@@ -1,0 +1,11 @@
+{
+    "name": "ExtraServices",
+    "alias": "extraservices",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\ExtraServices\\Providers\\ExtraServicesServiceProvider"
+    ],
+    "files": []
+}
