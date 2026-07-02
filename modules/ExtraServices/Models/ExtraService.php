@@ -40,40 +40,6 @@ class ExtraService extends Model
     ];
 
     /**
-     * activar un servicio
-     * @param string $serviceName Nombre del servicio a activar
-     * @return array Retorna un array con el resultado de la activación del servicio.
-     */
-    public static function activateService(string $serviceName): array
-    {
-        try {
-            $service = self::where('service', $serviceName)->first();
-
-            if (!$service) {
-                return [
-                    'success' => false,
-                    'message' => "El servicio '{$serviceName}' no existe.",
-                ];
-            }
-
-            $service->is_active = true;
-            $service->save();
-
-            return [
-                'success' => true,
-                'message' => "El servicio '{$serviceName}' ha sido activado correctamente.",
-                'data' => $service,
-            ];
-        } catch (Exception $th) {
-            Log::error("Error al activar el servicio '{$serviceName}': " . $th->getMessage());
-            return [
-                'success' => false,
-                'message' => "Ocurrió un error al activar el servicio '{$serviceName}'.",
-            ];
-        }
-    }
-
-    /**
      * Obtener la configuración de un servicio.
      * @param string $serviceName Nombre del servicio a consultar
      * @return ExtraService|null Retorna un array con la configuración o null si no existe.

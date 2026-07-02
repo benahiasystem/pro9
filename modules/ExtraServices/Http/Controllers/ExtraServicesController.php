@@ -95,6 +95,7 @@ class ExtraServicesController extends Controller
         if ($serviceName === 'apidocs') {
             $apiDocsService = new ApiDocsService();
             $activate = $apiDocsService->isApiDocsActive();
+            $service = ExtraService::where('service', $serviceName)->first();
         } else {
             return response()->json([
                 'success' => true,
@@ -103,7 +104,8 @@ class ExtraServicesController extends Controller
         }
 
         if ($activate) {
-            $result = ExtraService::activateService($serviceName);
+            $service->is_active = true;
+            $service->save();
             return response()->json([
                 'success' => true,
                 'message' => 'Se activó el servicio correctamente.',
