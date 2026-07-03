@@ -149,7 +149,8 @@ class Dispatch extends ModelTenant
         'reference_documents',
         'buyer_id',
         'buyer',
-        'custom_fields_data'
+        'custom_fields_data',
+        'sunat_error_response'
     ];
 
     protected $casts = [
@@ -168,6 +169,7 @@ class Dispatch extends ModelTenant
         'payer' => 'array',
         'reference_documents' => 'array',
         'custom_fields_data' => 'array',
+        'sunat_error_response' => 'array',
     ];
 
     public function getAdditionalDataAttribute($value)
@@ -660,6 +662,7 @@ class Dispatch extends ModelTenant
             'btn_options' => $btn_options,
             'btn_edit' => $btn_edit,
             'has_transport_driver_01'=> $this->has_transport_driver_01,
+            'sunat_error_response' => $this->sunat_error_response,
         ];
     }
 

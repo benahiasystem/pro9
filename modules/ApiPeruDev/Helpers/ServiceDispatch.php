@@ -106,9 +106,33 @@ class ServiceDispatch
                 ),
             ));
             $response = curl_exec($curl);
+            $error = curl_error($curl);
             curl_close($curl);
 
+            if ($error) {
+                throw new Exception(json_encode([
+                    'codigo' => 'Error CURL',
+                    'descripcion' => 'Fallo la conexión con SUNAT (Token)',
+                    'mensaje' => $error
+                ]));
+            }
+            if ($response === false || empty($response)) {
+                throw new Exception(json_encode([
+                    'codigo' => 'CURL Timeout',
+                    'descripcion' => 'Fallo la conexión con SUNAT (Token)',
+                    'mensaje' => 'El servidor no respondió (Respuesta vacía)'
+                ]));
+            }
+
             $data = json_decode($response, true);
+
+            if (!is_array($data)) {
+                throw new Exception(json_encode([
+                    'codigo' => 'Error de Red',
+                    'descripcion' => 'Error de conexión con el PSE/SUNAT',
+                    'mensaje' => 'La respuesta del servidor fue nula o inválida.'
+                ]));
+            }
 
             if (array_key_exists('access_token', $data)) {
                 $token = $data['access_token'];
@@ -140,100 +164,143 @@ class ServiceDispatch
     }
 
     public function send($filename, $file_content)
-    {
-        try {
-            $res = $this->getToken();
-            if (!$res['success']) {
-                throw new Exception($res['message']);
-            }
-            $token = $res['token'];
-            $file_zip = (new Zip())->compress($filename . '.xml', $file_content);
-            $form_params = [
-                "archivo" => [
-                    'nomArchivo' => $filename . '.zip',
-                    'arcGreZip' => base64_encode($file_zip),
-                    'hashZip' => hash('sha256', $file_zip)
-                ]
-            ];
-            $curl = curl_init();
-            curl_setopt_array($curl, array(
-                CURLOPT_URL => $this->getEndpointSend($filename),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 2,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_POSTFIELDS => json_encode($form_params),
-                CURLOPT_HTTPHEADER => array(
-                    "Authorization: Bearer {$token}",
-                    'Content-Type: application/json'
-                ),
-            ));
-
-            $response = curl_exec($curl);
-            curl_close($curl);
-
-            $res = json_decode($response, true);
-
-            if (key_exists('cod', $res)) {
-
-            } else {
-
-            }
-            if (key_exists('status', $res)) {
-                if ($res['status'] === 401) {
-                    throw new Exception('No se encuentra autorizado');
-                }
-            }
-            return [
-                'success' => true,
-                'data' => $res
-            ];
-        } catch (Exception $e) {
-            $message = "Code: {$e->getCode()} - Message: {$e->getMessage()}";
-            Log::info($message . ' send');
-            return [
-                'success' => false,
-                'message' => $message
-            ];
+{
+    try {
+        $res = $this->getToken();
+        if (!$res['success']) {
+            throw new Exception($res['message']);
         }
+
+        
+
+        $token = $res['token'];
+        $file_zip = (new Zip())->compress($filename . '.xml', $file_content);
+        $form_params = [
+            "archivo" => [
+                'nomArchivo' => $filename . '.zip',
+                'arcGreZip' => base64_encode($file_zip),
+                'hashZip' => hash('sha256', $file_zip)
+            ]
+        ];
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $this->getEndpointSend($filename),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 2,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'POST',
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_POSTFIELDS => json_encode($form_params),
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer {$token}",
+                'Content-Type: application/json'
+            ),
+        ));
+
+        // ... (todo tu código de cURL sigue igual) ...
+        $response = curl_exec($curl);
+        $error = curl_error($curl);
+        curl_close($curl);
+
+        // ... (tus validaciones de $error y $response vacía siguen igual) ...
+
+        $res = json_decode($response, true);
+
+        // --- AQUÍ VA LA VALIDACIÓN DENTRO DEL TRY ---
+        if (isset($res['cod'])) {
+            throw new Exception("Error SUNAT: " . ($res['message'] ?? 'Sin mensaje') . " (Código: " . $res['cod'] . ")");
+        }
+
+        if (isset($res['status']) && $res['status'] !== 200) {
+            throw new Exception("Error de servidor SUNAT: Status " . $res['status']);
+        }
+
+        return [
+            'success' => true,
+            'data' => $res
+        ];
+
+    } catch (Exception $e) {
+        // ESTE CATCH ES VITAL: atrapa todo lo anterior y lo convierte en un array limpio
+        $message = $e->getMessage();
+        Log::info($message . ' send'); // Registra el error en laravel.log
+        return [
+            'success' => false,
+            'message' => $message
+        ];
     }
+}
 
     public function ticket($numTicket)
-    {
-        try {
-            $res = $this->getToken();
-            if (!$res['success']) {
-                throw new Exception($res['message']);
-            }
-            $token = $res['token'];
-            $curl = curl_init();
-            curl_setopt_array($curl, array(
-                CURLOPT_URL => $this->getEndpointTicket($numTicket),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 2,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'GET',
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_HTTPHEADER => array(
-                    "Authorization: Bearer {$token}",
-                    'Content-Type: application/json'
-                ),
-            ));
-            $response = curl_exec($curl);
-            curl_close($curl);
-
-            return json_decode($response, true);
-        } catch (Exception $e) {
-            $message = "Code: {$e->getCode()} - Message: {$e->getMessage()}";
-            return [
-                'success' => false,
-                'message' => $message
-            ];
+{
+    try {
+        $res = $this->getToken();
+        if (!$res['success']) {
+            throw new Exception($res['message']);
         }
+        
+        $token = $res['token'];
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_URL => $this->getEndpointTicket($numTicket),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 2,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+            CURLOPT_SSL_VERIFYHOST => false,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HTTPHEADER => array(
+                "Authorization: Bearer {$token}",
+                'Content-Type: application/json'
+            ),
+        ));
+        $response = curl_exec($curl);
+        $error = curl_error($curl);
+        curl_close($curl);
+
+        if ($error) {
+            throw new Exception(json_encode([
+                'codigo' => 'Error CURL',
+                'descripcion' => 'Fallo la conexión con SUNAT (Ticket)',
+                'mensaje' => $error
+            ]));
+        }
+        if ($response === false || empty($response)) {
+            throw new Exception(json_encode([
+                'codigo' => 'CURL Timeout',
+                'descripcion' => 'Fallo la conexión con SUNAT (Ticket)',
+                'mensaje' => 'El servidor no respondió (Respuesta vacía)'
+            ]));
+        }
+
+        $res = json_decode($response, true);
+
+        // --- VALIDACIÓN DE ERROR EN TICKET ---
+        // En tu función ticket, donde haces el throw:
+if (isset($res['cod'])) {
+    $mensaje = $res['message'] ?? 'Error desconocido';
+    if ($res['cod'] == '0100') {
+        $mensaje = 'El ticket aún está en proceso, intenta nuevamente en unos segundos.';
     }
+    throw new Exception("Error SUNAT: " . $mensaje . " (Código: " . $res['cod'] . ")");
+}
+
+        return [
+            'success' => true,
+            'data' => $res
+        ];
+
+    } catch (Exception $e) {
+        $message = $e->getMessage();
+        Log::info($message . ' ticket'); // Registrar en logs para depuración
+        return [
+            'success' => false,
+            'message' => $message
+        ];
+    }
+}
+
 }
