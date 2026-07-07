@@ -79,6 +79,8 @@ var app_cart = new Vue({
         userDefaultAddress: window.__ecommerce_config?.userAddress || null,
         // Método de pago seleccionado: 'culqi' | 'cash' | null
         selectedPaymentMethod: null,
+        payment_reference: '',
+
         // Controla si se emiten documentos electrónicos (factura/boleta) o solo notas de venta
         enable_electronic_documents: window.__ecommerce_config?.enable_electronic_documents || false,
         // Recojo en tienda
@@ -490,6 +492,7 @@ var app_cart = new Vue({
                 total_discount: this.appliedCoupon ? this.appliedCoupon.discount : 0,
                 shipping_address: shippingAddress,
                 reference_payment: this.getSelectedReferencePayment(),
+                payment_reference: this.payment_reference,
             }
         },
         // Mapea el método de pago seleccionado al valor que se guarda en la orden
@@ -520,6 +523,10 @@ var app_cart = new Vue({
         async paymentCash() {
             if(!this.form_document.codigo_tipo_documento) {
                 return this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error')
+            }
+
+            if (this.selectedPaymentMethod === 'yape' && !this.payment_reference) {
+                return this.showSwalMessage('Ocurrió un error!', 'El número de operación es obligatorio para pagos con Yape.', 'error')
             }
 
             if(!this.form_contact.address) {

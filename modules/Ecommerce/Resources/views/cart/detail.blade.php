@@ -540,6 +540,19 @@
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
+                        
+                        <!-- Bloque dinámico para Yape -->
+                        <div v-if="selectedPaymentMethod === 'yape'" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Escanea el código QR desde tu app de Yape, realiza el pago y luego ingresa el número de operación.</p>
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <img src="{{ asset('logo/qr-yape.png') }}" alt="QR Yape" style="max-width: 150px; border-radius: 8px; border: 1px solid #eee;">
+                            </div>
+                            <div class="form-group mb-0">
+                                <label style="font-size: 13px; font-weight: 600;">Número de Operación <span class="text-danger">*</span></label>
+                                <input type="text" v-model="payment_reference" class="form-control" placeholder="Ej: 001234567" style="height: 40px; font-size: 14px;">
+                            </div>
+                        </div>
+
                         <label v-if="enableTransfer" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'transfer' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="transfer" autocomplete="off">
                             <span class="pay-method-ic">
