@@ -11,7 +11,7 @@ use App\Models\System\TrackApiPeruServices as SystemTrackApiPeruService;
 use App\Models\Tenant\TrackApiPeruServices as TenantTrackApiPeruService;
 use Illuminate\Support\Facades\URL;
 use Modules\ExtraServices\Models\ExtraServices;
-use Modules\ExtraServices\Services\ApiDocsService;
+use Modules\ExtraServices\Services\ApidocsService;
 use Modules\ExtraServices\Helpers\ApidocsHelper;
 
 
@@ -190,12 +190,12 @@ class ServiceData
         if ($shouldUseApidocs && in_array($type, ['ruc', 'dni'])) {
             try {
                 \Log::info('ServiceData - Usando apidocs');
-                $apiDocsService = new ApiDocsService();
+                $apidocsService = new ApidocsService();
 
                 if ($type === 'ruc') {
-                    $response = $apiDocsService->queryRuc($number);
+                    $response = $apidocsService->queryRuc($number);
                 } else {
-                    $response = $apiDocsService->queryDni($number);
+                    $response = $apidocsService->queryDni($number);
                 }
 
                 \Log::info('ServiceData - Respuesta de apidocs', ['response' => $response]);
