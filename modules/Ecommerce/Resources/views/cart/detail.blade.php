@@ -543,13 +543,18 @@
                         
                         <!-- Bloque dinámico para Yape -->
                         <div v-if="selectedPaymentMethod === 'yape'" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
-                            <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Escanea el código QR desde tu app de Yape, realiza el pago y luego ingresa el número de operación.</p>
+                            <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Escanea el código QR desde tu app de Yape.</p>
+                            @if(!empty($payment_configuration->image_url_yape))
                             <div style="text-align: center; margin-bottom: 15px;">
-                                <img src="{{ asset('logo/qr-yape.png') }}" alt="QR Yape" style="max-width: 150px; border-radius: 8px; border: 1px solid #eee;">
+                                <img src="{{ $payment_configuration->image_url_yape }}" alt="QR Yape" style="max-width: 150px; border-radius: 8px; border: 1px solid #eee;">
                             </div>
-                            <div class="form-group mb-0">
-                                <label style="font-size: 13px; font-weight: 600;">Número de Operación <span class="text-danger">*</span></label>
-                                <input type="text" v-model="payment_reference" class="form-control" placeholder="Ej: 001234567" style="height: 40px; font-size: 14px;">
+                            @endif
+                            <div style="font-size: 14px; text-align: center; margin-bottom: 10px;">
+                                <strong>Titular:</strong> {{ $payment_configuration->name_yape ?? 'No registrado' }}<br>
+                                <strong>Teléfono:</strong> <span>{{ $payment_configuration->telephone_yape ?? 'No registrado' }}</span>
+                                <button type="button" @click.prevent="copyToClipboard('{{ $payment_configuration->telephone_yape ?? '' }}')" class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">
+                                    Copiar
+                                </button>
                             </div>
                         </div>
 
@@ -560,6 +565,26 @@
                             </span>
                             <span class="pay-method-label">Transferencia bancaria</span>
                         </label>
+                        
+                        <!-- Bloque de cuentas bancarias -->
+                        <div v-if="selectedPaymentMethod === 'transfer'" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Realiza el depósito en alguna de nuestras cuentas bancarias y envíanos el voucher por WhatsApp.</p>
+                            @if(isset($bank_accounts) && count($bank_accounts) > 0)
+                                <ul style="list-style: none; padding-left: 0; font-size: 13px;">
+                                @foreach($bank_accounts as $account)
+                                    <li style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+                                        <strong>Banco:</strong> {{ $account->bank->description }} ({{ $account->currency_type->symbol }})<br>
+                                        <strong>Cuenta:</strong> {{ $account->number }}<br>
+                                        @if($account->cci)
+                                        <strong>CCI:</strong> {{ $account->cci }}
+                                        @endif
+                                    </li>
+                                @endforeach
+                                </ul>
+                            @else
+                                <p style="font-size: 13px; font-weight: bold; color: #d9534f;">No hay cuentas bancarias configuradas.</p>
+                            @endif
+                        </div>
                         @if($information->script_paypal)
                         <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'paypal' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="paypal" autocomplete="off">
@@ -925,7 +950,7 @@
 @vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
 
 <script>
-    Culqi.publicKey = {!! json_encode($configuration->token_public_culqui ) !!};
+    Culqi.publicKey = {!! json_encode($payment_configuration->publickey_culqi ?? '') !!};
     if(!Culqi.publicKey)
     {
       $('.culqi').hide()

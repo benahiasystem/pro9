@@ -79,7 +79,6 @@ var app_cart = new Vue({
         userDefaultAddress: window.__ecommerce_config?.userAddress || null,
         // Método de pago seleccionado: 'culqi' | 'cash' | null
         selectedPaymentMethod: null,
-        payment_reference: '',
 
         // Controla si se emiten documentos electrónicos (factura/boleta) o solo notas de venta
         enable_electronic_documents: window.__ecommerce_config?.enable_electronic_documents || false,
@@ -429,6 +428,42 @@ var app_cart = new Vue({
         saveCartToLocalStorage() {
             localStorage.setItem('products_cart', JSON.stringify(this.records));
         },
+        copyToClipboard(textToCopy) {
+            if (window.isSecureContext && navigator.clipboard) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    this.showSwalMessage('¡Copiado!', 'El número ha sido copiado al portapapeles.', 'success')
+                }, () => {
+                    this.fallbackCopyTextToClipboard(textToCopy);
+                });
+            } else {
+                this.fallbackCopyTextToClipboard(textToCopy);
+            }
+        },
+        fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+                if(successful) {
+                    this.showSwalMessage('¡Copiado!', 'El número ha sido copiado al portapapeles.', 'success')
+                } else {
+                    this.showSwalMessage('Error', 'No se pudo copiar el número.', 'error')
+                }
+            } catch (err) {
+                this.showSwalMessage('Error', 'No se pudo copiar el número.', 'error')
+            }
+            document.body.removeChild(textArea);
+        },
         async changeExchangeRate(exchange_rate_date){
             var response = await axios.get(`/exchange_rate/ecommence/${exchange_rate_date}`)
             this.exchange_rate_sale = parseFloat(response.data.sale)
@@ -492,7 +527,6 @@ var app_cart = new Vue({
                 total_discount: this.appliedCoupon ? this.appliedCoupon.discount : 0,
                 shipping_address: shippingAddress,
                 reference_payment: this.getSelectedReferencePayment(),
-                payment_reference: this.payment_reference,
             }
         },
         // Mapea el método de pago seleccionado al valor que se guarda en la orden
@@ -523,10 +557,6 @@ var app_cart = new Vue({
         async paymentCash() {
             if(!this.form_document.codigo_tipo_documento) {
                 return this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error')
-            }
-
-            if (this.selectedPaymentMethod === 'yape' && !this.payment_reference) {
-                return this.showSwalMessage('Ocurrió un error!', 'El número de operación es obligatorio para pagos con Yape.', 'error')
             }
 
             if(!this.form_contact.address) {

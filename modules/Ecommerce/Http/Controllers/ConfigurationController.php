@@ -26,7 +26,18 @@ class ConfigurationController extends Controller
     public function record() {
         $configuration = ConfigurationEcommerce::first();
         $record = new ConfigurationEcommerceResource($configuration);
-        return $record;
+        
+        $bank_accounts = \App\Models\Tenant\BankAccount::with('bank', 'currency_type')->get()->map(function($row) {
+            return [
+                'id' => $row->id,
+                'description' => $row->bank->description . ' - ' . $row->currency_type->symbol . ' - ' . $row->number,
+            ];
+        });
+
+        return [
+            'data' => $record,
+            'bank_accounts' => $bank_accounts
+        ];
     }
 
 
@@ -75,12 +86,17 @@ class ConfigurationController extends Controller
     {
         $id = $request->input('id');
         $configuration = ConfigurationEcommerce::find($id);
+        
+        $preferences = $configuration->preferences ?: [];
+        $preferences['ecommerce_bank_account_ids'] = $request->input('ecommerce_bank_account_ids', []);
+        
         $configuration->fill($request->all());
+        $configuration->preferences = $preferences;
         $configuration->save();
 
         return [
             'success' => true,
-            'message' => 'Configuración Culqui actualizada'
+            'message' => 'Configuración actualizada'
         ];
     }
 

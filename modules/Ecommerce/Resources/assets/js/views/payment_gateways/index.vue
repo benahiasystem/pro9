@@ -23,63 +23,22 @@
               </small>
             </div>
           </div>
-          <div class="col-md-12">
-            <div class="form-group" :class="{'has-danger': errors.token_public_culqui}">
-              <label class="control-label">
-                Token Público
-                <el-tooltip placement="right-start">
-                  <div slot="content">
-                    Token Público.
-                    <a href="#" @click="openCulqi">Culqi</a>
-                  </div>
-                  <i class="fa fa-info-circle"></i>
-                </el-tooltip>
-              </label>
-              <el-input v-model="form.token_public_culqui"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.token_public_culqui"
-                v-text="errors.token_public_culqui[0]"
-              ></small>
-            </div>
-          </div>
-          <div class="col-md-12">
-            <div class="form-group" :class="{'has-danger': errors.token_private_culqui}">
-              <label class="control-label">Token Privado  <el-tooltip placement="right-start">
-                  <div slot="content">
-                    Token Privado.
-                    <a href="#" @click="openCulqi">Culqi</a>
-                  </div>
-                  <i class="fa fa-info-circle"></i>
-                </el-tooltip></label>
-              <el-input v-model="form.token_private_culqui"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.token_private_culqui"
-                v-text="errors.token_private_culqui[0]"
-              ></small>
-            </div>
-          </div>
-          <!-- Script Paypal copiado de configuration_paypal -->
-          <div class="col-md-12">
-            <div class="form-group form-modern" :class="{'has-danger': errors.script_paypal}">
-              <label class="control-label">
-                Script Paypal
-                <el-tooltip placement="right-start">
-                  <div slot="content">
-                    Codigo Html Formulario Paypal.
-                    <a href="#" @click="openPaypal">Paypal</a>
-                  </div>
-                  <i class="fa fa-info-circle"></i>
-                </el-tooltip>
-              </label>
-              <br />
-              <el-input type="textarea" :rows="4" v-model="form.script_paypal"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.script_paypal"
-                v-text="errors.script_paypal[0]"
-              ></small>
+          <div class="col-md-12" v-if="form.enable_transfer === 1" style="animation: fadeIn 0.3s;">
+            <div class="form-group form-modern mb-3" style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+              <label class="mb-2" style="font-weight: 600;">Cuentas Bancarias Disponibles</label>
+              <small class="d-block text-muted mb-3" style="line-height: 1.5;">
+                Seleccione qué cuentas bancarias se mostrarán a los clientes en el checkout público de la tienda virtual.
+              </small>
+              <div v-if="bank_accounts.length > 0">
+                <el-checkbox-group v-model="form.ecommerce_bank_account_ids">
+                  <el-checkbox v-for="bank in bank_accounts" :key="bank.id" :label="bank.id" style="display: block; margin-bottom: 8px;">
+                    @{{ bank.description }}
+                  </el-checkbox>
+                </el-checkbox-group>
+              </div>
+              <div v-else>
+                <el-alert title="No se encontraron cuentas bancarias registradas en el sistema. Registre una primero." type="warning" show-icon :closable="false"></el-alert>
+              </div>
             </div>
           </div>
         </div>
@@ -103,6 +62,7 @@ export default {
       resource: "ecommerce",
       errors: {},
       form: {},
+      bank_accounts: [],
       soap_sends: [],
       soap_types: []
     };
@@ -114,11 +74,10 @@ export default {
       if (response.data !== "") {
         let data = response.data.data;
         this.form.id = data.id;
-        this.form.token_public_culqui = data.token_public_culqui;
-        this.form.token_private_culqui = data.token_private_culqui;
-        this.form.script_paypal = data.script_paypal;
         this.form.enable_yape = data.enable_yape ? 1 : 0;
         this.form.enable_transfer = data.enable_transfer ? 1 : 0;
+        this.bank_accounts = response.data.bank_accounts || [];
+        this.form.ecommerce_bank_account_ids = (data.preferences && data.preferences.ecommerce_bank_account_ids) ? data.preferences.ecommerce_bank_account_ids : [];
       }
     });
   },
@@ -135,11 +94,9 @@ export default {
       this.errors = {};
       this.form = {
         id: null,
-        token_public_culqui: "",
-        token_private_culqui: "",
-        script_paypal: "",
         enable_yape: 0,
         enable_transfer: 0,
+        ecommerce_bank_account_ids: [],
       };
     },
     submit() {

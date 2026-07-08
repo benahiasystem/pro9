@@ -343,7 +343,19 @@ class EcommerceController extends Controller
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
             : [];
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer'));
+        $payment_configuration = \Modules\Payment\Models\PaymentConfiguration::first();
+
+        // Obtener solo las cuentas que el administrador haya habilitado para el E-commerce
+        $preferences = $configuration->preferences ?: [];
+        $ecommerce_bank_account_ids = $preferences['ecommerce_bank_account_ids'] ?? [];
+
+        if (count($ecommerce_bank_account_ids) > 0) {
+            $bank_accounts = \App\Models\Tenant\BankAccount::whereIn('id', $ecommerce_bank_account_ids)->get();
+        } else {
+            $bank_accounts = collect(); // Por seguridad, si no selecciona ninguna, no se muestran
+        }
+
+        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'bank_accounts'));
     }
 
     public function orderList()
