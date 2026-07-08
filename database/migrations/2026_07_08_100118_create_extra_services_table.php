@@ -15,8 +15,7 @@ return new class extends Migration
     {
         Schema::create('extra_services', function (Blueprint $table) {
             $table->id();
-            $table->string('service')->unique();
-            $table->boolean('is_active')->default(false);
+            $table->boolean('isActiveApidocs')->default(false);
             $table->timestamps();
         });
     }

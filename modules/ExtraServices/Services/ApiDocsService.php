@@ -1,19 +1,14 @@
 <?php
 
 namespace Modules\ExtraServices\Services;
-use Modules\ExtraServices\Entities\ExtraService;
+use Modules\ExtraServices\Models\ExtraServices;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
-class ApiDocsService
+class ApidocsService
 {
-
-    /**
-     * Nombre del servicio a consultar
-     */
-    protected string $serviceName;
 
     /**
      ** URL base de la API
@@ -38,7 +33,6 @@ class ApiDocsService
     // Constructor para inicializar las propiedades del servicio
     public function __construct()
     {
-        $this->serviceName = 'apidocs';
         $this->hostname = $this->getMainHostname();
         $this->resellerId = $this->getResellerId();
         $this->secret = config('app.url_base');
@@ -133,13 +127,19 @@ class ApiDocsService
     {
         try {
 
-            $config = ExtraService::getServiceConfig($this->serviceName);
+            $config = ExtraServices::first();
 
-            if (!$config || !$config->is_active) {
+            if (!$config || !$config->isActiveApidocs) {
                 throw new Exception('El servicio de consultas no está activo');
             }
 
             $headers = $this->prepareHeaders($method, $path);
+            \log::info('$headers', [
+                'X-Reseller-Id' => $this->resellerId,
+                'X-Timestamp' => $headers['X-Timestamp'],
+                'X-Signature' => $headers['X-Signature'],
+                'X-Domain' => $this->hostname,
+            ]);
             $url = $this->baseUrl . $path;
 
             $response = Http::withoutVerifying()
@@ -264,7 +264,7 @@ class ApiDocsService
      * Verifica si el servicio 'apidocs' está activo en el sistema.
      * @return bool Retorna true si está activo, false si no lo está.
      */
-    public function isApiDocsActive(): bool
+    public function isActiveService(): bool
     {
         $method = 'GET';              
         $path = '/api/ruc/0000000000';

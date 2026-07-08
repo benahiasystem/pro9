@@ -10,6 +10,10 @@ use App\Models\Tenant\Configuration as TenantConfig;
 use App\Models\System\TrackApiPeruServices as SystemTrackApiPeruService;
 use App\Models\Tenant\TrackApiPeruServices as TenantTrackApiPeruService;
 use Illuminate\Support\Facades\URL;
+use Modules\ExtraServices\Models\ExtraServices;
+use Modules\ExtraServices\Services\ApiDocsService;
+use Modules\ExtraServices\Helpers\ApidocsHelper;
+
 
 class ServiceData
 {
@@ -96,8 +100,120 @@ class ServiceData
 
     }
 
+    protected function shouldUseExtraService()
+    {
+        return ApidocsHelper::canUseApidocs();
+    }
+
+
+    /**
+     * Transformar respuesta de SystemExtraServices al formato esperado por el sistema
+     *
+     * Maneja dos fuentes de datos:
+     * - "beta": API compatible con apiperudev (estructura estándar)
+     * - "alpha": API Factiliza (estructura específica)
+     */
+    protected function transformExtraServiceResponse($response, $type)
+    {
+        if (!$response['success']) {
+            return $response;
+        }
+
+        $data = $response['data'];
+        $meta = $response['meta'] ?? [];
+        $source = $meta['source'] ?? 'unknown';
+        $res_data = [];
+
+        if ($type === 'dni') {
+            // Para DNI, la estructura es similar en ambas fuentes
+            $ubigeo = $data['ubigeo'] ?? [];
+            $department_id = $ubigeo[0] ?? null;
+            $province_id = $ubigeo[1] ?? null;
+            $district_id = $ubigeo[2] ?? null;
+
+            $res_data = [
+                'name' => $data['nombre_completo'] ?? $data['name'] ?? '',
+                'trade_name' => '',
+                'location_id' => [
+                    $department_id,
+                    $province_id,
+                    $district_id
+                ],
+                'address' => $data['direccion'] ?? $data['address'] ?? '',
+                'department_id' => $department_id,
+                'province_id' => $province_id,
+                'district_id' => $district_id,
+                'condition' => '',
+                'state' => '',
+            ];
+        }
+
+        if ($type === 'ruc') {
+            // Determinar si es agente de retención
+            $is_agent_retention = false;
+            if (isset($data['es_agente_de_retencion'])) {
+                $is_agent_retention = ($data['es_agente_de_retencion'] === 'SI');
+            }
+
+            // Procesar ubigeo según la fuente
+            // API real retorna: ["15", "1501", "150122"]
+            $ubigeo = $data['ubigeo'] ?? [];
+
+            $res_data = [
+                'name' => $data['nombre_o_razon_social'] ?? '',
+                'trade_name' => '',
+                'address' => $data['direccion'] ?? '',
+                'location_id' => $ubigeo,
+                'condition' => $data['condicion'] ?? '',
+                'state' => $data['estado'] ?? '',
+                'is_agent_retention' => $is_agent_retention,
+            ];
+        }
+
+        $response['data'] = $res_data;
+        // Agregar fuente original en la respuesta
+        $response['source'] = $source === 'beta' ? 'apiperu.dev' : $source;
+
+        return $response;
+    }
+
     public function service($type, $number)
     {
+        // Interceptar y redirigir a SystemExtraServices si está activo
+        $shouldUseApidocs = $this->shouldUseExtraService();
+        \Log::info('ServiceData - Interceptor check', [
+            'shouldUseApidocs' => $shouldUseApidocs,
+            'type' => $type,
+            'number' => $number
+        ]);
+
+        if ($shouldUseApidocs && in_array($type, ['ruc', 'dni'])) {
+            try {
+                \Log::info('ServiceData - Usando apidocs');
+                $apiDocsService = new ApiDocsService();
+
+                if ($type === 'ruc') {
+                    $response = $apiDocsService->queryRuc($number);
+                } else {
+                    $response = $apiDocsService->queryDni($number);
+                }
+
+                \Log::info('ServiceData - Respuesta de apidocs', ['response' => $response]);
+
+                // Incrementar contador de consumo del cliente
+                //ApidocsHelper::incrementUsage();
+
+                // Transformar la respuesta al formato esperado por el sistema
+                return $this->transformExtraServiceResponse($response, $type);
+            } catch (\Exception $e) {
+                // Si falla el nuevo servicio, caer al servicio tradicional
+                \Log::error('ServiceData - Error en apidocs, usando fallback', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+            }
+        }
+
 
         $res = $this->client->request('GET', '/api/' . $type . '/' . $number, $this->parameters);
         $response = json_decode($res->getBody()->getContents(), true);

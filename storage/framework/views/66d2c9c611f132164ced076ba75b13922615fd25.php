@@ -1,0 +1,35 @@
+
+
+<?php $__env->startSection('content'); ?>
+    <div class="page-header pr-0">
+        <h2><a href="/configurations">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings" style="margin-top: -3px"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z"></path><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"></path></svg>
+        </a></h2>
+        <ol class="breadcrumbs">
+            <li class="active"><span> Configuraciones </span></li>
+        </ol>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 col-md-12">
+            <system-login-settings :configuration='<?php echo json_encode($configuration, 15, 512) ?>'></system-login-settings>
+            <system-configuration-themes></system-configuration-themes>
+            <system-configuration-visible-columns></system-configuration-visible-columns>
+            <system-login-other-configuration :plans='<?php echo json_encode($plans, 15, 512) ?>'></system-login-other-configuration>
+            <system-openai-configuration></system-openai-configuration>
+            <system-google-maps-configuration :configuration='<?php echo json_encode($configuration, 15, 512) ?>'></system-google-maps-configuration>
+            <system-cron-order-configuration :configuration='<?php echo json_encode($configuration, 15, 512) ?>'></system-cron-order-configuration>
+        </div>
+        <div class="col-lg-6 col-md-12">
+            <system-configuration-payment-gateway></system-configuration-payment-gateway>
+            <system-configuration-token></system-configuration-token>
+            <system-configuration-apk-url></system-configuration-apk-url>
+            <system-support-configuration></system-support-configuration>
+            <system-terms-configuration></system-terms-configuration>
+            <system-email-configuration :configuration='<?php echo json_encode($configuration, 15, 512) ?>'></system-email-configuration>
+        </div>
+    </div>
+
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('system.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Aplicaciones\laragon\sites\buho\pro9dev001\resources\views/system/configuration/index.blade.php ENDPATH**/ ?>
