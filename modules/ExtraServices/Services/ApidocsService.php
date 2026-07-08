@@ -84,6 +84,16 @@ class ApidocsService
      */
     protected function generateSignature(string $method, string $path, int $timestamp): string
     {
+        Log::info('Generating signature for request', [
+            'method' => $method,
+            'path' => $path,
+            'timestamp' => $timestamp,
+            'hostname' => $this->hostname,
+            'resellerId' => $this->resellerId,
+            'secret' => $this->secret,
+            'baseurl' => $this->baseUrl,
+        ]);
+
         $payload = implode("\n", [
             $method,
             $path,
@@ -134,7 +144,7 @@ class ApidocsService
             }
 
             $headers = $this->prepareHeaders($method, $path);
-            \log::info('$headers', [
+            Log::info('Request headers', [
                 'X-Reseller-Id' => $this->resellerId,
                 'X-Timestamp' => $headers['X-Timestamp'],
                 'X-Signature' => $headers['X-Signature'],
