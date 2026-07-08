@@ -1,6 +1,17 @@
 <?php
 
 return [
+    'url_base' => env('APP_URL_BASE', 'localhost'),
+
+    /*
+    |-------------------------------------------------------------------------- 
+    | Limite de consultas para resellers
+    |--------------------------------------------------------------------------
+    |
+    | Este valor determina el límite de consultas que un reseller puede realizar
+    | a los servicios extra (consulta de documentos, placa, licencia, etc.)
+    |
+    */
 
     'limite_reseller' => env('LIMITE_RESELLER', 999),
 
