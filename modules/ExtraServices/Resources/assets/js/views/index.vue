@@ -1,3 +1,4 @@
+<!-- filepath: c:\Aplicaciones\laragon\sites\buho\pro9dev001\modules\ExtraServices\Resources\assets\js\views\index.vue -->
 <template>
   <div>
     <header class="page-header">
@@ -10,7 +11,8 @@
         <li class="active"><span class="text-white">Servicios Extras</span></li>
       </ol>
     </header>
-     <div class="card mb-0">
+
+    <div class="card mb-0">
       <div class="card">
         <div class="card-header bg-info bg-info-customer-admin">
           <h3 class="my-0">Servicio ApiDocs</h3>
@@ -25,9 +27,11 @@
                 </Tooltip>
                 <el-switch style="margin-left: 10px;" v-model="form.isActiveApidocs" @change="setData"></el-switch>
               </div>
+
               <div class="col-12 form-group mb-4" v-if="form.isActiveApidocs">
-                Ventana de configuracion
+                <apidocs-usage />
               </div>
+
               <div class="col-12 form-group mb-4" v-if="!form.isActiveApidocs">
                 Ventana de ventas
               </div>
@@ -38,14 +42,16 @@
     </div>
   </div>
 </template>
+
 <script>
 import { Tooltip } from 'element-ui';
-
+import ApidocsUsage from './components/apidocs-usage.vue';
 
 export default {
   name: 'ExtraServicesIndex',
   components: {
-    Tooltip
+    Tooltip,
+    ApidocsUsage,
   },
   data() {
     return {
@@ -64,10 +70,10 @@ export default {
     async getData() {
       this.loading = true;
       try {
-        const response = await this.$http.get(this.resource + '/record');
+        const response = await this.$http.get(this.resource + '/records');
         this.form = response.data.data;
       } catch (error) {
-          console.error('Error fetching data:', error);
+        console.error('Error fetching data:', error);
       } finally {
         this.loading = false;
       }
@@ -79,20 +85,20 @@ export default {
         if (response.data.success) {
           this.$message({
             message: 'Configuración guardada exitosamente',
-              type: 'success'
-            });
-          }
-          await this.getData();
-        } catch (error) {
-          console.error('Error saving data:', error);
-          this.$message({
-            message: 'Error al guardar la configuración',
-            type: 'error'
+            type: 'success'
           });
-          await this.getData();
-        } finally {
-          this.loading = false;
         }
+        await this.getData();
+      } catch (error) {
+        console.error('Error saving data:', error);
+        this.$message({
+          message: 'Error al guardar la configuración',
+          type: 'error'
+        });
+        await this.getData();
+      } finally {
+        this.loading = false;
+      }
     },
   },
 };

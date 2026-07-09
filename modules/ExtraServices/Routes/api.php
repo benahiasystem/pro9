@@ -12,8 +12,7 @@ $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 Route::domain($app_url)->group(function () {
     Route::middleware(['auth:system_api'])->group(function() {
         Route::prefix('extra-services')->group(function () {
-            Route::post('activate', 'ExtraServicesController@activateService');
-            Route::post('inactivate', 'ExtraServicesController@inactivateService');
+            Route::get('/client-usage-apidocs', 'ClientUsageApidocsController@records');
         });
     });
 });

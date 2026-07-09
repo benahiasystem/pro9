@@ -12,9 +12,15 @@ $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 Route::domain($app_url)->group(function () {
     Route::middleware('auth:admin')->group(function () {
         Route::prefix('extra-services')->group(function () {
+
             Route::get('/', 'ExtraServicesController@index')->name('system.services');
-            Route::get('/record', 'ExtraServicesController@record');
+            Route::get('/records', 'ExtraServicesController@records');
             Route::post('/store', 'ExtraServicesController@store');
+
+            Route::prefix('apidocs')->group(function () {
+                Route::get('/usage/records', 'ClientUsageApidocsController@records');
+            });
+            
         });
     });
 });

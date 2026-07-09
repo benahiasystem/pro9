@@ -201,7 +201,7 @@ class ServiceData
                 \Log::info('ServiceData - Respuesta de apidocs', ['response' => $response]);
 
                 // Incrementar contador de consumo del cliente
-                //ApidocsHelper::incrementUsage();
+                ApidocsHelper::incrementUsage();
 
                 // Transformar la respuesta al formato esperado por el sistema
                 return $this->transformExtraServiceResponse($response, $type);

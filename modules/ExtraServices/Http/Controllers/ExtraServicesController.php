@@ -30,7 +30,7 @@ class ExtraServicesController extends Controller
      * Obtiene la primera fila de configuración del módulo.
      * @return \Illuminate\Http\JsonResponse    
      */
-    public function record()
+    public function records()
     {
         $configuration = ExtraServices::firstOrCreate([]);
         return new ExtraServicesResource($configuration);
