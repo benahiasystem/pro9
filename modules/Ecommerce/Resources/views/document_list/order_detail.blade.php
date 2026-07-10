@@ -100,6 +100,34 @@
     color: #1a1a1a;
 }
 
+.voided-banner {
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: #fdecea;
+    border: 1px solid #f5b7b1;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #a93226;
+    font-size: 14px;
+    font-weight: 700;
+}
+.voided-banner svg { flex-shrink: 0; }
+.returns-note {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: #fff4f4;
+    border: 1px solid #f8d7d7;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #c0392b;
+    font-size: 13px;
+    font-weight: 600;
+}
+.returns-note svg { flex-shrink: 0; }
 .total-box {
     margin-top: 20px;
     padding: 16px 20px;
@@ -137,6 +165,11 @@
             </div>
 
             <div class="modal-body">
+
+                <div class="voided-banner" v-if="record.is_voided">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><path d="M10 10l4 4m0 -4l-4 4"/></svg>
+                    <span>Este pedido fue anulado.</span>
+                </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3 mb-md-0">
@@ -213,6 +246,11 @@
                         </tr>
                     </tbody>
                 </table>
+
+                <div class="returns-note" v-if="record.returns_blocked">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                    <span>Este pedido ya no acepta devoluciones.</span>
+                </div>
 
                 <div class="total-box">
                     <span class="label">Total</span>

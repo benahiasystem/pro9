@@ -157,6 +157,7 @@
                                         <el-checkbox
                                             v-model="status[action.key]"
                                             :disabled="action.disabled"
+                                            @change="onActionChange(status, action)"
                                         >
                                             <span class="so-action-name">{{ action.label }}</span>
                                         </el-checkbox>
@@ -164,6 +165,9 @@
                                 </el-tooltip>
                             </div>
                         </div>
+                        <span class="so-action-desc" style="padding-left: 0">
+                            Solo un estado puede generar el comprobante de una orden.
+                        </span>
                     </div>
 
                     <!-- Estado inicial / final: solo para el grupo de pedido, únicos -->
@@ -557,14 +561,10 @@ export default {
             // Definición de acciones: label, descripción, clave del modelo y si está deshabilitada
             actionDefs: [
                 { key: 'action_discount_stock',     label: 'Descontar stock',       desc: 'Reduce el inventario disponible',      disabled: false, color: '#E6A23C' },
-                { key: 'action_mark_payment',       label: 'Marcar pago recibido',  desc: 'Registra el pago como confirmado',     disabled: true, color: '#67C23A' },
-                { key: 'action_generate_document',  label: 'Generar comprobante',   desc: 'Emite factura o boleta electrónica',   disabled: false, color: '#409EFF' },
+                { key: 'action_generate_document',  label: 'Generar comprobante',   desc: 'Emite el comprobante y registra el pago completo',   disabled: false, color: '#409EFF' },
                 { key: 'action_send_email',         label: 'Enviar email al cliente', desc: 'Notifica el cambio de estado',       disabled: false, color: '#8B5CF6' },
-                { key: 'action_notify_dispatch',    label: 'Notificar despacho',    desc: 'Alerta al área logística',             disabled: true, color: '#409EFF' },
-                { key: 'action_generate_remission', label: 'Generar guía de remisión', desc: 'Crea el documento de envío',       disabled: true,  color: '#10B981' },
-                { key: 'action_free_reserved_stock',label: 'Liberar stock reservado', desc: 'Devuelve unidades al inventario',   disabled: true,  color: '#E6A23C' },
-                { key: 'action_block_returns',      label: 'Bloquear devoluciones', desc: 'Cierra el periodo de cambio',          disabled: true,  color: '#F56C6C' },
-                { key: 'action_void_order',         label: 'Anular pedido',         desc: 'Cancela y revierte el pedido',         disabled: true,  color: '#F56C6C' },
+                { key: 'action_block_returns',      label: 'Bloquear devoluciones', desc: 'Informa al cliente que el pedido ya no acepta devoluciones (desde este estado en adelante)', disabled: false, color: '#F56C6C' },
+                { key: 'action_void_order',         label: 'Anular pedido',         desc: 'Anula el pedido y revierte el stock (y la nota de venta si existe). Bloquea todas las acciones del pedido', disabled: false, color: '#F56C6C' },
             ],
 
             typeOptions: [
@@ -601,10 +601,9 @@ export default {
             return [
                 'description', 'color', 'is_initial', 'is_final',
                 'is_payment_status', 'is_order_status', 'is_shipping_status',
-                'action_discount_stock', 'action_mark_payment',
+                'action_discount_stock',
                 'action_generate_document', 'action_send_email',
-                'action_notify_dispatch', 'action_generate_remission',
-                'action_free_reserved_stock', 'action_block_returns',
+                'action_block_returns',
                 'action_void_order',
             ]
         },
@@ -629,9 +628,8 @@ export default {
         normalize(status) {
             const booleans = [
                 'is_initial', 'is_final', 'is_payment_status', 'is_order_status', 'is_shipping_status',
-                'action_discount_stock', 'action_mark_payment',
-                'action_generate_document', 'action_send_email', 'action_notify_dispatch',
-                'action_generate_remission', 'action_free_reserved_stock',
+                'action_discount_stock',
+                'action_generate_document', 'action_send_email',
                 'action_block_returns', 'action_void_order',
             ]
             const s = { ...status }
@@ -689,6 +687,18 @@ export default {
             status.is_payment_status = type === 'payment'
             status.is_order_status = type === 'order'
             status.is_shipping_status = type === 'shipping'
+        },
+
+        // "Generar comprobante" es único en todo el sistema: al activarlo en un
+        // estado, se desactiva en los demás (un pedido solo emite un comprobante).
+        onActionChange(status, action) {
+            if (action.key !== 'action_generate_document') return
+            if (!status.action_generate_document) return
+            this.statuses.forEach(s => {
+                if (s.id !== status.id) {
+                    s.action_generate_document = false
+                }
+            })
         },
 
         // Marca un estado como inicial. Único dentro del grupo de pedido.

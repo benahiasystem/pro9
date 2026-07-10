@@ -113,6 +113,11 @@ class OrderController extends Controller
 
         $statusOrder = $statuses->firstWhere('id', $request->record[$field]);
 
+        // Anulación del pedido: revierte stock (vía NV si existe, o directo) y marca el estado
+        if ($statusOrder && $statusOrder->action_void_order) {
+            return $this->voidOrder($request, $field);
+        }
+
         // Descuento de stock: antes hardcodeado para id=3, ahora guiado por el flag del estado
         if ($statusOrder && $statusOrder->action_discount_stock) {
             // Obtener la orden para verificar si ya se descontó stock
@@ -162,6 +167,65 @@ class OrderController extends Controller
         }
 
         return ['message' => 'Estatus actualizado'];
+    }
+
+    /**
+     * Anula un pedido en cualquier punto del flujo.
+     * - Si el pedido tiene nota de venta vigente: la anula (revierte stock + kardex + lotes).
+     * - Si no tiene NV pero ya descontó stock: revierte el stock al almacén del establecimiento.
+     * En ambos casos persiste el estado de anulación seleccionado.
+     */
+    private function voidOrder(Request $request, string $field): array
+    {
+        $order = Order::where('id', $request->record['id'])->first();
+
+        if (!$order) {
+            return ['message' => 'Pedido no encontrado'];
+        }
+
+        // Persistir el estado de anulación
+        Order::where('id', $order->id)->update([$field => $request->record[$field]]);
+
+        // Revertir stock según el caso
+        if ($order->sale_note && (string) $order->sale_note->state_type_id !== '11') {
+            // Caso con NV: reutiliza la anulación de nota de venta (revierte stock y lotes)
+            app(SaleNoteController::class)->anulate($order->sale_note->id);
+        } elseif ($order->stock_discounted) {
+            // Caso sin NV: revierte el stock descontado directamente
+            $this->revertOrderStock($order);
+        }
+
+        return ['message' => 'Pedido anulado'];
+    }
+
+    /**
+     * Revierte el stock descontado de un pedido sin nota de venta, devolviendo las
+     * cantidades al almacén del establecimiento del usuario. Marca stock_discounted = false.
+     */
+    private function revertOrderStock(Order $order): void
+    {
+        $warehouse = ModuleWarehouse::where('establishment_id', auth()->user()->establishment_id)->first();
+
+        if ($warehouse) {
+            foreach ($order->items as $item) {
+                $itemId  = $item->id ?? null;
+                $quantity = $item->cantidad ?? 0;
+
+                if (!$itemId || !$quantity) {
+                    continue;
+                }
+
+                $itemWarehouse = ItemWarehouse::where('item_id', $itemId)
+                    ->where('warehouse_id', $warehouse->id)
+                    ->first();
+
+                if ($itemWarehouse) {
+                    $itemWarehouse->update(['stock' => $itemWarehouse->stock + $quantity]);
+                }
+            }
+        }
+
+        $order->update(['stock_discounted' => false]);
     }
 
     /**
