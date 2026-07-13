@@ -498,7 +498,7 @@
                             <span class="head-summary-warn">Inicia sesión</span>
                         @else
                             <b v-if="selectedPaymentMethod === 'culqi'">Tarjeta (VISA)</b>
-                            <b v-else-if="selectedPaymentMethod === 'cash'">Efectivo</b>
+                            <b v-else-if="selectedPaymentMethod === 'cash'">@{{ cashPaymentTitle }}</b>
                             <b v-else-if="selectedPaymentMethod === 'yape'">Yape</b>
                             <b v-else-if="selectedPaymentMethod === 'transfer'">Transferencia</b>
                             <b v-else-if="selectedPaymentMethod === 'paypal'">PayPal</b>
@@ -526,13 +526,18 @@
                             </span>
                             <span class="pay-method-label">Pagar con tarjeta (VISA)</span>
                         </label>
-                        <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
+                        <label v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="cash" autocomplete="off">
                             <span class="pay-method-ic">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
                             </span>
-                            <span class="pay-method-label">Pagar con efectivo</span>
+                            <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
+                        
+                        <!-- Bloque dinámico para Efectivo -->
+                        <div v-if="selectedPaymentMethod === 'cash' && cashPaymentDescription" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 0px;" style="white-space: pre-line;">@{{ cashPaymentDescription }}</p>
+                        </div>
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="yape" autocomplete="off">
                             <span class="pay-method-ic">
@@ -659,7 +664,7 @@
                 <div class="checkout-methods">
                     @guest('ecommerce')
                     <a href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">Pagar con VISA</a>
-                    <a href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">Pagar con efectivo</a>
+                    <a v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">@{{ cashPaymentTitle }}</a>
 
                     @elseauth('ecommerce')
                         <button v-if="selectedPaymentMethod !== 'paypal'" class="pay-btn" :class="{ disabled: !acceptedTerms }" :disabled="!selectedPaymentMethod || !acceptedTerms" @click="executePayment">
@@ -880,6 +885,10 @@
         pickup_branches: {!! json_encode($pickup_branches ?? []) !!},
         enable_yape: {!! json_encode($enable_yape ?? false) !!},
         enable_transfer: {!! json_encode($enable_transfer ?? false) !!},
+        enable_cash: {!! json_encode(isset($configuration->preferences['enable_cash']) && $configuration->preferences['enable_cash'] == 1) !!},
+        cash_payment_title: {!! json_encode($configuration->preferences['cash_title'] ?? 'Pago contra entrega') !!},
+        cash_payment_description: {!! json_encode($configuration->preferences['cash_description'] ?? '') !!},
+        cash_payment_pickup_only: {!! json_encode(isset($configuration->preferences['cash_pickup_only']) && $configuration->preferences['cash_pickup_only'] == 1) !!},
     };
 
     window.__routes = {

@@ -88,6 +88,10 @@ var app_cart = new Vue({
         selectedPickupBranch: null,
         isPickupMode: false,
         // Métodos de pago adicionales
+        enableCash: window.__ecommerce_config?.enable_cash || false,
+        cashPaymentTitle: window.__ecommerce_config?.cash_payment_title || 'Pago contra entrega',
+        cashPaymentDescription: window.__ecommerce_config?.cash_payment_description || '',
+        cashPaymentPickupOnly: window.__ecommerce_config?.cash_payment_pickup_only || false,
         enableYape: window.__ecommerce_config?.enable_yape || false,
         enableTransfer: window.__ecommerce_config?.enable_transfer || false,
         acceptedTerms: false,
@@ -129,6 +133,13 @@ var app_cart = new Vue({
             // Mostrar u ocultar el widget de PayPal que está fuera del scope de Vue
             const el = document.getElementById('paypal-widget-container');
             if (el) el.style.display = (val === 'paypal') ? 'block' : 'none';
+        },
+        isPickupMode(val) {
+            // Si el método Pago contra entrega solo aplica para recojo y se cambia a delivery,
+            // deseleccionar el método si estaba activo
+            if (!val && this.cashPaymentPickupOnly && this.selectedPaymentMethod === 'cash') {
+                this.selectedPaymentMethod = null;
+            }
         }
     },
     async mounted() {

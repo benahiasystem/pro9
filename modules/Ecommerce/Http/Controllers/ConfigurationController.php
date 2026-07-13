@@ -90,6 +90,11 @@ class ConfigurationController extends Controller
         $preferences = $configuration->preferences ?: [];
         $preferences['ecommerce_bank_account_ids'] = $request->input('ecommerce_bank_account_ids', []);
         
+        $preferences['enable_cash'] = $request->input('enable_cash', 0);
+        $preferences['cash_title'] = $request->input('cash_title', 'Pago contra entrega');
+        $preferences['cash_description'] = $request->input('cash_description', null);
+        $preferences['cash_pickup_only'] = $request->input('cash_pickup_only', 0) ? true : false;
+        
         $configuration->fill($request->all());
         $configuration->preferences = $preferences;
         $configuration->save();
