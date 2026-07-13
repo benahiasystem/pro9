@@ -884,6 +884,12 @@ class EcommerceController extends Controller
                     } catch (\Throwable $e) {
                         \Log::error('Failed to dispatch SendOrderStatusEmail on order creation: '.$e->getMessage());
                     }
+                if ($initialOrderStatus && ($initialOrderStatus->action_send_email ?? false)) {
+                    dispatch(new SendOrderStatusEmail(
+                        $order->id,
+                        $initialOrderStatus->id,
+                        $this->buildOrderListUrl()
+                    ));
                 }
 
                 $customer_email = $user->email;

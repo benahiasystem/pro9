@@ -219,6 +219,8 @@
                     } else {
                         self::setFilter($item, $request);
                     }
+
+                    $item->whereNotHiddenSearch();
                 }
             }
 

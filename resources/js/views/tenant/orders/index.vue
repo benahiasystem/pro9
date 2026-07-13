@@ -64,7 +64,11 @@
                     <tr></tr>
                     <tr slot-scope="{ index, row }">
                         <!-- <td>{{ index }}</td> -->
-                        <td>{{ row.order_id }}</td>
+                        <td>
+                            <a href="#" @click.prevent="openDetail(row)" class="text-primary">
+                                {{ row.order_id }}
+                            </a>
+                        </td>
                         <td>{{ row.customer }}</td>
                         <td class="text-center">
                             <template>
@@ -385,6 +389,10 @@
             :showDialog.sync="showStatusModal"
             :options="options"
         ></status-order-modal>
+        <order-detail
+            :visible.sync="showOrderModal"
+            :record="selectedOrder">
+        </order-detail>
     </div>
 </template>
 <style>
@@ -448,11 +456,12 @@ import OptionsForm from "../pos/partials/options.vue";
 import DocumentForm from "./partials/document_form.vue";
 import SaleNoteForm from "./partials/sale_note_form.vue";
 import StatusOrderModal from "./partials/status_order_modal.vue";
+import OrderDetail from "./partials/OrderDetail.vue";
 
 export default {
     props: ["user"],
 
-    components: { DataTable, OptionsForm, DocumentForm, SaleNoteForm, StatusOrderModal },
+    components: { DataTable, OptionsForm, DocumentForm, SaleNoteForm, StatusOrderModal, OrderDetail },
     data() {
         return {
             showStatusModal: false,
@@ -479,7 +488,9 @@ export default {
             dataSaleNote: {},
             showDialogSaleNote: false,
             statusFilter: null,
-            statusField: 'status_order_id'
+            statusField: 'status_order_id',
+            showOrderModal: false,
+            selectedOrder: null,
         };
     },
     async created() {
@@ -503,6 +514,12 @@ export default {
         }
     },
     methods: {
+        openDetail(row) {
+            console.log(row)
+            console.log(row.purchase)
+            this.selectedOrder = row
+            this.showOrderModal = true
+        },
         loadStatuses() {
             this.$http.get(`/statusOrder/records`).then(response => {
                 this.options = response.data;

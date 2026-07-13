@@ -217,6 +217,7 @@
                             colClass="col-md-6"
                             :wsPhone="form.customer_telephone"
                             :wsFile="form.print_ticket"
+                            :wsFileA4="form.print_a4"
                             :wsDocument="form.number"
                             :wsMessage="form.message_text"
                             :wsData="form.pdf_a4_data"

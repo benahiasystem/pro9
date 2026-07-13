@@ -143,13 +143,13 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr v-for="row in records" class="product-row">
+                    <tr v-for="row in records" class="product-row" @click="openDetail(row)" style="cursor:pointer">
                         <td class="text-left">
                             @{{ row.order_id }}
                         </td>
                         <td class="text-success">S/ @{{ row.total }}</td>
                         <td>
-                            @{{ row.created_at }}
+                            @{{ formatDateOnly(row.created_at) }}
                         </td>
                         <td>@{{ row.status_order_description }}</td>
                         <td>
@@ -192,9 +192,12 @@
               </div>
         </div><!-- End .cart-table-container -->
     </div><!-- End .col-lg-8 -->
-
+<order-detail
+    :visible.sync="showOrderModal"
+    :record="selectedOrder">
+</order-detail>
 </div>
-
+@include('ecommerce::document_list.order_detail')
 <input type="hidden" id="total_amount" data-total="0.0">
 
 @endsection
@@ -208,6 +211,30 @@
 
 <script type="text/javascript">
     Vue.use(ELEMENT, { locale: ELEMENT.lang.es });
+    Vue.component('order-detail', {
+        props: ['visible', 'record'],
+        template: '#order-detail-template',
+        watch: {
+            visible(val) {
+                if (val) {
+                    $('#orderDetailModal').modal('show');
+                } else {
+                    $('#orderDetailModal').modal('hide');
+                }
+            }
+        },
+        mounted() {
+            // Sincroniza el cierre por click afuera / ESC / botón X con el padre
+            $('#orderDetailModal').on('hidden.bs.modal', () => {
+                this.$emit('update:visible', false);
+            });
+        },
+        methods: {
+            close() {
+                this.$emit('update:visible', false);
+            }
+        }
+    });
     var app_cart = new Vue({
         el: '#app',
         data: {
@@ -219,6 +246,8 @@
             filters: {},
             last_page: null,
             filterId: 1,
+            showOrderModal: false,
+            selectedOrder: null,
         },
         computed: {
             pagL: function () {
@@ -234,6 +263,15 @@
             // this.filter_records = this.records;
         },
         methods: {
+            formatDateOnly(date) {
+                if (!date) return '-';
+                const parsedDate = moment(date);
+                return parsedDate.isValid() ? parsedDate.format("DD-MM-YYYY") : '-';
+            },
+            openDetail(row) {
+                this.selectedOrder = row;
+                this.showOrderModal = true;
+            },
             filterRecords(state_id)
             {
                 this.page = 1;

@@ -697,6 +697,7 @@ class DashboardData
 
             return [
                 'labels' => $labels,
+                'previous_labels' => $this->rangeLabels($previous['start'], $previous['end']),
                 'current' => $this->salesByRange($filters['date_start'], $filters['date_end'], $filters['establishment_id'], $points),
                 'previous' => $this->salesByRange($previous['start'], $previous['end'], $filters['establishment_id'], $points),
                 'subtitle' => 'Barras solidas = periodo filtrado - gris = periodo anterior',
@@ -704,11 +705,18 @@ class DashboardData
         }
 
         $start_current = Carbon::now()->startOfWeek(Carbon::MONDAY);
+        $start_previous = $start_current->copy()->subWeek();
+
+        $previous_labels = [];
+        for ($i = 0; $i < 7; $i++) {
+            $previous_labels[] = $start_previous->copy()->addDays($i)->format('d/m');
+        }
 
         return [
             'labels' => ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+            'previous_labels' => $previous_labels,
             'current' => $this->dailySales($start_current, $filters['establishment_id']),
-            'previous' => $this->dailySales($start_current->copy()->subWeek(), $filters['establishment_id']),
+            'previous' => $this->dailySales($start_previous, $filters['establishment_id']),
             'subtitle' => 'Barras solidas = esta semana - gris = semana anterior',
         ];
     }

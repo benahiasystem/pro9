@@ -3,6 +3,7 @@
 namespace Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\System\Client;
 use App\Models\Tenant\User;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Modules\Inventory\Exports\KardexExport;
@@ -26,12 +27,28 @@ use Modules\Inventory\Http\Resources\ReportKardexLotsGroupCollection;
 use Modules\Inventory\Http\Resources\ReportKardexItemLotCollection;
 use Modules\Inventory\Models\Devolution;
 use App\Models\Tenant\Dispatch;
+use App\Models\Tenant\Document;
+use App\Models\Tenant\Purchase;
+use App\Models\Tenant\PurchaseSettlement;
+use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\TemporaryKardexRecord;
+use App\Traits\JobReportTrait;
+use Hyn\Tenancy\Models\Hostname;
+use Illuminate\Bus\Batch;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Http\Resources\ReportTemporaryKardexCollection;
-
+use Modules\Inventory\Jobs\ProcessReportKardex;
+use Modules\Inventory\Models\Inventory;
+use Modules\Order\Models\OrderNote;
 
 class ReportKardexController extends Controller
 {
+
+    use JobReportTrait;
+
     protected $models = [
         "App\Models\Tenant\Document",
         "App\Models\Tenant\Purchase",
@@ -111,7 +128,7 @@ class ReportKardexController extends Controller
 
     public function records(Request $request)
     {
-        $data = $this->getDataRecords($request);
+        $records = $this->getDataRecords($request);
         $balance = 0;
         if($request->date_start){
             $balanceRequest = $request->duplicate();
@@ -121,32 +138,68 @@ class ReportKardexController extends Controller
                 'date_start' => null,
             ]);
             $dataBalance = $this->getDataRecords($balanceRequest);
-            $balance = $this->getFirstBalanceKardex($dataBalance["records"]);
+            $balance = $this->getFirstBalanceKardex($dataBalance);
         }
-        
+
         TemporaryKardexRecord::truncate();
-        foreach($data["records"] as $row){
-             $rowKardex = $row->getKardexReportCollection($balance, $request->warehouse_id);
-             $rowKardex["inventory_kardex_id"] = ($rowKardex["id"])??0;
-             TemporaryKardexRecord::create($rowKardex);
-        }
+
+        $callback = function(Collection $documents) use (&$balance, $request) {
+            $rows = [];
+            // $now = now();
+            // $columns = (new TemporaryKardexRecord())->getFillable();
+            // $columns[] = 'created_at';
+            // $columns[] = 'updated_at';
+
+            foreach($documents as $row){
+                $rowKardex = $row->getKardexReportCollection($balance, $request->warehouse_id);
+                $rowKardex["inventory_kardex_id"] = ($rowKardex["id"])??0;
+                unset($rowKardex["id"]);
+                // $rowKardex['created_at'] = $now;
+                // $rowKardex['updated_at'] = $now;
+
+                // $rows[] = collect($columns)
+                //     ->mapWithKeys(function ($column) use ($rowKardex) {
+                //         return [$column => $rowKardex[$column] ?? null];
+                //     })
+                //     ->all();
+
+                $rows[] = $rowKardex;
+            }
+
+            TemporaryKardexRecord::insert($rows);
+        } ;
+
+
+        $records->chunk(500, $callback);
 
         return new ReportTemporaryKardexCollection(TemporaryKardexRecord::paginate(config('tenant.items_per_page')));
     }
 
-    public function getFirstBalanceKardex($records){
-
+    public function getFirstBalanceKardex($records)
+    {
         $balance = 0 ;
         $lastRow = null;
-        foreach($records as $row) {
-            $lastRow = $row->getKardexReportCollection($balance);
-            $lastRow["inventory_kardex_id"] = $lastRow["id"] ?? 0;
+
+        $setLastRow = function ($records) use (&$balance, &$lastRow) {
+            foreach($records as $row) {
+                $lastRow = $row->getKardexReportCollection($balance);
+                $lastRow["inventory_kardex_id"] = $lastRow["id"] ?? 0;
+
+                Log::info($lastRow, [
+                    'data' => $row,
+                    'balance' => $balance,
+                    'condition' => $records instanceof \Illuminate\Database\Eloquent\Builder || $records instanceof \Illuminate\Database\Query\Builder
+                ]);
+            }
+        };
+
+        if ($records instanceof \Illuminate\Database\Eloquent\Builder || $records instanceof \Illuminate\Database\Query\Builder) {
+            $records->chunk(500, $setLastRow);
+        } else {
+            $setLastRow($records);
         }
 
-        if ($lastRow) {
-            return $lastRow["balance"] ?? 0;
-        }
-        return 0;
+        return $balance;
     }
 
     public function recordsOld(Request $request){
@@ -232,6 +285,143 @@ class ReportKardexController extends Controller
         return $desc;
     }
 
+    /**
+     * Query creado para registros que sera usado por InventoryKardex->getKardexReportCollection()
+     */
+    private function kardex_query() 
+    {
+        return InventoryKardex::query()
+            ->with([
+                'item' => function($query) {
+                    $query->select('id','description');
+                }
+                , 'inventory_kardexable' => function (MorphTo $morphTo) {
+                $morphTo->constrain([
+                    Document::class => function ($query) {
+                        $query
+                            ->without([
+                                'user',
+                                'soap_type',
+                                'state_type',
+                                'document_type',
+                                'currency_type',
+                                'group',
+                                'items',
+                                'invoice',
+                                'note',
+                                'payments',
+                                'fee'
+                            ])
+                            ->with([
+                                'note' => function ($query) {
+                                    $query
+                                        ->with([
+                                            'affected_document' => function ($query) {
+                                                $query->without([
+                                                        'user',
+                                                        'soap_type',
+                                                        'state_type',
+                                                        'document_type',
+                                                        'currency_type',
+                                                        'group',
+                                                        'items',
+                                                        'invoice',
+                                                'note',
+                                                'payments',
+                                                'fee'
+                                                ])->select('id', 'series', 'number');
+                                            }
+                                        ])
+                                        ->select('id', 'document_id', 'affected_document_id', 'data_affected_document');
+                                }, 
+                                'sale_note' ,
+                                'order_note' => function($query) {
+                                    $query->select('prefix', 'id');
+                                }
+                            ])
+                            ->select('id', 'sale_note_id', 'order_note_id', 'dispatch_id', 'sale_notes_relateds', 'series', 'number', 'has_prepayment', 'document_type_id', 'date_of_issue' );
+
+                    },
+                    Purchase::class => function ($query) {
+                        $query
+                            ->without([
+                                'user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments'
+                            ])
+                            ->select('id', 'series', 'number', 'date_of_issue');
+                    }, 
+                    PurchaseSettlement::class => function ($query) {
+                        $query->select('id', 'series', 'number', 'date_of_issue');
+                    },
+                    SaleNote::class => function($query) {
+                        $query
+                            ->without([
+                                'user',
+                                'soap_type',
+                                'state_type',
+                                'currency_type',
+                                'items',
+                                'payments'
+                            ])
+                            ->with([
+                                'order_note' => function($query) {
+                                    $query->select('prefix', 'id');
+                                }
+                            ])
+                            ->select('order_note_id', 'series', 'number', 'prefix', 'id', 'date_of_issue');
+
+                    },
+                    OrderNote::class => function ($query) {
+                        $query
+                            ->without([
+                                'user',
+                                'soap_type',
+                                'state_type',
+                                'currency_type',
+                                'items',
+                            ])
+                            ->select('prefix', 'id', 'date_of_issue');
+                    },
+                    Dispatch::class => function($query) {
+                        $query
+                            ->without(['user', 'soap_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type', 'items', 'reference_document']
+                            )
+                            ->with(['transfer_reason_type', 'reference_document',
+                                'sale_note' => function ($query) {
+                                    $query->select('series', 'number', 'prefix', 'id');
+                                },
+                                'order_note' => function($query) {
+                                    $query->select('prefix', 'id');
+                                }
+                            ])
+                            ->select('id', 'reference_sale_note_id', 'reference_order_note_id', 'reference_document_id', 'transfer_reason_type_id', 'series', 'number', 'date_of_issue');
+                    },
+                    Devolution::class => function ($query) {
+                        $query->select('prefix', 'id', 'date_of_issue');
+                    },
+                    Inventory::class => function ($query) {
+                        $query
+                            ->without([
+                                'transaction',
+                                'warehouse',
+                                'warehouse_destination',
+                                'item'
+                            ])
+                            ->with([
+                                'guide' => function($query) {
+                                    $query->select('id', 'series', 'number', 'date_of_issue');
+                                },
+                                'inventories_transfer' => function($query) {
+                                    $query->select('id', 'series', 'created_at', 'number');
+                                },
+                            ])
+                            ->select('id', 'type', 'inventory_transaction_id', 'inventories_transfer_id', 'description', 'date_of_issue', 'guide_id', 'warehouse_destination_id', 'warehouse_id');
+
+                    },
+                ]);
+            }]);
+
+    }
+
     private function getDataRecords($request)
     {
         $warehouse_id = $request->input('warehouse_id');
@@ -239,8 +429,7 @@ class ReportKardexController extends Controller
         $date_end = $request->input('date_end');
         $item_id = $request->input('item_id');
 
-        $query = InventoryKardex::query()
-            ->with(['inventory_kardexable']);
+        $query =  $this->kardex_query();
 
         if ($warehouse_id!='all') {
             $query->where('warehouse_id', $warehouse_id);
@@ -259,16 +448,13 @@ class ReportKardexController extends Controller
         }
 
         $records = $query->orderBy('item_id')
-            ->orderBy('id')
-            ->get();
-
-        return [
-            'records' => $records
-        ];
+            ->orderBy('id');
+        
+        return $records;
     
     }
 
-    private function getData($request)
+    public function getData($request)
     {
         $company = Company::query()->first();
         $establishment = Establishment::query()->find(auth()->user()->establishment_id);
@@ -281,8 +467,7 @@ class ReportKardexController extends Controller
             ->where('establishment_id', $establishment->id)
             ->first();
 
-        $query = InventoryKardex::query()
-            ->with(['inventory_kardexable'])
+        $query = $this->kardex_query()
             ->where('warehouse_id', $warehouse->id);
 
         if ($date_start) {
@@ -298,8 +483,7 @@ class ReportKardexController extends Controller
         }
 
         $records = $query->orderBy('item_id')
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
 
         return [
             'company' => $company,
@@ -315,6 +499,7 @@ class ReportKardexController extends Controller
         ];
     }
 
+
     /**
      * PDF
      * @param Request $request
@@ -322,8 +507,25 @@ class ReportKardexController extends Controller
      */
     public function pdf(Request $request)
     {
+        $host = $request->getHost();
         $data = $this->getData($request);
+        $limit = 500;
         $balance = 0;
+        $user_id = auth()->user()->id;
+        $total = (clone $data['records'])->count();
+        $is_greater_limit = $total > $limit;
+        $format =  $is_greater_limit ? 'zip' : "pdf" ;
+
+        $hostname = Hostname::where('fqdn',$host)->first();
+        if(empty($hostname)) {
+            $company = Company::active();
+            $number = $company->number;
+            $client = Client::where('number', $number)->first();
+            $website_id = (int) $client->hostname->website_id;
+        }else{
+            $website_id = (int) $hostname->website_id;
+        }
+
         if($request->date_start){
             $balanceRequest = $request->duplicate();
             $dateStartInitial = Carbon::parse($request->date_start)->subDay()->format('Y-m-d');
@@ -336,10 +538,55 @@ class ReportKardexController extends Controller
         }
 
         $data["balance"] = $balance;
-        $pdf = PDF::loadView('inventory::reports.kardex.report_pdf', $data);
-        $filename = 'Reporte_Kardex' . date('YmdHis');
 
-        return $pdf->download($filename . '.pdf');
+        $request->merge([
+            'format' => $format
+        ]);
+
+        if ($is_greater_limit) {
+            $tray = $this->createDownloadTray($user_id , 'Reporte', $format , 'Reporte Kardex');
+            $trayId = $tray->id;
+            $batches = [];
+            for ($i=0; $i < ceil($total / $limit) ; $i++) {
+                $offset = $i * $limit;
+                $batches[] = new ProcessReportKardex(
+                    $trayId,
+                    $request->all(),
+                    $website_id,
+                    $data['warehouse']->id,
+                    $user_id,
+                    $offset,
+                    $limit,
+                    true
+                );
+            }
+
+            // Se envuelve $batches en un array para que el batch ejecute los jobs
+            // como una única cadena (secuencial). Es necesario porque el cálculo
+            // del balance de cada reporte depende del balance acumulado del anterior.
+            $batch = Bus::batch([$batches])
+                ->name('Report Kardex')
+                ->catch(function (Batch $batch, $exception) use($trayId) {
+                    Log::error("Error de batch Report Kardex: ", [
+                        "error" => $exception->getMessage()
+                    ]);
+                    $this->jobBatchFailed($batch->id, $trayId);
+                })
+                ->then(function(Batch $batch) use($trayId, $website_id) {
+                    $filename = 'Reporte_Kardex' . date('YmdHis'). "_lote";
+                    return $this->jobBatchFinished($batch, $trayId, $website_id, $filename, 'pdf');
+                })
+                ->dispatch();
+        } else {
+            $filename = 'Reporte_Kardex' . date('YmdHis'). "_lote";
+            $data['records'] = $data['records']->get();
+            $pdf = PDF::loadView('inventory::reports.kardex.report_pdf', $data);
+            return $pdf->download($filename . '.pdf');
+        }
+
+        return [
+            'message' => "Descarga en bandeja de descarga"
+        ];
     }
 
     /**
@@ -365,9 +612,9 @@ class ReportKardexController extends Controller
 
         $kardexExport = new KardexExport();
         $kardexExport
+            ->setQuery($data['records'])
             ->balance($data['balance'])
             ->item_id($data['item_id'])
-            ->records($data['records'])
             ->models($data['models'])
             ->company($data['company'])
             ->establishment($data['establishment'])

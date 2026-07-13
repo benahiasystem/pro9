@@ -292,7 +292,7 @@
                                         <span slot="prepend" class="currency-symbol-span" v-if="is_discount_amount">{{ currencyTypeActive.symbol }}</span>
                                         <span slot="append" class="currency-symbol-span" v-else>%</span>
                                     </template>
-                                    <h2 class="m-0 d-flex align-items-center justify-content-center switch-wrapper">
+                                    <h2 v-if="!disabledDiscountForSeller" class="m-0 d-flex align-items-center justify-content-center switch-wrapper">
                                         <el-switch v-model="enabled_discount"
                                                    active-text="Descuento"
                                                    class="control-label font-weight-semibold m-0 text-center m-b-0"

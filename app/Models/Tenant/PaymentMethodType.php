@@ -73,11 +73,13 @@
             'number_days',
             'is_credit',
             'is_cash',
+            'is_active'
         ];
 
         protected $casts = [
             'is_credit' => 'bool',
-            'is_cash' => 'bool'
+            'is_cash' => 'bool',
+            'is_active' => 'bool'
         ];
 
         public const CASH_PAYMENT_ID = '01';
@@ -104,6 +106,7 @@
         public static function getPaymentMethodTypes($exclude_method_types_id = [])
         {
             return self::whereNotIn('id', $exclude_method_types_id)
+                ->active()
                 ->get()
                 ->transform(function ($row) {
                     $row->id = (string)$row->id;
@@ -112,6 +115,7 @@
                     $row->is_credit = (bool)$row->is_credit;
                     $row->has_card = (bool)$row->has_card;
                     $row->is_cash = (bool)$row->is_cash;
+                    $row->is_active = (bool)$row->is_active;
                     $row->charge = (float)$row->charge;
                     $row->description = (string)$row->description;
                     return $row;
@@ -344,6 +348,16 @@
             return $query->where('is_cash', '!=', 1);
         }
 
+        /**
+         * @param Builder $query
+         *
+         * @return Builder
+         */
+        public function scopeActive(Builder $query)
+        {
+            return $query->where('is_active', true);
+        }
+
         
         /**
          * @return bool
@@ -376,6 +390,7 @@
         public static function getTableCashPaymentMethodTypes()
         {
             return self::notCredit()
+                        ->active()
                         ->select([
                             'id',
                             'description'

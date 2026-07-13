@@ -287,6 +287,10 @@ if ($hostname) {
             Route::post('items/disableMassive', 'Tenant\ItemController@disableMassive');
             Route::get('items/enable/{item}', 'Tenant\ItemController@enable');
             Route::post('items/enableMassive', 'Tenant\ItemController@enableMassive');
+            Route::get('items/hidden_search/{item}', 'Tenant\ItemController@hiddenSearch');
+            Route::get('items/show_search/{item}', 'Tenant\ItemController@showSearch');
+            Route::post('items/hiddenSearchMassive', 'Tenant\ItemController@hiddenSearchMassive');
+            Route::post('items/showSearchMassive', 'Tenant\ItemController@showSearchMassive');
             Route::get('items/images/{item}', 'Tenant\ItemController@images');
             Route::get('items/images/delete/{id}', 'Tenant\ItemController@delete_images');
             Route::get('items/export', 'Tenant\ItemController@export')->name('tenant.items.export');
@@ -1043,6 +1047,7 @@ if ($hostname) {
             Route::get('plans/records', 'System\PlanController@records');
             Route::get('plans/tables', 'System\PlanController@tables');
             Route::get('plans/popular', 'System\PlanController@popular');
+            Route::post('plans/popular/{plan}', 'System\PlanController@setPopular');
             Route::get('plans/record/{plan}', 'System\PlanController@record');
             Route::post('plans', 'System\PlanController@store');
             Route::delete('plans/{plan}', 'System\PlanController@destroy');

@@ -724,11 +724,18 @@ html.sidebar-light:not(.dark) .style-switcher h5.title-visual{
 div.el-tab-pane {
     padding: 4px;
 }
-.el-tooltip__popper.is-dark {
-    background: var(--primary-color);
-    color: #fff;
-    max-width: 250px;
-    transition-duration: 0s;
+.el-tooltip__popper.is-dark{
+  background: color-mix(in srgb, #3d6bf5 30%, #000) !important;
+  color: #fff !important;
+}
+.el-tooltip__popper.is-light,
+html.dark .el-tooltip__popper.is-dark{
+  background:#fff !important;
+  color:#0e3069 !important;
+  border:1px solid #808a9c  !important;
+}
+.el-tooltip__popper{
+  border-radius:6px !important;
 }
 .popper__arrow{
     display: none !important;
@@ -1606,6 +1613,12 @@ html.dark .minitour-tooltip p {
 }
 html.dark .minitour-tooltip p b {
     color: #333 !important;
+}
+.kpi-col .card.card-dashboard {
+    margin-bottom: 0 !important;
+}
+.row.top.kpi-row {
+    margin-bottom: 8px !important;
 }
 /* theme dark */
 html.dark,html.dark body{

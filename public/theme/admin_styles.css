@@ -335,13 +335,14 @@ html.sidebar-left-collapsed .sidebar-left .nano:hover {
     color: #0e3069;
     border: 1px solid #eaeef8;
 }
-.form-control-feedback,
 .text-muted,
 small.text-muted,
 .table-responsive table td .text-muted {
     color: var(--muted) !important;
 }
-
+.form-control-feedback {
+    color: var(--danger) !important;
+}
 /*.style-switcher .style-switcher-open {*/
 /*    display: none;*/
 /*}*/
@@ -993,9 +994,6 @@ tbody tr:hover td.sticky-column {
     outline: none;
     transition: all 0.2s ease;
 }
-.btn-theme-color:hover:not(:disabled) {
-    transform: scale(1.1);
-}
 .btn-theme-color.theme-selected {
     box-shadow: 0 0 0 4px var(--highlight-color);
 }
@@ -1003,16 +1001,6 @@ tbody tr:hover td.sticky-column {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-}  
-.el-message--success {                        
-    background-color: var(--success);
-    border-color: var(--success);
-    color: #67c23a;
-}                 
-.el-message--error {
-    background-color: var(--danger);
-    border: 1px solid var(--danger);
-    color: #F56;
 }
 .theme-sidebar-header {
     padding: 15px 20px;
@@ -1268,6 +1256,7 @@ div.sub-title.text-muted{
 .el-message--success {
     background-color: color-mix(in srgb, var(--success) 70%, #ffffff) !important;
     border-color: var(--success) !important;
+    color: #fff;
 }
 .el-message--success .el-message__content,
 .el-message .el-icon-success{
@@ -1276,6 +1265,7 @@ div.sub-title.text-muted{
 .el-message--error {
     background-color: color-mix(in srgb, var(--danger) 70%, #ffffff) !important;
     border-color: var(--danger) !important;
+    color: #fff;
 }
 .el-message--error .el-message__content,
 .el-message .el-icon-error{

@@ -1410,7 +1410,7 @@ export default {
                 }
 
                 this.form.quantity = this.recordItem.quantity;
-                this.form.unit_price = this.recordItem.unit_price;
+                this.form.unit_price = this.recordItem.input_unit_price_value;
                 this.form.unit_price_value = this.recordItem.input_unit_price_value;
                 if (
                     !this.configuration.enable_list_product &&
@@ -1434,6 +1434,20 @@ export default {
                 this.form.has_plastic_bag_taxes =
                     this.recordItem.total_plastic_bag_taxes > 0 ? true : false;
                 this.form.warehouse_id = this.recordItem.warehouse_id;
+                this.form.discounts = (this.recordItem.discounts || []).map(discount => {
+                    const row = { ...discount };
+                    row.discount_type = _.find(this.discount_types, { id: row.discount_type_id }) || row.discount_type || null;
+                    row.base = 0;
+                    row.amount_exact = 0;
+                    delete row.amount_without_rounded;
+                    return row;
+                });
+                this.form.charges = this.recordItem.charges
+                    ? [...this.recordItem.charges]
+                    : [];
+                if (this.recordItem.attributes && this.recordItem.attributes.length) {
+                    this.form.attributes = [...this.recordItem.attributes];
+                }
                 if (this.recordItem.item.name_product_pdf) {
                     this.form.name_product_pdf = this.recordItem.item.name_product_pdf;
                 }
@@ -1743,8 +1757,48 @@ export default {
                 { id: affectation_igv_type_id }
             );
 
-            // let IdLoteSelected = this.form.IdLoteSelected
-            // let document_item_id = this.form.document_item_id
+            const igv_factor = 1 + this.percentageIgv;
+            const quantity = parseFloat(this.form.quantity);
+            const is_taxed = affectation_igv_type_id === "10";
+            const unit_value = is_taxed ? unit_price / igv_factor : unit_price;
+            const total_value_partial = unit_value * quantity;
+            const aux_total_line = unit_price * quantity;
+            const item_currency = this.form.item.currency_type_id || this.currencyTypeIdActive;
+            let doc_factor = 1;
+
+            if (item_currency !== this.currencyTypeIdActive && this.exchangeRateSale) {
+                doc_factor = item_currency === "PEN"
+                    ? 1 / this.exchangeRateSale
+                    : this.exchangeRateSale;
+            }
+
+            this.form.discounts.forEach(discount => {
+                const affects_base = (discount.discount_type && discount.discount_type.base) || discount.discount_type_id === "00";
+                const base = (affects_base ? total_value_partial : aux_total_line) * doc_factor;
+
+                if (discount.is_amount) {
+                    const amount = (parseFloat(discount.amount) || 0) * doc_factor;
+                    const factor = base > 0 ? amount / base : 0;
+
+                    discount.base = _.round(base, 2);
+                    const amount_base = affects_base ? amount / igv_factor : amount;
+                    discount.amount = Number(amount_base.toFixed(2));
+                    discount.amount_without_rounded = affects_base ? amount / igv_factor : amount;
+                    discount.factor = _.round(factor, 5);
+                    discount.percentage = _.round(factor * 100, 5);
+                } else {
+                    const percentage = parseFloat(discount.percentage) || 0;
+                    const factor = percentage / 100;
+                    const amount_base = Number((affects_base ? base * factor : (discount.amount * doc_factor) / igv_factor).toFixed(2));
+
+                    discount.base = _.round(base, 2);
+                    discount.factor = _.round(factor, 5);
+                    discount.percentage = percentage;
+                    discount.amount = amount_base;
+                    discount.amount_without_rounded = affects_base ? base * factor : discount.amount / igv_factor;
+                }
+            });
+
             this.row = calculateRowItem(
                 this.form,
                 this.currencyTypeIdActive,

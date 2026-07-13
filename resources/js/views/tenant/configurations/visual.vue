@@ -699,7 +699,7 @@ export default {
                     }
 
                     if (typeof this.visuals.show_welcome_panel === 'undefined') {
-                        this.$set(this.visuals, 'show_welcome_panel', true);
+                        this.$set(this.visuals, 'show_welcome_panel', false);
                     }
 
                     this.showWelcome = !!this.visuals.show_welcome_panel;

@@ -259,7 +259,10 @@ class ReportGeneralItemController extends Controller
                     ]);
                     $this->jobBatchFailed($batch->id, $trayId);
                 })
-                ->then(function(Batch $batch) use($trayId, $website_id, $r_all) {return $this->jobBatchFinished($batch, $trayId, $website_id, $r_all);})
+                ->then(function(Batch $batch) use($trayId, $website_id, $r_all) {
+                    $filename = "";
+                    return $this->jobBatchFinished($batch, $trayId, $website_id, $filename, "pdf")
+                ;})
                 ->dispatch();
 
 

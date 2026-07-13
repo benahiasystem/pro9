@@ -43,6 +43,7 @@ class PlanRequest extends FormRequest
             
             'establishments_limit' => $this->validationEstablishmentsLimit(),
             'sales_limit' => $this->validationSalesLimit(),
+            'whatsapp_messages_limit' => $this->validationWhatsappMessagesLimit(),
         ];
     }
 
@@ -86,6 +87,29 @@ class PlanRequest extends FormRequest
                 'integer', 
                 'numeric' ,
                 'gt:0', 
+            ];
+        }
+
+        return [];
+    }
+
+
+    /**
+     *
+     * Validacion para limite de mensajes de WhatsApp
+     *
+     * @return array
+     */
+    private function validationWhatsappMessagesLimit()
+    {
+
+        if(!$this->input('whatsapp_messages_unlimited'))
+        {
+            return [
+                'required',
+                'integer',
+                'numeric' ,
+                'gt:0',
             ];
         }
 

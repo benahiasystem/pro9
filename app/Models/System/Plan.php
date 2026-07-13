@@ -30,6 +30,8 @@ class Plan extends Model
         'include_sale_notes_sales_limit',
         'include_sale_notes_limit_documents',
         'module_permissions',
+        'whatsapp_messages_limit',
+        'whatsapp_messages_unlimited',
     ];
 
 
@@ -44,6 +46,8 @@ class Plan extends Model
         'module_permissions' => 'array',
         'test_days' => 'int',
         'test_days_enabled' => 'boolean',
+        'whatsapp_messages_limit' => 'int',
+        'whatsapp_messages_unlimited' => 'boolean',
     ];
 
 
@@ -117,5 +121,15 @@ class Plan extends Model
     {
         return $this->limit_users === 0;
     }
-    
+
+
+    /**
+     *
+     * @return bool
+     */
+    public function isWhatsappMessagesUnlimited()
+    {
+        return $this->whatsapp_messages_unlimited;
+    }
+
 }

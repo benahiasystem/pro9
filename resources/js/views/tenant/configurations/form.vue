@@ -2081,6 +2081,9 @@
                                                 <span class="dot"></span>
                                                 <span class="text-primary text-uppercase">Comprobantes por Defecto</span>
                                             </h5>
+                                            <span class="text-muted text-uppercase px-2 options-count">
+                                                3 opciones
+                                            </span>
                                         </div>
                                         <div>
                                             <span class="text-muted">
@@ -2089,26 +2092,22 @@
                                         </div>
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
-                                        <div class="col-12">
-                                            <label class="control-label">Seleccionar boleta por defecto</label>
-                                            <div :class="{ 'has-danger': errors.default_document_type_03 }" class="form-group">
-                                                <el-switch v-model="form.default_document_type_03"
-                                                            @change="changeDefaultDocumentType03"></el-switch>
-                                                <small v-if="errors.default_document_type_03" class="form-control-feedback"
-                                                    v-text="errors.default_document_type_03[0]"></small>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12">
-                                            <label class="control-label">Seleccionar nota de venta por defecto
+                                        <div class="col-12 d-flex align-items-center justify-content-start flex-row" style="flex-direction: row !important; gap: 15px;">
+                                            <label class="control-label mb-0 text-left">
+                                                Comprobante por defecto
                                                 <el-tooltip class="item" content="Disponible POS y Venta rápida" effect="dark"
                                                     placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                            <div :class="{ 'has-danger': errors.default_document_type_80 }" class="form-group">
-                                                <el-switch v-model="form.default_document_type_80"
-                                                            @change="changeDefaultDocumentType80"></el-switch>
+                                            <div :class="{ 'has-danger': errors.default_document_type_03 || errors.default_document_type_80 }" class="form-group mb-0 text-right" style="width: 200px;">
+                                                <el-select v-model="selectedDefaultDocument" class="w-100">
+                                                    <el-option label="Factura" value="01"></el-option>
+                                                    <el-option label="Boleta" value="03"></el-option>
+                                                    <el-option label="Nota de venta" value="80"></el-option>
+                                                </el-select>
+                                                <small v-if="errors.default_document_type_03" class="form-control-feedback"
+                                                    v-text="errors.default_document_type_03[0]"></small>
                                                 <small v-if="errors.default_document_type_80" class="form-control-feedback"
                                                     v-text="errors.default_document_type_80[0]"></small>
                                             </div>
@@ -3353,6 +3352,18 @@ export default {
         activeCurrencyTypes() {
             const list = (this.config && this.config.currency_types) ? this.config.currency_types : []
             return list.filter(c => !!c.active)
+        },
+        selectedDefaultDocument: {
+            get() {
+                if (this.form.default_document_type_03) return '03';
+                if (this.form.default_document_type_80) return '80';
+                return '01'; // Default to Factura if neither Boleta nor Nota de Venta are selected
+            },
+            set(value) {
+                this.form.default_document_type_03 = value === '03';
+                this.form.default_document_type_80 = value === '80';
+                this.submit();
+            }
         }
     },
     data() {

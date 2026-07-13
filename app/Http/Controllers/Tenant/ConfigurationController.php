@@ -619,7 +619,7 @@ class ConfigurationController extends Controller
             'header'   => 'light',
             'sidebars' => 'light',
             'sidebar_margin' => true,
-            'show_welcome_panel' => true,
+            'show_welcome_panel' => false,
         ];
         $configuration = Configuration::first();
         $configuration->visual = $defaults;
@@ -640,7 +640,7 @@ class ConfigurationController extends Controller
             ? (bool)$currentVisual->sidebar_margin
             : true;
 
-        $currentShowWelcome = true;
+        $currentShowWelcome = false;
         if (is_object($currentVisual) && property_exists($currentVisual, 'show_welcome_panel')) {
             $currentShowWelcome = (bool)$currentVisual->show_welcome_panel;
         } elseif (is_array($currentVisual) && array_key_exists('show_welcome_panel', $currentVisual)) {

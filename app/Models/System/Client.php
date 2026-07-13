@@ -80,6 +80,7 @@ class Client extends Model
         'token',
         'locked',
         'locked_emission',
+        'whatsapp_messages_limit_override',
         'locked_tenant',
         'locked_users',
         'plan_id',
@@ -137,6 +138,7 @@ class Client extends Model
         'smtp_port' => 'int',
         'locked_create_establishments' => 'boolean',
         'restrict_sales_limit' => 'boolean',
+        'whatsapp_messages_limit_override' => 'integer',
         'enable_list_product' => 'boolean',
         'from_guest_register' => 'boolean',
     ];

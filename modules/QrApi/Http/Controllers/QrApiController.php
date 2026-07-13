@@ -4,6 +4,8 @@ namespace Modules\QrApi\Http\Controllers;
 
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\Models\Tenant\Configuration;
+use App\Models\Tenant\WhatsappMessageLog;
+use App\Traits\LockedEmissionTrait;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +15,7 @@ use Modules\WhatsAppBot\Services\Evolution\EvolutionClient;
 class QrApiController extends Controller
 {
     use StorageDocument;
+    use LockedEmissionTrait;
 
     private const NO_INSTANCE_MSG = 'QR Api no tiene una instancia conectada.';
 
@@ -34,15 +37,20 @@ class QrApiController extends Controller
     public function getConfig()
     {
         $data = Configuration::first();
+        $whatsapp_usage = $this->getWhatsappMessagesUsage();
         return [
             'qr_api_enable_ws' => (bool) ($data->qr_api_enable ?? false),
             'qr_api_use_bot_instance' => (bool) ($data->qr_api_use_bot_instance ?? false),
+            'qr_api_pdf_format' => $data->qr_api_pdf_format ?? 'ticket',
             'qr_api_instance' => $data->qr_api_instance,
             'qr_api_connected_phone' => $data->qr_api_connected_phone,
             'qr_api_profile_name' => $data->qr_api_profile_name,
             'qr_api_connection_state' => $data->qr_api_connection_state ?? 'disconnected',
             'evolution_instance' => $data->evolution_instance,
             'evolution_connected_phone' => $data->evolution_connected_phone,
+            'whatsapp_messages_used' => $whatsapp_usage['used'],
+            'whatsapp_messages_limit' => $whatsapp_usage['limit'],
+            'whatsapp_messages_unlimited' => $whatsapp_usage['unlimited'],
         ];
     }
 
@@ -51,10 +59,15 @@ class QrApiController extends Controller
         $request->validate([
             'qr_api_enable_ws' => 'required|boolean',
             'qr_api_use_bot_instance' => 'sometimes|boolean',
+            'qr_api_pdf_format' => 'sometimes|in:a4,ticket',
         ]);
 
         $config = Configuration::first();
         $config->qr_api_enable = (bool) $request->qr_api_enable_ws;
+
+        if ($request->has('qr_api_pdf_format')) {
+            $config->qr_api_pdf_format = $request->qr_api_pdf_format;
+        }
 
         if ($request->has('qr_api_use_bot_instance')) {
             $newValue = (bool) $request->qr_api_use_bot_instance;
@@ -303,6 +316,14 @@ class QrApiController extends Controller
             'link' => 'sometimes|nullable|string',
         ]);
 
+        $exceed_limit = $this->exceedLimitWhatsappMessages();
+        if ($exceed_limit['success']) {
+            return response()->json([
+                'success' => false,
+                'message' => $exceed_limit['message'],
+            ], 422);
+        }
+
         $config = Configuration::first();
 
         if(!$config->qr_api_enable) {
@@ -350,6 +371,12 @@ class QrApiController extends Controller
         }
 
         if ($mediaOk || $textOk) {
+            WhatsappMessageLog::create([
+                'phone' => $request->number,
+                'filename' => $request->filename,
+                'status' => 'sent',
+            ]);
+
             return response()->json([
                 'success' => true,
                 'data' => $mediaResponse,

@@ -1690,6 +1690,7 @@ export default {
         {
             const price = parseFloat(this.form.sale_unit_price)
             if (!price || price <= 0) return null
+            const symbol = this.getCurrencySymbol()
             const IGV_RATE = 0.18
             let base, igv, total
             if (this.form.has_igv) {
@@ -1701,12 +1702,13 @@ export default {
                 igv = price * IGV_RATE
                 total = price + igv
             }
-            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = S/ ${total.toFixed(2)}`
+            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = ${symbol} ${total.toFixed(2)}`
         },
         purchaseUnitPriceBreakdown()
         {
             const price = parseFloat(this.form.purchase_unit_price)
             if (!price || price <= 0) return null
+            const symbol = this.getCurrencySymbol()
             const IGV_RATE = 0.18
             let base, igv, total
             if (this.form.purchase_has_igv) {
@@ -1718,7 +1720,7 @@ export default {
                 igv = price * IGV_RATE
                 total = price + igv
             }
-            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = S/ ${total.toFixed(2)}`
+            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = ${symbol} ${total.toFixed(2)}`
         }
 
     },
@@ -1876,7 +1878,9 @@ export default {
     },
 
     methods: {
-
+        getCurrencySymbol() {
+            return this.form.currency_type_id === 'USD' ? '$' : 'S/'
+        },
         ...mapActions([
             'loadConfiguration',
         ]),

@@ -618,6 +618,12 @@ ul.nav.list-config li:hover {
 .card{
     margin-bottom: 30px !important;
 }
+.kpi-col .card.card-dashboard {
+    margin-bottom: 0 !important;
+}
+.row.top.kpi-row {
+    margin-bottom: 8px !important;
+}
 .row-new{
     margin-top: -20px;
     margin-right: -25px;
@@ -2911,6 +2917,21 @@ html.dark .minitour-tooltip p {
 }
 html.dark .minitour-tooltip p b {
     color: var(--dark-color) !important;
+}
+
+.el-tooltip__popper.is-dark{
+  background: color-mix(in srgb, var(--primary-color) 30%, #000) !important;
+  color: var(--light-color) !important;
+}
+.el-tooltip__popper.is-light{
+  background:var(--light-color) !important;
+  color:var(--dark-color) !important;
+  border:1px solid var(--accent-color) !important;
+}
+html.dark .el-tooltip__popper.is-dark{
+  background: var(--light-color) !important;
+  color: var(--dark-color) !important;
+  border: 1px solid var(--accent-color);
 }
 /* --------------------------- tema Oscuro --------------------------- */
 /* html.dark .header .logo-container .topbar-links:hover {

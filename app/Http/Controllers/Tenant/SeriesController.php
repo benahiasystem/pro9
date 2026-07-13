@@ -26,6 +26,10 @@ class SeriesController extends Controller
         $query = Series::where('establishment_id', $establishmentId)
             ->with(['series_configurations', 'device_group']);
 
+        if ($this->isNrus()) {
+            $query->whereIn('document_type_id', SeriesCodeGenerator::nrusDocumentTypeIds());
+        }
+
         if (!empty($document_type)) {
             $query->where('document_type_id', $document_type);
         }
@@ -59,10 +63,17 @@ class SeriesController extends Controller
     public function tables()
     {
         $document_types          = DocumentType::OnlyAvaibleDocuments()->get();
-        $series_types            = SeriesCodeGenerator::SERIES_TYPES;
+        $is_nrus                 = $this->isNrus();
+        $series_types            = SeriesCodeGenerator::availableTypes($is_nrus);
         $enable_dedicated_series = (bool) optional(Configuration::first())->enable_dedicated_series;
 
-        return compact('document_types', 'series_types', 'enable_dedicated_series');
+        if ($is_nrus) {
+            $document_types = $document_types
+                ->whereIn('id', SeriesCodeGenerator::nrusDocumentTypeIds())
+                ->values();
+        }
+
+        return compact('document_types', 'series_types', 'enable_dedicated_series', 'is_nrus');
     }
 
     /**
@@ -161,6 +172,10 @@ class SeriesController extends Controller
      */
     public function validateSeries(SeriesRequest $request)
     {
+        if ($this->isNrus() && ! in_array($request->document_type_id, SeriesCodeGenerator::nrusDocumentTypeIds(), true)) {
+            return ['success' => false, 'message' => 'Para empresas NRUS solo están disponibles las series de Boleta de venta electrónica y Nota de venta.'];
+        }
+
         $query = Series::where([
             ['document_type_id', $request->document_type_id],
             ['number', $request->number],
@@ -175,6 +190,16 @@ class SeriesController extends Controller
         }
 
         return ['success' => true, 'message' => null];
+    }
+
+    /**
+     * Indica si el tenant actual es NRUS.
+     *
+     * @return bool
+     */
+    private function isNrus(): bool
+    {
+        return (bool) optional(Configuration::first())->isNrus();
     }
 
     /**

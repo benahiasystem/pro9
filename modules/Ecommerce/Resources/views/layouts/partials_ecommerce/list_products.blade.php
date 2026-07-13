@@ -112,4 +112,21 @@
         /* pointer-events: none; */
         /* opacity: 0.7; */
     }
+    .product-title-ecommerce{
+        min-height: 48px; /* 2 líneas */
+        line-height: 24px;
+        overflow: hidden;
+    }
+
+    .price-box-ecommerce{
+        white-space: nowrap; /* evita que S/ y el monto se separen */
+    }
+
+    .product-price-ecommerce{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        flex-wrap: nowrap;
+    }
 </style>

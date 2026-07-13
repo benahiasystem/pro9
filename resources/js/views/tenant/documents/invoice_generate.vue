@@ -241,12 +241,10 @@
                             </div>
 
                             <div v-if="form.operation_type_id === '0101'" class="mt-2">
-                                <div >
                                 <el-checkbox v-model="form.is_itinerant" @change="changeItineratOption">
                                     ¿Venta itinerante?
                                 </el-checkbox>
-                                </div>
-                            </div>  
+                            </div>
                         <div class="points-system">
                                 <div
                                     v-if="config.enabled_point_system && form.customer_id"
@@ -5320,16 +5318,6 @@ export default {
             this.onPrepareDataEstablishment(data);
 
             this.form.document_type_id = data.document_type_id;
-            // this.form.series = data.series; //form.series no llena el selector
-            if (this.table !== "quotations") {
-                this.$store.commit(
-                    "setSeries",
-                    this.onSetSeries(data.document_type_id, data.series)
-                );
-            } else {
-                // this.series = this.onSetSeries(this.form.document_type_id, this.series);
-                this.changeDocumentType();
-            }
 
             this.customers = this.customers.filter(el => el.id !== data.customer_id)
             this.customers.push(data.customer)
@@ -5395,10 +5383,6 @@ export default {
             this.form.total = parseFloat(data.total);
             this.form.subtotal = parseFloat(data.subtotal);
             this.form.total_igv_free = parseFloat(data.total_igv_free);
-            this.form.series_id = this.onSetSeriesId(
-                data.document_type_id,
-                data.series
-            );
             this.form.operation_type_id = data.invoice
                 ? data.invoice.operation_type_id
                 : data.operation_type_id;
@@ -5491,7 +5475,13 @@ export default {
             this.calculateTotal();
             // this.currency_type = _.find(this.currency_types, {'id': this.form.currency_type_id})
 
-            this.filterSeriesForTable();
+            if (this.table === "quotations") {
+                this.changeDocumentType();
+            } else if (this.isUpdateDocument) {
+                this.filterSeries(this.onSetSeriesId(data.document_type_id, data.series));
+            } else {
+                this.filterSeriesForTable();
+            }
             if (!this.form.custom_fields_data) {
                 this.$set(this.form, 'custom_fields_data', {});
             }
@@ -6639,32 +6629,33 @@ export default {
                 payment.date_of_payment = this.form.date_of_issue;
             });
         },
-        filterSeries() {
+        filterSeries(preserveSeriesId = null) {
             // console.log('filterSeries');
-            this.form.series_id = null;
-            let series = _.filter(this.all_series, {
-                establishment_id: this.form.establishment_id,
-                document_type_id: this.form.document_type_id,
-                contingency: this.is_contingency
-            });
+            if (!preserveSeriesId) {
+                this.form.series_id = null;
+            }
+            let series = this.all_series.filter(s =>
+                Number(s.establishment_id) === Number(this.form.establishment_id) &&
+                String(s.document_type_id) === String(this.form.document_type_id) &&
+                Boolean(s.contingency) === Boolean(this.is_contingency)
+            );
             if (
                 this.form.document_type_id === this.config.user.document_id &&
                 this.typeUser == "seller"
             ) {
                 // Se filtra si el documento es el mismo que el establecido para el usuario.
-                series = _.filter(this.all_series, {
-                    establishment_id: this.form.establishment_id,
-                    document_type_id: this.form.document_type_id,
-                    contingency: this.is_contingency,
-                    id: this.config.user.serie
-                });
+                series = series.filter(s => Number(s.id) === Number(this.config.user.serie));
             }
 
             //console.log(series);
 
             this.$store.commit("setSeries", series);
-            this.form.series_id =
-                this.series.length > 0 ? this.series[0].id : null;
+            if (preserveSeriesId) {
+                this.form.series_id = preserveSeriesId;
+            } else {
+                this.form.series_id =
+                    this.series.length > 0 ? this.series[0].id : null;
+            }
         },
         filterCustomers() {
             if (

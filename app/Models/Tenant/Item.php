@@ -169,6 +169,7 @@ class Item extends ModelTenant
         'lot_code',
         'lots_enabled',
         'active',
+        'hidden_search',
         'line',
         'series_enabled',
         'purchase_has_igv',
@@ -210,6 +211,7 @@ class Item extends ModelTenant
         'exchange_points' => 'boolean',
         'quantity_of_points' => 'float',
         'restrict_sale_cpe' => 'boolean',
+        'hidden_search' => 'boolean',
     ];
 
     protected static function booted()
@@ -544,6 +546,20 @@ class Item extends ModelTenant
     public function scopeWhereIsActive($query)
     {
         return $query->where('active', true);
+    }
+
+    /**
+     * Excluye los productos marcados como ocultos de los buscadores.
+     * Solo debe aplicarse en las búsquedas por texto/listado/código de barras,
+     * no cuando se carga un item por id (para no romper documentos existentes).
+     *
+     * @param Builder $query
+     *
+     * @return Builder
+     */
+    public function scopeWhereNotHiddenSearch($query)
+    {
+        return $query->where('hidden_search', false);
     }
 
     /**
@@ -1523,6 +1539,7 @@ class Item extends ModelTenant
             'calculate_quantity' => (bool)$this->calculate_quantity,
             'has_igv' => (bool)$this->has_igv,
             'active' => (bool)$this->active,
+            'hidden_search' => (bool)$this->hidden_search,
             'has_igv_description' => $has_igv_description,
             'purchase_has_igv_description' => $purchase_has_igv_description,
             'sale_unit_price' => $show_sale_unit_price,

@@ -38,6 +38,16 @@ class SeriesResolver
     }
 
     /**
+     * ¿La empresa actual usa el régimen NRUS?
+     *
+     * @return bool
+     */
+    public function isNrus(): bool
+    {
+        return (bool) optional(Configuration::first())->isNrus();
+    }
+
+    /**
      * Nombre del equipo tomado de la cookie (o cadena vacía).
      *
      * @return string
@@ -134,6 +144,10 @@ class SeriesResolver
     public function applyContext(Builder $query, $force_group_id = false): Builder
     {
         $group_id = ($force_group_id === false) ? $this->activeGroupId() : $force_group_id;
+
+        if ($this->isNrus()) {
+            $query->whereIn('document_type_id', SeriesCodeGenerator::nrusDocumentTypeIds());
+        }
 
         return $query->usableInContext($group_id);
     }

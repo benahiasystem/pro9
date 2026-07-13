@@ -1,86 +1,86 @@
 <template>
   <div class="row top px-2 kpi-row">
     <div class="kpi-col col">
-      <div class="card card-dashboard">
-        <div class="card-body card-kpi">
+      <div class="card card-dashboard h-100">
+        <div class="card-body card-kpi justify-content-start">
           <small class="text-muted">{{ salesTitle }}</small>
           <div class="kpi-main">
             <div class="kpi-values">
               <h3 class="font-weight-bold m-0 text-nowrap">S/ {{ monthly_sales | formatNumber }}</h3>
-              <small
-                v-if="changes.monthly_sales"
-                class="kpi-change"
-                :class="changes.monthly_sales.up ? 'is-up' : 'is-down'"
-              >
-                {{ changes.monthly_sales.up ? "▲" : "▼" }} {{ changes.monthly_sales.pct | formatNumber(1, 1) }}%
-                <span class="kpi-change-label text-muted">vs mes anterior</span>
-              </small>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.monthly_sales" :labels="trend.labels" color="#0f766e"></kpi-sparkline>
           </div>
+          <small
+            v-if="changes.monthly_sales"
+            class="kpi-change"
+            :class="changes.monthly_sales.up ? 'is-up' : 'is-down'"
+          >
+            {{ changes.monthly_sales.up ? "▲" : "▼" }} {{ changes.monthly_sales.pct | formatNumber(1, 1) }}%
+            <span class="kpi-change-label text-muted">{{ changeLabel }}</span>
+          </small>
         </div>
       </div>
     </div>
     <div class="kpi-col col">
-      <div class="card card-dashboard">
-        <div class="card-body card-kpi">
+      <div class="card card-dashboard h-100">
+        <div class="card-body card-kpi justify-content-start">
           <small class="text-muted">Ticket promedio</small>
           <div class="kpi-main">
             <div class="kpi-values">
               <h3 class="font-weight-bold m-0 text-nowrap">S/ {{ average_ticket | formatNumber }}</h3>
-              <small
-                v-if="changes.average_ticket"
-                class="kpi-change"
-                :class="changes.average_ticket.up ? 'is-up' : 'is-down'"
-              >
-                {{ changes.average_ticket.up ? "▲" : "▼" }} {{ changes.average_ticket.pct | formatNumber(1, 1) }}%
-                <span class="kpi-change-label text-muted">vs mes anterior</span>
-              </small>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.average_ticket" :labels="trend.labels" color="#0d9488"></kpi-sparkline>
           </div>
+          <small
+            v-if="changes.average_ticket"
+            class="kpi-change"
+            :class="changes.average_ticket.up ? 'is-up' : 'is-down'"
+          >
+            {{ changes.average_ticket.up ? "▲" : "▼" }} {{ changes.average_ticket.pct | formatNumber(1, 1) }}%
+            <span class="kpi-change-label text-muted">{{ changeLabel }}</span>
+          </small>
         </div>
       </div>
     </div>
     <div class="kpi-col col">
-      <div class="card card-dashboard">
-        <div class="card-body card-kpi">
+      <div class="card card-dashboard h-100">
+        <div class="card-body card-kpi justify-content-start">
           <small class="text-muted">Por cobrar</small>
           <div class="kpi-main">
             <div class="kpi-values">
               <h3 class="font-weight-bold m-0 text-nowrap">S/ {{ accounts_receivable | formatNumber }}</h3>
-              <small
-                v-if="changes.accounts_receivable"
-                class="kpi-change"
-                :class="changes.accounts_receivable.up ? 'is-up' : 'is-down'"
-              >
-                {{ changes.accounts_receivable.up ? "▲" : "▼" }} {{ changes.accounts_receivable.pct | formatNumber(1, 1) }}%
-                <span class="kpi-change-label text-muted">vs mes anterior</span>
-              </small>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.accounts_receivable" :labels="trend.labels" color="#f59e0b"></kpi-sparkline>
           </div>
+          <small
+            v-if="changes.accounts_receivable"
+            class="kpi-change"
+            :class="changes.accounts_receivable.up ? 'is-up' : 'is-down'"
+          >
+            {{ changes.accounts_receivable.up ? "▲" : "▼" }} {{ changes.accounts_receivable.pct | formatNumber(1, 1) }}%
+            <span class="kpi-change-label text-muted">{{ changeLabel }}</span>
+          </small>
         </div>
       </div>
     </div>
     <div class="kpi-col col">
-      <div class="card card-dashboard">
-        <div class="card-body card-kpi">
+      <div class="card card-dashboard h-100">
+        <div class="card-body card-kpi justify-content-start">
           <small class="text-muted">Utilidad neta</small>
           <div class="kpi-main">
             <div class="kpi-values">
               <h3 class="font-weight-bold m-0 text-nowrap">S/ {{ net_utility | formatNumber }}</h3>
-              <small
-                v-if="changes.net_utility"
-                class="kpi-change"
-                :class="changes.net_utility.up ? 'is-up' : 'is-down'"
-              >
-                {{ changes.net_utility.up ? "▲" : "▼" }} {{ changes.net_utility.pct | formatNumber(1, 1) }}%
-                <span class="kpi-change-label text-muted">vs mes anterior</span>
-              </small>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.net_utility" :labels="trend.labels" color="#16a34a"></kpi-sparkline>
           </div>
+          <small
+            v-if="changes.net_utility"
+            class="kpi-change"
+            :class="changes.net_utility.up ? 'is-up' : 'is-down'"
+          >
+            {{ changes.net_utility.up ? "▲" : "▼" }} {{ changes.net_utility.pct | formatNumber(1, 1) }}%
+            <span class="kpi-change-label text-muted">{{ changeLabel }}</span>
+          </small>
         </div>
       </div>
     </div>
@@ -144,6 +144,19 @@ export default {
         result[key] = { pct: Math.abs(pct), up: pct >= 0 };
       });
       return result;
+    },
+    changeLabel() {
+      const period = this.filters && this.filters.period ? this.filters.period : "month";
+      const labels = {
+        all: "vs mes anterior",
+        last_week: "vs semana anterior",
+        month: "vs mes anterior",
+        between_months: "vs periodo anterior",
+        date: "vs día anterior",
+        between_dates: "vs periodo anterior",
+      };
+
+      return labels[period] || "vs periodo anterior";
     },
     salesTitle() {
       const period = this.filters && this.filters.period ? this.filters.period : "month";

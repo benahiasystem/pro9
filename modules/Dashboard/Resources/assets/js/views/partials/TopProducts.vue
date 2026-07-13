@@ -102,7 +102,7 @@ export default {
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 300px;
+  max-height: 425px;
   overflow-y: auto;
   scrollbar-color: rgba(155, 161, 173, 0.32) transparent;
   scrollbar-width: thin;
