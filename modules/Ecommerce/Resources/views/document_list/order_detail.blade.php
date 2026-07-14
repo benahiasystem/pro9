@@ -58,11 +58,6 @@
     text-transform: uppercase;
     letter-spacing: .03em;
 }
-.status-1 { background: #fff4e5; color: #b45309; } /* pago sin verificar */
-.status-2 { background: #e7f9ed; color: #15803d; } /* pago verificado */
-.status-3 { background: #e5eefe; color: #1d4ed8; } /* despachado */
-.status-4 { background: #f2e9ff; color: #7c3aed; } /* confirmado */
-
 .products-title {
     font-size: 13px;
     font-weight: 700;

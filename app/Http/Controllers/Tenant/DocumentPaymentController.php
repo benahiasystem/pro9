@@ -32,7 +32,7 @@ class DocumentPaymentController extends Controller
     public function tables()
     {
         return [
-            'payment_method_types' => PaymentMethodType::all(),
+            'payment_method_types' => PaymentMethodType::getPaymentMethodTypes(),
             'payment_destinations' => $this->getPaymentDestinations(),
             'permissions' => auth()->user()->getPermissionsPayment()
         ];

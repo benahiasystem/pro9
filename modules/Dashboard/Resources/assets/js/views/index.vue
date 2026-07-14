@@ -1361,8 +1361,8 @@ export default {
         enabled_move_item: false,
         enabled_transaction_customer: false,
         period: "last_week",
-        date_start: moment().subtract(7, 'days').format("YYYY-MM-DD"),
-        date_end: moment().format("YYYY-MM-DD"),
+        date_start: moment().startOf("isoWeek").format("YYYY-MM-DD"),
+        date_end: moment().endOf("isoWeek").format("YYYY-MM-DD"),
         month_start: moment().format("YYYY-MM"),
         month_end: moment().format("YYYY-MM"),
         customer_id: null,
@@ -1381,6 +1381,10 @@ export default {
       this.loadAll();
     },
     changePeriod() {
+      if (this.form.period === "last_week") {
+        this.form.date_start = moment().startOf("isoWeek").format("YYYY-MM-DD");
+        this.form.date_end = moment().endOf("isoWeek").format("YYYY-MM-DD");
+      }
       if (this.form.period === "month") {
         this.form.month_start = moment().format("YYYY-MM");
         this.form.month_end = moment().format("YYYY-MM");

@@ -77,7 +77,7 @@
                     <div v-if="!configuration.enable_list_product" class="col-6" style="padding-top: 2.5px;">
                         <el-select
                             v-model="selected_option_price"
-                            @change="ChangeSelectedPrice"
+                            @change="onPriceOptionChange"
                             filterable
                         >
                             <el-option
@@ -3035,6 +3035,17 @@ export default {
             if (item.description === undefined) return 0;
             if (item.description == null) return 0;
             return item.description.length;
+        },
+        onPriceOptionChange() {
+            this.ChangeSelectedPrice();
+            const option = _.find(this.price_options, { id: this.selected_option_price });
+            if (option) {
+                this.$message({
+                    message: `Precio de búsqueda: ${option.description}`,
+                    type: "info",
+                    duration: 3000
+                });
+            }
         },
         async ChangeSelectedPrice() {
             // recorrer items

@@ -1347,8 +1347,7 @@ html.sidebar-white ul.nav-main li.nav-active:not(.nav-parent)>a {
 html.dark .sidebar-toggle:hover {
     background-color: #161d31;
 }
-
-html body .text-primary {
+.text-primary {
     color: var(--black-primary) !important;
 }
 .fa-ellipsis-v{
@@ -3369,6 +3368,19 @@ html.dark .minitour-step-tag {
 }
 html.dark .minitour-dot.on {
     background-color: var(--black-primary);
+}
+.el-tooltip__popper.is-dark{
+  background: color-mix(in srgb, var(--black-primary) 50%, #000) !important;
+  color: var(--black-light) !important;
+}
+.el-tooltip__popper.is-light,
+html.dark .el-tooltip__popper.is-dark{
+  background:var(--black-light) !important;
+  color:var(--black-dark) !important;
+  border:1px solid var(--black-accent) !important;
+}
+.el-tooltip__popper{
+  border-radius:8px !important;
 }
 /* ############################ ESTILOS MODO OSCURO ########################### */
 html.dark, html.dark body {

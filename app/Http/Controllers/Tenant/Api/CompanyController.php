@@ -25,7 +25,15 @@ class CompanyController extends Controller
         }
 
         $establishment_id =  $user->establishment_id;
-        $establishments = Establishment::without(['country', 'department', 'province', 'district'])->where('id', $establishment_id)->get();
+        $establishments = Establishment::without(['country', 'department', 'province', 'district'])
+            ->when($establishment_id, fn($q) => $q->where('id', $establishment_id))
+            ->get();
+
+        // Red de seguridad: si el usuario no tiene establishment_id o apunta a uno inexistente.
+        if ($establishments->isEmpty()) {
+            $establishments = Establishment::without(['country', 'department', 'province', 'district'])
+                ->take(1)->get();
+        }
         $series = collect($user->getSeries())->values()->all();
         $customers = Person::without(['country', 'department', 'province', 'district'])
                                ->whereType('customers')

@@ -11,7 +11,7 @@ use App\Http\Requests\Tenant\{
     SummaryRequest
 };
 use App\Http\Resources\Tenant\{
-    DocumentCollection,
+    SummaryDocumentCollection,
     SummaryResource,
     SummaryCollection
 };
@@ -88,9 +88,9 @@ class SummaryController extends Controller
 
         return [
             'success' => true,
-            'data' => new DocumentCollection($documents)
+            'data' => new SummaryDocumentCollection($documents)
         ];
-        
+
     }
     
     public function store(SummaryRequest $request) {

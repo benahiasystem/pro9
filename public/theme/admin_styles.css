@@ -1001,16 +1001,6 @@ tbody tr:hover td.sticky-column {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-}  
-.el-message--success {                        
-    background-color: var(--success);
-    border-color: var(--success);
-    color: #67c23a;
-}                 
-.el-message--error {
-    background-color: var(--danger);
-    border: 1px solid var(--danger);
-    color: #F56;
 }
 .theme-sidebar-header {
     padding: 15px 20px;
@@ -1266,6 +1256,7 @@ div.sub-title.text-muted{
 .el-message--success {
     background-color: color-mix(in srgb, var(--success) 70%, #ffffff) !important;
     border-color: var(--success) !important;
+    color: #fff;
 }
 .el-message--success .el-message__content,
 .el-message .el-icon-success{
@@ -1274,6 +1265,7 @@ div.sub-title.text-muted{
 .el-message--error {
     background-color: color-mix(in srgb, var(--danger) 70%, #ffffff) !important;
     border-color: var(--danger) !important;
+    color: #fff;
 }
 .el-message--error .el-message__content,
 .el-message .el-icon-error{

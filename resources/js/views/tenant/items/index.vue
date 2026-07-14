@@ -191,6 +191,18 @@
                       @click.native="clickEnableSelected">
                       Habilitar
                     </el-dropdown-item>
+
+                    <el-dropdown-item
+                      v-if="showHiddenSearch"
+                      @click.native="clickHiddenSearchSelected">
+                      Ocultar de búsquedas
+                    </el-dropdown-item>
+
+                    <el-dropdown-item
+                      v-if="showShowSearch"
+                      @click.native="clickShowSearchSelected">
+                      Mostrar en búsquedas
+                    </el-dropdown-item>
                   </el-dropdown-menu>
                 </el-dropdown>
                 <el-dropdown :hide-on-click="false">
@@ -244,7 +256,7 @@
                     <tr></tr>
                     <tr valign="middle"
                         slot-scope="{ index, row }"
-                        :class="{ disable_color: !row.active }"
+                        :class="{ disable_color: !row.active, 'text-warning': row.hidden_search }"
                     >
                         <td>
                             <el-checkbox :value="selected.includes(row.id)" @change="handleSelectionChange(row)"></el-checkbox>
@@ -351,7 +363,23 @@
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-copy me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" /></svg>
                                       Duplicar
                                     </el-dropdown-item>
-                                
+
+                                    <el-dropdown-item
+                                      v-if="!row.hidden_search"
+                                      @click.native.prevent="clickHiddenSearch(row.id)"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye-off me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" /><path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" /><path d="M3 3l18 18" /></svg>
+                                      Ocultar de búsquedas
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item
+                                      v-else
+                                      @click.native.prevent="clickShowSearch(row.id)"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                      Mostrar en búsquedas
+                                    </el-dropdown-item>
+
                                     <el-dropdown-item divided />
                                 
                                     <el-dropdown-item
@@ -661,6 +689,28 @@ export default {
                  this.selectedDisabledCount === this.selected.length &&
                  this.selectedEnabledCount === 0;
         },
+        selectedVisibleCount() {
+          return this.selected.reduce((acc, id) => {
+            const meta = this.selectedMeta[id];
+            return acc + (meta && meta.hidden_search === false ? 1 : 0);
+          }, 0);
+        },
+        selectedHiddenCount() {
+          return this.selected.reduce((acc, id) => {
+            const meta = this.selectedMeta[id];
+            return acc + (meta && meta.hidden_search === true ? 1 : 0);
+          }, 0);
+        },
+        showHiddenSearch() {
+          return this.selected.length > 0 &&
+                 this.selectedVisibleCount === this.selected.length &&
+                 this.selectedHiddenCount === 0;
+        },
+        showShowSearch() {
+          return this.selected.length > 0 &&
+                 this.selectedHiddenCount === this.selected.length &&
+                 this.selectedVisibleCount === 0;
+        },
 
         selectedInViewCount() {
             if (!this.visibleRows.length) return 0;
@@ -722,7 +772,7 @@ export default {
                     if (!this.selected.includes(row.id)) {
                         this.selected.push(row.id);
                     }
-                    this.$set(this.selectedMeta, row.id, { active: !!row.active });
+                    this.$set(this.selectedMeta, row.id, { active: !!row.active, hidden_search: !!row.hidden_search });
                 });
                 return;
             }
@@ -811,6 +861,74 @@ export default {
             this.selected = []
             this.selectedMeta = {}
             this.$eventHub.$emit("reloadData")
+        },
+        clickHiddenSearchSelected() {
+            return new Promise((resolve) => {
+                this.$confirm('¿Desea ocultar de los buscadores los registros seleccionados?', 'Ocultar de búsquedas', {
+                    confirmButtonText: 'Ocultar',
+                    cancelButtonText: 'Cancelar',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http.post(`${this.resource}/hiddenSearchMassive`, {
+                        selected: this.selected
+                    })
+                        .then(res => {
+                            if(res.data.success) {
+                                this.$message.success(res.data.message)
+                                this.selected = []
+                                this.selectedMeta = {}
+                                this.$eventHub.$emit("reloadData")
+                                resolve()
+                            }else{
+                                this.$message.error(res.data.message)
+                                resolve()
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status === 500) {
+                                this.$message.error('Error al intentar ocultar');
+                            } else {
+                                console.log(error.response.data.message)
+                            }
+                        })
+                }).catch(error => {
+                    console.log(error)
+                });
+            })
+        },
+        clickShowSearchSelected() {
+            return new Promise((resolve) => {
+                this.$confirm('¿Desea mostrar nuevamente en los buscadores los registros seleccionados?', 'Mostrar en búsquedas', {
+                    confirmButtonText: 'Mostrar',
+                    cancelButtonText: 'Cancelar',
+                    type: 'warning'
+                }).then(() => {
+                    this.$http.post(`${this.resource}/showSearchMassive`, {
+                        selected: this.selected
+                    })
+                        .then(res => {
+                            if(res.data.success) {
+                                this.$message.success(res.data.message)
+                                this.selected = []
+                                this.selectedMeta = {}
+                                this.$eventHub.$emit("reloadData")
+                                resolve()
+                            }else{
+                                this.$message.error(res.data.message)
+                                resolve()
+                            }
+                        })
+                        .catch(error => {
+                            if (error.response.status === 500) {
+                                this.$message.error('Error al intentar mostrar');
+                            } else {
+                                console.log(error.response.data.message)
+                            }
+                        })
+                }).catch(error => {
+                    console.log(error)
+                });
+            })
         },
         clickEnableSelected() {
             return new Promise((resolve) => {
@@ -969,6 +1087,38 @@ export default {
                 this.$eventHub.$emit("reloadData")
             );
         },
+        clickHiddenSearch(id) {
+            this.$confirm('¿Desea ocultar este producto de los buscadores al realizar documentos?', 'Ocultar de búsquedas', {
+                confirmButtonText: 'Ocultar',
+                cancelButtonText: 'Cancelar',
+                type: 'warning'
+            }).then(() => {
+                this.$http.get(`/${this.resource}/hidden_search/${id}`).then(res => {
+                    if (res.data.success) {
+                        this.$message.success(res.data.message);
+                        this.$eventHub.$emit('reloadData');
+                    } else {
+                        this.$message.error(res.data.message);
+                    }
+                });
+            }).catch(() => {});
+        },
+        clickShowSearch(id) {
+            this.$confirm('¿Desea mostrar nuevamente este producto en los buscadores?', 'Mostrar en búsquedas', {
+                confirmButtonText: 'Mostrar',
+                cancelButtonText: 'Cancelar',
+                type: 'warning'
+            }).then(() => {
+                this.$http.get(`/${this.resource}/show_search/${id}`).then(res => {
+                    if (res.data.success) {
+                        this.$message.success(res.data.message);
+                        this.$eventHub.$emit('reloadData');
+                    } else {
+                        this.$message.error(res.data.message);
+                    }
+                });
+            }).catch(() => {});
+        },
         clickBarcode(row) {
             if (!row.barcode) {
                 return this.$message.error(
@@ -1046,7 +1196,7 @@ export default {
             this.$delete(this.selectedMeta, id);
           } else {
             this.selected.push(id);
-            this.$set(this.selectedMeta, id, { active: !!row.active });
+            this.$set(this.selectedMeta, id, { active: !!row.active, hidden_search: !!row.hidden_search });
           }
         //   console.log('selected:', this.selected, 'meta:', this.selectedMeta);
         },

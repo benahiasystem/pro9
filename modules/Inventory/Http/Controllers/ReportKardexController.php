@@ -3,6 +3,7 @@
 namespace Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\System\Client;
 use App\Models\Tenant\User;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Modules\Inventory\Exports\KardexExport;
@@ -27,19 +28,27 @@ use Modules\Inventory\Http\Resources\ReportKardexItemLotCollection;
 use Modules\Inventory\Models\Devolution;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Document;
-use App\Models\Tenant\Inventory as TenantInventory;
 use App\Models\Tenant\Purchase;
 use App\Models\Tenant\PurchaseSettlement;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\TemporaryKardexRecord;
+use App\Traits\JobReportTrait;
+use Hyn\Tenancy\Models\Hostname;
+use Illuminate\Bus\Batch;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Http\Resources\ReportTemporaryKardexCollection;
+use Modules\Inventory\Jobs\ProcessReportKardex;
 use Modules\Inventory\Models\Inventory;
 use Modules\Order\Models\OrderNote;
 
 class ReportKardexController extends Controller
 {
+
+    use JobReportTrait;
+
     protected $models = [
         "App\Models\Tenant\Document",
         "App\Models\Tenant\Purchase",
@@ -131,7 +140,7 @@ class ReportKardexController extends Controller
             $dataBalance = $this->getDataRecords($balanceRequest);
             $balance = $this->getFirstBalanceKardex($dataBalance);
         }
-        
+
         TemporaryKardexRecord::truncate();
 
         $callback = function(Collection $documents) use (&$balance, $request) {
@@ -159,15 +168,15 @@ class ReportKardexController extends Controller
 
             TemporaryKardexRecord::insert($rows);
         } ;
-        
+
 
         $records->chunk(500, $callback);
 
         return new ReportTemporaryKardexCollection(TemporaryKardexRecord::paginate(config('tenant.items_per_page')));
     }
 
-    public function getFirstBalanceKardex($records){
-
+    public function getFirstBalanceKardex($records)
+    {
         $balance = 0 ;
         $lastRow = null;
 
@@ -175,6 +184,12 @@ class ReportKardexController extends Controller
             foreach($records as $row) {
                 $lastRow = $row->getKardexReportCollection($balance);
                 $lastRow["inventory_kardex_id"] = $lastRow["id"] ?? 0;
+
+                Log::info($lastRow, [
+                    'data' => $row,
+                    'balance' => $balance,
+                    'condition' => $records instanceof \Illuminate\Database\Eloquent\Builder || $records instanceof \Illuminate\Database\Query\Builder
+                ]);
             }
         };
 
@@ -184,10 +199,7 @@ class ReportKardexController extends Controller
             $setLastRow($records);
         }
 
-        if ($lastRow) {
-            return $lastRow["balance"] ?? 0;
-        }
-        return 0;
+        return $balance;
     }
 
     public function recordsOld(Request $request){
@@ -273,14 +285,12 @@ class ReportKardexController extends Controller
         return $desc;
     }
 
-    private function getDataRecords($request)
+    /**
+     * Query creado para registros que sera usado por InventoryKardex->getKardexReportCollection()
+     */
+    private function kardex_query() 
     {
-        $warehouse_id = $request->input('warehouse_id');
-        $date_start = $request->input('date_start');
-        $date_end = $request->input('date_end');
-        $item_id = $request->input('item_id');
-
-        $query = InventoryKardex::query()
+        return InventoryKardex::query()
             ->with([
                 'item' => function($query) {
                     $query->select('id','description');
@@ -410,6 +420,17 @@ class ReportKardexController extends Controller
                 ]);
             }]);
 
+    }
+
+    private function getDataRecords($request)
+    {
+        $warehouse_id = $request->input('warehouse_id');
+        $date_start = $request->input('date_start');
+        $date_end = $request->input('date_end');
+        $item_id = $request->input('item_id');
+
+        $query =  $this->kardex_query();
+
         if ($warehouse_id!='all') {
             $query->where('warehouse_id', $warehouse_id);
         }
@@ -433,7 +454,7 @@ class ReportKardexController extends Controller
     
     }
 
-    private function getData($request)
+    public function getData($request)
     {
         $company = Company::query()->first();
         $establishment = Establishment::query()->find(auth()->user()->establishment_id);
@@ -446,8 +467,7 @@ class ReportKardexController extends Controller
             ->where('establishment_id', $establishment->id)
             ->first();
 
-        $query = InventoryKardex::query()
-            ->with(['inventory_kardexable'])
+        $query = $this->kardex_query()
             ->where('warehouse_id', $warehouse->id);
 
         if ($date_start) {
@@ -463,8 +483,7 @@ class ReportKardexController extends Controller
         }
 
         $records = $query->orderBy('item_id')
-            ->orderBy('id')
-            ->get();
+            ->orderBy('id');
 
         return [
             'company' => $company,
@@ -480,6 +499,7 @@ class ReportKardexController extends Controller
         ];
     }
 
+
     /**
      * PDF
      * @param Request $request
@@ -487,8 +507,25 @@ class ReportKardexController extends Controller
      */
     public function pdf(Request $request)
     {
+        $host = $request->getHost();
         $data = $this->getData($request);
+        $limit = 500;
         $balance = 0;
+        $user_id = auth()->user()->id;
+        $total = (clone $data['records'])->count();
+        $is_greater_limit = $total > $limit;
+        $format =  $is_greater_limit ? 'zip' : "pdf" ;
+
+        $hostname = Hostname::where('fqdn',$host)->first();
+        if(empty($hostname)) {
+            $company = Company::active();
+            $number = $company->number;
+            $client = Client::where('number', $number)->first();
+            $website_id = (int) $client->hostname->website_id;
+        }else{
+            $website_id = (int) $hostname->website_id;
+        }
+
         if($request->date_start){
             $balanceRequest = $request->duplicate();
             $dateStartInitial = Carbon::parse($request->date_start)->subDay()->format('Y-m-d');
@@ -501,10 +538,55 @@ class ReportKardexController extends Controller
         }
 
         $data["balance"] = $balance;
-        $pdf = PDF::loadView('inventory::reports.kardex.report_pdf', $data);
-        $filename = 'Reporte_Kardex' . date('YmdHis');
 
-        return $pdf->download($filename . '.pdf');
+        $request->merge([
+            'format' => $format
+        ]);
+
+        if ($is_greater_limit) {
+            $tray = $this->createDownloadTray($user_id , 'Reporte', $format , 'Reporte Kardex');
+            $trayId = $tray->id;
+            $batches = [];
+            for ($i=0; $i < ceil($total / $limit) ; $i++) {
+                $offset = $i * $limit;
+                $batches[] = new ProcessReportKardex(
+                    $trayId,
+                    $request->all(),
+                    $website_id,
+                    $data['warehouse']->id,
+                    $user_id,
+                    $offset,
+                    $limit,
+                    true
+                );
+            }
+
+            // Se envuelve $batches en un array para que el batch ejecute los jobs
+            // como una única cadena (secuencial). Es necesario porque el cálculo
+            // del balance de cada reporte depende del balance acumulado del anterior.
+            $batch = Bus::batch([$batches])
+                ->name('Report Kardex')
+                ->catch(function (Batch $batch, $exception) use($trayId) {
+                    Log::error("Error de batch Report Kardex: ", [
+                        "error" => $exception->getMessage()
+                    ]);
+                    $this->jobBatchFailed($batch->id, $trayId);
+                })
+                ->then(function(Batch $batch) use($trayId, $website_id) {
+                    $filename = 'Reporte_Kardex' . date('YmdHis'). "_lote";
+                    return $this->jobBatchFinished($batch, $trayId, $website_id, $filename, 'pdf');
+                })
+                ->dispatch();
+        } else {
+            $filename = 'Reporte_Kardex' . date('YmdHis'). "_lote";
+            $data['records'] = $data['records']->get();
+            $pdf = PDF::loadView('inventory::reports.kardex.report_pdf', $data);
+            return $pdf->download($filename . '.pdf');
+        }
+
+        return [
+            'message' => "Descarga en bandeja de descarga"
+        ];
     }
 
     /**
@@ -530,9 +612,9 @@ class ReportKardexController extends Controller
 
         $kardexExport = new KardexExport();
         $kardexExport
+            ->setQuery($data['records'])
             ->balance($data['balance'])
             ->item_id($data['item_id'])
-            ->records($data['records'])
             ->models($data['models'])
             ->company($data['company'])
             ->establishment($data['establishment'])

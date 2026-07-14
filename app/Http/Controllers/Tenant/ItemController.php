@@ -1243,6 +1243,56 @@ class ItemController extends Controller
 
     }
 
+    public function hiddenSearchMassive(Request $request)
+    {
+        $selected = collect($request->selected);
+        $itemHidden = 0;
+        $count = $selected->count();
+
+        if ($count == 0 ) {
+            return [
+                'success'  => false,
+                'message' => 'Tiene que seleccionar los items'
+            ];
+        }
+
+        $selected->each(function($id) use (&$itemHidden){
+            $response = $this->hiddenSearch($id);
+            if ($response['success']) $itemHidden += 1;
+        });
+
+        return [
+            'success' => true,
+            'message' => "Se ocultaron de las búsquedas {$itemHidden} productos de {$count} productos seleccionados"
+        ];
+
+    }
+
+    public function showSearchMassive(Request $request)
+    {
+        $selected = collect($request->selected);
+        $itemShown = 0;
+        $count = $selected->count();
+
+        if ($count == 0 ) {
+            return [
+                'success'  => false,
+                'message' => 'Tiene que seleccionar los items'
+            ];
+        }
+
+        $selected->each(function($id) use (&$itemShown){
+            $response = $this->showSearch($id);
+            if ($response['success']) $itemShown += 1;
+        });
+
+        return [
+            'success' => true,
+            'message' => "Se mostraron en las búsquedas {$itemShown} productos de {$count} productos seleccionados"
+        ];
+
+    }
+
     public function images($item)
     {
         $records = ItemImage::where('item_id', $item)->get()->transform(function($row){
@@ -1288,6 +1338,46 @@ class ItemController extends Controller
         } catch (Exception $e) {
 
             return  ['success' => false, 'message' => 'Error inesperado, no se pudo habilitar el producto'];
+
+        }
+    }
+
+    public function hiddenSearch($id)
+    {
+        try {
+
+            $item = Item::findOrFail($id);
+            $item->hidden_search = 1;
+            $item->save();
+
+            return [
+                'success' => true,
+                'message' => 'Producto oculto de las búsquedas con éxito'
+            ];
+
+        } catch (Exception $e) {
+
+            return  ['success' => false, 'message' => 'Error inesperado, no se pudo ocultar el producto'];
+
+        }
+    }
+
+    public function showSearch($id)
+    {
+        try {
+
+            $item = Item::findOrFail($id);
+            $item->hidden_search = 0;
+            $item->save();
+
+            return [
+                'success' => true,
+                'message' => 'Producto visible en las búsquedas con éxito'
+            ];
+
+        } catch (Exception $e) {
+
+            return  ['success' => false, 'message' => 'Error inesperado, no se pudo mostrar el producto'];
 
         }
     }

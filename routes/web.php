@@ -287,6 +287,10 @@ if ($hostname) {
             Route::post('items/disableMassive', 'Tenant\ItemController@disableMassive');
             Route::get('items/enable/{item}', 'Tenant\ItemController@enable');
             Route::post('items/enableMassive', 'Tenant\ItemController@enableMassive');
+            Route::get('items/hidden_search/{item}', 'Tenant\ItemController@hiddenSearch');
+            Route::get('items/show_search/{item}', 'Tenant\ItemController@showSearch');
+            Route::post('items/hiddenSearchMassive', 'Tenant\ItemController@hiddenSearchMassive');
+            Route::post('items/showSearchMassive', 'Tenant\ItemController@showSearchMassive');
             Route::get('items/images/{item}', 'Tenant\ItemController@images');
             Route::get('items/images/delete/{id}', 'Tenant\ItemController@delete_images');
             Route::get('items/export', 'Tenant\ItemController@export')->name('tenant.items.export');

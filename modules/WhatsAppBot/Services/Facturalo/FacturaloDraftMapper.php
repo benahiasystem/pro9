@@ -172,11 +172,20 @@ class FacturaloDraftMapper
         $unitPriceWithIgv = $item->has_igv
             ? (float) $item->sale_unit_price
             : round($item->sale_unit_price * (1 + self::IGV_RATE), 2);
-        $unitValueWithoutIgv = round($unitPriceWithIgv / (1 + self::IGV_RATE), 2);
 
-        $totalValue = round($unitValueWithoutIgv * $quantity, 2);
-        $totalIgv = round($totalValue * self::IGV_RATE, 2);
-        $total = round($totalValue + $totalIgv, 2);
+        // Multiplicar primero con el precio unitario CON IGV completo, y recien
+        // ahi separar base/IGV. Redondear el unit_value sin IGV antes de
+        // multiplicar (como se hacia antes) arrastra el error de redondeo x
+        // cantidad (ver bug: S/3.00 x 15 daba S/44.96 en vez de S/45.00 exacto).
+        $total = round($unitPriceWithIgv * $quantity, 2);
+        $totalValue = round($total / (1 + self::IGV_RATE), 2);
+        $totalIgv = round($total - $totalValue, 2);
+        // unit_value recalculado desde el total ya reconciliado, en 6 decimales
+        // (misma precision que la columna sale_unit_price y que el calculo real
+        // del POS en functions.js, que tampoco redondea unit_value a 2
+        // decimales). A 2 decimales, unit_value x cantidad no siempre reconcilia
+        // con total_value cuando la division no cae exacta (ej. 38.14/15).
+        $unitValueWithoutIgv = $quantity > 0 ? round($totalValue / $quantity, 6) : 0.0;
 
         return [
             'item_id' => $item->id,

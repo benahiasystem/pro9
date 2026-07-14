@@ -24,6 +24,7 @@ export default {
   data() {
     return {
       labels: [],
+      previousLabels: [],
       current: [],
       previous: [],
       subtitle: "Barras solidas = esta semana - gris = semana anterior",
@@ -89,6 +90,18 @@ export default {
           },
         },
         tooltip: {
+          shared: false,
+          intersect: true,
+          x: {
+            formatter: (val, opts) => {
+              const idx = opts && opts.dataPointIndex != null ? opts.dataPointIndex : 0;
+              const seriesIndex = opts ? opts.seriesIndex : 0;
+              if (seriesIndex === 1) {
+                return this.previousLabels[idx] || val;
+              }
+              return this.labels[idx] || val;
+            },
+          },
           y: {
             formatter: (val) =>
               "S/ " +
@@ -110,6 +123,7 @@ export default {
       this.$http.get("/dashboard/sales-week", { params: this.filters || {} }).then((response) => {
         const data = response.data;
         this.labels = data.labels || [];
+        this.previousLabels = data.previous_labels || [];
         this.current = data.current || [];
         this.previous = data.previous || [];
         this.subtitle = data.subtitle || this.subtitle;

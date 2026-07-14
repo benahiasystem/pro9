@@ -126,6 +126,7 @@ class RestaurantConfiguration extends ModelTenant
             'is_restaurant_active' => $is_restaurant_active,
             'show_item_description_pack' => (bool)optional($configurations_global)->show_item_description_pack,
             'allow_edit_unit_price_to_seller' => (bool)optional($configurations_global)->allow_edit_unit_price_to_seller,
+            'enable_list_product' => (bool)optional($configurations_global)->enable_list_product,
         ];
     }
 }

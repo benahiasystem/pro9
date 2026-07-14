@@ -149,7 +149,7 @@
                         </td>
                         <td class="text-success">S/ @{{ row.total }}</td>
                         <td>
-                            @{{ row.created_at }}
+                            @{{ formatDateOnly(row.created_at) }}
                         </td>
                         <td>@{{ row.status_order_description }}</td>
                         <td>
@@ -263,6 +263,11 @@
             // this.filter_records = this.records;
         },
         methods: {
+            formatDateOnly(date) {
+                if (!date) return '-';
+                const parsedDate = moment(date);
+                return parsedDate.isValid() ? parsedDate.format("DD-MM-YYYY") : '-';
+            },
             openDetail(row) {
                 this.selectedOrder = row;
                 this.showOrderModal = true;

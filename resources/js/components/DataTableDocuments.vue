@@ -21,10 +21,12 @@
                                     <span class="bg-tickets legend-cube d-flex" style="margin-bottom: 2px;"></span>
                                     <span style="line-height: normal;">Boletas</span>
                                 </div>
-                                <div class="d-flex align-items-end ms-3 gap-1">
-                                    <span class="bg-invoices legend-cube d-flex" style="margin-bottom: 2px;"></span>
-                                    <span style="line-height: normal;">Facturas</span>
-                                </div>
+                                <template v-if="!isNrus">
+                                    <div class="d-flex align-items-end ms-3 gap-1">
+                                        <span class="bg-invoices legend-cube d-flex" style="margin-bottom: 2px;"></span>
+                                        <span style="line-height: normal;">Facturas</span>
+                                    </div>
+                                </template>
                                 <div class="d-flex align-items-end ms-3 gap-1">
                                     <span class="bg-credit-notes legend-cube d-flex" style="margin-bottom: 2px;"></span>
                                     <span style="line-height: normal;">Notas de crédito</span>
@@ -308,6 +310,9 @@ export default {
                     plate_numbers: null,
                 }
                 return Object.keys(defaults).some(key => this.search[key] !== defaults[key])
+            },
+            isNrus() {
+                return !!(this.config && this.config.is_nrus);
             },
         },
         watch: {
