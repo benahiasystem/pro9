@@ -1112,11 +1112,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                         <a class="nav-link" href="{{route('tenant.tags.index')}}">Etiquetas</a>
                                     </li>
                                 @endif
-                                @if(in_array('ecommerce_promotions', $vc_module_levels))
-                                    <li class="{{ ($firstLevel === 'promotions') ? 'nav-active' : '' }}">
-                                        <a class="nav-link" href="{{route('tenant.promotion.index')}}">Banners</a>
-                                    </li>
-                                @endif
+
                                 @if(in_array('ecommerce_settings', $vc_module_levels))
                                 <li class="nav-item-with-action {{ ($secondLevel === 'configuration')?'nav-active':'' }}">
                                     <a class="nav-link" href="{{route('tenant_ecommerce_configuration')}}">Configuración</a>

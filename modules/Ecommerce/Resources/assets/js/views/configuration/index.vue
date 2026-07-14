@@ -256,6 +256,12 @@
           </div>
         </form>
       </el-tab-pane>
+      <el-tab-pane label="Banners">
+        <div class="pt-2">
+          <!-- Banners / spots de la tienda (antes vista independiente de promociones) -->
+          <banner-settings-manager></banner-settings-manager>
+        </div>
+      </el-tab-pane>
       <el-tab-pane label="Enlaces">
         <ConfigurationLinks />
       </el-tab-pane>
@@ -355,6 +361,7 @@ import 'ckeditor5/ckeditor5.css';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import DigitalCoupon from '../configuration_digital_coupon/index.vue';
 import PickupBranches from '../configuration_pickup_branches/index.vue';
+import BannerSettingsManager from '@views/configurations/BannerSettingsManager.vue';
 import CKEditor from 'vue-ckeditor5';
 export default {
   components: {
@@ -363,6 +370,7 @@ export default {
     DigitalCoupon,
     DeliveryZones,
     PickupBranches,
+    BannerSettingsManager,
     'vue-ckeditor': CKEditor.component
   },
   data() {
