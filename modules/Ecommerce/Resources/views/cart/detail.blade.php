@@ -912,6 +912,61 @@
 @vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
 
 <script>
+    // Globales requeridos por Culqi v3 (evitan ReferenceError en consola)
+    window.closeCheckout = function () {
+        console.log('El usuario cerró el modal de Culqi.');
+        if (typeof app_cart !== 'undefined') {
+            app_cart.processingPayment = false;
+        }
+    };
+
+    window.mostrarMensaje = function (mensaje, tipo) {
+        tipo = tipo || 'error';
+        console.error('[Culqi]: ' + mensaje);
+
+        if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
+            Swal.fire({
+                icon: tipo,
+                title: tipo === 'error' ? 'Hubo un inconveniente' : 'Información',
+                text: mensaje,
+                confirmButtonColor: '#3085d6'
+            });
+        } else if (typeof swal === 'function') {
+            swal({
+                title: tipo === 'error' ? 'Hubo un inconveniente' : 'Información',
+                text: mensaje,
+                type: tipo,
+                icon: tipo
+            });
+        } else {
+            alert(mensaje);
+        }
+    };
+
+    function getCulqiErrorMessage(error) {
+        if (!error) {
+            return 'El pago fue cancelado o no se pudo completar.';
+        }
+
+        var code = String(error.code || error.type || '').toLowerCase();
+        var raw = String(
+            error.user_message || error.merchant_message || error.message || ''
+        ).toLowerCase();
+
+        var isEncryptError = code.indexOf('encrypt') !== -1
+            || raw.indexOf('encript') !== -1
+            || raw.indexOf('encrypt') !== -1;
+
+        if (isEncryptError || !window.isSecureContext) {
+            return 'El pago con tarjeta requiere HTTPS. En local usa https://local.pro9.test (habilita SSL en Laragon) o prueba desde un entorno seguro.';
+        }
+
+        return error.user_message
+            || error.merchant_message
+            || error.message
+            || 'No se pudo procesar el pago. Intente nuevamente.';
+    }
+
     Culqi.publicKey = {!! json_encode($configuration->token_public_culqui ) !!};
     if(!Culqi.publicKey)
     {
@@ -936,13 +991,22 @@
     }
 
     async function execCulqi() {
+        if (!Culqi.publicKey) {
+            window.mostrarMensaje('El pago con tarjeta aún no está configurado. Elija otro método de pago.', 'warning');
+            return;
+        }
 
-       console.log( 'errores', app_cart.errors)
-
-       //app_cart.errors = 'demo'
-
-    //   console.log( 'errores22', app_cart.errors)
-
+        // Web Crypto API (necesaria para encriptar la tarjeta) solo funciona en contexto seguro
+        if (!window.isSecureContext) {
+            window.mostrarMensaje(
+                'Culqi no puede encriptar datos de tarjeta en HTTP. Abre la tienda con HTTPS (ej. https://local.pro9.test) o usa otro método de pago en local.',
+                'warning'
+            );
+            if (typeof app_cart !== 'undefined') {
+                app_cart.processingPayment = false;
+            }
+            return;
+        }
 
         let precio = Math.round((Number(jQuery("#total_amount").data('total')) * 100).toFixed(2));
         if (precio > 0) {
@@ -955,10 +1019,12 @@
             Culqi.open();
         }
     }
+    window.execCulqi = execCulqi;
 
-
-    async function culqi() {
-        if (Culqi.token) {
+    window.culqi = async function () {
+        if (window.Culqi.token) {
+            const token = window.Culqi.token.id;
+            console.log('Token de Culqi creado:', token);
 
             swal({
                 title: "Estamos hablando con su banco",
@@ -972,10 +1038,8 @@
             let precio = Math.round((Number(jQuery("#total_amount").data('total')).toFixed(2) * 100));
             let precio_culqi = Number(jQuery("#total_amount").data('total')).toFixed(2);
 
-            var url = "/culqi";
-            var token = Culqi.token.id;
-            var email = Culqi.token.email;
-            var installments = Culqi.token.metadata.installments;
+            var email = window.Culqi.token.email;
+            var installments = window.Culqi.token.metadata.installments;
 
             const formpayment = await app_cart.getFormPaymentCash()
 
@@ -1018,8 +1082,7 @@
                   })
                 } else {
                   app_cart.processingPayment = false;
-                  const message = data.message || 'Sucedió algo inesperado.';
-                  swal("Pago No realizado", message, "error");
+                  window.mostrarMensaje(data.message || 'Sucedió algo inesperado.', 'error');
                 }
               },
               error: function (error_data) {
@@ -1037,13 +1100,29 @@
                         app_cart.errors = parsed;
                     }
                 }
-                swal("Pago No realizado", message, "error");
+                window.mostrarMensaje(message, 'error');
               }
             });
 
+        } else if (window.Culqi.error) {
+            const error = window.Culqi.error;
+            if (typeof app_cart !== 'undefined') {
+                app_cart.processingPayment = false;
+            }
+            try {
+                if (typeof window.Culqi.close === 'function') {
+                    window.Culqi.close();
+                }
+            } catch (e) { /* modal ya cerrado */ }
+            window.mostrarMensaje(
+                getCulqiErrorMessage(error) || error.user_message || error.merchant_message,
+                'error'
+            );
         } else {
-            console.log(Culqi.error);
-            swal("Pago No realizado", Culqi.error.user_message, "error");
+            // Usuario cerró el modal sin token ni error explícito
+            if (typeof app_cart !== 'undefined') {
+                app_cart.processingPayment = false;
+            }
         }
     };
 

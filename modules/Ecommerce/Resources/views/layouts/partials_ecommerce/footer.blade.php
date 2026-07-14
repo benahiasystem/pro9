@@ -908,23 +908,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const tooltip = document.getElementById("wsTooltip");
         const texto = document.getElementById("wsTooltipText");
-        /*
-        function mostrarMensaje() {
+
+        // Tooltip WhatsApp (local). No pisa window.mostrarMensaje usado por Culqi.
+        function mostrarMensajeWhatsApp() {
+            if (!tooltip || !texto) {
+                return;
+            }
             const random = mensajes[Math.floor(Math.random() * mensajes.length)];
             texto.innerText = random;
-
             tooltip.classList.add("show");
-
             setTimeout(() => {
                 tooltip.classList.remove("show");
             }, 4000);
         }
-        */
+
         // aparece cada cierto tiempo
-        // setInterval(mostrarMensaje, 10000);
+        // setInterval(mostrarMensajeWhatsApp, 10000);
 
         // primera vez
-        setTimeout(mostrarMensaje, 2000);
+        setTimeout(mostrarMensajeWhatsApp, 2000);
     });
 
 </script>
