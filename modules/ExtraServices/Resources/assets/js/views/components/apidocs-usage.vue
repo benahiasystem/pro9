@@ -1,7 +1,7 @@
 <template>
   <div v-loading="loading" element-loading-background="rgba(255, 255, 255, 0.7)">
     <div class="mb-3">
-      <strong>Uso del servicio ApiDocs</strong>
+      <strong>Uso del servicio</strong>
     </div>
 
     <div class="row mb-4" v-if="quota">

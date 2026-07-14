@@ -13,6 +13,7 @@ class ExtraServices extends Model
 
     protected $fillable = [
         'isActiveApidocs',
+        'urlApidocs',
     ];
 
     protected $casts = [

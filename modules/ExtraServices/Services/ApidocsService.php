@@ -36,7 +36,17 @@ class ApidocsService
         $this->hostname = $this->getMainHostname();
         $this->resellerId = $this->getResellerId();
         $this->secret = config('app.url_base');
-        $this->baseUrl = config('app.url_apidocs');
+        $this->baseUrl = $this->getBaseUrl();
+    }
+
+    /**
+     * Obtener la URL base de Apidocs desde la base de datos
+     */
+    protected function getBaseUrl(): string
+    {
+        $config = ExtraServices::first();
+
+        return rtrim($config?->urlApidocs ?? '', '/');
     }
 
     /**
