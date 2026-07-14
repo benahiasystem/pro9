@@ -2,19 +2,28 @@
 
 namespace Modules\ExtraServices\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
-use Modules\ExtraServices\Models\ClientUsageApidocs;
+use Modules\ExtraServices\Services\ApidocsService;
 
 class ClientUsageApidocsController extends Controller
 {
-    /**
-     * Devuelve el listado de uso de API de los clientes.
-     */
-    public function records()
+    protected $apidocsService;
+
+    public function __construct(ApidocsService $apidocsService)
     {
-        // Traemos el uso agrupado por cliente
-        $data = DB::table('extra_services_client_usage_apidocs as usage')
+        $this->apidocsService = $apidocsService;
+    }
+
+    /**
+     * Devuelve el listado de uso de API de los clientes (paginado) y la cuota del reseller.
+     */
+    public function records(Request $request)
+    {
+        $perPage = max(1, min((int) $request->input('per_page', 10), 100));
+
+        $clients = DB::table('extra_services_client_usage_apidocs as usage')
             ->join('clients as c', 'usage.client_id', '=', 'c.id')
             ->leftJoin('hostnames as h', 'c.hostname_id', '=', 'h.id')
             ->select(
@@ -24,11 +33,26 @@ class ClientUsageApidocsController extends Controller
                 'usage.quantity',
                 'usage.month'
             )
-            ->get();
+            ->orderByDesc('usage.month')
+            ->orderBy('c.name')
+            ->paginate($perPage);
+
+        $quotaResponse = $this->apidocsService->getQuota();
+        $quotaPayload = ($quotaResponse['success'] ?? false) ? ($quotaResponse['data'] ?? []) : [];
 
         return response()->json([
             'success' => true,
-            'data' => $data
+            'data' => [
+                'clients' => $clients->items(),
+                'pagination' => [
+                    'current_page' => $clients->currentPage(),
+                    'per_page' => $clients->perPage(),
+                    'total' => $clients->total(),
+                    'last_page' => $clients->lastPage(),
+                ],
+                'quota' => $quotaPayload['quota'] ?? null,
+                'current_usage' => $quotaPayload['current_usage'] ?? null,
+            ],
         ]);
     }
 }

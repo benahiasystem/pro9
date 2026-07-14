@@ -297,4 +297,41 @@ class ApidocsService
             return false;
         }
     }
+
+    /**
+     * Obtener el cuota del reseller
+     * @return array Retorna un array con la respuesta de la API o un mensaje de error
+     */
+    public function getQuota(): array
+    {
+        try {
+            $resellerId = $this->getResellerId();
+            $url = $this->baseUrl . '/admin/resellers/' . $resellerId . '/quota';
+
+            $response = Http::withoutVerifying()
+                ->timeout(15)
+                ->get($url);
+
+            if (!$response->successful()) {
+                return [
+                    'success' => false,
+                    'message' => 'Error al obtener el cuota',
+                ];
+            }
+
+            return [
+                'success' => true,
+                'data' => $response->json(),
+            ];
+        } catch (Exception $e) {
+            Log::error('ApiDocsService isActiveService Error: ' . $e->getMessage(), [
+                'resellerId' => $this->resellerId ?? null,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Error al obtener el cuota',
+            ];
+        } 
+    }
 }
