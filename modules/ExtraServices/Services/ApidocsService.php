@@ -276,34 +276,25 @@ class ApidocsService
      */
     public function isActiveService(): bool
     {
-        $method = 'GET';              
-        $path = '/api/ruc/0000000000';
-        $timestamp = time();
+        try {
+            $resellerId = $this->getResellerId();
+            $url = $this->baseUrl . '/admin/resellers/' . $resellerId . '/exists';
 
-        $signature = $this->generateSignature($method, $path, $timestamp);
-            
-        $headers = [
-            'X-Reseller-Id' => $this->resellerId,
-            'X-Timestamp' => $timestamp,
-            'X-Signature' => $signature . 'test',
-            'X-Domain' => $this->hostname,
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json',
-        ];
-            
-        $url = $this->baseUrl . $path;
+            $response = Http::withoutVerifying()
+                ->timeout(15)
+                ->get($url);
 
-        $response = Http::withoutVerifying()
-            ->withHeaders($headers)
-            ->timeout(30)
-            ->get($url);
+            if (!$response->successful()) {
+                return false;
+            }
 
-        $responseData = $response->json();
+            return (bool) ($response->json('exists') ?? false);
+        } catch (Exception $e) {
+            Log::error('ApiDocsService isActiveService Error: ' . $e->getMessage(), [
+                'resellerId' => $this->resellerId ?? null,
+            ]);
 
-        if ($responseData['message'] === 'Invalid signature' ){
-            return true;
+            return false;
         }
-
-        return false;
     }
 }
