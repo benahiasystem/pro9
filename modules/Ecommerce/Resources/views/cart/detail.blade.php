@@ -996,10 +996,17 @@
             return;
         }
 
-        // Web Crypto API (necesaria para encriptar la tarjeta) solo funciona en contexto seguro
+        // Culqi usa Web Crypto: en dominios .test solo funciona con HTTPS (HTTP no es "secure context")
         if (!window.isSecureContext) {
+            if (location.protocol === 'http:') {
+                try {
+                    sessionStorage.setItem('culqi_open_after_https', '1');
+                } catch (e) { /* ignore */ }
+                location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+                return;
+            }
             window.mostrarMensaje(
-                'Culqi no puede encriptar datos de tarjeta en HTTP. Abre la tienda con HTTPS (ej. https://local.pro9.test) o usa otro método de pago en local.',
+                'Culqi no puede encriptar la tarjeta en un contexto no seguro. Usa HTTPS o otro método de pago.',
                 'warning'
             );
             if (typeof app_cart !== 'undefined') {
@@ -1020,6 +1027,20 @@
         }
     }
     window.execCulqi = execCulqi;
+
+    // Si redirigimos a HTTPS por Culqi, reabrir el checkout automáticamente
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            if (window.isSecureContext && sessionStorage.getItem('culqi_open_after_https') === '1') {
+                sessionStorage.removeItem('culqi_open_after_https');
+                setTimeout(function () {
+                    if (typeof window.execCulqi === 'function') {
+                        window.execCulqi();
+                    }
+                }, 600);
+            }
+        } catch (e) { /* ignore */ }
+    });
 
     window.culqi = async function () {
         if (window.Culqi.token) {
