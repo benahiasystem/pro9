@@ -366,6 +366,7 @@ if ($hostname) {
             Route::post('documents/custom-fields/update', 'Tenant\DocumentController@updateCustomFields');
             Route::get('documents/recordsTotal', 'Tenant\DocumentController@recordsTotal');
             Route::get('documents/kpis', 'Tenant\DocumentController@kpis');
+            Route::get('documents/create/{table}/{table_id}', 'Tenant\DocumentController@createFromTable')->name('tenant.documents.create_from_table')->middleware(['redirect.level', 'tenant.internal.mode']);
             Route::get('documents/create', 'Tenant\DocumentController@create')->name('tenant.documents.create')->middleware(['redirect.level', 'tenant.internal.mode']);
             Route::get('documents/create_tensu', 'Tenant\DocumentController@create_tensu')->name('tenant.documents.create_tensu');
             Route::get('documents/{id}/edit', 'Tenant\DocumentController@edit')->middleware(['redirect.level', 'tenant.internal.mode']);
