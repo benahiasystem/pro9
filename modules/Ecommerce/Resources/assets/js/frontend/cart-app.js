@@ -136,9 +136,9 @@ var app_cart = new Vue({
         let exchange_rate_sale = this.exchange_rate_sale
         let contex = this
 
-        $(".input_quantity").change(function (e) {
-            let value = parseFloat($(this).val())
-            let id = $(this).data('product')
+        jQuery(".input_quantity").change(function (e) {
+            let value = parseFloat(jQuery(this).val())
+            let id = jQuery(this).data('product')
             let row = contex.records.find(x => x.id == id)
 
             if(row.currency_type_id === 'USD') {
@@ -614,7 +614,7 @@ var app_cart = new Vue({
                 total_exonerated: '0.0', total_igv: '0.0', delivery: '0.00'
             };
             this.payment_cash.amount = '0.00';
-            $("#total_amount").data('total', '0.00');
+            jQuery("#total_amount").data('total', '0.00');
         },
         goToThankYou() {
             if (this.thankYouUrl) {
@@ -719,7 +719,7 @@ var app_cart = new Vue({
             };
         },
         openAddressModal() {
-            $('#addressModal').modal('show')
+            jQuery('#addressModal').modal('show')
             setTimeout(() => {
                 if (!this.map) {
                     this.initMap()
@@ -732,7 +732,7 @@ var app_cart = new Vue({
         closeAddressModal() {
             const modalElement = document.getElementById('addressModal');
             if (modalElement) {
-                $(modalElement).modal('hide');
+                jQuery(modalElement).modal('hide');
             } else {
                 console.error('No se encontró el elemento del modal.');
             }
@@ -1107,7 +1107,7 @@ var app_cart = new Vue({
             this.summary.total            = computedTotal.toFixed(2)
             this.aux_totals               = Object.assign({}, this.summary)
 
-            $("#total_amount").data('total', this.summary.total);
+            jQuery("#total_amount").data('total', this.summary.total);
 
             this.form_document.codigo_tipo_documento = null
             this.optionDocument()

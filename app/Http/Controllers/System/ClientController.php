@@ -874,6 +874,8 @@ use Illuminate\Support\Facades\Mail;
             $module_permissions['business'] = $selected_business;
             $plan_for_config['module_permissions'] = $module_permissions;
 
+            $is_nrus = (int) data_get($plan->module_permissions, 'business') === 6;
+
             $http = config('tenant.force_https') == true ? 'https://' : 'http://';
 
             // Definir variable para registro de invitado
@@ -958,8 +960,42 @@ use Illuminate\Support\Facades\Mail;
                 'top_menu_c_id' => 76,
                 'quantity_sales_notes' => 0,
                 'from_guest_register' => $from_guest_register,
-                'date_of_due_test_days' => $plan->test_days > 0 ? Carbon::now()->addDays($plan->test_days)->toDateTimeLocalString() :null
+                'date_of_due_test_days' => $plan->test_days > 0 ? Carbon::now()->addDays($plan->test_days)->toDateTimeLocalString() :null,
+                'has_advanced_statuses' => true
             ]);
+
+
+            \Log::info('Configuración insertada');
+
+            \Log::info('Sembrando Estados de Pedido Avanzados...');
+            DB::connection('tenant')->table('status_orders')->delete();
+
+            $advancedStatuses = [
+                // === ESTADOS FINANCIEROS (Payment) ===
+                ['description' => 'Pago pendiente', 'color' => '#ffc107', 'is_initial' => true, 'is_final' => false, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => false, 'sort_order' => 1],
+                ['description' => 'Pago completado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => true, 'sort_order' => 2],
+                ['description' => 'Pago rechazado', 'color' => '#dc3545', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 3],
+                ['description' => 'Reembolso', 'color' => '#6c757d', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 4],
+
+                // === ESTADOS LOGÍSTICOS (Shipping) ===
+                ['description' => 'Preparando pedido', 'color' => '#17a2b8', 'is_initial' => true, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_discount_stock' => true, 'sort_order' => 5],
+                ['description' => 'Listo para recojo', 'color' => '#fd7e14', 'is_initial' => false, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 6],
+                ['description' => 'En camino', 'color' => '#007bff', 'is_initial' => false, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_notify_dispatch' => true, 'sort_order' => 7],
+                ['description' => 'Entregado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_mark_payment' => false, 'sort_order' => 8],
+                ['description' => 'Entrega pendiente', 'color' => '#ffc107', 'is_initial' => false, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => true, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 9],
+
+                // === ESTADOS ADMINISTRATIVOS (Order) ===
+                ['description' => 'Nuevo pedido', 'color' => '#17a2b8', 'is_initial' => true, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => false, 'is_order_status' => true, 'sort_order' => 10],
+                ['description' => 'En proceso', 'color' => '#007bff', 'is_initial' => false, 'is_final' => false, 'is_payment_status' => false, 'is_shipping_status' => false, 'is_order_status' => true, 'sort_order' => 11],
+                ['description' => 'Cancelado', 'color' => '#dc3545', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => false, 'is_shipping_status' => false, 'is_order_status' => true, 'action_send_email' => true, 'action_void_order' => true, 'sort_order' => 12],
+                ['description' => 'Completado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => false, 'is_shipping_status' => false, 'is_order_status' => true, 'sort_order' => 13],
+            ];
+
+            foreach ($advancedStatuses as $status) {
+                $status['created_at'] = now();
+                $status['updated_at'] = now();
+                DB::connection('tenant')->table('status_orders')->insert($status);
+            }
 
 
             \Log::info('Configuración insertada');
@@ -1053,7 +1089,7 @@ use Illuminate\Support\Facades\Mail;
                 \Log::info('Módulos básicos insertados');
             }
 
-            // Si la empresa se creó con el giro de negocio NRUS, dejar activo únicamente
+            // Si el plan corresponde al giro de negocio NRUS, dejar activo únicamente
             // el tipo de operación "Venta Interna - NRUS" (0113) y desactivar los demás.
             if ($is_nrus) {
                 \Log::info('Plan NRUS detectado, configurando tipos de operación...');

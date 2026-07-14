@@ -2082,7 +2082,7 @@
                                                 <span class="text-primary text-uppercase">Comprobantes por Defecto</span>
                                             </h5>
                                             <span class="text-muted text-uppercase px-2 options-count">
-                                                3 opciones
+                                                4 opciones
                                             </span>
                                         </div>
                                         <div>

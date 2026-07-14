@@ -116,7 +116,8 @@
     <script src="{{ asset('porto-ecommerce/assets/js/jquery.min.js') }}"></script>
     <script src="{{ asset('porto-ecommerce/assets/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('porto-ecommerce/assets/js/plugins.min.js') }}"></script>
-    <script src="{{ asset('porto-ecommerce/assets/js/culqi_v3.js') }}"></script>
+    <!--<script src="{{ asset('porto-ecommerce/assets/js/culqi_v3.js') }}"></script>--> 
+    <script src="https://checkout.culqi.com/js/v3"></script>
     <script src="{{ asset('porto-ecommerce/assets/js/sweetalert2.all.min.js') }}"></script>
     <script src="{{ asset('porto-ecommerce/assets/js/moment.min.js') }}"></script>
 

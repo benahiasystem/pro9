@@ -579,24 +579,7 @@ export default {
             // Obtener el objeto de estado completo desde las opciones cargadas
             const selectedStatus = this.options.find(o => o.id === record[field])
 
-            if (selectedStatus && selectedStatus.action_generate_document) {
-                this.order_id = record.id;
-
-                if (record.purchase.codigo_tipo_documento == "80") {
-                    if (record.has_sale_note)
-                        return this.$message.success(
-                            "Ya existe una nota de venta"
-                        );
-                    this.openDialogSaleNote(record.purchase);
-                } else {
-                    if (record.document_external_id) {
-                        return this.$message.success(
-                            "Ya existe un comprobante."
-                        );
-                    }
-                    this.$refs.document_form.sendPreview(record.purchase);
-                }
-            } else if (selectedStatus && selectedStatus.action_discount_stock) {
+            if (selectedStatus && selectedStatus.action_discount_stock) {
                 // Si la orden ya tiene el flag de stock descontado, no continuar
                 if (record.stock_discounted) {
                     this.$message.success('El stock ya fue descontado para esta orden');
@@ -615,10 +598,39 @@ export default {
             }
         },
         saveUpdateStatus() {
+            // Capturar el estado seleccionado ANTES de hacer la petición,
+            // para saber si tiene action_generate_document activo.
+            const selectedStatus = this.options.find(o => o.id === this.record[this.statusField]);
+
             this.$http
                 .post(`/statusOrder/update`, { record: this.record, field: this.statusField })
                 .then(response => {
-                    this.$message.success(response.data.message);
+                    if (response.data.type === 'error') {
+                        this.$message.error(response.data.message);
+                    } else if (response.data.type === 'warning') {
+                        this.$message.warning(response.data.message);
+                        this.$eventHub.$emit('reloadData');
+                    } else {
+                        this.$message.success(response.data.message);
+                        this.$eventHub.$emit('reloadData');
+
+                        // Si el estado tiene la acción de generar comprobante y el backend
+                        // devolvió el ID de la nota de venta, abrir el modal de opciones.
+                        if (
+                            selectedStatus &&
+                            selectedStatus.action_generate_document &&
+                            response.data.sale_note_id
+                        ) {
+                            this.documentNewId = response.data.sale_note_id;
+                            this.statusDocument.send = '';
+                            this.resource_options = 'sale-notes';
+                            this.showDialogOptions = true;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    this.$message.error('Ocurrió un error al actualizar el estado.');
                 });
         },
         async save() {
@@ -644,6 +656,7 @@ export default {
                 })
                 .then(response => {
                     this.$message.success(response.data.message);
+                    this.$eventHub.$emit('reloadData');
                     this.close();
                 });
         },

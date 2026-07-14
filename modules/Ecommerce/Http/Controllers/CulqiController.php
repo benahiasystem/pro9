@@ -19,7 +19,7 @@ use App\Models\Tenant\Person;
 use Exception;
 use App\Models\Tenant\ConfigurationEcommerce;
 use Illuminate\Support\Facades\Validator;
-
+use App\Models\Tenant\StatusOrder;
 
 
 
@@ -101,18 +101,30 @@ class CulqiController extends Controller
             ], 422);
         }
 
-        $order = Order::create([
+        // Estado inicial de la orden
+        $initialOrderStatus = StatusOrder::where('is_order_status', true)->where('is_initial', true)->orderBy('sort_order')->first()
+            ?: StatusOrder::where('is_order_status', true)->orderBy('sort_order')->first();
+        $initialStatusId = $initialOrderStatus ? $initialOrderStatus->id : null;
 
+        // Estado de pago "Pagado" (aquel que tiene action_mark_payment = true o no es el inicial)
+        $paidPaymentStatus = StatusOrder::where('is_payment_status', true)->where('action_mark_payment', true)->first();
+        if (!$paidPaymentStatus) {
+            $paidPaymentStatus = StatusOrder::where('is_payment_status', true)->where('is_initial', false)->first()
+                ?: StatusOrder::where('is_payment_status', true)->first();
+        }
+        $paidPaymentStatusId = $paidPaymentStatus ? $paidPaymentStatus->id : null;
+
+        $order = Order::create([
             'external_id' => Str::uuid()->toString(),
             'customer' => json_decode( $request->customer ),
             'shipping_address' => $request->input('shipping_address', ''),
             'items' => json_decode( $request->items ),
             'total' => $request->precio_culqi,
             'reference_payment' => 'culqui',
+            'status_order_id' => $initialStatusId,
+            'payment_status_order_id' => $paidPaymentStatusId,
             'purchase' => json_decode($request->purchase)
-
         ]);
-
 
         $customer_email = $request->email;
         $document = new stdClass;
@@ -121,25 +133,11 @@ class CulqiController extends Controller
         $document->total = $request->precio_culqi;
         $document->items = json_decode($request->items, true);
 
-          $email = $customer_email;
-          $mailable = new CulqiEmail($document);
-          $id = (int) $request->id;
-          $model = __FILE__.";;".__LINE__;
-          $sendIt = EmailController::SendMail($email, $mailable, $id, $model);
-          /*
-          Configuration::setConfigSmtpMail();
-          $array_email = explode(',', $customer_email);
-          if (count($array_email) > 1) {
-              foreach ($array_email as $email_to) {
-                  $email_to = trim($email_to);
-                if(!empty($email_to)) {
-                      Mail::to($email_to)->send(new CulqiEmail($document));
-                  }
-              }
-          } else {
-              Mail::to($customer_email)->send(new CulqiEmail($document));
-          }
-          */
+        $email = $customer_email;
+        $mailable = new CulqiEmail($document);
+        $id = (int) $request->id;
+        $model = __FILE__.";;".__LINE__;
+        $sendIt = EmailController::SendMail($email, $mailable, $id, $model);
 
         return [
             'success' => true,
@@ -175,11 +173,6 @@ class CulqiController extends Controller
           ], 400);
       }
 
-
-
-
     }
-
-
 
 }

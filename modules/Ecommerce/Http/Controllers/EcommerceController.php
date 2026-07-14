@@ -867,11 +867,11 @@ class EcommerceController extends Controller
 
                 // Encolar notificación por correo si el estado inicial lo requiere
                 if ($initialOrderStatus && ($initialOrderStatus->action_send_email ?? false)) {
-                    dispatch(new SendOrderStatusEmail(
-                        $order->id,
-                        $initialOrderStatus->id,
-                        $this->buildOrderListUrl()
-                    ));
+                    try {
+                        SendOrderStatusEmail::dispatch($order);
+                    } catch (\Exception $e) {
+                        \Log::error("Error enviando correo de pedido: " . $e->getMessage());
+                    }
                 }
 
                 $customer_email = $user->email;

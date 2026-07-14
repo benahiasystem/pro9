@@ -8,6 +8,7 @@ class PersonTransform
 {
     public static function transform($inputs)
     {
+        $inputs = json_decode(json_encode($inputs), true);
         return [
             'identity_document_type_id' => $inputs['codigo_tipo_documento_identidad'],
             'number' => $inputs['numero_documento'],

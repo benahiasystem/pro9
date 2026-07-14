@@ -915,7 +915,7 @@
     Culqi.publicKey = {!! json_encode($configuration->token_public_culqui ) !!};
     if(!Culqi.publicKey)
     {
-      $('.culqi').hide()
+      jQuery('.culqi').hide()
 /*
         swal({
             title: "Culqi configuración",
@@ -932,7 +932,7 @@
 
     async function askedDocument(order) {
         app_cart.order_generated = order
-        $('#modal_ask_document').modal('show')
+        jQuery('#modal_ask_document').modal('show')
     }
 
     async function execCulqi() {
@@ -944,7 +944,7 @@
     //   console.log( 'errores22', app_cart.errors)
 
 
-        let precio = Math.round((Number($("#total_amount").data('total')) * 100).toFixed(2));
+        let precio = Math.round((Number(jQuery("#total_amount").data('total')) * 100).toFixed(2));
         if (precio > 0) {
             Culqi.settings({
                 title: "Productos Ecommerce",
@@ -969,8 +969,8 @@
                 }
             });
 
-            let precio = Math.round((Number($("#total_amount").data('total')).toFixed(2) * 100));
-            let precio_culqi = Number($("#total_amount").data('total')).toFixed(2);
+            let precio = Math.round((Number(jQuery("#total_amount").data('total')).toFixed(2) * 100));
+            let precio_culqi = Number(jQuery("#total_amount").data('total')).toFixed(2);
 
             var url = "/culqi";
             var token = Culqi.token.id;
@@ -996,11 +996,11 @@
                 shipping_address: formpayment.shipping_address || '',
             }
 
-            $.ajax({
+            jQuery.ajax({
               url: "{{route('tenant_ecommerce_culqui')}}",
               method: 'post',
               headers: {
-                  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                  'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
               },
               data: data,
               dataType: 'JSON',
