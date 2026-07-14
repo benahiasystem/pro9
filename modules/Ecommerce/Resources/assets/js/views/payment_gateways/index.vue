@@ -43,62 +43,66 @@
           </div>
 
           <div class="col-md-12">
-            <div class="form-group" :class="{'has-danger': errors.token_public_culqui}">
-              <label class="control-label">
-                Token Público
-                <el-tooltip placement="right-start">
-                  <div slot="content">
-                    Token Público.
-                    <a href="#" @click="openCulqi">Culqi</a>
-                  </div>
-                  <i class="fa fa-info-circle"></i>
-                </el-tooltip>
-              </label>
-              <el-input v-model="form.token_public_culqui"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.token_public_culqui"
-                v-text="errors.token_public_culqui[0]"
-              ></small>
+            <el-alert title="Configuración de Credenciales" show-icon type="info" class="mb-4" :closable="false">
+              Las credenciales de Izipay, Mercado Pago y Culqi se obtienen automáticamente desde la configuración central (Empresa > Configuración de pagos). 
+              Aquí puedes habilitar cuáles mostrar en la tienda virtual y personalizar su título y descripción.
+            </el-alert>
+          </div>
+
+          <!-- Izipay -->
+          <div class="col-md-6">
+            <div class="form-group form-modern mb-3">
+              <el-switch v-model="form.enable_izipay" :active-value="1" :inactive-value="0"></el-switch>
+              <label class="ms-2 mb-0">Habilitar Izipay en Ecommerce</label>
+            </div>
+            
+            <div v-if="form.enable_izipay === 1" style="animation: fadeIn 0.3s; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 1rem;">
+              <div class="form-group mb-3">
+                <label class="mb-2" style="font-weight: 600;">Título del método</label>
+                <el-input v-model="form.title_izipay" placeholder="Ej: Pago con Tarjeta (Izipay)"></el-input>
+              </div>
+              <div class="form-group mb-0">
+                <label class="mb-2" style="font-weight: 600;">Descripción</label>
+                <el-input type="textarea" :rows="2" v-model="form.description_izipay" placeholder="Texto explicativo para el checkout..."></el-input>
+              </div>
             </div>
           </div>
-          <div class="col-md-12">
-            <div class="form-group" :class="{'has-danger': errors.token_private_culqui}">
-              <label class="control-label">Token Privado  <el-tooltip placement="right-start">
-                  <div slot="content">
-                    Token Privado.
-                    <a href="#" @click="openCulqi">Culqi</a>
-                  </div>
-                  <i class="fa fa-info-circle"></i>
-                </el-tooltip></label>
-              <el-input v-model="form.token_private_culqui"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.token_private_culqui"
-                v-text="errors.token_private_culqui[0]"
-              ></small>
+
+          <!-- Mercado Pago -->
+          <div class="col-md-6">
+            <div class="form-group form-modern mb-3">
+              <el-switch v-model="form.enable_mp" :active-value="1" :inactive-value="0"></el-switch>
+              <label class="ms-2 mb-0">Habilitar Mercado Pago en Ecommerce</label>
+            </div>
+            
+            <div v-if="form.enable_mp === 1" style="animation: fadeIn 0.3s; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 1rem;">
+              <div class="form-group mb-3">
+                <label class="mb-2" style="font-weight: 600;">Título del método</label>
+                <el-input v-model="form.title_mp" placeholder="Ej: Paga con Mercado Pago"></el-input>
+              </div>
+              <div class="form-group mb-0">
+                <label class="mb-2" style="font-weight: 600;">Descripción</label>
+                <el-input type="textarea" :rows="2" v-model="form.description_mp" placeholder="Texto explicativo para el checkout..."></el-input>
+              </div>
             </div>
           </div>
-          <!-- Script Paypal copiado de configuration_paypal -->
-          <div class="col-md-12">
-            <div class="form-group form-modern" :class="{'has-danger': errors.script_paypal}">
-              <label class="control-label">
-                Script Paypal
-                <el-tooltip placement="right-start">
-                  <div slot="content">
-                    Codigo Html Formulario Paypal.
-                    <a href="#" @click="openPaypal">Paypal</a>
-                  </div>
-                  <i class="fa fa-info-circle"></i>
-                </el-tooltip>
-              </label>
-              <br />
-              <el-input type="textarea" :rows="4" v-model="form.script_paypal"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.script_paypal"
-                v-text="errors.script_paypal[0]"
-              ></small>
+
+          <!-- Culqi -->
+          <div class="col-md-6">
+            <div class="form-group form-modern mb-3">
+              <el-switch v-model="form.enable_culqi" :active-value="1" :inactive-value="0"></el-switch>
+              <label class="ms-2 mb-0">Habilitar Culqi en Ecommerce</label>
+            </div>
+            
+            <div v-if="form.enable_culqi === 1" style="animation: fadeIn 0.3s; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 1rem;">
+              <div class="form-group mb-3">
+                <label class="mb-2" style="font-weight: 600;">Título del método</label>
+                <el-input v-model="form.title_culqi" placeholder="Ej: Pago con Tarjeta"></el-input>
+              </div>
+              <div class="form-group mb-0">
+                <label class="mb-2" style="font-weight: 600;">Descripción</label>
+                <el-input type="textarea" :rows="2" v-model="form.description_culqi" placeholder="Texto explicativo para el checkout..."></el-input>
+              </div>
             </div>
           </div>
           
@@ -172,6 +176,19 @@ export default {
         this.form.cash_title = (data.preferences && data.preferences.cash_title) ? data.preferences.cash_title : 'Pago contra entrega';
         this.form.cash_description = (data.preferences && data.preferences.cash_description) ? data.preferences.cash_description : '';
         this.form.cash_pickup_only = (data.preferences && data.preferences.cash_pickup_only) ? 1 : 0;
+        
+        // Custom gateway configurations
+        this.form.enable_izipay = (data.preferences && data.preferences.enable_izipay) ? parseInt(data.preferences.enable_izipay) : 0;
+        this.form.title_izipay = (data.preferences && data.preferences.title_izipay) ? data.preferences.title_izipay : 'Pago con Izipay';
+        this.form.description_izipay = (data.preferences && data.preferences.description_izipay) ? data.preferences.description_izipay : '';
+
+        this.form.enable_mp = (data.preferences && data.preferences.enable_mp) ? parseInt(data.preferences.enable_mp) : 0;
+        this.form.title_mp = (data.preferences && data.preferences.title_mp) ? data.preferences.title_mp : 'Mercado Pago';
+        this.form.description_mp = (data.preferences && data.preferences.description_mp) ? data.preferences.description_mp : '';
+
+        this.form.enable_culqi = (data.preferences && data.preferences.enable_culqi) ? parseInt(data.preferences.enable_culqi) : 0;
+        this.form.title_culqi = (data.preferences && data.preferences.title_culqi) ? data.preferences.title_culqi : 'Pago con Tarjeta (Culqi)';
+        this.form.description_culqi = (data.preferences && data.preferences.description_culqi) ? data.preferences.description_culqi : '';
       }
     });
   },
@@ -198,6 +215,15 @@ export default {
         cash_description: '',
         cash_pickup_only: 0,
         ecommerce_bank_account_ids: [],
+        enable_izipay: 0,
+        title_izipay: 'Pago con Izipay',
+        description_izipay: '',
+        enable_mp: 0,
+        title_mp: 'Mercado Pago',
+        description_mp: '',
+        enable_culqi: 0,
+        title_culqi: 'Pago con Tarjeta (Culqi)',
+        description_culqi: '',
       };
     },
     submit() {

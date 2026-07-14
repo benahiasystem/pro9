@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b63f9a6088979e4daea42914f71f5c5e",
+    "content-hash": "133f6959a40f9aa6f421b89a65a515f9",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -4362,16 +4362,16 @@
         },
         {
             "name": "mercadopago/dx-php",
-            "version": "2.6.2",
+            "version": "2.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/mercadopago/sdk-php.git",
-                "reference": "f5f97bd96dfcb3bafdfba634b3bc757025238caa"
+                "reference": "be9cf1cb29f1a78f9dc15f5548f47af6a9a897e4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mercadopago/sdk-php/zipball/f5f97bd96dfcb3bafdfba634b3bc757025238caa",
-                "reference": "f5f97bd96dfcb3bafdfba634b3bc757025238caa",
+                "url": "https://api.github.com/repos/mercadopago/sdk-php/zipball/be9cf1cb29f1a78f9dc15f5548f47af6a9a897e4",
+                "reference": "be9cf1cb29f1a78f9dc15f5548f47af6a9a897e4",
                 "shasum": ""
             },
             "require": {
@@ -4407,9 +4407,9 @@
             "description": "Mercado Pago PHP SDK",
             "homepage": "https://github.com/mercadopago/sdk-php",
             "support": {
-                "source": "https://github.com/mercadopago/sdk-php/tree/2.6.2"
+                "source": "https://github.com/mercadopago/sdk-php/tree/2.6.0"
             },
-            "time": "2024-02-05T19:41:32+00:00"
+            "time": "2023-08-03T17:33:17+00:00"
         },
         {
             "name": "mobiledetect/mobiledetectlib",
@@ -12662,5 +12662,5 @@
     "prefer-lowest": false,
     "platform": {},
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

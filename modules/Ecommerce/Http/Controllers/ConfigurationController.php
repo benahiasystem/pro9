@@ -95,6 +95,19 @@ class ConfigurationController extends Controller
         $preferences['cash_description'] = $request->input('cash_description', null);
         $preferences['cash_pickup_only'] = $request->input('cash_pickup_only', 0) ? true : false;
         
+        // Custom gateway configurations
+        $preferences['enable_izipay'] = $request->input('enable_izipay', 0);
+        $preferences['title_izipay'] = $request->input('title_izipay', 'Pago con Izipay');
+        $preferences['description_izipay'] = $request->input('description_izipay', null);
+
+        $preferences['enable_mp'] = $request->input('enable_mp', 0);
+        $preferences['title_mp'] = $request->input('title_mp', 'Mercado Pago');
+        $preferences['description_mp'] = $request->input('description_mp', null);
+
+        $preferences['enable_culqi'] = $request->input('enable_culqi', 0);
+        $preferences['title_culqi'] = $request->input('title_culqi', 'Pago con Tarjeta');
+        $preferences['description_culqi'] = $request->input('description_culqi', null);
+
         $configuration->fill($request->all());
         $configuration->preferences = $preferences;
         $configuration->save();

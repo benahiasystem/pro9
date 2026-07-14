@@ -44,6 +44,9 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
     Route::post('culqi', 'CulqiController@payment')->name('tenant_ecommerce_culqui');
     Route::post('transaction_finally', 'EcommerceController@transactionFinally')->name('tenant_ecommerce_transaction_finally');
     Route::post('payment_cash', 'EcommerceController@paymentCash')->name('tenant_ecommerce_payment_cash');
+    Route::post('mercadopago/payment', 'EcommerceController@paymentMercadoPago')->name('tenant_ecommerce_mp');
+    Route::post('izipay/payment', 'EcommerceController@paymentIzipay')->name('tenant_ecommerce_izipay');
+    Route::post('izipay/transaction', 'EcommerceController@transactionIzipay')->name('tenant_ecommerce_izipay_transaction');
     Route::post('validate-coupon', 'EcommerceController@validateCoupon')->name('tenant_ecommerce_validate_coupon');
     Route::post('apply-coupon', 'EcommerceController@applyCoupon')->name('tenant_ecommerce_apply_coupon');
 
