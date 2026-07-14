@@ -78,11 +78,26 @@ class CulqiController extends Controller
               )
         );
 
-        // Validar si Culqi responde con éxito a nivel de conexión pero el estado no es exitoso
-        if (isset($charge->outcome) && $charge->outcome->type !== 'venta_exitosa') {
+        $chargeObj = $charge;
+        if (is_string($charge)) {
+            $chargeObj = json_decode($charge);
+        } elseif (is_array($charge)) {
+            $chargeObj = json_decode(json_encode($charge));
+        }
+
+        // Validar si Culqi devuelve explícitamente un objeto de error (tarjeta rechazada)
+        if (isset($chargeObj->object) && $chargeObj->object === 'error') {
             return response()->json([
                 'success' => false,
-                'message' => $charge->outcome->user_message ?? 'Su tarjeta fue rechazada. Por favor, intente con otra.'
+                'message' => $chargeObj->user_message ?? 'Su tarjeta fue rechazada. Por favor, intente con otra.'
+            ], 422);
+        }
+
+        // Validar si Culqi responde con éxito a nivel de conexión pero el estado no es exitoso
+        if (isset($chargeObj->outcome) && $chargeObj->outcome->type !== 'venta_exitosa') {
+            return response()->json([
+                'success' => false,
+                'message' => $chargeObj->outcome->user_message ?? 'Su tarjeta fue rechazada. Por favor, intente con otra.'
             ], 422);
         }
 
@@ -144,11 +159,19 @@ class CulqiController extends Controller
               'message' => $message
           ], 422);
       }
-      catch (Exception $e)
+      catch (\Exception $e)
       {
+          $message = 'Ocurrió un error al procesar el pago: ' . $e->getMessage();
+          $error = json_decode($e->getMessage());
+          if ($error && isset($error->user_message)) {
+              return response()->json([
+                  'success' => false,
+                  'message' => $error->user_message
+              ], 422);
+          }
           return response()->json([
               'success' => false,
-              'message' => 'Ocurrió un error al procesar el pago: ' . $e->getMessage()
+              'message' => $message
           ], 400);
       }
 
