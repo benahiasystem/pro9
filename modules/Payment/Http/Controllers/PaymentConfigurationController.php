@@ -70,8 +70,7 @@ class PaymentConfigurationController extends Controller
         $record->enabled_mp = $request->enabled_mp;
         $record->public_key_mp = $request->public_key_mp;
 
-        if($request->access_token_mp)
-        {
+        if ($request->filled('access_token_mp')) {
             $record->access_token_mp = $request->access_token_mp;
         }
 

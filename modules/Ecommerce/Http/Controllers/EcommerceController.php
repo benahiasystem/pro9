@@ -343,7 +343,32 @@ class EcommerceController extends Controller
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
             : [];
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer'));
+        $payment_configuration = \Modules\Payment\Models\PaymentConfiguration::first();
+
+        // Obtener solo las cuentas que el administrador haya habilitado para el E-commerce
+        $preferences = $configuration->preferences ?: [];
+
+        // Validación estricta: Si el switch de Ecommerce está apagado, forzamos false en las credenciales
+        // en memoria para asegurarnos que la vista no intente inyectar scripts de pasarelas no autorizadas.
+        if (!($preferences['enable_izipay'] ?? false)) {
+            $payment_configuration->enabled_izipay = false;
+        }
+        if (!($preferences['enable_mp'] ?? false)) {
+            $payment_configuration->enabled_mp = false;
+        }
+        if (!($preferences['enable_culqi'] ?? false)) {
+            $payment_configuration->enabled_culqi = false;
+        }
+
+        $ecommerce_bank_account_ids = $preferences['ecommerce_bank_account_ids'] ?? [];
+
+        if (count($ecommerce_bank_account_ids) > 0) {
+            $bank_accounts = \App\Models\Tenant\BankAccount::whereIn('id', $ecommerce_bank_account_ids)->get();
+        } else {
+            $bank_accounts = collect(); // Por seguridad, si no selecciona ninguna, no se muestran
+        }
+
+        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'bank_accounts', 'preferences'));
     }
 
     public function orderList()
@@ -868,9 +893,9 @@ class EcommerceController extends Controller
                 // Encolar notificación por correo si el estado inicial lo requiere
                 if ($initialOrderStatus && ($initialOrderStatus->action_send_email ?? false)) {
                     try {
-                        SendOrderStatusEmail::dispatch($order);
-                    } catch (\Exception $e) {
-                        \Log::error("Error enviando correo de pedido: " . $e->getMessage());
+                        dispatch(new SendOrderStatusEmail($order->id, $initialOrderStatus->id, $this->buildOrderListUrl()));
+                    } catch (\Throwable $e) {
+                        \Log::error('Failed to dispatch SendOrderStatusEmail on order creation: '.$e->getMessage());
                     }
                 }
 
@@ -1310,5 +1335,82 @@ class EcommerceController extends Controller
             'found' => true,
             'zones' => $zones,
         ]);
+    }
+
+    public function paymentIzipay(Request $request)
+    {
+        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array)$request->customer;
+
+        $order = Order::create([
+            'external_id' => Str::uuid()->toString(),
+            'customer' => $customer,
+            'shipping_address' => $request->input('shipping_address', ''),
+            'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
+            'total' => $request->precio_culqi,
+            'reference_payment' => 'izipay',
+            'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase
+        ]);
+
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'amount' => round((float)$request->precio_culqi * 100),
+            'currency' => 'PEN',
+            'orderId' => $order->external_id,
+            'customer' => [
+                'email' => $customer['correo_electronico'] ?? null,
+                'billingDetails' => [
+                    'firstName' => $customer['apellidos_y_nombres_o_razon_social'] ?? null,
+                    'phoneNumber' => $customer['telefono'] ?? null,
+                ]
+            ]
+        ]);
+        
+        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $izipayController->izipayCreatePayment($paymentReq);
+        
+        return [
+            'success' => $result['success'],
+            'formToken' => $result['formToken'] ?? null,
+            'order' => $order
+        ];
+    }
+
+    public function transactionIzipay(Request $request)
+    {
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'uuid' => $request->uuid
+        ]);
+        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $izipayController->izipayTransaction($paymentReq);
+        return $result;
+    }
+
+    public function paymentMercadoPago(Request $request)
+    {
+        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array)$request->customer;
+
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'form_data' => $request->form_data, 
+        ]);
+        
+        $mpController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $mpController->mercadoPagoCreatePayment($paymentReq);
+        
+        if (!empty($result['paid']) || !empty($result['pending'])) {
+            $order = Order::create([
+                'external_id' => Str::uuid()->toString(),
+                'customer' => $customer,
+                'shipping_address' => $request->input('shipping_address', ''),
+                'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
+                'total' => $request->precio_culqi,
+                'reference_payment' => 'mp',
+                'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase
+            ]);
+            $result['order'] = $order;
+        }
+        
+        return $result;
     }
 }

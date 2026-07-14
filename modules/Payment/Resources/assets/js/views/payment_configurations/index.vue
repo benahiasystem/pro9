@@ -105,7 +105,12 @@
                                             <i class="fa fa-info-circle"></i>
                                         </el-tooltip>
                                     </label>
-                                    <el-input v-model="form.access_token_mp" show-password></el-input>
+                                    <el-input
+                                        v-model="form.access_token_mp"
+                                        show-password
+                                        autocomplete="new-password"
+                                        :placeholder="form.has_access_token_mp ? 'Token configurado (ingrese uno nuevo para cambiarlo)' : ''"
+                                    ></el-input>
                                     <small class="form-control-feedback" v-if="errors.access_token_mp" v-text="errors.access_token_mp[0]"></small>
                                 </div>
                             </div>
@@ -265,10 +270,22 @@
             submit(){
 
                 this.loading_submit = true
-                this.$http.post(`/${this.resource}`, this.form)
+
+                const payload = { ...this.form }
+
+                if (payload.type === '02' && this.form.has_access_token_mp && !payload.access_token_mp) {
+                    delete payload.access_token_mp
+                }
+
+                this.$http.post(`/${this.resource}`, payload)
                     .then(response => {
                         if (response.data.success) {
                             this.$message.success(response.data.message)
+
+                            if (this.form.type === '02' && this.form.access_token_mp) {
+                                this.form.has_access_token_mp = true
+                                this.form.access_token_mp = null
+                            }
                         } else {
                             this.$message.error(response.data.message)
                         }
@@ -312,6 +329,7 @@
                     enabled_mp : false,
                     access_token_mp: null,
                     public_key_mp: null,
+                    has_access_token_mp: false,
                 }
 
                 this.errors = {}
@@ -320,8 +338,14 @@
             async getData() {
                 await this.$http.get(`/${this.resource}/record`)
                     .then(response => {
-                        this.form = response.data.data
-                        this.form.type = '01'
+                        const data = response.data.data
+
+                        this.form = {
+                            ...data,
+                            type: '01',
+                            access_token_mp: null,
+                            has_access_token_mp: !!data.has_access_token_mp,
+                        }
                     })
             }, 
         }

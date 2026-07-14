@@ -79,6 +79,7 @@ var app_cart = new Vue({
         userDefaultAddress: window.__ecommerce_config?.userAddress || null,
         // Método de pago seleccionado: 'culqi' | 'cash' | null
         selectedPaymentMethod: null,
+
         // Controla si se emiten documentos electrónicos (factura/boleta) o solo notas de venta
         enable_electronic_documents: window.__ecommerce_config?.enable_electronic_documents || false,
         // Recojo en tienda
@@ -87,13 +88,34 @@ var app_cart = new Vue({
         selectedPickupBranch: null,
         isPickupMode: false,
         // Métodos de pago adicionales
+        enableCash: window.__ecommerce_config?.enable_cash || false,
+        cashPaymentTitle: window.__ecommerce_config?.cash_payment_title || 'Pago contra entrega',
+        cashPaymentDescription: window.__ecommerce_config?.cash_payment_description || '',
+        cashPaymentPickupOnly: window.__ecommerce_config?.cash_payment_pickup_only || false,
         enableYape: window.__ecommerce_config?.enable_yape || false,
         enableTransfer: window.__ecommerce_config?.enable_transfer || false,
+        
+        enableIzipay: window.__ecommerce_config?.enable_izipay || false,
+        titleIzipay: window.__ecommerce_config?.title_izipay || 'Pago con Izipay',
+        descriptionIzipay: window.__ecommerce_config?.description_izipay || '',
+        
+        enableMp: window.__ecommerce_config?.enable_mp || false,
+        titleMp: window.__ecommerce_config?.title_mp || 'Mercado Pago',
+        descriptionMp: window.__ecommerce_config?.description_mp || '',
+        
+        enableCulqi: window.__ecommerce_config?.enable_culqi || false,
+        titleCulqi: window.__ecommerce_config?.title_culqi || 'Tarjeta (VISA)',
+        descriptionCulqi: window.__ecommerce_config?.description_culqi || '',
+
         acceptedTerms: false,
         successOrder: null,
         showConfirmModal: false,
         processingPayment: false,
         thankYouUrl: null,
+        
+        mpScriptLoaded: false,
+        mpBrickController: null,
+        krScriptLoaded: false,
     },
     computed: {
         maxLength: function () {
@@ -128,6 +150,13 @@ var app_cart = new Vue({
             // Mostrar u ocultar el widget de PayPal que está fuera del scope de Vue
             const el = document.getElementById('paypal-widget-container');
             if (el) el.style.display = (val === 'paypal') ? 'block' : 'none';
+        },
+        isPickupMode(val) {
+            // Si el método Pago contra entrega solo aplica para recojo y se cambia a delivery,
+            // deseleccionar el método si estaba activo
+            if (!val && this.cashPaymentPickupOnly && this.selectedPaymentMethod === 'cash') {
+                this.selectedPaymentMethod = null;
+            }
         }
     },
     async mounted() {
@@ -427,6 +456,42 @@ var app_cart = new Vue({
         saveCartToLocalStorage() {
             localStorage.setItem('products_cart', JSON.stringify(this.records));
         },
+        copyToClipboard(textToCopy) {
+            if (window.isSecureContext && navigator.clipboard) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    this.showSwalMessage('¡Copiado!', 'El número ha sido copiado al portapapeles.', 'success')
+                }, () => {
+                    this.fallbackCopyTextToClipboard(textToCopy);
+                });
+            } else {
+                this.fallbackCopyTextToClipboard(textToCopy);
+            }
+        },
+        fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+                if(successful) {
+                    this.showSwalMessage('¡Copiado!', 'El número ha sido copiado al portapapeles.', 'success')
+                } else {
+                    this.showSwalMessage('Error', 'No se pudo copiar el número.', 'error')
+                }
+            } catch (err) {
+                this.showSwalMessage('Error', 'No se pudo copiar el número.', 'error')
+            }
+            document.body.removeChild(textArea);
+        },
         async changeExchangeRate(exchange_rate_date){
             var response = await axios.get(`/exchange_rate/ecommence/${exchange_rate_date}`)
             this.exchange_rate_sale = parseFloat(response.data.sale)
@@ -500,6 +565,8 @@ var app_cart = new Vue({
                 transfer: 'transferencia',
                 culqi:    'culqi',
                 paypal:   'paypal',
+                izipay:   'izipay',
+                mp:       'mp',
             };
             return map[this.selectedPaymentMethod] || 'efectivo';
         },
@@ -512,7 +579,11 @@ var app_cart = new Vue({
         },
         executePayment() {
             if (this.selectedPaymentMethod === 'culqi') {
-                execCulqi();
+                if (typeof execCulqi === 'function') execCulqi();
+            } else if (this.selectedPaymentMethod === 'izipay') {
+                this.execIzipay();
+            } else if (this.selectedPaymentMethod === 'mp') {
+                this.execMp();
             } else if (['cash', 'yape', 'transfer'].includes(this.selectedPaymentMethod)) {
                 this.paymentCash();
             }
@@ -555,12 +626,215 @@ var app_cart = new Vue({
                 }).catch(error => {
                     this.processingPayment = false
                     swal("Pago No realizado", 'Sucedió algo inesperado.', "error");
-                    if (error.response.status === 422) {
+                    if (error.response && error.response.status === 422) {
                         this.errors = error.response.data;
                     } else {
                         console.log(error);
                     }
                 });
+        },
+        async loadMpScript() {
+            if (window.MercadoPago) {
+                this.mpScriptLoaded = true;
+                return;
+            }
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://sdk.mercadopago.com/js/v2';
+                script.async = true;
+                script.onload = () => { this.mpScriptLoaded = true; resolve(); };
+                script.onerror = () => { this.showSwalMessage('Error', 'No se pudo cargar MercadoPago', 'error'); reject(); };
+                document.head.appendChild(script);
+            });
+        },
+        async execMp() {
+            if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
+                return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
+            }
+            if (this.records.length < 1){
+                return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
+            }
+            
+            this.processingPayment = true;
+            try {
+                await this.loadMpScript();
+                const publicKey = window.__ecommerce_config?.public_key_mp || '';
+                const mp = new window.MercadoPago(publicKey, { locale: 'es-PE' });
+                const bricksBuilder = mp.bricks();
+                
+                // Limpiar container previo si existe
+                if (this.mpBrickController) {
+                    this.mpBrickController.unmount();
+                }
+
+                // Generamos los datos preliminares de formulario para luego crear la orden
+                const rawFormData = await this.getFormPaymentCash();
+
+                const settings = {
+                    initialization: {
+                        amount: Number(rawFormData.precio_culqi).toFixed(2),
+                        payer: { email: rawFormData.customer.correo_electronico || '' },
+                    },
+                    customization: {
+                        visual: { style: { theme: 'default' } },
+                        paymentMethods: { creditCard: 'all', debitCard: 'all' },
+                    },
+                    callbacks: {
+                        onReady: () => {
+                            this.processingPayment = false;
+                            $('#mp-modal').modal('show'); // asumiendo que abriremos el container en un modal o está en el DOM
+                        },
+                        onSubmit: (formDataRecv) => {
+                            return new Promise((resolve, reject) => {
+                                swal({ title: "Estamos hablando con MercadoPago", text: "Procesando pago...", onOpen: () => { Swal.showLoading() } });
+                                
+                                const payload = { ...rawFormData, form_data: formDataRecv.formData };
+                                axios.post(window.__routes?.mercadopago_payment || '/ecommerce/mercadopago/payment', payload, this.getHeaderConfig())
+                                .then(response => {
+                                    if(response.data.success) {
+                                        swal.close();
+                                        $('#mp-modal').modal('hide');
+                                        this.saveContactDataUser();
+                                        this.showPurchaseSuccess(response.data.order);
+                                        resolve();
+                                    } else {
+                                        swal("Pago Rechazado", response.data.message || 'No se pudo procesar el pago.', "error");
+                                        reject();
+                                    }
+                                }).catch(err => {
+                                    swal("Pago Fallido", 'Ocurrió un error con la pasarela.', "error");
+                                    console.log(err);
+                                    reject();
+                                });
+                            });
+                        },
+                        onError: (error) => {
+                            console.error(error);
+                            this.showSwalMessage('Error', 'Ocurrió un problema con el formulario de pago.', 'error');
+                        },
+                    },
+                };
+                
+                // Necesitamos tener un wrapper visible, abrimos un sweetalert o modal
+                swal({
+                    title: 'Pago Seguro con Mercado Pago',
+                    html: '<div id="mp-swal-container" style="min-height: 300px;"></div>',
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    onOpen: async () => {
+                        this.mpBrickController = await bricksBuilder.create('payment', 'mp-swal-container', settings);
+                    },
+                    onClose: () => {
+                        if (this.mpBrickController) this.mpBrickController.unmount();
+                    }
+                });
+
+            } catch (err) {
+                this.processingPayment = false;
+                console.error(err);
+            }
+        },
+        async loadIzipaySDK() {
+            if (window.KR) {
+                this.krScriptLoaded = true;
+                return;
+            }
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js';
+                script.setAttribute('kr-public-key', window.__ecommerce_config?.public_key_izipay || '');
+                script.setAttribute('kr-popin', true);
+                script.setAttribute('kr-language', 'es-Es');
+                script.setAttribute('kr-no-pay-button', true);
+                
+                const style = document.createElement('link');
+                style.rel = 'stylesheet';
+                style.href = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css';
+                document.head.appendChild(style);
+                
+                const extScript = document.createElement('script');
+                extScript.src = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js';
+                document.head.appendChild(extScript);
+
+                document.head.appendChild(script);
+
+                const check = setInterval(() => {
+                    if (window.KR) {
+                        clearInterval(check);
+                        this.krScriptLoaded = true;
+                        resolve();
+                    }
+                }, 100);
+            });
+        },
+        async execIzipay() {
+            if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
+                return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
+            }
+            if (this.records.length < 1){
+                return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
+            }
+            
+            this.processingPayment = true;
+            try {
+                await this.loadIzipaySDK();
+                const rawFormData = await this.getFormPaymentCash();
+                
+                swal({ title: "Iniciando pago...", text: "Cargando conectividad con el banco", onOpen: () => { Swal.showLoading() } });
+
+                // 1. Get formToken from Backend
+                const response = await axios.post(window.__routes?.izipay_payment || '/ecommerce/izipay/payment', rawFormData, this.getHeaderConfig());
+                if(response.data.success && response.data.formToken) {
+                    swal.close();
+                    
+                    let container = document.querySelector('.kr-izipay-container-inner');
+                    container.innerHTML = '';
+                    let embedded = document.createElement('div');
+                    embedded.classList.add('kr-embedded');
+                    embedded.style.display = 'none';
+                    container.appendChild(embedded);
+
+                    await window.KR.setFormConfig({
+                        formToken: response.data.formToken,
+                        'kr-no-pay-button': true
+                    });
+                    
+                    // Setup callback
+                    window.KR.onSubmit(async (paymentResponse) => {
+                        const uuid = paymentResponse.clientAnswer.transactions[0].uuid;
+                        swal({ title: "Verificando...", text: "Validando la transacción...", onOpen: () => { Swal.showLoading() } });
+                        
+                        axios.post(window.__routes?.izipay_transaction || '/ecommerce/izipay/transaction', { uuid: uuid }, this.getHeaderConfig())
+                        .then(res => {
+                            if(res.data.success && res.data.paid) {
+                                swal.close();
+                                window.KR.closePopin();
+                                this.saveContactDataUser();
+                                this.showPurchaseSuccess(response.data.order);
+                            } else {
+                                swal("Pago Rechazado", "Su pago no fue aprobado o fue denegado", "error");
+                            }
+                        }).catch(err => {
+                            swal("Error", "Sucedió un error al verificar la transacción", "error");
+                        });
+                    });
+
+                    window.KR.openPopin();
+                    this.processingPayment = false;
+                } else {
+                    this.processingPayment = false;
+                    swal("Error", "No se pudo comunicar con Izipay", "error");
+                }
+            } catch (err) {
+                this.processingPayment = false;
+                console.error(err);
+                if (err.response && err.response.status === 422) {
+                    this.errors = err.response.data;
+                    swal("Error", "Revise los campos", "error");
+                } else {
+                    swal("Error", "Error al procesar", "error");
+                }
+            }
         },
         redirectHome() {
             window.location = window.__routes?.home || "/ecommerce";
@@ -569,7 +843,8 @@ var app_cart = new Vue({
         buildSuccessOrder(order) {
             const paymentLabels = {
                 cash: 'Efectivo', yape: 'Yape', transfer: 'Transferencia',
-                culqi: 'Tarjeta (VISA)', paypal: 'PayPal'
+                culqi: this.titleCulqi || 'Tarjeta (VISA)', paypal: 'PayPal',
+                izipay: this.titleIzipay || 'Izipay', mp: this.titleMp || 'Mercado Pago'
             };
             const deliveryLabel = (this.isPickupMode && this.selectedPickupBranch)
                 ? 'Recojo en tienda — ' + this.selectedPickupBranch.name

@@ -497,11 +497,13 @@
                         @guest('ecommerce')
                             <span class="head-summary-warn">Inicia sesión</span>
                         @else
-                            <b v-if="selectedPaymentMethod === 'culqi'">Tarjeta (VISA)</b>
-                            <b v-else-if="selectedPaymentMethod === 'cash'">Efectivo</b>
+                            <b v-if="selectedPaymentMethod === 'culqi'">@{{ titleCulqi }}</b>
+                            <b v-else-if="selectedPaymentMethod === 'cash'">@{{ cashPaymentTitle }}</b>
                             <b v-else-if="selectedPaymentMethod === 'yape'">Yape</b>
                             <b v-else-if="selectedPaymentMethod === 'transfer'">Transferencia</b>
                             <b v-else-if="selectedPaymentMethod === 'paypal'">PayPal</b>
+                            <b v-else-if="selectedPaymentMethod === 'mp'">@{{ titleMp }}</b>
+                            <b v-else-if="selectedPaymentMethod === 'izipay'">@{{ titleIzipay }}</b>
                             <span v-else class="head-summary-warn">Elige un método</span>
                         @endguest
                     </span>
@@ -519,20 +521,52 @@
                     </div>
                     @elseauth('ecommerce')
                     <div class="pay-methods" role="radiogroup">
-                        <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
+                        
+                        <label v-if="enableCulqi" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="culqi" autocomplete="off">
                             <span class="pay-method-ic">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                             </span>
-                            <span class="pay-method-label">Pagar con tarjeta (VISA)</span>
+                            <span class="pay-method-label">@{{ titleCulqi }}</span>
                         </label>
-                        <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
+                        <div v-if="selectedPaymentMethod === 'culqi' && descriptionCulqi" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 0px;" style="white-space: pre-line;">@{{ descriptionCulqi }}</p>
+                        </div>
+
+                        <label v-if="enableIzipay" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'izipay' }">
+                            <input type="radio" v-model="selectedPaymentMethod" value="izipay" autocomplete="off">
+                            <span class="pay-method-ic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2M4 14v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                            </span>
+                            <span class="pay-method-label">@{{ titleIzipay }}</span>
+                        </label>
+                        <div v-if="selectedPaymentMethod === 'izipay' && descriptionIzipay" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 0px;" style="white-space: pre-line;">@{{ descriptionIzipay }}</p>
+                        </div>
+
+                        <label v-if="enableMp" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'mp' }">
+                            <input type="radio" v-model="selectedPaymentMethod" value="mp" autocomplete="off">
+                            <span class="pay-method-ic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            </span>
+                            <span class="pay-method-label">@{{ titleMp }}</span>
+                        </label>
+                        <div v-if="selectedPaymentMethod === 'mp' && descriptionMp" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 0px;" style="white-space: pre-line;">@{{ descriptionMp }}</p>
+                        </div>
+
+                        <label v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="cash" autocomplete="off">
                             <span class="pay-method-ic">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
                             </span>
-                            <span class="pay-method-label">Pagar con efectivo</span>
+                            <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
+                        
+                        <!-- Bloque dinámico para Efectivo -->
+                        <div v-if="selectedPaymentMethod === 'cash' && cashPaymentDescription" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 0px;" style="white-space: pre-line;">@{{ cashPaymentDescription }}</p>
+                        </div>
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="yape" autocomplete="off">
                             <span class="pay-method-ic">
@@ -540,6 +574,24 @@
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
+                        
+                        <!-- Bloque dinámico para Yape -->
+                        <div v-if="selectedPaymentMethod === 'yape'" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Escanea el código QR desde tu app de Yape.</p>
+                            @if(!empty($payment_configuration->image_url_yape))
+                            <div style="text-align: center; margin-bottom: 15px;">
+                                <img src="{{ $payment_configuration->image_url_yape }}" alt="QR Yape" style="max-width: 150px; border-radius: 8px; border: 1px solid #eee;">
+                            </div>
+                            @endif
+                            <div style="font-size: 14px; text-align: center; margin-bottom: 10px;">
+                                <strong>Titular:</strong> {{ $payment_configuration->name_yape ?? 'No registrado' }}<br>
+                                <strong>Teléfono:</strong> <span>{{ $payment_configuration->telephone_yape ?? 'No registrado' }}</span>
+                                <button type="button" @click.prevent="copyToClipboard('{{ $payment_configuration->telephone_yape ?? '' }}')" class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">
+                                    Copiar
+                                </button>
+                            </div>
+                        </div>
+
                         <label v-if="enableTransfer" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'transfer' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="transfer" autocomplete="off">
                             <span class="pay-method-ic">
@@ -547,6 +599,26 @@
                             </span>
                             <span class="pay-method-label">Transferencia bancaria</span>
                         </label>
+                        
+                        <!-- Bloque de cuentas bancarias -->
+                        <div v-if="selectedPaymentMethod === 'transfer'" style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; background: #fafafa;">
+                            <p style="font-size: 13px; color: #555; margin-bottom: 10px;">Realiza el depósito en alguna de nuestras cuentas bancarias y envíanos el voucher por WhatsApp.</p>
+                            @if(isset($bank_accounts) && count($bank_accounts) > 0)
+                                <ul style="list-style: none; padding-left: 0; font-size: 13px;">
+                                @foreach($bank_accounts as $account)
+                                    <li style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+                                        <strong>Banco:</strong> {{ $account->bank->description }} ({{ $account->currency_type->symbol }})<br>
+                                        <strong>Cuenta:</strong> {{ $account->number }}<br>
+                                        @if($account->cci)
+                                        <strong>CCI:</strong> {{ $account->cci }}
+                                        @endif
+                                    </li>
+                                @endforeach
+                                </ul>
+                            @else
+                                <p style="font-size: 13px; font-weight: bold; color: #d9534f;">No hay cuentas bancarias configuradas.</p>
+                            @endif
+                        </div>
                         @if($information->script_paypal)
                         <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'paypal' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="paypal" autocomplete="off">
@@ -620,9 +692,10 @@
                 </label>
                 <div class="checkout-methods">
                     @guest('ecommerce')
-                    <a href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">Pagar con VISA</a>
-                    <a href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">Pagar con efectivo</a>
-
+                    <a v-if="enableCulqi" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleCulqi }}</a>
+                    <a v-if="enableIzipay" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleIzipay }}</a>
+                    <a v-if="enableMp" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleMp }}</a>
+                    <a v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">@{{ cashPaymentTitle }}</a>
                     @elseauth('ecommerce')
                         <button v-if="selectedPaymentMethod !== 'paypal'" class="pay-btn" :class="{ disabled: !acceptedTerms }" :disabled="!selectedPaymentMethod || !acceptedTerms" @click="executePayment">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
@@ -825,6 +898,10 @@
 </div>
 @endif
 
+<!-- DOM Containers for MP and Izipay -->
+<div id="mp-brick-container" style="display:none"></div>
+<div class="kr-izipay-container-inner" style="display:none"></div>
+
 <input type="hidden" id="total_amount" data-total="0.0">
 
 @endsection
@@ -842,6 +919,21 @@
         pickup_branches: {!! json_encode($pickup_branches ?? []) !!},
         enable_yape: {!! json_encode($enable_yape ?? false) !!},
         enable_transfer: {!! json_encode($enable_transfer ?? false) !!},
+        enable_cash: {!! json_encode(isset($configuration->preferences['enable_cash']) && $configuration->preferences['enable_cash'] == 1) !!},
+        cash_payment_title: {!! json_encode($configuration->preferences['cash_title'] ?? 'Pago contra entrega') !!},
+        cash_payment_description: {!! json_encode($configuration->preferences['cash_description'] ?? '') !!},
+        cash_payment_pickup_only: {!! json_encode(isset($configuration->preferences['cash_pickup_only']) && $configuration->preferences['cash_pickup_only'] == 1) !!},
+        enable_izipay: {!! json_encode($payment_configuration->enabled_izipay ?? false) !!},
+        public_key_izipay: {!! json_encode($payment_configuration->publickey_izipay ?? '') !!},
+        title_izipay: {!! json_encode($preferences['title_izipay'] ?? 'Pago con Izipay') !!},
+        description_izipay: {!! json_encode($preferences['description_izipay'] ?? '') !!},
+        enable_mp: {!! json_encode($payment_configuration->enabled_mp ?? false) !!},
+        public_key_mp: {!! json_encode($payment_configuration->public_key_mp ?? '') !!},
+        title_mp: {!! json_encode($preferences['title_mp'] ?? 'Mercado Pago') !!},
+        description_mp: {!! json_encode($preferences['description_mp'] ?? '') !!},
+        enable_culqi: {!! json_encode($payment_configuration->enabled_culqi ?? false) !!},
+        title_culqi: {!! json_encode($preferences['title_culqi'] ?? 'Pago con Tarjeta (Culqi)') !!},
+        description_culqi: {!! json_encode($preferences['description_culqi'] ?? '') !!},
     };
 
     window.__routes = {
@@ -850,6 +942,9 @@
         locations: '{{ route("get_location_cascade") }}',
         home: '{{ route("tenant.ecommerce.index") }}',
         culqi: '{{ route("tenant_ecommerce_culqui") }}',
+        izipay_payment: '{{ route("tenant_ecommerce_izipay") }}',
+        izipay_transaction: '{{ route("tenant_ecommerce_izipay_transaction") }}',
+        mercadopago_payment: '{{ route("tenant_ecommerce_mp") }}',
         thank_you: '{{ route("tenant_ecommerce_thank_you", ["external_id" => "EXTERNAL_ID"]) }}',
     };
 </script>
@@ -912,62 +1007,7 @@
 @vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
 
 <script>
-    // Globales requeridos por Culqi v3 (evitan ReferenceError en consola)
-    window.closeCheckout = function () {
-        console.log('El usuario cerró el modal de Culqi.');
-        if (typeof app_cart !== 'undefined') {
-            app_cart.processingPayment = false;
-        }
-    };
-
-    window.mostrarMensaje = function (mensaje, tipo) {
-        tipo = tipo || 'error';
-        console.error('[Culqi]: ' + mensaje);
-
-        if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
-            Swal.fire({
-                icon: tipo,
-                title: tipo === 'error' ? 'Hubo un inconveniente' : 'Información',
-                text: mensaje,
-                confirmButtonColor: '#3085d6'
-            });
-        } else if (typeof swal === 'function') {
-            swal({
-                title: tipo === 'error' ? 'Hubo un inconveniente' : 'Información',
-                text: mensaje,
-                type: tipo,
-                icon: tipo
-            });
-        } else {
-            alert(mensaje);
-        }
-    };
-
-    function getCulqiErrorMessage(error) {
-        if (!error) {
-            return 'El pago fue cancelado o no se pudo completar.';
-        }
-
-        var code = String(error.code || error.type || '').toLowerCase();
-        var raw = String(
-            error.user_message || error.merchant_message || error.message || ''
-        ).toLowerCase();
-
-        var isEncryptError = code.indexOf('encrypt') !== -1
-            || raw.indexOf('encript') !== -1
-            || raw.indexOf('encrypt') !== -1;
-
-        if (isEncryptError || !window.isSecureContext) {
-            return 'El pago con tarjeta requiere HTTPS. En local usa https://local.pro9.test (habilita SSL en Laragon) o prueba desde un entorno seguro.';
-        }
-
-        return error.user_message
-            || error.merchant_message
-            || error.message
-            || 'No se pudo procesar el pago. Intente nuevamente.';
-    }
-
-    Culqi.publicKey = {!! json_encode($configuration->token_public_culqui ) !!};
+    Culqi.publicKey = {!! json_encode($payment_configuration->publickey_culqi ?? '') !!};
     if(!Culqi.publicKey)
     {
       jQuery('.culqi').hide()
