@@ -78,6 +78,14 @@ class CulqiController extends Controller
               )
         );
 
+        // Validar si Culqi responde con éxito a nivel de conexión pero el estado no es exitoso
+        if (isset($charge->outcome) && $charge->outcome->type !== 'venta_exitosa') {
+            return response()->json([
+                'success' => false,
+                'message' => $charge->outcome->user_message ?? 'Su tarjeta fue rechazada. Por favor, intente con otra.'
+            ], 422);
+        }
+
         $order = Order::create([
 
             'external_id' => Str::uuid()->toString(),
@@ -123,14 +131,25 @@ class CulqiController extends Controller
             'culqui' => $charge,
             'order' => $order,
         ];
-      //  return json_encode($charge);
       }
-      catch(Exception $e)
+      catch (CulqiException $e)
       {
-        return [
-            'success' => false,
-            'message' =>  $e->getMessage()
-        ];
+          $message = 'Su tarjeta fue rechazada. Por favor, intente con otra.';
+          $error = json_decode($e->getMessage());
+          if ($error && isset($error->user_message)) {
+              $message = $error->user_message;
+          }
+          return response()->json([
+              'success' => false,
+              'message' => $message
+          ], 422);
+      }
+      catch (Exception $e)
+      {
+          return response()->json([
+              'success' => false,
+              'message' => 'Ocurrió un error al procesar el pago: ' . $e->getMessage()
+          ], 400);
       }
 
 

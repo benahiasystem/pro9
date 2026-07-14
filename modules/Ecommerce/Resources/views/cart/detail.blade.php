@@ -1017,16 +1017,27 @@
                     //window.location = "{{ route('tenant.ecommerce.index') }}";
                   })
                 } else {
-                  const message = data.message
+                  app_cart.processingPayment = false;
+                  const message = data.message || 'Sucedió algo inesperado.';
                   swal("Pago No realizado", message, "error");
                 }
               },
               error: function (error_data) {
-                console.log(error_data)
-                if (error_data.status === 422) {
-                    app_cart.errors = JSON.parse( error_data.responseText);
+                console.log(error_data);
+                app_cart.processingPayment = false;
+                let message = 'Ocurrió un error al procesar el pago.';
+                if (error_data.responseJSON && error_data.responseJSON.message) {
+                    message = error_data.responseJSON.message;
+                } else if (error_data.status === 422 && error_data.responseText) {
+                    let parsed = JSON.parse(error_data.responseText);
+                    if (parsed.message) {
+                        message = parsed.message;
+                    } else {
+                        message = 'Faltan completar campos';
+                        app_cart.errors = parsed;
+                    }
                 }
-                swal("Pago No realizado", 'Faltan completar campos', "error");
+                swal("Pago No realizado", message, "error");
               }
             });
 
