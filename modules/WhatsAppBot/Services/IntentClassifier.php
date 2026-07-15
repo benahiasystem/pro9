@@ -24,18 +24,35 @@ class IntentClassifier
         '👍', '✅', '👌',
     ];
 
+    // "para" y "alto" quedan fuera a propósito: son palabras comunes del
+    // español (preposición / adjetivo) que casi nunca significan "detente",
+    // pero aparecen constantemente en instrucciones normales ("para Juan",
+    // "de gama alta") y disparaban falsos cancelados.
     private const NO_KEYWORDS = [
         'no', 'no.', 'nop', 'nope', 'cancela', 'cancelar', 'cancelado',
-        'espera', 'aguarda', 'aguanta', 'detente', 'alto', 'para',
+        'espera', 'aguarda', 'aguanta', 'detente',
         'mejor no', 'no por ahora', 'aún no', 'todavía no', 'todavia no',
         'negativo', 'olvídalo', 'olvidalo', '👎', '❌',
     ];
+
+    // Mensajes largos casi nunca son un sí/no simple - son instrucciones
+    // ("agrégale también el producto precio no exacto"). Sin este limite,
+    // una palabra suelta como "no" o "para" dentro de una frase larga (o de
+    // un nombre de producto/cliente) se confunde con cancelar, y el mensaje
+    // nunca llega al LLM para que lo interprete en contexto.
+    private const MAX_WORDS_FOR_KEYWORD_MATCH = 5;
 
     public function classify(string $message): string
     {
         $normalized = $this->normalize($message);
 
         if ($normalized === '') {
+            return self::INTENT_UNCLEAR;
+        }
+
+        // normalize() ya colapsa espacios a uno solo, asi que contar
+        // separadores es seguro con tildes/ñ (str_word_count no es UTF-8 safe).
+        if (substr_count($normalized, ' ') + 1 > self::MAX_WORDS_FOR_KEYWORD_MATCH) {
             return self::INTENT_UNCLEAR;
         }
 

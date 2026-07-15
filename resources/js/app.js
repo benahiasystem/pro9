@@ -32,6 +32,12 @@ ElementUI.Select.computed.readonly = function () {
     return !(this.filterable || this.multiple || !isIE) && !this.visible;
 };
 
+ElementUI.Tooltip.props.transition.default = '';
+ElementUI.Tooltip.methods.hide = function () {
+    this.setExpectedState(false);
+    this.handleClosePopper();
+};
+
 export default ElementUI;
 
 Vue.use(ElementUI, { size: 'small' })

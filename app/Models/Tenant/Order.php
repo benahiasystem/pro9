@@ -23,6 +23,7 @@ class Order extends ModelTenant
         'number_document',
         'status_order_id',
         'payment_status_order_id',
+        'shipping_status_order_id',
         'purchase',
         'total_discount',
         'discount_coupon_code',
@@ -46,6 +47,11 @@ class Order extends ModelTenant
     public function payment_status_order()
     {
         return $this->belongsTo(StatusOrder::class, 'payment_status_order_id');
+    }
+
+    public function shipping_status_order()
+    {
+        return $this->belongsTo(StatusOrder::class, 'shipping_status_order_id');
     }
 
     public function sale_note()
@@ -78,12 +84,14 @@ class Order extends ModelTenant
             'total' => $this->total,
             'reference_payment' => strtoupper($this->reference_payment),
             'document_external_id' => $this->document_external_id,
-            'created_at' => $this->created_at->format('Y-m-d'),
+            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'status_order_id' => $this->status_order_id,
             'payment_status_order_id' => $this->payment_status_order_id,
+            'shipping_status_order_id' => $this->shipping_status_order_id,
             'purchase' => $this->purchase,
             'status_order_description' => $this->status_order->description ?? null,
             'payment_status_order_description' => $this->payment_status_order->description ?? null,
+            'shipping_status_order_description' => $this->shipping_status_order->description ?? null,
             'total_discount' => $this->total_discount,
             'discount_coupon_code' => $this->discount_coupon_code,
             'discount_coupon' => $this->discount_coupon ? $this->discount_coupon->getCollectionData() : null,

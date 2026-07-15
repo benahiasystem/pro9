@@ -15,10 +15,11 @@ class ItemCollection extends ResourceCollection
      */
     public function toArray($request)
     {
+        $configuration = Configuration::first();
+        $enableListProduct = (bool) optional($configuration)->enable_list_product;
 
-        return $this->collection->transform(function($row, $key){
+        return $this->collection->transform(function($row, $key) use ($configuration, $enableListProduct){
 
-            $configuration = Configuration::first();
             $defaultImage = $configuration->product_default_image ?? 'imagen-no-disponible.jpg';
             $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
                 ? asset('logo/imagen-no-disponible.jpg')
@@ -68,6 +69,32 @@ class ItemCollection extends ResourceCollection
                         ? $row->getRestaurantStockSet() 
                         : $row->getStockByWarehouse()),
                 'modifiers' => $row->modifiers ?? [],
+                'item_unit_types' => $enableListProduct
+                    ? $row->item_unit_types->map(function ($unitType) {
+                        return [
+                            'id' => $unitType->id,
+                            'description' => $unitType->description,
+                            'unit_type_id' => $unitType->unit_type_id,
+                            'quantity_unit' => (float) $unitType->quantity_unit,
+                            'prices' => $unitType->prices
+                                ->filter(function ($price) {
+                                    return (float) $price->price > 0;
+                                })
+                                ->map(function ($price) {
+                                    return [
+                                        'id' => $price->price_label_id,
+                                        'label' => optional($price->priceLabel)->label,
+                                        'price' => (float) $price->price,
+                                    ];
+                                })
+                                ->values(),
+                        ];
+                    })
+                    ->filter(function ($unitType) {
+                        return $unitType['prices']->isNotEmpty();
+                    })
+                    ->values()
+                    : [],
             ];
         });
     }

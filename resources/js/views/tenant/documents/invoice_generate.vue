@@ -1,5 +1,12 @@
 <template>
     <div :class="{ 'content-opacity': isVisible }" @click.self="toggleInformation">
+        <MiniTour
+            :steps="miniTourSteps"
+            storage-key="tour_doc_generate_buttons"
+            :version="1"
+            fab-avoid-selector=".ws-flotante"
+            auto
+        />
         <span class="module-title-marker" data-page-title="Nuevo Comprobante"></span>
         <Keypress key-event="keyup" @success="checkKey" />
         <Keypress
@@ -28,9 +35,9 @@
                                     </button>
                                 </h2>
                             </div>
-                            <div class="row p-0 m-0 col-md-6">
+                            <div class="row p-0 m-0 col-md-6 justify-content-end">
                                 <div class="col-md-4 d-flex align-items-end justify-content-end">
-                                    <button type="button" class="btn btn-sm second-buton" @click="toggleInformation">
+                                    <button type="button" data-tour="info-adicional" class="btn btn-sm second-buton" @click="toggleInformation">
                                         Información adicional
                                     </button>
                                 </div>
@@ -54,7 +61,7 @@
                                             :disabled="isUpdateDocument"
                                         >
                                             <el-option
-                                                v-for="option in document_types"
+                                                v-for="option in documentTypesAvailable"
                                                 :key="option.id"
                                                 :label="option.description"
                                                 :value="option.id"
@@ -232,7 +239,13 @@
                                     v-text="errors.customer_id[0]"
                                 ></small>
                             </div>
-                            <div class="points-system">
+
+                            <div v-if="form.operation_type_id === '0101'" class="mt-2">
+                                <el-checkbox v-model="form.is_itinerant" @change="changeItineratOption">
+                                    ¿Venta itinerante?
+                                </el-checkbox>
+                            </div>
+                        <div class="points-system">
                                 <div
                                     v-if="config.enabled_point_system && form.customer_id"
                                     class="d-flex align-items-center justify-content-between content-points"
@@ -1837,7 +1850,7 @@
                                                     </tr>
 
                                                     <template
-                                                        v-if="form.detraction"
+                                                        v-if="form.detraction && !isNrus"
                                                     >
                                                         <tr
                                                             v-if="
@@ -1859,7 +1872,7 @@
                                                             <!-- <td>{{ currency_type.symbol }} {{ form.detraction.amount }}</td> -->
                                                         </tr>
                                                     </template>
-                                                    <template v-if=" config.enabled_guarantee_fund && (form.detraction || form.retention)">
+                                                    <template v-if=" config.enabled_guarantee_fund && (form.detraction || form.retention) && !isNrus">
                                                         <tr v-if="form.detraction.guarantee_fund > 0 || form.retention.guarantee_fund > 0">
                                                             <td width="60%">FONDO DE GARANTIA:</td>
                                                             <td>{{ currency_type.symbol }} {{ guarantee_fund }}</td>
@@ -1938,7 +1951,7 @@
                                                     </tr>
                                                     <tr
                                                         v-if="
-                                                            form.total_taxed > 0
+                                                            form.total_taxed > 0 && !isNrus
                                                         "
                                                     >
                                                         <td>OP.GRAVADA:</td>
@@ -1970,7 +1983,7 @@
                                                     </tr>
                                                     <tr
                                                         v-if="
-                                                            form.total_igv > 0
+                                                            form.total_igv > 0 && !isNrus
                                                         "
                                                     >
                                                         <td>IGV:</td>
@@ -1983,7 +1996,7 @@
                                                     </tr>
                                                     <tr
                                                         v-if="
-                                                            form.total_isc > 0
+                                                            form.total_isc > 0 && !isNrus
                                                         "
                                                     >
                                                         <td>ISC:</td>
@@ -2872,7 +2885,7 @@
 
 
 
-                                    <template v-if="form.detraction">
+                                    <template v-if="form.detraction && !isNrus">
                                         <tr v-if="form.detraction.amount > 0">
                                             <td width="60%">M. DETRACCIÓN:</td>
                                             <td>
@@ -2880,14 +2893,14 @@
                                             </td>
                                         </tr>
                                     </template>
-                                    <template v-if="config.enabled_guarantee_fund && (form.detraction || form.retention)">
+                                    <template v-if="config.enabled_guarantee_fund && (form.detraction || form.retention) && !isNrus">
                                             <tr v-if="form.detraction.guarantee_fund > 0 || form.retention.guarantee_fund > 0">
                                                 <td width="60%">FONDO DE GARANTIA:</td>
                                                 <td>{{ currency_type.symbol }} {{ guarantee_fund }}</td>
                                             </tr>
                                     </template>
 
-                                    <template v-if="form.retention">
+                                    <template v-if="form.retention && !isNrus">
                                         <tr v-if="form.retention.amount > 0">
                                             <td>
                                                 M. RETENCIÓN ({{
@@ -2902,7 +2915,7 @@
                                         </tr>
                                     </template>
 
-                                    <tr v-if="form.total_exportation > 0">
+                                    <tr v-if="form.total_exportation > 0 && !isNrus">
                                         <td>OP.EXPORTACIÓN:</td>
                                         <td>
                                             {{ currency_type.symbol }}
@@ -2930,7 +2943,7 @@
                                             {{ form.total_exonerated }}
                                         </td>
                                     </tr>
-                                    <tr v-if="form.total_taxed > 0">
+                                    <tr v-if="form.total_taxed > 0 && !isNrus">
                                         <td>OP.GRAVADA:</td>
                                         <td>
                                             {{ currency_type.symbol }}
@@ -2944,14 +2957,14 @@
                                             {{ form.total_discount }}
                                         </td>
                                     </tr>
-                                    <tr v-if="form.total_igv > 0">
+                                    <tr v-if="form.total_igv > 0 && !isNrus">
                                         <td>IGV:</td>
                                         <td>
                                             {{ currency_type.symbol }}
                                             {{ form.total_igv }}
                                         </td>
                                     </tr>
-                                    <tr v-if="form.total_isc > 0">
+                                    <tr v-if="form.total_isc > 0 && !isNrus">
                                         <td>ISC:</td>
                                         <td>
                                             {{ currency_type.symbol }}
@@ -3986,6 +3999,7 @@ import DocumentFormPreview from "./partials/preview.vue";
 import ConsignedForm from './partials/consigned.vue';
 import CustomFieldsRenderer from '@viewsModuleCustomField/custom_fields/custom_field_renderer.vue'
 import DocumentFormPinnedBar from './_document_pinned_bar.vue';
+import MiniTour from "@components/MiniTour.vue";
 import {
     getDefaultLayout as getDocumentDefaultLayout,
     getAvailableFields as getDocumentAvailableFields,
@@ -4039,6 +4053,7 @@ export default {
         CustomFieldsRenderer,
         DocumentFormPinnedBar,
         RemoteSlot,
+        MiniTour,
     },
     mixins: [
         functions,
@@ -4051,6 +4066,23 @@ export default {
     ],
     data() {
         return {
+            miniTourSteps: [
+                {
+                    target: ".edit-layout-btn",
+                    tag: "Paso 1 de 2",
+                    title: "Personaliza tus campos",
+                    body: "Con este botón puedes <b>reordenar los campos</b> del formulario y <b>ajustar el ancho</b> de cada uno. Aparece al <b>pasar el cursor sobre el título</b>; configúralo una vez y el formulario quedará a tu medida.",
+                    placement: "bottom"
+                },
+                {
+                    target: "[data-tour='info-adicional']",
+                    tag: "Paso 2 de 2",
+                    badge: "Solo la primera vez",
+                    title: "Información adicional",
+                    body: "Aquí agregas datos extra al comprobante: <b>observaciones, orden de compra, guías</b> y más.",
+                    placement: "bottom"
+                }
+            ],
             datEmision: {
                 disabledDate(time) {
                     return time.getTime() > moment();
@@ -4334,6 +4366,16 @@ export default {
             return this.configuration.global_discount_type_id === "02" ;
         },
         ...mapState(["config", "series", "all_series"]),
+        isNrus() {
+            return !!(this.config && this.config.is_nrus);
+        },
+        documentTypesAvailable() {
+            // En NRUS solo se permite emitir Boleta (03)
+            if (this.isNrus) {
+                return this.document_types.filter(dt => dt.id === "03");
+            }
+            return this.document_types;
+        },
         credit_payment_metod: function() {
             return _.filter(this.payment_method_types, { is_credit: true });
         },
@@ -4564,7 +4606,9 @@ export default {
         const clientfromDispatchesOrNotes = localStorage.getItem("client");
         if (clientfromDispatchesOrNotes) {
             const client = JSON.parse(clientfromDispatchesOrNotes);
-            if (client.identity_document_type_id == 1 || client.identity_document_type_id == 0) {
+            if (this.isNrus) {
+                this.form.document_type_id = "03";
+            } else if (client.identity_document_type_id == 1 || client.identity_document_type_id == 0) {
                 this.form.document_type_id = "03";
             } else if (client.identity_document_type_id == 6 ) {
                 this.form.document_type_id = "01";
@@ -4791,8 +4835,9 @@ export default {
                     this.establishments.length > 0
                         ? this.establishments[0].id
                         : null;
-                this.form.document_type_id =
-                    this.document_types.length > 0
+                this.form.document_type_id = this.isNrus
+                    ? "03"
+                    : this.document_types.length > 0
                         ? this.document_types[0].id
                         : null;
                 this.form.operation_type_id =
@@ -5273,16 +5318,6 @@ export default {
             this.onPrepareDataEstablishment(data);
 
             this.form.document_type_id = data.document_type_id;
-            // this.form.series = data.series; //form.series no llena el selector
-            if (this.table !== "quotations") {
-                this.$store.commit(
-                    "setSeries",
-                    this.onSetSeries(data.document_type_id, data.series)
-                );
-            } else {
-                // this.series = this.onSetSeries(this.form.document_type_id, this.series);
-                this.changeDocumentType();
-            }
 
             this.customers = this.customers.filter(el => el.id !== data.customer_id)
             this.customers.push(data.customer)
@@ -5348,10 +5383,6 @@ export default {
             this.form.total = parseFloat(data.total);
             this.form.subtotal = parseFloat(data.subtotal);
             this.form.total_igv_free = parseFloat(data.total_igv_free);
-            this.form.series_id = this.onSetSeriesId(
-                data.document_type_id,
-                data.series
-            );
             this.form.operation_type_id = data.invoice
                 ? data.invoice.operation_type_id
                 : data.operation_type_id;
@@ -5444,7 +5475,13 @@ export default {
             this.calculateTotal();
             // this.currency_type = _.find(this.currency_types, {'id': this.form.currency_type_id})
 
-            this.filterSeriesForTable();
+            if (this.table === "quotations") {
+                this.changeDocumentType();
+            } else if (this.isUpdateDocument) {
+                this.filterSeries(this.onSetSeriesId(data.document_type_id, data.series));
+            } else {
+                this.filterSeriesForTable();
+            }
             if (!this.form.custom_fields_data) {
                 this.$set(this.form, 'custom_fields_data', {});
             }
@@ -5769,6 +5806,10 @@ export default {
             }
         },
         selectDocumentType() {
+            if (this.isNrus) {
+                this.form.document_type_id = "03";
+                return;
+            }
             this.form.document_type_id = this.select_first_document_type_03
                 ? "03"
                 : "01";
@@ -6588,32 +6629,33 @@ export default {
                 payment.date_of_payment = this.form.date_of_issue;
             });
         },
-        filterSeries() {
+        filterSeries(preserveSeriesId = null) {
             // console.log('filterSeries');
-            this.form.series_id = null;
-            let series = _.filter(this.all_series, {
-                establishment_id: this.form.establishment_id,
-                document_type_id: this.form.document_type_id,
-                contingency: this.is_contingency
-            });
+            if (!preserveSeriesId) {
+                this.form.series_id = null;
+            }
+            let series = this.all_series.filter(s =>
+                Number(s.establishment_id) === Number(this.form.establishment_id) &&
+                String(s.document_type_id) === String(this.form.document_type_id) &&
+                Boolean(s.contingency) === Boolean(this.is_contingency)
+            );
             if (
                 this.form.document_type_id === this.config.user.document_id &&
                 this.typeUser == "seller"
             ) {
                 // Se filtra si el documento es el mismo que el establecido para el usuario.
-                series = _.filter(this.all_series, {
-                    establishment_id: this.form.establishment_id,
-                    document_type_id: this.form.document_type_id,
-                    contingency: this.is_contingency,
-                    id: this.config.user.serie
-                });
+                series = series.filter(s => Number(s.id) === Number(this.config.user.serie));
             }
 
             //console.log(series);
 
             this.$store.commit("setSeries", series);
-            this.form.series_id =
-                this.series.length > 0 ? this.series[0].id : null;
+            if (preserveSeriesId) {
+                this.form.series_id = preserveSeriesId;
+            } else {
+                this.form.series_id =
+                    this.series.length > 0 ? this.series[0].id : null;
+            }
         },
         filterCustomers() {
             if (
@@ -7874,6 +7916,10 @@ export default {
                 .catch(error => {
                     if (error.response.status === 422) {
                         this.errors = error.response.data;
+                        if (this.errors.customer_id) {
+                            this.$message.error(this.errors.customer_id[0]);
+                            delete this.errors.customer_id;
+                        }
                     } else {
                         this.$message.error(error.response.data.message);
                     }
@@ -8310,7 +8356,7 @@ export default {
             }
 
             if (!this.form.customer_id) {
-                this.$message.error("Debe seleccionar cliente");
+                this.$message.error("El campo cliente es obligatorio.");
                 return false;
             }
 

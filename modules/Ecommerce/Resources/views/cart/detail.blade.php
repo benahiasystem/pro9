@@ -101,6 +101,33 @@
     .terms-txt a:hover {
         text-decoration: underline;
     }
+
+    /* Desktop - una fila */
+    .items-cart {
+        display: grid;
+        grid-template-columns: 80px 1fr auto auto auto;
+        grid-template-areas: "thumb info quantity total delete";
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .items-cart .thumb { grid-area: thumb; }
+    .items-cart .info { grid-area: info; }
+    .items-cart .modern-quantity-container { grid-area: quantity; }
+    .items-cart .total { grid-area: total; }
+    .items-cart .delete-item-btn { grid-area: delete; }
+
+    /* Móvil - dos filas */
+    @media (max-width: 576px) {
+        .items-cart {
+            grid-template-columns: 70px 1fr auto auto auto;
+            grid-template-areas:
+                "thumb info info info info"
+                "thumb quantity quantity total delete";
+        }
+    }
 </style>
 @endpush
 

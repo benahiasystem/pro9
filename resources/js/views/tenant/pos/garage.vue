@@ -665,7 +665,7 @@
                 <div class="fp-top-header">
                     <div class="fp-doc-tabs d-flex align-items-start px-1 py-1">
                         <div
-                            v-for="tab in doc_type_tabs"
+                            v-for="tab in docTypeTabsAvailable"
                             :key="tab.id"
                             class="fp-doc-tab-wrap"
                             :class="{'active': form.document_type_id === tab.id}"
@@ -1098,6 +1098,16 @@ export default {
             });
         },
         ...mapState(["config"]),
+        isNrus() {
+            return !!((this.configuration && this.configuration.is_nrus) || (this.config && this.config.is_nrus));
+        },
+        docTypeTabsAvailable() {
+            // NRUS no emite Factura (01)
+            if (this.isNrus) {
+                return this.doc_type_tabs.filter(tab => tab.id !== '01');
+            }
+            return this.doc_type_tabs;
+        },
         validteCreateProduct() {
             if (this.config) {
                 return (
@@ -1621,6 +1631,9 @@ export default {
             if (this.configuration.default_document_type_80) {
                 this.form.document_type_id = "80";
             } else if (this.configuration.default_document_type_03) {
+                this.form.document_type_id = "03";
+            } else if (this.isNrus) {
+                // NRUS no emite Factura, siempre Boleta
                 this.form.document_type_id = "03";
             } else {
                 this.form.document_type_id =

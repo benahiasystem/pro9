@@ -211,15 +211,15 @@ export default {
                             this.items = [];
                         }
                     });
-            } 
+            }
         },
         checkScrollShadows() {
             const el = this.$refs.scrollContainer;
             if (!el) return;
-            
+
             const scrollLeft = el.scrollLeft;
             const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-            
+
             this.showLeftShadow = scrollLeft > 1;
             this.showRightShadow = scrollRight > 1;
         },
@@ -285,14 +285,37 @@ export default {
                 this.form.date_end = this.form.date_start
             }
         },
-        clickDownload(type) {
+        async clickDownload(type) {
             if (!this.form.item_id) {
                 return this.$message.error('El producto es obligatorio')
             }
             let query = queryString.stringify({
                 ...this.form
             });
-            window.open(`/${this.resource}/${type}/?${query}`, '_blank');
+            await this.$http.get(`/${this.resource}/${type}/?${query}`, { responseType: 'blob' })
+                .then(async (response) => {
+                    const contentType = response.headers['content-type'] || '';
+                    // Si el servidor devuelve un JSON, es un mensaje (p. ej. descarga por
+                    // lotes en bandeja). Si devuelve un stream/archivo, se abre la ventana.
+                    if (contentType.includes('application/json')) {
+                        
+                        const json = JSON.parse(await response.data.text());
+                        this.$message.success(json.message);
+                    } else {
+                        const blobUrl = window.URL.createObjectURL(response.data);
+                        window.open(blobUrl, '_blank');
+                    }
+                })
+                .catch(async (error) => {
+                    // Un error (422/500) también puede venir como blob JSON: extraer mensaje.
+                    let message = 'Ocurrió un error al generar el reporte';
+                    if (error.response && error.response.data && typeof error.response.data.text === 'function') {
+                        try {
+                            message = JSON.parse(await error.response.data.text()).message || message;
+                        } catch (e) { /* respuesta no-JSON, se usa el mensaje por defecto */ }
+                    }
+                    this.$message.error(message);
+                });
         },
         customIndex(index) {
             return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1

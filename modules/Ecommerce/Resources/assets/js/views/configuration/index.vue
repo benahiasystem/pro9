@@ -52,7 +52,6 @@
                   <div class="form-group" :class="{'has-danger': errors.information_contact_address}">
                     <label class="control-label">
                       Horario de atención
-                      <span class="text-danger">*</span>
                     </label>
                     <el-input v-model="form.information_contact_address"></el-input>
                     <small

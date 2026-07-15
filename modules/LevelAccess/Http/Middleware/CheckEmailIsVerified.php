@@ -14,9 +14,6 @@ class CheckEmailIsVerified
     public function handle($request, Closure $next)
     {
         $configuration = Configuration::getDataToCheckGuestEmail();
-            Log::info("test days", [
-                'error'=> $configuration->isTestDaysExpired()
-            ]);
         if ($request->ajax()) return $next($request);
 
 

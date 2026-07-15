@@ -611,7 +611,12 @@ class QuotationController extends Controller
         ];
         */
 
-        return response()->file($temp, $this->generalPdfResponseFileHeaders($quotation->filename));
+        $headers = $this->generalPdfResponseFileHeaders($quotation->filename);
+        $headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0';
+        $headers['Pragma'] = 'no-cache';
+        $headers['Expires'] = 'Sat, 26 Jul 1997 05:00:00 GMT';
+
+        return response()->file($temp, $headers);
     }
 
     private function reloadPDF($quotation, $format, $filename)

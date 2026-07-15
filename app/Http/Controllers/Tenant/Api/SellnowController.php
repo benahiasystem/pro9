@@ -15,6 +15,7 @@ use Exception;
 use Illuminate\Support\Facades\Validator;
 use stdClass;
 use Illuminate\Support\Str;
+use App\Models\Tenant\Configuration;
 
 
 class SellnowController extends Controller
@@ -24,13 +25,18 @@ class SellnowController extends Controller
 
         $warehouse_id = auth()->user()->establishment->id;
 
-        $items = Item::whereNotNull('internal_id')
+        $itemsQuery = Item::whereNotNull('internal_id')
             ->whereHas('warehouses', function ($query) use ($warehouse_id) {
                 $query->where('warehouse_id', $warehouse_id);
             })
             ->orderBy('favorite','desc')
-            ->whereIsActive()
-            ->get();
+            ->whereIsActive();
+
+        if ((bool) optional(Configuration::first())->enable_list_product) {
+            $itemsQuery->with('item_unit_types.prices.priceLabel');
+        }
+
+        $items = $itemsQuery->get();
 
         $records = new ItemCollection($items);
 

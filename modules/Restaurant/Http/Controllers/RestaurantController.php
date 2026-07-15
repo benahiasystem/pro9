@@ -97,7 +97,7 @@ class RestaurantController extends Controller
         try {
             $currentHostname = app(\Hyn\Tenancy\Contracts\CurrentHostname::class)?->fqdn;
             $fqdn = $currentHostname ?: request()->getHost();
-            $protocol = request()->getScheme() . '://';
+            $protocol = config('tenant.force_https') ? 'https://' : 'http://';
 
             return response()->json(array_merge([
                 'apiSsl' => $protocol,

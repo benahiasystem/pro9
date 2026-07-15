@@ -91,11 +91,12 @@ class CreateDocumentTool implements ToolInterface
         $totalValue = 0.0;
         $totalIgv = 0.0;
 
-        // Mismo metodo que FacturaloDraftMapper::mapItem: trabajamos desde el
-        // unit_value (sin IGV) redondeado a 2 decimales. Para precios que no
-        // dividen exacto por 1.18 (ej. S/4.90) esto difiere de qty*precio_con_igv
-        // por unos centavos; respetamos el calculo de Pro8 para que el resumen
-        // del bot cuadre exacto con el PDF/XML emitido.
+        // Mismo metodo que FacturaloDraftMapper::mapItem: el total de la linea
+        // se calcula multiplicando el precio unitario CON IGV completo por la
+        // cantidad, y recien ahi se separa base/IGV. Redondear el unit_value
+        // sin IGV antes de multiplicar (como se hacia antes) arrastra el error
+        // de redondeo x cantidad (ver bug: S/3.00 x 15 daba S/44.96 en vez de
+        // S/45.00 exacto).
         foreach ($items as $line) {
             $item = Item::find($line['item_id'] ?? null);
             if (!$item) {
@@ -133,10 +134,9 @@ class CreateDocumentTool implements ToolInterface
             $unitWithIgv = $item->has_igv
                 ? (float) $item->sale_unit_price
                 : round($item->sale_unit_price * (1 + self::IGV_RATE), 2);
-            $unitValueWithoutIgv = round($unitWithIgv / (1 + self::IGV_RATE), 2);
-            $lineValue = round($unitValueWithoutIgv * $qty, 2);
-            $lineIgv = round($lineValue * self::IGV_RATE, 2);
-            $lineTotal = round($lineValue + $lineIgv, 2);
+            $lineTotal = round($unitWithIgv * $qty, 2);
+            $lineValue = round($lineTotal / (1 + self::IGV_RATE), 2);
+            $lineIgv = round($lineTotal - $lineValue, 2);
 
             $lines[] = [
                 'item_id' => (int) $item->id,

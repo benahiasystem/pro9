@@ -35,6 +35,9 @@ class PlanResource extends JsonResource
             'include_sale_notes_sales_limit' => $this->include_sale_notes_sales_limit,
             'include_sale_notes_limit_documents' => $this->include_sale_notes_limit_documents,
 
+            'whatsapp_messages_limit' => $this->whatsapp_messages_limit,
+            'whatsapp_messages_unlimited' => $this->whatsapp_messages_unlimited,
+
             'module_permissions' => $this->module_permissions,
 
         ];

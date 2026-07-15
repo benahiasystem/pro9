@@ -85,11 +85,18 @@
                 </template>
                 <template #sale_unit_price>
                     <div :class="{'has-danger': errors.sale_unit_price}" class="form-group">
-                        <label class="control-label">Precio Unitario <small v-if="form.has_igv">(con IGV)</small> <small v-else>(sin IGV)</small><span class="text-danger">*</span></label>
+                        <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template><span class="text-danger">*</span></label>
                         <el-input v-model="form.sale_unit_price"
                                   dusk="sale_unit_price"
                                   @input="calculatePercentageOfProfitBySale"></el-input>
-                        <small v-if="saleUnitPriceBreakdown" class="text-muted">{{ saleUnitPriceBreakdown }}</small>
+                        <small v-if="!isNrus" :style="saleUnitPriceBreakdown ? 'opacity: 1' : 'opacity: 0'" class="text-muted">
+                            <template v-if="saleUnitPriceBreakdown">
+                                {{ saleUnitPriceBreakdown }}
+                            </template>
+                            <template v-else>
+                                &nbsp;
+                            </template>
+                        </small>
                         <small v-if="errors.sale_unit_price"
                                class="form-control-feedback"
                                v-text="errors.sale_unit_price[0]"></small>
@@ -281,7 +288,7 @@
                 </template>
                 <template #purchase_unit_price>
                     <div :class="{'has-danger': errors.purchase_unit_price}" class="form-group">
-                        <label class="control-label">Precio Unitario (Compra) <small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></label>
+                        <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template></label>
                         <el-input v-model="form.purchase_unit_price"
                                   @input="calculatePercentageOfProfitByPurchase"></el-input>
                         <small v-if="errors.purchase_unit_price"
@@ -644,6 +651,7 @@
                             </div>
                         </div>
 
+                        <template v-if="!isNrus">
                         <div class="col-12 mt-2">
                             <div class="table-responsive table-border-none">
                                 <table class="table table-sm mb-0 table-borderless">
@@ -827,6 +835,7 @@
                                 </div>
                             </div>
                         </template>
+                        </template>
                         <div class="col-md-12 mt-4 text-center field-pinnable" v-if="showTab('imagen') && !isPinned('image')" data-field-key="image">
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('image')"><i class="el-icon-top"></i> Fijar arriba</button>
                             <label class="control-label d-block mb-2">Imagen</label>
@@ -844,7 +853,7 @@
                 </el-tab-pane>
 
                 <el-tab-pane class
-                             v-if="!isService && showTab('warehouses')"
+                             v-if="!isService && showTab('warehouses') && !isNrus"
                              name="second">
                     <span slot="label">Almacenes</span>
                     <div class="row">
@@ -1241,11 +1250,18 @@
                         <div v-show="!isPinned('purchase_unit_price')" class="col-md-4 field-pinnable">
                             <div :class="{'has-danger': errors.purchase_unit_price}"
                                  class="form-group">
-                                <label class="control-label">Precio Unitario <small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></label>
+                                <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template></label>
                                 <el-input v-model="form.purchase_unit_price"
                                           dusk="purchase_unit_price"
                                           @input="calculatePercentageOfProfitByPurchase"></el-input>
-                                <small v-if="purchaseUnitPriceBreakdown" class="text-muted">{{ purchaseUnitPriceBreakdown }}</small>
+                                <small v-if="!isNrus" :style="purchaseUnitPriceBreakdown ? 'opacity: 1' : 'opacity: 0'" class="text-muted">
+                                    <template v-if="purchaseUnitPriceBreakdown">
+                                        {{ purchaseUnitPriceBreakdown }}
+                                    </template>
+                                    <template v-else>
+                                        &nbsp;
+                                    </template>
+                                </small>
                                 <small v-if="errors.purchase_unit_price"
                                        class="form-control-feedback"
                                        v-text="errors.purchase_unit_price[0]"></small>
@@ -1285,7 +1301,7 @@
                         </div>
 
                         <!-- isc compras -->
-                        <div class="col-md-4">
+                        <div class="col-md-4" v-if="!isNrus">
                             <div :class="{'has-danger': errors.purchase_has_isc}"
                                  class="form-group">
                                 <el-checkbox v-model="form.purchase_has_isc"
@@ -1666,10 +1682,15 @@ export default {
             }
             return true
         },
+        isNrus()
+        {
+            return !!(this.config && this.config.is_nrus)
+        },
         saleUnitPriceBreakdown()
         {
             const price = parseFloat(this.form.sale_unit_price)
             if (!price || price <= 0) return null
+            const symbol = this.getCurrencySymbol()
             const IGV_RATE = 0.18
             let base, igv, total
             if (this.form.has_igv) {
@@ -1681,12 +1702,13 @@ export default {
                 igv = price * IGV_RATE
                 total = price + igv
             }
-            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = S/ ${total.toFixed(2)}`
+            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = ${symbol} ${total.toFixed(2)}`
         },
         purchaseUnitPriceBreakdown()
         {
             const price = parseFloat(this.form.purchase_unit_price)
             if (!price || price <= 0) return null
+            const symbol = this.getCurrencySymbol()
             const IGV_RATE = 0.18
             let base, igv, total
             if (this.form.purchase_has_igv) {
@@ -1698,7 +1720,7 @@ export default {
                 igv = price * IGV_RATE
                 total = price + igv
             }
-            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = S/ ${total.toFixed(2)}`
+            return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = ${symbol} ${total.toFixed(2)}`
         }
 
     },
@@ -1856,7 +1878,9 @@ export default {
     },
 
     methods: {
-
+        getCurrencySymbol() {
+            return this.form.currency_type_id === 'USD' ? '$' : 'S/'
+        },
         ...mapActions([
             'loadConfiguration',
         ]),
@@ -2369,15 +2393,27 @@ this.activeName = null
                     this.close();
 
                 } else {
-                    this.$message.error(response.data.message);
+                    const msg = response.data.message || '';
+                    if (msg.toLowerCase().includes('código interno') || msg.toLowerCase().includes('internal id')) {
+                        this.errors = { internal_id: [msg] };
+                    } else {
+                        this.$message.error(msg || 'Error al guardar el producto');
+                    }
                 }
 
             } catch (error) {
                 if (error.response?.status === 422) {
-                    this.errors = error.response.data;
+                    this.errors = error.response.data.errors || error.response.data;
+                } else if (error.response?.data?.message) {
+                    const msg = error.response.data.message.toLowerCase();
+                    if (msg.includes('código interno') || msg.includes('internal id')) {
+                        this.errors = { internal_id: [error.response.data.message] };
+                    } else {
+                        this.$message.error(error.response.data.message);
+                    }
                 } else {
                     console.log(error);
-                    this.$message.error(error.response?.data?.message);
+                    this.$message.error('Server Error');
                 }
             } finally {
                 this.loading_submit = false;

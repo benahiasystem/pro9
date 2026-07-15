@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Archivo:wght@400;500;600;700&family=Onest:wght@400;500;600;700&display=swap');
 
 :root{
     /* Color base */
@@ -9,6 +10,8 @@
     /* Claros */
     --primary-color: var(--black-primary);
     --black-primary: oklch(var(--base-l) var(--base-c) var(--base-h));
+    /* Versión vibrante del color base (para botones/acentos, no tan oscura) */
+    --black-vivid: oklch(0.58 0.15 var(--base-h));
     --black-dark: oklch(calc(var(--base-l) - 0.0786) calc(var(--base-c) + 0.0008) calc(var(--base-h) - 1.23));
     --black-accent: oklch(calc(var(--base-l) + 0.4954) calc(var(--base-c) - 0.0015) calc(var(--base-h) - 9.37 ));
     --black-highlight: oklch(calc(var(--base-l) + 0.76) calc(var(--base-c) - 0.0375) calc(var(--base-h) - 29.86));
@@ -26,7 +29,7 @@
     --danger: #e7000b;
     --success: #5ea500;
     --warning: #f54900;
-    --primary: #155dfb;
+    --primary: var(--black-primary);
     --info: #1dadff;
 }
 /* Admin Reseller*/
@@ -1344,8 +1347,7 @@ html.sidebar-white ul.nav-main li.nav-active:not(.nav-parent)>a {
 html.dark .sidebar-toggle:hover {
     background-color: #161d31;
 }
-
-html body .text-primary {
+.text-primary {
     color: var(--black-primary) !important;
 }
 .fa-ellipsis-v{
@@ -1789,8 +1791,7 @@ html.dark ul.nav-main li .nav-children li a:after {
 }
 
 /* -------- config -------- */
-html.dark .card.card-dashboard .card-title,
-html.dark .card.card-dashboard small.text-muted {
+html.dark .card.card-dashboard .card-title {
     background: var(--black-content-dark);
 }
 
@@ -3297,6 +3298,90 @@ html.dark .fp-doc-tab.active {
     border: 1px solid color-mix(in srgb, var(--black-accent) 25%, #ffffff 75%);
     background: var(--black-highlight);
 }
+.minitour-ring {
+    box-shadow: 0 0 0 3px var(--black-primary);
+}
+@keyframes minitour-pulse {
+    0% {
+        box-shadow: 0 0 0 3px var(--black-primary), 0 0 0 3px color-mix(in srgb, var(--black-primary) 20%, #ffffff00);
+    }
+    70% {
+        box-shadow: 0 0 0 3px var(--black-primary), 0 0 0 14px color-mix(in srgb, var(--black-primary) 20%, #ffffff00);
+    }
+    100% {
+        box-shadow: 0 0 0 3px var(--black-primary), 0 0 0 14px color-mix(in srgb, var(--black-primary) 20%, #ffffff00);
+    }
+}
+.minitour-tooltip,
+.minitour-arrow {
+    background-color: var(--black-content-dark);
+    color: var(--black-light);
+}
+.minitour-tooltip p {
+    color: var(--black-muted) !important;
+}
+.minitour-tooltip p b {
+    color: var(--black-light) !important;
+}
+.minitour-step-tag {
+    color: var(--black-highlight);
+}
+.minitour-dot.on {
+    background-color: var(--black-highlight);
+}
+.minitour-actions .btn-primary {
+    background-color: #ffff !important;
+    color: var(--black-dark) !important;
+}
+.minitour-actions .btn-primary:hover,
+.minitour-actions .btn-primary:focus,
+.minitour-actions .btn-primary:active {
+    color: var(--black-dark) !important;
+    border-color: oklch(calc(var(--base-l) + 0.68) calc(var(--base-c) - 0.0375) calc(var(--base-h) - 29.86)) !important;
+    background-color: oklch(calc(var(--base-l) + 0.71) calc(var(--base-c) - 0.0375) calc(var(--base-h) - 29.86)) !important;
+}
+html.dark .minitour-tooltip,
+html.dark .minitour-arrow {
+    background-color: var(--black-light);
+}
+html.dark .minitour-tooltip h2 {
+    color: var(--black-dark) !important;
+}
+html.dark .minitour-tooltip p {
+    color: color-mix(in srgb, var(--black-dark) 92%, #fff) !important;
+}
+html.dark .minitour-tooltip p b {
+    color: var(--black-dark) !important;
+}
+html.dark .minitour-actions .btn-primary {
+    background-color: var(--black-primary) !important;
+    color: #fff !important;
+}
+html.dark .minitour-actions .btn-primary:hover,
+html.dark .minitour-actions .btn-primary:focus,
+html.dark .minitour-actions .btn-primary:active {
+    background-color: color-mix(in srgb, var(--black-primary) 85%, #000) !important;
+    color: #fff !important;
+}
+html.dark .minitour-step-tag {
+    color: var(--black-primary);
+}
+html.dark .minitour-dot.on {
+    background-color: var(--black-primary);
+}
+.el-tooltip__popper.is-dark{
+  background: color-mix(in srgb, var(--black-primary) 50%, #000) !important;
+  color: var(--black-light) !important;
+}
+.el-tooltip__popper.is-light,
+html.dark .el-tooltip__popper.is-dark{
+  background:var(--black-light) !important;
+  color:var(--black-dark) !important;
+  border:1px solid var(--black-accent) !important;
+}
+.el-tooltip__popper{
+  border-radius:8px !important;
+}
 /* ############################ ESTILOS MODO OSCURO ########################### */
 html.dark, html.dark body {
     background-color: var(--black-bg-dark) !important;
@@ -3773,7 +3858,9 @@ html.dark .card-header,
 html.dark li.el-select-dropdown__item.item-result[data-v-3d395dcf] {
     border-bottom-color: var(--black-border-dark);
 }
-html.dark .el-tabs__nav {
+html.dark .el-tabs__nav,
+html.dark .db-seg,
+html.dark .db-thumb {
     background: var(--black-content-dark);
 }
 html.dark .el-tabs__item.is-active h3,
@@ -3783,7 +3870,9 @@ html.dark .page-header .breadcrumbs a,
 html.dark .page-header .breadcrumbs span,
 html.dark .el-tabs__item.is-active,
 html.dark form.style-switcher-wrap h3,
-html.dark .el-pager li.active{
+html.dark .el-pager li.active,
+html.dark .db-thumb,
+html.dark .db-seg button.active{
     color: var(--black-light);
 }
 html.dark .el-tabs__item:hover {
@@ -3791,7 +3880,8 @@ html.dark .el-tabs__item:hover {
     cursor: pointer;
 }
 html.dark .el-tabs__item.is-active,
-html.dark .el-tabs--border-card>.el-tabs__header .el-tabs__item.is-active {
+html.dark .el-tabs--border-card>.el-tabs__header .el-tabs__item.is-active,
+html.dark .db-seg button.active {
     background: var(--black-content-dark);
     border: 1px solid var(--black-accent);
     color: var(--black-light) !important;
@@ -3854,7 +3944,10 @@ html.dark .el-cascader-node:not(.is-disabled):hover,
 html.dark .el-cascader-node:not(.is-disabled):focus {
     background: var(--black-input-dark);
 }
-html.dark .dropdown-divider{
+html.dark .dropdown-divider,
+html.dark .db-client,
+html.dark .ls-item,
+html.dark .tp-item {
     border-color: var(--black-border-dark) !important;
 }
 html.dark .btn-close-pos{

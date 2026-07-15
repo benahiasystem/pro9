@@ -16,6 +16,11 @@ use App\Models\Tenant\Series;
 class SeriesCodeGenerator
 {
     /**
+     * Tipos de serie disponibles para empresas NRUS.
+     */
+    public const NRUS_SERIES_KEYS = ['receipt', 'sale_note'];
+
+    /**
      * Catálogo canónico de tipos de serie con su prefijo y categoría (tabs de la UI).
      * Fuente única para la siembra de tenant, la UI (Etapa 5) y la auto-propuesta.
      *
@@ -83,6 +88,35 @@ class SeriesCodeGenerator
         }
 
         return null;
+    }
+
+    /**
+     * Catálogo de tipos permitido según el régimen de la empresa.
+     *
+     * @param  bool $is_nrus
+     * @return array<int, array<string, string>>
+     */
+    public static function availableTypes(bool $is_nrus = false): array
+    {
+        if (! $is_nrus) {
+            return self::SERIES_TYPES;
+        }
+
+        return array_values(array_filter(self::SERIES_TYPES, function ($type) {
+            return in_array($type['key'], self::NRUS_SERIES_KEYS, true);
+        }));
+    }
+
+    /**
+     * IDs de documento permitidos para empresas NRUS.
+     *
+     * @return array<int, string>
+     */
+    public static function nrusDocumentTypeIds(): array
+    {
+        return array_values(array_unique(array_map(function ($type) {
+            return $type['document_type_id'];
+        }, self::availableTypes(true))));
     }
 
     /**

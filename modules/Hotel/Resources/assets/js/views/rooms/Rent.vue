@@ -261,8 +261,14 @@
                                     :class="{ 'has-danger': errors.input_time }"
                                 >
                                     <label class="control-label m-0">Hora de entrada</label>
-                                    <el-input v-model="form.input_time" placeholder="HH:MM">
-                                    </el-input>
+                                    <el-time-picker
+                                        v-model="form.input_time"
+                                        format="HH:mm"
+                                        value-format="HH:mm"
+                                        placeholder="Seleccione hora"
+                                        :picker-options="{ format: 'HH:mm' }"
+                                    >
+                                    </el-time-picker>
                                     <small
                                         class="form-control-feedback"
                                         v-if="errors.input_time"
@@ -297,8 +303,14 @@
                                     :class="{ 'has-danger': errors.output_time }"
                                 >
                                     <label class="control-label m-0">Hora de salida</label>
-                                    <el-input v-model="form.output_time" placeholder="HH:MM">
-                                    </el-input>
+                                    <el-time-picker
+                                        v-model="form.output_time"
+                                        format="HH:mm"
+                                        value-format="HH:mm"
+                                        placeholder="Seleccione hora"
+                                        :picker-options="{ format: 'HH:mm' }"
+                                    >
+                                    </el-time-picker>
                                     <small
                                         class="form-control-feedback"
                                         v-if="errors.output_time"

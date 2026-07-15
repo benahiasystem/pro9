@@ -115,6 +115,7 @@
                         </a>
                     </li>
                 @endif
+                @if(in_array('ecommerce', $vc_modules))
                 <li>
                     <a href="{{ route('tenant_orders_index') }}"
                         class="notification-icon text-secondary navigation-options" data-toggle="tooltip"
@@ -141,6 +142,7 @@
                         </svg>
                     </a>
                 </li>
+                @endif
                 @if(in_array('cuenta', $vc_modules))
                     @if(in_array('account_users_list', $vc_module_levels))
                         <li>
@@ -383,6 +385,7 @@
             </li>
         </ul>
         @endif
+        @if(in_array('ecommerce', $vc_modules))
         <span class="separator"></span>
         <ul class="notifications">
             <li>
@@ -401,6 +404,7 @@
                 </a>
             </li>
         </ul>
+        @endif
         @if(in_array('reports', $vc_modules) && $vc_finished_downloads > 0)
             <span class="separator"></span>
             <ul class="notifications">

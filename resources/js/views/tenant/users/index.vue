@@ -83,7 +83,7 @@
                                 <span v-else-if="row.bot_enabled" class="badge" style="background:#28a745;color:#fff;padding:3px 7px;border-radius:4px;font-size:11px;">Activo</span>
                                 <span v-else class="badge" style="background:#6c757d;color:#fff;padding:3px 7px;border-radius:4px;font-size:11px;">Inactivo</span>
                                 <button
-                                    v-if="!row.locked && typeUser === 'admin' && !isMainUser(row.id)"
+                                    v-if="!row.locked && typeUser === 'admin'"
                                     type="button"
                                     class="btn btn-link btn-xs p-0 ms-1"
                                     :title="row.bot_enabled ? 'Deshabilitar bot' : 'Habilitar bot'"

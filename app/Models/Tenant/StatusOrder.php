@@ -14,8 +14,10 @@ class StatusOrder extends ModelTenant
         'color',
         'sort_order',
         'is_initial',
+        'is_final',
         'is_payment_status',
         'is_order_status',
+        'is_shipping_status',
         'action_generate_document',
         'action_discount_stock',
         'action_mark_payment',
@@ -30,8 +32,10 @@ class StatusOrder extends ModelTenant
     protected $casts = [
         'sort_order'               => 'integer',
         'is_initial'               => 'boolean',
+        'is_final'                 => 'boolean',
         'is_payment_status'        => 'boolean',
         'is_order_status'          => 'boolean',
+        'is_shipping_status'       => 'boolean',
         'action_generate_document' => 'boolean',
         'action_discount_stock'    => 'boolean',
         'action_mark_payment'      => 'boolean',
@@ -51,6 +55,11 @@ class StatusOrder extends ModelTenant
     public function payment_order()
     {
         return $this->hasMany(Order::class, 'payment_status_order_id');
+    }
+
+    public function shipping_order()
+    {
+        return $this->hasMany(Order::class, 'shipping_status_order_id');
     }
 }
 

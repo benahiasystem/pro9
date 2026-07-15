@@ -23042,7 +23042,6 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
     0%   { background-position: -400px 0; }
     100% { background-position:  400px 0; }
 }
-<<<<<<< HEAD
 .sk-line, .sk-circle, .sk-bar, .sk-card {
     background: linear-gradient(90deg, #ececec 25%, #e0e0e0 50%, #ececec 75%);
     background-size: 800px 100%;
@@ -23087,7 +23086,6 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
     align-self: flex-end;
 }
 /* ────────────────────────────────────────────────── */
-=======
 .el-notification__title {
     font-weight: 700;
     font-size: 16px !important;
@@ -23109,7 +23107,6 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
 .el-notification .el-icon-success {
     color: var(--success);
 }
->>>>>>> main
 @media (max-width: 768px) {
     .support-sidebar {
         width: 100%;
@@ -23808,3 +23805,40 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
 .pinned-bar-editing .btn-add-new {
     display: none;
 }
+.dashboard .apexcharts-tooltip,
+.dashboard .apexcharts-tooltip-title,
+.dashboard .apexcharts-xaxistooltip,
+.dashboard .apexcharts-yaxistooltip {
+    color: #17202a !important;
+}
+/* ---------- base común a ambos temas ---------- */
+.el-tooltip__popper{
+  font-size:12.5px !important;
+  line-height:1.5 !important;
+  padding:12px 14px 11px !important;
+  max-width:260px;
+  border-radius:10px !important;
+}
+
+/* oculta la flecha nativa: tarjeta simple sin flecha */
+.el-tooltip__popper .popper__arrow,
+.el-tooltip__popper .popper__arrow::after{
+  display:none !important;
+}
+
+/* ---------- tema oscuro (effect="dark") ---------- */
+.el-tooltip__popper.is-dark{
+  background:#16231E !important;
+  color:#F2F0E3 !important;
+  border:none !important;
+  box-shadow:0 12px 28px -8px rgba(20,30,25,.28), 0 2px 6px rgba(20,30,25,.10);
+}
+
+/* ---------- tema claro (effect="light") ---------- */
+.el-tooltip__popper.is-light{
+  background:#FFFFFF !important;
+  color:#1F2A27 !important;
+  border:1px solid #E4E1D2 !important;
+  box-shadow:0 12px 28px -10px rgba(20,30,25,.18), 0 2px 6px rgba(20,30,25,.06);
+}
+

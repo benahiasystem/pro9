@@ -131,63 +131,7 @@
                 </el-dropdown>
             </div>
             -->
-            <div class="row px-2 documents-kpis">
-                <div class="col-md-6 mb-3">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="text-muted text-uppercase">Ventas del Mes</span>
-                            <span class="badge bg-secondary" :class="kpis.sales.variation_up ? 'bg-success' : 'bg-danger'" v-if="kpis.sales.variation">
-                                <svg v-if="kpis.sales.variation_up" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trending-up" style="margin-top: -1px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 17l6 -6l4 4l8 -8" /><path d="M14 7l7 0l0 7" /></svg>
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trending-down" style="margin-top: -1px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 7l6 6l4 -4l8 8" /><path d="M14 17l7 0l0 -7" /></svg>
-                                {{ kpis.sales.variation }}
-                            </span>
-                        </div>
-                        <h2 class="text-primary fw-semibold mt-0 mb-0 pb-2 card-value">
-                            {{ kpis.sales.total }}
-                        </h2>
-                        <div class="d-flex align-items-center justify-content-start mt-2 gap-2">
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="dot bg-invoices"></span>
-                                <span class="text-muted">Facturas: {{ kpis.sales.facturas }}</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="dot bg-tickets"></span>
-                                <span class="text-muted">
-                                    Boletas: {{ kpis.sales.boletas }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <div class="card-body position-relative">
-                        <div class="d-flex align-items-center justify-content-between mb-1">
-                            <span class="text-muted text-uppercase">Cuentas por cobrar</span>
-                            <span class="badge bg-secondary bg-primary position-absolute icon-building-bank">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-bank"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 21l18 0" /><path d="M3 10l18 0" /><path d="M5 6l7 -3l7 3" /><path d="M4 10l0 11" /><path d="M20 10l0 11" /><path d="M8 14l0 3" /><path d="M12 14l0 3" /><path d="M16 14l0 3" /></svg>
-                            </span>
-                            <span class="badge bg-secondary opacity-0">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-bank"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 21l18 0" /><path d="M3 10l18 0" /><path d="M5 6l7 -3l7 3" /><path d="M4 10l0 11" /><path d="M20 10l0 11" /><path d="M8 14l0 3" /><path d="M12 14l0 3" /><path d="M16 14l0 3" /></svg>
-                            </span>
-                        </div>
-                        <h2 class="text-primary fw-semibold mt-0 mb-0 pb-2 card-value">
-                            {{ kpis.receivable.total }}
-                        </h2>
-                        <div class="d-flex align-items-center justify-content-start mt-2 gap-2">
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="dot bg-primary"></span>
-                                <span class="text-muted">Por cobrar (30 días): {{ kpis.receivable.current }}</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="dot bg-danger"></span>
-                                <span class="text-danger">
-                                    Vencidas: {{ kpis.receivable.overdue }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
             <div class="card-body card-body-invoice">
                 <data-table :resource="resource">
                     <div slot="showhide">
@@ -231,7 +175,7 @@
                             <th v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center" style="min-width: 95px;">Fecha de pago</th>
                             <th v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center">Fecha Vencimiento</th>
                             <th v-if="col.visible && col.key === 'customer'" :key="col.key">Cliente</th>
-                            <!-- <th v-if="col.visible && col.key === 'number'" :key="col.key">Número</th> -->
+                            <th v-if="col.visible && col.key === 'number'" :key="col.key">Número</th>
                             <th v-if="col.visible && col.key === 'notes'" :key="col.key">Notas C/D</th>
                             <th v-if="col.visible && col.key === 'dispatch'" :key="col.key">Guía de Remisión</th>
                             <th v-if="col.visible && col.key === 'sales_note'" :key="col.key">Nota de venta</th>
@@ -280,26 +224,14 @@
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'soap_type'" :key="col.key">{{ row.soap_type_description }}</td>
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">
-                                <div class="d-flex align-items-center">
-                                    <div>
-                                        <span class="icon-date-issue dot d-flex align-items-center justify-content-center" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03' }">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M19 12v7a1.78 1.78 0 0 1 -3.1 1.4a1.65 1.65 0 0 0 -2.6 0a1.65 1.65 0 0 1 -2.6 0a1.65 1.65 0 0 0 -2.6 0a1.78 1.78 0 0 1 -3.1 -1.4v-14a2 2 0 0 1 2 -2h7l5 5v4.25"></path></svg>
-                                        </span>
-                                    </div>
-                                    <div class="d-flex flex-column align-items-start ms-2">
-                                        <template v-if="columns.number && columns.number.visible">
-                                            {{ row.number }} <br> 
-                                            <small class="text-muted">{{ formatDateLong(row.date_of_issue) }}</small>
-                                        </template> 
-
-                                        <template v-else>{{ formatDateLong(row.date_of_issue) }}</template>
-                                    </div>
-                                </div>                                
+                                {{ formatDateLong(row.date_of_issue) }}                               
                             </td>
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small></td>
-                            <!-- <td v-if="col.visible && col.key === 'number'" :key="col.key">{{ row.number }}<br /><small v-text="row.document_type_description"></small><br /><small v-if="row.affected_document" v-text="row.affected_document"></small></td> -->
+                            <td v-if="col.visible && col.key === 'number'" :key="col.key">
+                                <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px;">{{ row.number }}</span>
+                            </td>
                             <td v-if="col.visible && col.key === 'notes'" :key="col.key">
                                 <template v-for="(note, i) in row.notes">
                                     <label :key="i" class="d-block">{{ note.note_type_description }}: {{ note.description }}</label>
@@ -724,13 +656,20 @@
     height: 15px;
     width: 15px;
 }
-.dot.bg-tickets {
+.bg-tickets {
     background-color: color-mix(in srgb, var(--success) 10%, #ffffff) !important;
     border: 1px solid var(--success);
+    color: var(--success);
 }
-.dot.bg-invoices {
+.bg-invoices {
     background-color: color-mix(in srgb, var(--warning) 10%, #ffffff) !important;
     border: 1px solid var(--warning);
+    color: var(--warning);
+}
+.bg-credit-notes {
+    background-color: color-mix(in srgb, var(--info) 10%, #ffffff) !important;
+    border: 1px solid var(--info);
+    color: var(--info);
 }
 .icon-date-issue.dot {
     width: 25px !important;

@@ -88,7 +88,7 @@
                         <span class="fp-total-label">Subtotal</span>
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
                     </div>
-                    <div class="fp-total-row d-flex justify-content-between py-1">
+                    <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
                         <span class="fp-total-label">IGV (18%)</span>
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
                     </div>
@@ -106,7 +106,7 @@
                         <span class="fp-total-label">Subtotal</span>
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
                     </div>
-                    <div class="fp-total-row d-flex justify-content-between py-1">
+                    <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
                         <span class="fp-total-label">IGV (18%)</span>
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
                     </div>
@@ -383,6 +383,10 @@ export default {
         this.checkPaymentGarage()
     },
     computed: {
+        isNrus()
+        {
+            return !!((this.configuration && this.configuration.is_nrus) || (this.config && this.config.is_nrus));
+        },
         disabledDiscountForSeller()
         {
             return this.configuration.restrict_seller_discount && this.typeUser === 'seller';
@@ -449,6 +453,9 @@ export default {
                 if (this.configuration.default_document_type_80) {
                     this.form.document_type_id = "80";
                 } else if (this.configuration.default_document_type_03) {
+                    this.form.document_type_id = "03";
+                } else if (this.isNrus) {
+                    // NRUS no emite Factura, siempre Boleta
                     this.form.document_type_id = "03";
                 } else {
                     this.form.document_type_id =
@@ -519,6 +526,12 @@ export default {
         },
         handleFn113() {
             const code = this.form.document_type_id
+            if (this.isNrus) {
+                // En NRUS solo Boleta (03) y N. Venta (80); se omite Factura
+                this.form.document_type_id = (code == '03') ? '80' : '03'
+                this.filterSeries()
+                return
+            }
             if (code == '01') {
                 this.form.document_type_id = '03'
             } else if (code == '03') {

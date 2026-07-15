@@ -1,13 +1,14 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Nunito+Sans:wght@400;600;700;800&family=DM+Sans:wght@400;500;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Anaheim:wght@400..800&family=Heebo:wght@100..900&family=Host+Grotesk:ital,wght@0,300..800;1,300..800&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Jaldi:wght@400;700&family=Maven+Pro:wght@400..900&family=Pragati+Narrow:wght@400;700&family=Questrial&family=Roboto:ital,wght@0,100..900;1,100..900&family=Sora:wght@100..800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
 :root{
-    --primary-color: #4a40ff;
-    --dark-color: #323941;
-    --light-color: #f7faff;
-    --accent-color: #cac8f1;
-    --highlight-color: #9894dd;
-    --muted: #808a9c;
+    --primary-color: #3d6bf5;
+    --dark-color: #3a4658;
+    --light-color: #f5f8ff;
+    --accent-color: #e7edfc;
+    --highlight-color: #8aa4f7;
+    --muted: #8492a6;
     /* modo dark */
     --background-dark: #0e1525;
     --contents-dark: #1a2235;
@@ -18,7 +19,7 @@
     --danger: #ff0066;
     --success: #00c666;
     --warning: #ff8400;
-    --primary: #007bff;
+    --primary: var(--primary-color);
     --info: #1dadff; 
 }
 
@@ -215,6 +216,12 @@ ul.nav-main li.nav-description {
 .card{
     margin-bottom: 15px;
 }
+.kpi-col .card.card-dashboard {
+    margin-bottom: 0 !important;
+}
+.row.top.kpi-row {
+    margin-bottom: 8px !important;
+}
 .card.card-dashboard {
     -webkit-box-shadow: none;
     box-shadow: none;
@@ -347,7 +354,7 @@ ul.nav-main li .nav-children li a:before {
     box-shadow: unset;
 }
 a.text-info:hover, a.text-info:focus {
-    color: #002183 !important;
+    color: var(--dark-color) !important;
 }
 html.fixed.sidebar-white .sidebar-left, html.fixed.sidebar-white .sidebar-header, html.fixed.sidebar-white .sidebar-left .nano {
     transition: all .15s ease;
@@ -1200,9 +1207,6 @@ html.dark ul.nav-main li .nav-children li a:after {
 }
 
 /* -------- config -------- */
-html.dark .card.card-dashboard .card-title, html.dark .card.card-dashboard small.text-muted {
-    background: var(--button-second);
-}
 /* menu top */
 .fix-m {
     margin-bottom: -4px;
@@ -1884,6 +1888,67 @@ html.dark .pos-qty-btn {
     background: var(--light-color);
     border-radius: 4px;
 }
+.minitour-ring {
+    box-shadow: 0 0 0 3px var(--primary-color);
+}
+@keyframes minitour-pulse {
+    0% {
+        box-shadow: 0 0 0 3px var(--primary-color), 0 0 0 3px color-mix(in srgb, var(--primary-color) 20%, #ffffff00);
+    }
+    70% {
+        box-shadow: 0 0 0 3px var(--primary-color), 0 0 0 14px color-mix(in srgb, var(--primary-color) 20%, #ffffff00);
+    }
+    100% {
+        box-shadow: 0 0 0 3px var(--primary-color), 0 0 0 14px color-mix(in srgb, var(--primary-color) 20%, #ffffff00);
+    }
+}
+.minitour-tooltip,
+.minitour-arrow {
+    background-color: var(--contents-dark);
+    color: var(--light-color);
+}
+.minitour-tooltip p {
+    color: var(--muted) !important;
+}
+.minitour-tooltip p b {
+    color: var(--light-color) !important;
+}
+.minitour-step-tag {
+    color: var(--highlight-color);
+}
+.minitour-dot.on {
+    background-color: var(--highlight-color);
+}
+html.dark .minitour-tooltip,
+html.dark .minitour-arrow {
+    background-color: var(--light-color);
+}
+html.dark .minitour-tooltip h2 {
+    color: var(--dark-color) !important;
+}
+html.dark .minitour-tooltip p {
+    color: color-mix(in srgb, var(--dark-color) 92%, #fff) !important;
+}
+html.dark .minitour-tooltip p b {
+    color: var(--dark-color) !important;
+}
+.el-tooltip__popper.is-dark{
+  background: color-mix(in srgb, var(--primary-color) 30%, #000) !important;
+  color: var(--light-color) !important;
+}
+.el-tooltip__popper.is-light{
+  background:var(--light-color) !important;
+  color:var(--dark-color) !important;
+  border:1px solid var(--accent-color) !important;
+}
+.el-tooltip__popper{
+  border-radius:4px !important;
+}
+html.dark .el-tooltip__popper.is-dark{
+  background: var(--light-color) !important;
+  color: var(--dark-color) !important;
+  border: 1px solid var(--accent-color);
+}
 /* modo oscuro */
 html.dark .table-responsive.payment {
     border: 1px solid var(--inputs-dark);
@@ -1894,8 +1959,9 @@ html.dark .el-tabs--border-card > .el-tabs__header {
     background-color: var(--contents-dark);
     border-bottom: 1px solid var(--borders-dark);
 }
-html.dark .el-tabs--border-card > .el-tabs__header .el-tabs__item.is-active {
-    color: var(--primary-color);
+html.dark .el-tabs--border-card > .el-tabs__header .el-tabs__item.is-active,
+html.dark .advanced-settings.el-tabs--border-card>.el-tabs__header .el-tabs__item.is-active {
+    color: var(--light-color) !important;
     background-color: var(--button-second);
     border-right-color: var(--borders-dark);
     border-left-color: var(--borders-dark);
@@ -2016,7 +2082,7 @@ html.dark .form-control:focus, html.dark .el-input__inner:focus, html.dark .el-t
 html.dark .el-dialog {
     background: var(--contents-dark);
 }
-html.dark .card.card-dashboard .card-title, html.dark .card.card-dashboard small.text-muted, html.dark .el-dialog__title {
+html.dark .card.card-dashboard .card-title, html.dark .el-dialog__title {
     color: var(--light-color) !important;
 }
 html.dark label.control-label, html.dark .userbox .name, html.dark .el-select-dropdown__item.selected,
@@ -2373,6 +2439,22 @@ html.dark .cd-text-block {
 html.dark .pos-qty-field .el-input__inner{
     border-color: transparent !important;
     background-color: transparent !important;
+}
+html.dark .advanced-settings .el-tabs__nav,
+html.dark .db-seg,
+html.dark .db-count {
+    background-color: var(--inputs-dark);
+}
+html.dark .db-thumb {
+    background-color: var(--contents-dark);
+}
+html.dark .db-seg button.active {
+    color: var(--light-color);
+}
+html.dark .db-client,
+html.dark .tp-item,
+html.dark .ls-item {
+    border-color: var(--borders-dark);
 }
 @media only screen and (min-width: 391px){
     .card-body-invoice div .row .filter-invoice{

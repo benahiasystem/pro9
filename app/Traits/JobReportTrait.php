@@ -208,19 +208,19 @@ trait JobReportTrait
         Auth::logout();
     }
 
-    public function jobBatchFinished(Batch $batch, int $trayId, int $website_id,$request)
+    public function jobBatchFinished(Batch $batch, int $trayId, int $website_id, $filename = null, $format)
     {
         $website = $this->findWebsite($website_id);
         $tenancy = app(Environment::class);
         $tenancy->tenant($website);
-        $type = $request['type'];
-        $type_prefix = ($type == 'sale') ? 'ventas_' : 'compras_';
+        // $type = $request['type'];
+        // $type_prefix = ($type == 'sale') ? 'ventas_' : 'compras_';
         $path = $this->getReportPath('zip');
         $disk = Storage::disk('tenant');
         $tray = $this->findDownloadTray($trayId);
 
 
-        $filename = $type_prefix . 'report_general_items_'.date('YmdHis').'-' .$tray->user_id;
+        // $filename = $type_prefix . 'report_general_items_'.date('YmdHis').'-' .$tray->user_id;
 
         $files = JobBatchingTray::where('job_batch_id', $batch->id);
 
@@ -236,7 +236,7 @@ trait JobReportTrait
 
         if ($zip->open($pathZip, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
             foreach ($files->get() as $file) {
-                $ouput = $disk->get(DIRECTORY_SEPARATOR.$this->getReportPath($request['format']).DIRECTORY_SEPARATOR.$file->generated_filename);
+                $ouput = $disk->get(DIRECTORY_SEPARATOR.$this->getReportPath($format).DIRECTORY_SEPARATOR.$file->generated_filename);
                 $zip->addFromString($file->generated_filename, $ouput);
             }
             $zip->close();

@@ -27,7 +27,7 @@
 
 import {mapState} from "vuex/dist/vuex.mjs";
 export default {
-    props: ['colClass','wsPhone','wsFile','wsDocument','wsMessage', 'wsData', 'wsConfig'],
+    props: ['colClass','wsPhone','wsFile','wsFileA4','wsDocument','wsMessage', 'wsData', 'wsConfig'],
     data() {
         return {
             form: {},
@@ -48,6 +48,12 @@ export default {
         canSend() {
             return !!this.effectiveConfig.qr_api_enable_ws && !!this.effectiveInstance;
         },
+        resolvedWsFile() {
+            if (this.effectiveConfig.qr_api_pdf_format === 'a4' && this.wsFileA4) {
+                return this.wsFileA4;
+            }
+            return this.wsFile;
+        },
         disabledReason() {
             if (!this.effectiveConfig.qr_api_enable_ws) {
                 return 'El envío por QR Api está deshabilitado. Actívalo en Configuración → WhatsApp.';
@@ -67,7 +73,7 @@ export default {
             }
 
             const {extension_only, filename_only} = this.wsData;
-            this.convertFileToBase64(this.wsFile)
+            this.convertFileToBase64(this.resolvedWsFile)
                 .then(file_encode64 => {
 
                     this.setForm(file_encode64, `${filename_only}.${extension_only}`)
@@ -79,7 +85,8 @@ export default {
                             }
                         })
                         .catch(error => {
-                            return this.$message.error('No se puede enviar')
+                            const message = error.response?.data?.message || 'No se puede enviar'
+                            return this.$message.error(message)
                         })
                         .finally(() => {
                             this.loading_submit = false

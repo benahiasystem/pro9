@@ -1236,6 +1236,8 @@ class Facturalo
         }
     }
 
+
+
     public function validationCodeResponse($code, $message)
     {
         //Errors

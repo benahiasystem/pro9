@@ -196,12 +196,18 @@ class DocumentTransform
         if(key_exists('descuentos', $inputs)) {
             $discounts = [];
             foreach ($inputs['descuentos'] as $row) {
+                // $is_amount = $row['is_amount'] ?? null; //registra si el descuento fue por monto o porcentaje
+                $amount_without_rounded = $row['cantidad_sin_redondeo'] ?? null; // monto sin redondear para cálculos posteriores, principalmente para descuentos que afectan base imponible del IGV
+                $from_global_distribution = $row['global_distribucion'] ?? null;
                 $discounts[] = [
                     'discount_type_id' => $row['codigo'],
                     'description' => $row['descripcion'],
+                    'from_global_distribution' => $from_global_distribution, // para identificar si el descuento viene de una distribución global o es un descuento directo del item
                     'factor' => $row['factor'],
                     'amount' => $row['monto'],
                     'base' =>  $row['base'],
+                    'amount_without_rounded'  => $amount_without_rounded,
+                    // 'is_amount' => $is_amount,
                 ];
             }
 

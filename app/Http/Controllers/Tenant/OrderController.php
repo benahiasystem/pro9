@@ -107,7 +107,7 @@ class OrderController extends Controller
 
         $statuses = Cache::rememberForever($cacheKey, fn () => StatusOrder::orderBy('sort_order')->get());
 
-        $field = in_array($request->field, ['status_order_id', 'payment_status_order_id'], true)
+        $field = in_array($request->field, ['status_order_id', 'payment_status_order_id', 'shipping_status_order_id'], true)
             ? $request->field
             : 'status_order_id';
 

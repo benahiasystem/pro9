@@ -74,6 +74,7 @@ class Quotation extends ModelTenant
         'seller_id',
         'total_igv_free',
         'subtotal',
+        'custom_fields_data',
     ];
 
     public static function boot()
@@ -88,6 +89,7 @@ class Quotation extends ModelTenant
         'date_of_issue' => 'date',
         // 'date_of_due' => 'date',
         // 'delivery_date' => 'date',
+        'custom_fields_data' => 'array',
     ];
 
     public function getEstablishmentAttribute($value)
@@ -451,6 +453,7 @@ class Quotation extends ModelTenant
             'updated_at' => $row->updated_at->format('Y-m-d H:i:s'),
             'print_ticket' => $row->getUrlPrintPdf('ticket'),
             'filename' => $row->filename,
+            'custom_fields_data' => $row->custom_fields_data,
         ];
     }
 
