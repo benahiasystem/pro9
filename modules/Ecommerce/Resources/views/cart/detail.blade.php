@@ -898,9 +898,9 @@
 </div>
 @endif
 
-<!-- DOM Containers for MP and Izipay -->
+<!-- DOM Containers for MP and Izipay (fuera de #app para evitar conflicto con Vue) -->
 <div id="mp-brick-container" style="display:none"></div>
-<div class="kr-izipay-container-inner" style="display:none"></div>
+<div id="izipay-payment-host" class="kr-izipay-container-inner" style="display:none"></div>
 
 <input type="hidden" id="total_amount" data-total="0.0">
 
