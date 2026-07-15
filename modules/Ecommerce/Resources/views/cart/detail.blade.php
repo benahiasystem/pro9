@@ -608,10 +608,24 @@
                 <!-- Coupon input and applied coupon display -->
                 <div class="coupon-block">
                     <div class="coupon">
-                        <input v-model="couponField" type="text" class="input" placeholder="Código de cupón">
-                        <button class="coupon-btn" @click="applyCoupon" :disabled="couponLoading">Aplicar</button>
+                        <input
+                            v-model="couponField"
+                            type="text"
+                            class="input"
+                            placeholder="Código de cupón"
+                            :disabled="couponLoading || !!(appliedCoupon && appliedCoupon.code)"
+                        >
+                        <button
+                            class="coupon-btn"
+                            @click="applyCoupon"
+                            :disabled="couponLoading || !!(appliedCoupon && appliedCoupon.code)"
+                            :title="(appliedCoupon && appliedCoupon.code) ? 'Ya hay un cupón aplicado' : 'Aplicar cupón'"
+                        >Aplicar</button>
                     </div>
                     <small class="coupon-msg text-danger" v-if="couponMessage">@{{ couponMessage }}</small>
+                    <small class="coupon-msg text-muted" v-else-if="appliedCoupon && appliedCoupon.code">
+                        Cupón aplicado. Usa &quot;Eliminar&quot; para quitarlo.
+                    </small>
                 </div>
                 <label class="terms" :class="{ 'terms--checked': acceptedTerms }" id="termsLabel">
                   <input type="checkbox" id="termsCheck" v-model="acceptedTerms">

@@ -1287,13 +1287,36 @@ var app_cart = new Vue({
             }
             this.calculateSummary();
         },
+        /**
+         * Subtotal de ítems sin cupón ni delivery.
+         * Debe coincidir con la base que usa calculateSummary al restar el descuento.
+         */
+        getTotalBeforeCoupon() {
+            let total = 0;
+            (this.records || []).forEach(function (item) {
+                total += parseFloat(item.sub_total) || 0;
+            });
+            return Math.round(total * 100) / 100;
+        },
+
         async applyCoupon() {
             if (!this.couponField || this.couponLoading) return;
+
+            // Un solo cupón por carrito: bloquear reaplicación acumulativa
+            if (this.appliedCoupon && this.appliedCoupon.code) {
+                this.couponMessage = 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.';
+                return;
+            }
+
             this.couponLoading = true;
             this.couponMessage = null;
 
             try {
-                const payload = { code: this.couponField, order_total: this.summary.total };
+                const payload = {
+                    code: this.couponField,
+                    order_total: this.getTotalBeforeCoupon(),
+                    coupon_already_applied: !!(this.appliedCoupon && this.appliedCoupon.code)
+                };
                 const res = await axios.post('/ecommerce/validate-coupon', payload, this.getHeaderConfig());
                 if (res.data && res.data.success) {
                     const d = res.data.data;
@@ -1303,10 +1326,9 @@ var app_cart = new Vue({
                         discount: parseFloat(d.discount),
                         free_shipping: d.free_shipping
                     };
-                    if (typeof d.new_total !== 'undefined') {
-                        this.summary.total = parseFloat(d.new_total).toFixed(2);
-                        this.payment_cash.amount = this.summary.total;
-                    }
+                    // Recalcular resumen una sola vez (items - descuento + delivery)
+                    this.calculateSummary();
+                    this.couponField = d.code || this.couponField;
                     this.couponMessage = null;
                 } else {
                     this.couponMessage = (res.data && res.data.message) ? res.data.message : 'cupon no valido';
