@@ -16,6 +16,8 @@ class ExtraServicesResource extends JsonResource
     {
         return [
             'isActiveApidocs' => (bool) $this->isActiveApidocs,
+            'urlObtainApidocs' => $this->urlObtainApidocs,
+            'urlServiceApidocs' => $this->urlServiceApidocs,
         ];
     }
 }

@@ -18,8 +18,8 @@
           <h3 class="my-0">Servicio ApiDocs</h3>
         </div>
         <div class="card-body">
-          <div class="card mb-0" v-loading="loading" element-loading-background="rgba(255, 255, 255, 0.7)">
-            <div class="row">
+          <div class="card mb-0" v-loading="loading" element-loading-background="rgba(255, 255, 255, 0.7)" style="min-height: 120px;">
+            <div class="row" v-if="configLoaded">
               <div class="col-12 form-group mb-4">
                 <label>Habilitar servicio extra para el sistema</label>
                 <Tooltip style="margin-left: 5px;" content="Habilitar el servicio extra para el sistema, esto permitirá que los clientes puedan acceder a la documentación de la API.">
@@ -32,8 +32,8 @@
                 <apidocs-usage />
               </div>
 
-              <div class="col-12 form-group mb-4" v-if="!form.isActiveApidocs">
-                Ventana de ventas
+              <div class="col-12 form-group mb-4" v-else>
+                <apidocs-venta :url="form.urlObtainApidocs" />
               </div>
             </div>
           </div>
@@ -46,19 +46,25 @@
 <script>
 import { Tooltip } from 'element-ui';
 import ApidocsUsage from './components/apidocs-usage.vue';
+import ApidocsVenta from './components/apidocs-venta.vue';
 
 export default {
   name: 'ExtraServicesIndex',
   components: {
     Tooltip,
     ApidocsUsage,
+    ApidocsVenta,
   },
+
   data() {
     return {
       resource: '/extra-services',
       loading: false,
+      configLoaded: false,
       form: {
         isActiveApidocs: false,
+        urlObtainApidocs: '',
+        urlServiceApidocs: '',
       },
       errors: {},
     };
@@ -72,14 +78,17 @@ export default {
       try {
         const response = await this.$http.get(this.resource + '/records');
         this.form = response.data.data;
+        this.configLoaded = true;
       } catch (error) {
         console.error('Error fetching data:', error);
+        this.configLoaded = false;
       } finally {
         this.loading = false;
       }
     },
     async setData() {
       this.loading = true;
+      this.configLoaded = false;
       try {
         const response = await this.$http.post(this.resource + '/store', this.form);
         if (response.data.success) {

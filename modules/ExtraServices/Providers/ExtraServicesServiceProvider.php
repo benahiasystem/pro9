@@ -15,6 +15,7 @@ class ExtraServicesServiceProvider extends ServiceProvider
     {
         $this->registerConfig();
         $this->registerViews();
+        $this->registerCommands();
     }
 
     /**
@@ -25,6 +26,17 @@ class ExtraServicesServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->register(RouteServiceProvider::class);
+    }
+
+    /**
+     * Registra los comandos Artisan del módulo.
+     */
+    protected function registerCommands(): void
+    {
+        $this->commands([
+            \Modules\ExtraServices\Console\Commands\SetUrlServiceApidocsCommand::class,
+            \Modules\ExtraServices\Console\Commands\SetUrlObtainApidocsCommand::class,
+        ]);
     }
 
     /**

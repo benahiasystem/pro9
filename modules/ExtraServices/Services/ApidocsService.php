@@ -46,7 +46,7 @@ class ApidocsService
     {
         $config = ExtraServices::first();
 
-        return rtrim($config?->urlApidocs ?? '', '/');
+        return rtrim($config?->urlServiceApidocs ?? '', '/');
     }
 
     /**
