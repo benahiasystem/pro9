@@ -667,9 +667,10 @@ var app_cart = new Vue({
                 // Limpiar container previo si existe
                 if (this.mpBrickController) {
                     this.mpBrickController.unmount();
+                    this.mpBrickController = null;
                 }
 
-                // Generamos los datos preliminares de formulario para luego crear la orden
+                // Preparar datos del pedido/formulario antes de mostrar el Brick
                 const rawFormData = await this.getFormPaymentCash();
 
                 const settings = {
@@ -683,19 +684,20 @@ var app_cart = new Vue({
                     },
                     callbacks: {
                         onReady: () => {
+                            // El Brick ya está montado; el overlay debió cerrarse antes del modal
                             this.processingPayment = false;
-                            $('#mp-modal').modal('show'); // asumiendo que abriremos el container en un modal o está en el DOM
                         },
                         onSubmit: (formDataRecv) => {
                             return new Promise((resolve, reject) => {
+                                this.processingPayment = true;
                                 swal({ title: "Estamos hablando con MercadoPago", text: "Procesando pago...", onOpen: () => { Swal.showLoading() } });
                                 
                                 const payload = { ...rawFormData, form_data: formDataRecv.formData };
                                 axios.post(window.__routes?.mercadopago_payment || '/ecommerce/mercadopago/payment', payload, this.getHeaderConfig())
                                 .then(response => {
+                                    this.processingPayment = false;
                                     if(response.data.success) {
                                         swal.close();
-                                        $('#mp-modal').modal('hide');
                                         this.saveContactDataUser();
                                         this.showPurchaseSuccess(response.data.order);
                                         resolve();
@@ -704,6 +706,7 @@ var app_cart = new Vue({
                                         reject();
                                     }
                                 }).catch(err => {
+                                    this.processingPayment = false;
                                     swal("Pago Fallido", 'Ocurrió un error con la pasarela.', "error");
                                     console.log(err);
                                     reject();
@@ -712,28 +715,45 @@ var app_cart = new Vue({
                         },
                         onError: (error) => {
                             console.error(error);
+                            this.processingPayment = false;
                             this.showSwalMessage('Error', 'Ocurrió un problema con el formulario de pago.', 'error');
                         },
                     },
                 };
+
+                // Quitar overlay global ANTES de abrir el modal (z-index 1080 > swal 1060)
+                this.processingPayment = false;
                 
-                // Necesitamos tener un wrapper visible, abrimos un sweetalert o modal
                 swal({
                     title: 'Pago Seguro con Mercado Pago',
-                    html: '<div id="mp-swal-container" style="min-height: 300px;"></div>',
+                    html: '<div id="mp-swal-container" class="mp-swal-brick"></div>',
+                    width: 640,
+                    customClass: 'mp-payment-swal',
                     showConfirmButton: false,
                     showCloseButton: true,
                     onOpen: async () => {
-                        this.mpBrickController = await bricksBuilder.create('payment', 'mp-swal-container', settings);
+                        try {
+                            this.mpBrickController = await bricksBuilder.create('payment', 'mp-swal-container', settings);
+                        } catch (brickErr) {
+                            console.error(brickErr);
+                            this.processingPayment = false;
+                            swal.close();
+                            this.showSwalMessage('Error', 'No se pudo cargar el formulario de Mercado Pago.', 'error');
+                        }
                     },
                     onClose: () => {
-                        if (this.mpBrickController) this.mpBrickController.unmount();
+                        this.processingPayment = false;
+                        if (this.mpBrickController) {
+                            this.mpBrickController.unmount();
+                            this.mpBrickController = null;
+                        }
                     }
                 });
 
             } catch (err) {
                 this.processingPayment = false;
                 console.error(err);
+                this.showSwalMessage('Error', 'No se pudo iniciar el pago con Mercado Pago.', 'error');
             }
         },
         async loadIzipaySDK() {

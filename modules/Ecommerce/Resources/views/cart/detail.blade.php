@@ -2,6 +2,42 @@
 
 @push('styles')
 <style>
+    /* Modal Mercado Pago (SweetAlert2 v7 + Payment Brick) */
+    .swal2-popup.mp-payment-swal {
+        width: 640px !important;
+        max-width: 92vw !important;
+        padding: 1.5rem 1.75rem 1.75rem !important;
+        box-sizing: border-box;
+    }
+
+    /* Por encima del overlay de carga (.purchase-overlay = 1080) por si queda residual */
+    .swal2-container {
+        z-index: 1100 !important;
+    }
+
+    .swal2-popup.mp-payment-swal .swal2-content,
+    .swal2-popup.mp-payment-swal #swal2-content {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        text-align: left;
+    }
+
+    .mp-swal-brick {
+        width: 100%;
+        min-height: 320px;
+        text-align: left;
+    }
+
+    @media (max-width: 576px) {
+        .swal2-popup.mp-payment-swal {
+            width: 94vw !important;
+            padding: 1rem 0.85rem 1.25rem !important;
+        }
+    }
+
     #addressModal .modal-dialog {
         max-width: 800px;
     }
