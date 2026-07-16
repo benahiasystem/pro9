@@ -14,6 +14,7 @@
               </small>
             </div>
           </div>
+
           <div class="col-md-6">
             <div class="form-group form-modern mb-3">
               <el-switch v-model="form.enable_transfer" :active-value="1" :inactive-value="0"></el-switch>
@@ -22,9 +23,8 @@
                 Muestra la opción &ldquo;Transferencia Bancaria&rdquo; en el checkout.
               </small>
             </div>
-          </div>
-          <div class="col-md-12" v-if="form.enable_transfer === 1" style="animation: fadeIn 0.3s;">
-            <div class="form-group form-modern mb-3" style="background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+
+            <div v-if="form.enable_transfer === 1" class="payment-gateway-panel bank-accounts-panel">
               <label class="mb-2" style="font-weight: 600;">Cuentas Bancarias Disponibles</label>
               <small class="d-block text-muted mb-3" style="line-height: 1.5;">
                 Seleccione qué cuentas bancarias se mostrarán a los clientes en el checkout público de la tienda virtual.
@@ -42,21 +42,14 @@
             </div>
           </div>
 
-          <div class="col-md-12">
-            <el-alert title="Configuración de Credenciales" show-icon type="info" class="mb-4" :closable="false">
-              Las credenciales de Izipay, Mercado Pago y Culqi se obtienen automáticamente desde la configuración central (Empresa > Configuración de pagos). 
-              Aquí puedes habilitar cuáles mostrar en la tienda virtual y personalizar su título y descripción.
-            </el-alert>
-          </div>
-
           <!-- Izipay -->
           <div class="col-md-6">
             <div class="form-group form-modern mb-3">
               <el-switch v-model="form.enable_izipay" :active-value="1" :inactive-value="0"></el-switch>
               <label class="ms-2 mb-0">Habilitar Izipay en Ecommerce</label>
             </div>
-            
-            <div v-if="form.enable_izipay === 1" style="animation: fadeIn 0.3s; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 1rem;">
+
+            <div v-if="form.enable_izipay === 1" class="payment-gateway-panel">
               <div class="form-group mb-3">
                 <label class="mb-2" style="font-weight: 600;">Título del método</label>
                 <el-input v-model="form.title_izipay" placeholder="Ej: Pago con Tarjeta (Izipay)"></el-input>
@@ -74,8 +67,8 @@
               <el-switch v-model="form.enable_mp" :active-value="1" :inactive-value="0"></el-switch>
               <label class="ms-2 mb-0">Habilitar Mercado Pago en Ecommerce</label>
             </div>
-            
-            <div v-if="form.enable_mp === 1" style="animation: fadeIn 0.3s; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 1rem;">
+
+            <div v-if="form.enable_mp === 1" class="payment-gateway-panel">
               <div class="form-group mb-3">
                 <label class="mb-2" style="font-weight: 600;">Título del método</label>
                 <el-input v-model="form.title_mp" placeholder="Ej: Paga con Mercado Pago"></el-input>
@@ -93,8 +86,8 @@
               <el-switch v-model="form.enable_culqi" :active-value="1" :inactive-value="0"></el-switch>
               <label class="ms-2 mb-0">Habilitar Culqi en Ecommerce</label>
             </div>
-            
-            <div v-if="form.enable_culqi === 1" style="animation: fadeIn 0.3s; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 1rem;">
+
+            <div v-if="form.enable_culqi === 1" class="payment-gateway-panel">
               <div class="form-group mb-3">
                 <label class="mb-2" style="font-weight: 600;">Título del método</label>
                 <el-input v-model="form.title_culqi" placeholder="Ej: Pago con Tarjeta"></el-input>
@@ -105,7 +98,7 @@
               </div>
             </div>
           </div>
-          
+
           <div class="col-md-6">
             <div class="form-group form-modern mb-3">
               <el-switch v-model="form.enable_cash" :active-value="1" :inactive-value="0"></el-switch>
@@ -114,8 +107,8 @@
                 Muestra la opción &ldquo;Pago contra entrega&rdquo; en el checkout.
               </small>
             </div>
-            
-            <div v-if="form.enable_cash === 1" style="animation: fadeIn 0.3s; background: #f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 1rem;">
+
+            <div v-if="form.enable_cash === 1" class="payment-gateway-panel">
               <div class="form-group mb-3">
                 <label class="mb-2" style="font-weight: 600;">Título</label>
                 <el-input v-model="form.cash_title" placeholder="Ej: Pago contra entrega"></el-input>
@@ -132,6 +125,13 @@
               </div>
             </div>
           </div>
+
+          <div class="col-md-12">
+            <el-alert title="Configuración de Credenciales" show-icon type="info" class="mb-0 mt-1" :closable="false">
+              Las credenciales de Izipay, Mercado Pago y Culqi se obtienen automáticamente desde la configuración central (Empresa > Configuración de pagos).
+              Aquí puedes habilitar cuáles mostrar en la tienda virtual y personalizar su título y descripción.
+            </el-alert>
+          </div>
         </div>
       </div>
       <div class="form-actions text-end float-end pt-2">
@@ -140,6 +140,35 @@
     </form>
   </div>
 </template>
+
+<style scoped>
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.payment-gateway-panel {
+  animation: fadeIn 0.3s;
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  margin-bottom: 1rem;
+}
+
+.bank-accounts-panel {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+</style>
 
 
 
