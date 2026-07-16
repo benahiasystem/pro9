@@ -118,11 +118,17 @@
                                         <span
                                             slot="suffix"
                                             class="access-token-mp-toggle"
-                                            :class="{'access-token-mp-toggle--disabled': isShowingSavedAccessToken}"
                                             @mousedown.prevent
                                             @click="toggleAccessTokenVisibility"
                                         >
-                                            <i :class="showAccessTokenMp ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+                                            <i
+                                                v-if="accessTokenMpRevealLoading"
+                                                class="fa fa-spinner fa-spin"
+                                            ></i>
+                                            <i
+                                                v-else
+                                                :class="accessTokenMpVisible ? 'fa fa-eye-slash' : 'fa fa-eye'"
+                                            ></i>
                                         </span>
                                     </el-input>
                                     <small class="form-control-feedback" v-if="errors.access_token_mp" v-text="errors.access_token_mp[0]"></small>
@@ -267,10 +273,6 @@
         color: #909399;
     }
 
-    .access-token-mp-toggle--disabled {
-        cursor: default;
-        opacity: 0.45;
-    }
 
 </style>
 
@@ -285,22 +287,25 @@
                 form: {},
                 errors: {},
                 loading_submit: false,
-                showAccessTokenMp: false,
+                accessTokenMpVisible: false,
                 accessTokenMpEditing: false,
+                accessTokenMpDraft: null,
+                accessTokenMpRevealLoading: false,
+                accessTokenMpUnchangedSinceReveal: false,
             }
         },
         computed: {
             isShowingSavedAccessToken() {
                 return this.form.has_access_token_mp
+                    && !this.accessTokenMpDraft
                     && !this.accessTokenMpEditing
-                    && !this.form.access_token_mp
             },
             accessTokenInputType() {
                 if (this.isShowingSavedAccessToken) {
                     return 'text'
                 }
 
-                return this.showAccessTokenMp ? 'text' : 'password'
+                return this.accessTokenMpVisible ? 'text' : 'password'
             },
             accessTokenInputValue() {
                 if (this.isShowingSavedAccessToken) {
@@ -313,7 +318,7 @@
                     return '.'.repeat(18) + suffix
                 }
 
-                return this.form.access_token_mp || ''
+                return this.accessTokenMpDraft || ''
             },
         },
         async created() {
@@ -322,27 +327,80 @@
         },
         methods: {
             onAccessTokenInput(value) {
-                this.form.access_token_mp = value
+                this.accessTokenMpDraft = value
+                this.accessTokenMpUnchangedSinceReveal = false
             },
             onAccessTokenFocus() {
                 if (this.isShowingSavedAccessToken) {
                     this.accessTokenMpEditing = true
-                    this.form.access_token_mp = ''
-                    this.showAccessTokenMp = false
+                    this.accessTokenMpDraft = ''
+                    this.accessTokenMpVisible = false
+                    this.accessTokenMpUnchangedSinceReveal = false
                 }
             },
             onAccessTokenBlur() {
-                if (this.accessTokenMpEditing && !this.form.access_token_mp) {
+                if (this.accessTokenMpVisible) {
+                    this.maskAccessTokenMp()
+                }
+
+                if (this.accessTokenMpEditing && !this.accessTokenMpDraft) {
                     this.accessTokenMpEditing = false
-                    this.showAccessTokenMp = false
                 }
             },
-            toggleAccessTokenVisibility() {
-                if (this.isShowingSavedAccessToken) {
+            maskAccessTokenMp() {
+                this.accessTokenMpVisible = false
+
+                if (this.accessTokenMpUnchangedSinceReveal) {
+                    this.accessTokenMpDraft = null
+                }
+            },
+            async revealAccessTokenMp() {
+                this.accessTokenMpRevealLoading = true
+
+                try {
+                    const { data } = await this.$http.get(`/${this.resource}/access-token-mp`)
+
+                    if (!data.success || !data.access_token_mp) {
+                        throw new Error(data.message || 'No se pudo obtener el token de acceso')
+                    }
+
+                    this.accessTokenMpDraft = data.access_token_mp
+                    this.accessTokenMpVisible = true
+                    this.accessTokenMpUnchangedSinceReveal = true
+                    this.accessTokenMpEditing = false
+                } catch (error) {
+                    const message = error.response?.data?.message
+                        || error.message
+                        || 'No se pudo obtener el token de acceso'
+
+                    this.$message.error(message)
+                } finally {
+                    this.accessTokenMpRevealLoading = false
+                }
+            },
+            async toggleAccessTokenVisibility() {
+                if (this.accessTokenMpRevealLoading) {
                     return
                 }
 
-                this.showAccessTokenMp = !this.showAccessTokenMp
+                if (this.accessTokenMpVisible) {
+                    this.maskAccessTokenMp()
+                    return
+                }
+
+                if (this.isShowingSavedAccessToken) {
+                    await this.revealAccessTokenMp()
+                    return
+                }
+
+                this.accessTokenMpVisible = true
+            },
+            resetAccessTokenMpState() {
+                this.accessTokenMpVisible = false
+                this.accessTokenMpEditing = false
+                this.accessTokenMpDraft = null
+                this.accessTokenMpRevealLoading = false
+                this.accessTokenMpUnchangedSinceReveal = false
             },
             handleClick(){
 
@@ -353,8 +411,12 @@
 
                 const payload = { ...this.form }
 
-                if (payload.type === '02' && this.form.has_access_token_mp && !payload.access_token_mp) {
-                    delete payload.access_token_mp
+                if (payload.type === '02') {
+                    if (this.accessTokenMpDraft) {
+                        payload.access_token_mp = this.accessTokenMpDraft
+                    } else if (this.form.has_access_token_mp) {
+                        delete payload.access_token_mp
+                    }
                 }
 
                 this.$http.post(`/${this.resource}`, payload)
@@ -362,12 +424,10 @@
                         if (response.data.success) {
                             this.$message.success(response.data.message)
 
-                            if (this.form.type === '02' && this.form.access_token_mp) {
+                            if (this.form.type === '02' && this.accessTokenMpDraft) {
                                 this.form.has_access_token_mp = true
-                                this.form.access_token_mp_suffix = this.form.access_token_mp.slice(-8)
-                                this.form.access_token_mp = null
-                                this.accessTokenMpEditing = false
-                                this.showAccessTokenMp = false
+                                this.form.access_token_mp_suffix = this.accessTokenMpDraft.slice(-8)
+                                this.resetAccessTokenMpState()
                             }
                         } else {
                             this.$message.error(response.data.message)
@@ -432,8 +492,7 @@
                             access_token_mp_suffix: data.access_token_mp_suffix || null,
                         }
 
-                        this.accessTokenMpEditing = false
-                        this.showAccessTokenMp = false
+                        this.resetAccessTokenMpState()
                     })
             }, 
         }
