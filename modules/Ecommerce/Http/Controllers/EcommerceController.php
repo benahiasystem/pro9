@@ -335,7 +335,8 @@ class EcommerceController extends Controller
 
         $enable_electronic_documents = (bool) ($configuration->enable_electronic_documents ?? false);
         $enable_store_pickup          = (bool) ($configuration->enable_store_pickup ?? false);
-        $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
+        $gateway_availability         = \Modules\Payment\Models\PaymentConfiguration::getEcommerceGatewayAvailability();
+        $enable_yape                  = ($configuration->enable_yape ?? false) && $gateway_availability['yape'];
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
 
         // Sucursales de recojo activas para el checkout
@@ -348,15 +349,14 @@ class EcommerceController extends Controller
         // Obtener solo las cuentas que el administrador haya habilitado para el E-commerce
         $preferences = $configuration->preferences ?: [];
 
-        // Validación estricta: Si el switch de Ecommerce está apagado, forzamos false en las credenciales
-        // en memoria para asegurarnos que la vista no intente inyectar scripts de pasarelas no autorizadas.
-        if (!($preferences['enable_izipay'] ?? false)) {
+        // Validación estricta: requiere switch de Ecommerce activo y pasarela configurada globalmente.
+        if (!($preferences['enable_izipay'] ?? false) || ! $gateway_availability['izipay']) {
             $payment_configuration->enabled_izipay = false;
         }
-        if (!($preferences['enable_mp'] ?? false)) {
+        if (!($preferences['enable_mp'] ?? false) || ! $gateway_availability['mercadopago']) {
             $payment_configuration->enabled_mp = false;
         }
-        if (!($preferences['enable_culqi'] ?? false)) {
+        if (!($preferences['enable_culqi'] ?? false) || ! $gateway_availability['culqi']) {
             $payment_configuration->enabled_culqi = false;
         }
 

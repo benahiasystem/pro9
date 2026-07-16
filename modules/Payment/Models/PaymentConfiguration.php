@@ -176,4 +176,146 @@ class PaymentConfiguration extends ModelTenant
 
     }
 
+    /**
+     * Indica si un valor de credencial está presente y no vacío.
+     */
+    private static function hasCredentialValue(?string $value): bool
+    {
+        return filled(trim((string) $value));
+    }
+
+    /**
+     * Yape habilitado globalmente con todos los campos requeridos.
+     */
+    public static function isYapeConfigured(?self $record = null): bool
+    {
+        $record = $record ?? static::first();
+
+        if (! $record || ! $record->enabled_yape) {
+            return false;
+        }
+
+        return static::hasCredentialValue($record->telephone_yape)
+            && static::hasCredentialValue($record->name_yape)
+            && static::hasCredentialValue($record->qrcode_yape);
+    }
+
+    /**
+     * Mercado Pago habilitado globalmente con tokens público y privado.
+     */
+    public static function isMercadoPagoConfigured(?self $record = null): bool
+    {
+        $record = $record ?? static::first();
+
+        if (! $record || ! $record->enabled_mp) {
+            return false;
+        }
+
+        return static::hasCredentialValue($record->public_key_mp)
+            && static::hasCredentialValue($record->access_token_mp);
+    }
+
+    /**
+     * Culqi habilitado globalmente con todas las claves requeridas.
+     */
+    public static function isCulqiConfigured(?self $record = null): bool
+    {
+        $record = $record ?? static::first();
+
+        if (! $record || ! $record->enabled_culqi) {
+            return false;
+        }
+
+        return static::hasCredentialValue($record->publickey_culqi)
+            && static::hasCredentialValue($record->privatekey_culqi)
+            && static::hasCredentialValue($record->idrsa_culqi)
+            && static::hasCredentialValue($record->rsa_culqi);
+    }
+
+    /**
+     * Izipay habilitado globalmente con todas las credenciales requeridas.
+     */
+    public static function isIzipayConfigured(?self $record = null): bool
+    {
+        $record = $record ?? static::first();
+
+        if (! $record || ! $record->enabled_izipay) {
+            return false;
+        }
+
+        return static::hasCredentialValue($record->username_izipay)
+            && static::hasCredentialValue($record->password_izipay)
+            && static::hasCredentialValue($record->publickey_izipay)
+            && static::hasCredentialValue($record->sha256key_izipay);
+    }
+
+    /**
+     * Disponibilidad de pasarelas para la configuración de Tienda Virtual.
+     */
+    public static function getEcommerceGatewayAvailability(): array
+    {
+        $record = static::first();
+
+        return [
+            'yape' => static::isYapeConfigured($record),
+            'mercadopago' => static::isMercadoPagoConfigured($record),
+            'culqi' => static::isCulqiConfigured($record),
+            'izipay' => static::isIzipayConfigured($record),
+        ];
+    }
+
+    public const IZIPAY_CULQI_EXCLUSIVITY_MESSAGE = 'No puedes activar Izipay y Culqi simultáneamente';
+
+    /**
+     * Valida que Izipay y Culqi no estén activos al mismo tiempo.
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public static function validateIzipayCulqiExclusivity(bool $enableIzipay, bool $enableCulqi): void
+    {
+        if ($enableIzipay && $enableCulqi) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'enable_izipay' => [self::IZIPAY_CULQI_EXCLUSIVITY_MESSAGE],
+                'enable_culqi' => [self::IZIPAY_CULQI_EXCLUSIVITY_MESSAGE],
+            ]);
+        }
+    }
+
+    /**
+     * Garantiza que solo una pasarela de tarjeta (Izipay o Culqi) quede habilitada.
+     */
+    public function enforceIzipayCulqiExclusivity(): void
+    {
+        if ($this->enabled_izipay) {
+            $this->enabled_culqi = false;
+        } elseif ($this->enabled_culqi) {
+            $this->enabled_izipay = false;
+        }
+    }
+
+    /**
+     * Valida exclusividad en preferencias de ecommerce (enable_izipay / enable_culqi).
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public static function validateEcommerceIzipayCulqiExclusivity(bool $enableIzipay, bool $enableCulqi): void
+    {
+        static::validateIzipayCulqiExclusivity($enableIzipay, $enableCulqi);
+    }
+
+    /**
+     * Aplica exclusividad en preferencias de ecommerce tras un guardado válido.
+     */
+    public static function enforceEcommerceIzipayCulqiExclusivity(array &$preferences): void
+    {
+        $enableIzipay = (bool) ($preferences['enable_izipay'] ?? false);
+        $enableCulqi = (bool) ($preferences['enable_culqi'] ?? false);
+
+        if ($enableIzipay) {
+            $preferences['enable_culqi'] = 0;
+        } elseif ($enableCulqi) {
+            $preferences['enable_izipay'] = 0;
+        }
+    }
+
 }
