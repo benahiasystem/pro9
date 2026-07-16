@@ -169,6 +169,9 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 {
                     if ($document_item->item->IdLoteSelected != null)
                     {
+                        $productName = $document_item->item->description
+                            ?? ($document_item->item->name ?? 'sin nombre');
+
                         if(is_array($document_item->item->IdLoteSelected))
                         {
                             // presentacion - factor de lista de precios
@@ -179,8 +182,21 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
                             foreach ($lotesSelecteds as $item)
                             {
-                                $lot = ItemLotsGroup::query()->find($item->id);
-                                $lot->quantity = $lot->quantity + (($quantity_unit * $item->compromise_quantity) * $document_factor);
+                                $lotId = is_array($item) ? ($item['id'] ?? null) : ($item->id ?? null);
+                                $compromiseQuantity = is_array($item)
+                                    ? ($item['compromise_quantity'] ?? 0)
+                                    : ($item->compromise_quantity ?? 0);
+
+                                if ($lotId === null || $lotId === '') {
+                                    throw new Exception("Lote vacío o sin identificador para el producto [{$productName}]");
+                                }
+
+                                $lot = ItemLotsGroup::query()->find($lotId);
+                                if (!$lot) {
+                                    throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
+                                }
+
+                                $lot->quantity = $lot->quantity + (($quantity_unit * $compromiseQuantity) * $document_factor);
                                 $this->validateStockLotGroup($lot, $document_item);
                                 $lot->save();
                             }
@@ -188,7 +204,12 @@ class InventoryKardexServiceProvider extends ServiceProvider
                         }
                         else{
 
-                            $lot = ItemLotsGroup::query()->find($document_item->item->IdLoteSelected);
+                            $lotId = $document_item->item->IdLoteSelected;
+                            $lot = ItemLotsGroup::query()->find($lotId);
+                            if (!$lot) {
+                                throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
+                            }
+
                             try {
                                 $quantity_unit = $document_item->item->presentation->quantity_unit;
                             } catch (Exception $e) {
