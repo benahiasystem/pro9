@@ -101,16 +101,30 @@
                             <div class="col-md-12 mt-3">
                                 <div class="form-group" :class="{'has-danger': errors.access_token_mp}">
                                     <label class="control-label">Token de acceso (privado) <span class="text-danger">*</span>
-                                        <el-tooltip class="item" effect="dark" content="El token de acceso no es visible, si desea modificarlo ingrese un valor" placement="top-end">
+                                        <el-tooltip class="item" effect="dark" content="Se muestran los últimos 8 caracteres del token guardado. Ingrese un valor nuevo para reemplazarlo." placement="top-end">
                                             <i class="fa fa-info-circle"></i>
                                         </el-tooltip>
                                     </label>
                                     <el-input
-                                        v-model="form.access_token_mp"
-                                        show-password
+                                        :value="accessTokenInputValue"
+                                        :type="accessTokenInputType"
+                                        :readonly="isShowingSavedAccessToken"
                                         autocomplete="new-password"
-                                        :placeholder="form.has_access_token_mp ? 'Token configurado (ingrese uno nuevo para cambiarlo)' : ''"
-                                    ></el-input>
+                                        placeholder=""
+                                        @input="onAccessTokenInput"
+                                        @focus="onAccessTokenFocus"
+                                        @blur="onAccessTokenBlur"
+                                    >
+                                        <span
+                                            slot="suffix"
+                                            class="access-token-mp-toggle"
+                                            :class="{'access-token-mp-toggle--disabled': isShowingSavedAccessToken}"
+                                            @mousedown.prevent
+                                            @click="toggleAccessTokenVisibility"
+                                        >
+                                            <i :class="showAccessTokenMp ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+                                        </span>
+                                    </el-input>
                                     <small class="form-control-feedback" v-if="errors.access_token_mp" v-text="errors.access_token_mp[0]"></small>
                                 </div>
                             </div>
@@ -244,6 +258,20 @@
         text-align: center;
     }
 
+    .access-token-mp-toggle {
+        display: inline-flex;
+        align-items: center;
+        height: 100%;
+        padding-right: 8px;
+        cursor: pointer;
+        color: #909399;
+    }
+
+    .access-token-mp-toggle--disabled {
+        cursor: default;
+        opacity: 0.45;
+    }
+
 </style>
 
 <script>
@@ -257,13 +285,65 @@
                 form: {},
                 errors: {},
                 loading_submit: false,
+                showAccessTokenMp: false,
+                accessTokenMpEditing: false,
             }
+        },
+        computed: {
+            isShowingSavedAccessToken() {
+                return this.form.has_access_token_mp
+                    && !this.accessTokenMpEditing
+                    && !this.form.access_token_mp
+            },
+            accessTokenInputType() {
+                if (this.isShowingSavedAccessToken) {
+                    return 'text'
+                }
+
+                return this.showAccessTokenMp ? 'text' : 'password'
+            },
+            accessTokenInputValue() {
+                if (this.isShowingSavedAccessToken) {
+                    const suffix = this.form.access_token_mp_suffix || ''
+
+                    if (!suffix) {
+                        return ''
+                    }
+
+                    return '.'.repeat(18) + suffix
+                }
+
+                return this.form.access_token_mp || ''
+            },
         },
         async created() {
             await this.initForm()
             await this.getData()
         },
         methods: {
+            onAccessTokenInput(value) {
+                this.form.access_token_mp = value
+            },
+            onAccessTokenFocus() {
+                if (this.isShowingSavedAccessToken) {
+                    this.accessTokenMpEditing = true
+                    this.form.access_token_mp = ''
+                    this.showAccessTokenMp = false
+                }
+            },
+            onAccessTokenBlur() {
+                if (this.accessTokenMpEditing && !this.form.access_token_mp) {
+                    this.accessTokenMpEditing = false
+                    this.showAccessTokenMp = false
+                }
+            },
+            toggleAccessTokenVisibility() {
+                if (this.isShowingSavedAccessToken) {
+                    return
+                }
+
+                this.showAccessTokenMp = !this.showAccessTokenMp
+            },
             handleClick(){
 
             },
@@ -284,7 +364,10 @@
 
                             if (this.form.type === '02' && this.form.access_token_mp) {
                                 this.form.has_access_token_mp = true
+                                this.form.access_token_mp_suffix = this.form.access_token_mp.slice(-8)
                                 this.form.access_token_mp = null
+                                this.accessTokenMpEditing = false
+                                this.showAccessTokenMp = false
                             }
                         } else {
                             this.$message.error(response.data.message)
@@ -330,6 +413,7 @@
                     access_token_mp: null,
                     public_key_mp: null,
                     has_access_token_mp: false,
+                    access_token_mp_suffix: null,
                 }
 
                 this.errors = {}
@@ -345,7 +429,11 @@
                             type: '01',
                             access_token_mp: null,
                             has_access_token_mp: !!data.has_access_token_mp,
+                            access_token_mp_suffix: data.access_token_mp_suffix || null,
                         }
+
+                        this.accessTokenMpEditing = false
+                        this.showAccessTokenMp = false
                     })
             }, 
         }
