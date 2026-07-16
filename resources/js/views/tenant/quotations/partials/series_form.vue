@@ -26,7 +26,7 @@
                                         <template v-if="itemRequiresLot(row) && !rowNeedsLotAssignment(row)">
                                             <br />
                                             <small class="text-success">
-                                                Lotes: {{ showItemLots(row.IdLoteSelected) }}
+                                                Lotes: {{ showItemLots(resolveIdLoteSelected(row)) }}
                                             </small>
                                         </template>
                                         </td>
@@ -108,6 +108,8 @@
     import {
         itemRequiresLot,
         rowNeedsLotAssignment,
+        resolveIdLoteSelected,
+        hydrateItemLots,
     } from '../../../../helpers/lotValidation'
 
     export default {
@@ -134,6 +136,11 @@
         created(){
             // console.log(this.items)
 
+            // Hidratar lotes ya guardados en el JSON del ítem (cotización → conversión)
+            if (Array.isArray(this.items)) {
+                this.items.forEach(row => hydrateItemLots(row));
+            }
+
             this.$eventHub.$on('selectWarehouseId', (data) => {
                 // console.log(data)
                 this.items[data.index].warehouse_id = data.warehouse_id
@@ -146,6 +153,9 @@
             },
             rowNeedsLotAssignment(row) {
                 return rowNeedsLotAssignment(row);
+            },
+            resolveIdLoteSelected(row) {
+                return resolveIdLoteSelected(row);
             },
             showItemLots(idLoteSelected) {
                 if (!idLoteSelected) return '';

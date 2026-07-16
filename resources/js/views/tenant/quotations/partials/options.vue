@@ -553,7 +553,7 @@ import moment from "moment";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {functions} from '../../../../mixins/functions';
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
-import { validateItemsLots } from '../../../../helpers/lotValidation';
+import { validateItemsLots, hydrateItemLots } from '../../../../helpers/lotValidation';
 
 export default {
     components: {DocumentOptions, SaleNoteOptions, SeriesForm, QrApi},
@@ -1076,6 +1076,11 @@ export default {
                             this.document.payment_condition_id = this.form.quotation.payment_condition_id;
                             if (this.document.payment_condition_id === undefined || this.document.payments.length > 0) {
                                 this.document.payment_condition_id = "01";
+                            }
+
+                            // Precargar lotes ya guardados en la cotización
+                            if (this.form.quotation && Array.isArray(this.form.quotation.items)) {
+                                this.form.quotation.items.forEach(row => hydrateItemLots(row));
                             }
 
                             // console.log(this.form)
