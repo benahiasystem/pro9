@@ -1,5 +1,5 @@
 <template>
-  <div class="py-4">
+  <div class="py-4" style="padding-top: 10px !important; padding-bottom: 10px !important;">
     <p class="mb-4 text-muted">
       Puedes solicitar este servicio desde nuestra plataforma.
     </p>

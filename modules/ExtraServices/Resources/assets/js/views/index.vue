@@ -20,12 +20,13 @@
         <div class="card-body">
           <div class="card mb-0" v-loading="loading" element-loading-background="rgba(255, 255, 255, 0.7)" style="min-height: 120px;">
             <div class="row" v-if="configLoaded">
-              <div class="col-12 form-group mb-4">
+              <div class="col-12 form-group mb-4" style="margin-bottom: 0px !important;">
                 <label>Habilitar servicio extra para el sistema</label>
                 <Tooltip style="margin-left: 5px;" content="Habilitar el servicio extra para el sistema, esto permitirá que los clientes puedan acceder a la documentación de la API.">
                   <i class="fa fa-info-circle"></i>
                 </Tooltip>
                 <el-switch style="margin-left: 10px;" v-model="form.isActiveApidocs" @change="setData"></el-switch>
+                <span class="text-danger" style="margin-left: 10px;" v-if="message_service.apidocs">{{ message_service.apidocs }}</span>
               </div>
 
               <div class="col-12 form-group mb-4" v-if="form.isActiveApidocs">
@@ -63,8 +64,9 @@ export default {
       configLoaded: false,
       form: {
         isActiveApidocs: false,
-        urlObtainApidocs: '',
-        urlServiceApidocs: '',
+      },
+      message_service: {
+        apidocs: '',
       },
       errors: {},
     };
@@ -96,6 +98,7 @@ export default {
             message: 'Configuración guardada exitosamente',
             type: 'success'
           });
+          this.message_service = response.data.message_service;
         }
         await this.getData();
       } catch (error) {

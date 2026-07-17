@@ -44,9 +44,11 @@ class ExtraServicesController extends Controller
     public function store(ExtraServicesRequest $request){
         $data = $request->validated();
 
+        $message_service = [];
         if ($request->input('isActiveApidocs') === true) {
             if (!$this->apidocsService->isActiveService()){
                 $data['isActiveApidocs'] = false;
+                $message_service['apidocs'] = 'No cuenta con el servicio de apidocs activo.';
             }
         }
 
@@ -54,7 +56,8 @@ class ExtraServicesController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Configuración guardada.',
+            'message_service' => $message_service,
             'data' => new ExtraServicesResource($configuration)
-        ]);
+        ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 }
