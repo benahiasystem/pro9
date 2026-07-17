@@ -56,21 +56,6 @@
           </div>
         </div>
 
-        <div class="col-md-12">
-          <el-alert title="Configuración de Credenciales" show-icon type="info" class="mb-4" :closable="false">
-            Las credenciales de Izipay, Mercado Pago y Culqi se obtienen automáticamente desde la configuración central (Empresa > Configuración de pagos).
-            Aquí puedes habilitar cuáles mostrar en la tienda virtual y personalizar su título y descripción.
-          </el-alert>
-          <el-alert
-            v-if="!hasAvailableGateways"
-            title="No hay pasarelas de pago disponibles. Actívelas y complete sus credenciales en Empresa > Configuración de pagos."
-            show-icon
-            type="warning"
-            class="mb-4"
-            :closable="false"
-          ></el-alert>
-        </div>
-
         <!-- Izipay -->
         <div class="col-md-6" v-if="gateway_availability.izipay">
           <div class="form-group form-modern mb-3">
@@ -231,6 +216,21 @@
               </small>
             </div>
           </div>
+        </div>
+
+        <div class="col-md-12 mt-4">
+          <el-alert title="Configuración de Credenciales" show-icon type="info" class="mb-4" :closable="false">
+            Las credenciales de Izipay, Mercado Pago y Culqi se obtienen automáticamente desde la configuración central (Empresa > Configuración de pagos).
+            Aquí puedes habilitar cuáles mostrar en la tienda virtual y personalizar su título y descripción.
+          </el-alert>
+          <el-alert
+            v-if="!hasAvailableGateways"
+            title="No hay pasarelas de pago disponibles. Actívelas y complete sus credenciales en Empresa > Configuración de pagos."
+            show-icon
+            type="warning"
+            class="mb-4"
+            :closable="false"
+          ></el-alert>
         </div>
       </div>
     </div>

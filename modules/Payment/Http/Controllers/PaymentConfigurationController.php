@@ -7,6 +7,7 @@ use Modules\Payment\Http\Resources\PaymentConfigurationResource;
 use Modules\Payment\Models\PaymentConfiguration;
 use Modules\Payment\Http\Requests\PaymentConfigurationRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Modules\Finance\Helpers\UploadFileHelper;
 
 
@@ -61,25 +62,62 @@ class PaymentConfigurationController extends Controller
      * Actualizar configuracion
      *
      * @param  PaymentConfigurationRequest $request
-     * @return array
+     * @return array|\Illuminate\Http\JsonResponse
      */
     public function store(PaymentConfigurationRequest $request)
     {
+        try {
+            $type = $request->type;
+            $record = PaymentConfiguration::firstOrFail();
 
-        $type = $request->type;
-        $record = PaymentConfiguration::firstOrFail();
+            Log::info('PaymentConfiguration store: inicio', [
+                'type' => $type,
+                'record_id' => $record->id,
+            ]);
 
-        $response = match ($type) {
-            '01' => $this->setDataYape($record, $request),
-            '02' => $this->setDataMP($record, $request),
-            '03' => $this->setDataCulqi($record, $request),
-            '04' => $this->setDataIzipay($record, $request),
-            default => null,
-        };
+            $response = match ($type) {
+                '01' => $this->setDataYape($record, $request),
+                '02' => $this->setDataMP($record, $request),
+                '03' => $this->setDataCulqi($record, $request),
+                '04' => $this->setDataIzipay($record, $request),
+                default => [
+                    'success' => false,
+                    'message' => 'Tipo de pasarela no válido',
+                ],
+            };
 
-        $record->save();
+            // Si el setter indicó fallo de negocio, no persistir.
+            if (is_array($response) && array_key_exists('success', $response) && $response['success'] === false) {
+                return $response;
+            }
 
-        return $response;
+            $record->save();
+
+            Log::info('PaymentConfiguration store: guardado OK', [
+                'type' => $type,
+                'record_id' => $record->id,
+            ]);
+
+            return $response ?: [
+                'success' => true,
+                'message' => 'Configuración actualizada',
+            ];
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            Log::error('PaymentConfiguration store failed', [
+                'type' => $request->type,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar la configuración de pagos: '.$e->getMessage(),
+            ], 500);
+        }
     }
 
 
@@ -87,7 +125,7 @@ class PaymentConfigurationController extends Controller
      *
      * @param  PaymentConfiguration $record
      * @param  PaymentConfigurationRequest $request
-     * @return void
+     * @return array
      */
     public function setDataMP(PaymentConfiguration &$record, $request)
     {
@@ -186,7 +224,7 @@ class PaymentConfigurationController extends Controller
      *
      * @param  PaymentConfiguration $record
      * @param  PaymentConfigurationRequest $request
-     * @return void
+     * @return array
      */
     public function setDataYape(PaymentConfiguration &$record, $request)
     {
@@ -194,11 +232,21 @@ class PaymentConfigurationController extends Controller
         $record->name_yape = $request->name_yape;
         $record->telephone_yape = $request->telephone_yape;
 
-        if($request->qrcode_yape && $request->temp_path_yape)
-        {
-            $filename = UploadFileHelper::uploadFileFromTempFile('payment_configurations', $request->qrcode_yape, $request->temp_path_yape, $record->id, 'qr_yape');
+        if ($request->qrcode_yape && $request->temp_path_yape) {
+            $filename = UploadFileHelper::uploadFileFromTempFile(
+                'payment_configurations',
+                $request->qrcode_yape,
+                $request->temp_path_yape,
+                $record->id,
+                'qr_yape'
+            );
             $record->qrcode_yape = $filename;
         }
+
+        return [
+            'success' => true,
+            'message' => 'Configuración actualizada',
+        ];
     }
 
 
