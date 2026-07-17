@@ -608,10 +608,24 @@
                 <!-- Coupon input and applied coupon display -->
                 <div class="coupon-block">
                     <div class="coupon">
-                        <input v-model="couponField" type="text" class="input" placeholder="Código de cupón">
-                        <button class="coupon-btn" @click="applyCoupon" :disabled="couponLoading">Aplicar</button>
+                        <input
+                            v-model="couponField"
+                            type="text"
+                            class="input"
+                            placeholder="Código de cupón"
+                            :disabled="couponLoading || !!(appliedCoupon && appliedCoupon.code)"
+                        >
+                        <button
+                            class="coupon-btn"
+                            @click="applyCoupon"
+                            :disabled="couponLoading || !!(appliedCoupon && appliedCoupon.code)"
+                            :title="(appliedCoupon && appliedCoupon.code) ? 'Ya hay un cupón aplicado' : 'Aplicar cupón'"
+                        >Aplicar</button>
                     </div>
                     <small class="coupon-msg text-danger" v-if="couponMessage">@{{ couponMessage }}</small>
+                    <small class="coupon-msg text-muted" v-else-if="appliedCoupon && appliedCoupon.code">
+                        Cupón aplicado. Usa &quot;Eliminar&quot; para quitarlo.
+                    </small>
                 </div>
                 <label class="terms" :class="{ 'terms--checked': acceptedTerms }" id="termsLabel">
                   <input type="checkbox" id="termsCheck" v-model="acceptedTerms">
@@ -912,10 +926,65 @@
 @vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
 
 <script>
+    // Globales requeridos por Culqi v3 (evitan ReferenceError en consola)
+    window.closeCheckout = function () {
+        console.log('El usuario cerró el modal de Culqi.');
+        if (typeof app_cart !== 'undefined') {
+            app_cart.processingPayment = false;
+        }
+    };
+
+    window.mostrarMensaje = function (mensaje, tipo) {
+        tipo = tipo || 'error';
+        console.error('[Culqi]: ' + mensaje);
+
+        if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
+            Swal.fire({
+                icon: tipo,
+                title: tipo === 'error' ? 'Hubo un inconveniente' : 'Información',
+                text: mensaje,
+                confirmButtonColor: '#3085d6'
+            });
+        } else if (typeof swal === 'function') {
+            swal({
+                title: tipo === 'error' ? 'Hubo un inconveniente' : 'Información',
+                text: mensaje,
+                type: tipo,
+                icon: tipo
+            });
+        } else {
+            alert(mensaje);
+        }
+    };
+
+    function getCulqiErrorMessage(error) {
+        if (!error) {
+            return 'El pago fue cancelado o no se pudo completar.';
+        }
+
+        var code = String(error.code || error.type || '').toLowerCase();
+        var raw = String(
+            error.user_message || error.merchant_message || error.message || ''
+        ).toLowerCase();
+
+        var isEncryptError = code.indexOf('encrypt') !== -1
+            || raw.indexOf('encript') !== -1
+            || raw.indexOf('encrypt') !== -1;
+
+        if (isEncryptError || !window.isSecureContext) {
+            return 'El pago con tarjeta requiere HTTPS. En local usa https://local.pro9.test (habilita SSL en Laragon) o prueba desde un entorno seguro.';
+        }
+
+        return error.user_message
+            || error.merchant_message
+            || error.message
+            || 'No se pudo procesar el pago. Intente nuevamente.';
+    }
+
     Culqi.publicKey = {!! json_encode($configuration->token_public_culqui ) !!};
     if(!Culqi.publicKey)
     {
-      $('.culqi').hide()
+      jQuery('.culqi').hide()
 /*
         swal({
             title: "Culqi configuración",
@@ -932,19 +1001,35 @@
 
     async function askedDocument(order) {
         app_cart.order_generated = order
-        $('#modal_ask_document').modal('show')
+        jQuery('#modal_ask_document').modal('show')
     }
 
     async function execCulqi() {
+        if (!Culqi.publicKey) {
+            window.mostrarMensaje('El pago con tarjeta aún no está configurado. Elija otro método de pago.', 'warning');
+            return;
+        }
 
-       console.log( 'errores', app_cart.errors)
+        // Culqi usa Web Crypto: en dominios .test solo funciona con HTTPS (HTTP no es "secure context")
+        if (!window.isSecureContext) {
+            if (location.protocol === 'http:') {
+                try {
+                    sessionStorage.setItem('culqi_open_after_https', '1');
+                } catch (e) { /* ignore */ }
+                location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+                return;
+            }
+            window.mostrarMensaje(
+                'Culqi no puede encriptar la tarjeta en un contexto no seguro. Usa HTTPS o otro método de pago.',
+                'warning'
+            );
+            if (typeof app_cart !== 'undefined') {
+                app_cart.processingPayment = false;
+            }
+            return;
+        }
 
-       //app_cart.errors = 'demo'
-
-    //   console.log( 'errores22', app_cart.errors)
-
-
-        let precio = Math.round((Number($("#total_amount").data('total')) * 100).toFixed(2));
+        let precio = Math.round((Number(jQuery("#total_amount").data('total')) * 100).toFixed(2));
         if (precio > 0) {
             Culqi.settings({
                 title: "Productos Ecommerce",
@@ -955,10 +1040,25 @@
             Culqi.open();
         }
     }
+    window.execCulqi = execCulqi;
 
+    // Si redirigimos a HTTPS por Culqi, reabrir el checkout automáticamente
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            if (window.isSecureContext && sessionStorage.getItem('culqi_open_after_https') === '1') {
+                sessionStorage.removeItem('culqi_open_after_https');
+                setTimeout(function () {
+                    if (typeof window.execCulqi === 'function') {
+                        window.execCulqi();
+                    }
+                }, 600);
+            }
+        } catch (e) { /* ignore */ }
+    });
 
-    async function culqi() {
-        if (Culqi.token) {
+    window.culqi = async function () {
+        if (window.Culqi.token) {
+            const token = window.Culqi.token.id;
 
             swal({
                 title: "Estamos hablando con su banco",
@@ -969,13 +1069,11 @@
                 }
             });
 
-            let precio = Math.round((Number($("#total_amount").data('total')).toFixed(2) * 100));
-            let precio_culqi = Number($("#total_amount").data('total')).toFixed(2);
+            let precio = Math.round((Number(jQuery("#total_amount").data('total')).toFixed(2) * 100));
+            let precio_culqi = Number(jQuery("#total_amount").data('total')).toFixed(2);
 
-            var url = "/culqi";
-            var token = Culqi.token.id;
-            var email = Culqi.token.email;
-            var installments = Culqi.token.metadata.installments;
+            var email = window.Culqi.token.email;
+            var installments = window.Culqi.token.metadata.installments;
 
             const formpayment = await app_cart.getFormPaymentCash()
 
@@ -996,11 +1094,11 @@
                 shipping_address: formpayment.shipping_address || '',
             }
 
-            $.ajax({
+            jQuery.ajax({
               url: "{{route('tenant_ecommerce_culqui')}}",
               method: 'post',
               headers: {
-                  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                  'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
               },
               data: data,
               dataType: 'JSON',
@@ -1017,22 +1115,48 @@
                     //window.location = "{{ route('tenant.ecommerce.index') }}";
                   })
                 } else {
-                  const message = data.message
-                  swal("Pago No realizado", message, "error");
+                  app_cart.processingPayment = false;
+                  window.mostrarMensaje(data.message || 'Sucedió algo inesperado.', 'error');
                 }
               },
               error: function (error_data) {
-                console.log(error_data)
-                if (error_data.status === 422) {
-                    app_cart.errors = JSON.parse( error_data.responseText);
+                console.log(error_data);
+                app_cart.processingPayment = false;
+                let message = 'Ocurrió un error al procesar el pago.';
+                if (error_data.responseJSON && error_data.responseJSON.message) {
+                    message = error_data.responseJSON.message;
+                } else if (error_data.status === 422 && error_data.responseText) {
+                    let parsed = JSON.parse(error_data.responseText);
+                    if (parsed.message) {
+                        message = parsed.message;
+                    } else {
+                        message = 'Faltan completar campos';
+                        app_cart.errors = parsed;
+                    }
                 }
-                swal("Pago No realizado", 'Faltan completar campos', "error");
+                window.mostrarMensaje(message, 'error');
               }
             });
 
+        } else if (window.Culqi.error) {
+            const error = window.Culqi.error;
+            if (typeof app_cart !== 'undefined') {
+                app_cart.processingPayment = false;
+            }
+            try {
+                if (typeof window.Culqi.close === 'function') {
+                    window.Culqi.close();
+                }
+            } catch (e) { /* modal ya cerrado */ }
+            window.mostrarMensaje(
+                getCulqiErrorMessage(error) || error.user_message || error.merchant_message,
+                'error'
+            );
         } else {
-            console.log(Culqi.error);
-            swal("Pago No realizado", Culqi.error.user_message, "error");
+            // Usuario cerró el modal sin token ni error explícito
+            if (typeof app_cart !== 'undefined') {
+                app_cart.processingPayment = false;
+            }
         }
     };
 

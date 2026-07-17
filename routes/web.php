@@ -73,7 +73,7 @@ if ($hostname) {
             Route::get('orders/records', 'Tenant\OrderController@records');
             Route::get('orders/record/{order}', 'Tenant\OrderController@record');
             //Route::get('orders/print/{external_id}/{format?}', 'Tenant\OrderController@toPrint');
-            Route::post('statusOrder/update/', 'Tenant\OrderController@updateStatusOrders');
+            Route::post('statusOrder/update', 'Tenant\OrderController@updateStatusOrders');
             Route::get('orders/pdf/{id}', 'Tenant\OrderController@pdf');
 
             //warehouse
@@ -802,7 +802,7 @@ if ($hostname) {
             Route::delete('tags/{tag}', 'Tenant\TagController@destroy');
 
             //Promotion
-            Route::get('promotions', 'Tenant\PromotionController@index')->name('tenant.promotion.index');
+            // Route::get('promotions', 'Tenant\PromotionController@index')->name('tenant.promotion.index');
             Route::get('promotions/columns', 'Tenant\PromotionController@columns');
             Route::get('promotions/tables', 'Tenant\PromotionController@tables');
             Route::get('promotions/records', 'Tenant\PromotionController@records');

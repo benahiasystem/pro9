@@ -52,7 +52,43 @@ class StoreController extends Controller
             $item['attributes'] = ($item['attributes']) ? (array)$item['attributes'] : [];
             $item['charges'] = ($item['charges']) ? (array)$item['charges'] : [];
             $item['discounts'] = ($item['discounts']) ? (array)$item['discounts'] : [];
+
+            // Hidratar IdLoteSelected a nivel de fila si solo viene dentro del JSON item
+            // (así invoice_generate puede prellenar el lote elegido en la cotización).
+            $itemPayload = $item['item'] ?? null;
+            $itemAsArray = is_object($itemPayload) ? (array) $itemPayload : (is_array($itemPayload) ? $itemPayload : []);
+
+            $idLoteSelected = $item['IdLoteSelected']
+                ?? ($itemAsArray['IdLoteSelected'] ?? null);
+
+            if (empty($idLoteSelected) && !empty($itemAsArray['lots_group']) && is_array($itemAsArray['lots_group'])) {
+                $idLoteSelected = array_values(array_filter(array_map(function ($lot) {
+                    $lot = (array) $lot;
+                    $compromise = (float) ($lot['compromise_quantity'] ?? 0);
+                    if ($compromise <= 0) {
+                        return null;
+                    }
+                    return [
+                        'id' => $lot['id'] ?? null,
+                        'code' => $lot['code'] ?? null,
+                        'compromise_quantity' => $compromise,
+                        'date_of_due' => $lot['date_of_due'] ?? null,
+                    ];
+                }, $itemAsArray['lots_group'])));
+                if (empty($idLoteSelected)) {
+                    $idLoteSelected = null;
+                }
+            }
+
+            if (!empty($idLoteSelected)) {
+                $item['IdLoteSelected'] = $idLoteSelected;
+                if (is_array($itemPayload) || is_object($itemPayload)) {
+                    $itemAsArray['IdLoteSelected'] = $idLoteSelected;
+                    $item['item'] = $itemAsArray;
+                }
+            }
         }
+        unset($item);
 
         $rec['document_type_id'] = $document_type_id;
         $rec['operation_type_id'] = '0101';

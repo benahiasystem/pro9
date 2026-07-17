@@ -644,6 +644,14 @@ class EcommerceController extends Controller
      */
     public function validateCoupon(Request $request)
     {
+        // Bloquear reaplicación acumulativa si el cliente ya tiene cupón activo
+        if (filter_var($request->input('coupon_already_applied', false), FILTER_VALIDATE_BOOLEAN)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.'
+            ], 422);
+        }
+
         $codes = [];
         if ($request->codes && is_array($request->codes)) {
             $codes = $request->codes;
@@ -673,6 +681,8 @@ class EcommerceController extends Controller
             if (!$coupon->canBeUsedBy($person_id, $order_total)) continue;
 
             $discount = $coupon->calculateDiscountAmount($order_total);
+            // Nunca descontar más que el total (evita totales negativos)
+            $discount = min($discount, max(0, $order_total));
             $validCoupons[] = [
                 'coupon' => $coupon,
                 'discount' => $discount
@@ -719,6 +729,14 @@ class EcommerceController extends Controller
             return response()->json(['success' => false, 'message' => 'Orden no encontrada'], 404);
         }
 
+        // Un solo cupón por orden: idempotente / bloqueante tras el primero
+        if ($order->discount_coupon_id || $order->discount_coupon_code) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.'
+            ], 422);
+        }
+
         $user = auth('ecommerce')->user();
         $person_id = $user?->id;
 
@@ -738,6 +756,7 @@ class EcommerceController extends Controller
         }
 
         $discount = $coupon->calculateDiscountAmount($order->total);
+        $discount = min($discount, max(0, (float) $order->total));
 
         // Actualizar la orden (un solo cupón por venta)
         $order->total_discount = $discount;

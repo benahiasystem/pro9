@@ -41,7 +41,7 @@ class CheckEmailIsVerified
         return $next($request);
     }
 
-    private function hasPaymentOrder(): PaymentOrder | null
+    private function hasPaymentOrder(): ?PaymentOrder
     {
         $hostname = app(CurrentHostname::class);
         if (!$hostname) return null;
@@ -52,6 +52,6 @@ class CheckEmailIsVerified
         return PaymentOrder::where('client_id', $client->id)
             ->where('created_by', 'Autoregistro')
             ->where('order_state_id', 1)
-            ->exists();
+            ->first(); // Cambiado de exists() a first() para que coincida con el tipo PaymentOrder
     }
 }

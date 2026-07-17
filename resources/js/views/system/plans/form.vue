@@ -87,7 +87,7 @@
                                 <el-input value="∞" disabled></el-input>
                             </template>
                             <template v-else>
-                                <el-input v-model="form.sales_limit" @input="normalizeNrusSalesLimit"></el-input>
+                                <el-input v-model="form.sales_limit" @input="normalizeNrusSalesLimit" :disabled="business === 6"></el-input>
                             </template>
 
                             <el-checkbox v-model="form.sales_unlimited" :disabled="business === 6">Ilimitado</el-checkbox><br>
@@ -642,41 +642,17 @@
                 this.applyingBusinessModules = true;
                 if (this.business === 6) {
                     this.applyNrusLimits(true);
-                    this.$nextTick(() => {
-                        const treeKeys = this.buildNrusKeys(this.modules, this.nrusSpec.modules);
-                        const appKeys = this.buildNrusKeys(this.apps, this.nrusSpec.apps);
-                        if (this.$refs.tree) this.$refs.tree.setCheckedKeys(treeKeys);
-                        if (this.$refs.Apptree) this.$refs.Apptree.setCheckedKeys(appKeys);
-                        this.applyingBusinessModules = false;
-                    });
-                    return;
                 }
-                var group = {
-                    modules: [],
-                    apps: [],
-                };
-                if(this.business == 1){
-                    group.modules = this.getIds(this.group_basic);
-                }
-                if(this.business == 2){
-                    group.modules = this.getIds(this.group_pharmacy);
-                    group.apps = this.getIds(this.group_pharmacy_apps);
-                }
-                if(this.business == 3){
-                    group.modules = this.getIds(this.group_hotel);
-                    group.apps = this.getIds(this.group_hotel_apps);
-                }
-                if(this.business == 4){
-                    group.modules = this.getIds(this.group_restaurant);
-                    group.apps = this.getIds(this.group_restaurant_apps);
-                }
-                if(this.business == 5){
-                    group.modules = this.getIds(this.modules);
-                    group.apps = this.getIds(this.apps);
-                }
-                this.$refs.tree.setCheckedKeys(group.modules);
-                this.$refs.Apptree.setCheckedKeys(group.apps);
-                this.applyingBusinessModules = false;
+
+                this.$nextTick(() => {
+                    const treeKeys = this.buildNrusKeys(this.modules, this.nrusSpec.modules);
+                    const appKeys = this.buildNrusKeys(this.apps, this.nrusSpec.apps);
+                    if (this.$refs.tree) this.$refs.tree.setCheckedKeys(treeKeys);
+                    if (this.$refs.Apptree) this.$refs.Apptree.setCheckedKeys(appKeys);
+                    
+                    this.applyingBusinessModules = false;
+                });
+                return;
             },
             buildNrusKeys(treeData, spec) {
                 const keys = [];

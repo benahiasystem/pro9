@@ -1362,6 +1362,32 @@
                                                 }}
                                             </template>
 
+                                            <template v-if="itemRequiresLot(row)">
+                                                <br />
+                                                <template v-if="rowNeedsLotAssignment(row)">
+                                                    <button
+                                                        type="button"
+                                                        class="btn waves-effect waves-light btn-xs btn-warning mt-1"
+                                                        @click.prevent="openLotGroupDialog(index, row)"
+                                                    >
+                                                        Asignar Lote
+                                                    </button>
+                                                </template>
+                                                <template v-else>
+                                                    <small class="text-success">
+                                                        Lotes:
+                                                        {{ showItemLots(resolveIdLoteSelected(row)) }}
+                                                    </small>
+                                                    <button
+                                                        type="button"
+                                                        class="btn waves-effect waves-light btn-xs btn-outline-secondary ms-1"
+                                                        @click.prevent="openLotGroupDialog(index, row)"
+                                                    >
+                                                        Cambiar lote
+                                                    </button>
+                                                </template>
+                                            </template>
+
                                             <!-- sistema por puntos -->
                                             <template
                                                 v-if="
@@ -3753,6 +3779,14 @@
             @success="successItemSeries"
         ></store-item-series-index>
 
+        <lots-group
+            :lots-group="lotModalLotsGroup"
+            :quantity="lotModalQuantity"
+            :showDialog.sync="showDialogLotsGroup"
+            @addRowLotGroup="addRowLotGroupFromTable"
+        >
+        </lots-group>
+
         <document-form-preview
             :showDialog.sync="showDialogPreview"
             :preview="preview"
@@ -3990,6 +4024,14 @@ import DocumentReportCustomer from "./partials/report_customer.vue";
 import SetTip from "@components/SetTip.vue";
 
 import LotsForm from "./partials/lots.vue";
+import LotsGroup from "./partials/lots_group.vue";
+import {
+    itemRequiresLot,
+    rowNeedsLotAssignment,
+    validateItemsLots,
+    hydrateItemLots,
+    resolveIdLoteSelected,
+} from "../../../helpers/lotValidation";
 import { editableRowItems } from "@mixins/editable-row-items";
 import { buhoprinter } from "@mixins/buhoprinter";
 import ItemSearchQuickSale from "@components/items/ItemSearchQuickSale.vue";
@@ -4045,6 +4087,7 @@ export default {
         DocumentReportCustomer,
         SetTip,
         LotsForm,
+        LotsGroup,
         ItemSearchQuickSale,
         // ItemDetailForm,
         PackItemDescription,
@@ -4119,6 +4162,10 @@ export default {
             showDialogFormHotel: false,
             showDialogFormTransport: false,
             showDialogItemSeriesIndex: false,
+            showDialogLotsGroup: false,
+            lotModalItemIndex: -1,
+            lotModalLotsGroup: [],
+            lotModalQuantity: 0,
             is_client: false,
             recordItem: null,
             resource: "documents",
@@ -5651,6 +5698,10 @@ export default {
                     i.additional_information
                 );
                 i.item = this.onPrepareIndividualItem(i);
+
+                // Si la cotización/origen ya trae lote, precargarlo; si no, queda null y se muestra "Asignar Lote"
+                hydrateItemLots(i);
+
                 return i;
             });
         },
@@ -7758,6 +7809,16 @@ export default {
                 this.validateCustomerRetention(customer.identity_document_type_id)
             }
 
+            // Normalizar IdLoteSelected en cada ítem antes de validar y enviar
+            this.ensureItemsLotsForSubmit();
+
+            // Validando lotes (origen) — misma regla que DocumentRequest / lots_group.vue
+            const lotsValidation = validateItemsLots(this.form.items);
+            if (!lotsValidation.valid) {
+                this.$message.error(lotsValidation.message);
+                return false;
+            }
+
             //Validando las series seleccionadas
             let errorSeries = false;
             _.forEach(this.form.items, row => {
@@ -7863,6 +7924,10 @@ export default {
                     );
             }
 
+            // Asegurar IdLoteSelected a nivel de fila e ítem antes del POST
+            // (la UI puede resolverlo desde item.IdLoteSelected / lots_group, pero el backend lee row.IdLoteSelected)
+            this.ensureItemsLotsForSubmit();
+
             // Capturar el cliente antes del submit, ya que resetForm() limpia el customer
             this.customerCurrent = this.getCustomer;
 
@@ -7914,14 +7979,28 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response.status === 422) {
-                        this.errors = error.response.data;
-                        if (this.errors.customer_id) {
+                    if (error.response && error.response.status === 422) {
+                        const data = error.response.data || {};
+                        this.errors = data.errors || data;
+                        const firstLotError = this.firstValidationError(
+                            this.errors,
+                            "IdLoteSelected"
+                        );
+                        if (firstLotError) {
+                            this.$message.error(firstLotError);
+                        } else if (this.errors.customer_id) {
                             this.$message.error(this.errors.customer_id[0]);
                             delete this.errors.customer_id;
+                        } else if (data.message) {
+                            this.$message.error(data.message);
                         }
                     } else {
-                        this.$message.error(error.response.data.message);
+                        this.$message.error(
+                            (error.response &&
+                                error.response.data &&
+                                error.response.data.message) ||
+                                "Error al registrar el comprobante"
+                        );
                     }
                     if (temp === "03") this.form.payment_condition_id = "03";
                 })
@@ -8328,6 +8407,137 @@ export default {
         },
         showItemSeries(series) {
             return series.map(o => o["series"]).join(", ");
+        },
+        itemRequiresLot(row) {
+            return itemRequiresLot(row);
+        },
+        rowNeedsLotAssignment(row) {
+            return rowNeedsLotAssignment(row);
+        },
+        resolveIdLoteSelected(row) {
+            return resolveIdLoteSelected(row);
+        },
+        showItemLots(idLoteSelected) {
+            if (!idLoteSelected) return "";
+            if (!Array.isArray(idLoteSelected)) {
+                return String(idLoteSelected);
+            }
+            return idLoteSelected
+                .map(lot => {
+                    const code = lot.code || lot.id;
+                    const qty = lot.compromise_quantity || 0;
+                    return `${code} (${qty})`;
+                })
+                .join(", ");
+        },
+        async openLotGroupDialog(index, row) {
+            if (!row || !row.item_id) {
+                return this.$message.error("No se pudo identificar el producto para asignar lotes.");
+            }
+
+            this.loading_submit = true;
+            try {
+                const response = await this.$http.get(
+                    `/item-lots-group/available-data/${row.item_id}`
+                );
+                let lotsGroup = Array.isArray(response.data)
+                    ? response.data
+                    : [];
+
+                // Restaurar cantidades ya comprometidas si el usuario reabre el modal
+                if (row.IdLoteSelected && Array.isArray(row.IdLoteSelected)) {
+                    lotsGroup = lotsGroup.map(lGroup => {
+                        const selected = _.find(row.IdLoteSelected, {
+                            id: lGroup.id
+                        });
+                        return {
+                            ...lGroup,
+                            compromise_quantity: selected
+                                ? selected.compromise_quantity
+                                : lGroup.compromise_quantity || 0
+                        };
+                    });
+                }
+
+                this.lotModalLotsGroup = lotsGroup;
+                this.lotModalQuantity = parseFloat(row.quantity) || 0;
+                this.lotModalItemIndex = index;
+                this.showDialogLotsGroup = true;
+            } catch (e) {
+                this.$message.error(
+                    "No se pudieron cargar los lotes disponibles del producto."
+                );
+            } finally {
+                this.loading_submit = false;
+            }
+        },
+        addRowLotGroupFromTable(lotsSelected) {
+            if (this.lotModalItemIndex < 0) return;
+            const row = this.form.items[this.lotModalItemIndex];
+            if (!row) return;
+
+            // Estructura idéntica a lots_group.vue (id, code, compromise_quantity, date_of_due)
+            const normalizedLots = Array.isArray(lotsSelected)
+                ? lotsSelected.map(lot => ({
+                      id: lot.id,
+                      code: lot.code,
+                      compromise_quantity: lot.compromise_quantity,
+                      date_of_due: lot.date_of_due
+                  }))
+                : lotsSelected;
+
+            this.$set(row, "IdLoteSelected", normalizedLots);
+            if (row.item) {
+                this.$set(row.item, "IdLoteSelected", normalizedLots);
+            }
+            // Forzar reactividad del array de ítems
+            this.$set(this.form.items, this.lotModalItemIndex, row);
+
+            this.lotModalItemIndex = -1;
+            this.$message.success("Lotes asignados correctamente.");
+        },
+        /**
+         * Garantiza que cada ítem con lote lleve IdLoteSelected en el payload
+         * (nivel fila + item), con la misma estructura que lots_group.vue.
+         * No toca item.lots (eso es series/seriales).
+         */
+        ensureItemsLotsForSubmit() {
+            if (!Array.isArray(this.form.items)) return;
+
+            this.form.items.forEach((row, index) => {
+                if (!row) return;
+
+                hydrateItemLots(row);
+
+                const resolved = resolveIdLoteSelected(row);
+                if (resolved === null || resolved === undefined || resolved === "") {
+                    return;
+                }
+
+                const normalized = Array.isArray(resolved)
+                    ? resolved.map(lot => ({
+                          id: lot.id,
+                          code: lot.code,
+                          compromise_quantity: Number(lot.compromise_quantity) || 0,
+                          date_of_due: lot.date_of_due || null
+                      }))
+                    : resolved;
+
+                this.$set(row, "IdLoteSelected", normalized);
+                if (row.item) {
+                    this.$set(row.item, "IdLoteSelected", normalized);
+                }
+                this.$set(this.form.items, index, row);
+            });
+        },
+        firstValidationError(errors, fieldHint) {
+            if (!errors || typeof errors !== "object") return null;
+            const keys = Object.keys(errors);
+            const preferred = keys.find(key => key.includes(fieldHint));
+            const key = preferred || keys[0];
+            if (!key) return null;
+            const messages = errors[key];
+            return Array.isArray(messages) ? messages[0] : String(messages);
         },
         handleEnterKey(event) {
             event.preventDefault();

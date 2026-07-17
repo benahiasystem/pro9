@@ -1821,14 +1821,19 @@ export default {
             }
 
              */
+
+            // Capturar lote ANTES de initForm (limpia el formulario)
+            const IdLoteSelected = this.form.IdLoteSelected;
+            this.row.IdLoteSelected = IdLoteSelected;
+            if (this.row.item) {
+                this.row.item.IdLoteSelected = IdLoteSelected;
+            }
+
             this.initForm();
 
             if (this.recordItem) {
                 this.row.indexi = this.recordItem.indexi;
             }
-
-            // this.row.IdLoteSelected = IdLoteSelected
-            // this.row.document_item_id = document_item_id
 
             this.$emit("add", this.row);
 

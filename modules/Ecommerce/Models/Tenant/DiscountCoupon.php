@@ -152,6 +152,6 @@ class DiscountCoupon extends ModelTenant
             $discount = min($discount, $this->max_amount);
         }
 
-        return round($discount, 2);
+        return round(min($discount, max(0, (float) $total)), 2);
     }
 }

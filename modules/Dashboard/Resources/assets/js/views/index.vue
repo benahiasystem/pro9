@@ -151,6 +151,82 @@
                                     <div>
                                         <h5 class="sn-title m-0">Notas de venta</h5>
                                         <small class="text-muted">Cobros y pendientes</small>
+                    <div class="col-12 mb-2" :class="{ 'col-xl-8': configuration.dashboard_goal_enabled }">
+                        <weekly-sales-chart :filters="form"></weekly-sales-chart>
+                    </div>
+                    <div v-if="configuration.dashboard_goal_enabled" class="col-12 col-xl-4 mb-2">
+                        <month-goal></month-goal>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-4 mb-2">
+                        <debtors :filters="form"></debtors>
+                    </div>
+                    <template v-if="configuration.dashboard_products">
+                        <div class="col-12 col-md-6 col-xl-4 mb-2">
+                            <div v-if="loaders.items_by_sales" class="card card-dashboard">
+                                <div class="card-body">
+                                    <loader-graph :rows="4" :columns="1" :radius="100" :hideCircle="true"></loader-graph>
+                                </div>
+                            </div>
+                            <top-products
+                                v-else
+                                :items="items_by_sales"
+                                v-model="form.enabled_move_item"
+                                @order-change="loadDataAditional"
+                            ></top-products>
+                        </div>
+                    </template>
+                    <div class="col-12 col-md-6 col-xl-4 mb-2">
+                        <payment-methods :filters="form"></payment-methods>
+                    </div>
+                    <div class="col-12 col-xl-8 mb-2">
+                        <cash-flow-chart :filters="form"></cash-flow-chart>
+                    </div>
+                    <div class="col-12 col-xl-4 mb-2 d-flex flex-column">
+                        <sunat-status :filters="form"></sunat-status>
+                        <template v-if="configuration.dashboard_products">
+                            <low-stock :filters="form"></low-stock>
+                        </template>
+                    </div>
+                    <template v-if="showLegacyCards && configuration.dashboard_sales">
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <section class="card card-dashboard">
+                                <div class="card-body" v-if="loaders.sale_note">
+                                    <template >
+                                        <loader-graph :rows="4" :columns="1" :radius="50"></loader-graph>
+                                    </template>
+                                </div>
+                                <div class="card-body card-body-border-radius" v-if="!loaders.sale_note">
+                                    <div class="widget-summary">
+                                        <div class="widget-summary-col" v-if="sale_note">
+                                            <div class="row no-gutters">
+                                                <div class="col-md-12 m-b-10">
+                                                    <label>Notas de venta</label>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <x-graph type="doughnut" :all-data="sale_note.graph"></x-graph>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>    
+                                    <div class="mt-3" v-show="!loaders.sale_note">
+                                        <table class="table-dashboard mb-0 table-sm">
+                                            <tbody class="card-dark">
+                                                <tr class="text-info text-bold">
+                                                    <td>Total Cobrado</td>
+                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ sale_note.totals.total_payment }}</td>
+                                                </tr>
+                                                <tr class="text-danger text-bold">
+                                                    <td>Cobro pendiente</td>
+                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ sale_note.totals.total_to_pay }}</td>
+                                                </tr>
+                                                <tr class="text-bold td-total">
+                                                    <td class="">Total</td>
+                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ sale_note.totals.total }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
 
@@ -267,6 +343,7 @@
                             ></top-products>
                         </div>
                     </template>
+<<<<<<< Updated upstream
                     <div class="col-12 col-md-6 mb-2" :class="configuration.dashboard_products ? 'col-xl-4' : 'col-xl-6'">
                         <payment-methods :filters="form"></payment-methods>
                     </div>
@@ -280,6 +357,8 @@
                         </template>
                     </div>
                     
+=======
+>>>>>>> Stashed changes
                     <template v-if="showLegacyCards && configuration.dashboard_general">
                         <div class="col-12 col-sm-6 col-xl-3">
                             <section class="card card-dashboard">

@@ -553,6 +553,7 @@ import moment from "moment";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import {functions} from '../../../../mixins/functions';
 import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
+import { validateItemsLots, hydrateItemLots } from '../../../../helpers/lotValidation';
 
 export default {
     components: {DocumentOptions, SaleNoteOptions, SeriesForm, QrApi},
@@ -1077,6 +1078,11 @@ export default {
                                 this.document.payment_condition_id = "01";
                             }
 
+                            // Precargar lotes ya guardados en la cotización
+                            if (this.form.quotation && Array.isArray(this.form.quotation.items)) {
+                                this.form.quotation.items.forEach(row => hydrateItemLots(row));
+                            }
+
                             // console.log(this.form)
                             // this.validateIdentityDocumentType()
                             this.getCustomer();
@@ -1196,7 +1202,6 @@ export default {
         async validateQuantityandSeriesLots() {
 
             let error = 0;
-            let error_lots_group = 0
 
             await this.form.quotation.items.forEach((element) => {
 
@@ -1207,19 +1212,15 @@ export default {
                     if (select_lots != element.quantity) error++;
                 }
 
-                if (element.item.lots_enabled)
-                {
-                    if (!element.IdLoteSelected) error_lots_group++
-                }
-
             });
 
-            if(error_lots_group > 0)
-            {
+            // Lotes de origen: misma regla que invoice_generate / DocumentRequest
+            const lotsValidation = validateItemsLots(this.form.quotation.items);
+            if (!lotsValidation.valid) {
                 return {
                     success: false,
-                    message: 'Las cantidades y lotes seleccionados deben ser iguales.',
-                }
+                    message: lotsValidation.message,
+                };
             }
 
             if (error > 0)

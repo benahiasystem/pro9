@@ -12,7 +12,7 @@
         </p>
 
         <!-- Grupos colapsables por tipo -->
-        <el-collapse v-model="activeGroups" class="so-groups-collapse">
+        <el-collapse v-if="!loading" v-model="activeGroups" class="so-groups-collapse">
             <el-collapse-item
                 v-for="group in statusGroups"
                 :key="group.key"
@@ -524,6 +524,7 @@ export default {
     },
     data() {
         return {
+            loading: false,
             statuses: [],
             activeGroups: ['payment', 'shipping', 'order'],
             activePanel: null,
@@ -534,6 +535,7 @@ export default {
             dragGroupKey: null,
             originalStatuses: null,
             dropped: false,
+            isAdvanced: false,
 
             // Paleta de 15 colores vibrantes, distribuidos en todo el espectro
             colorPalette: [
@@ -617,11 +619,20 @@ export default {
         },
 
         getRecords() {
+            this.loading = true;
             this.$http.get('/statusOrder/records').then(response => {
-                // Normalizar booleanos que pueden llegar como 0/1 desde el backend
-                this.statuses = response.data.map(s => this.normalize(s))
-                this.activeGroups = ['payment', 'shipping', 'order']
-                this.activePanel = null
+                console.log('API response:', response.data);
+                if (response && response.data) {
+                    // El backend ahora siempre envía un Array plano. El Frontend Vue (tanto aquí como en index.vue) filtra nativamente por las propiedades is_payment_status, etc.
+                    let records = Array.isArray(response.data) ? response.data : [];
+                    
+                    // Normalizar booleanos que pueden llegar como 0/1 desde el backend
+                    this.statuses = records.map(s => this.normalize(s))
+                    this.activeGroups = ['payment', 'shipping', 'order']
+                    this.activePanel = null
+                }
+            }).finally(() => {
+                this.loading = false;
             })
         },
 
