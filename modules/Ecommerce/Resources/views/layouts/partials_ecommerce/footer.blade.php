@@ -212,6 +212,11 @@
                             <i class="ti ti-brand-instagram"></i>
                         </a>
                     @endif
+                    @if($information->link_youtube)
+                        <a href="{{ $information->link_youtube }}" class="footer-social-btn" target="_blank" title="YouTube">
+                            <i class="ti ti-brand-youtube"></i>
+                        </a>
+                    @endif
                 </div>
             </div>
 
