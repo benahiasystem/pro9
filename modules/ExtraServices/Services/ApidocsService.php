@@ -330,7 +330,7 @@ class ApidocsService
             }
 
             return [
-                'success' => false,
+                'success' => true,
                 'data' => $response->json(),
             ];
         } catch (Exception $e) {
