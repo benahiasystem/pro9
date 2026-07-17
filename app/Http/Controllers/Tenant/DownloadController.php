@@ -23,20 +23,22 @@ class DownloadController extends Controller
         if (!$document) throw new Exception("El código {$external_id} es inválido, no se encontró documento relacionado");
 
         $type_pdf = $document_type;
-        if ($document_type == 'document') {
-             $type_pdf = 'invoice';
-             if($document->document_type_id === '07') $type_pdf = 'credit';
-             if($document->document_type_id === '08') $type_pdf = 'debit';
-        }
+        if ($type == 'pdf') {
+            if ($document_type == 'document') {
+                $type_pdf = 'invoice';
+                if($document->document_type_id === '07') $type_pdf = 'credit';
+                if($document->document_type_id === '08') $type_pdf = 'debit';
+            }
 
-        if ($format != null) {
-            $this->reloadPDF($document, $type_pdf, $format);
-        } else {
-            // Validar la existencia física del PDF. 
-            // Si el formato es null y no existe en disco, forzar 'a4' y regenerar preventivamente con el tipo correcto.
-            if (!$this->existFileInStorage($document->filename, 'pdf')) {
-                $format = 'a4';
+            if ($format != null) {
                 $this->reloadPDF($document, $type_pdf, $format);
+            } else {
+                // Validar la existencia física del PDF. 
+                // Si el formato es null y no existe en disco, forzar 'a4' y regenerar preventivamente con el tipo correcto.
+                if (!$this->existFileInStorage($document->filename, 'pdf')) {
+                    $format = 'a4';
+                    $this->reloadPDF($document, $type_pdf, $format);
+                }
             }
         }
 
