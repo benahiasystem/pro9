@@ -19,6 +19,8 @@ export default defineConfig({
         'resources/js/app.js',
         'modules/ClaimsBook/Resources/assets/js/app.js',
         'modules/Ecommerce/Resources/assets/js/frontend/cart-app.js',
+        // Bundle público del Marketplace: standalone, sin Element UI ni Bootstrap.
+        'modules/Marketplace/Resources/assets/js/marketplace.js',
         // 'resources/sass/style.scss',
         // 'resources/sass/auth.scss'
       ],
@@ -64,6 +66,7 @@ export default defineConfig({
       '@viewsModuleCustomField' : path.resolve(__dirname, 'modules/CustomField/Resources/assets/js'),
       '@viewsModuleClaimsBook' : path.resolve(__dirname, 'modules/ClaimsBook/Resources/assets/js'),
       '@viewsModuleWebhook' : path.resolve(__dirname, 'modules/Webhook/Resources/assets/js'),
+      '@viewsModuleMarketplace' : path.resolve(__dirname, 'modules/Marketplace/Resources/assets/js'),
       'vue': path.resolve(__dirname, 'node_modules/vue/dist/vue.esm.js'),
       '@ckeditor/ckeditor5-build-classic': path.resolve(__dirname, 'resources/js/ckeditor-shim.js'),
       '@viewsModuleRestaurant' : path.resolve(__dirname, 'modules/Restaurant/Resources/assets/js/views'),

@@ -1,0 +1,70 @@
+<?php
+
+namespace Modules\Marketplace\Providers;
+
+use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Route;
+
+class RouteServiceProvider extends ServiceProvider
+{
+    protected $moduleNamespace = 'Modules\Marketplace\Http\Controllers';
+
+    public function map()
+    {
+        $this->mapApiRoutes();
+        $this->mapAdminRoutes();
+        $this->mapWebRoutes();
+    }
+
+    /**
+     * Admin. Se registra ANTES que las rutas públicas para que
+     * `marketplace/admin` gane sobre cualquier patrón con comodín.
+     */
+    protected function mapAdminRoutes()
+    {
+        Route::domain($this->systemDomain())
+            ->middleware('web')
+            ->namespace($this->moduleNamespace)
+            ->group(module_path('Marketplace', '/Routes/admin.php'));
+    }
+
+    /**
+     * Rutas públicas del marketplace.
+     *
+     * Van acotadas al **dominio del sistema**: los datos viven en la conexión
+     * `system` y no tienen nada que ver con los tenants. Es la misma forma en
+     * que routes/web.php separa el panel del reseller.
+     */
+    protected function mapWebRoutes()
+    {
+        Route::domain($this->systemDomain())
+            ->middleware('web')
+            ->namespace($this->moduleNamespace)
+            ->group(module_path('Marketplace', '/Routes/web.php'));
+    }
+
+    /**
+     * API para la app móvil.
+     *
+     * No se acota por dominio a propósito: los modelos usan UsesSystemConnection,
+     * así que responden igual desde cualquier host, y la app se compila
+     * apuntando al dominio del reseller.
+     */
+    protected function mapApiRoutes()
+    {
+        Route::prefix('api')
+            ->middleware('api')
+            ->namespace($this->moduleNamespace)
+            ->group(module_path('Marketplace', '/Routes/api.php'));
+    }
+
+    /**
+     * Mismo cálculo que routes/web.php para el dominio del panel del sistema.
+     */
+    private function systemDomain(): string
+    {
+        $prefix = env('PREFIX_URL', null);
+
+        return (! empty($prefix) ? $prefix . '.' : '') . env('APP_URL_BASE');
+    }
+}
