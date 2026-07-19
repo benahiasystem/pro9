@@ -18,11 +18,16 @@ class MarketplaceController extends Controller
      */
     public function index(Request $request): View
     {
+        $item = $this->initialItem($request);
+
         return view('marketplace::public.index', [
             'meta' => $this->meta(),
             // Deep-link ?p={id}: el producto se resuelve en el servidor para
             // que el modal abra sin un viaje extra al feed.
-            'boot' => $this->boot(['initial_item' => $this->initialItem($request)]),
+            'boot' => $this->boot([
+                'initial_item' => $item,
+                'recommended_ids' => $this->recommendedIds($request, $item),
+            ]),
         ]);
     }
 
@@ -45,13 +50,30 @@ class MarketplaceController extends Controller
             ], 410);
         }
 
+        $item = $this->initialItem($request);
+
         return view('marketplace::public.index', [
             'meta' => $this->meta($store),
             'boot' => $this->boot([
                 'store' => PublicPresenter::store($store),
-                'initial_item' => $this->initialItem($request),
+                'initial_item' => $item,
+                'recommended_ids' => $this->recommendedIds($request, $item),
             ]),
         ]);
+    }
+
+    /**
+     * Siembra el pulgar del producto del deep-link. El feed marca los de cada
+     * página, pero el producto abierto con ?p= podría no estar en la primera, y
+     * el modal abre antes de que llegue el feed: sin esto, su pulgar aparecería
+     * apagado un instante aunque el visitante ya lo hubiera recomendado.
+     */
+    private function recommendedIds(Request $request, ?array $item): array
+    {
+        return \Modules\Marketplace\Models\Recommendation::recommendedItemIds(
+            \Modules\Marketplace\Http\Middleware\EnsureMarketplaceVisitor::id($request),
+            $item ? [$item['id']] : []
+        );
     }
 
     /**
@@ -112,12 +134,14 @@ class MarketplaceController extends Controller
                 'hero_highlight' => Settings::get('hero_highlight'),
                 'items_per_page' => Settings::get('items_per_page'),
                 'report_reasons' => Settings::get('report_reasons', []),
+                'whatsapp_cart_greeting' => Settings::get('whatsapp_cart_greeting'),
             ],
             'terms_url' => Settings::termsUrl(),
             'prefix' => config('marketplace.route_prefix'),
             'gone' => false,
             'store' => null,
             'initial_item' => null,
+            'recommended_ids' => [],
         ], $extra);
     }
 

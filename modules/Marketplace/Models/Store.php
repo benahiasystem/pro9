@@ -32,6 +32,7 @@ class Store extends Model
         'status_reason',
         'items_count',
         'reports_count',
+        'recommendations_count',
         'terms_accepted_at',
         'approved_at',
         'rejected_at',
@@ -45,6 +46,7 @@ class Store extends Model
     protected $casts = [
         'items_count' => 'integer',
         'reports_count' => 'integer',
+        'recommendations_count' => 'integer',
         'last_sync_items' => 'integer',
         'terms_accepted_at' => 'datetime',
         'approved_at' => 'datetime',
@@ -61,6 +63,11 @@ class Store extends Model
     public function reports()
     {
         return $this->hasMany(Report::class, 'store_id');
+    }
+
+    public function recommendations()
+    {
+        return $this->hasMany(Recommendation::class, 'store_id');
     }
 
     public function isApproved(): bool

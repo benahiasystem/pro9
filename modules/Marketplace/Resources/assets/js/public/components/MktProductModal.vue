@@ -34,6 +34,10 @@
                     <mkt-icon name="whatsapp" :size="24"/> Pedir por WhatsApp
                 </a>
 
+                <mkt-cart-button :product="product" variant="full" @added="$emit('added')"/>
+
+                <mkt-recommend :product="product" :prefix="prefix" variant="full" class="mkt-modal__reco"/>
+
                 <p class="mkt-modal__note">Coordinas precio y entrega directamente con la tienda.</p>
 
                 <button type="button" class="mkt-modal__report" @click="$emit('report', product)">
@@ -46,12 +50,15 @@
 
 <script>
 import MktIcon from './MktIcon.vue'
+import MktRecommend from './MktRecommend.vue'
+import MktCartButton from './MktCartButton.vue'
 
 export default {
     name: 'MktProductModal',
-    components: { MktIcon },
+    components: { MktIcon, MktRecommend, MktCartButton },
     props: {
         product: { type: Object, required: true },
+        prefix: { type: String, default: 'marketplace' },
     },
 
     mounted() {
@@ -225,6 +232,10 @@ export default {
     font-size: var(--fs-body);
     margin-top: 4px;
 }
+
+/* Ancho completo pero secundario: no debe competir con el CTA de WhatsApp, que
+   es la acción que de verdad importa aquí. */
+.mkt-modal__reco { width: 100%; }
 
 .mkt-modal__note {
     margin: 0;

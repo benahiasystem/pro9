@@ -2,10 +2,12 @@
 
 namespace Modules\Marketplace\Support;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Modules\Marketplace\Models\Item;
 use Modules\Marketplace\Models\Store;
+use Modules\Marketplace\Services\Settings;
 use Modules\Marketplace\Services\WhatsAppLink;
 
 /**
@@ -28,10 +30,22 @@ class PublicPresenter
             'category' => $item->category?->name,
             'image_url' => self::url($item->image_path),
             'initial' => mb_strtoupper(mb_substr($item->name, 0, 1)),
+            // Sin número: en el producto el pulgar solo se enciende o se apaga.
+            // Si el visitante ya lo recomendó lo marca el feed aparte, no aquí,
+            // porque esto va dentro del payload cacheado y sería igual para
+            // todos.
             'store' => [
                 'slug' => $store->slug,
                 'name' => $store->name,
                 'initials' => self::initials($store->name),
+                // Para que el carrito arme el mensaje multi-producto en el
+                // cliente. No es una fuga nueva: el número ya viaja dentro de
+                // `wa_link` de cada producto.
+                'whatsapp' => $store->whatsapp,
+                // La URL canónica, la misma que arma el servidor: el carrito la
+                // usa tal cual en el mensaje en vez de reconstruirla desde el
+                // origin, que perdería el subpath en despliegues bajo una ruta.
+                'url' => WhatsAppLink::storeUrl($store),
             ],
             'wa_link' => WhatsAppLink::forItem($item, $store),
         ];
@@ -46,11 +60,66 @@ class PublicPresenter
             'description' => $store->description,
             'address' => $store->address,
             'items_count' => $store->items_count,
+            // El número solo viaja cuando ya es notable; por debajo del umbral
+            // llega 0 y el front no pinta la insignia. Es lo que hace del
+            // ranking un aval y no un marcador que empieza en 1.
+            'recommendations_count' => self::notableRanking($store->recommendations_count),
             'main_category' => $mainCategory,
             'logo_url' => self::url($store->logo_path),
             'url' => WhatsAppLink::storeUrl($store),
             'wa_link' => WhatsAppLink::forStore($store),
+            // «Nuevo» durante el primer mes. Se usa en la ficha y en la tarjeta
+            // del home.
+            'is_new' => self::isNew($store->created_at),
+            // Antigüedad gruesa para el detalle («Creado hace 3 meses»), nunca
+            // en días. La fecha exacta viaja aparte para el tooltip.
+            'created_label' => self::ageLabel($store->created_at),
+            'created_on' => $store->created_at?->format('d/m/Y'),
         ];
+    }
+
+    private static function isNew(?Carbon $createdAt): bool
+    {
+        return $createdAt !== null && $createdAt->greaterThan(now()->subMonth());
+    }
+
+    /**
+     * Antigüedad a trazo grueso: nada de «hace 2 días». Antes del mes no hay
+     * cifra (el badge «Nuevo» ya lo dice); a partir de ahí, meses; y a partir
+     * del año, años. Es a propósito impreciso: al vecino le basta con la escala.
+     */
+    private static function ageLabel(?Carbon $createdAt): ?string
+    {
+        if ($createdAt === null) {
+            return null;
+        }
+
+        $months = $createdAt->diffInMonths(now());
+
+        if ($months < 1) {
+            return 'Creado hace menos de un mes';
+        }
+
+        if ($months < 12) {
+            return 'Creado hace ' . $months . ($months === 1 ? ' mes' : ' meses');
+        }
+
+        $years = intdiv($months, 12);
+
+        return 'Creado hace ' . $years . ($years === 1 ? ' año' : ' años');
+    }
+
+    /**
+     * El ranking solo se expone si alcanza el umbral configurado. Por debajo
+     * devuelve 0 para que no se muestre ni ordene: una tienda con un par de
+     * recomendaciones no debe verse "mejor" que una que aún no tiene ninguna.
+     * Con el umbral en 0 no hay gate.
+     */
+    private static function notableRanking(int $count): int
+    {
+        $threshold = (int) Settings::get('ranking_threshold', 0);
+
+        return $count >= $threshold ? $count : 0;
     }
 
     /**

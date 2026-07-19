@@ -12,7 +12,10 @@
                 </span>
 
                 <div class="mkt-store__info">
-                    <h1 class="mkt-store__name">{{ store.name }}</h1>
+                    <h1 class="mkt-store__name">
+                        {{ store.name }}
+                        <span v-if="store.is_new" class="mkt-new">Nuevo</span>
+                    </h1>
                     <p v-if="store.description" class="mkt-store__desc">{{ store.description }}</p>
                     <div class="mkt-store__meta">
                         <span v-if="store.address">
@@ -21,6 +24,15 @@
                         <span>
                             <mkt-icon name="building-store" :size="16"/>
                             <span class="mkt-mono">{{ store.items_count }}</span> productos
+                        </span>
+                        <span v-if="store.created_label" :title="store.created_on ? ('Desde el ' + store.created_on) : null">
+                            <mkt-icon name="calendar" :size="16"/> {{ store.created_label }}
+                        </span>
+                        <span v-if="store.recommendations_count" class="mkt-store__reco"
+                              :title="store.recommendations_count + ' recomendaciones'">
+                            <mkt-icon name="heart" :size="16"/>
+                            <span class="mkt-mono">{{ compact(store.recommendations_count) }}</span>
+                            recomendaciones
                         </span>
                     </div>
                 </div>
@@ -43,12 +55,16 @@
 
 <script>
 import MktIcon from './MktIcon.vue'
+import { compactCount } from '../format'
 
 export default {
     name: 'MktStoreHeader',
     components: { MktIcon },
     props: {
         store: { type: Object, required: true },
+    },
+    methods: {
+        compact: compactCount,
     },
 }
 </script>
@@ -97,6 +113,10 @@ export default {
 .mkt-store__info { flex: 1; min-width: 260px; }
 
 .mkt-store__name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
     margin: 0 0 6px;
     font-size: var(--fs-h3);
     font-weight: 700;
@@ -122,6 +142,9 @@ export default {
 }
 
 .mkt-store__meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+.mkt-store__reco { color: var(--buho-pink-600); font-weight: 600; }
+.mkt-store__reco svg { fill: currentColor; }
 
 .mkt-store__actions {
     display: flex;

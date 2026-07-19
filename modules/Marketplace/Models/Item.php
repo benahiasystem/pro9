@@ -31,6 +31,7 @@ class Item extends Model
         'blocked_at',
         'blocked_reason',
         'reports_count',
+        'recommendations_count',
         'last_synced_at',
     ];
 
@@ -38,6 +39,7 @@ class Item extends Model
         'store_id' => 'integer',
         'category_id' => 'integer',
         'reports_count' => 'integer',
+        'recommendations_count' => 'integer',
         'blocked_at' => 'datetime',
         'last_synced_at' => 'datetime',
     ];

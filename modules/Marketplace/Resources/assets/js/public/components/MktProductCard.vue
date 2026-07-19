@@ -21,10 +21,15 @@
                     <span class="mkt-card__store-label">{{ product.store.name }}</span>
                 </button>
 
-                <a :href="product.wa_link" target="_blank" rel="noopener nofollow"
-                   class="mkt-card__wa" aria-label="Escribir por WhatsApp">
-                    <mkt-icon name="whatsapp" :size="22"/>
-                </a>
+                <div class="mkt-card__actions">
+                    <mkt-recommend :product="product" :prefix="prefix"/>
+                    <mkt-cart-button :product="product" @added="$emit('added')"/>
+
+                    <a :href="product.wa_link" target="_blank" rel="noopener nofollow"
+                       class="mkt-card__wa" aria-label="Escribir por WhatsApp">
+                        <mkt-icon name="whatsapp" :size="22"/>
+                    </a>
+                </div>
             </div>
         </div>
     </article>
@@ -32,12 +37,15 @@
 
 <script>
 import MktIcon from './MktIcon.vue'
+import MktRecommend from './MktRecommend.vue'
+import MktCartButton from './MktCartButton.vue'
 
 export default {
     name: 'MktProductCard',
-    components: { MktIcon },
+    components: { MktIcon, MktRecommend, MktCartButton },
     props: {
         product: { type: Object, required: true },
+        prefix: { type: String, default: 'marketplace' },
     },
 }
 </script>
@@ -139,12 +147,21 @@ export default {
 
 .mkt-card__title:hover { color: var(--buho-blue-600); }
 
+/* Dos filas: la tienda arriba, y debajo los tres botones de acción. Con tres
+   acciones (recomendar, agregar, WhatsApp) ya no caben en la misma línea que el
+   nombre de la tienda sin apretarse. */
 .mkt-card__foot {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    flex-direction: column;
+    gap: 12px;
     margin-top: auto;
+}
+
+.mkt-card__actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
 }
 
 .mkt-card__store {

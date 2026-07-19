@@ -20,7 +20,7 @@ use Modules\Marketplace\Models\Store;
  */
 class CatalogCounters
 {
-    /** Productos activos de una tienda. */
+    /** Productos activos de una tienda y su ranking de recomendaciones. */
     public static function refreshStore(int $storeId): void
     {
         $store = Store::find($storeId);
@@ -35,6 +35,60 @@ class CatalogCounters
             ->count();
 
         $store->save();
+
+        self::syncStoreVisitors($storeId);
+    }
+
+    /**
+     * Recalcula ambos contadores tras poner o quitar un pulgar: el del producto
+     * y el de su tienda. Por recuento y no por incremento, para que queden
+     * exactos sin depender de que cada +1/-1 acierte.
+     *
+     * Ambos van como UPDATE … SET x = (SELECT …), en una sola sentencia: es la
+     * ruta caliente y dos pulgares concurrentes a la misma tienda podrían
+     * pisarse si se contara en PHP y se guardara después (lost update). El
+     * recuento y la escritura tienen que ser atómicos.
+     */
+    public static function refreshRecommendations(Item $item): void
+    {
+        DB::connection('system')->statement('
+            UPDATE marketplace_items i
+            SET i.recommendations_count = (
+                SELECT COUNT(*) FROM marketplace_recommendations r WHERE r.item_id = i.id
+            )
+            WHERE i.id = ?
+        ', [$item->id]);
+
+        self::syncStoreVisitors($item->store_id);
+    }
+
+    /**
+     * El ranking de la tienda: cuántos visitantes DISTINTOS han recomendado
+     * algo suyo. No es la suma de sus productos —así un solo entusiasta que
+     * recorra el catálogo entero sigue contando como uno—, que es lo que hace
+     * del número un aval y no una puntuación inflable.
+     *
+     * Se excluyen los productos bloqueados: lo que el admin retiró por una razón
+     * no debería seguir sosteniendo la posición de la tienda. Los inactivos sí
+     * cuentan: un producto que salió del catálogo no borra el reconocimiento ya
+     * ganado.
+     *
+     * Atómico por lo mismo que refreshRecommendations: es el contador que más
+     * se toca y no puede sufrir lost updates entre recuento y escritura.
+     */
+    private static function syncStoreVisitors(int $storeId): void
+    {
+        DB::connection('system')->statement('
+            UPDATE marketplace_stores s
+            SET s.recommendations_count = (
+                SELECT COUNT(DISTINCT r.visitor_id)
+                FROM marketplace_recommendations r
+                INNER JOIN marketplace_items i ON i.id = r.item_id
+                WHERE r.store_id = s.id
+                  AND i.status != ?
+            )
+            WHERE s.id = ?
+        ', [Item::STATUS_BLOCKED, $storeId]);
     }
 
     /**

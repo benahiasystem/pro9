@@ -29,9 +29,12 @@ class SettingController extends Controller
             'hero_title' => ['sometimes', 'nullable', 'string', 'max:120'],
             'hero_highlight' => ['sometimes', 'nullable', 'string', 'max:60'],
             'whatsapp_greeting' => ['sometimes', 'required', 'string', 'max:255'],
+            'whatsapp_cart_greeting' => ['sometimes', 'required', 'string', 'max:255'],
             'max_items_per_store' => ['sometimes', 'required', 'integer', 'min:1', 'max:5000'],
             // 0 = nunca bloquear automáticamente.
             'auto_block_reports' => ['sometimes', 'required', 'integer', 'min:0', 'max:10000'],
+            // 0 = sin umbral, el ranking se muestra desde la primera recomendación.
+            'ranking_threshold' => ['sometimes', 'required', 'integer', 'min:0', 'max:10000'],
             'items_per_page' => ['sometimes', 'required', 'integer', 'min:6', 'max:96'],
             'report_reasons' => ['sometimes', 'array', 'min:1'],
             'report_reasons.*' => ['required', 'string', 'max:60'],

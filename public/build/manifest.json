@@ -1,17 +1,17 @@
 {
-  "__plugin-vue2_normalizer-fe46c126.js": {
-    "file": "assets/_plugin-vue2_normalizer-fe46c126.js"
+  "__plugin-vue2_normalizer-839f22b6.js": {
+    "file": "assets/_plugin-vue2_normalizer-839f22b6.js"
   },
-  "_claim_form-de465041.js": {
+  "_claim_form-62a9b16c.js": {
     "css": [
       "assets/claim_form-b455b368.css"
     ],
-    "file": "assets/claim_form-de465041.js",
+    "file": "assets/claim_form-62a9b16c.js",
     "imports": [
-      "__plugin-vue2_normalizer-fe46c126.js"
+      "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_index-d4f33c18.js": {
+  "_index-00ca7a5d.js": {
     "assets": [
       "assets/element-icons-ab40a589.woff",
       "assets/element-icons-a30f5b3b.ttf"
@@ -19,19 +19,19 @@
     "css": [
       "assets/index-ceb821ee.css"
     ],
-    "file": "assets/index-d4f33c18.js",
+    "file": "assets/index-00ca7a5d.js",
     "imports": [
-      "__plugin-vue2_normalizer-fe46c126.js"
+      "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_vue-clipboard-fdf0a8da.js": {
+  "_vue-clipboard-57fc87a8.js": {
     "css": [
       "assets/vue-clipboard-2de710db.css"
     ],
-    "file": "assets/vue-clipboard-fdf0a8da.js",
+    "file": "assets/vue-clipboard-57fc87a8.js",
     "imports": [
-      "__plugin-vue2_normalizer-fe46c126.js",
-      "_index-d4f33c18.js"
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-00ca7a5d.js"
     ]
   },
   "claim_form.css": {
@@ -43,11 +43,11 @@
     "src": "index.css"
   },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-b9b90e4f.js",
+    "file": "assets/app-2177b09b.js",
     "imports": [
-      "__plugin-vue2_normalizer-fe46c126.js",
-      "_index-d4f33c18.js",
-      "_claim_form-de465041.js"
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-00ca7a5d.js",
+      "_claim_form-62a9b16c.js"
     ],
     "isEntry": true,
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
@@ -86,7 +86,7 @@
     "src": "modules/Marketplace/Resources/assets/img/buho-logo.svg"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.css": {
-    "file": "assets/marketplace-d4c09457.css",
+    "file": "assets/marketplace-f607f6a4.css",
     "src": "modules/Marketplace/Resources/assets/js/marketplace.css"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.js": {
@@ -100,11 +100,11 @@
       "assets/jetbrains-mono-latin-ext-db5ff4db.woff2"
     ],
     "css": [
-      "assets/marketplace-d4c09457.css"
+      "assets/marketplace-f607f6a4.css"
     ],
-    "file": "assets/marketplace-00c3ad10.js",
+    "file": "assets/marketplace-4d5a9cd8.js",
     "imports": [
-      "__plugin-vue2_normalizer-fe46c126.js"
+      "__plugin-vue2_normalizer-839f22b6.js"
     ],
     "isEntry": true,
     "src": "modules/Marketplace/Resources/assets/js/marketplace.js"
@@ -125,29 +125,29 @@
     "css": [
       "assets/app-e72603f2.css"
     ],
-    "file": "assets/app-77087b99.js",
+    "file": "assets/app-36b0dce5.js",
     "imports": [
-      "_vue-clipboard-fdf0a8da.js",
-      "__plugin-vue2_normalizer-fe46c126.js",
-      "_index-d4f33c18.js",
-      "_claim_form-de465041.js"
+      "_vue-clipboard-57fc87a8.js",
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-00ca7a5d.js",
+      "_claim_form-62a9b16c.js"
     ],
     "isEntry": true,
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-3e06cbfc.css",
+    "file": "assets/system-eb656036.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-3e06cbfc.css"
+      "assets/system-eb656036.css"
     ],
-    "file": "assets/system-0d71ea77.js",
+    "file": "assets/system-930eea35.js",
     "imports": [
-      "_vue-clipboard-fdf0a8da.js",
-      "__plugin-vue2_normalizer-fe46c126.js",
-      "_index-d4f33c18.js"
+      "_vue-clipboard-57fc87a8.js",
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-00ca7a5d.js"
     ],
     "isEntry": true,
     "src": "resources/js/system.js"

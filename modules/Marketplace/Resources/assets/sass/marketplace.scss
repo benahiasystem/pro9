@@ -205,6 +205,24 @@
     font-family: var(--font-mono);
 }
 
+// Insignia «Nuevo»: verde de éxito, no la pila de la paleta, para que lea como
+// algo fresco y no se confunda con el rosa de recomendar. Global porque la usan
+// dos componentes (la ficha de tienda y la tarjeta del home).
+.mkt-new {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    font-size: var(--fs-micro);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1.6;
+}
+
 // El botón de WhatsApp usa el verde de marca de WhatsApp, no la paleta Búho:
 // es un código de color que el usuario ya reconoce.
 .mkt-wa {

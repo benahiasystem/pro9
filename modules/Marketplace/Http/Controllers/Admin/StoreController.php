@@ -57,6 +57,7 @@ class StoreController extends Controller
                 'status' => $i->status,
                 'blocked_reason' => $i->blocked_reason,
                 'reports_count' => $i->reports_count,
+                'recommendations_count' => $i->recommendations_count,
                 'image_url' => $i->image_path ? \Illuminate\Support\Facades\Storage::disk(config('marketplace.disk'))->url($i->image_path) : null,
             ]);
 
@@ -151,6 +152,7 @@ class StoreController extends Controller
             'status_reason' => $store->status_reason,
             'items_count' => $store->items_count,
             'reports_count' => $store->reports_count,
+            'recommendations_count' => $store->recommendations_count,
             'public_url' => $store->publicUrl(),
             'logo_url' => $store->logo_path ? \Illuminate\Support\Facades\Storage::disk(config('marketplace.disk'))->url($store->logo_path) : null,
             'last_synced_at' => $store->last_synced_at?->format('d/m/Y H:i'),

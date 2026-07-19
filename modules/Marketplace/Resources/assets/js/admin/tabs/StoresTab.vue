@@ -49,6 +49,13 @@
                                               :title="item.reports_count + ' denuncia(s)'">
                                             <i class="fas fa-flag"></i> {{ item.reports_count }}
                                         </span>
+                                        <!-- Y las recomendaciones son el contrapeso: un producto
+                                             denunciado que además acumula recomendaciones suele ser
+                                             una denuncia interesada, no un problema real. -->
+                                        <span v-if="item.recommendations_count" class="badge badge-pill badge-success"
+                                              :title="item.recommendations_count + ' recomendación(es)'">
+                                            <i class="fas fa-heart"></i> {{ item.recommendations_count }}
+                                        </span>
                                         <span v-if="item.status !== 'active'" class="badge badge-pill"
                                               :class="item.status === 'blocked' ? 'badge-danger' : 'badge-secondary'"
                                               :title="item.blocked_reason || ''">
@@ -96,6 +103,16 @@
                 <template slot-scope="scope">
                     <span v-if="scope.row.reports_count" class="badge badge-pill badge-danger">
                         {{ scope.row.reports_count }}
+                    </span>
+                    <span v-else class="text-muted">—</span>
+                </template>
+            </el-table-column>
+
+            <!-- Exacto, no abreviado: el público ve «2.5k», el admin necesita el número. -->
+            <el-table-column label="Recomendaciones" width="140" align="center">
+                <template slot-scope="scope">
+                    <span v-if="scope.row.recommendations_count" class="badge badge-pill badge-success">
+                        {{ scope.row.recommendations_count }}
                     </span>
                     <span v-else class="text-muted">—</span>
                 </template>

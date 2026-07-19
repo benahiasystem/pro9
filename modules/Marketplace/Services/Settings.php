@@ -8,8 +8,8 @@ use Modules\Marketplace\Models\Setting;
 /**
  * Acceso a marketplace_settings, cacheado en Redis bajo la versión global.
  *
- * Se lee la tabla entera de una vez: son ocho filas y evita N consultas
- * cuando una vista pide varias claves.
+ * Se lee la tabla entera de una vez: es una decena de filas y evita N
+ * consultas cuando una vista pide varias claves.
  */
 class Settings
 {

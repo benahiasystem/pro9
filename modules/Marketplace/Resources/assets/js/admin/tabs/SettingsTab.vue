@@ -66,13 +66,21 @@
             </div>
 
             <div class="row">
-                <div class="form-group col-12 mb-2" :class="{ 'has-danger': errors.whatsapp_greeting }">
-                    <label class="control-label">Saludo de WhatsApp</label>
+                <div class="form-group col-lg-6 col-md-12 mb-2" :class="{ 'has-danger': errors.whatsapp_greeting }">
+                    <label class="control-label">Saludo de WhatsApp (un producto)</label>
                     <el-input v-model="form.whatsapp_greeting" :maxlength="255"/>
                     <small class="text-muted">
                         Se antepone al nombre y código del producto en el mensaje que abre el comprador.
                     </small>
                     <small v-if="errors.whatsapp_greeting" class="form-control-feedback" v-text="errors.whatsapp_greeting[0]"></small>
+                </div>
+                <div class="form-group col-lg-6 col-md-12 mb-2" :class="{ 'has-danger': errors.whatsapp_cart_greeting }">
+                    <label class="control-label">Saludo del pedido (carrito)</label>
+                    <el-input v-model="form.whatsapp_cart_greeting" :maxlength="255"/>
+                    <small class="text-muted">
+                        Encabeza el mensaje del carrito; debajo va la lista de productos con sus cantidades.
+                    </small>
+                    <small v-if="errors.whatsapp_cart_greeting" class="form-control-feedback" v-text="errors.whatsapp_cart_greeting[0]"></small>
                 </div>
             </div>
 
@@ -104,6 +112,21 @@
                         </template>
                     </small>
                     <small v-if="errors.auto_block_reports" class="form-control-feedback" v-text="errors.auto_block_reports[0]"></small>
+                </div>
+                <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.ranking_threshold }">
+                    <label class="control-label">Umbral del ranking</label>
+                    <el-input-number v-model="form.ranking_threshold" :min="0" :max="10000"
+                                     controls-position="right" class="w-100"/>
+                    <small class="text-muted">
+                        <template v-if="form.ranking_threshold > 0">
+                            Una tienda muestra su número de recomendaciones y gana posición solo al llegar a
+                            {{ form.ranking_threshold }} vecinos distintos. Por debajo no destaca.
+                        </template>
+                        <template v-else>
+                            Sin umbral: el ranking se muestra desde la primera recomendación.
+                        </template>
+                    </small>
+                    <small v-if="errors.ranking_threshold" class="form-control-feedback" v-text="errors.ranking_threshold[0]"></small>
                 </div>
             </div>
 
@@ -149,8 +172,8 @@ export default {
             form: {
                 is_enabled: false, title: '', description: '', community_name: '',
                 hero_title: '', hero_highlight: '',
-                whatsapp_greeting: '', items_per_page: 24, max_items_per_store: 500,
-                auto_block_reports: 100, report_reasons: [],
+                whatsapp_greeting: '', whatsapp_cart_greeting: '', items_per_page: 24, max_items_per_store: 500,
+                auto_block_reports: 100, ranking_threshold: 10, report_reasons: [],
             },
         }
     },

@@ -51,14 +51,25 @@
             <div class="mkt__wrap">
                 <!-- Los tabs solo tienen sentido en la vista global: dentro de
                      una tienda no hay nada que alternar. -->
-                <div v-if="!store" class="tabs-line" role="tablist">
-                    <button role="tab" class="tab-line" :class="{ 'tab-line--active': tab === 'productos' }"
-                            @click="setTab('productos')">
-                        Productos <span class="mkt-mono mkt-count">{{ totals.products }}</span>
-                    </button>
-                    <button role="tab" class="tab-line" :class="{ 'tab-line--active': tab === 'tiendas' }"
-                            @click="setTab('tiendas')">
-                        Tiendas <span class="mkt-mono mkt-count">{{ totals.stores }}</span>
+                <div v-if="!store" class="mkt-toolbar">
+                    <div class="tabs-line" role="tablist">
+                        <button role="tab" class="tab-line" :class="{ 'tab-line--active': tab === 'productos' }"
+                                @click="setTab('productos')">
+                            Productos <span class="mkt-mono mkt-count">{{ totals.products }}</span>
+                        </button>
+                        <button role="tab" class="tab-line" :class="{ 'tab-line--active': tab === 'tiendas' }"
+                                @click="setTab('tiendas')">
+                            Tiendas <span class="mkt-mono mkt-count">{{ totals.stores }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Fuera del tablist a propósito: no es una pestaña más,
+                         es un orden que se aplica a la que esté activa. -->
+                    <button type="button" class="tag mkt-sort"
+                            :class="{ 'tag--active': orden === 'recomendados' }"
+                            :aria-pressed="orden === 'recomendados' ? 'true' : 'false'"
+                            @click="toggleOrden">
+                        <mkt-icon name="heart" :size="14"/> Más recomendados
                     </button>
                 </div>
 
@@ -115,8 +126,9 @@
                     <template v-else>
                         <!-- Productos -->
                         <div v-if="showProducts" role="list" class="mkt-grid">
-                            <mkt-product-card v-for="p in products" :key="p.id" :product="p"
-                                              @open="openProduct" @open-store="goStore"/>
+                            <mkt-product-card v-for="p in products" :key="p.id" :product="p" :prefix="prefix"
+                                              @open="openProduct" @open-store="goStore"
+                                              @added="onAddedToCart"/>
                         </div>
 
                         <nav v-if="showProducts && lastPage > 1" class="mkt-pager" aria-label="Paginación">
@@ -143,11 +155,21 @@
                                     <span v-else class="avatar avatar--lg avatar--navy">{{ s.initials }}</span>
                                 </span>
                                 <span class="mkt-store-card__body">
-                                    <span class="mkt-store-card__name">{{ s.name }}</span>
+                                    <span class="mkt-store-card__head">
+                                        <span class="mkt-store-card__name">{{ s.name }}</span>
+                                        <span v-if="s.is_new" class="mkt-new">Nuevo</span>
+                                    </span>
                                     <span class="mkt-store-card__meta">
                                         <span class="mkt-mono">{{ s.items_count }}</span> productos
                                         <template v-if="s.main_category"> · {{ s.main_category }}</template>
                                     </span>
+                                </span>
+                                <!-- Aproximado (1k, 2.5k): a quien elige tienda
+                                     el número exacto no le dice nada más. -->
+                                <span v-if="s.recommendations_count" class="mkt-store-card__reco"
+                                      :title="s.recommendations_count + ' recomendaciones'">
+                                    <mkt-icon name="heart" :size="14"/>
+                                    <span class="mkt-mono">{{ compact(s.recommendations_count) }}</span>
                                 </span>
                                 <mkt-icon name="chevron-right" :size="18"/>
                             </button>
@@ -172,15 +194,22 @@
             </div>
         </footer>
 
-        <mkt-product-modal v-if="modalProduct" :product="modalProduct"
-                           @close="closeProduct" @open-store="goStore" @report="openReport"/>
+        <mkt-product-modal v-if="modalProduct" :product="modalProduct" :prefix="prefix"
+                           @close="closeProduct" @open-store="goStore" @report="openReport"
+                           @added="onAddedToCart"/>
 
         <mkt-report-modal v-if="reportTarget" :target="reportTarget"
                           :reasons="settings.report_reasons || []" :prefix="prefix"
                           @close="reportTarget = null"/>
 
+        <!-- El pedido: el FAB solo aparece con algo dentro y cede el paso al
+             drawer mientras está abierto. -->
+        <mkt-cart-fab v-if="cartCount > 0 && !cartOpen" @open="cartOpen = true"/>
+        <mkt-cart-drawer v-if="cartOpen" :greeting="settings.whatsapp_cart_greeting"
+                         @close="cartOpen = false"/>
+
         <div v-if="toast" class="mkt-toast">
-            <mkt-icon name="link" :size="16"/> {{ toast }}
+            <mkt-icon :name="toastIcon" :size="16"/> {{ toast }}
         </div>
     </div>
 </template>
@@ -192,12 +221,17 @@ import MktProductCard from './components/MktProductCard.vue'
 import MktProductModal from './components/MktProductModal.vue'
 import MktReportModal from './components/MktReportModal.vue'
 import MktStoreHeader from './components/MktStoreHeader.vue'
+import MktCartFab from './components/MktCartFab.vue'
+import MktCartDrawer from './components/MktCartDrawer.vue'
+import recommendations from './recommendations'
+import cart from './cart'
+import { compactCount } from './format'
 import logo from '../../img/buho-logo.svg'
 
 export default {
     name: 'Marketplace',
 
-    components: { MktIcon, MktSearch, MktProductCard, MktProductModal, MktReportModal, MktStoreHeader },
+    components: { MktIcon, MktSearch, MktProductCard, MktProductModal, MktReportModal, MktStoreHeader, MktCartFab, MktCartDrawer },
 
     data() {
         // Todo lo que el servidor inyecta viaja en un único objeto, serializado
@@ -215,6 +249,8 @@ export default {
             q: '',
             categoria: null,
             tab: 'productos',
+            // null = alfabético (el de siempre) · 'recomendados' = ranking.
+            orden: null,
             page: 1,
 
             loading: true,
@@ -228,6 +264,8 @@ export default {
             modalProduct: boot.initial_item || null,
             reportTarget: null,
             toast: '',
+            toastIcon: 'link',
+            cartOpen: false,
             searchTimer: null,
             toastTimer: null,
         }
@@ -290,6 +328,11 @@ export default {
             return chips
         },
 
+        /** Unidades en el pedido; mueve el FAB. Reactivo por cart.state observable. */
+        cartCount() {
+            return cart.count()
+        },
+
         /** Ventana de 5 páginas alrededor de la actual. */
         pageNumbers() {
             const total = this.lastPage
@@ -309,6 +352,9 @@ export default {
     },
 
     created() {
+        // Siembra el pulgar del producto del deep-link antes del primer feed,
+        // por si no cae en la primera página. El feed rellena el resto.
+        recommendations.hydrate((window.__marketplace || {}).recommended_ids)
         this.reload(1)
     },
 
@@ -323,6 +369,7 @@ export default {
                     categoria: this.categoria,
                     tienda: this.store ? this.store.slug : null,
                     tab: this.tab,
+                    orden: this.orden,
                     page: this.page,
                 },
             }).then(({ data }) => {
@@ -331,6 +378,8 @@ export default {
                 this.stores = data.stores
                 this.categories = data.categories
                 this.totals = data.totals
+                // Qué recomendó este visitante en la página que acaba de llegar.
+                recommendations.hydrate(data.recommended)
             }).finally(() => { this.loading = false })
         },
 
@@ -338,8 +387,18 @@ export default {
             if (this.tab === tab) return
             this.tab = tab
             this.categoria = null
+            // El orden se mantiene al cambiar de pestaña: en productos ordena
+            // por las recomendaciones de cada producto y en tiendas por el
+            // ranking de la tienda, así que sigue significando lo mismo.
             this.reload(1)
         },
+
+        toggleOrden() {
+            this.orden = this.orden === 'recomendados' ? null : 'recomendados'
+            this.reload(1)
+        },
+
+        compact: compactCount,
 
         toggleCategory(slug) {
             this.categoria = this.categoria === slug ? null : slug
@@ -419,10 +478,15 @@ export default {
             document.body.removeChild(input)
         },
 
-        showToast(message) {
+        showToast(message, icon = 'link') {
             this.toast = message
+            this.toastIcon = icon
             clearTimeout(this.toastTimer)
             this.toastTimer = setTimeout(() => { this.toast = '' }, 2200)
+        },
+
+        onAddedToCart() {
+            this.showToast('Agregado a tu pedido', 'shopping-bag')
         },
     },
 }
@@ -448,6 +512,24 @@ export default {
 .mkt-hero__title em { font-style: italic; font-weight: 300; color: var(--buho-pink-600); }
 
 .mkt-count { font-size: var(--fs-micro); color: var(--color-text-muted); }
+
+/* Las pestañas a la izquierda y el orden a la derecha. En móvil el orden cae
+   debajo en vez de comprimir las pestañas. */
+.mkt-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.mkt-sort {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+}
 
 .mkt-pills { display: flex; flex-wrap: wrap; gap: 8px; padding: 20px 0 4px; }
 .mkt-pills .tag { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
@@ -534,8 +616,12 @@ export default {
 .mkt-store-card__logo img { width: 56px; height: 56px; border-radius: var(--radius-md); object-fit: cover; }
 .mkt-store-card__body { flex: 1; min-width: 0; }
 
+/* El nombre trunca; el badge «Nuevo» nunca se encoge ni empuja la fila. */
+.mkt-store-card__head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+
 .mkt-store-card__name {
-    display: block;
+    flex: 1;
+    min-width: 0;
     font-weight: 700;
     font-size: var(--fs-body);
     color: var(--buho-navy-950);
@@ -545,6 +631,21 @@ export default {
 }
 
 .mkt-store-card__meta { display: block; font-size: var(--fs-caption); color: var(--color-text-muted); margin-top: 2px; }
+
+.mkt-store-card__reco {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: var(--radius-full);
+    background: var(--buho-cream);
+    color: var(--buho-pink-600);
+    font-size: var(--fs-caption);
+    font-weight: 700;
+}
+
+.mkt-store-card__reco svg { fill: currentColor; }
 
 /* Skeletons: el shimmer viene del design system (@keyframes mkt-shimmer) */
 .mkt-skeleton { background: var(--white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }

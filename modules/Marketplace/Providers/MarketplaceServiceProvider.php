@@ -7,6 +7,7 @@ use Illuminate\Cache\RedisStore;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 use Modules\Marketplace\Http\Middleware\EnsureMarketplaceEnabled;
+use Modules\Marketplace\Http\Middleware\EnsureMarketplaceVisitor;
 
 class MarketplaceServiceProvider extends ServiceProvider
 {
@@ -62,6 +63,7 @@ class MarketplaceServiceProvider extends ServiceProvider
         $router = $this->app['router'];
 
         $router->aliasMiddleware('marketplace.enabled', EnsureMarketplaceEnabled::class);
+        $router->aliasMiddleware('marketplace.visitor', EnsureMarketplaceVisitor::class);
     }
 
     protected function registerConfig(): void

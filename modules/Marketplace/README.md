@@ -33,8 +33,9 @@ La app móvil se compila apuntando al dominio del reseller con un token fijo. La
 - **Bloquear productos individuales de forma permanente.** El bloqueo sobrevive a cualquier número de sincronizaciones.
 - **Gestionar denuncias**: bloquear el producto, deshabilitar la tienda o descartar. El catálogo de cada tienda muestra el número de denuncias por producto, que es lo que decide cuál bloquear.
 - **Bloqueo automático por denuncias**: umbral configurable (100 por defecto). Al alcanzarlo, el producto se retira solo y queda el rastro en el motivo. `0` desactiva la función.
+- **Ver el ranking de recomendaciones**, por tienda y por producto, junto a las denuncias. Es el contrapeso: un producto denunciado que además acumula recomendaciones suele ser una denuncia interesada, no un problema real. Aquí el número es **exacto**; el público lo ve abreviado.
 - **Renombrar u ocultar categorías** sin romper enlaces.
-- **Ajustes**: nombre de la comunidad, titular de la portada, textos SEO, saludo de WhatsApp, paginación, límite de catálogo y motivos de denuncia.
+- **Ajustes**: nombre de la comunidad, titular de la portada, textos SEO, saludo de WhatsApp (de un producto **y** del pedido/carrito), paginación, límite de catálogo, motivos de denuncia y **umbral del ranking** (cuántos vecinos distintos hacen falta para que una tienda destaque; 10 por defecto, `0` lo desactiva).
 
 El titular de la portada se edita en dos campos —el texto y el remate destacado, que se pinta en rosa y cursiva— con vista previa en vivo. Viene precargado con *«Lo que venden tus vecinos, a un WhatsApp.»*; si se vacían ambos, el titular desaparece de la portada.
 
@@ -46,8 +47,11 @@ Pantalla única en `/marketplace`, con el design system de Búho:
 - **Pestañas** Productos / Tiendas, **filtro de categorías** en pills y **chips** de filtros activos.
 - **Grilla de productos** con paginación; sin foto, muestra la inicial del producto y el nombre de la tienda.
 - **Modal de producto** con categoría, código, tienda y la CTA de WhatsApp.
-- **Ficha de tienda** en `/marketplace/tienda/{slug}` con logo, descripción, dirección, WhatsApp, compartir y su catálogo filtrado.
+- **Ficha de tienda** en `/marketplace/tienda/{slug}` con logo, descripción, dirección, WhatsApp, compartir y su catálogo filtrado. Muestra la **antigüedad** a trazo grueso («Creado hace 3 meses», nunca en días; la fecha exacta va en el tooltip) y una insignia **«Nuevo»** durante el primer mes.
+- **Insignia «Nuevo»** en las tarjetas de la grilla de tiendas del home, además de la ficha: la tienda destaca durante su primer mes.
 - **Denuncias** de un producto o de la tienda, con motivo de la lista configurada.
+- **Recomendaciones**: un corazón por producto, reversible y sin diálogo ni confirmación. Alimenta el ranking de la tienda y el orden **«Más recomendados»** de la portada. El producto no muestra número; la tienda sí, una vez alcanza el umbral.
+- **Pedido (carrito)**: reúne productos de una o varias tiendas y, al enviar, cada tienda recibe **un solo WhatsApp** con sus ítems y cantidades. Botón flotante con contador, drawer con pasos de cantidad y «Vaciar». Persiste entre páginas. No es un ecommerce: sin precios, stock ni pago.
 - **Deep-link** `?p={id}` para abrir un producto directamente; la URL se mantiene al abrir el modal, así que se puede compartir.
 - Skeletons de carga y estados vacíos distintos para «aún no hay nada publicado» y «no hay resultados para estos filtros».
 
@@ -70,6 +74,62 @@ Una vez aprobada, la tienda publica cambios **al instante y sin revisión**. Cam
 `StoreSyncService` **nunca** toca `status`, `blocked_at`, `blocked_reason` ni `reports_count` de un ítem bloqueado. Sí actualiza su nombre, imagen y categoría. Y los ítems bloqueados **jamás se eliminan**, ni siquiera si desaparecen del catálogo que envía la app — si se borraran, la tienda podría saltarse el bloqueo simplemente resincronizando.
 
 Solo el administrador lo revierte. Lo mismo vale para el **bloqueo automático** al superar el umbral de denuncias: es la misma marca `blocked`, con el motivo puesto por el sistema.
+
+### El pulgar dice la verdad: identidad por cookie, no por IP
+
+Un visitante puede recomendar cada producto **una vez** y **quitarlo** cuando quiera. Es reversible, como un «me gusta» de toda la vida, y sin número en el producto: solo se enciende o se apaga.
+
+La clave es que el pulgar **refleja el estado real**, no una suposición. La primera vez que alguien entra, `EnsureMarketplaceVisitor` le emite una cookie firmada (`mkt_visitor`) con un uuid; esa es su identidad. El feed devuelve, en cada respuesta, `recommended: [ids]` — cuáles de los productos de esa página ya recomendó **ese** visitante — y el front enciende esos pulgares. No hay `localStorage` que adivine ni descartes en silencio.
+
+**Por qué cookie y no IP:** en el wifi de un edificio —el caso de uso exacto— todos los vecinos comparten IP pública. Con la IP como identidad, el primero en recomendar consumiría el pulgar de todos, y la pantalla no tendría forma de decírselo. La cookie distingue navegadores. La IP se guarda solo como rastro para auditar un ranking sospechoso; no manda ninguna regla. Se quitó también el filtro de autorrecomendación por IP: bloqueaba a vecinos reales que compartían red con la tienda y no frenaba a un dueño con datos móviles; con el ranking por personas distintas, un dueño solo puede darse **un** voto, que es irrelevante.
+
+**El `recommended` del visitante viaja FUERA del payload cacheado.** El feed se cachea 10 min y se comparte entre miles de visitantes; el pulgar encendido es de cada uno. Se resuelve con una consulta ligera **después** de leer el cache. Mezclarlos haría que un visitante viera los pulgares de otro — es el error que hay que no cometer al tocar `FeedController::index`.
+
+### El ranking cuenta personas, y solo cuando ya es notable
+
+`marketplace_stores.recommendations_count` **no es la suma de los pulgares de sus productos**: son los **visitantes distintos** que han recomendado algo suyo. Así un solo entusiasta que recorra el catálogo entero cuenta como **uno**. Es lo que convierte el número en un aval y no en un marcador inflable. Lo recompone `CatalogCounters::refreshStore()` con un `COUNT(DISTINCT visitor_id)`; se **excluyen los productos bloqueados** pero cuentan los inactivos (un producto retirado del catálogo no borra el reconocimiento ya ganado).
+
+Y hay un **umbral** (`ranking_threshold`, 10 por defecto): por debajo de él la tienda **no muestra el número ni gana posición** — se ordena junto a las que tienen cero. Una tienda con dos recomendaciones no debe verse «mejor» que una que aún no tiene ninguna; la preferencia solo aparece cuando el número ya significa algo. El gate se aplica en dos sitios coordinados: el orden del feed (`CASE WHEN count >= umbral THEN count ELSE 0 END`) y el presenter, que manda `0` por debajo para que el front ni pinte la insignia. El front nunca conoce el umbral: solo recibe «notable o no». Con el umbral en `0` no hay gate.
+
+### Los contadores se recuentan atómicamente, no se incrementan
+
+Poner o quitar un pulgar dispara `CatalogCounters::refreshRecommendations()`, que **recuenta** el del producto y el de la tienda en vez de hacer `+1`/`-1`: así no hay incrementos que se desvíen si algo falla a medias.
+
+El recuento y la escritura van en **una sola sentencia** `UPDATE … SET x = (SELECT …)`, no un `COUNT` en PHP seguido de `save()`. Es la ruta más caliente del módulo —cada pulgar la ejecuta— y contar-en-PHP-y-guardar-después abre una ventana de *lost update*: dos vecinos recomendando a la misma tienda casi a la vez pueden intercalarse y el que contó primero (con el valor viejo) pisa al que contó el total real. El `UPDATE` atómico cierra esa ventana. Es el mismo patrón que ya usaba `refreshCategories`.
+
+### Recomendar no invalida el cache
+
+A diferencia de los contadores de categoría, aquí un número desactualizado unos minutos no rompe nada: no lleva a una búsqueda vacía, solo muestra un ranking ligeramente atrasado. Purgar el módulo entero en cada pulgar dejaría el cache inservible justo en las horas de más tráfico, así que el `POST` no llama a `MarketplaceCache::bump()`.
+
+### Riesgo aceptado: inflación del ranking por borrado de cookies
+
+La cookie del visitante está **firmada**, así que nadie puede falsificar un `visitor_id` ajeno. Pero cada identidad nueva solo necesita **un** pulgar para contar como visitante distinto, y borrar cookies genera identidades nuevas: con el `throttle:60,60` por IP, alguien decidido puede fabricar del orden de 60 avales por minuto desde una misma IP.
+
+No se mitiga más porque hacerlo exigiría cuentas, captcha o algún tipo de verificación, y eso rompería la premisa de todo el marketplace: **mínima interacción, sin fricción**. Las dos defensas que sí existen son proporcionadas al riesgo (una comunidad cerrada, no un ranking con dinero de por medio): el **umbral** obliga a reunir varias identidades antes de que la tienda destaque siquiera, y la **IP queda registrada en cada fila**, así que un ranking sospechoso se audita de un vistazo (muchos `visitor_id` distintos desde una sola IP es la firma del abuso). Es la misma clase de decisión consciente que el [riesgo de autenticación](#riesgo-aceptado-en-la-autenticación) de la API.
+
+### Un pulgar es idempotente
+
+`recomendar: true` usa **`insertOrIgnore`**, no `firstOrCreate`. En Laravel 9 `firstOrCreate` es un `SELECT` seguido de `INSERT` sin atrapar la violación de clave única (eso llegó con `createOrFirst` en L10), así que dos POST paralelos del mismo visitante y producto pasarían ambos el `SELECT` y el segundo `INSERT` reventaría con un **500** contra `mkt_reco_once_per_visitor`. `insertOrIgnore` descarta el duplicado en la propia sentencia: doble clic o dos pestañas abiertas simplemente no hacen nada.
+
+El endpoint lleva el estado **explícito** (`recomendar` true/false), no es un toggle ciego, para que el resultado dependa de lo que pidió el cliente y no del estado que hubiera en el servidor. El orden entre un «pon» y un «quita» concurrentes lo garantiza el cliente, que serializa las peticiones (guard `busy` en `MktRecommend`): no dispara una hasta que vuelve la anterior.
+
+### El pedido se arma y se envía desde el cliente
+
+El carrito vive **entero en el navegador** (`Resources/assets/js/public/cart.js`, persistido en `localStorage`). No hay tabla, ni endpoint, ni estado en el servidor: es una lista de la compra, coherente con que el marketplace no maneja precios, stock ni pagos.
+
+Persiste porque **el front navega con recargas de página completas** (ir a una tienda es un `location.href`): un carrito en memoria se perdería al cambiar de vista. Por eso cada ítem guarda un **snapshot** de lo que necesita para agruparse y armar el mensaje —nombre, código y los datos de su tienda—, sin depender de que el producto siga en la página actual.
+
+El mensaje de WhatsApp se arma en el cliente (`wa-cart.js`), no en el servidor como el de un solo producto, porque **las cantidades son dinámicas**. Para eso el payload del producto expone `store.whatsapp` (no es una fuga: ese número ya viajaba dentro de `wa_link`). El saludo que encabeza el mensaje es el ajuste **`whatsapp_cart_greeting`**, gemelo del de un producto: toda la copia que llega al WhatsApp de la tienda vive en Ajustes.
+
+**Se agrupa por tienda y cada una envía por separado**: una tienda no puede recibir el pedido de otra. Si el carrito cruza varias, el drawer lo avisa y pinta un botón «Enviar pedido» por grupo. La marca «Enviado» es solo de sesión —no podemos saber si el mensaje se mandó de verdad— y no se persiste.
+
+Los ítems del carrito son un snapshot y **no se validan contra el servidor**: si un producto se bloquea o se retira después, sigue en la lista hasta que el vecino la ajuste; la tienda lo aclara por WhatsApp. Es el mismo criterio de mínima fricción del resto del módulo.
+
+### La antigüedad de la tienda es a trazo grueso
+
+`PublicPresenter::ageLabel()` nunca dice «hace 2 días»: por debajo del mes solo hay «Creado hace menos de un mes» (el badge «Nuevo» ya da el matiz), luego meses, y a partir del año, años. Al vecino le basta la escala para hacerse una idea de si el negocio lleva tiempo; la precisión al día sería ruido. La fecha exacta queda en el `title` (tooltip) por si alguien la quiere. El mismo `created_at` decide el badge «Nuevo» (`isNew()`: dentro del último mes).
+
+Se calcula en el presenter, así que en las tarjetas del home viaja dentro del payload cacheado (10 min) — irrelevante a escala de meses — y en la ficha, que no se cachea, siempre es fresco.
 
 ### Los ítems nunca se borran
 
@@ -102,13 +162,16 @@ El token es global del reseller, compartido por todas las apps. La identidad de 
 ```
 modules/Marketplace/
 ├── Config/config.php                 # solo disk y route_prefix; el resto en BD
-├── Database/Migrations/              # 5 tablas + defaults de settings
-├── Models/                           # Store, Item, Category, Report, Setting
+├── Database/Migrations/              # 6 tablas + defaults de settings
+├── Models/                           # Store, Item, Category, Report,
+│                                     # Recommendation, Setting
 ├── Http/
 │   ├── Controllers/Api/              # SyncController, StatusController
 │   ├── Controllers/Admin/            # Store, Report, Category, Setting
-│   ├── Middleware/                   # EnsureMarketplaceEnabled
-│   └── Requests/                     # SyncRequest
+│   ├── Controllers/Web/              # Marketplace, Feed, Report, Recommend
+│   ├── Middleware/                   # EnsureMarketplaceEnabled,
+│   │                                 # EnsureMarketplaceVisitor (cookie)
+│   └── Requests/                     # SyncRequest, ReportRequest, RecommendRequest
 ├── Providers/                        # MarketplaceServiceProvider, RouteServiceProvider
 ├── Scopes/PublishedScope.php
 ├── Services/                         # StoreSync, CategoryResolver, ImageStorage,
@@ -119,7 +182,9 @@ modules/Marketplace/
 ├── Resources/
 │   ├── assets/
 │   │   ├── js/marketplace.js         # entry Vite público, standalone
-│   │   ├── js/public/                # Marketplace.vue + components/MktIcon.vue
+│   │   ├── js/public/                # Marketplace.vue + components/ +
+│   │   │                             # recommendations.js, cart.js (pedido),
+│   │   │                             # wa-cart.js (mensaje), format.js
 │   │   ├── js/admin/                 # Vue 2 + Element UI (bundle `system`)
 │   │   ├── sass/                     # _design-system.scss (extraído) + marketplace.scss
 │   │   ├── fonts/                    # Figtree + JetBrains Mono (woff2)
@@ -138,6 +203,7 @@ modules/Marketplace/
 | `marketplace_items` | Productos. Unique `(store_id, external_id)` |
 | `marketplace_categories` | Taxonomía plana, un solo nivel |
 | `marketplace_reports` | Denuncias del público |
+| `marketplace_recommendations` | Pulgares del público. Unique `(visitor_id, item_id)` |
 | `marketplace_settings` | Configuración editable, con tipo |
 
 Ninguna tiene `price`, `stock` ni `reseller_id`.
@@ -150,7 +216,7 @@ El sync y el admin necesitan ver todo, así que usan **`Item::unscoped()`**.
 
 ### Los contadores hay que recalcularlos en toda acción que cambie qué se publica
 
-`marketplace_stores.items_count` y `marketplace_categories.items_count` están denormalizados para que el filtro del front no tenga que contar en cada carga. Eso obliga a recalcularlos no solo en el sync, sino **también** al aprobar, rechazar, deshabilitar o habilitar una tienda, y al bloquear o desbloquear un producto.
+`marketplace_stores.items_count`, `marketplace_stores.recommendations_count` y `marketplace_categories.items_count` están denormalizados para que el filtro y el orden del front no tengan que contar ni sumar en cada carga. Eso obliga a recalcularlos no solo en el sync, sino **también** al aprobar, rechazar, deshabilitar o habilitar una tienda, y al bloquear o desbloquear un producto.
 
 Todo pasa por `Services/CatalogCounters`. Si se añade una acción nueva que cambie el conjunto publicado, tiene que llamarlo: si no, el filtro muestra números que no cuadran con los resultados, o una categoría con contador > 0 que no lleva a ningún producto.
 
@@ -210,7 +276,10 @@ Pantalla en **`/marketplace/admin`**.
 | `GET` | `/marketplace` | La pantalla. Acepta `?p={id}` para abrir un producto |
 | `GET` | `/marketplace/tienda/{slug}` | La misma pantalla filtrada por tienda. Enlace compartible; 410 si no está aprobada |
 | `GET` | `/marketplace/feed` | JSON del componente. Con `?suggest=1` devuelve las sugerencias del buscador |
-| `POST` | `/marketplace/denuncia` | Registrar denuncia. `throttle:5,60` por IP |
+| `POST` | `/marketplace/denuncia` | Registrar denuncia. `throttle:10,60` por IP |
+| `POST` | `/marketplace/recomendacion` | Poner o quitar un pulgar (`recomendar` true/false). Idempotente. `throttle:60,60` por IP |
+
+Las rutas públicas pasan además por `marketplace.visitor`, que emite la cookie `mkt_visitor` con la identidad anónima del visitante.
 
 > **Ojo con el throttle:** `app/Exceptions/Handler.php` convierte a **500** cualquier excepción en peticiones JSON, así que el límite de denuncias responde `500 {"message":"Too Many Attempts."}` y no un 429. Es comportamiento global de la app, no del módulo; por eso el front lo reconoce por status **o** por mensaje.
 
