@@ -32,9 +32,51 @@ class StoreController extends Controller
 
     public function getRecord($table, $table_id)
     {
+        if ($table !== 'quotations') {
+            return [
+                'success' => false,
+                'message' => 'Origen no soportado',
+            ];
+        }
+
         $record = Quotation::query()->with('person')->find($table_id);
-        $person = $record->person;
-        $customer = Person::find($record->customer_id)->getCollectionData();
+
+        if (!$record) {
+            return [
+                'success' => false,
+                'message' => 'Cotización no encontrada',
+            ];
+        }
+
+        $customer_id = $record->customer_id;
+        $person = $record->person ?: Person::find($customer_id);
+
+        if (!$person && $record->customer) {
+            $customerData = is_array($record->customer)
+                ? $record->customer
+                : (array) $record->customer;
+
+            if (!empty($customerData['id'])) {
+                $person = Person::find($customerData['id']);
+            } elseif (!empty($customerData['number'])) {
+                $person = Person::whereType('customers')
+                    ->where('number', $customerData['number'])
+                    ->first();
+            }
+
+            if ($person) {
+                $customer_id = $person->id;
+            }
+        }
+
+        if (!$person) {
+            return [
+                'success' => false,
+                'message' => 'Cliente de la cotización no encontrado',
+            ];
+        }
+
+        $customer = $person->getCollectionData();
 
 
         $rec = $record->toArray();
@@ -108,7 +150,7 @@ class StoreController extends Controller
         $rec['quotation_id'] = $table_id;
         $rec['quotation_id'] = $table_id;
         $rec['customer'] = $customer;
-        $rec['customer_id'] = $record->customer_id;
+        $rec['customer_id'] = $customer_id;
         $rec['additional_information'] = $rec['description'];
 
         $this->setPaymentsFromQuotation($rec, $record);
