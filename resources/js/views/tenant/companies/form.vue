@@ -636,6 +636,9 @@ export default {
             logoDarkPreviewUrl: '/logo/tulogo.png',
             faviconPreviewUrl: PLACEHOLDER_IMAGE_DATA_URI,
             appLogoPreviewUrl: PLACEHOLDER_IMAGE_DATA_URI,
+            // El backend guarda siempre con el mismo nombre (logo_<ruc>.ext), por lo que
+            // sin este parámetro el navegador seguiría mostrando la imagen anterior en caché.
+            previewCacheBust: null,
             isDraggingLogo: false,
             isDraggingLogoDark: false,
             isDraggingFavicon: false,
@@ -699,17 +702,21 @@ export default {
                 : '/logo/tulogo.png'
             if (!value) return defaultUrl
             if (typeof value !== 'string') return defaultUrl
-            if (value.startsWith('http://') || value.startsWith('https://')) return value
-            if (value.startsWith('/')) return value
+            if (value.startsWith('http://') || value.startsWith('https://')) return this.withCacheBust(value)
+            if (value.startsWith('/')) return this.withCacheBust(value)
 
             // En algunos campos (p.ej. favicon) el backend guarda "storage/...".
-            if (value.startsWith('storage/')) return `/${value}`
+            if (value.startsWith('storage/')) return this.withCacheBust(`/${value}`)
 
             if (type === 'logo' || type === 'logo_dark' || type === 'app_logo') {
-                return `/storage/uploads/logos/${value}`
+                return this.withCacheBust(`/storage/uploads/logos/${value}`)
             }
 
-            return value
+            return this.withCacheBust(value)
+        },
+        withCacheBust(url) {
+            if (!this.previewCacheBust) return url
+            return url + (url.includes('?') ? '&' : '?') + `v=${this.previewCacheBust}`
         },
         onImageError(type) {
             if (type === 'favicon') {
@@ -776,6 +783,8 @@ export default {
                     const data = response?.data
                     if (data && data.success) {
                         this.successUpload(data)
+                        // Nueva versión de la imagen: fuerza al navegador a re-descargarla.
+                        this.previewCacheBust = Date.now()
                         if (type === 'logo') {
                             this.logoLightPreviewUrl = this.getCompanyImageUrl('logo', data.name)
                         }
