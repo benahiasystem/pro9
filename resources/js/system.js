@@ -53,6 +53,7 @@ import SystemConfigurationCronOrderPayments from './views/system/configuration/c
 import SystemPaymentsIndex from './views/system/payments/index.vue';
 import SystemPaymentViewIndex from './views/system/payments/payment-view.vue';
 import SystemAdminResellerAdministratorsIndex from './views/system/admin_reseller/administrators/index.vue';
+import SystemMozoIndex from './views/system/mozo/index.vue';
 
 import InputService from '../../modules/ApiPeruDev/Resources/assets/js/components/InputService.vue'// apiperu - porque cambiar el input si tiene el mismo contenido?
 import SystemGuestRegisterDisabled from  './views/system/guest-register/disabled.vue'
@@ -149,6 +150,7 @@ Vue.component('system-payments-index', SystemPaymentsIndex);
 Vue.component('system-payments-view-index', SystemPaymentViewIndex);
 Vue.component('system-cron-order-configuration', SystemConfigurationCronOrderPayments);
 Vue.component('system-admin-reseller-administrators-index', SystemAdminResellerAdministratorsIndex);
+Vue.component('system-mozo-index', SystemMozoIndex);
 Vue.component('system-guest-register-register', SystemGuestRegister);
 Vue.component('system-guest-register-plan-panel', SystemGuestRegisterPlanPanel);
 Vue.component('system-guest-register-disabled', SystemGuestRegisterDisabled );

@@ -32,6 +32,41 @@
 
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
+    // Obtener configuración de columnas para Plantilla_personalizable_ticket
+    $columnsConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $document->establishment_id)
+        ->where('template_name', 'Plantilla_personalizable_ticket')
+        ->first();
+
+    $showColumns = $columnsConfig ? $columnsConfig->columns_config : null;
+    if(!$showColumns) {
+        $showColumns = [
+            'codigo' => true,
+            'cantidad' => true,
+            'unidad' => true,
+            'descripcion' => true,
+            'serie' => false,
+            'modelo' => false,
+            'marca' => false,
+            'lote' => false,
+            'fecha_vencimiento' => false,
+            'precio_unitario' => true,
+            'descuento' => false,
+            'total' => true,
+            'tipo_persona' => false,
+            'peso_total' => false,
+            'nro_producto' => true,
+        ];
+    }
+    
+    $colspan_total = 0;
+    if($showColumns['codigo']) $colspan_total++;
+    if($showColumns['cantidad']) $colspan_total++;
+    if($showColumns['unidad']) $colspan_total++;
+    if($showColumns['descripcion']) $colspan_total++;
+    if($showColumns['precio_unitario']) $colspan_total++;
+    if($showColumns['descuento']) $colspan_total++;
+    if($showColumns['total']) $colspan_total++;
+    
 @endphp
 <html>
 <head>
@@ -482,12 +517,13 @@
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr>
-        <th class="border-top-bottom desc-9 text-left">COD.</th>
-        <th class="border-top-bottom desc-9 text-left">CANT.</th>
-        <th class="border-top-bottom desc-9 text-left">UNIDAD</th>
-        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
-        <th class="border-top-bottom desc-9 text-right">P.UNIT</th>
-        <th class="border-top-bottom desc-9 text-right">TOTAL</th>
+        @if($showColumns['codigo']) <th class="border-top-bottom desc-9 text-left">COD.</th> @endif
+        @if($showColumns['cantidad']) <th class="border-top-bottom desc-9 text-left">CANT.</th> @endif
+        @if($showColumns['unidad']) <th class="border-top-bottom desc-9 text-left">U.</th> @endif
+        @if($showColumns['descripcion']) <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th> @endif
+        @if($showColumns['precio_unitario']) <th class="border-top-bottom desc-9 text-right">P.U</th> @endif
+        @if($showColumns['descuento']) <th class="border-top-bottom desc-9 text-right">DTO.</th> @endif
+        @if($showColumns['total']) <th class="border-top-bottom desc-9 text-right">TOTAL</th> @endif
     </tr>
     </thead>
     <tbody>
@@ -505,18 +541,20 @@
     @endphp
     @if($hay_fusionados)
         <tr>
-        <td class="text-center desc-9 align-top font-bold">001</td>
-        <td class="text-center">{{ number_format($cantidad_fusionada, 0) }}</td>
-        <td class="text-center desc-9 align-top">NIU</td>
-        <td class="text-left desc-9 align-top font-bold">Por consumo</td>
-        <td class="text-right">{{ number_format($total_fusionado, 2) }}</td>
-        <td class="text-right">{{ number_format($total_fusionado, 2) }}</td>
+        @if($showColumns['codigo']) <td class="text-center desc-9 align-top font-bold">001</td> @endif
+        @if($showColumns['cantidad']) <td class="text-center">{{ number_format($cantidad_fusionada, 0) }}</td> @endif
+        @if($showColumns['unidad']) <td class="text-center desc-9 align-top">NIU</td> @endif
+        @if($showColumns['descripcion']) <td class="text-left desc-9 align-top font-bold">Por consumo</td> @endif
+        @if($showColumns['precio_unitario']) <td class="text-right">{{ number_format($total_fusionado, 2) }}</td> @endif
+        @if($showColumns['descuento']) <td class="text-right">0.00</td> @endif
+        @if($showColumns['total']) <td class="text-right">{{ number_format($total_fusionado, 2) }}</td> @endif
     </tr>
-    <tr><td colspan="6" class="border-bottom"></td></tr>
+    <tr><td colspan="{{ $colspan_total }}" class="border-bottom"></td></tr>
     @else
         @foreach($document->items as $row)
             <tr>
-                <td class="text-center desc-9 align-top font-bold">{{ $row->item->internal_id }}</td>
+                @if($showColumns['codigo']) <td class="text-center desc-9 align-top font-bold">{{ $row->item->internal_id }}</td> @endif
+                @if($showColumns['cantidad'])
                 <td class="text-center desc-9 align-top font-bold">
                     @if(((int)$row->quantity != $row->quantity))
                         {{ $row->quantity }}
@@ -524,7 +562,10 @@
                         {{ number_format($row->quantity, 0) }}
                     @endif
                 </td>
-                <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
+                @endif
+                @if($showColumns['unidad']) <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td> @endif
+                
+                @if($showColumns['descripcion'])
                 <td class="text-left desc-9 align-top font-bold">
                     @if($row->name_product_pdf)
                         {!!$row->name_product_pdf!!}
@@ -541,6 +582,13 @@
                     @if($row->total_plastic_bag_taxes > 0)
                         <br/>ICBPER : {{ $row->total_plastic_bag_taxes }}
                     @endif
+                    
+                    @if($showColumns['marca'] && !empty($row->m_item->brand->name))
+                        <br/><span style="font-size: 7px; font-weight: normal;">Marca: {{ $row->m_item->brand->name }}</span>
+                    @endif
+                    @if($showColumns['modelo'] && !empty($row->item->model))
+                        <br/><span style="font-size: 7px; font-weight: normal;">Modelo: {{ $row->item->model }}</span>
+                    @endif
 
                     @foreach($row->additional_information as $information)
                         @if ($information)
@@ -550,7 +598,6 @@
 
                     @if($row->attributes)
                         @foreach($row->attributes as $attr)
-                            {{-- Excluir atributos de placa (diferentes variaciones de texto) --}}
                             @if(!in_array(strtoupper(trim($attr->description)), [
                                 'PLACA', 
                                 'NRO PLACA', 
@@ -578,13 +625,11 @@
                     @endif
 
                     @if($row->item->is_set == 1)
-
                         <br>
                         @inject('itemSet', 'App\Services\ItemSetService')
                         @foreach ($itemSet->getItemsSet($row->item_id) as $item)
                             {{$item}}<br>
                         @endforeach
-                        {{-- {{join( "-", $itemSet->getItemsSet($row->item_id) )}} --}}
                     @endif
 
                     @if($row->item->used_points_for_exchange ?? false)
@@ -601,19 +646,19 @@
                         $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
                         $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
                     @endphp
-                    @if($lot)
-                        <small style="display:block; font-weight: normal; font-size: 7px;">
-                            Lote: {{ ltrim($lot, '/') }}  
-                            <br>
-                            FV: 
-                            @if($date_due != '')
-                                {{ ltrim($date_due, '/') }}
-                            @elseif($row->relation_item->date_of_due)
-                                {{ $row->relation_item->date_of_due->format('y-m-d') }}
-                            @endif 
-                            <br>
-                        </small>
+                    @if($showColumns['lote'] || $showColumns['fecha_vencimiento'])
+                        @if($lot && $showColumns['lote'])
+                            <small style="display:block; font-weight: normal; font-size: 7px;">
+                                Lote: {{ ltrim($lot, '/') }}  
+                            </small>
+                        @endif
+                        @if($showColumns['fecha_vencimiento'] && ($date_due != '' || $row->relation_item->date_of_due))
+                            <small style="display:block; font-weight: normal; font-size: 7px;">
+                                FV: @if($date_due != '') {{ ltrim($date_due, '/') }} @else {{ $row->relation_item->date_of_due->format('y-m-d') }} @endif 
+                            </small>
+                        @endif
                     @endif
+                    @if($showColumns['serie'])
                     <small style="display:block; font-weight: normal; font-size: 7px;">
                         @isset($row->item->lots)
                             @foreach($row->item->lots as $lot)
@@ -623,12 +668,29 @@
                             @endforeach
                         @endisset
                     </small>
+                    @endif
                 </td>
-                <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td>
-                <td class="text-right desc-9 align-top font-bold">{{ number_format($row->total, 2) }}</td>
+                @endif
+                @if($showColumns['precio_unitario']) <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td> @endif
+                @if($showColumns['descuento'])
+                    <td class="text-right desc-9 align-top">
+                        @if($row->discounts)
+                            @php
+                                $total_discount_line = 0;
+                                foreach ($row->discounts as $disto) {
+                                    $total_discount_line = $total_discount_line + $disto->amount;
+                                }
+                            @endphp
+                            {{ number_format($total_discount_line, 2) }}
+                        @else
+                            0.00
+                        @endif
+                    </td>
+                @endif
+                @if($showColumns['total']) <td class="text-right desc-9 align-top font-bold">{{ number_format($row->total, 2) }}</td> @endif
             </tr>
             <tr>
-                <td colspan="6" class="border-bottom"></td>
+                <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
             </tr>
         @endforeach
     @endif
@@ -646,33 +708,33 @@
                 <td class="text-right  desc-9 align-top">-{{ number_format($p->total, 2) }}</td>
             </tr>
             <tr>
-                <td colspan="5" class="border-bottom"></td>
+                <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="border-bottom"></td>
             </tr>
         @endforeach
     @endif
 
     @if($document->total_exportation > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">OP.
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">OP.
                 EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_exportation, 2) }}</td>
         </tr>
     @endif
     @if($document->total_free > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_free, 2) }}</td>
         </tr>
     @endif
     @if($document->total_unaffected > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_unaffected, 2) }}</td>
         </tr>
     @endif
     @if($document->total_exonerated > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">OP.
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">OP.
                 EXONERADAS: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_exonerated, 2) }}</td>
         </tr>
@@ -681,46 +743,46 @@
     @if ($document->document_type_id === '07')
         @if($document->total_taxed >= 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP.
+                <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">OP.
                     GRAVADAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_taxed, 2) }}</td>
             </tr>
         @endif
     @elseif($document->total_taxed > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_taxed, 2) }}</td>
         </tr>
     @endif
 
     @if($document->total_plastic_bag_taxes > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">ICBPER: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">ICBPER: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
         </tr>
     @endif
     <tr>
-        <td colspan="5" class="text-right font-bold desc">IGV: {{ $document->currency_type->symbol }}</td>
+        <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">IGV: {{ $document->currency_type->symbol }}</td>
         <td class="text-right font-bold desc">{{ number_format($document->total_igv, 2) }}</td>
     </tr>
 
     @if($document->total_isc > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">ISC: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">ISC: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_isc, 2) }}</td>
         </tr>
     @endif
 
     @if($document->total_discount_with_igv > 0 && $document->subtotal > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">SUBTOTAL: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">SUBTOTAL: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->subtotal, 2) }}</td>
         </tr>
     @endif
 
     @if($document->total_discount_with_igv > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">DESCUENTO
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">DESCUENTO
                 TOTAL: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_discount_with_igv, 2) }}</td>
         </tr>
@@ -735,33 +797,33 @@
                 }
             @endphp
             <tr>
-                <td colspan="5" class="text-right font-bold desc">CARGOS ({{$total_factor}}
+                <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">CARGOS ({{$total_factor}}
                     %): {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_charge, 2) }}</td>
             </tr>
         @else
             <tr>
-                <td colspan="5" class="text-right font-bold desc">CARGOS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">CARGOS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_charge, 2) }}</td>
             </tr>
         @endif
     @endif
 
     <tr>
-        <td colspan="5" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+        <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
         <td class="text-right font-bold desc">{{ number_format($document->total, 2) }}</td>
     </tr>
 
     @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_pending_payment, 2) }}</td>
         </tr>
     @endif
 
     @if($balance < 0)
         <tr>
-            <td colspan="5" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format(abs($balance),2, ".", "") }}</td>
         </tr>
     @endif

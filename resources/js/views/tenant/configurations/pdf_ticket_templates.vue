@@ -49,11 +49,25 @@
                                 <span class="text-bold">Plantilla: </span>
                                 <span class="text-center">{{ template.name }}</span>
                                 <div v-if="form.establishment_id"
-                                     class="bottom clearfix text-end m-0" style="margin-top: auto !important;">
+                                     class="d-flex w-100" style="margin-top: auto !important; gap: 5px; align-items: stretch;">
+                                    <el-button 
+                                        v-if="template.name === 'Plantilla_personalizable'" 
+                                        type="info" 
+                                        class="p-0 m-0 d-flex align-items-center justify-content-center"
+                                        style="flex: 0 0 42px; border-radius: 4px;"
+                                        @click.stop="openColumnsDialog(template)"
+                                    >
+                                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                                    </el-button>
                                     <el-radio v-model="form.current_format"
                                               :label="template.name"
                                               @change="changeFormat(template.name)"
-                                              :class="['radio-button', { 'active-button': form.current_format === template.name }]">
+                                              class="m-0 flex-grow-1"
+                                              style="width: auto;"
+                                              :class="[
+                                                  'radio-button',
+                                                  form.current_format === template.name ? 'active-button' : ''
+                                              ]">
                                         <span v-if="form.current_format == template.name">Plantilla activa</span>
                                         <span v-else>Activar plantilla</span>
                                     </el-radio>
@@ -96,6 +110,80 @@
                 <el-button v-if="form.establishment_id"
                            type="primary"
                            @click="changeFormat(template.name)">Activar</el-button>
+            </span>
+        </el-dialog>
+
+        <!-- Modal para configurar columnas -->
+        <el-dialog
+            title="Configurar columnas del documento"
+            :visible.sync="modalColumns"
+            class="dialog-config">
+            <div class="columns-config">
+                <p class="mb-3">Selecciona las columnas que deseas mostrar en el documento:</p>
+                <div class="row">
+                    <div class="col-12 col-md-6 mb-2">
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.codigo">Código</el-checkbox>
+                        </div>
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.cantidad">Cantidad</el-checkbox>
+                        </div>
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.unidad">Unidad</el-checkbox>
+                        </div>
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.descripcion">Descripción</el-checkbox>
+                        </div>
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.serie">Serie</el-checkbox>
+                        </div>
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.modelo">Modelo</el-checkbox>
+                        </div> 
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.marca">Marca</el-checkbox>
+                        </div>
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.lote">Lote</el-checkbox>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 mb-2">
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.fecha_vencimiento">Fecha de venc.</el-checkbox>
+                        </div>
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.precio_unitario">Precio Unitario</el-checkbox>
+                        </div>
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.descuento">Descuento</el-checkbox>
+                        </div>
+                        
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.total">Total</el-checkbox>
+                        </div>
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.tipo_persona">Tipo de persona</el-checkbox>
+                        </div>
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.peso_total">Peso total</el-checkbox>
+                        </div>
+                        <div class="column-item">
+                            <el-checkbox v-model="columns.nro_producto">N° de productos</el-checkbox>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="modalColumns = false">Cancelar</el-button>
+                <el-button type="primary" @click="saveColumnsConfig">Guardar configuración</el-button>
             </span>
         </el-dialog>
     </div>
@@ -212,6 +300,16 @@ background-color: #d3dce6;
 .image-direccion{
     cursor: pointer;
 }
+.columns-config {
+    padding: 10px 0;
+}
+</style>
+<style>
+    @media only screen and (max-width: 650px){
+        .dialog-config .el-dialog {
+            width: 70% !important;
+        }
+    }
 </style>
 
 <script>
@@ -233,9 +331,27 @@ export default {
             formatos: [],
             path: location,
             modalImage: false,
+            modalColumns: false,
             template: {
                 name: '',
                 urls: {}
+            },
+            columns: {
+                codigo: true,
+                descripcion: true,
+                cantidad: true,
+                unidad: true,
+                serie: false,
+                modelo: false,
+                marca: false,
+                lote: false,
+                fecha_vencimiento: false,
+                precio_unitario: true,
+                descuento: true,
+                total: true,
+                tipo_persona: false,
+                peso_total: false,
+                nro_producto: true,
             }
         }
     },
@@ -273,6 +389,9 @@ export default {
                     establishment_id: current.id,
                     current_format: current.template_ticket_pdf
                 };
+                if (current.template_ticket_pdf === 'Plantilla_personalizable') {
+                    this.loadColumnsConfigFromServer(current.id);
+                }
             }
         },
         changeFormat(value) {
@@ -292,6 +411,11 @@ export default {
             var establishment = this.form.establishment_id;
             var selected = _.filter(this.establishments, {'id': establishment})[0];
             this.form.current_format = selected.template_ticket_pdf;
+
+            // Cargar configuración de columnas si la plantilla actual es Plantilla_personalizable
+            if (selected.template_ticket_pdf === 'Plantilla_personalizable') {
+                this.loadColumnsConfigFromServer(establishment);
+            }
         },
         refreshTickets() {
             this.$http.all([
@@ -312,6 +436,47 @@ export default {
         viewModalImage(name) {
             this.template = this.formatos.filter(template => template.name == name)[0]
             this.modalImage = true
+        },
+        openColumnsDialog(template) {
+            this.template = template
+            this.loadColumnsConfigFromServer(this.form.establishment_id)
+            this.modalColumns = true
+        },
+        loadColumnsConfigFromServer(establishmentId) {
+            if (!establishmentId) return
+            
+            // Cargar configuración desde el servidor
+            this.$http.get(`/${this.resource}/getColumnsConfig`, {
+                params: { 
+                    establishment_id: establishmentId,
+                    format_type: 'ticket' 
+                }
+            }).then(response => {
+                if (response.data.success && response.data.data) {
+                    this.columns = response.data.data
+                }
+            }).catch(error => {
+                console.error('Error al cargar configuración:', error)
+            })
+        },
+        saveColumnsConfig() {
+            if (!this.form.establishment_id) {
+                this.$message.warning('Debe seleccionar un establecimiento primero');
+                return
+            }
+            
+            // Guardar configuración en el servidor
+            this.$http.post(`/${this.resource}/saveColumnsConfig`, {
+                establishment: this.form.establishment_id,
+                columns: this.columns,
+                format_type: 'ticket'
+            }).then(response => {
+                this.$message.success('Configuración de columnas guardada exitosamente');
+                this.modalColumns = false
+            }).catch(error => {
+                this.$message.error('Error al guardar la configuración');
+                console.error(error)
+            })
         }
     }
 }

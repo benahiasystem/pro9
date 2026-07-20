@@ -733,9 +733,8 @@ export default {
             return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
         },
         isDecimalUnit(unitTypeId) {
-            // Unidades de peso, volumen, longitud, área, tiempo: admiten decimales
-            const decimals = ['KGM','GRM','MGM','TNE','LBR','LTR','MLT','GLL','MTR','CMT','KMT','MTK','MTQ','HUR','DAY','MIN'];
-            return decimals.includes(unitTypeId);
+            // Solo la unidad NIU (Unidad SUNAT) exige cantidades enteras; el resto (incluidas las unidades creadas manualmente) admite decimales
+            return unitTypeId !== 'NIU';
         },
         unitSymbol(unitTypeId) {
             const map = {

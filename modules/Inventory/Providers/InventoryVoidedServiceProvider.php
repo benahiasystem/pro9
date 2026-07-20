@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Inventory\Traits\InventoryTrait;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Note;
+use App\Models\Tenant\VoidedDocument;
 
 class InventoryVoidedServiceProvider extends ServiceProvider
 {
@@ -33,6 +34,8 @@ class InventoryVoidedServiceProvider extends ServiceProvider
             // if($document['document_type_id'] == '01' || $document['document_type_id'] == '03'){
             if(in_array($document['document_type_id'], ['01', '03', '08'], true))
             {
+                if (!$document->wasChanged('state_type_id')) return;
+
                 if(in_array($document['state_type_id'], [ '09', '11' ], true)){
                     // $warehouse = $this->findWarehouse($document['establishment_id']);
 
@@ -153,7 +156,7 @@ class InventoryVoidedServiceProvider extends ServiceProvider
         Note::created(function ($note) {
 
             //si es nc y tiene tipo de nc igual a "Anulación de la operación"
-            if($note->document->document_type_id === '07' && $note->note_credit_type_id === '01')
+            if($note->document->document_type_id === '07' && ($note->note_credit_type_id === '01' || $note->note_credit_type_id === '06' ))
             {
                 $affected_document = $note->affected_document;
 

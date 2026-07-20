@@ -844,7 +844,10 @@ class Document extends ModelTenant
      */
     public function scopeWhereHasPrepayment($query)
     {
-        return $query->where([['has_prepayment', true], ['was_deducted_prepayment', false], ['state_type_id', '05']]);
+        return $query->where([['has_prepayment', true], ['was_deducted_prepayment', false], ['state_type_id', '05']])
+            ->whereDoesntHave('affected_documents', function ($q) {
+                $q->where('note_type', 'credit');
+            });
     }
 
     /**

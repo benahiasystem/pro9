@@ -305,10 +305,13 @@ class ConfigurationController extends Controller
             ], 404);
         }
 
+        $formatType = $request->get('format_type', 'pdf');
+        $templateName = $formatType === 'ticket' ? 'Plantilla_personalizable_ticket' : 'Plantilla_personalizable';
+
         $config = TemplateColumnsConfig::updateOrCreate(
             [
                 'establishment_id' => $request->establishment,
-                'template_name' => 'Plantilla_personalizable',
+                'template_name' => $templateName,
             ],
             [
                 'columns_config' => $request->columns,
@@ -336,7 +339,10 @@ class ConfigurationController extends Controller
             ];
         }
 
-        $config = TemplateColumnsConfig::getOrCreateConfig($establishmentId);
+        $formatType = $request->get('format_type', 'pdf');
+        $templateName = $formatType === 'ticket' ? 'Plantilla_personalizable_ticket' : 'Plantilla_personalizable';
+
+        $config = TemplateColumnsConfig::getOrCreateConfig($establishmentId, $templateName);
 
         return [
             'success' => true,

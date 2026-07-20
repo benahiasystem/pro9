@@ -1981,12 +1981,13 @@ export default {
 
             if (this.config.condition_sale_purchase_price_to_item) {
                 if (
-                    this.form.unit_price_value <
-                    this.form.item.purchase_unit_value
+                    this.form.unit_price_value < this.form.item.purchase_unit_price
                 )
+                {
                     return this.$message.error(
                         "El Precio Unitario debe ser mayor o igual al costo de compra"
                     );
+                }
             }
 
             if (

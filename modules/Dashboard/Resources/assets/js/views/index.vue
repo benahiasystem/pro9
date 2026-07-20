@@ -279,7 +279,6 @@
                             <low-stock :filters="form"></low-stock>
                         </template>
                     </div>
-
                     <template v-if="showLegacyCards && configuration.dashboard_general">
                         <div class="col-12 col-sm-6 col-xl-3">
                             <section class="card card-dashboard">

@@ -1463,18 +1463,28 @@ export default {
         enabledSearchItemByBarcode() {
             if (this.configuration.search_item_by_barcode) {
                 this.search_item_by_barcode = true;
-            }
-        },
+            } },
         changeRowTotal(index) {
             const item = this.form.items[index];
+            let newTotal = parseFloat(item.total);
+            let validated = false
 
+            if (this.config.condition_sale_purchase_price_to_item) {
+
+                if (newTotal < item.purchase_unit_price) {
+                    validated = true
+                    newTotal = item.item.sale_unit_price_original
+                }
+                    
+            }
+            
             if (item.item.calculate_quantity) {
                 this.blurCalculateQuantity(index);
                 return;
             }
 
+            this.form.items[index].total = newTotal
             const quantity = parseFloat(item.quantity);
-            const newTotal = parseFloat(item.total);
 
             if (isNaN(newTotal) || isNaN(quantity) || quantity <= 0) {
                 this.blurCalculateQuantity(index);
@@ -1493,6 +1503,16 @@ export default {
 
             this.calculateTotal();
             this.setFormPosLocalStorage();
+
+
+            if (validated) {
+                return this.$message.error(
+                    "El Precio Unitario debe ser mayor o igual al costo de compra"
+                );
+                
+            }
+            
+
         },
         ...mapActions(["loadConfiguration"]),
         /**
@@ -1716,10 +1736,25 @@ export default {
         clickEditUnitPriceItem(index) {
             // console.log(index)
             let item_search = this.items[index];
-            this.items[index].sale_unit_price = this.items[
+            let edit_sale_unit_price = this.items[
                 index
             ].edit_sale_unit_price;
-            this.items[index].edit_unit_price = false;
+            let product = this.items[index];
+            
+            if (this.config.condition_sale_purchase_price_to_item) {
+
+                if (edit_sale_unit_price < product.purchase_unit_price) {
+                    return this.$message.error(
+                        "El Precio Unitario debe ser mayor o igual al costo de compra"
+                    );
+                }
+
+                this.items[index].sale_unit_price = this.items[
+                    index
+                ].edit_sale_unit_price;
+                this.items[index].edit_unit_price = false;
+
+            }
 
             // console.log(item_search)
         },
@@ -2366,6 +2401,8 @@ export default {
 
                 this.row["unit_type_id"] = item.unit_type_id;
 
+                this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
+                
                 // Preservar la presentation (calculateRowItem no la copia)
                 this.row.presentation = exist_item.presentation;
 
@@ -2429,6 +2466,8 @@ export default {
                     exchangeRateSale,
                     this.percentage_igv
                 );
+
+                this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
 
                 // this.row['unit_type_id'] = item.presentation ? item.presentation.unit_type_id : 'NIU';
 

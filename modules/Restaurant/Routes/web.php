@@ -14,12 +14,17 @@
 // Rutas públicas (no deben forzar login principal)
 Route::get('/config.json', 'RestaurantController@config');
 Route::get('/mozo/auth/login', 'RestaurantController@public');
-Route::get('/mozo/{any}', 'RestaurantController@public')->name('tenant.restaurant.mozo');
+Route::get('/mozo/{any?}', 'RestaurantController@public')
+->where('any', '.*')
+->name('tenant.restaurant.mozo');
 
 // Vendeya (mismo patrón que mozo)
 Route::get('/vendeya/config.json', 'RestaurantController@configVendeya');
 Route::get('/vendeya/auth/login', 'RestaurantController@publicVendeya');
-Route::get('/vendeya/{any}', 'RestaurantController@publicVendeya')->name('tenant.restaurant.vendeya');
+Route::get('/vendeya/{any}', 'RestaurantController@publicVendeya')
+->where('any', '.*')
+->name('tenant.restaurant.vendeya');
+
 Route::prefix('restaurant')->middleware(['locked.tenant'])->group(function() {
     Route::get('item_partial/{id}', 'RestaurantController@partialItem')->name('restaurant.item_partial');
     Route::get('item/{id}/{slug?}', 'RestaurantController@item')->name('restaurant.item');

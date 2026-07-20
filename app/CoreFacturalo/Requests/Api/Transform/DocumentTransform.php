@@ -95,7 +95,7 @@ class DocumentTransform
         if(key_exists('items', $inputs)) {
             $items = [];
             foreach ($inputs['items'] as $row) {
-                $items[] = [
+                $item = [
                     'internal_id' => isset($row['codigo_interno']) ? $row['codigo_interno']:'',
                     'description' => $row['descripcion'],
                     'name' => Functions::valueKeyInArray($row, 'nombre'),
@@ -143,6 +143,16 @@ class DocumentTransform
                     'additional_data' => Functions::valueKeyInArray($row, 'dato_adicional'),
                     'esFusionado' => Functions::valueKeyInArray($row, 'esFusionado', false),
                 ];
+
+                $presentation = Functions::valueKeyInArray($row, 'presentacion');
+                if (!empty($presentation)) {
+                    $item['item'] = [
+                        'unit_type_id' => strtoupper($row['unidad_de_medida']),
+                        'presentation' => $presentation,
+                    ];
+                }
+
+                $items[] = $item;
             }
 
             return $items;

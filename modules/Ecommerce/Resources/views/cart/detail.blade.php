@@ -1135,7 +1135,6 @@
     window.culqi = async function () {
         if (window.Culqi.token) {
             const token = window.Culqi.token.id;
-            console.log('Token de Culqi creado:', token);
 
             swal({
                 title: "Estamos hablando con su banco",

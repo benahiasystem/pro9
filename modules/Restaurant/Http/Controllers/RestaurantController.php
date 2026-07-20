@@ -32,6 +32,7 @@ use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Company;
 use Modules\BusinessTurn\Models\BusinessTurn;
 use Modules\MobileApp\Models\AppConfiguration;
+use App\Services\System\MozoConfigurationService;
 
 
 class RestaurantController extends Controller
@@ -44,22 +45,9 @@ class RestaurantController extends Controller
         return view('restaurant::mozo.index');
     }
 
-    public function config()
+    public function config(MozoConfigurationService $service)
     {
-        return $this->buildConfigResponse([
-            'brandName' => 'Mozo.pe',
-            'Primary' => '#32a56a',
-            'Secondary' => '#f58f00',
-            'Accent' => '#115733',
-            'Background' => '#f4f5f6',
-            'Text' => '#1d3a3a',
-            'lightText' => '#a2a5b9',
-            'darkPrimary' => '#222225',
-            'darkSecondary' => '#27272a',
-            'darkAccent' => '#313135',
-            'darkBackground' => '#3b3b40',
-            'darkLightText' => '#d0d2dc'
-        ]);
+        return $this->buildConfigResponse($service->get());
     }
 
     /**
@@ -103,7 +91,7 @@ class RestaurantController extends Controller
                 'apiSsl' => $protocol,
                 'apiUrl' => $fqdn,
                 'isStoreEnabled' => 'false',
-            ], $branding));
+            ], $branding))->header('Cache-Control', 'no-store, no-cache, must-revalidate');
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

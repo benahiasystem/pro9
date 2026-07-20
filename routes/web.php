@@ -1086,6 +1086,11 @@ if ($hostname) {
             Route::post('certificates/saveSoapUser', 'System\CertificateController@saveSoapUser');
             Route::delete('certificates', 'System\CertificateController@destroy');
             Route::get('configurations', 'System\ConfigurationController@index')->name('system.configuration.index');
+            Route::get('configurations/mozo', 'System\MozoController@index')->name('system.mozo.index');
+            Route::get('configurations/mozo/record', 'System\MozoController@record')->name('system.mozo.record');
+            Route::put('configurations/mozo', 'System\MozoController@update')->name('system.mozo.update');
+            Route::put('configurations/mozo/brand-name', 'System\MozoController@updateBrandName')->name('system.mozo.brand_name.update');
+            Route::put('configurations/mozo/colors', 'System\MozoController@updateColors')->name('system.mozo.colors.update');
             Route::post('configurations/login', 'System\ConfigurationController@storeLoginSettings');
             Route::post('configurations/bg', 'System\ConfigurationController@storeBgLogin');
             Route::post('configurations/other-configuration', 'System\ConfigurationController@storeOtherConfiguration');

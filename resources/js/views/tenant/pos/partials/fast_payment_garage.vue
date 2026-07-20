@@ -1384,16 +1384,16 @@ export default {
 
             if (this.form.payments.length == 0) {
                 this.$refs.componentMultiplePaymentGarage.clickAddPayment(amount)
-                this.setAmount(effectiveAmount)
+                this.setAmount(this.form.total)
             } else if (this.form.payments.length == 1) {
 
-                this.form.payments[0].payment = effectiveAmount
+                this.form.payments[0].payment = this.form.total
 
                 if (this.payments.length == 0) {
                     this.payments = this.form.payments
                 }
 
-                this.setAmount(effectiveAmount)
+                this.setAmount(this.form.total)
 
             } else {
                 // multiples pagos no controlados

@@ -60,6 +60,7 @@ class Configuration extends Model
         'terms_mode',
         'terms_content',
         'terms_url',
+        'mozo_configuration',
     ];
 
 
@@ -72,6 +73,7 @@ class Configuration extends Model
         'enabled_izipay' => 'boolean',
         'enabled_culqi' => 'boolean',
         'enabled_mp' => 'boolean',
+        'mozo_configuration' => 'array',
     ];
 
 

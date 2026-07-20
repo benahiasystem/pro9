@@ -1434,10 +1434,25 @@ export default {
         clickEditUnitPriceItem(index) {
             // console.log(index)
             let item_search = this.items[index];
-            this.items[index].sale_unit_price = this.items[
+            let edit_sale_unit_price = this.items[
                 index
             ].edit_sale_unit_price;
-            this.items[index].edit_unit_price = false;
+            let product = this.items[index];
+            
+            if (this.config.condition_sale_purchase_price_to_item) {
+
+                if (edit_sale_unit_price < product.purchase_unit_price) {
+                    return this.$message.error(
+                        "El Precio Unitario debe ser mayor o igual al costo de compra"
+                    );
+                }
+
+                this.items[index].sale_unit_price = this.items[
+                    index
+                ].edit_sale_unit_price;
+                this.items[index].edit_unit_price = false;
+
+            }
 
             // console.log(item_search)
         },
@@ -1583,15 +1598,31 @@ export default {
         },
         blurCalculateQuantity(index) {
             const current = this.form.items[index];
+            const quantity = parseFloat(current.quantity);
+            let newTotal = parseFloat(current.total);
+            let validated = false
+
+
+            if (this.config.condition_sale_purchase_price_to_item) {
+                
+                if (newTotal < current.item.purchase_unit_price) {
+                   validated = true 
+                   newTotal = current.item.sale_unit_price_original
+                    
+                } 
+
+            }
+            
+
             if (!current.item.calculate_quantity) {
-                const quantity = parseFloat(current.quantity);
-                const newTotal = parseFloat(current.total);
                 if (quantity > 0 && !isNaN(newTotal) && newTotal >= 0) {
                     const newUnitPrice = _.round(newTotal / quantity, 6);
                     current.item.unit_price = newUnitPrice;
                     current.unit_price = newUnitPrice;
                 }
             }
+
+            this.form.items[index].total = newTotal
 
             this.row = calculateRowItem(
                 this.form.items[index],
@@ -1607,6 +1638,13 @@ export default {
             this.form.items[index] = this.row;
             this.calculateTotal();
             this.setFormPosLocalStorage();
+
+
+            if (validated) {
+                return this.$message.error(
+                    "El Precio Unitario debe ser mayor o igual al costo de compra"
+                );
+            }
         },
         blurCalculateQuantity2(index) {
             this.row = calculateRowItem(
@@ -1942,8 +1980,7 @@ export default {
                     this.percentage_igv
                 );
 
-                console.log(this.row);
-
+                this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
 
                 this.row["unit_type_id"] = item.unit_type_id;
 
@@ -2004,6 +2041,8 @@ export default {
                 this.row["unit_type_id"] = item.presentation
                     ? item.presentation.unit_type_id
                     : this.form_item.item.unit_type_id;
+
+                this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
 
                 this.form.items.unshift(this.row);
                 item.aux_quantity = 1;

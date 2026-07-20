@@ -365,12 +365,18 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                 @php
                                     $business_turns_active = \Modules\BusinessTurn\Models\BusinessTurn::where('id', 4)->value('active');
                                 @endphp
-                                    <li class="{{ ($firstLevel === 'pos' && $secondLevel === 'garage') ? 'nav-active' : '' }}">
+                                    <li class="{{ ($firstLevel === 'pos' && $secondLevel === 'garage') ? 'nav-active' : '' }} nav-item-with-action">
                                         <a class="nav-link" href="{{ route('tenant.pos.garage') }}">Venta rápida
                                             @if($business_turns_active)
                                                 <span style="font-size:.65rem;">(Grifos y Markets)</span>
                                             @endif
                                         </a>
+                                        <button
+                                            type="button"
+                                            class="{{ ($firstLevel === 'quotations') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0 ms-1"
+                                            title="Vendeya"
+                                            onclick="openVendeyaApp('{{ auth()->user()->api_token ?? '' }}')">Vendeya
+                                        </button>
                                     </li>
                                 @endif
 
@@ -1231,12 +1237,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                             title="Mozo"
                                             onclick="openMozoApp('{{ auth()->user()->api_token ?? '' }}')">Ver Mozo
                                         </button>
-                                        <button
-                                            type="button"
-                                            class="{{ ($firstLevel === 'quotations') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0 ms-1"
-                                            title="Vendeya"
-                                            onclick="openVendeyaApp('{{ auth()->user()->api_token ?? '' }}')">Ver Vendeya
-                                        </button>
                                     </div>
                                 </li>
                             </ul>
@@ -1769,7 +1769,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                 <path d="M11 4h2" />
                                 <path d="M12 17v.01" />
                             </svg>
-                            APP 3.1
+                            APP 4.1
                         </a>
                     </li>
                 @endif
