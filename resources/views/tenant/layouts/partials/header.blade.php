@@ -288,18 +288,6 @@
                 <li class="btn-primary" role="menuitem" href="{{ route('logout') }}"
                     onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                     {{--<a role="menuitem" href="#"><i class="fas fa-user"></i> Perfil</a>--}}
-<!-- <<<<<<< HEAD -->
-                    <!-- <a>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
-                            stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="icon icon-tabler icons-tabler-outline icon-tabler-logout me-2">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M14 8v-2a2 2 0 0 0 -2 -2h-7a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2 -2v-2" />
-                            <path d="M9 12h12l-3 -3" />
-                            <path d="M18 15l3 -3" />
-                        </svg>
-                        Cerrar Sesión
-                    </a> -->
                     <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none"
                         stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                         class="icon icon-tabler icons-tabler-outline icon-tabler-logout me-2">
@@ -309,7 +297,6 @@
                         <path d="M18 15l3 -3" />
                     </svg>
                     Cerrar Sesión
- <!-- dc3907b4 (fix(ui): mejora en estilos para movil) -->
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                         @csrf
                     </form>
