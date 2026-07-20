@@ -2,6 +2,42 @@
 
 @push('styles')
 <style>
+    /* Modal Mercado Pago (SweetAlert2 v7 + Payment Brick) */
+    .swal2-popup.mp-payment-swal {
+        width: 640px !important;
+        max-width: 92vw !important;
+        padding: 1.5rem 1.75rem 1.75rem !important;
+        box-sizing: border-box;
+    }
+
+    /* Por encima del overlay de carga (.purchase-overlay = 1080) por si queda residual */
+    .swal2-container {
+        z-index: 1100 !important;
+    }
+
+    .swal2-popup.mp-payment-swal .swal2-content,
+    .swal2-popup.mp-payment-swal #swal2-content {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+        text-align: left;
+    }
+
+    .mp-swal-brick {
+        width: 100%;
+        min-height: 320px;
+        text-align: left;
+    }
+
+    @media (max-width: 576px) {
+        .swal2-popup.mp-payment-swal {
+            width: 94vw !important;
+            padding: 1rem 0.85rem 1.25rem !important;
+        }
+    }
+
     #addressModal .modal-dialog {
         max-width: 800px;
     }
@@ -680,10 +716,24 @@
                 <!-- Coupon input and applied coupon display -->
                 <div class="coupon-block">
                     <div class="coupon">
-                        <input v-model="couponField" type="text" class="input" placeholder="Código de cupón">
-                        <button class="coupon-btn" @click="applyCoupon" :disabled="couponLoading">Aplicar</button>
+                        <input
+                            v-model="couponField"
+                            type="text"
+                            class="input"
+                            placeholder="Código de cupón"
+                            :disabled="couponLoading || !!(appliedCoupon && appliedCoupon.code)"
+                        >
+                        <button
+                            class="coupon-btn"
+                            @click="applyCoupon"
+                            :disabled="couponLoading || !!(appliedCoupon && appliedCoupon.code)"
+                            :title="(appliedCoupon && appliedCoupon.code) ? 'Ya hay un cupón aplicado' : 'Aplicar cupón'"
+                        >Aplicar</button>
                     </div>
                     <small class="coupon-msg text-danger" v-if="couponMessage">@{{ couponMessage }}</small>
+                    <small class="coupon-msg text-muted" v-else-if="appliedCoupon && appliedCoupon.code">
+                        Cupón aplicado. Usa &quot;Eliminar&quot; para quitarlo.
+                    </small>
                 </div>
                 <label class="terms" :class="{ 'terms--checked': acceptedTerms }" id="termsLabel">
                   <input type="checkbox" id="termsCheck" v-model="acceptedTerms">

@@ -10,6 +10,7 @@ use App\Http\Requests\Tenant\ConfigurationEcommerceRequest;
 use App\Http\Resources\Tenant\ConfigurationEcommerceResource;
 use Modules\Finance\Helpers\UploadFileHelper;
 use Illuminate\Support\Facades\Storage;
+use Modules\Payment\Models\PaymentConfiguration;
 
 
 class ConfigurationController extends Controller
@@ -34,9 +35,12 @@ class ConfigurationController extends Controller
             ];
         });
 
+        $gateway_availability = PaymentConfiguration::getEcommerceGatewayAvailability();
+
         return [
             'data' => $record,
-            'bank_accounts' => $bank_accounts
+            'bank_accounts' => $bank_accounts,
+            'gateway_availability' => $gateway_availability,
         ];
     }
 
@@ -85,36 +89,63 @@ class ConfigurationController extends Controller
     public function store_configuration_culqui(Request $request)
     {
         $id = $request->input('id');
-        $configuration = ConfigurationEcommerce::find($id);
-        
+        $configuration = ConfigurationEcommerce::findOrFail($id);
+        $gateway_availability = PaymentConfiguration::getEcommerceGatewayAvailability();
+
+        $enableIzipay = $gateway_availability['izipay']
+            ? (bool) $request->input('enable_izipay', 0)
+            : false;
+        $enableCulqi = $gateway_availability['culqi']
+            ? (bool) $request->input('enable_culqi', 0)
+            : false;
+
+        PaymentConfiguration::validateEcommerceIzipayCulqiExclusivity($enableIzipay, $enableCulqi);
+
         $preferences = $configuration->preferences ?: [];
         $preferences['ecommerce_bank_account_ids'] = $request->input('ecommerce_bank_account_ids', []);
-        
+
         $preferences['enable_cash'] = $request->input('enable_cash', 0);
         $preferences['cash_title'] = $request->input('cash_title', 'Pago contra entrega');
         $preferences['cash_description'] = $request->input('cash_description', null);
         $preferences['cash_pickup_only'] = $request->input('cash_pickup_only', 0) ? true : false;
-        
-        // Custom gateway configurations
-        $preferences['enable_izipay'] = $request->input('enable_izipay', 0);
+
+        $preferences['enable_izipay'] = $enableIzipay ? 1 : 0;
         $preferences['title_izipay'] = $request->input('title_izipay', 'Pago con Izipay');
         $preferences['description_izipay'] = $request->input('description_izipay', null);
 
-        $preferences['enable_mp'] = $request->input('enable_mp', 0);
+        $preferences['enable_mp'] = $gateway_availability['mercadopago']
+            ? (int) $request->input('enable_mp', 0)
+            : 0;
         $preferences['title_mp'] = $request->input('title_mp', 'Mercado Pago');
         $preferences['description_mp'] = $request->input('description_mp', null);
 
-        $preferences['enable_culqi'] = $request->input('enable_culqi', 0);
+        $preferences['enable_culqi'] = $enableCulqi ? 1 : 0;
         $preferences['title_culqi'] = $request->input('title_culqi', 'Pago con Tarjeta');
         $preferences['description_culqi'] = $request->input('description_culqi', null);
 
+        PaymentConfiguration::enforceEcommerceIzipayCulqiExclusivity($preferences);
+
         $configuration->fill($request->all());
+        $configuration->enable_yape = $gateway_availability['yape']
+            ? (bool) $request->input('enable_yape', 0)
+            : false;
+        $configuration->enable_transfer = (bool) $request->input('enable_transfer', 0);
         $configuration->preferences = $preferences;
         $configuration->save();
 
+        return $this->buildPaymentGatewayResponse($configuration);
+    }
+
+    /**
+     * Respuesta estándar para autoguardado de pasarelas de pago.
+     */
+    private function buildPaymentGatewayResponse(ConfigurationEcommerce $configuration): array
+    {
         return [
             'success' => true,
-            'message' => 'Configuración actualizada'
+            'message' => 'Configuración actualizada',
+            'gateway_availability' => PaymentConfiguration::getEcommerceGatewayAvailability(),
+            'data' => (new ConfigurationEcommerceResource($configuration->fresh()))->resolve(),
         ];
     }
 

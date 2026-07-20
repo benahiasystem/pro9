@@ -667,9 +667,10 @@ var app_cart = new Vue({
                 // Limpiar container previo si existe
                 if (this.mpBrickController) {
                     this.mpBrickController.unmount();
+                    this.mpBrickController = null;
                 }
 
-                // Generamos los datos preliminares de formulario para luego crear la orden
+                // Preparar datos del pedido/formulario antes de mostrar el Brick
                 const rawFormData = await this.getFormPaymentCash();
 
                 const settings = {
@@ -683,19 +684,20 @@ var app_cart = new Vue({
                     },
                     callbacks: {
                         onReady: () => {
+                            // El Brick ya está montado; el overlay debió cerrarse antes del modal
                             this.processingPayment = false;
-                            $('#mp-modal').modal('show'); // asumiendo que abriremos el container en un modal o está en el DOM
                         },
                         onSubmit: (formDataRecv) => {
                             return new Promise((resolve, reject) => {
+                                this.processingPayment = true;
                                 swal({ title: "Estamos hablando con MercadoPago", text: "Procesando pago...", onOpen: () => { Swal.showLoading() } });
                                 
                                 const payload = { ...rawFormData, form_data: formDataRecv.formData };
                                 axios.post(window.__routes?.mercadopago_payment || '/ecommerce/mercadopago/payment', payload, this.getHeaderConfig())
                                 .then(response => {
+                                    this.processingPayment = false;
                                     if(response.data.success) {
                                         swal.close();
-                                        $('#mp-modal').modal('hide');
                                         this.saveContactDataUser();
                                         this.showPurchaseSuccess(response.data.order);
                                         resolve();
@@ -704,6 +706,7 @@ var app_cart = new Vue({
                                         reject();
                                     }
                                 }).catch(err => {
+                                    this.processingPayment = false;
                                     swal("Pago Fallido", 'Ocurrió un error con la pasarela.', "error");
                                     console.log(err);
                                     reject();
@@ -712,28 +715,45 @@ var app_cart = new Vue({
                         },
                         onError: (error) => {
                             console.error(error);
+                            this.processingPayment = false;
                             this.showSwalMessage('Error', 'Ocurrió un problema con el formulario de pago.', 'error');
                         },
                     },
                 };
+
+                // Quitar overlay global ANTES de abrir el modal (z-index 1080 > swal 1060)
+                this.processingPayment = false;
                 
-                // Necesitamos tener un wrapper visible, abrimos un sweetalert o modal
                 swal({
                     title: 'Pago Seguro con Mercado Pago',
-                    html: '<div id="mp-swal-container" style="min-height: 300px;"></div>',
+                    html: '<div id="mp-swal-container" class="mp-swal-brick"></div>',
+                    width: 640,
+                    customClass: 'mp-payment-swal',
                     showConfirmButton: false,
                     showCloseButton: true,
                     onOpen: async () => {
-                        this.mpBrickController = await bricksBuilder.create('payment', 'mp-swal-container', settings);
+                        try {
+                            this.mpBrickController = await bricksBuilder.create('payment', 'mp-swal-container', settings);
+                        } catch (brickErr) {
+                            console.error(brickErr);
+                            this.processingPayment = false;
+                            swal.close();
+                            this.showSwalMessage('Error', 'No se pudo cargar el formulario de Mercado Pago.', 'error');
+                        }
                     },
                     onClose: () => {
-                        if (this.mpBrickController) this.mpBrickController.unmount();
+                        this.processingPayment = false;
+                        if (this.mpBrickController) {
+                            this.mpBrickController.unmount();
+                            this.mpBrickController = null;
+                        }
                     }
                 });
 
             } catch (err) {
                 this.processingPayment = false;
                 console.error(err);
+                this.showSwalMessage('Error', 'No se pudo iniciar el pago con Mercado Pago.', 'error');
             }
         },
         async loadIzipaySDK() {
@@ -1672,13 +1692,36 @@ var app_cart = new Vue({
             }
             this.calculateSummary();
         },
+        /**
+         * Subtotal de ítems sin cupón ni delivery.
+         * Debe coincidir con la base que usa calculateSummary al restar el descuento.
+         */
+        getTotalBeforeCoupon() {
+            let total = 0;
+            (this.records || []).forEach(function (item) {
+                total += parseFloat(item.sub_total) || 0;
+            });
+            return Math.round(total * 100) / 100;
+        },
+
         async applyCoupon() {
             if (!this.couponField || this.couponLoading) return;
+
+            // Un solo cupón por carrito: bloquear reaplicación acumulativa
+            if (this.appliedCoupon && this.appliedCoupon.code) {
+                this.couponMessage = 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.';
+                return;
+            }
+
             this.couponLoading = true;
             this.couponMessage = null;
 
             try {
-                const payload = { code: this.couponField, order_total: this.summary.total };
+                const payload = {
+                    code: this.couponField,
+                    order_total: this.getTotalBeforeCoupon(),
+                    coupon_already_applied: !!(this.appliedCoupon && this.appliedCoupon.code)
+                };
                 const res = await axios.post('/ecommerce/validate-coupon', payload, this.getHeaderConfig());
                 if (res.data && res.data.success) {
                     const d = res.data.data;
@@ -1688,10 +1731,9 @@ var app_cart = new Vue({
                         discount: parseFloat(d.discount),
                         free_shipping: d.free_shipping
                     };
-                    if (typeof d.new_total !== 'undefined') {
-                        this.summary.total = parseFloat(d.new_total).toFixed(2);
-                        this.payment_cash.amount = this.summary.total;
-                    }
+                    // Recalcular resumen una sola vez (items - descuento + delivery)
+                    this.calculateSummary();
+                    this.couponField = d.code || this.couponField;
                     this.couponMessage = null;
                 } else {
                     this.couponMessage = (res.data && res.data.message) ? res.data.message : 'cupon no valido';

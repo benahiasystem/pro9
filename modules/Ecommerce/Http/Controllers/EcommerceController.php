@@ -335,7 +335,8 @@ class EcommerceController extends Controller
 
         $enable_electronic_documents = (bool) ($configuration->enable_electronic_documents ?? false);
         $enable_store_pickup          = (bool) ($configuration->enable_store_pickup ?? false);
-        $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
+        $gateway_availability         = \Modules\Payment\Models\PaymentConfiguration::getEcommerceGatewayAvailability();
+        $enable_yape                  = ($configuration->enable_yape ?? false) && $gateway_availability['yape'];
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
 
         // Sucursales de recojo activas para el checkout
@@ -348,15 +349,14 @@ class EcommerceController extends Controller
         // Obtener solo las cuentas que el administrador haya habilitado para el E-commerce
         $preferences = $configuration->preferences ?: [];
 
-        // Validación estricta: Si el switch de Ecommerce está apagado, forzamos false en las credenciales
-        // en memoria para asegurarnos que la vista no intente inyectar scripts de pasarelas no autorizadas.
-        if (!($preferences['enable_izipay'] ?? false)) {
+        // Validación estricta: requiere switch de Ecommerce activo y pasarela configurada globalmente.
+        if (!($preferences['enable_izipay'] ?? false) || ! $gateway_availability['izipay']) {
             $payment_configuration->enabled_izipay = false;
         }
-        if (!($preferences['enable_mp'] ?? false)) {
+        if (!($preferences['enable_mp'] ?? false) || ! $gateway_availability['mercadopago']) {
             $payment_configuration->enabled_mp = false;
         }
-        if (!($preferences['enable_culqi'] ?? false)) {
+        if (!($preferences['enable_culqi'] ?? false) || ! $gateway_availability['culqi']) {
             $payment_configuration->enabled_culqi = false;
         }
 
@@ -669,6 +669,14 @@ class EcommerceController extends Controller
      */
     public function validateCoupon(Request $request)
     {
+        // Bloquear reaplicación acumulativa si el cliente ya tiene cupón activo
+        if (filter_var($request->input('coupon_already_applied', false), FILTER_VALIDATE_BOOLEAN)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.'
+            ], 422);
+        }
+
         $codes = [];
         if ($request->codes && is_array($request->codes)) {
             $codes = $request->codes;
@@ -698,6 +706,8 @@ class EcommerceController extends Controller
             if (!$coupon->canBeUsedBy($person_id, $order_total)) continue;
 
             $discount = $coupon->calculateDiscountAmount($order_total);
+            // Nunca descontar más que el total (evita totales negativos)
+            $discount = min($discount, max(0, $order_total));
             $validCoupons[] = [
                 'coupon' => $coupon,
                 'discount' => $discount
@@ -744,6 +754,14 @@ class EcommerceController extends Controller
             return response()->json(['success' => false, 'message' => 'Orden no encontrada'], 404);
         }
 
+        // Un solo cupón por orden: idempotente / bloqueante tras el primero
+        if ($order->discount_coupon_id || $order->discount_coupon_code) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.'
+            ], 422);
+        }
+
         $user = auth('ecommerce')->user();
         $person_id = $user?->id;
 
@@ -763,6 +781,7 @@ class EcommerceController extends Controller
         }
 
         $discount = $coupon->calculateDiscountAmount($order->total);
+        $discount = min($discount, max(0, (float) $order->total));
 
         // Actualizar la orden (un solo cupón por venta)
         $order->total_discount = $discount;
