@@ -66,6 +66,9 @@ class PaymentConfiguration extends ModelTenant
             'access_token_mp_suffix' => $this->access_token_mp
                 ? substr($this->access_token_mp, -8)
                 : null,
+            'access_token_mp_length' => $this->access_token_mp
+                ? strlen($this->access_token_mp)
+                : null,
             'enabled_culqi' => $this->enabled_culqi,
             'publickey_culqi' => $this->publickey_culqi,
             'privatekey_culqi' => $this->privatekey_culqi,

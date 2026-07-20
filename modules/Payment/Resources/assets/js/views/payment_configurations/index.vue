@@ -315,7 +315,10 @@
                         return ''
                     }
 
-                    return '.'.repeat(18) + suffix
+                    const totalLength = this.form.access_token_mp_length || suffix.length
+                    const hiddenLength = Math.max(totalLength - suffix.length, 0)
+
+                    return '*'.repeat(hiddenLength) + suffix
                 }
 
                 return this.accessTokenMpDraft || ''
@@ -427,6 +430,7 @@
                             if (this.form.type === '02' && this.accessTokenMpDraft) {
                                 this.form.has_access_token_mp = true
                                 this.form.access_token_mp_suffix = this.accessTokenMpDraft.slice(-8)
+                                this.form.access_token_mp_length = this.accessTokenMpDraft.length
                                 this.resetAccessTokenMpState()
                             }
                         } else {
@@ -474,6 +478,7 @@
                     public_key_mp: null,
                     has_access_token_mp: false,
                     access_token_mp_suffix: null,
+                    access_token_mp_length: null,
                 }
 
                 this.errors = {}
@@ -490,6 +495,7 @@
                             access_token_mp: null,
                             has_access_token_mp: !!data.has_access_token_mp,
                             access_token_mp_suffix: data.access_token_mp_suffix || null,
+                            access_token_mp_length: data.access_token_mp_length || null,
                         }
 
                         this.resetAccessTokenMpState()
