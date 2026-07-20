@@ -35,7 +35,7 @@ La app móvil se compila apuntando al dominio del reseller con un token fijo. La
 - **Bloqueo automático por denuncias**: umbral configurable (100 por defecto). Al alcanzarlo, el producto se retira solo y queda el rastro en el motivo. `0` desactiva la función.
 - **Ver el ranking de recomendaciones**, por tienda y por producto, junto a las denuncias. Es el contrapeso: un producto denunciado que además acumula recomendaciones suele ser una denuncia interesada, no un problema real. Aquí el número es **exacto**; el público lo ve abreviado.
 - **Renombrar u ocultar categorías** sin romper enlaces.
-- **Ajustes**: nombre de la comunidad, titular de la portada, textos SEO, saludo de WhatsApp (de un producto **y** del pedido/carrito), paginación, límite de catálogo, motivos de denuncia y **umbral del ranking** (cuántos vecinos distintos hacen falta para que una tienda destaque; 10 por defecto, `0` lo desactiva).
+- **Ajustes**: nombre de la comunidad, titular de la portada, textos SEO, saludo de WhatsApp (de un producto **y** del pedido/carrito), **símbolo de moneda** (para las tiendas que muestran precios), paginación, límite de catálogo, motivos de denuncia y **umbral del ranking** (cuántos vecinos distintos hacen falta para que una tienda destaque; 10 por defecto, `0` lo desactiva).
 
 El titular de la portada se edita en dos campos —el texto y el remate destacado, que se pinta en rosa y cursiva— con vista previa en vivo. Viene precargado con *«Lo que venden tus vecinos, a un WhatsApp.»*; si se vacían ambos, el titular desaparece de la portada.
 
@@ -46,7 +46,8 @@ Pantalla única en `/marketplace`, con el design system de Búho:
 - **Buscador global** con sugerencias en vivo (hasta 4 productos y 3 tiendas), debounce de 300 ms. Ignora tildes y mayúsculas, y busca también por código interno y código de barras.
 - **Pestañas** Productos / Tiendas, **filtro de categorías** en pills y **chips** de filtros activos.
 - **Grilla de productos** con paginación; sin foto, muestra la inicial del producto y el nombre de la tienda.
-- **Modal de producto** con categoría, código, tienda y la CTA de WhatsApp.
+- **Modal de producto** con categoría, código, **descripción**, tienda y la CTA de WhatsApp.
+- **Precios opcionales**: si la tienda los habilita, el precio se muestra en la tarjeta y en el modal, con el símbolo de moneda que fija el admin. Si no, no viaja al navegador.
 - **Ficha de tienda** en `/marketplace/tienda/{slug}` con logo, descripción, dirección, WhatsApp, compartir y su catálogo filtrado. Muestra la **antigüedad** a trazo grueso («Creado hace 3 meses», nunca en días; la fecha exacta va en el tooltip) y una insignia **«Nuevo»** durante el primer mes.
 - **Insignia «Nuevo»** en las tarjetas de la grilla de tiendas del home, además de la ficha: la tienda destaca durante su primer mes.
 - **Denuncias** de un producto o de la tienda, con motivo de la lista configurada.
@@ -124,6 +125,18 @@ El mensaje de WhatsApp se arma en el cliente (`wa-cart.js`), no en el servidor c
 **Se agrupa por tienda y cada una envía por separado**: una tienda no puede recibir el pedido de otra. Si el carrito cruza varias, el drawer lo avisa y pinta un botón «Enviar pedido» por grupo. La marca «Enviado» es solo de sesión —no podemos saber si el mensaje se mandó de verdad— y no se persiste.
 
 Los ítems del carrito son un snapshot y **no se validan contra el servidor**: si un producto se bloquea o se retira después, sigue en la lista hasta que el vecino la ajuste; la tienda lo aclara por WhatsApp. Es el mismo criterio de mínima fricción del resto del módulo.
+
+### Los precios son opt-in por tienda, y el gate es de presentación
+
+El marketplace nació sin precios —«se coordina por WhatsApp»— y esa sigue siendo la opción por defecto. Cada tienda decide con un toggle en su app (`show_prices`, default **false**) si publica los precios de su catálogo.
+
+El precio de cada ítem **se guarda siempre** que la app lo envíe; lo que depende del toggle es si se **muestra**. `PublicPresenter::item` expone `price` solo cuando la tienda tiene `show_prices` activo; si no, ni siquiera llega al navegador. Así, apagar los precios los oculta al instante sin perder el dato, y encenderlos no exige resincronizar.
+
+El símbolo lo pinta el front con el ajuste `currency_symbol` (default `S/`), configurable una vez para todo el marketplace. El número va como decimal; el formato (dos decimales, separador de miles) vive en `format.js`.
+
+### La descripción del producto se omite si repite el nombre
+
+La app de inventario históricamente fusionaba nombre y descripción en un solo campo. Ahora tiene un campo de descripción propio, pero los productos viejos aún llegan con `description == name`. `PublicPresenter::item` devuelve `description` en `null` cuando coincide con el nombre: repetir el título en el modal no aporta nada. La app hace el mismo filtro antes de enviar, así que el caso normal ni siquiera viaja.
 
 ### La antigüedad de la tienda es a trazo grueso
 

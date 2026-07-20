@@ -28,6 +28,12 @@ class PublicPresenter
             'name' => $item->name,
             'internal_code' => $item->internal_code,
             'category' => $item->category?->name,
+            // El precio solo viaja si la tienda lo habilitó; si no, ni siquiera
+            // llega al navegador. La descripción se omite cuando coincide con el
+            // nombre (productos donde la app aún fusiona ambos): repetir el
+            // título en el modal no aporta nada.
+            'price' => $store->show_prices && $item->price !== null ? (float) $item->price : null,
+            'description' => $item->description && $item->description !== $item->name ? $item->description : null,
             'image_url' => self::url($item->image_path),
             'initial' => mb_strtoupper(mb_substr($item->name, 0, 1)),
             // Sin número: en el producto el pulgar solo se enciende o se apaga.

@@ -30,6 +30,7 @@ class SettingController extends Controller
             'hero_highlight' => ['sometimes', 'nullable', 'string', 'max:60'],
             'whatsapp_greeting' => ['sometimes', 'required', 'string', 'max:255'],
             'whatsapp_cart_greeting' => ['sometimes', 'required', 'string', 'max:255'],
+            'currency_symbol' => ['sometimes', 'required', 'string', 'max:8'],
             'max_items_per_store' => ['sometimes', 'required', 'integer', 'min:1', 'max:5000'],
             // 0 = nunca bloquear automáticamente.
             'auto_block_reports' => ['sometimes', 'required', 'integer', 'min:0', 'max:10000'],

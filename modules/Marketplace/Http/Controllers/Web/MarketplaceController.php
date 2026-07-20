@@ -135,6 +135,7 @@ class MarketplaceController extends Controller
                 'items_per_page' => Settings::get('items_per_page'),
                 'report_reasons' => Settings::get('report_reasons', []),
                 'whatsapp_cart_greeting' => Settings::get('whatsapp_cart_greeting'),
+                'currency_symbol' => Settings::get('currency_symbol', 'S/'),
             ],
             'terms_url' => Settings::termsUrl(),
             'prefix' => config('marketplace.route_prefix'),

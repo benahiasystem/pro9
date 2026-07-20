@@ -18,3 +18,18 @@ export function compactCount(value) {
 function short(n) {
     return String(n < 10 ? Math.round(n * 10) / 10 : Math.round(n))
 }
+
+// Precio con símbolo y dos decimales: «S/ 12.50», «S/ 1,234.00». El símbolo lo
+// decide el admin (ajuste currency_symbol). Siempre dos decimales, con
+// separador de miles, que es como se lee un precio.
+export function formatPrice(value, symbol) {
+    if (value == null) return ''
+
+    const n = Number(value)
+    if (!Number.isFinite(n)) return ''
+
+    const [int, dec] = n.toFixed(2).split('.')
+    const withThousands = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+    return `${symbol || 'S/'} ${withThousands}.${dec}`
+}

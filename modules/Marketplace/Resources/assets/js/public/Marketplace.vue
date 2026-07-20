@@ -127,6 +127,7 @@
                         <!-- Productos -->
                         <div v-if="showProducts" role="list" class="mkt-grid">
                             <mkt-product-card v-for="p in products" :key="p.id" :product="p" :prefix="prefix"
+                                              :currency="settings.currency_symbol"
                                               @open="openProduct" @open-store="goStore"
                                               @added="onAddedToCart"/>
                         </div>
@@ -195,6 +196,7 @@
         </footer>
 
         <mkt-product-modal v-if="modalProduct" :product="modalProduct" :prefix="prefix"
+                           :currency="settings.currency_symbol"
                            @close="closeProduct" @open-store="goStore" @report="openReport"
                            @added="onAddedToCart"/>
 

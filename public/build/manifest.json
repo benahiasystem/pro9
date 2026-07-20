@@ -86,7 +86,7 @@
     "src": "modules/Marketplace/Resources/assets/img/buho-logo.svg"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.css": {
-    "file": "assets/marketplace-f607f6a4.css",
+    "file": "assets/marketplace-2043c666.css",
     "src": "modules/Marketplace/Resources/assets/js/marketplace.css"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.js": {
@@ -100,9 +100,9 @@
       "assets/jetbrains-mono-latin-ext-db5ff4db.woff2"
     ],
     "css": [
-      "assets/marketplace-f607f6a4.css"
+      "assets/marketplace-2043c666.css"
     ],
-    "file": "assets/marketplace-4d5a9cd8.js",
+    "file": "assets/marketplace-602d1b63.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js"
     ],
@@ -136,14 +136,14 @@
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-eb656036.css",
+    "file": "assets/system-5b2a4a7d.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-eb656036.css"
+      "assets/system-5b2a4a7d.css"
     ],
-    "file": "assets/system-930eea35.js",
+    "file": "assets/system-ebc5ec12.js",
     "imports": [
       "_vue-clipboard-57fc87a8.js",
       "__plugin-vue2_normalizer-839f22b6.js",

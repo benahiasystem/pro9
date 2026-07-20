@@ -26,6 +26,8 @@ class SyncRequest extends FormRequest
             'store.whatsapp' => ['required', 'string', 'regex:/^\d{8,20}$/'],
             'store.description' => ['nullable', 'string', 'max:500'],
             'store.address' => ['nullable', 'string', 'max:255'],
+            // Opt-in de precios. Ausente = false (la tienda no los muestra).
+            'store.show_prices' => ['nullable', 'boolean'],
             'store.logo_hash' => ['nullable', 'string', 'max:64'],
             'store.logo_base64' => ['nullable', 'string'],
 
@@ -35,6 +37,11 @@ class SyncRequest extends FormRequest
             'items.*.internal_code' => ['nullable', 'string', 'max:64'],
             'items.*.barcode' => ['nullable', 'string', 'max:64'],
             'items.*.category' => ['nullable', 'string', 'max:120'],
+            // Precio del producto. Se guarda siempre; solo se muestra si la
+            // tienda tiene show_prices. Sin tope de decimales aquí: la columna
+            // es decimal(10,2).
+            'items.*.price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'items.*.description' => ['nullable', 'string', 'max:1000'],
             'items.*.image_hash' => ['nullable', 'string', 'max:64'],
             'items.*.image_base64' => ['nullable', 'string'],
 

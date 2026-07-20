@@ -15,6 +15,8 @@
                 {{ product.name }}
             </h3>
 
+            <div v-if="priceLabel" class="mkt-card__price">{{ priceLabel }}</div>
+
             <div class="mkt-card__foot">
                 <button type="button" class="mkt-card__store" @click="$emit('open-store', product.store)">
                     <span class="avatar avatar--sm avatar--navy">{{ product.store.initials }}</span>
@@ -39,6 +41,7 @@
 import MktIcon from './MktIcon.vue'
 import MktRecommend from './MktRecommend.vue'
 import MktCartButton from './MktCartButton.vue'
+import { formatPrice } from '../format'
 
 export default {
     name: 'MktProductCard',
@@ -46,6 +49,13 @@ export default {
     props: {
         product: { type: Object, required: true },
         prefix: { type: String, default: 'marketplace' },
+        currency: { type: String, default: 'S/' },
+    },
+    computed: {
+        // null cuando la tienda no muestra precios; el backend ya lo omite.
+        priceLabel() {
+            return this.product.price != null ? formatPrice(this.product.price, this.currency) : ''
+        },
     },
 }
 </script>
@@ -146,6 +156,14 @@ export default {
 }
 
 .mkt-card__title:hover { color: var(--buho-blue-600); }
+
+.mkt-card__price {
+    font-size: var(--fs-body);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--buho-navy-950);
+    margin-top: -4px;
+}
 
 /* Dos filas: la tienda arriba, y debajo los tres botones de acción. Con tres
    acciones (recomendar, agregar, WhatsApp) ya no caben en la misma línea que el

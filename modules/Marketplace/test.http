@@ -116,7 +116,8 @@ Authorization: Bearer {{token}}
     "email": "carmen@bodega.pe",
     "whatsapp": "51987003344",
     "description": "Abarrotes, bebidas y todo lo del día a día.",
-    "address": "Block 4 · tienda 3"
+    "address": "Block 4 · tienda 3",
+    "show_prices": true
   },
   "items": [
     {
@@ -124,13 +125,16 @@ Authorization: Bearer {{token}}
       "name": "Arroz Costeño Extra 5KG",
       "internal_code": "AR-5",
       "barcode": "7501234567890",
-      "category": "Abarrotes"
+      "category": "Abarrotes",
+      "price": 24.90,
+      "description": "Saco de 5 kg, grano extra."
     },
     {
       "external_id": "A-021",
       "name": "Aceite Primor Clásico 1L",
       "internal_code": "AC-1",
-      "category": "ABARROTES"
+      "category": "ABARROTES",
+      "price": 12.50
     },
     {
       "external_id": "A-044",
@@ -141,6 +145,12 @@ Authorization: Bearer {{token}}
   ],
   "app_version": "3.4.0"
 }
+# Campos nuevos (todos opcionales):
+#   store.show_prices  bool  — si el catálogo publica precios. Ausente = false.
+#   items[].price      num   — precio de venta. Se guarda siempre; solo se
+#                              muestra si show_prices está activo.
+#   items[].description str  — descripción del producto (modal). Se omite si
+#                              coincide con el nombre.
 
 
 ### 4.2 Consultar estado mientras espera aprobación

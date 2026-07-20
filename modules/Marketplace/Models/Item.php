@@ -25,6 +25,8 @@ class Item extends Model
         'barcode',
         'category_id',
         'source_category',
+        'price',
+        'description',
         'image_path',
         'image_hash',
         'status',
@@ -38,6 +40,7 @@ class Item extends Model
     protected $casts = [
         'store_id' => 'integer',
         'category_id' => 'integer',
+        'price' => 'decimal:2',
         'reports_count' => 'integer',
         'recommendations_count' => 'integer',
         'blocked_at' => 'datetime',

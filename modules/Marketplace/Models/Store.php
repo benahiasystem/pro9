@@ -28,6 +28,7 @@ class Store extends Model
         'logo_hash',
         'description',
         'address',
+        'show_prices',
         'status',
         'status_reason',
         'items_count',
@@ -44,6 +45,7 @@ class Store extends Model
     ];
 
     protected $casts = [
+        'show_prices' => 'boolean',
         'items_count' => 'integer',
         'reports_count' => 'integer',
         'recommendations_count' => 'integer',

@@ -98,6 +98,12 @@
                     <small class="text-muted">Un sync que lo supere se rechaza con error 422.</small>
                     <small v-if="errors.max_items_per_store" class="form-control-feedback" v-text="errors.max_items_per_store[0]"></small>
                 </div>
+                <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.currency_symbol }">
+                    <label class="control-label">Símbolo de moneda</label>
+                    <el-input v-model="form.currency_symbol" :maxlength="8" placeholder="S/"/>
+                    <small class="text-muted">Con el que se pintan los precios de las tiendas que los muestran.</small>
+                    <small v-if="errors.currency_symbol" class="form-control-feedback" v-text="errors.currency_symbol[0]"></small>
+                </div>
                 <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.auto_block_reports }">
                     <label class="control-label">Bloqueo automático por denuncias</label>
                     <el-input-number v-model="form.auto_block_reports" :min="0" :max="10000"
@@ -172,7 +178,8 @@ export default {
             form: {
                 is_enabled: false, title: '', description: '', community_name: '',
                 hero_title: '', hero_highlight: '',
-                whatsapp_greeting: '', whatsapp_cart_greeting: '', items_per_page: 24, max_items_per_store: 500,
+                whatsapp_greeting: '', whatsapp_cart_greeting: '', currency_symbol: 'S/',
+                items_per_page: 24, max_items_per_store: 500,
                 auto_block_reports: 100, ranking_threshold: 10, report_reasons: [],
             },
         }

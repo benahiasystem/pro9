@@ -77,6 +77,8 @@ class StoreSyncService
             'whatsapp' => $data['whatsapp'],
             'description' => $data['description'] ?? null,
             'address' => $data['address'] ?? null,
+            // Ausente = false: una app vieja que no lo envíe deja los precios ocultos.
+            'show_prices' => (bool) ($data['show_prices'] ?? false),
         ]);
 
         $store->last_synced_at = now();
@@ -158,6 +160,8 @@ class StoreSyncService
                 'barcode' => $data['barcode'] ?? null,
                 'category_id' => $category?->id,
                 'source_category' => $data['category'] ?? null,
+                'price' => $data['price'] ?? null,
+                'description' => $data['description'] ?? null,
             ]);
 
             // Un ítem bloqueado se actualiza en todo salvo su estado: el

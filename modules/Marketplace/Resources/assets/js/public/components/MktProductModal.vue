@@ -17,9 +17,13 @@
 
                 <h2 class="mkt-modal__title">{{ product.name }}</h2>
 
+                <p v-if="priceLabel" class="mkt-modal__price">{{ priceLabel }}</p>
+
                 <p v-if="product.internal_code" class="mkt-modal__code">
                     Código <span class="mkt-mono">{{ product.internal_code }}</span>
                 </p>
+
+                <p v-if="product.description" class="mkt-modal__desc">{{ product.description }}</p>
 
                 <button type="button" class="mkt-modal__store" @click="$emit('open-store', product.store)">
                     <span class="avatar avatar--navy">{{ product.store.initials }}</span>
@@ -52,6 +56,7 @@
 import MktIcon from './MktIcon.vue'
 import MktRecommend from './MktRecommend.vue'
 import MktCartButton from './MktCartButton.vue'
+import { formatPrice } from '../format'
 
 export default {
     name: 'MktProductModal',
@@ -59,6 +64,13 @@ export default {
     props: {
         product: { type: Object, required: true },
         prefix: { type: String, default: 'marketplace' },
+        currency: { type: String, default: 'S/' },
+    },
+
+    computed: {
+        priceLabel() {
+            return this.product.price != null ? formatPrice(this.product.price, this.currency) : ''
+        },
     },
 
     mounted() {
@@ -194,6 +206,23 @@ export default {
 }
 
 .mkt-modal__code span { color: var(--buho-navy-950); font-weight: 600; }
+
+.mkt-modal__price {
+    margin: 0;
+    font-size: var(--fs-h4);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--buho-navy-950);
+}
+
+/* pre-line: respeta los saltos de línea que la tienda escribió en la app. */
+.mkt-modal__desc {
+    margin: 0;
+    font-size: var(--fs-body-sm);
+    line-height: 1.6;
+    color: var(--color-text-muted);
+    white-space: pre-line;
+}
 
 .mkt-modal__store {
     display: flex;
