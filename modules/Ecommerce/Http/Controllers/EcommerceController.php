@@ -40,6 +40,8 @@ use App\Models\Tenant\PersonAddress;
 
 use App\Models\System\Configuration as SystemConfiguration;
 use Modules\Ecommerce\Jobs\SendOrderStatusEmail;
+use Illuminate\Support\Facades\Log;
+use Exception;
 
 
 class EcommerceController extends Controller
@@ -338,12 +340,17 @@ class EcommerceController extends Controller
         $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
 
+        $payment_configuration = \Modules\Payment\Models\PaymentConfiguration::first();
+        $preferences = $configuration->preferences
+            ? (is_string($configuration->preferences) ? json_decode($configuration->preferences, true) : $configuration->preferences)
+            : [];
+
         // Sucursales de recojo activas para el checkout
         $pickup_branches = $enable_store_pickup
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
             : [];
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer'));
+        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'preferences'));
     }
 
     public function orderList()
@@ -916,6 +923,105 @@ class EcommerceController extends Controller
                 ];
             }
         }
+    }
+
+    public function paymentMercadoPago(Request $request)
+    {
+        // TODO: quitar tras depurar el payload del Payment Brick
+        Log::info('MercadoPago ecommerce request payload', $request->all());
+
+        $customer = is_string($request->customer)
+            ? json_decode($request->customer, true)
+            : (array) $request->customer;
+
+        $formData = $request->input('form_data') ?? $request->input('formData');
+        if (is_string($formData)) {
+            $formData = json_decode($formData, true);
+        }
+        if (is_array($formData) && isset($formData['formData'])) {
+            $formData = $formData['formData'];
+        }
+
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'form_data' => $formData,
+        ]);
+
+        $mpController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $mpController->mercadoPagoCreatePayment($paymentReq);
+
+        if (!empty($result['paid']) || !empty($result['pending'])) {
+            $order = Order::create([
+                'external_id' => Str::uuid()->toString(),
+                'customer' => $customer,
+                'shipping_address' => $request->input('shipping_address', ''),
+                'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
+                'total' => $request->precio_culqi,
+                'reference_payment' => $request->input('reference_payment', 'mp'),
+                'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
+            ]);
+            $result['order'] = $order;
+        }
+
+        return response()->json($result);
+    }
+
+    public function paymentIzipay(Request $request)
+    {
+        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array) $request->customer;
+
+        $order = Order::create([
+            'external_id' => Str::uuid()->toString(),
+            'customer' => $customer,
+            'shipping_address' => $request->input('shipping_address', ''),
+            'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
+            'total' => $request->precio_culqi,
+            'reference_payment' => 'izipay',
+            'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
+        ]);
+
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'amount' => round((float) $request->precio_culqi * 100),
+            'currency' => 'PEN',
+            'orderId' => $order->external_id,
+            'customer' => [
+                'email' => $customer['correo_electronico'] ?? null,
+                'billingDetails' => [
+                    'firstName' => $customer['apellidos_y_nombres_o_razon_social'] ?? null,
+                    'phoneNumber' => $customer['telefono'] ?? null,
+                ],
+            ],
+        ]);
+
+        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $izipayController->izipayCreatePayment($paymentReq);
+
+        return response()->json([
+            'success' => $result['success'],
+            'formToken' => $result['formToken'] ?? null,
+            'publickey_izipay' => \Modules\Payment\Models\PaymentConfiguration::getKryptonPublicKeyIzipay(),
+            'order' => $order,
+        ]);
+    }
+
+    public function transactionIzipay(Request $request)
+    {
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'uuid' => $request->uuid,
+        ]);
+
+        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+
+        return response()->json($izipayController->izipayTransaction($paymentReq));
+    }
+
+    public function izipayRecord()
+    {
+        return response()->json([
+            'publickey_izipay' => \Modules\Payment\Models\PaymentConfiguration::getKryptonPublicKeyIzipay(),
+        ]);
     }
 
     public function paymentCashEmail($customer_email, $document)

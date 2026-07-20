@@ -147,10 +147,9 @@ class PaymentConfigurationController extends Controller
         $enableCulqi = (bool) $request->enabled_culqi;
         $enableIzipay = (bool) $record->enabled_izipay;
 
+        // Si se está activando Culqi, apagar Izipay automáticamente en lugar de bloquear
         if ($enableCulqi && $enableIzipay) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'enabled_culqi' => [PaymentConfiguration::IZIPAY_CULQI_EXCLUSIVITY_MESSAGE],
-            ]);
+            $record->enabled_izipay = false;
         }
 
         $record->enabled_culqi = $enableCulqi;
@@ -186,10 +185,9 @@ class PaymentConfigurationController extends Controller
         $enableIzipay = (bool) $request->enabled_izipay;
         $enableCulqi = (bool) $record->enabled_culqi;
 
+        // Si se está activando Izipay, apagar Culqi automáticamente en lugar de bloquear
         if ($enableIzipay && $enableCulqi) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'enabled_izipay' => [PaymentConfiguration::IZIPAY_CULQI_EXCLUSIVITY_MESSAGE],
-            ]);
+            $record->enabled_culqi = false;
         }
 
         $record->enabled_izipay = $enableIzipay;
@@ -199,19 +197,19 @@ class PaymentConfigurationController extends Controller
         }
 
         if ($request->username_izipay) {
-            $record->username_izipay = $request->username_izipay;
+            $record->username_izipay = trim($request->username_izipay);
         }
 
         if ($request->password_izipay) {
-            $record->password_izipay = $request->password_izipay;
+            $record->password_izipay = trim($request->password_izipay);
         }
 
         if ($request->publickey_izipay) {
-            $record->publickey_izipay = $request->publickey_izipay;
+            $record->publickey_izipay = PaymentConfiguration::sanitizePublicKeyForStorage($request->publickey_izipay);
         }
 
         if ($request->sha256key_izipay) {
-            $record->sha256key_izipay = $request->sha256key_izipay;
+            $record->sha256key_izipay = trim($request->sha256key_izipay);
         }
 
         return [

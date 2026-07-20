@@ -5,15 +5,20 @@
         <!-- Yape -->
         <div class="col-md-6" v-if="gateway_availability.yape">
           <div class="form-group form-modern mb-3">
-            <el-switch
-              v-model="form.enable_yape"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="saving.yape"
-              @change="val => saveAuto('yape', val)"
-            ></el-switch>
-            <label class="ms-2 mb-0">Habilitar pago con Yape</label>
-            <small class="d-block text-muted ms-5" style="padding: 0 !important; line-height: 1.5;">
+            <div class="gateway-switch__control">
+              <el-switch
+                v-model="form.enable_yape"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="saving.yape"
+                @change="val => saveAuto('yape', val)"
+              ></el-switch>
+              <span class="gateway-switch__brand gateway-switch__brand--wide">
+                <img :src="gatewayLogos.yape" alt="Yape" class="gateway-switch__logo">
+              </span>
+              <label class="mb-0 gateway-switch__label">Habilitar pago con Yape</label>
+            </div>
+            <small class="d-block text-muted gateway-switch__hint">
               Muestra la opción &ldquo;Pagar con YAPE&rdquo; en el checkout.
             </small>
           </div>
@@ -21,15 +26,20 @@
 
         <div class="col-md-6">
           <div class="form-group form-modern mb-3">
-            <el-switch
-              v-model="form.enable_transfer"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="saving.transfer"
-              @change="val => saveAuto('transfer', val)"
-            ></el-switch>
-            <label class="ms-2 mb-0">Habilitar transferencia bancaria</label>
-            <small class="d-block text-muted ms-5" style="padding: 0 !important; line-height: 1.5;">
+            <div class="gateway-switch__control">
+              <el-switch
+                v-model="form.enable_transfer"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="saving.transfer"
+                @change="val => saveAuto('transfer', val)"
+              ></el-switch>
+              <span class="gateway-switch__brand gateway-switch__brand--square">
+                <img :src="gatewayLogos.transfer" alt="Transferencia bancaria" class="gateway-switch__logo">
+              </span>
+              <label class="mb-0 gateway-switch__label">Habilitar transferencia bancaria</label>
+            </div>
+            <small class="d-block text-muted gateway-switch__hint">
               Muestra la opción &ldquo;Transferencia Bancaria&rdquo; en el checkout.
             </small>
           </div>
@@ -59,14 +69,19 @@
         <!-- Izipay -->
         <div class="col-md-6" v-if="gateway_availability.izipay">
           <div class="form-group form-modern mb-3">
-            <el-switch
-              v-model="form.enable_izipay"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="saving.izipay"
-              @change="val => onExclusiveGatewayToggle('izipay', val)"
-            ></el-switch>
-            <label class="ms-2 mb-0">Habilitar Izipay en Ecommerce</label>
+            <div class="gateway-switch__control">
+              <el-switch
+                v-model="form.enable_izipay"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="saving.izipay"
+                @change="val => onExclusiveGatewayToggle('izipay', val)"
+              ></el-switch>
+              <span class="gateway-switch__brand gateway-switch__brand--wide">
+                <img :src="gatewayLogos.izipay" alt="Izipay" class="gateway-switch__logo">
+              </span>
+              <label class="mb-0 gateway-switch__label">Habilitar Izipay en Ecommerce</label>
+            </div>
           </div>
 
           <div v-if="form.enable_izipay === 1" class="payment-gateway-panel">
@@ -96,14 +111,19 @@
         <!-- Mercado Pago -->
         <div class="col-md-6" v-if="gateway_availability.mercadopago">
           <div class="form-group form-modern mb-3">
-            <el-switch
-              v-model="form.enable_mp"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="saving.mercadopago"
-              @change="val => saveAuto('mercadopago', val)"
-            ></el-switch>
-            <label class="ms-2 mb-0">Habilitar Mercado Pago en Ecommerce</label>
+            <div class="gateway-switch__control">
+              <el-switch
+                v-model="form.enable_mp"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="saving.mercadopago"
+                @change="val => saveAuto('mercadopago', val)"
+              ></el-switch>
+              <span class="gateway-switch__brand gateway-switch__brand--wide">
+                <img :src="gatewayLogos.mercadopago" alt="Mercado Pago" class="gateway-switch__logo">
+              </span>
+              <label class="mb-0 gateway-switch__label">Habilitar Mercado Pago en Ecommerce</label>
+            </div>
           </div>
 
           <div v-if="form.enable_mp === 1" class="payment-gateway-panel">
@@ -133,14 +153,19 @@
         <!-- Culqi -->
         <div class="col-md-6" v-if="gateway_availability.culqi">
           <div class="form-group form-modern mb-3">
-            <el-switch
-              v-model="form.enable_culqi"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="saving.culqi"
-              @change="val => onExclusiveGatewayToggle('culqi', val)"
-            ></el-switch>
-            <label class="ms-2 mb-0">Habilitar Culqi en Ecommerce</label>
+            <div class="gateway-switch__control">
+              <el-switch
+                v-model="form.enable_culqi"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="saving.culqi"
+                @change="val => onExclusiveGatewayToggle('culqi', val)"
+              ></el-switch>
+              <span class="gateway-switch__brand gateway-switch__brand--wide">
+                <img :src="gatewayLogos.culqi" alt="Culqi" class="gateway-switch__logo">
+              </span>
+              <label class="mb-0 gateway-switch__label">Habilitar Culqi en Ecommerce</label>
+            </div>
           </div>
 
           <div v-if="form.enable_culqi === 1" class="payment-gateway-panel">
@@ -169,15 +194,20 @@
 
         <div class="col-md-6">
           <div class="form-group form-modern mb-3">
-            <el-switch
-              v-model="form.enable_cash"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="saving.cash"
-              @change="val => saveAuto('cash', val)"
-            ></el-switch>
-            <label class="ms-2 mb-0">Habilitar pago contra entrega</label>
-            <small class="d-block text-muted ms-5" style="padding: 0 !important; line-height: 1.5;">
+            <div class="gateway-switch__control">
+              <el-switch
+                v-model="form.enable_cash"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="saving.cash"
+                @change="val => saveAuto('cash', val)"
+              ></el-switch>
+              <span class="gateway-switch__brand gateway-switch__brand--square">
+                <img :src="gatewayLogos.cash" alt="Pago contra entrega" class="gateway-switch__logo">
+              </span>
+              <label class="mb-0 gateway-switch__label">Habilitar pago contra entrega</label>
+            </div>
+            <small class="d-block text-muted gateway-switch__hint">
               Muestra la opción &ldquo;Pago contra entrega&rdquo; en el checkout.
             </small>
           </div>
@@ -267,6 +297,79 @@
   max-width: 100%;
   box-sizing: border-box;
 }
+
+.gateway-switch__control {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  min-height: 30px;
+}
+
+.gateway-switch__brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.gateway-switch__brand--wide {
+  width: 88px;
+  min-width: 80px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+}
+
+.gateway-switch__brand--square {
+  width: 36px;
+  height: 30px;
+  padding: 3px;
+  border: 1px solid #eee;
+  background: #fff;
+}
+
+.gateway-switch__logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.gateway-switch__brand--wide .gateway-switch__logo {
+  max-height: none;
+  border-radius: 6px;
+}
+
+.gateway-switch__brand--square .gateway-switch__logo {
+  width: 24px;
+  height: 24px;
+}
+
+.gateway-switch__label {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.gateway-switch__hint {
+  margin-top: 8px;
+  margin-left: 0;
+  padding-left: 50px;
+  padding-right: 0 !important;
+  line-height: 1.5;
+}
 </style>
 
 <script>
@@ -281,6 +384,8 @@ const GATEWAY_TOGGLE_FIELDS = {
 
 const IZIPAY_CULQI_EXCLUSIVITY_MESSAGE = 'No puedes activar Izipay y Culqi simultáneamente';
 
+const GATEWAY_LOGO_BASE = '/porto-ecommerce/assets/images/payment-gateways';
+
 export default {
   data() {
     return {
@@ -288,6 +393,14 @@ export default {
       errors: {},
       form: {},
       bank_accounts: [],
+      gatewayLogos: {
+        yape: `${GATEWAY_LOGO_BASE}/yape.svg`,
+        transfer: `${GATEWAY_LOGO_BASE}/bank-transfer.svg`,
+        izipay: `${GATEWAY_LOGO_BASE}/izipay.svg`,
+        mercadopago: `${GATEWAY_LOGO_BASE}/mercado-pago.svg`,
+        culqi: `${GATEWAY_LOGO_BASE}/culqi.svg`,
+        cash: `${GATEWAY_LOGO_BASE}/cash-delivery.svg`,
+      },
       gateway_availability: {
         yape: false,
         mercadopago: false,
@@ -402,9 +515,16 @@ export default {
     },
     onExclusiveGatewayToggle(gateway, newValue) {
       if (this.hasExclusiveGatewayConflict(gateway, newValue)) {
-        this.$nextTick(() => this.revertToggle(gateway, 0));
-        this.showExclusiveGatewayToast();
-        return;
+        if (gateway === 'izipay') {
+          this.form.enable_culqi = 0;
+        } else if (gateway === 'culqi') {
+          this.form.enable_izipay = 0;
+        }
+        this.$message({
+          message: 'Se deshabilitó la pasarela en conflicto automáticamente.',
+          type: 'warning',
+          duration: 3000
+        });
       }
 
       this.saveAuto(gateway, newValue);

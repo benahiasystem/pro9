@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 28" role="img" aria-label="Mercado Pago">
+  <rect width="88" height="28" rx="6" fill="#009EE3"/>
+  <ellipse cx="14" cy="14" rx="8" ry="6.5" fill="#FFFFFF" opacity="0.22"/>
+  <path fill="#FFFFFF" d="M11.8 14c0-1.2 1-2.2 2.2-2.2s2.2 1 2.2 2.2-1 2.2-2.2 2.2-2.2-1-2.2-2.2zm4.4 0c0-1.2 1-2.2 2.2-2.2s2.2 1 2.2 2.2-1 2.2-2.2 2.2-2.2-1-2.2-2.2z"/>
+  <text x="24" y="13" fill="#FFFFFF" font-family="Nunito, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="700">mercado</text>
+  <text x="24" y="21" fill="#FFFFFF" font-family="Nunito, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="8.5" font-weight="800">pago</text>
+</svg>

@@ -140,6 +140,14 @@ class PaymentGatewayController extends Controller
 
 
         $credentials = $this->izipayCredentials($is_tenant);
+
+        if (! $credentials) {
+            return [
+                'success' => false,
+                'formToken' => null,
+            ];
+        }
+
         $result = $this->createPayment($credentials, $validated);
 
         return [
@@ -151,15 +159,24 @@ class PaymentGatewayController extends Controller
 
     private function izipayCredentials(bool $is_tenant = false)
     {
-        if (
-            $is_tenant
-        ) {
-            $credentials = PaymentConfiguration::accessIzipay();
-        } else {
-            $credentials = Configuration::accessIzipay();
+        if ($is_tenant) {
+            return PaymentConfiguration::accessIzipayCredentials();
         }
-    
-        return $credentials;
+
+        $record = Configuration::query()
+            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay')
+            ->first();
+
+        if (! $record) {
+            return null;
+        }
+
+        return [
+            'username_izipay' => PaymentConfiguration::normalizeIzipayCredential($record->username_izipay),
+            'password_izipay' => PaymentConfiguration::normalizeIzipayCredential($record->password_izipay),
+            'publickey_izipay' => PaymentConfiguration::normalizeIzipayCredential($record->publickey_izipay),
+            'sha256key_izipay' => PaymentConfiguration::normalizeIzipayCredential($record->sha256key_izipay),
+        ];
     }
 
 
@@ -167,9 +184,12 @@ class PaymentGatewayController extends Controller
     {
 
         $is_tenant = $request->boolean('isTenant', false);
-        $publickey_izipay = $is_tenant ? 
-            PaymentConfiguration::select('publickey_izipay')->first()->publickey_izipay : 
-            Configuration::select('publickey_izipay')->first()->publickey_izipay;
+        $publickey_izipay = $is_tenant
+            ? PaymentConfiguration::getKryptonPublicKeyIzipay()
+            : (PaymentConfiguration::buildKryptonPublicKey(
+                optional(Configuration::select('username_izipay')->first())->username_izipay,
+                optional(Configuration::select('publickey_izipay')->first())->publickey_izipay
+            ) ?: null);
 
         return [
             'publickey_izipay' => $publickey_izipay,
@@ -180,6 +200,15 @@ class PaymentGatewayController extends Controller
     {
         $is_tenant = $request->boolean('isTenant', false);
         $credentials = $this->izipayCredentials($is_tenant);
+
+        if (! $credentials) {
+            return [
+                'success' => false,
+                'result' => null,
+                'pending' => false,
+                'paid' => false,
+            ];
+        }
 
         $uuid = $request->validate([
             'uuid' => 'required|string'

@@ -135,7 +135,141 @@ class PaymentConfiguration extends ModelTenant
     public function scopeAccessIzipay($query)
     {
         return $query->where('enabled_izipay', true)
-            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay')->first()->toArray();
+            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay');
+    }
+
+    /**
+     * Normaliza credenciales Izipay (trim) para evitar INT_904 por espacios.
+     */
+    public static function normalizeIzipayCredential(?string $value): string
+    {
+        return trim((string) $value);
+    }
+
+    /**
+     * Llave pública Izipay cruda desde payment_configurations.
+     */
+    public static function getPublicKeyIzipay(): ?string
+    {
+        $record = static::query()->select('publickey_izipay')->first();
+
+        if (! $record) {
+            return null;
+        }
+
+        $key = static::normalizeIzipayCredential($record->publickey_izipay);
+
+        return $key !== '' ? $key : null;
+    }
+
+    /**
+     * Llave pública en formato Krypton: "{username}:{publickey}".
+     * Requerido por kr-public-key; sin el prefijo Krypton responde INT_904.
+     */
+    public static function extractRawPublicKey(?string $publicKey): string
+    {
+        $publicKey = static::normalizeIzipayCredential($publicKey);
+
+        if ($publicKey === '') {
+            return '';
+        }
+
+        if (! str_contains($publicKey, ':')) {
+            return $publicKey;
+        }
+
+        $parts = array_values(array_filter(
+            array_map([static::class, 'normalizeIzipayCredential'], explode(':', $publicKey)),
+            fn ($part) => $part !== ''
+        ));
+
+        foreach (array_reverse($parts) as $part) {
+            if (preg_match('/^(test|prod)publickey_/i', $part)) {
+                return $part;
+            }
+        }
+
+        return static::normalizeIzipayCredential(end($parts) ?: '');
+    }
+
+    public static function buildKryptonPublicKey(?string $username, ?string $publicKey): ?string
+    {
+        $username = static::normalizeIzipayCredential($username);
+        $rawKey = static::extractRawPublicKey($publicKey);
+
+        if ($rawKey === '') {
+            return null;
+        }
+
+        if ($username === '') {
+            $normalized = static::normalizeIzipayCredential($publicKey);
+
+            if (str_contains($normalized, ':')) {
+                $merchantId = static::normalizeIzipayCredential(strtok($normalized, ':'));
+
+                if ($merchantId !== '') {
+                    return $merchantId . ':' . $rawKey;
+                }
+            }
+
+            return null;
+        }
+
+        return $username . ':' . $rawKey;
+    }
+
+    /**
+     * Normaliza la llave pública antes de persistirla (solo token, sin prefijo duplicado).
+     */
+    public static function sanitizePublicKeyForStorage(?string $publicKey): ?string
+    {
+        $rawKey = static::extractRawPublicKey($publicKey);
+
+        return $rawKey !== '' ? $rawKey : null;
+    }
+
+    /**
+     * Llave pública lista para el SDK Krypton del checkout ecommerce.
+     */
+    public static function getKryptonPublicKeyIzipay(): ?string
+    {
+        $record = static::query()->select('username_izipay', 'publickey_izipay')->first();
+
+        if (! $record) {
+            return null;
+        }
+
+        return static::buildKryptonPublicKey($record->username_izipay, $record->publickey_izipay);
+    }
+
+    /**
+     * Credenciales Izipay del tenant para crear formToken (solo si está habilitada).
+     */
+    public static function accessIzipayCredentials(): ?array
+    {
+        $record = static::query()
+            ->where('enabled_izipay', true)
+            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay')
+            ->first();
+
+        if (! $record) {
+            return null;
+        }
+
+        $credentials = [
+            'username_izipay' => static::normalizeIzipayCredential($record->username_izipay),
+            'password_izipay' => static::normalizeIzipayCredential($record->password_izipay),
+            'publickey_izipay' => static::normalizeIzipayCredential($record->publickey_izipay),
+            'sha256key_izipay' => static::normalizeIzipayCredential($record->sha256key_izipay),
+        ];
+
+        foreach ($credentials as $value) {
+            if ($value === '') {
+                return null;
+            }
+        }
+
+        return $credentials;
     }
 
     /**
@@ -260,10 +394,10 @@ class PaymentConfiguration extends ModelTenant
         $record = static::first();
 
         return [
-            'yape' => static::isYapeConfigured($record),
-            'mercadopago' => static::isMercadoPagoConfigured($record),
-            'culqi' => static::isCulqiConfigured($record),
-            'izipay' => static::isIzipayConfigured($record),
+            'yape' => $record && static::hasCredentialValue($record->telephone_yape) && static::hasCredentialValue($record->name_yape) && static::hasCredentialValue($record->qrcode_yape),
+            'mercadopago' => $record && static::hasCredentialValue($record->public_key_mp) && static::hasCredentialValue($record->access_token_mp),
+            'culqi' => $record && static::hasCredentialValue($record->publickey_culqi) && static::hasCredentialValue($record->privatekey_culqi) && static::hasCredentialValue($record->idrsa_culqi) && static::hasCredentialValue($record->rsa_culqi),
+            'izipay' => $record && static::hasCredentialValue($record->username_izipay) && static::hasCredentialValue($record->password_izipay) && static::hasCredentialValue($record->publickey_izipay) && static::hasCredentialValue($record->sha256key_izipay),
         ];
     }
 

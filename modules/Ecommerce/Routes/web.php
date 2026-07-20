@@ -47,6 +47,7 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
     Route::post('mercadopago/payment', 'EcommerceController@paymentMercadoPago')->name('tenant_ecommerce_mp');
     Route::post('izipay/payment', 'EcommerceController@paymentIzipay')->name('tenant_ecommerce_izipay');
     Route::post('izipay/transaction', 'EcommerceController@transactionIzipay')->name('tenant_ecommerce_izipay_transaction');
+    Route::get('izipay/record', 'EcommerceController@izipayRecord')->name('tenant_ecommerce_izipay_record');
     Route::post('validate-coupon', 'EcommerceController@validateCoupon')->name('tenant_ecommerce_validate_coupon');
     Route::post('apply-coupon', 'EcommerceController@applyCoupon')->name('tenant_ecommerce_apply_coupon');
 

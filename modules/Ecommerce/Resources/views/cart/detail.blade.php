@@ -31,6 +31,17 @@
         text-align: left;
     }
 
+    #mp-brick-stash {
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        width: 600px;
+        height: 420px;
+        overflow: hidden;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     @media (max-width: 576px) {
         .swal2-popup.mp-payment-swal {
             width: 94vw !important;
@@ -949,7 +960,9 @@
 @endif
 
 <!-- DOM Containers for MP and Izipay (fuera de #app para evitar conflicto con Vue) -->
-<div id="mp-brick-container" style="display:none"></div>
+<div id="mp-brick-stash" aria-hidden="true">
+    <div id="mp-brick-container" class="mp-swal-brick"></div>
+</div>
 <div id="izipay-payment-host" class="kr-izipay-container-inner" style="display:none"></div>
 
 <input type="hidden" id="total_amount" data-total="0.0">
@@ -973,15 +986,15 @@
         cash_payment_title: {!! json_encode($configuration->preferences['cash_title'] ?? 'Pago contra entrega') !!},
         cash_payment_description: {!! json_encode($configuration->preferences['cash_description'] ?? '') !!},
         cash_payment_pickup_only: {!! json_encode(isset($configuration->preferences['cash_pickup_only']) && $configuration->preferences['cash_pickup_only'] == 1) !!},
-        enable_izipay: {!! json_encode($payment_configuration->enabled_izipay ?? false) !!},
-        public_key_izipay: {!! json_encode($payment_configuration->publickey_izipay ?? '') !!},
+        enable_izipay: {!! json_encode(isset($preferences['enable_izipay']) && $preferences['enable_izipay'] == 1 && ($payment_configuration->enabled_izipay ?? false)) !!},
+        public_key_izipay: {!! json_encode(\Modules\Payment\Models\PaymentConfiguration::getKryptonPublicKeyIzipay() ?? '') !!},
         title_izipay: {!! json_encode($preferences['title_izipay'] ?? 'Pago con Izipay') !!},
         description_izipay: {!! json_encode($preferences['description_izipay'] ?? '') !!},
-        enable_mp: {!! json_encode($payment_configuration->enabled_mp ?? false) !!},
+        enable_mp: {!! json_encode(isset($preferences['enable_mp']) && $preferences['enable_mp'] == 1 && ($payment_configuration->enabled_mp ?? false)) !!},
         public_key_mp: {!! json_encode($payment_configuration->public_key_mp ?? '') !!},
         title_mp: {!! json_encode($preferences['title_mp'] ?? 'Mercado Pago') !!},
         description_mp: {!! json_encode($preferences['description_mp'] ?? '') !!},
-        enable_culqi: {!! json_encode($payment_configuration->enabled_culqi ?? false) !!},
+        enable_culqi: {!! json_encode(isset($preferences['enable_culqi']) && $preferences['enable_culqi'] == 1 && ($payment_configuration->enabled_culqi ?? false)) !!},
         title_culqi: {!! json_encode($preferences['title_culqi'] ?? 'Pago con Tarjeta (Culqi)') !!},
         description_culqi: {!! json_encode($preferences['description_culqi'] ?? '') !!},
     };
@@ -994,6 +1007,7 @@
         culqi: '{{ route("tenant_ecommerce_culqui") }}',
         izipay_payment: '{{ route("tenant_ecommerce_izipay") }}',
         izipay_transaction: '{{ route("tenant_ecommerce_izipay_transaction") }}',
+        izipay_record: '{{ route("tenant_ecommerce_izipay_record") }}',
         mercadopago_payment: '{{ route("tenant_ecommerce_mp") }}',
         thank_you: '{{ route("tenant_ecommerce_thank_you", ["external_id" => "EXTERNAL_ID"]) }}',
     };
