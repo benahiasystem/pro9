@@ -233,6 +233,9 @@
           ></el-alert>
         </div>
       </div>
+      <div class="form-actions text-end mt-4">
+        <el-button type="primary" :loading="saving.submit" @click="submit">Guardar</el-button>
+      </div>
     </div>
   </div>
 </template>
@@ -298,6 +301,7 @@ export default {
         mercadopago: false,
         culqi: false,
         cash: false,
+        submit: false,
       },
     };
   },
@@ -322,7 +326,7 @@ export default {
       const prefs = data.preferences || {};
 
       this.gateway_availability = payload.gateway_availability || this.gateway_availability;
-      this.bank_accounts = payload.bank_accounts || [];
+      this.bank_accounts = payload.bank_accounts !== undefined ? payload.bank_accounts : this.bank_accounts;
 
       this.form.id = data.id;
       this.form.enable_yape = (this.gateway_availability.yape && data.enable_yape) ? 1 : 0;
@@ -484,6 +488,29 @@ export default {
     },
     isExclusiveGatewayMessage(message) {
       return typeof message === 'string' && message.includes('Izipay y Culqi');
+    },
+    async submit() {
+      if (this.saving.submit) return;
+      
+      this.saving.submit = true;
+      try {
+        const response = await this.$http.post(`/${this.resource}/configuration_culqui`, this.form);
+
+        if (response.data.success) {
+          this.applyServerState(response.data);
+          this.$message.success('Configuración guardada correctamente');
+        } else {
+          this.$message.error(response.data.message || 'No se pudo guardar la configuración');
+        }
+      } catch (error) {
+        if (this.isExclusiveGatewayError(error)) {
+          this.showExclusiveGatewayToast();
+        } else {
+          this.$message.error(this.getErrorMessage(error));
+        }
+      } finally {
+        this.saving.submit = false;
+      }
     },
   }
 };
