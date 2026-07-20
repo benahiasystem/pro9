@@ -10,8 +10,7 @@
                 v-model="form.enable_yape"
                 :active-value="1"
                 :inactive-value="0"
-                :disabled="saving.yape"
-                @change="val => saveAuto('yape', val)"
+                :disabled="loading_submit"
               ></el-switch>
               <span class="gateway-switch__brand gateway-switch__brand--wide">
                 <img :src="gatewayLogos.yape" alt="Yape" class="gateway-switch__logo">
@@ -31,8 +30,7 @@
                 v-model="form.enable_transfer"
                 :active-value="1"
                 :inactive-value="0"
-                :disabled="saving.transfer"
-                @change="val => saveAuto('transfer', val)"
+                :disabled="loading_submit"
               ></el-switch>
               <span class="gateway-switch__brand gateway-switch__brand--square">
                 <img :src="gatewayLogos.transfer" alt="Transferencia bancaria" class="gateway-switch__logo">
@@ -52,8 +50,7 @@
             <div v-if="bank_accounts.length > 0">
               <el-checkbox-group
                 v-model="form.ecommerce_bank_account_ids"
-                :disabled="saving.transfer"
-                @change="() => saveAuto('transfer', form.enable_transfer, { silent: true })"
+                :disabled="loading_submit"
               >
                 <el-checkbox v-for="bank in bank_accounts" :key="bank.id" :label="bank.id" style="display: block; margin-bottom: 8px;">
                   {{ bank.description }}
@@ -74,7 +71,7 @@
                 v-model="form.enable_izipay"
                 :active-value="1"
                 :inactive-value="0"
-                :disabled="saving.izipay"
+                :disabled="loading_submit"
                 @change="val => onExclusiveGatewayToggle('izipay', val)"
               ></el-switch>
               <span class="gateway-switch__brand gateway-switch__brand--wide">
@@ -90,8 +87,7 @@
               <el-input
                 v-model="form.title_izipay"
                 placeholder="Ej: Pago con Tarjeta (Izipay)"
-                :disabled="saving.izipay"
-                @blur="() => saveAuto('izipay', form.enable_izipay, { silent: true })"
+                :disabled="loading_submit"
               ></el-input>
             </div>
             <div class="form-group mb-0">
@@ -101,8 +97,7 @@
                 :rows="2"
                 v-model="form.description_izipay"
                 placeholder="Texto explicativo para el checkout..."
-                :disabled="saving.izipay"
-                @blur="() => saveAuto('izipay', form.enable_izipay, { silent: true })"
+                :disabled="loading_submit"
               ></el-input>
             </div>
           </div>
@@ -116,8 +111,7 @@
                 v-model="form.enable_mp"
                 :active-value="1"
                 :inactive-value="0"
-                :disabled="saving.mercadopago"
-                @change="val => saveAuto('mercadopago', val)"
+                :disabled="loading_submit"
               ></el-switch>
               <span class="gateway-switch__brand gateway-switch__brand--wide">
                 <img :src="gatewayLogos.mercadopago" alt="Mercado Pago" class="gateway-switch__logo">
@@ -132,8 +126,7 @@
               <el-input
                 v-model="form.title_mp"
                 placeholder="Ej: Paga con Mercado Pago"
-                :disabled="saving.mercadopago"
-                @blur="() => saveAuto('mercadopago', form.enable_mp, { silent: true })"
+                :disabled="loading_submit"
               ></el-input>
             </div>
             <div class="form-group mb-0">
@@ -143,8 +136,7 @@
                 :rows="2"
                 v-model="form.description_mp"
                 placeholder="Texto explicativo para el checkout..."
-                :disabled="saving.mercadopago"
-                @blur="() => saveAuto('mercadopago', form.enable_mp, { silent: true })"
+                :disabled="loading_submit"
               ></el-input>
             </div>
           </div>
@@ -158,7 +150,7 @@
                 v-model="form.enable_culqi"
                 :active-value="1"
                 :inactive-value="0"
-                :disabled="saving.culqi"
+                :disabled="loading_submit"
                 @change="val => onExclusiveGatewayToggle('culqi', val)"
               ></el-switch>
               <span class="gateway-switch__brand gateway-switch__brand--wide">
@@ -174,8 +166,7 @@
               <el-input
                 v-model="form.title_culqi"
                 placeholder="Ej: Pago con Tarjeta"
-                :disabled="saving.culqi"
-                @blur="() => saveAuto('culqi', form.enable_culqi, { silent: true })"
+                :disabled="loading_submit"
               ></el-input>
             </div>
             <div class="form-group mb-0">
@@ -185,8 +176,7 @@
                 :rows="2"
                 v-model="form.description_culqi"
                 placeholder="Texto explicativo para el checkout..."
-                :disabled="saving.culqi"
-                @blur="() => saveAuto('culqi', form.enable_culqi, { silent: true })"
+                :disabled="loading_submit"
               ></el-input>
             </div>
           </div>
@@ -199,8 +189,7 @@
                 v-model="form.enable_cash"
                 :active-value="1"
                 :inactive-value="0"
-                :disabled="saving.cash"
-                @change="val => saveAuto('cash', val)"
+                :disabled="loading_submit"
               ></el-switch>
               <span class="gateway-switch__brand gateway-switch__brand--square">
                 <img :src="gatewayLogos.cash" alt="Pago contra entrega" class="gateway-switch__logo">
@@ -218,8 +207,7 @@
               <el-input
                 v-model="form.cash_title"
                 placeholder="Ej: Pago contra entrega"
-                :disabled="saving.cash"
-                @blur="() => saveAuto('cash', form.enable_cash, { silent: true })"
+                :disabled="loading_submit"
               ></el-input>
             </div>
             <div class="form-group mb-3">
@@ -229,8 +217,7 @@
                 :rows="3"
                 v-model="form.cash_description"
                 placeholder="Instrucciones para el cliente..."
-                :disabled="saving.cash"
-                @blur="() => saveAuto('cash', form.enable_cash, { silent: true })"
+                :disabled="loading_submit"
               ></el-input>
             </div>
             <div class="form-group mb-0">
@@ -238,8 +225,7 @@
                 v-model="form.cash_pickup_only"
                 :true-label="1"
                 :false-label="0"
-                :disabled="saving.cash"
-                @change="() => saveAuto('cash', form.enable_cash, { silent: true })"
+                :disabled="loading_submit"
               >Solo aplicar en recojo en tienda</el-checkbox>
               <small class="d-block text-muted mt-1" style="line-height: 1.5;">
                 Si está marcado, este método de pago no aparecerá si el cliente elige envío a domicilio.
@@ -264,7 +250,7 @@
         </div>
       </div>
       <div class="form-actions text-end mt-4">
-        <el-button type="primary" :loading="saving.submit" @click="submit">Guardar</el-button>
+        <el-button type="primary" :loading="loading_submit" @click="submit">Guardar</el-button>
       </div>
     </div>
   </div>
@@ -373,15 +359,6 @@
 </style>
 
 <script>
-const GATEWAY_TOGGLE_FIELDS = {
-  yape: 'enable_yape',
-  transfer: 'enable_transfer',
-  izipay: 'enable_izipay',
-  mercadopago: 'enable_mp',
-  culqi: 'enable_culqi',
-  cash: 'enable_cash',
-};
-
 const IZIPAY_CULQI_EXCLUSIVITY_MESSAGE = 'No puedes activar Izipay y Culqi simultáneamente';
 
 const GATEWAY_LOGO_BASE = '/porto-ecommerce/assets/images/payment-gateways';
@@ -392,6 +369,7 @@ export default {
       resource: "ecommerce",
       errors: {},
       form: {},
+      loading_submit: false,
       bank_accounts: [],
       gatewayLogos: {
         yape: `${GATEWAY_LOGO_BASE}/yape.svg`,
@@ -406,15 +384,6 @@ export default {
         mercadopago: false,
         culqi: false,
         izipay: false,
-      },
-      saving: {
-        yape: false,
-        transfer: false,
-        izipay: false,
-        mercadopago: false,
-        culqi: false,
-        cash: false,
-        submit: false,
       },
     };
   },
@@ -484,12 +453,6 @@ export default {
         description_culqi: '',
       };
     },
-    revertToggle(gateway, previousValue) {
-      const field = GATEWAY_TOGGLE_FIELDS[gateway];
-      if (field) {
-        this.$set(this.form, field, previousValue);
-      }
-    },
     hasExclusiveGatewayConflict(gateway, newValue) {
       if (newValue !== 1) {
         return false;
@@ -513,21 +476,25 @@ export default {
         showClose: true,
       });
     },
+    /**
+     * Exclusividad Izipay/Culqi solo en estado local; no persiste hasta Guardar.
+     */
     onExclusiveGatewayToggle(gateway, newValue) {
-      if (this.hasExclusiveGatewayConflict(gateway, newValue)) {
-        if (gateway === 'izipay') {
-          this.form.enable_culqi = 0;
-        } else if (gateway === 'culqi') {
-          this.form.enable_izipay = 0;
-        }
-        this.$message({
-          message: 'Se deshabilitó la pasarela en conflicto automáticamente.',
-          type: 'warning',
-          duration: 3000
-        });
+      if (!this.hasExclusiveGatewayConflict(gateway, newValue)) {
+        return;
       }
 
-      this.saveAuto(gateway, newValue);
+      if (gateway === 'izipay') {
+        this.form.enable_culqi = 0;
+      } else if (gateway === 'culqi') {
+        this.form.enable_izipay = 0;
+      }
+
+      this.$message({
+        message: 'Se deshabilitó la pasarela en conflicto automáticamente.',
+        type: 'warning',
+        duration: 3000,
+      });
     },
     isExclusiveGatewayError(error) {
       if (!error.response || error.response.status !== 422) {
@@ -556,63 +523,10 @@ export default {
       }
       return 'No se pudo guardar la configuración';
     },
-    async saveAuto(gateway, newValue, options = {}) {
-      const { silent = false } = options;
-      const field = GATEWAY_TOGGLE_FIELDS[gateway];
-      const previousValue = field && newValue !== null && newValue !== undefined
-        ? (newValue === 1 ? 0 : 1)
-        : null;
-
-      if (this.saving[gateway]) {
-        return;
-      }
-
-      this.saving[gateway] = true;
-
-      try {
-        const response = await this.$http.post(`/${this.resource}/configuration_culqui`, this.form);
-
-        if (response.data.success) {
-          this.applyServerState(response.data);
-          if (!silent) {
-            this.$message.success(response.data.message || 'Configuración actualizada');
-          }
-        } else {
-          const message = response.data.message || 'No se pudo guardar la configuración';
-
-          if (previousValue !== null && this.isExclusiveGatewayMessage(message)) {
-            this.$nextTick(() => this.revertToggle(gateway, previousValue));
-            this.showExclusiveGatewayToast();
-          } else {
-            if (previousValue !== null) {
-              this.$nextTick(() => this.revertToggle(gateway, previousValue));
-            }
-            this.$message.error(message);
-          }
-        }
-      } catch (error) {
-        if (this.isExclusiveGatewayError(error)) {
-          if (previousValue !== null) {
-            this.$nextTick(() => this.revertToggle(gateway, previousValue));
-          }
-          this.showExclusiveGatewayToast();
-        } else {
-          if (previousValue !== null) {
-            this.$nextTick(() => this.revertToggle(gateway, previousValue));
-          }
-          this.$message.error(this.getErrorMessage(error));
-        }
-      } finally {
-        this.saving[gateway] = false;
-      }
-    },
-    isExclusiveGatewayMessage(message) {
-      return typeof message === 'string' && message.includes('Izipay y Culqi');
-    },
     async submit() {
-      if (this.saving.submit) return;
-      
-      this.saving.submit = true;
+      if (this.loading_submit) return;
+
+      this.loading_submit = true;
       try {
         const response = await this.$http.post(`/${this.resource}/configuration_culqui`, this.form);
 
@@ -629,7 +543,7 @@ export default {
           this.$message.error(this.getErrorMessage(error));
         }
       } finally {
-        this.saving.submit = false;
+        this.loading_submit = false;
       }
     },
   }
