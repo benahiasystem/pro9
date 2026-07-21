@@ -3607,6 +3607,7 @@ export default {
                 show_all_item_details: false,
                 add_description_to_document_item: false,
                 show_item_description_pack: false,
+                edit_name_product: false,
                 show_weighted_cost_purchase: false,
                 show_unify_amount_items: false,
                 enabled_dispatch_ticket_pdf_individual: false,

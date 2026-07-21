@@ -963,6 +963,7 @@ use Illuminate\Support\Facades\Mail;
                 'date_of_due_test_days' => $plan->test_days > 0 ? Carbon::now()->addDays($plan->test_days)->toDateTimeLocalString() :null,
                 'has_advanced_statuses' => true,
                 'show_item_discounts_charges_attributes' => false,
+                'edit_name_product' => false,
             ]);
 
 
