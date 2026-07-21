@@ -582,8 +582,8 @@
 
                         <label v-if="enableIzipay" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'izipay' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="izipay" autocomplete="off">
-                            <span class="pay-method-ic">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2M4 14v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                            <span class="pay-method-ic pay-method-ic--brand">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/izipay-official.svg') }}?v=4" alt="Izipay">
                             </span>
                             <span class="pay-method-label">@{{ titleIzipay }}</span>
                         </label>
@@ -593,8 +593,8 @@
 
                         <label v-if="enableMp" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'mp' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="mp" autocomplete="off">
-                            <span class="pay-method-ic">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            <span class="pay-method-ic pay-method-ic--brand">
+                                <img src="/porto-ecommerce/assets/images/payment-gateways/mercado-pago-icon.svg" alt="Mercado Pago" width="18" height="18">
                             </span>
                             <span class="pay-method-label">@{{ titleMp }}</span>
                         </label>
@@ -616,8 +616,8 @@
                         </div>
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="yape" autocomplete="off">
-                            <span class="pay-method-ic">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                            <span class="pay-method-ic pay-method-ic--brand pay-method-ic--wide">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/yape.svg') }}?v=4" alt="Yape">
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
@@ -914,43 +914,6 @@
         </div>
     </div>
 
-    <!-- ===== Confirmación de compra (post-pago) ===== -->
-    <div class="purchase-overlay" :class="{ 'purchase-overlay--show': showConfirmModal }" v-if="successOrder">
-        <div class="purchase-confirm" role="dialog" aria-modal="true" aria-label="Detalle de tu compra">
-            <div class="purchase-confirm-head">
-                <span class="ic">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1 -2 2H5a2 2 0 0 1 -2 -2V5a2 2 0 0 1 2 -2h11"/></svg>
-                </span>
-                <div>
-                    <h3>¡Pago realizado!</h3>
-                    <div class="ordn">Pedido @{{ successOrder.number }}</div>
-                </div>
-            </div>
-            <div class="purchase-confirm-body">
-                <div class="o-item" v-for="(it, i) in successOrder.items" :key="i">
-                    <div><span class="o-q">@{{ it.cantidad }}×</span>@{{ it.description }}</div>
-                    <span class="o-amt">@{{ it.symbol }} @{{ it.total }}</span>
-                </div>
-                <div class="o-sep"></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_exonerated) > 0">Op. exoneradas <span class="v">S/ @{{ successOrder.total_exonerated }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_taxed) > 0">Op. gravada <span class="v">S/ @{{ successOrder.total_taxed }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_igv) > 0">IGV (18%) <span class="v">S/ @{{ successOrder.total_igv }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.delivery) > 0">Envío <span class="v">S/ @{{ successOrder.delivery }}</span></div>
-                <div class="o-total"><span class="l">Total pagado</span><span class="a">S/ @{{ successOrder.total }}</span></div>
-                <div class="o-pay">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    Pago: @{{ successOrder.paymentLabel }} · @{{ successOrder.deliveryLabel }}
-                </div>
-            </div>
-            <div class="purchase-confirm-foot">
-                <button type="button" class="pay-btn" @click="goToThankYou">
-                    Continuar
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </button>
-            </div>
-        </div>
-    </div>
-
 </div><!-- End .row -->
 
 @if(auth('ecommerce')->check() && $information->script_paypal)
@@ -1002,6 +965,7 @@
     window.__routes = {
         payment_cash: '{{ route("tenant_ecommerce_payment_cash") }}',
         user_data: '{{ route("tenant_ecommerce_user_data") }}',
+        shipping_address: '{{ route("tenant_ecommerce_shipping_address") }}',
         locations: '{{ route("get_location_cascade") }}',
         home: '{{ route("tenant.ecommerce.index") }}',
         culqi: '{{ route("tenant_ecommerce_culqui") }}',
@@ -1195,15 +1159,7 @@
               success: function (data) {
                 if (data.success == true) {
                   app_cart.saveContactDataUser();
-                  app_cart.clearShoppingCart();
-                  swal({
-                    title: "Gracias por su pago!",
-                    text: "En breve le enviaremos un correo electronico con los detalles de su compra.",
-                    type: "success"
-                  }).then((x) => {
-                    askedDocument(data.order);
-                    //window.location = "{{ route('tenant.ecommerce.index') }}";
-                  })
+                  app_cart.showPurchaseSuccess(data.order);
                 } else {
                   app_cart.processingPayment = false;
                   window.mostrarMensaje(data.message || 'Sucedió algo inesperado.', 'error');

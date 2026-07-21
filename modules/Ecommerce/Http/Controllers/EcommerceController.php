@@ -320,19 +320,10 @@ class EcommerceController extends Controller
         $systemConfig = Configuration::with('globalDiscountType')->first();
         $global_discount_type = $systemConfig->globalDiscountType;
 
-        // Obtener la primera dirección guardada del cliente autenticado para pre-cargar el modal
+        // Dirección de envío del cliente autenticado (contact.shipping + persons.address + person_addresses)
         $userAddress = null;
         if ($ecommerceUser = auth('ecommerce')->user()) {
-            $firstAddress = $ecommerceUser->addresses()->first();
-            if ($firstAddress) {
-                $userAddress = [
-                    'address'       => $firstAddress->address,
-                    'department_id' => $firstAddress->department_id,
-                    'province_id'   => $firstAddress->province_id,
-                    'district_id'   => $firstAddress->district_id,
-                    'phone'         => $firstAddress->phone,
-                ];
-            }
+            $userAddress = $this->buildUserShippingAddressPayload($ecommerceUser);
         }
 
         $enable_electronic_documents = (bool) ($configuration->enable_electronic_documents ?? false);
@@ -398,8 +389,10 @@ class EcommerceController extends Controller
                 $records = $records->whereBetween('created_at', [$date_of_start, $date_of_end]);
             }
 
-            // Obtener los resultados paginados
-            $records = $records->paginate(config('tenant.items_per_page', 10));
+            // Mostrar primero los pedidos más recientes.
+            $records = $records
+                ->orderByDesc('id')
+                ->paginate(config('tenant.items_per_page', 10));
 
             // Transformar los datos manteniendo la estructura de paginación
             $records->getCollection()->transform(function ($row) {
@@ -961,6 +954,13 @@ class EcommerceController extends Controller
                 'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
             ]);
             $result['order'] = $order;
+            $result['thank_you_url'] = route('tenant_ecommerce_thank_you', [
+                'external_id' => $order->external_id,
+            ]);
+        } elseif (!empty($result['success'])) {
+            // La petición llegó a Mercado Pago, pero el pago no fue aprobado.
+            $result['success'] = false;
+            $result['message'] = 'El pago no fue aprobado por Mercado Pago.';
         }
 
         return response()->json($result);
@@ -1159,30 +1159,177 @@ class EcommerceController extends Controller
 
         $user->save();
 
-        // Registrar la dirección de entrega en el historial de direcciones del cliente si tiene ubigeo completo
-        $deliveryAddress = $request->input('delivery_address');
-        $districtId      = $request->input('district_id');
+        // Persistir dirección de entrega si viene en el payload (p. ej. desde cuenta o checkout)
+        $deliveryAddress = $request->input('delivery_address') ?: $request->input('address');
+        if ($deliveryAddress) {
+            $user->address = $deliveryAddress;
+            $user->save();
 
-        if ($deliveryAddress && $districtId) {
-            $user->addresses()->firstOrCreate(
-                [
-                    'address'     => $deliveryAddress,
-                    'district_id' => $districtId,
-                ],
-                [
-                    'country_id'    => 'PE',
-                    'department_id' => $request->input('department_id'),
-                    'province_id'   => $request->input('province_id'),
-                    'district_id'   => $districtId,
-                    'address'       => $deliveryAddress,
-                    'phone'         => $request->input('telephone'),
-                    'main'          => false,
-                ]
-            );
+            $this->persistPersonAddressRecord($user, [
+                'address'       => $deliveryAddress,
+                'department_id' => $request->input('department_id'),
+                'province_id'   => $request->input('province_id'),
+                'district_id'   => $request->input('district_id'),
+                'phone'         => $request->input('telephone') ?: $user->telephone,
+            ]);
         }
 
         return ['success' => true, 'message' => 'Datos actualizados correctamente'];
 
+    }
+
+    /**
+     * Guarda la dirección de envío del checkout (mapa + referencia) en el usuario autenticado.
+     * No exige campos de perfil (nombre/email): solo datos de dirección.
+     */
+    public function saveShippingAddress(Request $request)
+    {
+        $user = auth('ecommerce')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe iniciar sesión para guardar la dirección.',
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'address'       => 'required|string|max:500',
+            'reference'     => 'nullable|string|max:500',
+            'full_address'  => 'nullable|string|max:700',
+            'latitude'      => 'nullable|numeric',
+            'longitude'     => 'nullable|numeric',
+            'department_id' => 'nullable|string|max:2',
+            'province_id'   => 'nullable|string|max:4',
+            'district_id'   => 'nullable|string|max:6',
+            'telephone'     => 'nullable|string|max:30',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $street = trim((string) $request->input('address'));
+        $reference = trim((string) $request->input('reference', ''));
+        $fullAddress = trim((string) $request->input('full_address', ''));
+
+        if ($fullAddress === '') {
+            $fullAddress = $street;
+            if ($reference !== '') {
+                $fullAddress .= ' - Ref: ' . $reference;
+            }
+        }
+
+        if ($request->filled('telephone')) {
+            $user->telephone = $request->input('telephone');
+        }
+
+        $user->address = $fullAddress;
+
+        $contact = $user->contact ? (array) $user->contact : [];
+        $contact['shipping'] = [
+            'address'       => $street,
+            'reference'     => $reference,
+            'full_address'  => $fullAddress,
+            'latitude'      => $request->input('latitude'),
+            'longitude'     => $request->input('longitude'),
+            'department_id' => $request->input('department_id'),
+            'province_id'   => $request->input('province_id'),
+            'district_id'   => $request->input('district_id'),
+        ];
+        $user->contact = $contact;
+        $user->save();
+
+        $this->persistPersonAddressRecord($user, [
+            'address'       => $fullAddress,
+            'department_id' => $request->input('department_id'),
+            'province_id'   => $request->input('province_id'),
+            'district_id'   => $request->input('district_id'),
+            'phone'         => $request->input('telephone') ?: $user->telephone,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dirección de envío guardada correctamente',
+            'address' => $this->buildUserShippingAddressPayload($user->fresh()),
+        ]);
+    }
+
+    /**
+     * Payload de dirección de envío para precargar el checkout.
+     */
+    private function buildUserShippingAddressPayload($ecommerceUser): ?array
+    {
+        $shipping = null;
+        if ($ecommerceUser->contact) {
+            $contact = (array) $ecommerceUser->contact;
+            if (!empty($contact['shipping'])) {
+                $shipping = (array) $contact['shipping'];
+            }
+        }
+
+        $firstAddress = $ecommerceUser->addresses()->orderByDesc('id')->first();
+
+        $street = $shipping['address']
+            ?? ($ecommerceUser->address ?: optional($firstAddress)->address);
+        $fullAddress = $shipping['full_address']
+            ?? ($ecommerceUser->address ?: optional($firstAddress)->address);
+
+        if (empty($street) && empty($fullAddress)) {
+            return null;
+        }
+
+        return [
+            'address'       => $street ?: $fullAddress,
+            'full_address'  => $fullAddress ?: $street,
+            'reference'     => $shipping['reference'] ?? '',
+            'latitude'      => isset($shipping['latitude']) && $shipping['latitude'] !== null && $shipping['latitude'] !== ''
+                ? (float) $shipping['latitude']
+                : null,
+            'longitude'     => isset($shipping['longitude']) && $shipping['longitude'] !== null && $shipping['longitude'] !== ''
+                ? (float) $shipping['longitude']
+                : null,
+            'department_id' => $shipping['department_id'] ?? optional($firstAddress)->department_id,
+            'province_id'   => $shipping['province_id'] ?? optional($firstAddress)->province_id,
+            'district_id'   => $shipping['district_id'] ?? optional($firstAddress)->district_id,
+            'phone'         => $ecommerceUser->telephone ?: optional($firstAddress)->phone,
+        ];
+    }
+
+    /**
+     * Actualiza o crea el registro en person_addresses (best-effort; no bloquea si falta ubigeo).
+     */
+    private function persistPersonAddressRecord($user, array $data): void
+    {
+        $address = trim((string) ($data['address'] ?? ''));
+        if ($address === '') {
+            return;
+        }
+
+        $payload = [
+            'country_id'    => 'PE',
+            'address'       => $address,
+            'phone'         => $data['phone'] ?? $user->telephone,
+            'main'          => true,
+            'department_id' => $data['department_id'] ?: null,
+            'province_id'   => $data['province_id'] ?: null,
+            'district_id'   => $data['district_id'] ?: null,
+        ];
+
+        try {
+            $existing = $user->addresses()->orderByDesc('id')->first();
+            if ($existing) {
+                $existing->fill($payload);
+                $existing->save();
+            } else {
+                $user->addresses()->create($payload);
+            }
+        } catch (\Throwable $e) {
+            // Ubigeo inválido u otras FKs: la dirección ya quedó en persons.address / contact.shipping
+            report($e);
+        }
     }
 
     public function searchDocument($type, $number)

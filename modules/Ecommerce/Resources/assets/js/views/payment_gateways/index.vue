@@ -311,8 +311,8 @@
   min-width: 80px;
   height: 30px;
   padding: 0;
-  border: none;
-  background: transparent;
+  border: 1px solid #eee;
+  background: #fff;
   border-radius: 6px;
 }
 
@@ -374,7 +374,7 @@ export default {
       gatewayLogos: {
         yape: `${GATEWAY_LOGO_BASE}/yape.svg`,
         transfer: `${GATEWAY_LOGO_BASE}/bank-transfer.svg`,
-        izipay: `${GATEWAY_LOGO_BASE}/izipay.svg`,
+        izipay: `${GATEWAY_LOGO_BASE}/izipay-official.svg?v=4`,
         mercadopago: `${GATEWAY_LOGO_BASE}/mercado-pago.svg`,
         culqi: `${GATEWAY_LOGO_BASE}/culqi.svg`,
         cash: `${GATEWAY_LOGO_BASE}/cash-delivery.svg`,

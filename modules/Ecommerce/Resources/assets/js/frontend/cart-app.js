@@ -115,8 +115,6 @@ var app_cart = new Vue({
         descriptionCulqi: window.__ecommerce_config?.description_culqi || '',
 
         acceptedTerms: false,
-        successOrder: null,
-        showConfirmModal: false,
         processingPayment: false,
         thankYouUrl: null,
         
@@ -768,11 +766,14 @@ var app_cart = new Vue({
                         );
                     })
                     .then(response => {
-                        if (response.data.success) {
+                        if (response.data.success && response.data.order) {
                             this.detachMpBrickFromModal();
                             swal.close();
                             this.saveContactDataUser();
-                            this.showPurchaseSuccess(response.data.order);
+                            this.showPurchaseSuccess(
+                                response.data.order,
+                                response.data.thank_you_url
+                            );
                             resolve();
                         } else {
                             this.detachMpBrickFromModal();
@@ -1219,44 +1220,28 @@ var app_cart = new Vue({
         redirectHome() {
             window.location = window.__routes?.home || "/ecommerce";
         },
-        // Arma el detalle de la compra que se mostrará en el modal de confirmación
-        buildSuccessOrder(order) {
-            const paymentLabels = {
-                cash: 'Efectivo', yape: 'Yape', transfer: 'Transferencia',
-                culqi: this.titleCulqi || 'Tarjeta (VISA)', paypal: 'PayPal',
-                izipay: this.titleIzipay || 'Izipay', mp: this.titleMp || 'Mercado Pago'
-            };
-            const deliveryLabel = (this.isPickupMode && this.selectedPickupBranch)
-                ? 'Recojo en tienda — ' + this.selectedPickupBranch.name
-                : (this.isPickupMode ? 'Recojo en tienda' : 'Envío a domicilio');
-            const number = (order && (order.id || order.external_id))
-                ? '#' + String(order.id || order.external_id).toString().padStart(6, '0')
-                : '#—';
-            return {
-                number: number,
-                items: this.records.map(r => ({
-                    description: r.description,
-                    cantidad: r.cantidad,
-                    symbol: r.currency_type_symbol || 'S/',
-                    total: (parseFloat(r.sale_unit_price) * r.cantidad).toFixed(2)
-                })),
-                total_taxed: this.summary.total_taxed || '0.00',
-                total_igv: this.summary.total_igv || '0.00',
-                total_exonerated: this.summary.total_exonerated || '0.00',
-                delivery: this.summary.delivery || '0.00',
-                total: this.summary.total || '0.00',
-                paymentLabel: paymentLabels[this.selectedPaymentMethod] || 'Efectivo',
-                deliveryLabel: deliveryLabel,
-            };
-        },
-        showPurchaseSuccess(order) {
-            this.successOrder = this.buildSuccessOrder(order);
+        /**
+         * Modal de éxito unificado (Yape / efectivo / transferencia / MP / Izipay).
+         * Mismo swal del sistema: título, aviso de correo y botón OK.
+         */
+        showPurchaseSuccess(order, thankYouUrl = null) {
+            this.processingPayment = false;
             this.response_order_total = order ? order.total : 0;
-            if (order && order.external_id && window.__routes && window.__routes.thank_you) {
+            this.thankYouUrl = thankYouUrl || null;
+            if (!this.thankYouUrl && order && order.external_id && window.__routes && window.__routes.thank_you) {
                 this.thankYouUrl = window.__routes.thank_you.replace('EXTERNAL_ID', order.external_id);
             }
             this.clearCartSilently();
-            this.$nextTick(() => { this.showConfirmModal = true; });
+            swal({
+                title: '¡Gracias por su pago!',
+                text: 'En breve le enviaremos un correo electrónico con los detalles de su compra',
+                type: 'success',
+                confirmButtonText: 'OK',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+            }).then(() => {
+                this.goToThankYou();
+            });
         },
         clearCartSilently() {
             this.errors = {};
@@ -1404,9 +1389,13 @@ var app_cart = new Vue({
             this.form_contact.address = fullAddress
             this.closeAddressModal()
             this.checkDeliveryZone()
+            this.saveShippingAddress()
         },
         initMap() {
-            const defaultLocation = { lat: -12.046374, lng: -77.042793 };
+            const saved = this.userDefaultAddress;
+            const defaultLocation = (saved && saved.latitude != null && saved.longitude != null)
+                ? { lat: Number(saved.latitude), lng: Number(saved.longitude) }
+                : { lat: -12.046374, lng: -77.042793 };
 
             this.map = new google.maps.Map(document.getElementById('map'), {
                 center: defaultLocation,
@@ -1420,8 +1409,13 @@ var app_cart = new Vue({
             });
 
             this.geocoder = new google.maps.Geocoder();
+            this.addressModal.latitude = defaultLocation.lat;
+            this.addressModal.longitude = defaultLocation.lng;
 
-            if (navigator.geolocation) {
+            const hasSavedCoords = saved && saved.latitude != null && saved.longitude != null;
+
+            // Solo geolocalizar si no hay coordenadas guardadas del usuario
+            if (!hasSavedCoords && navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const userLocation = {
@@ -1438,7 +1432,7 @@ var app_cart = new Vue({
                         console.error('Error obteniendo la ubicación actual:', error);
                     }
                 );
-            } else {
+            } else if (!hasSavedCoords) {
                 console.warn('La geolocalización no está soportada por este navegador.');
             }
 
@@ -1637,8 +1631,16 @@ var app_cart = new Vue({
                 "items": [],
             }
 
-            this.form_contact.address =  this.user.address
-            this.form_contact.telephone =  this.user.telephone
+            const savedAddress = this.userDefaultAddress
+            this.form_contact.address = (savedAddress && (savedAddress.full_address || savedAddress.address))
+                || this.user.address
+                || ''
+            this.form_contact.telephone = this.user.telephone || ''
+
+            if (this.form_document.datos_del_cliente_o_receptor) {
+                this.form_document.datos_del_cliente_o_receptor.direccion = this.form_contact.address
+                this.form_document.datos_del_cliente_o_receptor.telefono = this.form_contact.telephone
+            }
 
             this.optionDocument()
             // Aplicar defaults según configuración de documentos electrónicos
@@ -1772,21 +1774,45 @@ var app_cart = new Vue({
             this.payment_cash.amount = this.summary.total;
         },
         saveContactDataUser() {
-            let url_finally = window.__routes?.user_data || '/ecommerce/user/data';
+            this.saveShippingAddress();
+        },
+        saveShippingAddress() {
+            if (!this.user || !this.user.id) {
+                return;
+            }
 
-            let payload = Object.assign({}, this.form_contact, {
-                department_id:    this.selectedDepartment   || null,
-                province_id:      this.selectedProvince     || null,
-                district_id:      this.selectedDistrict     || null,
-                delivery_address: this.addressModal.address || this.form_contact.address || null,
-            });
+            const street = this.addressModal.address || this.form_contact.address;
+            if (!street) {
+                return;
+            }
 
-            axios.post(url_finally, payload, this.getHeaderConfig())
+            const url = window.__routes?.shipping_address || '/ecommerce/shipping-address';
+            const payload = {
+                address: this.addressModal.address || street,
+                reference: this.addressModal.reference || '',
+                full_address: this.form_contact.address || street,
+                latitude: this.addressModal.latitude,
+                longitude: this.addressModal.longitude,
+                department_id: this.selectedDepartment || null,
+                province_id: this.selectedProvince || null,
+                district_id: this.selectedDistrict || null,
+                telephone: this.form_contact.telephone || null,
+            };
+
+            axios.post(url, payload, this.getHeaderConfig())
                 .then(response => {
-                   console.log(response.data)
+                    if (response.data && response.data.success && response.data.address) {
+                        this.userDefaultAddress = response.data.address;
+                        if (response.data.address.full_address) {
+                            this.form_contact.address = response.data.address.full_address;
+                        }
+                        if (this.user) {
+                            this.user.address = this.form_contact.address;
+                        }
+                    }
                 })
                 .catch(error => {
-
+                    console.error('No se pudo guardar la dirección de envío', error);
                 });
         },
         clickSendWhatsapp(order_id) {
@@ -1811,9 +1837,31 @@ var app_cart = new Vue({
         },
         loadDefaultAddress() {
             const addr = this.userDefaultAddress;
-            if (!addr || !addr.address) return;
+            if (!addr || (!addr.address && !addr.full_address)) return;
 
-            this.addressModal.address = addr.address;
+            this.addressModal.address = addr.address || addr.full_address || '';
+            this.addressModal.reference = addr.reference || '';
+
+            if (addr.latitude != null && addr.longitude != null) {
+                this.addressModal.latitude = Number(addr.latitude);
+                this.addressModal.longitude = Number(addr.longitude);
+                if (this.map && this.marker) {
+                    const pos = {
+                        lat: this.addressModal.latitude,
+                        lng: this.addressModal.longitude,
+                    };
+                    this.map.setCenter(pos);
+                    this.marker.setPosition(pos);
+                }
+            }
+
+            if (!this.form_contact.address) {
+                this.form_contact.address = addr.full_address || addr.address || '';
+            }
+
+            if (addr.phone && !this.form_contact.telephone) {
+                this.form_contact.telephone = addr.phone;
+            }
 
             if (!addr.department_id) return;
 
