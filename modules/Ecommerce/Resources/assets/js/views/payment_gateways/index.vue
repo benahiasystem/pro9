@@ -374,9 +374,9 @@ export default {
       gatewayLogos: {
         yape: `${GATEWAY_LOGO_BASE}/yape.svg`,
         transfer: `${GATEWAY_LOGO_BASE}/bank-transfer.svg`,
-        izipay: `${GATEWAY_LOGO_BASE}/izipay-official.svg?v=4`,
+        izipay: `${GATEWAY_LOGO_BASE}/izipay-official.svg?v=5`,
         mercadopago: `${GATEWAY_LOGO_BASE}/mercado-pago.svg`,
-        culqi: `${GATEWAY_LOGO_BASE}/culqi.svg`,
+        culqi: `${GATEWAY_LOGO_BASE}/culqi.svg?v=2`,
         cash: `${GATEWAY_LOGO_BASE}/cash-delivery.svg`,
       },
       gateway_availability: {

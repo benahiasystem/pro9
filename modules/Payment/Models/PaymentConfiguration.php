@@ -394,10 +394,10 @@ class PaymentConfiguration extends ModelTenant
         $record = static::first();
 
         return [
-            'yape' => $record && static::hasCredentialValue($record->telephone_yape) && static::hasCredentialValue($record->name_yape) && static::hasCredentialValue($record->qrcode_yape),
-            'mercadopago' => $record && static::hasCredentialValue($record->public_key_mp) && static::hasCredentialValue($record->access_token_mp),
-            'culqi' => $record && static::hasCredentialValue($record->publickey_culqi) && static::hasCredentialValue($record->privatekey_culqi) && static::hasCredentialValue($record->idrsa_culqi) && static::hasCredentialValue($record->rsa_culqi),
-            'izipay' => $record && static::hasCredentialValue($record->username_izipay) && static::hasCredentialValue($record->password_izipay) && static::hasCredentialValue($record->publickey_izipay) && static::hasCredentialValue($record->sha256key_izipay),
+            'yape' => static::isYapeConfigured($record),
+            'mercadopago' => static::isMercadoPagoConfigured($record),
+            'culqi' => static::isCulqiConfigured($record),
+            'izipay' => static::isIzipayConfigured($record),
         ];
     }
 

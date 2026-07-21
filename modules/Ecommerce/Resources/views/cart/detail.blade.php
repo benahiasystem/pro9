@@ -571,8 +571,8 @@
                         
                         <label v-if="enableCulqi" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="culqi" autocomplete="off">
-                            <span class="pay-method-ic">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                            <span class="pay-method-ic pay-method-ic--brand pay-method-ic--wide">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi.svg') }}?v=2" alt="Culqi">
                             </span>
                             <span class="pay-method-label">@{{ titleCulqi }}</span>
                         </label>
@@ -583,7 +583,7 @@
                         <label v-if="enableIzipay" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'izipay' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="izipay" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
-                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/izipay-official.svg') }}?v=4" alt="Izipay">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/izipay-official.svg') }}?v=5" alt="Izipay">
                             </span>
                             <span class="pay-method-label">@{{ titleIzipay }}</span>
                         </label>
@@ -949,15 +949,15 @@
         cash_payment_title: {!! json_encode($configuration->preferences['cash_title'] ?? 'Pago contra entrega') !!},
         cash_payment_description: {!! json_encode($configuration->preferences['cash_description'] ?? '') !!},
         cash_payment_pickup_only: {!! json_encode(isset($configuration->preferences['cash_pickup_only']) && $configuration->preferences['cash_pickup_only'] == 1) !!},
-        enable_izipay: {!! json_encode(isset($preferences['enable_izipay']) && $preferences['enable_izipay'] == 1 && ($payment_configuration->enabled_izipay ?? false)) !!},
+        enable_izipay: {!! json_encode(isset($preferences['enable_izipay']) && $preferences['enable_izipay'] == 1 && ($gateway_availability['izipay'] ?? false)) !!},
         public_key_izipay: {!! json_encode(\Modules\Payment\Models\PaymentConfiguration::getKryptonPublicKeyIzipay() ?? '') !!},
         title_izipay: {!! json_encode($preferences['title_izipay'] ?? 'Pago con Izipay') !!},
         description_izipay: {!! json_encode($preferences['description_izipay'] ?? '') !!},
-        enable_mp: {!! json_encode(isset($preferences['enable_mp']) && $preferences['enable_mp'] == 1 && ($payment_configuration->enabled_mp ?? false)) !!},
+        enable_mp: {!! json_encode(isset($preferences['enable_mp']) && $preferences['enable_mp'] == 1 && ($gateway_availability['mercadopago'] ?? false)) !!},
         public_key_mp: {!! json_encode($payment_configuration->public_key_mp ?? '') !!},
         title_mp: {!! json_encode($preferences['title_mp'] ?? 'Mercado Pago') !!},
         description_mp: {!! json_encode($preferences['description_mp'] ?? '') !!},
-        enable_culqi: {!! json_encode(isset($preferences['enable_culqi']) && $preferences['enable_culqi'] == 1 && ($payment_configuration->enabled_culqi ?? false)) !!},
+        enable_culqi: {!! json_encode(isset($preferences['enable_culqi']) && $preferences['enable_culqi'] == 1 && ($gateway_availability['culqi'] ?? false)) !!},
         title_culqi: {!! json_encode($preferences['title_culqi'] ?? 'Pago con Tarjeta (Culqi)') !!},
         description_culqi: {!! json_encode($preferences['description_culqi'] ?? '') !!},
     };

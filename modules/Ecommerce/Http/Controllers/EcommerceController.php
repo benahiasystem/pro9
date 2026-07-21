@@ -37,6 +37,7 @@ use Modules\Ecommerce\Models\Tenant\DiscountCoupon;
 use Modules\Ecommerce\Models\Tenant\DiscountCouponUsage;
 use Modules\Ecommerce\Models\Tenant\PickupBranch;
 use App\Models\Tenant\PersonAddress;
+use Modules\Payment\Models\PaymentConfiguration;
 
 use App\Models\System\Configuration as SystemConfiguration;
 use Modules\Ecommerce\Jobs\SendOrderStatusEmail;
@@ -331,7 +332,9 @@ class EcommerceController extends Controller
         $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
 
-        $payment_configuration = \Modules\Payment\Models\PaymentConfiguration::first();
+        $payment_configuration = PaymentConfiguration::first();
+        $gateway_availability = PaymentConfiguration::getEcommerceGatewayAvailability();
+        $enable_yape = $enable_yape && $gateway_availability['yape'];
         $preferences = $configuration->preferences
             ? (is_string($configuration->preferences) ? json_decode($configuration->preferences, true) : $configuration->preferences)
             : [];
@@ -341,7 +344,7 @@ class EcommerceController extends Controller
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
             : [];
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'preferences'));
+        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'preferences', 'gateway_availability'));
     }
 
     public function orderList()
@@ -777,6 +780,15 @@ class EcommerceController extends Controller
 
     public function paymentCash(Request $request)
     {
+        if (
+            $request->input('reference_payment') === 'yape'
+            && ! PaymentConfiguration::isYapeConfigured()
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Yape está deshabilitado o incompleto en la configuración global de pagos.',
+            ], 422);
+        }
 
         $validator = Validator::make($request->customer, [
             'telefono' => 'required|numeric',
@@ -920,6 +932,13 @@ class EcommerceController extends Controller
 
     public function paymentMercadoPago(Request $request)
     {
+        if (! PaymentConfiguration::isMercadoPagoConfigured()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mercado Pago está deshabilitado o incompleto en la configuración global de pagos.',
+            ], 422);
+        }
+
         // TODO: quitar tras depurar el payload del Payment Brick
         Log::info('MercadoPago ecommerce request payload', $request->all());
 
@@ -968,6 +987,13 @@ class EcommerceController extends Controller
 
     public function paymentIzipay(Request $request)
     {
+        if (! PaymentConfiguration::isIzipayConfigured()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Izipay está deshabilitado o incompleto en la configuración global de pagos.',
+            ], 422);
+        }
+
         $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array) $request->customer;
 
         $order = Order::create([

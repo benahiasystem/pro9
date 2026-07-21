@@ -20,6 +20,7 @@ use Exception;
 use App\Models\Tenant\ConfigurationEcommerce;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Tenant\StatusOrder;
+use Modules\Payment\Models\PaymentConfiguration;
 
 
 
@@ -38,6 +39,13 @@ class CulqiController extends Controller
 
     public function payment(Request $request)
     {
+      if (! PaymentConfiguration::isCulqiConfigured()) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Culqi está deshabilitado o incompleto en la configuración global de pagos.',
+        ], 422);
+      }
+
       try{
 
         $customer = (array)json_decode($request->customer);
