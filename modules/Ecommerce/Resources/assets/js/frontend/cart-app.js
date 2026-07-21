@@ -7,6 +7,7 @@ const IZIPAY_KR_MAIN_SRC = 'https://static.micuentaweb.pe/static/js/krypton-clie
 const IZIPAY_KR_CSS_HREF = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css';
 const IZIPAY_KR_EXT_SRC = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js';
 const MP_BRICK_HOST_ID = 'mp-brick-container';
+const MP_LOGO_SRC = '/porto-ecommerce/assets/images/payment-gateways/mercado-pago-official.svg?v=2';
 
 var app_cart = new Vue({
     el: '#app',
@@ -732,14 +733,56 @@ var app_cart = new Vue({
                 email: customer.correo_electronico || (this.user && this.user.email) || '',
             };
         },
+        getStorePrimaryColor() {
+            const rootColor = getComputedStyle(document.documentElement)
+                .getPropertyValue('--primary-color').trim();
+            const bodyColor = document.body
+                ? getComputedStyle(document.body).getPropertyValue('--primary-color').trim()
+                : '';
+
+            return bodyColor || rootColor || '#ff7a00';
+        },
         buildMpBrickSettings(initData) {
+            const primaryColor = this.getStorePrimaryColor();
+
             return {
                 initialization: {
                     amount: Number(initData.amount).toFixed(2),
                     payer: { email: initData.email || '' },
                 },
                 customization: {
-                    visual: { style: { theme: 'default' } },
+                    visual: {
+                        style: {
+                            theme: 'flat',
+                            customVariables: {
+                                baseColor: primaryColor,
+                                baseColorFirstVariant: primaryColor,
+                                baseColorSecondVariant: primaryColor,
+                                buttonTextColor: '#ffffff',
+                                textPrimaryColor: '#0f2137',
+                                textSecondaryColor: '#667085',
+                                inputBackgroundColor: '#ffffff',
+                                formBackgroundColor: '#ffffff',
+                                outlinePrimaryColor: '#b8b8b8',
+                                outlineSecondaryColor: '#9aa1a9',
+                                fontSizeExtraExtraSmall: '10px',
+                                fontSizeExtraSmall: '11px',
+                                fontSizeSmall: '12px',
+                                fontSizeMedium: '13px',
+                                fontSizeLarge: '16px',
+                                fontSizeExtraLarge: '18px',
+                                inputVerticalPadding: '7px',
+                                inputHorizontalPadding: '10px',
+                                inputBorderWidth: '1px',
+                                inputFocusedBorderWidth: '1px',
+                                inputFocusedBoxShadow: 'none',
+                                borderRadiusSmall: '0px',
+                                borderRadiusMedium: '0px',
+                                borderRadiusLarge: '0px',
+                                formPadding: '0px',
+                            },
+                        },
+                    },
                     paymentMethods: { creditCard: 'all', debitCard: 'all' },
                 },
                 callbacks: {
@@ -788,18 +831,24 @@ var app_cart = new Vue({
                             resolve();
                         } else {
                             this.detachMpBrickFromModal();
-                            swal("Pago Rechazado", response.data.message || 'No se pudo procesar el pago.', "error");
-                            reject();
+                            const rejection = new Error(response.data.message || 'No se pudo procesar el pago.');
+                            rejection.isPaymentRejection = true;
+                            throw rejection;
                         }
                     })
                     .catch(err => {
                         const validationMsg = err.response?.data?.message
                             || (err.response?.data?.errors && Object.values(err.response.data.errors).flat().join(' '))
+                            || err.message
                             || null;
                         this.detachMpBrickFromModal();
-                        swal("Pago Fallido", validationMsg || 'Ocurrió un error con la pasarela.', "error");
+                        swal(
+                            err.isPaymentRejection ? "Pago Rechazado" : "Pago Fallido",
+                            validationMsg || 'Ocurrió un error con la pasarela.',
+                            "error"
+                        );
                         console.log('MercadoPago payment error', err.response?.data || err);
-                        reject();
+                        reject(err);
                     });
             });
         },
@@ -927,11 +976,16 @@ var app_cart = new Vue({
             swal({
                 title: 'Pago Seguro con Mercado Pago',
                 html: '<div id="mp-swal-slot" class="mp-swal-brick"></div>',
-                width: 640,
+                width: 560,
                 customClass: 'mp-payment-swal',
                 showConfirmButton: false,
                 showCloseButton: true,
                 onOpen: () => {
+                    const popup = document.querySelector('.swal2-popup.mp-payment-swal');
+                    const title = popup ? popup.querySelector('.swal2-title') : null;
+                    if (title) {
+                        title.innerHTML = `<img class="gateway-payment-title-logo" src="${MP_LOGO_SRC}" alt="Mercado Pago">`;
+                    }
                     this.attachMpBrickToModal();
                 },
                 onClose: () => {
@@ -1114,10 +1168,16 @@ var app_cart = new Vue({
         },
         hideIzipayPaymentHost() {
             const container = document.getElementById('izipay-payment-host');
+            const modal = document.getElementById('izipay-payment-modal');
             if (container) {
                 container.style.display = 'none';
                 container.innerHTML = '';
             }
+            if (modal) {
+                modal.classList.remove('is-open');
+                modal.setAttribute('aria-hidden', 'true');
+            }
+            document.body.style.overflow = '';
         },
         async execIzipay() {
             if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
@@ -1179,16 +1239,23 @@ var app_cart = new Vue({
                             document.body.appendChild(container);
                         }
 
-                        // Estilos de Overlay (Visibilidad forzada)
-                        container.style.position = 'fixed';
-                        container.style.top = '50%';
-                        container.style.left = '50%';
-                        container.style.transform = 'translate(-50%, -50%)';
-                        container.style.zIndex = '9999';
-                        container.style.backgroundColor = 'white';
-                        container.style.padding = '20px';
-                        container.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+                        const modal = document.getElementById('izipay-payment-modal');
+                        const closeButton = document.getElementById('izipay-payment-close');
+
                         container.style.display = 'block';
+                        if (modal) {
+                            modal.classList.add('is-open');
+                            modal.setAttribute('aria-hidden', 'false');
+                            modal.onclick = (event) => {
+                                if (event.target === modal) {
+                                    this.hideIzipayPaymentHost();
+                                }
+                            };
+                        }
+                        if (closeButton) {
+                            closeButton.onclick = () => this.hideIzipayPaymentHost();
+                        }
+                        document.body.style.overflow = 'hidden';
 
                         // Limpieza e Inyección de estructura
                         container.innerHTML = '';

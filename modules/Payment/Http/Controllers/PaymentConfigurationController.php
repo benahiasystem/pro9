@@ -130,10 +130,10 @@ class PaymentConfigurationController extends Controller
     public function setDataMP(PaymentConfiguration &$record, $request)
     {
         $record->enabled_mp = $request->enabled_mp;
-        $record->public_key_mp = $request->public_key_mp;
+        $record->public_key_mp = trim((string) $request->public_key_mp);
 
         if ($request->filled('access_token_mp')) {
-            $record->access_token_mp = $request->access_token_mp;
+            $record->access_token_mp = trim((string) $request->access_token_mp);
         }
 
         return [

@@ -4,13 +4,58 @@
 <style>
     /* Modal Mercado Pago (SweetAlert2 v7 + Payment Brick) */
     .swal2-popup.mp-payment-swal {
-        width: 640px !important;
+        width: 560px !important;
         max-width: 92vw !important;
-        padding: 1.5rem 1.75rem 1.75rem !important;
+        max-height: 92vh;
+        padding: 0 1.35rem 1.5rem !important;
         box-sizing: border-box;
+        border-radius: 20px !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        box-shadow: 0 24px 70px rgba(15, 33, 55, .22) !important;
     }
 
-    /* Por encima del overlay de carga (.purchase-overlay = 1080) por si queda residual */
+    .swal2-popup.mp-payment-swal .swal2-title {
+        display: flex !important;
+        align-items: center;
+        align-self: stretch;
+        justify-content: flex-start;
+        width: calc(100% + 2.7rem);
+        max-width: none;
+        min-height: 72px;
+        margin: 0 -1.35rem 1.25rem !important;
+        padding: 14px 64px 14px 22px !important;
+        box-sizing: border-box;
+        border-bottom: 1px solid #e9edf1;
+        background: #fff;
+        text-align: left;
+    }
+
+    .swal2-popup.mp-payment-swal .gateway-payment-title-logo {
+        display: block;
+        width: 132px;
+        height: 42px;
+        object-fit: contain;
+        object-position: left center;
+    }
+
+    .swal2-popup.mp-payment-swal .swal2-close {
+        top: 14px !important;
+        right: 16px !important;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        color: #52606d !important;
+        font-size: 30px !important;
+        transition: background .15s, color .15s;
+    }
+
+    .swal2-popup.mp-payment-swal .swal2-close:hover {
+        background: #f3f5f7;
+        color: var(--primary-color) !important;
+    }
+
+    /* Mantener las alertas de pago por encima de los demás modales. */
     .swal2-container {
         z-index: 1100 !important;
     }
@@ -27,8 +72,160 @@
 
     .mp-swal-brick {
         width: 100%;
-        min-height: 320px;
+        min-height: 0;
         text-align: left;
+    }
+
+    #mp-brick-container form > h1:first-child {
+        display: none !important;
+    }
+
+    #mp-brick-container div:has(> input[type="radio"]) {
+        min-height: 40px;
+        margin-bottom: 9px !important;
+        padding: 6px 9px !important;
+        box-sizing: border-box;
+        border: 1px solid #b8b8b8 !important;
+    }
+
+    #mp-brick-container form button {
+        position: relative;
+        width: 100% !important;
+        min-height: 42px !important;
+        margin-top: 20px !important;
+        border-radius: 12px !important;
+    }
+
+    #mp-brick-container form button[class*="loading-"] {
+        background-color: var(--primary-color) !important;
+        background-image: none !important;
+        color: transparent !important;
+    }
+
+    #mp-brick-container form button[class*="loading-"] > * {
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+
+    #mp-brick-container form button[class*="loading-"]::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 38px;
+        height: 16px;
+        content: "";
+        transform: translate(-50%, -50%);
+        background-image:
+            radial-gradient(circle, #fff 0 3px, transparent 4px),
+            radial-gradient(circle, #fff 0 3px, transparent 4px),
+            radial-gradient(circle, #fff 0 3px, transparent 4px);
+        background-repeat: no-repeat;
+        background-size: 8px 8px;
+        animation: mpPaymentDotsWave .9s ease-in-out infinite;
+    }
+
+    @keyframes mpPaymentDotsWave {
+        0%, 80%, 100% {
+            background-position: 0 8px, 15px 8px, 30px 8px;
+        }
+        20% {
+            background-position: 0 1px, 15px 8px, 30px 8px;
+        }
+        40% {
+            background-position: 0 8px, 15px 1px, 30px 8px;
+        }
+        60% {
+            background-position: 0 8px, 15px 8px, 30px 1px;
+        }
+    }
+
+    /* Contenedor visual compartido para formularios embebidos de pasarela. */
+    .gateway-payment-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: none;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 33, 55, .5);
+        backdrop-filter: blur(4px);
+    }
+
+    .gateway-payment-overlay.is-open {
+        display: grid;
+    }
+
+    .gateway-payment-dialog {
+        width: min(620px, 94vw);
+        max-height: 92vh;
+        overflow: auto;
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 24px 70px rgba(15, 33, 55, .25);
+    }
+
+    .gateway-payment-header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 72px;
+        padding: 14px 16px 14px 22px;
+        border-bottom: 1px solid #e9edf1;
+        background: #fff;
+    }
+
+    .gateway-payment-header img {
+        display: block;
+        width: 132px;
+        height: 42px;
+        object-fit: contain;
+        object-position: left center;
+    }
+
+    .gateway-payment-close {
+        display: grid;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        place-items: center;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: #52606d;
+        font-size: 28px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .gateway-payment-close:hover {
+        background: #f3f5f7;
+        color: var(--primary-color);
+    }
+
+    .gateway-payment-body {
+        padding: 24px;
+    }
+
+    #izipay-payment-host {
+        width: 100%;
+        min-height: 320px;
+    }
+
+    #izipay-payment-host .kr-smart-form,
+    #izipay-payment-host .kr-embedded {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        font-family: inherit !important;
+    }
+
+    #izipay-payment-host .kr-payment-button {
+        border-radius: 12px !important;
+        background: var(--primary-color) !important;
     }
 
     #mp-brick-stash {
@@ -45,7 +242,21 @@
     @media (max-width: 576px) {
         .swal2-popup.mp-payment-swal {
             width: 94vw !important;
-            padding: 1rem 0.85rem 1.25rem !important;
+            padding: 0 0.85rem 1.25rem !important;
+        }
+
+        .swal2-popup.mp-payment-swal .swal2-title {
+            width: calc(100% + 1.7rem);
+            margin-right: -0.85rem !important;
+            margin-left: -0.85rem !important;
+        }
+
+        .gateway-payment-overlay {
+            padding: 10px;
+        }
+
+        .gateway-payment-body {
+            padding: 16px 12px 20px;
         }
     }
 
@@ -841,8 +1052,8 @@
                         
                         <label v-if="enableCulqi" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="culqi" autocomplete="off">
-                            <span class="pay-method-ic pay-method-ic--brand pay-method-ic--wide">
-                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi.svg') }}?v=2" alt="Culqi">
+                            <span class="pay-method-ic pay-method-ic--brand">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi-checkout.svg') }}?v=1" alt="Culqi">
                             </span>
                             <span class="pay-method-label">@{{ titleCulqi }}</span>
                         </label>
@@ -853,7 +1064,7 @@
                         <label v-if="enableIzipay" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'izipay' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="izipay" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
-                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/izipay-official.svg') }}?v=5" alt="Izipay">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/izipay-checkout.svg') }}?v=2" alt="Izipay">
                             </span>
                             <span class="pay-method-label">@{{ titleIzipay }}</span>
                         </label>
@@ -864,7 +1075,7 @@
                         <label v-if="enableMp" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'mp' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="mp" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
-                                <img src="/porto-ecommerce/assets/images/payment-gateways/mercado-pago-icon.svg" alt="Mercado Pago" width="18" height="18">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/mercado-pago-checkout.svg') }}?v=4" alt="Mercado Pago">
                             </span>
                             <span class="pay-method-label">@{{ titleMp }}</span>
                         </label>
@@ -886,8 +1097,8 @@
                         </div>
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="yape" autocomplete="off">
-                            <span class="pay-method-ic pay-method-ic--brand pay-method-ic--wide">
-                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/yape.svg') }}?v=4" alt="Yape">
+                            <span class="pay-method-ic pay-method-ic--brand">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/yape-checkout.svg') }}?v=4" alt="Yape">
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
@@ -1249,15 +1460,6 @@
         </div>
     </div>
 
-    <!-- ===== Overlay de carga mientras se procesa el pago ===== -->
-    <div class="purchase-overlay purchase-overlay--show" v-if="processingPayment">
-        <div class="purchase-loading" role="status" aria-live="polite">
-            <span class="purchase-spinner" aria-hidden="true"></span>
-            <h3>Estamos generando tu pedido</h3>
-            <p>Por favor no cierres esta ventana hasta que el proceso termine.</p>
-        </div>
-    </div>
-
 </div><!-- End .row -->
 
 @if(auth('ecommerce')->check() && $information->script_paypal)
@@ -1270,7 +1472,17 @@
 <div id="mp-brick-stash" aria-hidden="true">
     <div id="mp-brick-container" class="mp-swal-brick"></div>
 </div>
-<div id="izipay-payment-host" class="kr-izipay-container-inner" style="display:none"></div>
+<div id="izipay-payment-modal" class="gateway-payment-overlay" aria-hidden="true">
+    <section class="gateway-payment-dialog" role="dialog" aria-modal="true" aria-label="Pago con Izipay">
+        <header class="gateway-payment-header">
+            <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/izipay-official.svg') }}?v=5" alt="Izipay">
+            <button type="button" id="izipay-payment-close" class="gateway-payment-close" aria-label="Cerrar">&times;</button>
+        </header>
+        <div class="gateway-payment-body">
+            <div id="izipay-payment-host" class="kr-izipay-container-inner" style="display:none"></div>
+        </div>
+    </section>
+</div>
 
 <input type="hidden" id="total_amount" data-total="0.0">
 
@@ -1395,8 +1607,30 @@
         })
 */
     }
+    const ecommercePrimaryCssColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--primary-color').trim() || '#ff7a00';
+    const ecommerceColorProbe = document.createElement('span');
+    ecommerceColorProbe.style.color = ecommercePrimaryCssColor;
+    document.body.appendChild(ecommerceColorProbe);
+    const ecommercePrimaryRgb = getComputedStyle(ecommerceColorProbe).color;
+    ecommerceColorProbe.remove();
+    const ecommercePrimaryColor = '#' + (ecommercePrimaryRgb.match(/\d+/g) || [255, 122, 0])
+        .slice(0, 3)
+        .map(value => Number(value).toString(16).padStart(2, '0'))
+        .join('');
+
     Culqi.options({
-        installments: true
+        installments: true,
+        style: {
+            logo: "{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi.svg') }}?v=2",
+            bannerColor: '#ffffff',
+            buttonBackground: ecommercePrimaryColor,
+            menuColor: ecommercePrimaryColor,
+            linksColor: ecommercePrimaryColor,
+            buttonText: 'Pagar',
+            buttonTextColor: '#ffffff',
+            priceColor: ecommercePrimaryColor
+        }
     });
 
     async function askedDocument(order) {
@@ -1459,15 +1693,6 @@
     window.culqi = async function () {
         if (window.Culqi.token) {
             const token = window.Culqi.token.id;
-
-            swal({
-                title: "Estamos hablando con su banco",
-                text: `Por favor no cierre esta ventana hasta que el proceso termine.`,
-                focusConfirm: false,
-                onOpen: () => {
-                    Swal.showLoading()
-                }
-            });
 
             let precio = Math.round((Number(jQuery("#total_amount").data('total')).toFixed(2) * 100));
             let precio_culqi = Number(jQuery("#total_amount").data('total')).toFixed(2);

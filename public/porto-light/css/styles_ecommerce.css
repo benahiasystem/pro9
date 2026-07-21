@@ -3514,12 +3514,14 @@ textarea.input {
     background: hsl(var(--primary-h), var(--primary-s), 98%);
 }
 .pay-method input[type="radio"] {
+    order: 1;
     margin: 0;
     flex: none;
     accent-color: var(--primary-color);
     cursor: pointer;
 }
 .pay-method-ic {
+    order: 3;
     width: 34px;
     height: 34px;
     flex: none;
@@ -3530,7 +3532,11 @@ textarea.input {
     color: var(--primary-color);
 }
 .pay-method-ic--brand {
-    background: transparent;
+    width: 48px;
+    height: 48px;
+    border-radius: 11px;
+    border: 1px solid #e4e8ed;
+    background: #fff;
     padding: 0;
     overflow: hidden;
 }
@@ -3541,13 +3547,14 @@ textarea.input {
     object-fit: contain;
 }
 .pay-method-ic--wide {
-    width: 76px;
-    height: 28px;
-    border-radius: 6px;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
     background: #fff;
     border: 1px solid #e9edf1;
 }
 .pay-method-label {
+    order: 2;
     flex: 1;
 }
 
@@ -3930,42 +3937,6 @@ textarea.input {
     to   { opacity: 1; transform: none; }
 }
 
-/* Overlay de carga mientras se procesa el pago */
-.purchase-loading {
-    width: 100%;
-    max-width: 360px;
-    padding: 36px 32px;
-    text-align: center;
-    background: #fff;
-    border-radius: 22px;
-    box-shadow: 0 24px 70px rgba(0, 19, 47, .35);
-    animation: purchasePop .25s cubic-bezier(.2, .8, .25, 1);
-}
-.purchase-spinner {
-    display: inline-block;
-    width: 48px;
-    height: 48px;
-    margin-bottom: 18px;
-    border-radius: 50%;
-    border: 4px solid hsl(var(--primary-h), var(--primary-s), 90%);
-    border-top-color: var(--primary-color);
-    animation: purchaseSpin .7s linear infinite;
-}
-@keyframes purchaseSpin {
-    to { transform: rotate(360deg); }
-}
-.purchase-loading h3 {
-    margin: 0;
-    font-size: 17px;
-    font-weight: 800;
-    color: var(--title-color);
-}
-.purchase-loading p {
-    margin: 8px 0 0;
-    font-size: 13.5px;
-    line-height: 1.5;
-    color: var(--subtitle-color);
-}
 .purchase-confirm-head {
     display: flex;
     align-items: center;

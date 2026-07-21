@@ -941,6 +941,17 @@ class EcommerceController extends Controller
             ], 422);
         }
 
+        $paymentConfig = PaymentConfiguration::first();
+        $publicKeyIsTest = str_starts_with(trim((string) $paymentConfig->public_key_mp), 'TEST-');
+        $accessTokenIsTest = str_starts_with(trim((string) $paymentConfig->access_token_mp), 'TEST-');
+
+        if ($publicKeyIsTest !== $accessTokenIsTest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Las credenciales de Mercado Pago pertenecen a entornos distintos. La Public Key y el Access Token deben ser ambos de prueba o ambos de producción.',
+            ], 422);
+        }
+
         // TODO: quitar tras depurar el payload del Payment Brick
         Log::info('MercadoPago ecommerce request payload', $request->all());
 
