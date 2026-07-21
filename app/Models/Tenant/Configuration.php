@@ -866,7 +866,7 @@ use Illuminate\Support\Facades\Log;
                 'enabled_dispatch_ticket_pdf' => $this->enabled_dispatch_ticket_pdf,
                 'register_series_invoice_xml' => $this->register_series_invoice_xml,
                 'enable_discount_by_customer' => $this->enable_discount_by_customer,
-                'show_item_discounts_charges_attributes' => (bool)($this->show_item_discounts_charges_attributes ?? true),
+                'show_item_discounts_charges_attributes' => (bool)($this->show_item_discounts_charges_attributes ?? false),
                 'show_price_barcode_ticket' => $this->show_price_barcode_ticket,
                 'price_selected_add_product' => $this->price_selected_add_product,
                 'restrict_sale_items_cpe' => $this->restrict_sale_items_cpe,
