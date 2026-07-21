@@ -1369,12 +1369,15 @@ var app_cart = new Vue({
                 total_venta:                    total_venta
             };
         },
-        openAddressModal() {
+        openAddAddressFlow() {
+            this.openAddressMapModal('add', null, false);
+        },
+        openChangeAddressFlow() {
             if (this.user && this.user.id) {
                 this.openAddressListModal();
                 return;
             }
-            this.openAddressMapModal('add');
+            this.openAddressMapModal('add', null, false);
         },
         openAddressListModal() {
             this.addressListMenuOpen = null;
@@ -1438,10 +1441,12 @@ var app_cart = new Vue({
             this.checkDeliveryZone();
             this.saveShippingAddress();
         },
-        openAddressMapModal(mode = 'add', address = null) {
+        openAddressMapModal(mode = 'add', address = null, returnToList = null) {
             this.addressModalMode = mode;
             this.editingAddressId = (mode === 'edit' && address && address.id) ? address.id : null;
-            this.addressMapReturnToList = !!(this.user && this.user.id);
+            this.addressMapReturnToList = returnToList === null
+                ? !!(this.user && this.user.id)
+                : !!returnToList;
             this.resetAddressModalForm(mode, address);
 
             if (mode === 'edit' && address && address.latitude != null && address.longitude != null) {
@@ -1452,11 +1457,27 @@ var app_cart = new Vue({
                 this.lastGeocodedLng = null;
             }
 
-            jQuery('#addressListModal').modal('hide');
-            jQuery('#addressModal').off('shown.bs.modal.map').on('shown.bs.modal.map', () => {
+            this.showAddressMapModal();
+        },
+        showAddressMapModal() {
+            const $listModal = jQuery('#addressListModal');
+            const $mapModal = jQuery('#addressModal');
+
+            $mapModal.off('shown.bs.modal.map').on('shown.bs.modal.map', () => {
                 this.ensureMapReady();
             });
-            jQuery('#addressModal').modal('show');
+
+            const openMap = () => {
+                $mapModal.modal('show');
+            };
+
+            if ($listModal.hasClass('show')) {
+                $listModal.one('hidden.bs.modal', openMap);
+                $listModal.modal('hide');
+                return;
+            }
+
+            openMap();
         },
         resetAddressModalForm(mode, address = null) {
             if (mode === 'edit' && address) {
@@ -1533,9 +1554,7 @@ var app_cart = new Vue({
             const previousFormAddress = this.form_contact.address;
 
             this.userAddresses = this.userAddresses.filter(item => item.id !== deletedId);
-            if (this.selectedAddressId === deletedId) {
-                this.selectedAddressId = this.userAddresses.length ? this.userAddresses[0].id : null;
-            }
+            this.selectedAddressId = this.userAddresses.length ? this.userAddresses[0].id : null;
 
             const url = window.__routes?.shipping_address_delete || '/ecommerce/shipping-address';
             axios.delete(url, {
@@ -1543,16 +1562,31 @@ var app_cart = new Vue({
                 ...this.getHeaderConfig(),
             }).then(response => {
                 if (response.data && response.data.success) {
-                    this.userAddresses = response.data.addresses || [];
+                    this.userAddresses = Array.isArray(response.data.addresses)
+                        ? response.data.addresses
+                        : [];
+
+                    if (this.userAddresses.length === 0) {
+                        this.selectedAddressId = null;
+                        this.editingAddressId = null;
+                        this.userDefaultAddress = null;
+                        this.form_contact.address = '';
+                        this.addressModal.address = '';
+                        this.addressModal.reference = '';
+                        if (this.user) {
+                            this.user.address = '';
+                        }
+                        this.checkDeliveryZone();
+                        return;
+                    }
+
                     if (this.selectedAddressId && !this.userAddresses.some(item => item.id === this.selectedAddressId)) {
-                        this.selectedAddressId = this.userAddresses.length ? this.userAddresses[0].id : null;
+                        this.selectedAddressId = this.userAddresses[0].id;
                     }
                     if (response.data.address) {
                         this.userDefaultAddress = response.data.address;
-                        this.loadDefaultAddress();
-                    } else {
-                        this.userDefaultAddress = null;
-                        this.form_contact.address = '';
+                        let fullAddress = response.data.address.full_address || response.data.address.address || '';
+                        this.form_contact.address = fullAddress;
                     }
                     return;
                 }

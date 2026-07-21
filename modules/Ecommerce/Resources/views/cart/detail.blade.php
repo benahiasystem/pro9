@@ -248,10 +248,19 @@
     }
 
     #addressListModal .addr-list-empty {
-        padding: 24px 0 10px;
+        padding: 20px 12px 8px;
         text-align: center;
         color: #8a96a3;
         font-size: 13px;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    #addressListModal .addr-list-empty-hint {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #a8b3bd;
     }
 
     #addressListModal .modal-footer-wrap {
@@ -674,7 +683,7 @@
                             {{-- Modo delivery normal --}}
                             <template v-else>
                                 <span class="field-label">Dirección de entrega</span>
-                                <button v-if="!form_contact.address" type="button" class="addr-btn" @click="openAddressModal">
+                                <button v-if="!form_contact.address" type="button" class="addr-btn" @click="openAddAddressFlow">
                                     <span class="plus">+</span>
                                     Agregar dirección
                                 </button>
@@ -686,7 +695,7 @@
                                         <strong>@{{ form_contact.address }}</strong>
                                         <span class="addr-card-sub">@{{ ubigeoLabel }}</span>
                                     </div>
-                                    <button type="button" class="addr-change" @click="openAddressModal">Cambiar</button>
+                                    <button type="button" class="addr-change" @click="openChangeAddressFlow">Cambiar</button>
                                 </div>
 
                                 {{-- Mensaje sin cobertura de delivery --}}
@@ -1058,7 +1067,8 @@
                     </button>
 
                     <p v-if="userAddresses.length === 0" class="addr-list-empty">
-                        Aún no tienes direcciones guardadas.
+                        No tienes direcciones guardadas.
+                        <span class="addr-list-empty-hint">Haz clic en «+ Agregar nueva dirección» para registrar una.</span>
                     </p>
 
                     <ul v-else class="addr-list-cards">
@@ -1101,6 +1111,7 @@
                 <div class="modal-footer-wrap">
                     <button type="button" class="pay-btn pay-btn--ghost" @click="closeAddressListModal()">Cancelar</button>
                     <button
+                        v-if="userAddresses.length > 0"
                         type="button"
                         class="pay-btn"
                         :disabled="!selectedAddressId"

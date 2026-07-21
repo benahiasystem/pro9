@@ -1356,27 +1356,30 @@ class EcommerceController extends Controller
         $activeShipping = !empty($contact['shipping']) && is_array($contact['shipping'])
             ? $contact['shipping']
             : [];
-        if (($activeShipping['id'] ?? null) === $addressId) {
-            if (!empty($remaining)) {
-                $next = $remaining[0];
-                $contact['shipping'] = $next;
-                $user->address = $next['full_address'] ?? $next['address'] ?? '';
-            } else {
-                unset($contact['shipping']);
-                $user->address = null;
-            }
+
+        if (empty($remaining)) {
+            unset($contact['shipping']);
+            $user->address = null;
+            $this->clearPersonAddressRecord($user);
+        } elseif (($activeShipping['id'] ?? null) === $addressId) {
+            $next = $remaining[0];
+            $contact['shipping'] = $next;
+            $user->address = $next['full_address'] ?? $next['address'] ?? '';
         }
 
         $user->contact = $contact;
         $user->save();
 
         $freshUser = $user->fresh();
+        $freshAddresses = $this->getUserShippingAddresses($freshUser);
 
         return response()->json([
             'success'   => true,
             'message'   => 'Dirección eliminada correctamente',
-            'address'   => $this->buildUserShippingAddressPayload($freshUser),
-            'addresses' => $this->getUserShippingAddresses($freshUser),
+            'address'   => !empty($freshAddresses)
+                ? $this->buildUserShippingAddressPayload($freshUser)
+                : null,
+            'addresses' => $freshAddresses,
         ]);
     }
 
@@ -1390,31 +1393,58 @@ class EcommerceController extends Controller
             ? $contact['shipping']
             : null;
 
+        if ($shipping) {
+            $firstAddress = $ecommerceUser->addresses()->orderByDesc('id')->first();
+
+            $street = $shipping['address'] ?? '';
+            $fullAddress = $shipping['full_address'] ?? '';
+
+            if ($street === '' && $fullAddress === '') {
+                return null;
+            }
+
+            return [
+                'id'            => $shipping['id'] ?? null,
+                'address'       => $street ?: $fullAddress,
+                'full_address'  => $fullAddress ?: $street,
+                'reference'     => $shipping['reference'] ?? '',
+                'latitude'      => isset($shipping['latitude']) && $shipping['latitude'] !== null && $shipping['latitude'] !== ''
+                    ? (float) $shipping['latitude']
+                    : null,
+                'longitude'     => isset($shipping['longitude']) && $shipping['longitude'] !== null && $shipping['longitude'] !== ''
+                    ? (float) $shipping['longitude']
+                    : null,
+                'department_id' => $shipping['department_id'] ?? optional($firstAddress)->department_id,
+                'province_id'   => $shipping['province_id'] ?? optional($firstAddress)->province_id,
+                'district_id'   => $shipping['district_id'] ?? optional($firstAddress)->district_id,
+                'phone'         => $ecommerceUser->telephone ?: optional($firstAddress)->phone,
+            ];
+        }
+
+        // Usuario ya migrado al listado múltiple: sin shipping activo = sin dirección.
+        if (array_key_exists('shipping_addresses', $contact)) {
+            return null;
+        }
+
         $firstAddress = $ecommerceUser->addresses()->orderByDesc('id')->first();
 
-        $street = $shipping['address']
-            ?? ($ecommerceUser->address ?: optional($firstAddress)->address);
-        $fullAddress = $shipping['full_address']
-            ?? ($ecommerceUser->address ?: optional($firstAddress)->address);
+        $street = $ecommerceUser->address ?: optional($firstAddress)->address;
+        $fullAddress = $ecommerceUser->address ?: optional($firstAddress)->address;
 
         if (empty($street) && empty($fullAddress)) {
             return null;
         }
 
         return [
-            'id'            => $shipping['id'] ?? null,
+            'id'            => null,
             'address'       => $street ?: $fullAddress,
             'full_address'  => $fullAddress ?: $street,
-            'reference'     => $shipping['reference'] ?? '',
-            'latitude'      => isset($shipping['latitude']) && $shipping['latitude'] !== null && $shipping['latitude'] !== ''
-                ? (float) $shipping['latitude']
-                : null,
-            'longitude'     => isset($shipping['longitude']) && $shipping['longitude'] !== null && $shipping['longitude'] !== ''
-                ? (float) $shipping['longitude']
-                : null,
-            'department_id' => $shipping['department_id'] ?? optional($firstAddress)->department_id,
-            'province_id'   => $shipping['province_id'] ?? optional($firstAddress)->province_id,
-            'district_id'   => $shipping['district_id'] ?? optional($firstAddress)->district_id,
+            'reference'     => '',
+            'latitude'      => null,
+            'longitude'     => null,
+            'department_id' => optional($firstAddress)->department_id,
+            'province_id'   => optional($firstAddress)->province_id,
+            'district_id'   => optional($firstAddress)->district_id,
             'phone'         => $ecommerceUser->telephone ?: optional($firstAddress)->phone,
         ];
     }
@@ -1458,6 +1488,11 @@ class EcommerceController extends Controller
 
         if (!empty($addresses)) {
             return $addresses;
+        }
+
+        // Listado explícitamente vacío (p. ej. el usuario eliminó todas sus direcciones).
+        if (array_key_exists('shipping_addresses', $contact)) {
+            return [];
         }
 
         $legacy = $this->buildUserShippingAddressPayload($ecommerceUser);
@@ -1517,6 +1552,18 @@ class EcommerceController extends Controller
             'province_id'   => $data['province_id'] ?? null,
             'district_id'   => $data['district_id'] ?? null,
         ];
+    }
+
+    /**
+     * Elimina los registros de person_addresses del cliente (best-effort).
+     */
+    private function clearPersonAddressRecord($user): void
+    {
+        try {
+            $user->addresses()->delete();
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
     /**
