@@ -26,7 +26,7 @@
                     <div class="col-md-12">
                         <div class="form-group">
                             <div class="row">
-                                <div class="col-md-4 mt-1 mb-1" v-for="(app_module, index) in form.app_modules" :key="index">
+                                <div class="col-md-4 mt-1 mb-1" v-for="(app_module, index) in visible_app_modules" :key="index">
                                     <el-checkbox v-model="app_module.checked" :disabled="form.locked">{{ app_module.description }}</el-checkbox>
                                 </div>
                             </div>
@@ -34,7 +34,7 @@
                     </div>
                 </div>
             </div>
-            <div class="form-actions text-right mt-4">
+            <div class="form-actions text-end mt-4">
                 <el-button class="second-buton" @click.prevent="close()">Cancelar</el-button>
                 <el-button type="primary" native-type="submit" :loading="loading_submit" class="ms-1">Guardar</el-button>
             </div>
@@ -58,7 +58,15 @@
                 app_configuration: {},
                 app_modules: [],
                 loading: false,
-                pos_document_types: []
+                pos_document_types: [],
+                // modulos aun no implementados en la app movil, se ocultan del dialog
+                hidden_app_modules: ['order-note', 'report-sales', 'configuration', 'dispatches', 'carrier_dispatches']
+            }
+        },
+        computed: {
+            // solo para mostrar, form.app_modules se envia completo al guardar
+            visible_app_modules(){
+                return _.filter(this.form.app_modules, (app_module) => !this.hidden_app_modules.includes(app_module.value))
             }
         },
         async created() {

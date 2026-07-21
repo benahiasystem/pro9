@@ -1,7 +1,6 @@
 <template>
-    <div class="card">
-        <div class="card-body" v-loading="loadingConfig || loadingSubmit">
-            <h4>Gestionar color de la app</h4>
+    <div>
+        <div v-loading="loadingConfig || loadingSubmit">
             <div class="col-12">
                 <label class="control-label d-block mb-1">Tema de color</label>
                 <el-select v-model="form.theme_color"

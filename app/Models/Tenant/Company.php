@@ -226,20 +226,38 @@ class Company extends ModelTenant
 
     /**
      *
-     * Obtener logo de la app
+     * Obtener logo de la app, se toma del logo en modo claro
      *
      * @param  Builder $query
      * @return string
      */
     public static function getAppUrlLogo()
     {
-        $app_logo = self::select('app_logo')->firstOrFail()->app_logo;
+        $logo = self::select('logo')->firstOrFail()->logo;
 
-        if ($app_logo) {
-            $app_logo = asset('storage/uploads/logos/' . $app_logo);
+        if ($logo) {
+            $logo = asset('storage/uploads/logos/' . $logo);
         }
 
-        return $app_logo;
+        return $logo;
+    }
+
+
+    /**
+     *
+     * Obtener logo de la app para modo oscuro, null si no se ha subido
+     *
+     * @return string|null
+     */
+    public static function getAppUrlLogoDark()
+    {
+        $logo_dark = self::select('logo_dark')->firstOrFail()->logo_dark;
+
+        if ($logo_dark) {
+            $logo_dark = asset('storage/uploads/logos/' . $logo_dark);
+        }
+
+        return $logo_dark;
     }
 
 
