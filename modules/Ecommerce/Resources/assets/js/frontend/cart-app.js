@@ -22,9 +22,21 @@ var app_cart = new Vue({
             longitude: -77.042793,
             preventSearch: false
         },
+        addressModalMode: 'add',
+        editingAddressId: null,
+        addressMapReturnToList: false,
+        userAddresses: window.__ecommerce_config?.userAddresses || [],
+        selectedAddressId: null,
+        addressListMenuOpen: null,
         map: null,
         marker: null,
         geocoder: null,
+        mapListeners: [],
+        mapGeocodeEnabled: false,
+        mapGeocodeRequestId: 0,
+        isGeocodingAddress: false,
+        lastGeocodedLat: null,
+        lastGeocodedLng: null,
         addressSearchTimeout: null,
         payment_cash: {
             amount: '',
@@ -216,11 +228,6 @@ var app_cart = new Vue({
 
         this.calculateSummary()
 
-        // Inicializar Google Maps cuando esté disponible
-        if (typeof google !== 'undefined') {
-            this.initMap()
-        }
-
         // Cargar ubicaciones y autocompletar si el usuario tiene una dirección guardada
         this.fetchLocations().then(() => {
             this.loadDefaultAddress();
@@ -352,9 +359,13 @@ var app_cart = new Vue({
                 this.addressModal.longitude = loc.lng();
 
                 if (this.map && this.marker) {
+                    this.marker.setPosition(loc);
                     this.map.setCenter(loc);
                     this.map.setZoom(17);
-                    this.marker.setPosition(loc);
+                    this.mapGeocodeEnabled = true;
+                    this.lastGeocodedLat = null;
+                    this.lastGeocodedLng = null;
+                    this.onMarkerPositionChanged(true);
                 }
 
                 this.addressModal.address = place.formattedAddress || suggestion.fullText;
@@ -1359,104 +1370,424 @@ var app_cart = new Vue({
             };
         },
         openAddressModal() {
-            jQuery('#addressModal').modal('show')
-            setTimeout(() => {
-                if (!this.map) {
-                    this.initMap()
-                } else {
-                    google.maps.event.trigger(this.map, 'resize')
-                    this.map.setCenter({lat: this.addressModal.latitude, lng: this.addressModal.longitude})
+            if (this.user && this.user.id) {
+                this.openAddressListModal();
+                return;
+            }
+            this.openAddressMapModal('add');
+        },
+        openAddressListModal() {
+            this.addressListMenuOpen = null;
+            const active = this.userDefaultAddress;
+            if (active && active.id && this.userAddresses.some(a => a.id === active.id)) {
+                this.selectedAddressId = active.id;
+            } else if (this.userAddresses.length) {
+                this.selectedAddressId = this.userAddresses[0].id;
+            } else {
+                this.selectedAddressId = null;
+            }
+            jQuery('#addressListModal').modal('show');
+        },
+        closeAddressListModal() {
+            jQuery('#addressListModal').modal('hide');
+            this.addressListMenuOpen = null;
+        },
+        toggleAddressListMenu(addressId) {
+            this.addressListMenuOpen = this.addressListMenuOpen === addressId ? null : addressId;
+        },
+        closeAddressListMenu() {
+            this.addressListMenuOpen = null;
+        },
+        getAddressTitle(addr, index) {
+            if (!addr) return 'Dirección';
+            const text = (addr.address || addr.full_address || '').trim();
+            if (!text) return 'Dirección ' + ((index || 0) + 1);
+            const firstPart = text.split(',')[0].trim();
+            if (firstPart.length <= 42) return firstPart;
+            return firstPart.substring(0, 42) + '…';
+        },
+        getAddressDetail(addr) {
+            if (!addr) return '';
+            const lines = [];
+            const street = (addr.address || addr.full_address || '').trim();
+            if (street) lines.push(street);
+            if (addr.reference) lines.push('Ref: ' + addr.reference);
+            return lines.join(' · ');
+        },
+        selectAddressInList(addressId) {
+            this.selectedAddressId = addressId;
+            this.addressListMenuOpen = null;
+        },
+        confirmChooseAddress() {
+            const addr = this.userAddresses.find(item => item.id === this.selectedAddressId);
+            if (!addr) {
+                return;
+            }
+
+            this.applyAddressToModal(addr);
+            this.addressModalMode = 'edit';
+            this.editingAddressId = addr.id;
+
+            let fullAddress = addr.full_address || addr.address || '';
+            if (addr.reference && fullAddress.indexOf('Ref:') === -1) {
+                fullAddress += ' - Ref: ' + addr.reference;
+            }
+
+            this.form_contact.address = fullAddress;
+            this.closeAddressListModal();
+            this.checkDeliveryZone();
+            this.saveShippingAddress();
+        },
+        openAddressMapModal(mode = 'add', address = null) {
+            this.addressModalMode = mode;
+            this.editingAddressId = (mode === 'edit' && address && address.id) ? address.id : null;
+            this.addressMapReturnToList = !!(this.user && this.user.id);
+            this.resetAddressModalForm(mode, address);
+
+            if (mode === 'edit' && address && address.latitude != null && address.longitude != null) {
+                this.lastGeocodedLat = Number(address.latitude);
+                this.lastGeocodedLng = Number(address.longitude);
+            } else {
+                this.lastGeocodedLat = null;
+                this.lastGeocodedLng = null;
+            }
+
+            jQuery('#addressListModal').modal('hide');
+            jQuery('#addressModal').off('shown.bs.modal.map').on('shown.bs.modal.map', () => {
+                this.ensureMapReady();
+            });
+            jQuery('#addressModal').modal('show');
+        },
+        resetAddressModalForm(mode, address = null) {
+            if (mode === 'edit' && address) {
+                this.applyAddressToModal(address);
+                return;
+            }
+
+            this.editingAddressId = null;
+            this.addressModal.address = '';
+            this.addressModal.reference = '';
+            this.addressModal.latitude = -12.046374;
+            this.addressModal.longitude = -77.042793;
+            this.addressModal.preventSearch = false;
+            this.selectedDepartment = '';
+            this.selectedProvince = '';
+            this.selectedDistrict = '';
+            this.provinces = [];
+            this.districts = [];
+        },
+        applyAddressToModal(address) {
+            this.addressModal.address = address.address || address.full_address || '';
+            this.addressModal.reference = address.reference || '';
+            this.addressModal.preventSearch = false;
+
+            if (address.latitude != null && address.longitude != null) {
+                this.addressModal.latitude = Number(address.latitude);
+                this.addressModal.longitude = Number(address.longitude);
+            }
+
+            if (!address.department_id) {
+                return;
+            }
+
+            const dept = this.departments.find(d => d.value === address.department_id);
+            if (!dept) {
+                return;
+            }
+
+            this.selectedDepartment = dept.value;
+            this.provinces = dept.children || [];
+            this.selectedProvince = '';
+            this.districts = [];
+            this.selectedDistrict = '';
+
+            this.$nextTick(() => {
+                const prov = this.provinces.find(p => p.value === address.province_id);
+                if (!prov) {
+                    return;
                 }
-            }, 300)
+                this.selectedProvince = prov.value;
+                this.districts = prov.children || [];
+                this.$nextTick(() => {
+                    const dist = this.districts.find(d => d.value === address.district_id);
+                    if (dist) {
+                        this.selectedDistrict = dist.value;
+                    }
+                });
+            });
+        },
+        editSavedAddress(address) {
+            this.addressListMenuOpen = null;
+            this.openAddressMapModal('edit', address);
+        },
+        deleteSavedAddress(address) {
+            this.addressListMenuOpen = null;
+            if (!address || !address.id || !this.user || !this.user.id) {
+                return;
+            }
+
+            const deletedId = address.id;
+            const previousAddresses = this.userAddresses.slice();
+            const previousSelectedId = this.selectedAddressId;
+            const previousDefault = this.userDefaultAddress;
+            const previousFormAddress = this.form_contact.address;
+
+            this.userAddresses = this.userAddresses.filter(item => item.id !== deletedId);
+            if (this.selectedAddressId === deletedId) {
+                this.selectedAddressId = this.userAddresses.length ? this.userAddresses[0].id : null;
+            }
+
+            const url = window.__routes?.shipping_address_delete || '/ecommerce/shipping-address';
+            axios.delete(url, {
+                data: { address_id: deletedId },
+                ...this.getHeaderConfig(),
+            }).then(response => {
+                if (response.data && response.data.success) {
+                    this.userAddresses = response.data.addresses || [];
+                    if (this.selectedAddressId && !this.userAddresses.some(item => item.id === this.selectedAddressId)) {
+                        this.selectedAddressId = this.userAddresses.length ? this.userAddresses[0].id : null;
+                    }
+                    if (response.data.address) {
+                        this.userDefaultAddress = response.data.address;
+                        this.loadDefaultAddress();
+                    } else {
+                        this.userDefaultAddress = null;
+                        this.form_contact.address = '';
+                    }
+                    return;
+                }
+
+                this.userAddresses = previousAddresses;
+                this.selectedAddressId = previousSelectedId;
+                this.userDefaultAddress = previousDefault;
+                this.form_contact.address = previousFormAddress;
+            }).catch(error => {
+                console.error('No se pudo eliminar la dirección', error);
+                this.userAddresses = previousAddresses;
+                this.selectedAddressId = previousSelectedId;
+                this.userDefaultAddress = previousDefault;
+                this.form_contact.address = previousFormAddress;
+            });
+        },
+        ensureMapReady() {
+            if (typeof google === 'undefined') {
+                return;
+            }
+            if (!this.map) {
+                this.initMap();
+                return;
+            }
+            google.maps.event.trigger(this.map, 'resize');
+            this.syncMapToMarker();
         },
         closeAddressModal() {
-            const modalElement = document.getElementById('addressModal');
-            if (modalElement) {
-                jQuery(modalElement).modal('hide');
-            } else {
-                console.error('No se encontró el elemento del modal.');
-            }
+            jQuery('#addressModal').modal('hide');
+            this.destroyMap();
+            this.addressSuggestions = [];
+            this.highlightedIndex = -1;
         },
         confirmAddress() {
-            let fullAddress = ''
+            let fullAddress = '';
             if (this.addressModal.address) {
-                fullAddress = this.addressModal.address
+                fullAddress = this.addressModal.address;
             }
             if (this.addressModal.reference) {
-                fullAddress += ' - Ref: ' + this.addressModal.reference
+                fullAddress += ' - Ref: ' + this.addressModal.reference;
             }
 
-            this.form_contact.address = fullAddress
-            this.closeAddressModal()
-            this.checkDeliveryZone()
-            this.saveShippingAddress()
+            this.form_contact.address = fullAddress;
+            const returnToList = this.addressMapReturnToList;
+            const isCreatingNew = this.addressModalMode === 'add';
+            this.closeAddressModal();
+            this.checkDeliveryZone();
+
+            this.saveShippingAddress(() => {
+                if (returnToList) {
+                    this.openAddressListModal();
+                }
+            }, isCreatingNew);
+        },
+        syncMapToMarker() {
+            if (!this.map || !this.marker) {
+                return;
+            }
+            const pos = {
+                lat: Number(this.addressModal.latitude),
+                lng: Number(this.addressModal.longitude),
+            };
+            this.marker.setPosition(pos);
+            this.map.setCenter(pos);
+        },
+        destroyMap() {
+            if (this.mapListeners && this.mapListeners.length) {
+                this.mapListeners.forEach(listener => google.maps.event.removeListener(listener));
+            }
+            this.mapListeners = [];
+            if (this.marker) {
+                this.marker.setMap(null);
+            }
+            this.map = null;
+            this.marker = null;
+            this.geocoder = null;
+            this.mapGeocodeEnabled = false;
+            this.mapGeocodeRequestId = 0;
+            this.lastGeocodedLat = null;
+            this.lastGeocodedLng = null;
         },
         initMap() {
-            const saved = this.userDefaultAddress;
-            const defaultLocation = (saved && saved.latitude != null && saved.longitude != null)
-                ? { lat: Number(saved.latitude), lng: Number(saved.longitude) }
-                : { lat: -12.046374, lng: -77.042793 };
+            const mapElement = document.getElementById('map');
+            if (!mapElement || typeof google === 'undefined') {
+                return;
+            }
 
-            this.map = new google.maps.Map(document.getElementById('map'), {
+            this.destroyMap();
+
+            const defaultLocation = {
+                lat: Number(this.addressModal.latitude),
+                lng: Number(this.addressModal.longitude),
+            };
+
+            this.map = new google.maps.Map(mapElement, {
                 center: defaultLocation,
-                zoom: 15
+                zoom: 16,
+                disableDefaultUI: true,
+                zoomControl: false,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: false,
+                clickableIcons: false,
+                gestureHandling: 'greedy',
             });
 
             this.marker = new google.maps.Marker({
                 position: defaultLocation,
                 map: this.map,
-                draggable: true
+                draggable: true,
             });
 
             this.geocoder = new google.maps.Geocoder();
-            this.addressModal.latitude = defaultLocation.lat;
-            this.addressModal.longitude = defaultLocation.lng;
+            this.mapListeners = [];
+            this.mapGeocodeEnabled = false;
 
-            const hasSavedCoords = saved && saved.latitude != null && saved.longitude != null;
+            this.mapListeners.push(this.marker.addListener('dragend', () => {
+                this.onMarkerPositionChanged(true);
+            }));
 
-            // Solo geolocalizar si no hay coordenadas guardadas del usuario
-            if (!hasSavedCoords && navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const userLocation = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
+            this.mapListeners.push(this.map.addListener('click', (event) => {
+                this.marker.setPosition(event.latLng);
+                this.onMarkerPositionChanged(true);
+            }));
 
-                        this.map.setCenter(userLocation);
-                        this.marker.setPosition(userLocation);
-                        this.addressModal.latitude = userLocation.lat;
-                        this.addressModal.longitude = userLocation.lng;
-                    },
-                    (error) => {
-                        console.error('Error obteniendo la ubicación actual:', error);
-                    }
-                );
-            } else if (!hasSavedCoords) {
-                console.warn('La geolocalización no está soportada por este navegador.');
+            this.mapListeners.push(this.map.addListener('dragend', () => {
+                this.onMarkerPositionChanged(true);
+            }));
+
+            this.mapListeners.push(this.map.addListener('idle', () => {
+                this.onMarkerPositionChanged(true);
+            }));
+
+            google.maps.event.addListenerOnce(this.map, 'idle', () => {
+                google.maps.event.trigger(this.map, 'resize');
+                this.syncCoordsFromMarker();
+
+                const saved = this.userDefaultAddress;
+                const hasSavedCoords = saved && saved.latitude != null && saved.longitude != null;
+
+                if (!hasSavedCoords && navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const userLocation = {
+                                lat: position.coords.latitude,
+                                lng: position.coords.longitude,
+                            };
+                            this.marker.setPosition(userLocation);
+                            this.map.setCenter(userLocation);
+                            this.mapGeocodeEnabled = true;
+                            this.lastGeocodedLat = null;
+                            this.lastGeocodedLng = null;
+                            this.onMarkerPositionChanged(true);
+                        },
+                        (error) => {
+                            console.error('Error obteniendo la ubicación actual:', error);
+                            this.mapGeocodeEnabled = true;
+                        }
+                    );
+                    return;
+                }
+
+                if (hasSavedCoords) {
+                    this.lastGeocodedLat = Number(saved.latitude);
+                    this.lastGeocodedLng = Number(saved.longitude);
+                }
+                this.mapGeocodeEnabled = true;
+            });
+        },
+        getMarkerCoords() {
+            if (!this.marker) {
+                return null;
+            }
+            const pos = this.marker.getPosition();
+            return {
+                lat: Math.round(pos.lat() * 1e6) / 1e6,
+                lng: Math.round(pos.lng() * 1e6) / 1e6,
+            };
+        },
+        syncCoordsFromMarker() {
+            const coords = this.getMarkerCoords();
+            if (!coords) {
+                return;
+            }
+            this.addressModal.latitude = coords.lat;
+            this.addressModal.longitude = coords.lng;
+        },
+        onMarkerPositionChanged(updateAddressField) {
+            this.syncCoordsFromMarker();
+            if (!this.mapGeocodeEnabled || !updateAddressField) {
+                return;
+            }
+            this.reverseGeocodeFromMarker(true);
+        },
+        reverseGeocodeFromMarker(updateAddressField = true) {
+            if (!this.marker || !this.geocoder) {
+                return;
             }
 
-            this.map.addListener('click', (event) => {
-                const clickedLocation = {
-                    lat: event.latLng.lat(),
-                    lng: event.latLng.lng()
-                };
+            const coords = this.getMarkerCoords();
+            if (!coords) {
+                return;
+            }
 
-                this.marker.setPosition(clickedLocation);
-                this.addressModal.latitude = clickedLocation.lat;
-                this.addressModal.longitude = clickedLocation.lng;
-                this.addressModal.preventSearch = true;
+            const { lat, lng } = coords;
+            this.addressModal.latitude = lat;
+            this.addressModal.longitude = lng;
 
-                this.geocoder.geocode({ location: clickedLocation }, (results, status) => {
-                    if (status === google.maps.GeocoderStatus.OK && results[0]) {
-                        this.addressModal.address = results[0].formatted_address;
-                        this.extractAndSetUbigeoFromComponents(results[0].address_components);
-                    }
+            if (!updateAddressField) {
+                return;
+            }
 
-                    setTimeout(() => {
-                        this.addressModal.preventSearch = false;
-                    }, 1000);
-                });
+            if (this.lastGeocodedLat === lat && this.lastGeocodedLng === lng) {
+                return;
+            }
+
+            const requestId = ++this.mapGeocodeRequestId;
+            this.isGeocodingAddress = true;
+            this.addressModal.preventSearch = true;
+
+            this.geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+                if (requestId !== this.mapGeocodeRequestId) {
+                    return;
+                }
+
+                this.isGeocodingAddress = false;
+                if (status === google.maps.GeocoderStatus.OK && results[0]) {
+                    this.addressModal.address = results[0].formatted_address;
+                    this.extractAndSetUbigeoFromComponents(results[0].address_components);
+                    this.lastGeocodedLat = lat;
+                    this.lastGeocodedLng = lng;
+                }
+                setTimeout(() => {
+                    this.addressModal.preventSearch = false;
+                }, 400);
             });
         },
         getAddressFromLatLng(latLng) {
@@ -1486,6 +1817,10 @@ var app_cart = new Vue({
                     this.map.setZoom(16);
                     if (this.marker) {
                         this.marker.setPosition(location);
+                        this.mapGeocodeEnabled = true;
+                        this.lastGeocodedLat = null;
+                        this.lastGeocodedLng = null;
+                        this.onMarkerPositionChanged(true);
                     }
                 } else {
                     console.warn('Dirección no encontrada. Estado:', status);
@@ -1776,17 +2111,24 @@ var app_cart = new Vue({
         saveContactDataUser() {
             this.saveShippingAddress();
         },
-        saveShippingAddress() {
+        saveShippingAddress(onSuccess, forceCreate) {
             if (!this.user || !this.user.id) {
+                if (typeof onSuccess === 'function') {
+                    onSuccess();
+                }
                 return;
             }
 
             const street = this.addressModal.address || this.form_contact.address;
             if (!street) {
+                if (typeof onSuccess === 'function') {
+                    onSuccess();
+                }
                 return;
             }
 
             const url = window.__routes?.shipping_address || '/ecommerce/shipping-address';
+            const isCreatingNew = forceCreate === true || this.addressModalMode === 'add';
             const payload = {
                 address: this.addressModal.address || street,
                 reference: this.addressModal.reference || '',
@@ -1799,20 +2141,44 @@ var app_cart = new Vue({
                 telephone: this.form_contact.telephone || null,
             };
 
+            if (!isCreatingNew && this.editingAddressId) {
+                payload.address_id = this.editingAddressId;
+            }
+
             axios.post(url, payload, this.getHeaderConfig())
                 .then(response => {
-                    if (response.data && response.data.success && response.data.address) {
-                        this.userDefaultAddress = response.data.address;
-                        if (response.data.address.full_address) {
-                            this.form_contact.address = response.data.address.full_address;
+                    if (response.data && response.data.success) {
+                        if (Array.isArray(response.data.addresses)) {
+                            this.userAddresses = response.data.addresses;
                         }
-                        if (this.user) {
-                            this.user.address = this.form_contact.address;
+                        if (response.data.address) {
+                            this.userDefaultAddress = response.data.address;
+                            if (response.data.address.id) {
+                                this.selectedAddressId = response.data.address.id;
+                            }
+                            if (response.data.address.full_address) {
+                                this.form_contact.address = response.data.address.full_address;
+                            }
+                            if (this.user) {
+                                this.user.address = this.form_contact.address;
+                            }
                         }
+                        if (isCreatingNew) {
+                            this.editingAddressId = null;
+                            this.addressModalMode = 'add';
+                        } else if (response.data.address && response.data.address.id) {
+                            this.editingAddressId = response.data.address.id;
+                        }
+                    }
+                    if (typeof onSuccess === 'function') {
+                        onSuccess();
                     }
                 })
                 .catch(error => {
                     console.error('No se pudo guardar la dirección de envío', error);
+                    if (typeof onSuccess === 'function') {
+                        onSuccess();
+                    }
                 });
         },
         clickSendWhatsapp(order_id) {
@@ -1850,8 +2216,8 @@ var app_cart = new Vue({
                         lat: this.addressModal.latitude,
                         lng: this.addressModal.longitude,
                     };
-                    this.map.setCenter(pos);
                     this.marker.setPosition(pos);
+                    this.map.setCenter(pos);
                 }
             }
 

@@ -323,8 +323,10 @@ class EcommerceController extends Controller
 
         // Dirección de envío del cliente autenticado (contact.shipping + persons.address + person_addresses)
         $userAddress = null;
+        $userAddresses = [];
         if ($ecommerceUser = auth('ecommerce')->user()) {
             $userAddress = $this->buildUserShippingAddressPayload($ecommerceUser);
+            $userAddresses = $this->getUserShippingAddresses($ecommerceUser);
         }
 
         $enable_electronic_documents = (bool) ($configuration->enable_electronic_documents ?? false);
@@ -344,7 +346,7 @@ class EcommerceController extends Controller
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
             : [];
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'preferences', 'gateway_availability'));
+        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'userAddresses', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'preferences', 'gateway_availability'));
     }
 
     public function orderList()
@@ -1219,6 +1221,7 @@ class EcommerceController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
+            'address_id'    => 'nullable|string|max:64',
             'address'       => 'required|string|max:500',
             'reference'     => 'nullable|string|max:500',
             'full_address'  => 'nullable|string|max:700',
@@ -1254,8 +1257,9 @@ class EcommerceController extends Controller
 
         $user->address = $fullAddress;
 
-        $contact = $user->contact ? (array) $user->contact : [];
-        $contact['shipping'] = [
+        $contact = $this->getContactArray($user);
+
+        $recordData = [
             'address'       => $street,
             'reference'     => $reference,
             'full_address'  => $fullAddress,
@@ -1265,6 +1269,33 @@ class EcommerceController extends Controller
             'province_id'   => $request->input('province_id'),
             'district_id'   => $request->input('district_id'),
         ];
+
+        $addresses = $this->getUserShippingAddresses($user);
+        $requestedAddressId = trim((string) $request->input('address_id', ''));
+        $updated = false;
+
+        if ($requestedAddressId !== '') {
+            $recordData['id'] = $requestedAddressId;
+            $addressRecord = $this->buildShippingAddressRecord($recordData);
+
+            foreach ($addresses as $index => $item) {
+                if (($item['id'] ?? null) === $requestedAddressId) {
+                    $addresses[$index] = $addressRecord;
+                    $updated = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$updated) {
+            $recordData['id'] = $this->generateNewShippingAddressId();
+            $addressRecord = $this->buildShippingAddressRecord($recordData);
+            $addresses[] = $addressRecord;
+        }
+
+        $contact['shipping'] = $addressRecord;
+
+        $contact['shipping_addresses'] = array_values($addresses);
         $user->contact = $contact;
         $user->save();
 
@@ -1276,10 +1307,76 @@ class EcommerceController extends Controller
             'phone'         => $request->input('telephone') ?: $user->telephone,
         ]);
 
+        $freshUser = $user->fresh();
+
         return response()->json([
-            'success' => true,
-            'message' => 'Dirección de envío guardada correctamente',
-            'address' => $this->buildUserShippingAddressPayload($user->fresh()),
+            'success'   => true,
+            'message'   => 'Dirección de envío guardada correctamente',
+            'address'   => $this->buildUserShippingAddressPayload($freshUser),
+            'addresses' => $this->getUserShippingAddresses($freshUser),
+        ]);
+    }
+
+    /**
+     * Elimina una dirección guardada del perfil del cliente (contact.shipping_addresses).
+     */
+    public function deleteShippingAddress(Request $request)
+    {
+        $user = auth('ecommerce')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe iniciar sesión para eliminar la dirección.',
+            ], 401);
+        }
+
+        $addressId = trim((string) $request->input('address_id', ''));
+        if ($addressId === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Identificador de dirección inválido.',
+            ], 422);
+        }
+
+        $contact = $this->getContactArray($user);
+        $addresses = $this->getUserShippingAddresses($user);
+        $remaining = array_values(array_filter($addresses, function ($item) use ($addressId) {
+            return ($item['id'] ?? null) !== $addressId;
+        }));
+
+        if (count($remaining) === count($addresses)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró la dirección solicitada.',
+            ], 404);
+        }
+
+        $contact['shipping_addresses'] = $remaining;
+
+        $activeShipping = !empty($contact['shipping']) && is_array($contact['shipping'])
+            ? $contact['shipping']
+            : [];
+        if (($activeShipping['id'] ?? null) === $addressId) {
+            if (!empty($remaining)) {
+                $next = $remaining[0];
+                $contact['shipping'] = $next;
+                $user->address = $next['full_address'] ?? $next['address'] ?? '';
+            } else {
+                unset($contact['shipping']);
+                $user->address = null;
+            }
+        }
+
+        $user->contact = $contact;
+        $user->save();
+
+        $freshUser = $user->fresh();
+
+        return response()->json([
+            'success'   => true,
+            'message'   => 'Dirección eliminada correctamente',
+            'address'   => $this->buildUserShippingAddressPayload($freshUser),
+            'addresses' => $this->getUserShippingAddresses($freshUser),
         ]);
     }
 
@@ -1288,13 +1385,10 @@ class EcommerceController extends Controller
      */
     private function buildUserShippingAddressPayload($ecommerceUser): ?array
     {
-        $shipping = null;
-        if ($ecommerceUser->contact) {
-            $contact = (array) $ecommerceUser->contact;
-            if (!empty($contact['shipping'])) {
-                $shipping = (array) $contact['shipping'];
-            }
-        }
+        $contact = $this->getContactArray($ecommerceUser);
+        $shipping = !empty($contact['shipping']) && is_array($contact['shipping'])
+            ? $contact['shipping']
+            : null;
 
         $firstAddress = $ecommerceUser->addresses()->orderByDesc('id')->first();
 
@@ -1308,6 +1402,7 @@ class EcommerceController extends Controller
         }
 
         return [
+            'id'            => $shipping['id'] ?? null,
             'address'       => $street ?: $fullAddress,
             'full_address'  => $fullAddress ?: $street,
             'reference'     => $shipping['reference'] ?? '',
@@ -1321,6 +1416,106 @@ class EcommerceController extends Controller
             'province_id'   => $shipping['province_id'] ?? optional($firstAddress)->province_id,
             'district_id'   => $shipping['district_id'] ?? optional($firstAddress)->district_id,
             'phone'         => $ecommerceUser->telephone ?: optional($firstAddress)->phone,
+        ];
+    }
+
+    /**
+     * Convierte contact (object|array|null) en array asociativo profundo.
+     */
+    private function getContactArray($ecommerceUser): array
+    {
+        if (!$ecommerceUser || !$ecommerceUser->contact) {
+            return [];
+        }
+
+        $decoded = json_decode(json_encode($ecommerceUser->contact), true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Lista de direcciones guardadas en contact.shipping_addresses (sin cambios de esquema).
+     */
+    private function getUserShippingAddresses($ecommerceUser): array
+    {
+        $contact = $this->getContactArray($ecommerceUser);
+        $addresses = [];
+
+        if (!empty($contact['shipping_addresses']) && is_array($contact['shipping_addresses'])) {
+            foreach ($contact['shipping_addresses'] as $item) {
+                if (is_object($item)) {
+                    $item = (array) $item;
+                }
+                if (!is_array($item)) {
+                    continue;
+                }
+                $normalized = $this->buildShippingAddressRecord($item);
+                if (!empty($normalized['address']) || !empty($normalized['full_address'])) {
+                    $addresses[] = $normalized;
+                }
+            }
+        }
+
+        if (!empty($addresses)) {
+            return $addresses;
+        }
+
+        $legacy = $this->buildUserShippingAddressPayload($ecommerceUser);
+        if (!$legacy) {
+            return [];
+        }
+
+        return [$this->buildShippingAddressRecord($legacy)];
+    }
+
+    /**
+     * Genera un identificador único para una nueva dirección de envío.
+     */
+    private function generateNewShippingAddressId(): string
+    {
+        return 'addr_' . bin2hex(random_bytes(8));
+    }
+
+    /**
+     * Normaliza un registro de dirección de envío para contact.shipping_addresses.
+     */
+    private function buildShippingAddressRecord(array $data): array
+    {
+        $street = trim((string) ($data['address'] ?? ''));
+        $reference = trim((string) ($data['reference'] ?? ''));
+        $fullAddress = trim((string) ($data['full_address'] ?? ''));
+
+        if ($fullAddress === '') {
+            $fullAddress = $street;
+            if ($reference !== '') {
+                $fullAddress .= ' - Ref: ' . $reference;
+            }
+        }
+
+        if ($street === '' && $fullAddress !== '') {
+            $street = preg_replace('/\s*-\s*Ref:.*$/i', '', $fullAddress);
+        }
+
+        $id = trim((string) ($data['id'] ?? ''));
+        if ($id === '') {
+            $seed = $fullAddress ?: $street;
+            $id = 'addr_' . substr(md5($seed), 0, 16);
+        }
+
+        return [
+            'id'            => $id,
+            'address'       => $street,
+            'reference'     => $reference,
+            'full_address'  => $fullAddress,
+            'latitude'      => isset($data['latitude']) && $data['latitude'] !== null && $data['latitude'] !== ''
+                ? (float) $data['latitude']
+                : null,
+            'longitude'     => isset($data['longitude']) && $data['longitude'] !== null && $data['longitude'] !== ''
+                ? (float) $data['longitude']
+                : null,
+            'department_id' => $data['department_id'] ?? null,
+            'province_id'   => $data['province_id'] ?? null,
+            'district_id'   => $data['district_id'] ?? null,
         ];
     }
 

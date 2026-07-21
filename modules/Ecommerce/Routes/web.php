@@ -71,6 +71,7 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
     Route::post('configuration_color', 'ConfigurationController@store_configuration_color');
     Route::post('saveDataUser', 'EcommerceController@saveDataUser')->name('tenant_ecommerce_user_data');
     Route::post('shipping-address', 'EcommerceController@saveShippingAddress')->name('tenant_ecommerce_shipping_address');
+    Route::delete('shipping-address', 'EcommerceController@deleteShippingAddress')->name('tenant_ecommerce_shipping_address_delete');
     Route::post('configuration_links', 'ConfigurationController@store_configuration_links');
 
     Route::get('record', 'ConfigurationController@record');

@@ -49,25 +49,257 @@
         }
     }
 
-    #addressModal .modal-dialog {
-        max-width: 800px;
+    #addressListModal .modal-dialog {
+        max-width: 560px;
+        width: calc(100% - 32px);
     }
 
-    #map {
-        height: 400px;
+    #addressModal .modal-dialog {
+        max-width: 520px;
+    }
+
+    #addressListModal .modal-content,
+    #addressModal .modal-content {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 18px 40px rgba(20, 30, 45, .16);
+    }
+
+    #addressListModal .modal-header,
+    #addressModal .modal-header {
+        background: #fff;
+        border-bottom: 1px solid #edf1f4;
+        padding: 14px 18px;
+    }
+
+    #addressListModal .modal-title,
+    #addressModal .modal-title {
+        font-weight: 700;
+        color: #1f2a37;
+        font-size: 17px;
+        margin: 0;
+    }
+
+    #addressListModal .close,
+    #addressModal .close {
+        font-size: 1.5rem;
+        font-weight: 700;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+        padding: 0;
+        margin: 0;
+    }
+
+    #addressListModal .close:hover,
+    #addressModal .close:hover {
+        opacity: 1;
+    }
+
+    #addressListModal .modal-body {
+        padding: 12px 16px 10px;
+    }
+
+    #addressListModal .addr-list-add-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        background: none;
+        padding: 0;
+        margin: 0 0 14px;
+        color: var(--primary-color);
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    #addressListModal .addr-list-add-link:hover {
+        text-decoration: underline;
+    }
+
+    #addressListModal .addr-list-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
         width: 100%;
+        max-height: 360px;
+        overflow-y: auto;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    #addressListModal .addr-list-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        box-sizing: border-box;
+        min-height: 76px;
+        padding: 16px 14px;
+        border: 1.5px solid #e3e8ee;
+        border-radius: 14px;
+        background: #fff;
+        cursor: pointer;
+        transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    #addressListModal .addr-list-card:hover {
+        border-color: hsl(var(--primary-h), var(--primary-s), 80%);
+    }
+
+    #addressListModal .addr-list-card--active {
+        border-color: var(--primary-color);
+        background: hsl(var(--primary-h), var(--primary-s), 98%);
+        box-shadow: 0 0 0 1px hsl(var(--primary-h), var(--primary-s), 90%);
+    }
+
+    #addressListModal .addr-list-card__radio {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        accent-color: var(--primary-color);
+        pointer-events: none;
+    }
+
+    #addressListModal .addr-list-card__body {
+        flex: 1;
+        min-width: 0;
+        padding-right: 4px;
+    }
+
+    #addressListModal .addr-list-card__body strong {
+        display: block;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1f2a37;
+        line-height: 1.35;
+        margin-bottom: 4px;
+    }
+
+    #addressListModal .addr-list-card__body span {
+        display: block;
+        font-size: 13px;
+        color: #6b7785;
+        line-height: 1.45;
+        word-break: break-word;
+    }
+
+    #addressListModal .addr-list-card__menu-wrap {
+        position: relative;
+        flex-shrink: 0;
+        align-self: flex-start;
+        margin-top: 2px;
+    }
+
+    #addressListModal .addr-list-card__menu-btn {
+        width: 34px;
+        height: 34px;
+        border: none;
         border-radius: 8px;
-        border: 2px solid #e0e0e0;
+        background: transparent;
+        color: #667788;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+    }
+
+    #addressListModal .addr-list-card__menu-btn:hover {
+        background: #f2f5f7;
+        color: #1f2a37;
+    }
+
+    #addressListModal .addr-list-card__menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        min-width: 140px;
+        background: #fff;
+        border: 1px solid #e7edf2;
+        border-radius: 12px;
+        box-shadow: 0 10px 24px rgba(20, 30, 45, .14);
+        z-index: 30;
+        overflow: hidden;
+    }
+
+    #addressListModal .addr-list-card__menu button {
+        display: block;
+        width: 100%;
+        border: none;
+        background: #fff;
+        text-align: left;
+        padding: 11px 14px;
+        font-size: 13px;
+        color: #1f2a37;
+        cursor: pointer;
+    }
+
+    #addressListModal .addr-list-card__menu button:hover {
+        background: #f5f8fa;
+    }
+
+    #addressListModal .addr-list-card__menu button.danger {
+        color: #d64545;
+    }
+
+    #addressListModal .addr-list-empty {
+        padding: 24px 0 10px;
+        text-align: center;
+        color: #8a96a3;
+        font-size: 13px;
+    }
+
+    #addressListModal .modal-footer-wrap {
+        display: flex;
+        gap: 10px;
+        padding: 12px 16px 16px;
+        border-top: 1px solid #edf1f4;
+    }
+
+    #addressListModal .pay-btn--ghost {
+        flex: 1;
+        background: #fff;
+        color: #1f2a37;
+        border: 1.5px solid #dde3e9;
+        box-shadow: none;
+    }
+
+    #addressListModal .pay-btn--ghost:hover {
+        background: #f5f7f8;
+        border-color: #c8d0d8;
+    }
+
+    #addressListModal .modal-footer-wrap .pay-btn:not(.pay-btn--ghost) {
+        flex: 1.4;
+    }
+
+    #addressModal .modal-dialog {
+        max-width: 520px;
+    }
+
+    #addressModal #map {
+        height: 220px;
+        width: 100%;
+        border: none;
+        border-radius: 0;
     }
 
     #addressModal .modal-header {
-        background-color: #f8f9fa;
-        border-bottom: 2px solid #dee2e6;
+        background: #fff;
+        border-bottom: 1px solid #edf1f4;
+        padding: 14px 18px;
     }
 
     #addressModal .modal-title {
-        font-weight: 600;
-        color: #333;
+        font-weight: 700;
+        color: #1f2a37;
+        font-size: 17px;
+        margin: 0;
     }
 
     #addressModal .close {
@@ -75,10 +307,39 @@
         font-weight: 700;
         opacity: 0.7;
         transition: opacity 0.2s;
+        padding: 0;
+        margin: 0;
     }
 
     #addressModal .close:hover {
         opacity: 1;
+    }
+
+    #addressModal .modal-body {
+        padding: 0;
+    }
+
+    #addressModal .addr-modal-form {
+        padding: 12px 16px 0;
+    }
+
+    #addressModal .addr-modal-form .field-label {
+        margin-bottom: 6px;
+    }
+
+    #addressModal .addr-modal-form .mb-2 {
+        margin-bottom: 10px !important;
+    }
+
+    #addressModal .addr-map-geocoding {
+        font-size: 11px;
+        color: var(--primary-color);
+        margin-top: 4px;
+    }
+
+    #addressModal .modal-footer-wrap {
+        padding: 12px 16px 16px;
+        border-top: 1px solid #edf1f4;
     }
 
     .btn-input-group {
@@ -780,12 +1041,82 @@
       </div><!-- End .summary-sticky -->
     </div><!-- End .col-lg-4 -->
 
-    <!-- Modal de Dirección -->
-    <div class="modal fade" id="addressModal" tabindex="-1" role="dialog" aria-labelledby="addressModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+    <!-- Modal Mis Direcciones -->
+    <div class="modal fade" id="addressListModal" tabindex="-1" role="dialog" aria-labelledby="addressListModalLabel" aria-hidden="true" @click="closeAddressListMenu">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header h-auto">
-                    <h3 class="modal-title">Confirmar dirección</h3>
+                    <h3 class="modal-title" id="addressListModalLabel">Mis direcciones</h3>
+                    <button type="button" class="close" @click="closeAddressListModal()" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <button type="button" class="addr-list-add-link" @click="openAddressMapModal('add')">
+                        <span>+</span> Agregar nueva dirección
+                    </button>
+
+                    <p v-if="userAddresses.length === 0" class="addr-list-empty">
+                        Aún no tienes direcciones guardadas.
+                    </p>
+
+                    <ul v-else class="addr-list-cards">
+                        <li
+                            v-for="(item, index) in userAddresses"
+                            :key="item.id || index"
+                            class="addr-list-card"
+                            :class="{ 'addr-list-card--active': selectedAddressId === item.id }"
+                            @click="selectAddressInList(item.id)"
+                        >
+                            <input
+                                type="radio"
+                                class="addr-list-card__radio"
+                                name="savedAddress"
+                                :value="item.id"
+                                :checked="selectedAddressId === item.id"
+                                tabindex="-1"
+                                aria-hidden="true"
+                            >
+                            <div class="addr-list-card__body">
+                                <strong>@{{ getAddressTitle(item, index) }}</strong>
+                                <span>@{{ getAddressDetail(item) }}</span>
+                            </div>
+                            <div class="addr-list-card__menu-wrap" @click.stop>
+                                <button
+                                    type="button"
+                                    class="addr-list-card__menu-btn"
+                                    aria-label="Opciones"
+                                    @click.stop="toggleAddressListMenu(item.id)"
+                                >&#8942;</button>
+                                <div v-if="addressListMenuOpen === item.id" class="addr-list-card__menu">
+                                    <button type="button" @click="editSavedAddress(item)">Editar</button>
+                                    <button type="button" class="danger" @click="deleteSavedAddress(item)">Eliminar</button>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="modal-footer-wrap">
+                    <button type="button" class="pay-btn pay-btn--ghost" @click="closeAddressListModal()">Cancelar</button>
+                    <button
+                        type="button"
+                        class="pay-btn"
+                        :disabled="!selectedAddressId"
+                        @click="confirmChooseAddress()"
+                    >Elegir dirección</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Dirección (mapa) -->
+    <div class="modal fade" id="addressModal" tabindex="-1" role="dialog" aria-labelledby="addressModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header h-auto">
+                    <h3 class="modal-title">@{{ addressModalMode === 'edit' ? 'Editar dirección' : 'Agregar dirección' }}</h3>
                     <button type="button" class="close" @click="closeAddressModal()" aria-label="Close">
                         <span aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
@@ -793,12 +1124,12 @@
                     </button>
                 </div>
 
-                <div class="modal-body p-2">
+                <div class="modal-body">
                     @if(!empty($googleMapsApiKey))
                         <div id="map"></div>
                     @endif
 
-                    <div class="p-3">
+                    <div class="addr-modal-form">
                         @if(empty($googleMapsApiKey))
                             <div class="form-row mb-2">
                                 <div class="col-12 col-md-4 mb-2 mb-md-0">
@@ -858,6 +1189,7 @@
                                     </li>
                                 </ul>
                             </div>
+                            <p v-if="isGeocodingAddress" class="addr-map-geocoding mb-0">Actualizando dirección…</p>
                         </div>
 
                         <div class="mb-0">
@@ -867,13 +1199,14 @@
                     </div>
                 </div>
 
-                <!-- Alerta sin cobertura dentro del modal de dirección -->
-                <div v-if="deliveryMessage" class="ship-alert ship-alert--warn mx-3 mb-3">
+                <div v-if="deliveryMessage" class="ship-alert ship-alert--warn mx-3 mb-2">
                     <strong>&#9888; Sin cobertura:</strong> @{{ deliveryMessage }}
                 </div>
 
-                <div class="p-3 border-top px-4">
-                    <button type="button" class="pay-btn" @click="confirmAddress()">Continuar</button>
+                <div class="modal-footer-wrap">
+                    <button type="button" class="pay-btn" @click="confirmAddress()">
+                        @{{ addressModalMode === 'edit' ? 'Guardar dirección' : 'Continuar' }}
+                    </button>
                 </div>
             </div>
         </div>
@@ -940,6 +1273,7 @@
         global_discount_type: {!! json_encode($global_discount_type ?? []) !!},
         user: {!! json_encode(optional(Auth::guard("ecommerce")->user())->makeHidden(['password', 'remember_token'])) !!},
         userAddress: {!! json_encode($userAddress ?? null) !!},
+        userAddresses: {!! json_encode($userAddresses ?? []) !!},
         enable_electronic_documents: {!! json_encode($enable_electronic_documents ?? false) !!},
         enable_store_pickup: {!! json_encode($enable_store_pickup ?? false) !!},
         pickup_branches: {!! json_encode($pickup_branches ?? []) !!},
@@ -966,6 +1300,7 @@
         payment_cash: '{{ route("tenant_ecommerce_payment_cash") }}',
         user_data: '{{ route("tenant_ecommerce_user_data") }}',
         shipping_address: '{{ route("tenant_ecommerce_shipping_address") }}',
+        shipping_address_delete: '{{ route("tenant_ecommerce_shipping_address_delete") }}',
         locations: '{{ route("get_location_cascade") }}',
         home: '{{ route("tenant.ecommerce.index") }}',
         culqi: '{{ route("tenant_ecommerce_culqui") }}',
