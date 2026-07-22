@@ -260,15 +260,6 @@
         }
     }
 
-    #addressListModal .modal-dialog {
-        max-width: 560px;
-        width: calc(100% - 32px);
-    }
-
-    #addressModal .modal-dialog {
-        max-width: 520px;
-    }
-
     #addressListModal .modal-content,
     #addressModal .modal-content {
         border: none;
@@ -277,11 +268,58 @@
         box-shadow: 0 18px 40px rgba(20, 30, 45, .16);
     }
 
+    #addressListModal .modal-content {
+        display: flex;
+        flex-direction: column;
+        max-height: min(90vh, 640px);
+    }
+
+    #addressListModal .modal-dialog {
+        max-width: 560px;
+        width: calc(100% - 32px);
+        margin: 1rem auto;
+    }
+
+    @media (max-width: 576px) {
+        #addressListModal .modal-dialog {
+            width: calc(100% - 20px);
+            max-width: none;
+            margin: 0.5rem auto;
+        }
+
+        #addressListModal .modal-content {
+            max-height: 92vh;
+            border-radius: 14px;
+        }
+
+        #addressListModal .modal-footer-wrap {
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+        }
+
+        #addressListModal .modal-footer-wrap .pay-btn,
+        #addressListModal .modal-footer-wrap .pay-btn:not(.pay-btn--ghost) {
+            flex: none;
+            width: 100%;
+        }
+
+        #addressListModal .addr-list-card {
+            padding: 14px 12px;
+            gap: 10px;
+        }
+    }
+
     #addressListModal .modal-header,
     #addressModal .modal-header {
         background: #fff;
         border-bottom: 1px solid #edf1f4;
         padding: 14px 18px;
+        flex-shrink: 0;
+    }
+
+    #addressModal .modal-dialog {
+        max-width: 520px;
     }
 
     #addressListModal .modal-title,
@@ -308,7 +346,41 @@
     }
 
     #addressListModal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
         padding: 12px 16px 10px;
+    }
+
+    #addressListModal .addr-list-scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: #c5ced6 transparent;
+        padding-right: 2px;
+    }
+
+    #addressListModal .addr-list-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #addressListModal .addr-list-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    #addressListModal .addr-list-scroll::-webkit-scrollbar-thumb {
+        background: #c5ced6;
+        border-radius: 999px;
+    }
+
+    #addressListModal .addr-list-scroll::-webkit-scrollbar-thumb:hover {
+        background: #a8b3bd;
     }
 
     #addressListModal .addr-list-add-link {
@@ -323,6 +395,7 @@
         font-weight: 700;
         font-size: 14px;
         cursor: pointer;
+        flex-shrink: 0;
     }
 
     #addressListModal .addr-list-add-link:hover {
@@ -334,8 +407,6 @@
         flex-direction: column;
         gap: 12px;
         width: 100%;
-        max-height: 360px;
-        overflow-y: auto;
         margin: 0;
         padding: 0;
         list-style: none;
@@ -476,9 +547,11 @@
 
     #addressListModal .modal-footer-wrap {
         display: flex;
+        flex-shrink: 0;
         gap: 10px;
         padding: 12px 16px 16px;
         border-top: 1px solid #edf1f4;
+        background: #fff;
     }
 
     #addressListModal .pay-btn--ghost {
@@ -1277,46 +1350,48 @@
                         <span>+</span> Agregar nueva dirección
                     </button>
 
-                    <p v-if="userAddresses.length === 0" class="addr-list-empty">
-                        No tienes direcciones guardadas.
-                        <span class="addr-list-empty-hint">Haz clic en «+ Agregar nueva dirección» para registrar una.</span>
-                    </p>
+                    <div class="addr-list-scroll">
+                        <p v-if="userAddresses.length === 0" class="addr-list-empty">
+                            No tienes direcciones guardadas.
+                            <span class="addr-list-empty-hint">Haz clic en «+ Agregar nueva dirección» para registrar una.</span>
+                        </p>
 
-                    <ul v-else class="addr-list-cards">
-                        <li
-                            v-for="(item, index) in userAddresses"
-                            :key="item.id || index"
-                            class="addr-list-card"
-                            :class="{ 'addr-list-card--active': selectedAddressId === item.id }"
-                            @click="selectAddressInList(item.id)"
-                        >
-                            <input
-                                type="radio"
-                                class="addr-list-card__radio"
-                                name="savedAddress"
-                                :value="item.id"
-                                :checked="selectedAddressId === item.id"
-                                tabindex="-1"
-                                aria-hidden="true"
+                        <ul v-else class="addr-list-cards">
+                            <li
+                                v-for="(item, index) in userAddresses"
+                                :key="item.id || index"
+                                class="addr-list-card"
+                                :class="{ 'addr-list-card--active': selectedAddressId === item.id }"
+                                @click="selectAddressInList(item.id)"
                             >
-                            <div class="addr-list-card__body">
-                                <strong>@{{ getAddressTitle(item, index) }}</strong>
-                                <span>@{{ getAddressDetail(item) }}</span>
-                            </div>
-                            <div class="addr-list-card__menu-wrap" @click.stop>
-                                <button
-                                    type="button"
-                                    class="addr-list-card__menu-btn"
-                                    aria-label="Opciones"
-                                    @click.stop="toggleAddressListMenu(item.id)"
-                                >&#8942;</button>
-                                <div v-if="addressListMenuOpen === item.id" class="addr-list-card__menu">
-                                    <button type="button" @click="editSavedAddress(item)">Editar</button>
-                                    <button type="button" class="danger" @click="deleteSavedAddress(item)">Eliminar</button>
+                                <input
+                                    type="radio"
+                                    class="addr-list-card__radio"
+                                    name="savedAddress"
+                                    :value="item.id"
+                                    :checked="selectedAddressId === item.id"
+                                    tabindex="-1"
+                                    aria-hidden="true"
+                                >
+                                <div class="addr-list-card__body">
+                                    <strong>@{{ getAddressTitle(item, index) }}</strong>
+                                    <span>@{{ getAddressDetail(item) }}</span>
                                 </div>
-                            </div>
-                        </li>
-                    </ul>
+                                <div class="addr-list-card__menu-wrap" @click.stop>
+                                    <button
+                                        type="button"
+                                        class="addr-list-card__menu-btn"
+                                        aria-label="Opciones"
+                                        @click.stop="toggleAddressListMenu(item.id)"
+                                    >&#8942;</button>
+                                    <div v-if="addressListMenuOpen === item.id" class="addr-list-card__menu">
+                                        <button type="button" @click="editSavedAddress(item)">Editar</button>
+                                        <button type="button" class="danger" @click="deleteSavedAddress(item)">Eliminar</button>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="modal-footer-wrap">
