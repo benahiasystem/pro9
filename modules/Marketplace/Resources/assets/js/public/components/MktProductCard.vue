@@ -27,10 +27,12 @@
                     <mkt-recommend :product="product" :prefix="prefix"/>
                     <mkt-cart-button :product="product" @added="$emit('added')"/>
 
-                    <a :href="product.wa_link" target="_blank" rel="noopener nofollow"
-                       class="mkt-card__wa" aria-label="Escribir por WhatsApp">
+                    <!-- Sin wa_link: el enlace nace en la puerta de contacto,
+                         que registra al comprador antes de entregarlo. -->
+                    <button type="button" class="mkt-card__wa" aria-label="Escribir por WhatsApp"
+                            @click="$emit('contact', product)">
                         <mkt-icon name="whatsapp" :size="22"/>
-                    </a>
+                    </button>
                 </div>
             </div>
         </div>
@@ -211,6 +213,9 @@ export default {
     flex: none;
     width: 44px;
     height: 44px;
+    border: none;
+    padding: 0;
+    cursor: pointer;
     border-radius: 50%;
     background: #25d366;
     color: var(--buho-navy-950);

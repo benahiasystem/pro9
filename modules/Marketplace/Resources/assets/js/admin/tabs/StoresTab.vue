@@ -118,7 +118,7 @@
                 </template>
             </el-table-column>
 
-            <el-table-column label="Estado" width="150">
+            <el-table-column label="Estado" width="170">
                 <template slot-scope="scope">
                     <span class="badge badge-pill" :class="statusClass(scope.row.status)">
                         {{ statusLabel(scope.row.status) }}
@@ -126,6 +126,26 @@
                     <el-tooltip v-if="scope.row.status_reason" :content="scope.row.status_reason" placement="top">
                         <i class="el-icon-info text-muted ms-1"></i>
                     </el-tooltip>
+
+                    <!-- «Ocultar mi tienda»: sigue aprobada, pero se despublicó
+                         ella misma. El admin no tiene que hacer nada, solo saberlo. -->
+                    <div v-if="scope.row.hidden">
+                        <span class="badge badge-pill badge-secondary mt-1"
+                              title="La tienda se ocultó a sí misma desde su app. Volverá al sincronizar.">
+                            <i class="fas fa-eye-slash"></i> Oculta por la tienda
+                        </span>
+                    </div>
+
+                    <!-- Acción requerida (alertas de seguridad sin revisar):
+                         mismo trato visual que una tienda pendiente de aprobar.
+                         Se atiende desde el menú de acciones de la fila. -->
+                    <div v-for="alert in scope.row.alerts" :key="alert.id">
+                        <el-tooltip :content="alert.message" placement="top">
+                            <span class="badge badge-pill badge-warning mt-1 mkt-alert-badge">
+                                <i class="fas fa-exclamation-triangle"></i> {{ alertLabel(alert.type) }}
+                            </span>
+                        </el-tooltip>
+                    </div>
                 </template>
             </el-table-column>
 
@@ -155,8 +175,47 @@
                                               @click.native="askReason(scope.row, 'disable')">
                                 <i class="el-icon-remove-outline"></i> Deshabilitar
                             </el-dropdown-item>
-                            <el-dropdown-item v-if="scope.row.public_url" divided>
-                                <a :href="scope.row.public_url" target="_blank" rel="noopener" class="text-reset">
+                            <!-- Atender la alerta = revisarla y marcarla. El
+                                 mensaje completo está en el tooltip del badge. -->
+                            <el-dropdown-item v-for="alert in scope.row.alerts" :key="alert.id"
+                                              @click.native="markAlertRead(alert)">
+                                <i class="el-icon-check text-warning"></i>
+                                Revisado: {{ alertLabel(alert.type) }}
+                            </el-dropdown-item>
+
+                            <!-- Ancla nativa a ancho completo del ítem (no
+                                 window.open): la descarga la maneja el
+                                 navegador y ningún bloqueador de popups la
+                                 corta. Sin target: un CSV con
+                                 Content-Disposition no navega, descarga. -->
+                            <el-dropdown-item :disabled="!scope.row.contacts_count">
+                                <a v-if="scope.row.contacts_count"
+                                   :href="'/marketplace/admin/contact-requests?export=1&store_id=' + scope.row.id"
+                                   class="mkt-drop-link">
+                                    <i class="el-icon-download"></i>
+                                    Contactos ({{ scope.row.contacts_count }}) — CSV
+                                </a>
+                                <template v-else>
+                                    <i class="el-icon-download"></i> Contactos (0) — CSV
+                                </template>
+                            </el-dropdown-item>
+
+                            <!-- Para cuando la tienda cambió o perdió su
+                                 dispositivo: el próximo sync emite credencial
+                                 nueva (trust-on-first-use). -->
+                            <el-dropdown-item v-if="scope.row.has_secret"
+                                              @click.native="askResetSecret(scope.row)">
+                                <i class="el-icon-key"></i> Restablecer credencial
+                            </el-dropdown-item>
+
+                            <!-- Ancla nativa que cubre TODO el ítem (margen
+                                 negativo contra el padding del li): el
+                                 problema original era que solo el texto del
+                                 <a> era clickeable y el resto del ítem cerraba
+                                 el menú sin navegar. -->
+                            <el-dropdown-item v-if="scope.row.public_url">
+                                <a :href="scope.row.public_url" target="_blank" rel="noopener"
+                                   class="mkt-drop-link">
                                     <i class="el-icon-view"></i> Ver página pública
                                 </a>
                             </el-dropdown-item>
@@ -252,6 +311,35 @@ export default {
 
         statusLabel(status) {
             return { pending: 'Pendiente', approved: 'Aprobada', rejected: 'Rechazada', disabled: 'Deshabilitada' }[status]
+        },
+
+        alertLabel(type) {
+            return {
+                whatsapp_changed: 'Cambió su WhatsApp',
+                secret_reset: 'Credencial restablecida',
+                feed_sweep: 'Barrido del catálogo',
+            }[type] || 'Alerta de seguridad'
+        },
+
+        markAlertRead(alert) {
+            this.$http.post(`/marketplace/admin/alerts/${alert.id}/read`).then(() => {
+                this.$message.success('Alerta marcada como revisada.')
+                this.load(this.pagination.current_page)
+            }).catch(this.onError)
+        },
+
+
+        askResetSecret(store) {
+            this.$confirm(
+                'El dispositivo actual dejará de poder sincronizar y el próximo sync emitirá una credencial nueva. Hazlo solo si la tienda cambió o perdió su equipo.',
+                `Restablecer la credencial de «${store.name}»`,
+                { confirmButtonText: 'Restablecer', cancelButtonText: 'Cancelar', type: 'warning' },
+            ).then(() => {
+                this.$http.post(`/marketplace/admin/stores/${store.id}/reset-secret`).then(({ data }) => {
+                    this.$message.success(data.message)
+                    this.load(this.pagination.current_page)
+                }).catch(this.onError)
+            }).catch(() => {})
         },
 
         statusClass(status) {
@@ -351,6 +439,18 @@ export default {
 </script>
 
 <style scoped>
+/* Ancla que rellena el el-dropdown-item completo: contrarresta el padding
+   0 20px del li para que cualquier punto del ítem navegue, no solo el texto.
+   Funciona aunque el menú se monte en <body> (popper): el atributo scoped
+   viaja con el nodo. */
+.mkt-drop-link {
+    display: block;
+    margin: 0 -20px;
+    padding: 0 20px;
+    color: inherit;
+    text-decoration: none;
+}
+
 .mkt-logo {
     width: 34px; height: 34px; border-radius: 6px; object-fit: cover;
     margin-right: 10px; flex: none;

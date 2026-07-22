@@ -2,7 +2,12 @@
 
 Vitrina pública de las tiendas de una comunidad. Los negocios publican su catálogo desde la app móvil, el administrador aprueba, y los vecinos encuentran productos y contactan por WhatsApp.
 
-**No es un ecommerce.** No hay precios, stock, carrito, pagos, órdenes ni comisiones. El precio y la entrega se coordinan directamente por WhatsApp entre comprador y tienda.
+**No es un ecommerce.** No hay stock, pagos en línea, órdenes ni comisiones: el marketplace nunca cobra ni registra una venta. El cierre siempre ocurre por WhatsApp entre comprador y tienda.
+
+Sí hay dos cosas que se le parecen, y conviene entender sus límites:
+
+- **Precios opcionales**, opt-in por tienda. Cada negocio decide si publica los suyos; por defecto no. Son informativos: el precio final y la entrega se acuerdan en el chat.
+- **Un pedido (carrito)** que agrupa productos y los manda en **un solo WhatsApp** por tienda. No es un checkout: no hay total vinculante, no se cobra nada y el servidor ni se entera — el carrito vive en el navegador.
 
 ---
 
@@ -20,7 +25,8 @@ La app móvil se compila apuntando al dominio del reseller con un token fijo. La
 
 ### Para la tienda (app móvil)
 
-- **Sincroniza todo su catálogo** con una sola llamada: datos de la tienda + productos + imágenes.
+- **Sincroniza todo su catálogo** con una sola llamada: datos de la tienda + productos + imágenes. De cada producto viajan también su **precio** y su **descripción**, si los tiene.
+- **Decide si publica precios** con un toggle en el formulario de su tienda (*Mostrar precios*, apagado por defecto). Apagarlo los oculta al instante sin resincronizar.
 - **Consulta su estado** en cualquier momento (pendiente, aprobada, rechazada, deshabilitada) y recibe el motivo escrito por el administrador tal cual.
 - **Aceptación implícita de términos y condiciones**: al sincronizar por primera vez queda registrada. Si el reseller no tiene T&C activos, el enlace no se muestra en ninguna parte.
 - **Syncs ligeros**: las imágenes se envían solo cuando cambian (comparando hash). El primer sync puede pesar megas; los siguientes, unos KB.
@@ -52,7 +58,7 @@ Pantalla única en `/marketplace`, con el design system de Búho:
 - **Insignia «Nuevo»** en las tarjetas de la grilla de tiendas del home, además de la ficha: la tienda destaca durante su primer mes.
 - **Denuncias** de un producto o de la tienda, con motivo de la lista configurada.
 - **Recomendaciones**: un corazón por producto, reversible y sin diálogo ni confirmación. Alimenta el ranking de la tienda y el orden **«Más recomendados»** de la portada. El producto no muestra número; la tienda sí, una vez alcanza el umbral.
-- **Pedido (carrito)**: reúne productos de una o varias tiendas y, al enviar, cada tienda recibe **un solo WhatsApp** con sus ítems y cantidades. Botón flotante con contador, drawer con pasos de cantidad y «Vaciar». Persiste entre páginas. No es un ecommerce: sin precios, stock ni pago.
+- **Pedido (carrito)**: reúne productos de una o varias tiendas y, al enviar, cada tienda recibe **un solo WhatsApp** con sus ítems y cantidades. Botón flotante con contador, drawer con pasos de cantidad y «Vaciar». Persiste entre páginas. No es un checkout: sin total vinculante, sin stock y sin pago en línea.
 - **Deep-link** `?p={id}` para abrir un producto directamente; la URL se mantiene al abrir el modal, así que se puede compartir.
 - Skeletons de carga y estados vacíos distintos para «aún no hay nada publicado» y «no hay resultados para estos filtros».
 
@@ -60,7 +66,9 @@ Cada tienda tiene un enlace compartible con Open Graph, pensado para pegarse en 
 
 ### La CTA es siempre WhatsApp
 
-No hay carrito ni checkout. El enlace se arma en el servidor (`Services/WhatsAppLink`) e incluye el saludo configurable, el nombre del producto, su **código interno** y la URL de la tienda. El código es lo que le permite al vendedor ubicar el producto de inmediato en su app, que es de donde salió el catálogo.
+No hay checkout ni pasarela: todo termina en un chat. Para **un producto**, el enlace se arma en el servidor (`Services/WhatsAppLink`) e incluye el saludo configurable, el nombre, su **código interno** y la URL de la tienda. El código es lo que le permite al vendedor ubicar el producto de inmediato en su app, que es de donde salió el catálogo.
+
+Para **un pedido** (varios productos de una tienda), el mensaje se arma en el cliente (`wa-cart.js`) porque las cantidades son dinámicas: mismo formato, con la lista de ítems y sus cantidades bajo el saludo del carrito.
 
 ---
 
@@ -116,7 +124,7 @@ El endpoint lleva el estado **explícito** (`recomendar` true/false), no es un t
 
 ### El pedido se arma y se envía desde el cliente
 
-El carrito vive **entero en el navegador** (`Resources/assets/js/public/cart.js`, persistido en `localStorage`). No hay tabla, ni endpoint, ni estado en el servidor: es una lista de la compra, coherente con que el marketplace no maneja precios, stock ni pagos.
+El carrito vive **entero en el navegador** (`Resources/assets/js/public/cart.js`, persistido en `localStorage`). No hay tabla, ni endpoint, ni estado en el servidor: es una lista de la compra, coherente con que el marketplace no maneja stock, órdenes ni pagos. Tampoco calcula un total, aunque la tienda muestre precios: el importe lo confirma el vendedor en el chat.
 
 Persiste porque **el front navega con recargas de página completas** (ir a una tienda es un `location.href`): un carrito en memoria se perdería al cambiar de vista. Por eso cada ítem guarda un **snapshot** de lo que necesita para agruparse y armar el mensaje —nombre, código y los datos de su tienda—, sin depender de que el producto siga en la página actual.
 
@@ -219,7 +227,7 @@ modules/Marketplace/
 | `marketplace_recommendations` | Pulgares del público. Unique `(visitor_id, item_id)` |
 | `marketplace_settings` | Configuración editable, con tipo |
 
-Ninguna tiene `price`, `stock` ni `reseller_id`.
+`marketplace_items` tiene `price` y `description` (ambos opcionales, los envía la app). Ninguna tabla tiene `stock`, `reseller_id`, ni nada de órdenes o pagos.
 
 ### `PublishedScope`
 
@@ -319,9 +327,9 @@ Para catálogos con imágenes, el primer sync puede pesar ~10 MB:
 | Archivo | Para quién |
 |---|---|
 | `README.md` | Este. Qué hace el módulo y por qué está montado así |
-| `API.md` | **Equipo móvil.** Contrato completo de los 2 endpoints |
-| `FRONTEND.md` | Quien monte otra pantalla pública con Vue + Vite |
-| `test.http` | Recorrido del ciclo de vida con REST Client de VSCode |
+| `test.http` | **Equipo móvil.** Recorrido del ciclo de vida con REST Client de VSCode; es el contrato del sync, con todos los campos y su significado |
+
+Del lado de la app, el dominio está documentado en su propio repositorio: `docs/domains/marketplace.md` (flujos, invariantes y contrato visto desde el cliente).
 
 ---
 
@@ -354,3 +362,13 @@ Todas las fases completadas.
 | 4 — Design system y bundle público | ✅ |
 | 5 — Front público (búsqueda, grillas, modales) | ✅ |
 | 6 — Cierre y documentación | ✅ |
+
+### Añadido después del cierre
+
+| Función | Estado |
+|---|---|
+| Recomendaciones (corazón por producto, ranking por visitantes distintos, umbral) | ✅ |
+| Pedido / carrito agrupado por tienda, un WhatsApp por tienda | ✅ |
+| Antigüedad de la tienda e insignia «Nuevo» del primer mes | ✅ |
+| Precios opt-in por tienda + símbolo de moneda configurable | ✅ |
+| Descripción del producto en el modal | ✅ |

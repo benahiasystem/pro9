@@ -236,6 +236,10 @@
     color: var(--buho-navy-950);
     font-weight: 700;
     transition: all 200ms var(--ease-out);
+    // Desde la puerta de contacto los CTA son <button>, ya no <a>.
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
 
     &:hover {
         box-shadow: var(--shadow-md);

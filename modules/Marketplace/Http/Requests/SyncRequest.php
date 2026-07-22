@@ -26,6 +26,12 @@ class SyncRequest extends FormRequest
             'store.whatsapp' => ['required', 'string', 'regex:/^\d{8,20}$/'],
             'store.description' => ['nullable', 'string', 'max:500'],
             'store.address' => ['nullable', 'string', 'max:255'],
+            // Opt-in de la dirección exacta. Ausente = false: solo se publica
+            // la zona referencial (o nada).
+            'store.show_address' => ['nullable', 'boolean'],
+            // La «zona referencial» que se muestra con show_address apagado
+            // («Bloque 7», «Portería principal»). La escribe la tienda.
+            'store.address_zone' => ['nullable', 'string', 'max:120'],
             // Opt-in de precios. Ausente = false (la tienda no los muestra).
             'store.show_prices' => ['nullable', 'boolean'],
             'store.logo_hash' => ['nullable', 'string', 'max:64'],

@@ -28,6 +28,8 @@ class Store extends Model
         'logo_hash',
         'description',
         'address',
+        'show_address',
+        'address_zone',
         'show_prices',
         'status',
         'status_reason',
@@ -46,6 +48,8 @@ class Store extends Model
 
     protected $casts = [
         'show_prices' => 'boolean',
+        'show_address' => 'boolean',
+        'hidden_at' => 'datetime',
         'items_count' => 'integer',
         'reports_count' => 'integer',
         'recommendations_count' => 'integer',
@@ -72,14 +76,43 @@ class Store extends Model
         return $this->hasMany(Recommendation::class, 'store_id');
     }
 
+    public function contactRequests()
+    {
+        return $this->hasMany(ContactRequest::class, 'store_id');
+    }
+
+    public function securityAlerts()
+    {
+        return $this->hasMany(SecurityAlert::class, 'store_id');
+    }
+
     public function isApproved(): bool
     {
         return $this->status === self::STATUS_APPROVED;
     }
 
     /**
+     * ¿La ocultó la propia tienda? («Ocultar mi tienda» desde la app.) Es un
+     * estado paralelo a status: sigue approved, pero no es pública. El
+     * siguiente sync la republica.
+     */
+    public function isHidden(): bool
+    {
+        return $this->hidden_at !== null;
+    }
+
+    /**
+     * Visible al público = aprobada por el admin Y no auto-ocultada.
+     */
+    public function isPubliclyVisible(): bool
+    {
+        return $this->isApproved() && ! $this->isHidden();
+    }
+
+    /**
      * URL pública compartible. Null mientras la tienda no esté aprobada:
-     * la app no debe mostrar un link que devolvería 410.
+     * la app no debe mostrar un link que devolvería 410. Una tienda oculta
+     * conserva su URL (el enlace mostrará el 410 amable hasta republicar).
      */
     public function publicUrl(): ?string
     {
@@ -93,5 +126,11 @@ class Store extends Model
     public function scopeApproved($query)
     {
         return $query->where('status', self::STATUS_APPROVED);
+    }
+
+    /** Lo que puede ver el público: aprobada y no oculta. */
+    public function scopeVisible($query)
+    {
+        return $query->approved()->whereNull('hidden_at');
     }
 }

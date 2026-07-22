@@ -47,6 +47,12 @@ class FeedController extends Controller
 
         $payload = MarketplaceCache::remember($key, 600, fn () => $this->payload($filters));
 
+        // Detección de barrido (plan de seguridad, A2.5): una IP que recorre
+        // muchas páginas distintas del feed en un minuto no es un vecino que
+        // navega, es un script que descarga el directorio. No se bloquea (el
+        // throttle de la ruta ya pone el techo): se deja constancia al admin.
+        $this->detectSweep($request, $filters['page'], (int) ($payload['products']['last_page'] ?? 1));
+
         // Qué ha recomendado ESTE visitante se resuelve fuera del cache: el
         // payload es igual para todos y se comparte entre miles de visitantes,
         // pero el pulgar encendido es de cada uno. Mezclarlos haría que un
@@ -144,7 +150,8 @@ class FeedController extends Controller
 
     private function stores(array $filters)
     {
-        $query = Store::approved();
+        // visible() y no approved(): una tienda auto-ocultada no aparece.
+        $query = Store::visible();
 
         $filters['orden'] === 'recomendados'
             ? $query->orderByRaw($this->rankingOrder('recommendations_count'), [$this->threshold()])->orderBy('name')
@@ -219,7 +226,7 @@ class FeedController extends Controller
             ->get()
             ->map(fn (Item $i) => PublicPresenter::item($i));
 
-        $stores = Store::approved()
+        $stores = Store::visible()
             ->where('name_normalized', 'like', "%{$needle}%")
             ->orderBy('name')
             ->limit(3)
@@ -236,6 +243,42 @@ class FeedController extends Controller
     private function normalize(string $value): string
     {
         return Str::ascii(mb_strtolower(trim($value)));
+    }
+
+    /**
+     * Registra en un set por IP las páginas pedidas en la última ventana de
+     * 60 s. Si cubre 5+ páginas distintas (y el feed tiene más de una), crea
+     * una alerta de seguridad — como mucho una por IP al día, para no inundar.
+     */
+    private function detectSweep(Request $request, int $page, int $lastPage): void
+    {
+        if ($lastPage < 2) {
+            return;
+        }
+
+        $ip = (string) $request->ip();
+        $key = 'mkt:sweep:' . $ip;
+
+        $pages = \Illuminate\Support\Facades\Cache::get($key, []);
+        $pages[$page] = true;
+        \Illuminate\Support\Facades\Cache::put($key, $pages, 60);
+
+        $threshold = min($lastPage, 5);
+
+        if (count($pages) < $threshold) {
+            return;
+        }
+
+        // Candado diario: la primera detección del día es la que avisa.
+        if (! \Illuminate\Support\Facades\Cache::add('mkt:sweep-alerted:' . $ip, 1, 86400)) {
+            return;
+        }
+
+        \Modules\Marketplace\Models\SecurityAlert::create([
+            'type' => \Modules\Marketplace\Models\SecurityAlert::TYPE_FEED_SWEEP,
+            'message' => "La IP {$ip} recorrió {$threshold}+ páginas del feed en menos de un minuto (patrón de scraper).",
+            'meta' => ['ip' => $ip, 'pages' => array_keys($pages), 'last_page' => $lastPage],
+        ]);
     }
 
     /**

@@ -32,6 +32,29 @@ class WhatsAppLink
         );
     }
 
+    /**
+     * El mensaje del pedido multi-producto, armado EN SERVIDOR.
+     *
+     * Antes lo componía wa-cart.js con el número en mano; ahora el navegador
+     * manda ítems y cantidades a POST /contacto y el número nunca sale de aquí
+     * (plan de seguridad, A2.2). $items: [{name, code, qty}].
+     */
+    public static function forCart(Store $store, array $items): string
+    {
+        $greeting = trim((string) Settings::get('whatsapp_cart_greeting', ''))
+            ?: 'Hola, quiero hacer este pedido:';
+
+        $lines = array_map(function (array $it) {
+            $code = ! empty($it['code']) ? " ({$it['code']})" : '';
+
+            return "- {$it['qty']}x {$it['name']}{$code}";
+        }, $items);
+
+        $text = $greeting . "\n" . implode("\n", $lines) . "\n" . self::storeUrl($store);
+
+        return self::build($store->whatsapp, $text);
+    }
+
     public static function storeUrl(Store $store): string
     {
         return url(config('marketplace.route_prefix') . '/tienda/' . $store->slug);

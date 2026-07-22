@@ -34,9 +34,11 @@
                     <mkt-icon name="chevron-right" :size="18"/>
                 </button>
 
-                <a :href="product.wa_link" target="_blank" rel="noopener nofollow" class="mkt-wa mkt-modal__cta">
+                <!-- Sin wa_link: abre la puerta de contacto, que genera el
+                     enlace en el servidor y registra la solicitud. -->
+                <button type="button" class="mkt-wa mkt-modal__cta" @click="$emit('contact', product)">
                     <mkt-icon name="whatsapp" :size="24"/> Pedir por WhatsApp
-                </a>
+                </button>
 
                 <mkt-cart-button :product="product" variant="full" @added="$emit('added')"/>
 

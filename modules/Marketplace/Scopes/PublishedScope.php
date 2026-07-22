@@ -26,7 +26,10 @@ class PublishedScope implements Scope
                 $query->select(\Illuminate\Support\Facades\DB::raw(1))
                     ->from('marketplace_stores')
                     ->whereColumn('marketplace_stores.id', $items . '.store_id')
-                    ->where('marketplace_stores.status', Store::STATUS_APPROVED);
+                    ->where('marketplace_stores.status', Store::STATUS_APPROVED)
+                    // «Ocultar mi tienda»: oculta la tienda Y su catálogo, en
+                    // el mismo gate global que la aprobación.
+                    ->whereNull('marketplace_stores.hidden_at');
             });
     }
 }

@@ -43,7 +43,9 @@ class MarketplaceController extends Controller
     {
         $store = Store::where('slug', $slug)->first();
 
-        if (! $store || ! $store->isApproved()) {
+        // Una tienda auto-ocultada («Ocultar mi tienda») recibe el mismo 410
+        // amable que una no aprobada: para el visitante, no existe.
+        if (! $store || ! $store->isPubliclyVisible()) {
             return response()->view('marketplace::public.index', [
                 'meta' => $this->meta(null, true),
                 'boot' => $this->boot(['gone' => true]),
@@ -136,6 +138,12 @@ class MarketplaceController extends Controller
                 'report_reasons' => Settings::get('report_reasons', []),
                 'whatsapp_cart_greeting' => Settings::get('whatsapp_cart_greeting'),
                 'currency_symbol' => Settings::get('currency_symbol', 'S/'),
+                // Para el banner de datos personales (Ley 29733). Vacío = el
+                // enlace ARCO no se muestra.
+                'arco_email' => Settings::get('arco_email', ''),
+                // El front avisa a pantalla completa al cruzar la mitad de
+                // este límite; la autoridad real es el servidor.
+                'contact_limit' => (int) Settings::get('contact_limit_per_hour', 10),
             ],
             'terms_url' => Settings::termsUrl(),
             'prefix' => config('marketplace.route_prefix'),

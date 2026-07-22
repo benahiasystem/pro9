@@ -27,6 +27,10 @@ const MAX_QTY = 99
 // descarta en la carga. El carrito se auto-sana: lo válido sobrevive, lo demás
 // se ignora y el vecino lo vuelve a agregar.
 function isValidEntry(it) {
+    // Sin whatsapp ni url: desde la capa de seguridad el mensaje se arma en el
+    // servidor (POST /contacto) y el snapshot solo necesita identificar el
+    // producto y su tienda. Un snapshot viejo con más campos sigue siendo
+    // válido; simplemente ya no se usan.
     return !!it
         && typeof it === 'object'
         && typeof it.name === 'string'
@@ -36,8 +40,6 @@ function isValidEntry(it) {
         && !!it.store
         && typeof it.store.slug === 'string'
         && typeof it.store.name === 'string'
-        && typeof it.store.whatsapp === 'string'
-        && typeof it.store.url === 'string'
 }
 
 function load() {
@@ -87,8 +89,6 @@ export default {
                 slug: product.store.slug,
                 name: product.store.name,
                 initials: product.store.initials,
-                whatsapp: product.store.whatsapp,
-                url: product.store.url,
             },
         }
     },
@@ -118,6 +118,18 @@ export default {
 
     remove(itemId) {
         Vue.delete(state.items, itemId)
+        persist()
+    },
+
+    /**
+     * Vacía el pedido de UNA tienda. Se llama cuando su mensaje de WhatsApp ya
+     * se abrió: ese pedido está enviado y dejarlo en la lista solo invita a
+     * reenviarlo por error. Las demás tiendas del carrito no se tocan.
+     */
+    removeStore(storeSlug) {
+        Object.keys(state.items).forEach((id) => {
+            if (state.items[id].store.slug === storeSlug) Vue.delete(state.items, id)
+        })
         persist()
     },
 

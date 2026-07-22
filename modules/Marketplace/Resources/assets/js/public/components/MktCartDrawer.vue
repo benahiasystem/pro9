@@ -37,7 +37,6 @@
                     <div class="mkt-order__head">
                         <span class="avatar avatar--sm avatar--navy">{{ g.store.initials }}</span>
                         <span class="mkt-order__store">{{ g.store.name }}</span>
-                        <span v-if="isSent(g.store.slug)" class="mkt-order__sent">Enviado</span>
                     </div>
 
                     <div v-for="it in g.items" :key="it.id" class="mkt-order__line">
@@ -62,11 +61,13 @@
                     </div>
 
                     <div class="mkt-order__foot">
-                        <a :href="link(g)" target="_blank" rel="noopener nofollow"
-                           class="mkt-order__send" @click="markSent(g.store.slug)">
+                        <!-- El mensaje se arma en el SERVIDOR: la puerta de
+                             contacto recibe ítems y cantidades y devuelve el
+                             enlace. El número nunca está en el navegador. -->
+                        <button type="button" class="mkt-order__send" @click="$emit('contact', g)">
                             <mkt-icon name="whatsapp" :size="20"/>
                             Enviar pedido · <span class="mkt-mono">{{ g.units }}</span>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -81,25 +82,19 @@
 <script>
 import MktIcon from './MktIcon.vue'
 import cart from '../cart'
-import { buildCartLink } from '../wa-cart'
 
 // El pedido, agrupado por tienda. Cada tienda envía su propio mensaje de
 // WhatsApp con sus ítems y cantidades. Toda la data sale del store `cart`
 // (persistido); aquí solo se pinta y se manejan las cantidades.
+//
+// El envío ya no arma ningún enlace: emite `contact` con el grupo y la puerta
+// de contacto (MktContactGate) hace el resto en el servidor. Al abrir el
+// WhatsApp de una tienda, Marketplace vacía sus líneas del carrito: un pedido
+// enviado no se queda en la lista invitando a reenviarse.
 export default {
     name: 'MktCartDrawer',
 
     components: { MktIcon },
-
-    props: {
-        greeting: { type: String, default: 'Hola, quiero hacer este pedido:' },
-    },
-
-    data() {
-        // Qué tiendas ya se enviaron ESTA sesión. No se persiste: no sabemos si
-        // el mensaje se mandó de verdad, es solo una marca visual.
-        return { sentStores: [] }
-    },
 
     computed: {
         groups() {
@@ -139,16 +134,6 @@ export default {
         },
         clear() {
             cart.clear()
-            this.sentStores = []
-        },
-        link(g) {
-            return buildCartLink(g, this.greeting)
-        },
-        isSent(slug) {
-            return this.sentStores.includes(slug)
-        },
-        markSent(slug) {
-            if (!this.sentStores.includes(slug)) this.sentStores.push(slug)
         },
     },
 }
@@ -269,18 +254,6 @@ export default {
     text-overflow: ellipsis;
 }
 
-.mkt-order__sent {
-    flex: none;
-    padding: 2px 10px;
-    border-radius: var(--radius-full);
-    background: var(--color-success-bg);
-    color: var(--color-success);
-    font-size: var(--fs-micro);
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-}
-
 .mkt-order__line {
     display: flex;
     align-items: center;
@@ -361,6 +334,10 @@ export default {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
     height: 48px;
     border-radius: var(--radius-full);
     background: #25d366;

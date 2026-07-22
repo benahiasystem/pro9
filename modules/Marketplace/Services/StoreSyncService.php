@@ -5,6 +5,7 @@ namespace Modules\Marketplace\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Marketplace\Models\Item;
+use Modules\Marketplace\Models\SecurityAlert;
 use Modules\Marketplace\Models\Store;
 
 /**
@@ -69,6 +70,17 @@ class StoreSyncService
         // pending sigue pending · approved sigue approved (publica al instante)
         // · disabled sigue disabled (solo el admin lo revierte).
 
+        // Cambio de WhatsApp en una tienda ya aprobada: se publica igual (la
+        // aprobación es solo para el alta), pero NUNCA en silencio. Es el dato
+        // que un atacante querría capturar para desviar a los clientes, así
+        // que el admin recibe una alerta con el antes y el después enmascarados
+        // (plan de seguridad, A3.4).
+        $whatsappChanged = ! $isNew
+            && $store->isApproved()
+            && $store->whatsapp !== $data['whatsapp'];
+
+        $previousWhatsapp = $store->whatsapp;
+
         $store->fill([
             'name' => $data['name'],
             'name_normalized' => $this->normalize($data['name']),
@@ -79,7 +91,14 @@ class StoreSyncService
             'address' => $data['address'] ?? null,
             // Ausente = false: una app vieja que no lo envíe deja los precios ocultos.
             'show_prices' => (bool) ($data['show_prices'] ?? false),
+            // Mismo criterio para la dirección exacta (opt-in) y su zona.
+            'show_address' => (bool) ($data['show_address'] ?? false),
+            'address_zone' => $data['address_zone'] ?? null,
         ]);
+
+        // Sincronizar republica una tienda auto-ocultada: es el gesto explícito
+        // de «Volver a publicar» de la app.
+        $store->hidden_at = null;
 
         $store->last_synced_at = now();
         $store->last_sync_items = $itemsReceived;
@@ -87,6 +106,20 @@ class StoreSyncService
         $store->app_version = $appVersion;
 
         $store->save();
+
+        if ($whatsappChanged) {
+            SecurityAlert::create([
+                'store_id' => $store->id,
+                'type' => SecurityAlert::TYPE_WHATSAPP_CHANGED,
+                'message' => "La tienda «{$store->name}» cambió su WhatsApp de pedidos de ***" . substr((string) $previousWhatsapp, -4)
+                    . ' a ***' . substr($data['whatsapp'], -4) . '. Verifica que fue la propia tienda.',
+                'meta' => [
+                    'previous' => $previousWhatsapp,
+                    'current' => $data['whatsapp'],
+                    'sync_ip' => $ip,
+                ],
+            ]);
+        }
 
         $this->syncLogo($store, $data);
 

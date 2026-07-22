@@ -33,6 +33,7 @@ class EnsureMarketplaceEnabled
                 'message' => $message,
                 'status' => null,
                 'status_reason' => null,
+                'hidden' => null,
                 'public_url' => null,
                 'items_received' => 0,
                 'items_published' => 0,

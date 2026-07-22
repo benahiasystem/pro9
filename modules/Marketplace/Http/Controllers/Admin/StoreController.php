@@ -28,11 +28,24 @@ class StoreController extends Controller
             });
         }
 
-        $stores = $query->orderByRaw("FIELD(status, 'pending', 'approved', 'rejected', 'disabled')")
+        $stores = $query->withCount('contactRequests')
+            ->orderByRaw("FIELD(status, 'pending', 'approved', 'rejected', 'disabled')")
             ->orderBy('name')
             ->paginate(20);
 
-        $stores->getCollection()->transform(fn (Store $s) => $this->present($s));
+        // Alertas sin revisar de las tiendas de esta página, en una sola
+        // consulta. No hay pestaña de alertas: cada una se muestra como
+        // «acción requerida» en la fila de su tienda, igual que una pendiente
+        // de aprobar.
+        $alerts = \Modules\Marketplace\Models\SecurityAlert::whereNull('read_at')
+            ->whereIn('store_id', $stores->getCollection()->pluck('id'))
+            ->orderByDesc('id')
+            ->get()
+            ->groupBy('store_id');
+
+        $stores->getCollection()->transform(
+            fn (Store $s) => $this->present($s, $alerts->get($s->id))
+        );
 
         return response()->json($stores);
     }
@@ -123,6 +136,33 @@ class StoreController extends Controller
         return $this->done($store, 'Tienda habilitada.');
     }
 
+    /**
+     * Restablece la credencial TOFU de una tienda (plan de seguridad, A4.2).
+     *
+     * Para cuando la tienda cambió o perdió su dispositivo: sin el secreto no
+     * puede volver a sincronizar. Con secret_hash en null, su siguiente sync
+     * se comporta como el primero (emite credencial nueva) — y queda alerta,
+     * porque un reset es exactamente lo que pediría también un suplantador.
+     */
+    public function resetSecret(int $id): JsonResponse
+    {
+        $store = Store::findOrFail($id);
+
+        $store->secret_hash = null;
+        $store->save();
+
+        \Modules\Marketplace\Models\SecurityAlert::create([
+            'store_id' => $store->id,
+            'type' => \Modules\Marketplace\Models\SecurityAlert::TYPE_SECRET_RESET,
+            'message' => "Se restableció la credencial de «{$store->name}»: el próximo sync emitirá una nueva (trust-on-first-use).",
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Credencial restablecida. El próximo sync de la tienda emitirá una nueva.',
+        ]);
+    }
+
     private function done(Store $store, string $message): JsonResponse
     {
         // Aprobar o deshabilitar cambia qué ítems están publicados, así que los
@@ -137,7 +177,7 @@ class StoreController extends Controller
         ]);
     }
 
-    private function present(Store $store): array
+    private function present(Store $store, $alerts = null): array
     {
         return [
             'id' => $store->id,
@@ -150,9 +190,26 @@ class StoreController extends Controller
             'address' => $store->address,
             'status' => $store->status,
             'status_reason' => $store->status_reason,
+            // «Ocultar mi tienda»: sigue approved, pero la tienda se
+            // despublicó a sí misma. El admin debe verlo sin adivinar.
+            'hidden' => $store->isHidden(),
             'items_count' => $store->items_count,
             'reports_count' => $store->reports_count,
             'recommendations_count' => $store->recommendations_count,
+            // Cuántos vecinos pidieron su contacto — y de paso, el dato que
+            // justifica el botón de exportar el CSV de esa tienda.
+            'contacts_count' => (int) ($store->contact_requests_count ?? 0),
+            // Sin credencial (tienda de antes del TOFU, o tras un reset) el
+            // «Restablecer credencial» no aporta nada: el front lo etiqueta.
+            'has_secret' => $store->secret_hash !== null,
+            // Alertas sin revisar: es lo que pinta el «acción requerida» de la
+            // fila. Vacío = nada pendiente.
+            'alerts' => collect($alerts ?? [])->map(fn ($a) => [
+                'id' => $a->id,
+                'type' => $a->type,
+                'message' => $a->message,
+                'created_at' => $a->created_at?->format('d/m/Y H:i'),
+            ])->values()->all(),
             'public_url' => $store->publicUrl(),
             'logo_url' => $store->logo_path ? \Illuminate\Support\Facades\Storage::disk(config('marketplace.disk'))->url($store->logo_path) : null,
             'last_synced_at' => $store->last_synced_at?->format('d/m/Y H:i'),

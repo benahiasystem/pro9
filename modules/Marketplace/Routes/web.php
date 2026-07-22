@@ -21,8 +21,25 @@ Route::prefix(config('marketplace.route_prefix', 'marketplace'))
         Route::get('tienda/{slug}', 'Web\MarketplaceController@store')->name('marketplace.public.store');
 
         // JSON para el componente Vue. Sirve también las sugerencias del
-        // buscador con ?suggest=1.
-        Route::get('feed', 'Web\FeedController@index')->name('marketplace.public.feed');
+        // buscador con ?suggest=1. El throttle es invisible para un humano
+        // (120 req/min) y letal para un scraper que recorra la paginación.
+        Route::get('feed', 'Web\FeedController@index')
+            ->middleware('throttle:120,1')
+            ->name('marketplace.public.feed');
+
+        // La puerta de contacto (plan de seguridad, A2). El desafío PoW se pide
+        // al abrir el modal; el POST valida la solución, registra al comprador
+        // (nombre, WhatsApp, cookie, IP) y devuelve el enlace wa.me — que es el
+        // único lugar donde existe el número de la tienda. El límite fino por
+        // visitante (contact_limit_per_hour) vive en el controlador porque su
+        // respuesta necesita el meta used/limit para el aviso del 50%.
+        Route::get('desafio', 'Web\ContactController@challenge')
+            ->middleware('throttle:30,1')
+            ->name('marketplace.public.challenge');
+
+        Route::post('contacto', 'Web\ContactController@store')
+            ->middleware('throttle:30,60')
+            ->name('marketplace.public.contact');
 
         Route::post('denuncia', 'Web\ReportController@store')
             ->middleware('throttle:10,60')

@@ -32,6 +32,13 @@ Route::prefix('marketplace/admin')
         Route::post('stores/{id}/disable', 'Admin\StoreController@disable');
         Route::post('stores/{id}/enable', 'Admin\StoreController@enable');
 
+        Route::post('stores/{id}/reset-secret', 'Admin\StoreController@resetSecret');
+
+        // Seguridad: rastro de contactos (con ?export=1 → CSV) y alertas.
+        Route::get('contact-requests', 'Admin\ContactRequestController@index');
+        Route::get('alerts', 'Admin\SecurityAlertController@index');
+        Route::post('alerts/{id}/read', 'Admin\SecurityAlertController@markRead');
+
         // Denuncias
         Route::get('reports', 'Admin\ReportController@index');
         Route::post('reports/{id}/dismiss', 'Admin\ReportController@dismiss');

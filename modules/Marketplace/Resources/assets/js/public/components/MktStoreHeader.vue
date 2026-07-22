@@ -18,8 +18,11 @@
                     </h1>
                     <p v-if="store.description" class="mkt-store__desc">{{ store.description }}</p>
                     <div class="mkt-store__meta">
+                        <!-- Con show_address apagado llega la zona referencial
+                             (o nada); se marca como tal para que el vecino
+                             sepa que no es la dirección exacta. -->
                         <span v-if="store.address">
-                            <mkt-icon name="map-pin" :size="16"/> {{ store.address }}
+                            <mkt-icon name="map-pin" :size="16"/> {{ store.address }}<template v-if="store.address_is_zone"> · zona referencial</template>
                         </span>
                         <span>
                             <mkt-icon name="building-store" :size="16"/>
@@ -38,9 +41,11 @@
                 </div>
 
                 <div class="mkt-store__actions">
-                    <a :href="store.wa_link" target="_blank" rel="noopener nofollow" class="mkt-wa mkt-store__wa">
+                    <!-- Sin wa_link: la puerta de contacto genera el enlace en
+                         el servidor y deja rastro de quién lo pidió. -->
+                    <button type="button" class="mkt-wa mkt-store__wa" @click="$emit('contact')">
                         <mkt-icon name="whatsapp" :size="20"/> WhatsApp
-                    </a>
+                    </button>
                     <button type="button" class="btn btn--secondary" @click="$emit('share')">
                         <mkt-icon name="share" :size="18"/> Compartir
                     </button>

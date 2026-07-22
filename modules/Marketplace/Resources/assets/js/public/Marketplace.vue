@@ -34,7 +34,8 @@
 
         <main v-else class="mkt__main">
             <mkt-store-header v-if="store" :store="store"
-                              @home="goHome" @share="share" @report="openReport(store)"/>
+                              @home="goHome" @share="share" @report="openReport(store)"
+                              @contact="openGate({ type: 'store', store: store.slug })"/>
 
             <section class="mkt-search-band" :class="{ 'is-compact': !!store }">
                 <div class="mkt__wrap">
@@ -129,7 +130,7 @@
                             <mkt-product-card v-for="p in products" :key="p.id" :product="p" :prefix="prefix"
                                               :currency="settings.currency_symbol"
                                               @open="openProduct" @open-store="goStore"
-                                              @added="onAddedToCart"/>
+                                              @added="onAddedToCart" @contact="contactProduct"/>
                         </div>
 
                         <nav v-if="showProducts && lastPage > 1" class="mkt-pager" aria-label="Paginación">
@@ -198,7 +199,7 @@
         <mkt-product-modal v-if="modalProduct" :product="modalProduct" :prefix="prefix"
                            :currency="settings.currency_symbol"
                            @close="closeProduct" @open-store="goStore" @report="openReport"
-                           @added="onAddedToCart"/>
+                           @added="onAddedToCart" @contact="contactProduct"/>
 
         <mkt-report-modal v-if="reportTarget" :target="reportTarget"
                           :reasons="settings.report_reasons || []" :prefix="prefix"
@@ -207,8 +208,19 @@
         <!-- El pedido: el FAB solo aparece con algo dentro y cede el paso al
              drawer mientras está abierto. -->
         <mkt-cart-fab v-if="cartCount > 0 && !cartOpen" @open="cartOpen = true"/>
-        <mkt-cart-drawer v-if="cartOpen" :greeting="settings.whatsapp_cart_greeting"
-                         @close="cartOpen = false"/>
+        <mkt-cart-drawer v-if="cartOpen"
+                         @close="cartOpen = false" @contact="contactCart"/>
+
+        <!-- La puerta de contacto: TODO camino a WhatsApp pasa por aquí. -->
+        <mkt-contact-gate v-if="gateTarget" :target="gateTarget" :prefix="prefix"
+                          @close="gateTarget = null" @opened="onGateOpened"/>
+
+        <!-- Aviso a pantalla completa al cruzar la mitad del throttle. -->
+        <mkt-throttle-warn v-if="throttleWarn"
+                           @continue="warnContinue" @cancel="warnCancel"/>
+
+        <!-- En la vista 410 no hay nada que aceptar: no se registra nada ahí. -->
+        <mkt-cookie-bar v-if="!gone" :terms-url="termsUrl" :arco-email="settings.arco_email || ''"/>
 
         <div v-if="toast" class="mkt-toast">
             <mkt-icon :name="toastIcon" :size="16"/> {{ toast }}
@@ -225,15 +237,19 @@ import MktReportModal from './components/MktReportModal.vue'
 import MktStoreHeader from './components/MktStoreHeader.vue'
 import MktCartFab from './components/MktCartFab.vue'
 import MktCartDrawer from './components/MktCartDrawer.vue'
+import MktContactGate from './components/MktContactGate.vue'
+import MktThrottleWarn from './components/MktThrottleWarn.vue'
+import MktCookieBar from './components/MktCookieBar.vue'
 import recommendations from './recommendations'
 import cart from './cart'
+import usage from './contact-usage'
 import { compactCount } from './format'
 import logo from '../../img/buho-logo.svg'
 
 export default {
     name: 'Marketplace',
 
-    components: { MktIcon, MktSearch, MktProductCard, MktProductModal, MktReportModal, MktStoreHeader, MktCartFab, MktCartDrawer },
+    components: { MktIcon, MktSearch, MktProductCard, MktProductModal, MktReportModal, MktStoreHeader, MktCartFab, MktCartDrawer, MktContactGate, MktThrottleWarn, MktCookieBar },
 
     data() {
         // Todo lo que el servidor inyecta viaja en un único objeto, serializado
@@ -270,6 +286,13 @@ export default {
             cartOpen: false,
             searchTimer: null,
             toastTimer: null,
+
+            // La puerta de contacto y su aviso de throttle (plan de
+            // seguridad, B1/B3). pendingGate guarda el destino mientras el
+            // aviso a pantalla completa espera el «Entiendo».
+            gateTarget: null,
+            pendingGate: null,
+            throttleWarn: false,
         }
     },
 
@@ -489,6 +512,69 @@ export default {
 
         onAddedToCart() {
             this.showToast('Agregado a tu pedido', 'shopping-bag')
+        },
+
+        // -------------------------------------------------------------
+        // La puerta de contacto (plan de seguridad, B1–B3)
+        // -------------------------------------------------------------
+
+        contactProduct(product) {
+            this.modalProduct = null
+            this.openGate({ type: 'product', store: product.store.slug, item_id: product.id })
+        },
+
+        /** Del drawer: un grupo del pedido → puerta con ítems y cantidades. */
+        contactCart(group) {
+            this.openGate({
+                type: 'cart',
+                store: group.store.slug,
+                items: group.items.map((it) => ({ id: it.id, qty: it.qty })),
+            })
+        },
+
+        /**
+         * Todo camino a WhatsApp pasa por aquí. Si el uso registrado ya cruzó
+         * la mitad del límite del servidor, primero el aviso a pantalla
+         * completa; el destino queda en espera hasta el «Entiendo».
+         */
+        openGate(target) {
+            if (usage.shouldWarn()) {
+                this.pendingGate = target
+                this.throttleWarn = true
+                return
+            }
+
+            this.gateTarget = target
+        },
+
+        warnContinue() {
+            usage.acknowledge()
+            this.throttleWarn = false
+            this.gateTarget = this.pendingGate
+            this.pendingGate = null
+        },
+
+        warnCancel() {
+            this.throttleWarn = false
+            this.pendingGate = null
+        },
+
+        /** El comprador abrió WhatsApp desde el paso final del gate. */
+        onGateOpened() {
+            const target = this.gateTarget
+            this.gateTarget = null
+
+            // Pedido enviado: sus líneas salen del carrito para que no se
+            // reenvíe por error. Si era la última tienda, el drawer se cierra
+            // (quedaría vacío) y el FAB desaparece solo.
+            if (target && target.type === 'cart') {
+                cart.removeStore(target.store)
+                if (cart.count() === 0) this.cartOpen = false
+                this.showToast('Pedido enviado — abriendo WhatsApp…', 'whatsapp')
+                return
+            }
+
+            this.showToast('Abriendo WhatsApp…', 'whatsapp')
         },
     },
 }

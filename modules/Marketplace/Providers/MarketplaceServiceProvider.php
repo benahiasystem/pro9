@@ -22,6 +22,19 @@ class MarketplaceServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->loadMigrationsFrom(module_path($this->moduleName, 'Database/Migrations'));
         $this->registerMiddleware();
+        $this->registerCommands();
+    }
+
+    /**
+     * marketplace:purge — programado en App\Console\Kernel (03:30, América/Lima).
+     */
+    protected function registerCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Modules\Marketplace\Console\PurgeCommand::class,
+            ]);
+        }
     }
 
     public function register()
