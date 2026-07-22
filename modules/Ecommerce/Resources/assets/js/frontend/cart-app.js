@@ -1446,17 +1446,48 @@ var app_cart = new Vue({
             }
             this.openAddressMapModal('add', null, false);
         },
+        fetchUserAddresses() {
+            if (!this.user || !this.user.id) {
+                return Promise.resolve();
+            }
+
+            const url = window.__routes?.shipping_addresses || '/ecommerce/shipping-addresses';
+
+            return axios.get(url, this.getHeaderConfig())
+                .then(response => {
+                    if (response.data && response.data.success) {
+                        if (Array.isArray(response.data.addresses)) {
+                            this.userAddresses = response.data.addresses;
+                        }
+                        if (response.data.address) {
+                            this.userDefaultAddress = response.data.address;
+                        }
+                    }
+                    return response;
+                })
+                .catch(error => {
+                    console.error('No se pudieron cargar las direcciones', error);
+                    return Promise.reject(error);
+                });
+        },
         openAddressListModal() {
             this.addressListMenuOpen = null;
-            const active = this.userDefaultAddress;
-            if (active && active.id && this.userAddresses.some(a => a.id === active.id)) {
-                this.selectedAddressId = active.id;
-            } else if (this.userAddresses.length) {
-                this.selectedAddressId = this.userAddresses[0].id;
-            } else {
-                this.selectedAddressId = null;
-            }
-            jQuery('#addressListModal').modal('show');
+
+            const showModal = () => {
+                const active = this.userDefaultAddress;
+                if (active && active.id && this.userAddresses.some(a => a.id === active.id)) {
+                    this.selectedAddressId = active.id;
+                } else if (this.userAddresses.length) {
+                    this.selectedAddressId = this.userAddresses[0].id;
+                } else {
+                    this.selectedAddressId = null;
+                }
+                jQuery('#addressListModal').modal('show');
+            };
+
+            this.fetchUserAddresses()
+                .then(showModal)
+                .catch(showModal);
         },
         closeAddressListModal() {
             jQuery('#addressListModal').modal('hide');

@@ -1523,6 +1523,7 @@
         payment_cash: '{{ route("tenant_ecommerce_payment_cash") }}',
         user_data: '{{ route("tenant_ecommerce_user_data") }}',
         shipping_address: '{{ route("tenant_ecommerce_shipping_address") }}',
+        shipping_addresses: '{{ route("tenant_ecommerce_shipping_addresses") }}',
         shipping_address_delete: '{{ route("tenant_ecommerce_shipping_address_delete") }}',
         locations: '{{ route("get_location_cascade") }}',
         home: '{{ route("tenant.ecommerce.index") }}',
