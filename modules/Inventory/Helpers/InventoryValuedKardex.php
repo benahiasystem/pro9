@@ -8,6 +8,7 @@ use App\Models\Tenant\{
     DocumentItem,
     DispatchItem,
     PurchaseItem,
+    SaleNoteItem,
 };
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -129,10 +130,9 @@ class InventoryValuedKardex
         $purchase_items = $item->purchase_item;
         $document_items = $item->document_items;
         $dispatch_items = $item->dispatch_items;
+        $sale_note_items = $item->sale_note_items;
 
-        // $all_record_items = ($purchase_items->merge($dispatch_items))->merge($document_items);
-        
-        $all_record_items = self::getAllRecordItems($document_items, $purchase_items, $dispatch_items);
+        $all_record_items = self::getAllRecordItems($document_items, $purchase_items, $dispatch_items, $sale_note_items);
 
         return [
             'item' => $item,
@@ -148,9 +148,10 @@ class InventoryValuedKardex
      * @param  Collection $document_items
      * @param  Collection $purchase_items
      * @param  Collection $dispatch_items
+     * @param  Collection $sale_note_items
      * @return Collection
      */
-    public static function getAllRecordItems($document_items, $purchase_items, $dispatch_items)
+    public static function getAllRecordItems($document_items, $purchase_items, $dispatch_items, $sale_note_items = null)
     {
         $all_items = collect()->merge($document_items);
 
@@ -161,6 +162,12 @@ class InventoryValuedKardex
         $dispatch_items->each(function($dispatch) use($all_items){
             $all_items->push($dispatch);
         });
+
+        if ($sale_note_items) {
+            $sale_note_items->each(function($sale_note_item) use($all_items){
+                $all_items->push($sale_note_item);
+            });
+        }
         
         return $all_items;
     }
@@ -401,6 +408,41 @@ class InventoryValuedKardex
                 'output_total' => null,
 
                 'factor' => 1,
+                'quantity' => $record_item->quantity,
+                'total' => $record_item->total_value,
+
+                'balance_quantity' => 0,
+                'balance_unit_cost' => 0,
+                'balance_total_cost' => 0,
+                'affected_document_id' => null,
+            ];
+
+        }else if($record_item instanceof SaleNoteItem){
+
+            $document = $record_item->sale_note;
+
+            $temp_data = [
+                'id' => $document->id,
+                'type' => 'output',
+                'model_type' => 'sale_note',
+                'date_of_issue' => $document->date_of_issue->format('d-m-Y'),
+                'sort_date_of_issue' => self::getDateForSort($document),
+                'time_of_issue' => $document->time_of_issue,
+                'document_type_id' => '80',
+                'series' => $document->series,
+                'number' => $document->number,
+                'operation_type' => 'VENTA',
+                'operation_type_code' => '01',
+
+                'input_quantity' => null,
+                'input_unit_price' => null,
+                'input_total' => null,
+
+                'output_quantity' => $record_item->quantity,
+                'output_unit_price' => $record_item->unit_value,
+                'output_total' => $record_item->total_value,
+
+                'factor' => -1,
                 'quantity' => $record_item->quantity,
                 'total' => $record_item->total_value,
 

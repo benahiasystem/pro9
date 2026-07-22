@@ -1073,7 +1073,14 @@ class Document extends ModelTenant
     {
         return $query->whereStateTypeAccepted()
             ->whereTypeUser()
-            ->whereBetween('date_of_issue', [$params->date_start, $params->date_end]);
+            ->whereBetween('date_of_issue', [$params->date_start, $params->date_end])
+            ->whereNull('sale_note_id')
+            ->whereNull('order_note_id')
+            ->whereNull('dispatch_id')
+            ->where(function ($q) {
+                $q->whereNull('sale_notes_relateds')
+                    ->orWhere('sale_notes_relateds', '[]');
+            });
     }
 
 
