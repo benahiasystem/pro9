@@ -215,7 +215,7 @@ trait MultiUserTrait
             'establishment_id' => $user->establishment->id,
             'api_token' => $user->api_token,
             'ruc' => $company->number,
-            'app_logo' => $company->app_logo,
+            'app_logo' => $company->logo,
             'company' => [
                 'name' => $company->name,
                 'address' => $user->establishment->department->description.', '.$user->establishment->province->description.', '.$user->establishment->district->description.', '.$user->establishment->address,

@@ -70,6 +70,7 @@ class AppConfigurationController extends Controller
             'generals' => [
                 'pos_document_types' => $user->getPosDocumentTypes(),
                 'app_logo' => Company::getAppUrlLogo(),
+                'app_logo_dark' => Company::getAppUrlLogoDark(),
                 'user_data' => $user->getGeneralDataApp()
             ],
             'multi_user_enabled' => config('configuration.multi_user_enabled')
@@ -84,6 +85,7 @@ class AppConfigurationController extends Controller
             return [
                 'primary_color' => $record->primary_color ?? '#020F3C',
                 'app_logo'      => Company::getAppUrlLogo(),
+                'app_logo_dark' => Company::getAppUrlLogoDark(),
                 'name'          => Company::first()->trade_name,
             ];
         });

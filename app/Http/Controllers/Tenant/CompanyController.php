@@ -255,15 +255,6 @@ class CompanyController extends Controller
                 if (is_resource($stream)) fclose($stream);
             }
 
-            if (($type === 'app_logo')) {
-                request()->validate(['file' => 'required|mimes:jpeg,png,jpg,gif,svg,webp|max:2048']);
-                UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
-                $stream = fopen($file->getPathname(), 'r');
-                Storage::put('public/uploads/logos/'.$name, $stream);
-                if (is_resource($stream)) fclose($stream);
-            }
-
-
             if (($type === 'img_firm')) {
                 request()->validate(['file' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048']);
                 UploadFileHelper::checkIfValidFile($name, $file->getPathName(), true);
@@ -415,7 +406,7 @@ class CompanyController extends Controller
     public function deleteLogo(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:logo,logo_dark,favicon,app_logo'
+            'type' => 'required|in:logo,logo_dark,favicon'
         ]);
 
         $company = Company::active();
@@ -448,7 +439,6 @@ class CompanyController extends Controller
                 'logo' => 'Logo (modo claro)',
                 'logo_dark' => 'Logo (modo oscuro)',
                 'favicon' => 'Favicon (ícono web)',
-                'app_logo' => 'Logo APP',
             };
 
             return [

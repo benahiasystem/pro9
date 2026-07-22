@@ -1749,13 +1749,13 @@ export default {
                     );
                 }
 
-                this.items[index].sale_unit_price = this.items[
-                    index
-                ].edit_sale_unit_price;
-                this.items[index].edit_unit_price = false;
 
             }
 
+            this.items[index].sale_unit_price = this.items[
+                    index
+                ].edit_sale_unit_price;
+            this.items[index].edit_unit_price = false;
             // console.log(item_search)
         },
         clickCancelUnitPriceItem(index) {
