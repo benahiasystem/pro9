@@ -20,11 +20,7 @@ class StatusOrder extends ModelTenant
         'is_shipping_status',
         'action_generate_document',
         'action_discount_stock',
-        'action_mark_payment',
         'action_send_email',
-        'action_notify_dispatch',
-        'action_generate_remission',
-        'action_free_reserved_stock',
         'action_block_returns',
         'action_void_order',
     ];
@@ -38,11 +34,7 @@ class StatusOrder extends ModelTenant
         'is_shipping_status'       => 'boolean',
         'action_generate_document' => 'boolean',
         'action_discount_stock'    => 'boolean',
-        'action_mark_payment'      => 'boolean',
         'action_send_email'        => 'boolean',
-        'action_notify_dispatch'   => 'boolean',
-        'action_generate_remission'=> 'boolean',
-        'action_free_reserved_stock' => 'boolean',
         'action_block_returns'     => 'boolean',
         'action_void_order'        => 'boolean',
     ];

@@ -1,0 +1,248 @@
+// =========================================================
+// Marketplace — hoja de estilos de la pantalla pública
+// =========================================================
+// El design system (tokens + clases base) se importa aparte y no se edita:
+// es un artefacto extraído del mockup. Lo específico de esta pantalla va aquí.
+
+// @use en vez de @import: Sass deprecó @import y avisa en cada build.
+@use 'design-system';
+
+// ---------------------------------------------------------
+// Layout base de la página
+// ---------------------------------------------------------
+
+.mkt {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: var(--font-sans);
+    background: var(--white);
+}
+
+.mkt__main {
+    flex: 1;
+}
+
+.mkt__wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px;
+
+    @media (max-width: 640px) {
+        padding: 0 16px;
+    }
+}
+
+// ---------------------------------------------------------
+// Cabecera
+// ---------------------------------------------------------
+
+.mkt-header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(255, 255, 255, 0.86);
+    backdrop-filter: saturate(140%) blur(12px);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.mkt-header__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    @media (max-width: 640px) {
+        padding: 0 16px;
+    }
+}
+
+.mkt-header__brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+
+    img {
+        height: 30px;
+        width: auto;
+    }
+}
+
+.mkt-header__titles {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    text-align: left;
+}
+
+.mkt-header__title {
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    color: var(--buho-navy-950);
+}
+
+.mkt-header__sub {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-top: 3px;
+}
+
+.mkt-header__community {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--fs-caption);
+    color: var(--color-text-muted);
+
+    @media (max-width: 640px) {
+        display: none;
+    }
+}
+
+// ---------------------------------------------------------
+// Pie
+// ---------------------------------------------------------
+
+.mkt-footer {
+    border-top: 1px solid var(--color-border);
+    background: var(--buho-cream);
+    margin-top: 56px;
+}
+
+.mkt-footer__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px 32px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: var(--fs-caption);
+
+    @media (max-width: 640px) {
+        padding: 24px 16px;
+    }
+}
+
+.mkt-footer__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--color-text-muted);
+
+    img {
+        height: 20px;
+        opacity: 0.8;
+    }
+}
+
+.mkt-footer__links {
+    display: flex;
+    gap: 20px;
+}
+
+// ---------------------------------------------------------
+// Estados de pantalla completa (410, 503, marketplace vacío)
+// ---------------------------------------------------------
+
+.mkt-notice {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 32px;
+    background: var(--buho-cream);
+}
+
+.mkt-notice__box {
+    max-width: 480px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    animation: mkt-fade 320ms var(--ease-out);
+
+    img {
+        height: 44px;
+        opacity: 0.9;
+    }
+
+    h1 {
+        font-size: var(--fs-h3);
+        font-weight: 700;
+        margin: 0;
+        color: var(--buho-navy-950);
+        letter-spacing: -0.01em;
+    }
+
+    p {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: var(--fs-body);
+        line-height: 1.6;
+    }
+}
+
+// ---------------------------------------------------------
+// Utilidades del módulo
+// ---------------------------------------------------------
+
+.mkt-mono {
+    font-family: var(--font-mono);
+}
+
+// Insignia «Nuevo»: verde de éxito, no la pila de la paleta, para que lea como
+// algo fresco y no se confunda con el rosa de recomendar. Global porque la usan
+// dos componentes (la ficha de tienda y la tarjeta del home).
+.mkt-new {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    background: var(--color-success-bg);
+    color: var(--color-success);
+    font-size: var(--fs-micro);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1.6;
+}
+
+// El botón de WhatsApp usa el verde de marca de WhatsApp, no la paleta Búho:
+// es un código de color que el usuario ya reconoce.
+.mkt-wa {
+    --mkt-wa-green: #25d366;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--mkt-wa-green);
+    color: var(--buho-navy-950);
+    font-weight: 700;
+    transition: all 200ms var(--ease-out);
+    // Desde la puerta de contacto los CTA son <button>, ya no <a>.
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+
+    &:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+    }
+}

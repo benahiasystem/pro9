@@ -69,10 +69,38 @@
                     </div>
                 </div>
 
+                <div class="col-lg-4">
+                    <div class="form-group">
+                        <label class="control-label">Método de pago</label>
+                        <el-select v-model="payment_method_type_id" placeholder="Seleccione">
+                            <el-option
+                                v-for="option in payment_method_types"
+                                :key="option.id"
+                                :label="option.description"
+                                :value="option.id"
+                            ></el-option>
+                        </el-select>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="form-group">
+                        <label class="control-label">Caja / destino</label>
+                        <el-select v-model="payment_destination_id" placeholder="Seleccione">
+                            <el-option
+                                v-for="option in payment_destinations"
+                                :key="option.id"
+                                :label="option.description"
+                                :value="option.id"
+                            ></el-option>
+                        </el-select>
+                    </div>
+                </div>
+
             </div>
 
             <span slot="footer" class="dialog-footer">
-                <el-button @click="clickClose">Cerrar</el-button>
+                <el-button @click="cancel">Cerrar</el-button>
                 <el-button
                     :loading="loading_submit"
                     class="submit"
@@ -111,7 +139,9 @@ export default {
     props: [
         'showDialog',
         'orderId',
-        'dataSaleNote'
+        'dataSaleNote',
+        'statusField',
+        'statusValue'
     ],
     computed:{
     },
@@ -124,6 +154,10 @@ export default {
             document: {},
             all_series: [],
             series: [],
+            payment_method_types: [],
+            payment_destinations: [],
+            payment_method_type_id: null,
+            payment_destination_id: null,
             lots: [],
             loading_submit: false,
             showDialogSelectLots: false,
@@ -205,9 +239,25 @@ export default {
             if (!validate_items.success)
                 return this.$message.error(validate_items.message)
 
+            if (!this.payment_method_type_id)
+                return this.$message.error('Seleccione el método de pago')
+
+            if (!this.payment_destination_id)
+                return this.$message.error('Seleccione la caja / destino del pago')
+
             this.loading_submit = true
             this.document.prefix = "NV"
             this.document.order_id = this.orderId
+
+            // Camino X: el comprobante registra el pago completo (saldo total) a la caja elegida
+            this.document.payments = [{
+                date_of_payment: this.paymentDate(),
+                payment_method_type_id: this.payment_method_type_id,
+                payment_destination_id: this.payment_destination_id,
+                reference: null,
+                payment: this.document.total,
+                payment_received: true,
+            }]
 
             await this.$http
                 .post(`/${this.resource}`, this.document)
@@ -236,7 +286,12 @@ export default {
                 })
         },
         saveUpdateStatus(){
-            this.$http.post(`/statusOrder/update`, { record: { id: this.orderId, status_order_id: 2} })
+            // Persiste el estado realmente seleccionado que disparó la generación
+            const field = this.statusField || 'status_order_id'
+            this.$http.post(`/statusOrder/update`, {
+                record: { id: this.orderId, [field]: this.statusValue },
+                field,
+            })
         },
         async getTransformDataForOrder(){
 
@@ -263,9 +318,23 @@ export default {
                 .get(`/${this.resource}/option/tables`)
                 .then((response) => {
                     this.all_series = response.data.series
+                    this.payment_method_types = response.data.payment_method_types || []
+                    this.payment_destinations = response.data.payment_destinations || []
                     this.filterSeries()
+                    this.presetPayment()
                 })
 
+        },
+        // Preselecciona método y caja (obligatorios). El pago se registra completo al generar.
+        presetPayment() {
+            this.payment_method_type_id = this.payment_method_types.length > 0 ? this.payment_method_types[0].id : null
+            this.payment_destination_id = this.payment_destinations.length > 0 ? this.payment_destinations[0].id : null
+        },
+        // Fecha local YYYY-MM-DD para el registro de pago
+        paymentDate() {
+            const d = new Date()
+            const p = (n) => String(n).padStart(2, '0')
+            return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
         },
         filterSeries() {
             this.document.series_id = null
@@ -281,6 +350,13 @@ export default {
         clickClose() {
             this.$emit("update:showDialog", false)
             this.resetDocument()
+            this.payment_method_type_id = null
+            this.payment_destination_id = null
+        },
+        // Cancelar sin generar: revierte el estado recargando el listado (el backend no avanzó)
+        cancel() {
+            this.$eventHub.$emit("reloadData")
+            this.clickClose()
         },
         async validateQuantitySeriesLots() {
 

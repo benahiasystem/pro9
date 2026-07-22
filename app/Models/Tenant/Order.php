@@ -95,8 +95,71 @@ class Order extends ModelTenant
             'total_discount' => $this->total_discount,
             'discount_coupon_code' => $this->discount_coupon_code,
             'discount_coupon' => $this->discount_coupon ? $this->discount_coupon->getCollectionData() : null,
+            'returns_blocked' => $this->returnsBlocked(),
+            'is_voided' => $this->isVoided(),
         ];
 
         return $data;
+    }
+
+    /**
+     * Indica si el pedido está anulado: alguno de sus estados actuales tiene
+     * activada la acción "Anular pedido".
+     */
+    public function isVoided(): bool
+    {
+        $statuses = static::orderStatusesCache();
+        $currentIds = [$this->status_order_id, $this->payment_status_order_id, $this->shipping_status_order_id];
+
+        foreach ($currentIds as $id) {
+            $current = $id ? $statuses->get($id) : null;
+            if ($current && $current->action_void_order) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Indica si el pedido ya no acepta devoluciones: es true cuando el pedido
+     * alcanzó (o superó) el estado marcado con "Bloquear devoluciones",
+     * comparando por sort_order dentro del mismo grupo del estado bloqueador.
+     */
+    public function returnsBlocked(): bool
+    {
+        $statuses = static::orderStatusesCache();
+        $blockers = $statuses->where('action_block_returns', true);
+
+        foreach ($blockers as $blocker) {
+            if ($blocker->is_payment_status) {
+                $currentId = $this->payment_status_order_id;
+            } elseif ($blocker->is_shipping_status) {
+                $currentId = $this->shipping_status_order_id;
+            } else {
+                $currentId = $this->status_order_id;
+            }
+
+            $current = $currentId ? $statuses->get($currentId) : null;
+            if ($current && $current->sort_order >= $blocker->sort_order) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Cachea la colección de estados por request para evitar N+1 al transformar pedidos.
+     */
+    protected static $orderStatusesCache = null;
+
+    protected static function orderStatusesCache()
+    {
+        if (static::$orderStatusesCache === null) {
+            static::$orderStatusesCache = StatusOrder::get()->keyBy('id');
+        }
+
+        return static::$orderStatusesCache;
     }
 }

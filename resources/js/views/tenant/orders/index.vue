@@ -62,7 +62,7 @@
                         <th class="text-end">Opciones</th>
                     </tr>
                     <tr></tr>
-                    <tr slot-scope="{ index, row }">
+                    <tr slot-scope="{ index, row }" :class="{ 'order-voided-row': isVoided(row) }">
                         <!-- <td>{{ index }}</td> -->
                         <td>
                             <a href="#" @click.prevent="openDetail(row)" class="text-primary">
@@ -185,6 +185,7 @@
                                     v-model="row.payment_status_order_id"
                                     placeholder="Estado de pago"
                                     :value="row.payment_status_order_id"
+                                    :disabled="isVoided(row)"
                                     @change="updateStatus(row, 'payment_status_order_id')"
                                 >
                                     <el-option
@@ -214,6 +215,7 @@
                                     v-model="row.shipping_status_order_id"
                                     placeholder="Estado de envío"
                                     :value="row.shipping_status_order_id"
+                                    :disabled="isVoided(row)"
                                     @change="updateStatus(row, 'shipping_status_order_id')"
                                 >
                                     <el-option
@@ -243,6 +245,7 @@
                                     v-model="row.status_order_id"
                                     placeholder="Estado de pedido"
                                     :value="row.status_order_id"
+                                    :disabled="isVoided(row)"
                                     @change="updateStatus(row, 'status_order_id')"
                                 >
                                     <el-option
@@ -266,28 +269,37 @@
                             </template>
                         </td>
                         <td class="text-end">
-                            <template v-if="row.document_type_id == '80'">
-                                <el-button
-                                    v-if="row.sale_note_id"
-                                    class="submit"
-                                    type="success"
-                                    icon="el-icon-tickets"
-                                    @click.prevent="
-                                        clickOptions(row.sale_note_id)
-                                    "
-                                ></el-button>
-                            </template>
-                            <template v-else>
-                                <el-button
-                                    v-if="row.document_external_id"
-                                    class="submit"
-                                    type="success"
-                                    icon="el-icon-tickets"
-                                    @click.prevent="
-                                        clickDownload(row.document_external_id)
-                                    "
-                                ></el-button>
-                            </template>
+                            <el-tag v-if="isVoided(row)" type="danger" size="small" effect="plain">
+                                Anulado
+                            </el-tag>
+                            <el-dropdown v-else trigger="click" size="small">
+                                <el-button class="btn-dropdown" icon="el-icon-more"></el-button>
+                                <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item
+                                        v-if="row.document_type_id == '80' && row.sale_note_id"
+                                        @click.native="clickOptions(row.sale_note_id)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" /></svg>
+                                        Opciones
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item
+                                        v-else-if="row.document_external_id"
+                                        @click.native="clickDownload(row.document_external_id)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" /></svg>
+                                        Opciones
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item
+                                        v-if="canGenerateGuide(row)"
+                                        @click.native="goToGuide(row)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg>
+                                        Generar guía
+                                    </el-dropdown-item>
+                                </el-dropdown-menu>
+                            </el-dropdown>
                         </td>
                     </tr>
                 </data-table>
@@ -383,6 +395,8 @@
             :showDialog.sync="showDialogSaleNote"
             :orderId="order_id"
             :dataSaleNote="dataSaleNote"
+            :statusField="statusField"
+            :statusValue="record ? record[statusField] : null"
         >
         </sale-note-form>
         <status-order-modal
@@ -396,6 +410,11 @@
     </div>
 </template>
 <style>
+/* Pedido anulado: texto en rojo en toda la fila (patrón consistente con anulaciones) */
+.order-voided-row td,
+.order-voided-row td a {
+    color: #c0392b !important;
+}
 /* Estado con color: se pinta el propio select (borde, fondo, texto) con el punto dentro */
 .status-select-wrap {
     position: relative;
@@ -549,6 +568,22 @@ export default {
             this.resource_options = "sale-notes";
             this.showDialogOptions = true;
         },
+        // El pedido está anulado si alguno de sus estados actuales tiene "Anular pedido".
+        isVoided(row) {
+            const ids = [
+                row.status_order_id,
+                row.payment_status_order_id,
+                row.shipping_status_order_id,
+            ];
+            return this.options.some(o => ids.includes(o.id) && o.action_void_order);
+        },
+        // La guía se arma sobre la nota de venta: basta con que exista para permitirla.
+        canGenerateGuide(row) {
+            return !!row.sale_note_id;
+        },
+        goToGuide(row) {
+            window.location.href = `/dispatches/create_new/sale_note/${row.sale_note_id}`;
+        },
         async clickDownload(row) {
             await this.$http
                 .get(`/documents/search/externalId/${row}`)
@@ -596,7 +631,37 @@ export default {
             // Obtener el objeto de estado completo desde las opciones cargadas
             const selectedStatus = this.options.find(o => o.id === record[field])
 
-            if (selectedStatus && selectedStatus.action_discount_stock) {
+            if (selectedStatus && selectedStatus.action_void_order) {
+                this.$confirm(
+                    'Se anulará el pedido y se revertirá el stock (y la nota de venta si existe). Esta acción no se puede deshacer.',
+                    'Anular pedido',
+                    { confirmButtonText: 'Anular', cancelButtonText: 'Cancelar', type: 'warning' }
+                ).then(() => {
+                    this.saveUpdateStatus();
+                    this.$eventHub.$emit('reloadData');
+                }).catch(() => {
+                    // Cancelado: revertir el estado visual al valor de BD
+                    this.$eventHub.$emit('reloadData');
+                });
+                return;
+            } else if (selectedStatus && selectedStatus.action_generate_document) {
+                this.order_id = record.id;
+
+                if (record.purchase.codigo_tipo_documento == "80") {
+                    if (record.has_sale_note)
+                        return this.$message.success(
+                            "Ya existe una nota de venta"
+                        );
+                    this.openDialogSaleNote(record.purchase);
+                } else {
+                    if (record.document_external_id) {
+                        return this.$message.success(
+                            "Ya existe un comprobante."
+                        );
+                    }
+                    this.$refs.document_form.sendPreview(record.purchase);
+                }
+            } else if (selectedStatus && selectedStatus.action_discount_stock) {
                 // Si la orden ya tiene el flag de stock descontado, no continuar
                 if (record.stock_discounted) {
                     this.$message.success('El stock ya fue descontado para esta orden');
