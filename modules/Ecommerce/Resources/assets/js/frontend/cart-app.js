@@ -233,6 +233,11 @@ var app_cart = new Vue({
 
         this.calculateSummary()
 
+        this.userAddresses = this.normalizeAddressList(this.userAddresses);
+        if (this.userDefaultAddress) {
+            this.userDefaultAddress = this.normalizeAddressRecord(this.userDefaultAddress);
+        }
+
         // Cargar ubicaciones y autocompletar si el usuario tiene una dirección guardada
         this.fetchLocations().then(() => {
             this.loadDefaultAddress();
@@ -1461,10 +1466,10 @@ var app_cart = new Vue({
                 .then(response => {
                     if (response.data && response.data.success) {
                         if (Array.isArray(response.data.addresses)) {
-                            this.userAddresses = response.data.addresses;
+                            this.userAddresses = this.normalizeAddressList(response.data.addresses);
                         }
                         if (response.data.address) {
-                            this.userDefaultAddress = response.data.address;
+                            this.userDefaultAddress = this.normalizeAddressRecord(response.data.address);
                         }
                     }
                     return response;
@@ -1584,9 +1589,153 @@ var app_cart = new Vue({
             this.addressListMenuAnchorEvent = null;
             this.unbindAddressListMenuListeners();
         },
+        splitAddressReference(text) {
+            const raw = (text || '').trim();
+            if (!raw) {
+                return { street: '', reference: '' };
+            }
+
+            const match = raw.match(/\s*-\s*Ref[.:]?\s*(.+)$/i);
+            if (match) {
+                return {
+                    street: raw.replace(/\s*-\s*Ref[.:]?\s*.+$/i, '').trim(),
+                    reference: match[1].trim(),
+                };
+            }
+
+            return { street: raw, reference: '' };
+        },
+        composeFullAddress(street, reference) {
+            const cleanStreet = (street || '').trim();
+            const cleanReference = (reference || '').trim();
+
+            if (!cleanStreet) {
+                return cleanReference ? `Ref: ${cleanReference}` : '';
+            }
+
+            if (!cleanReference) {
+                return cleanStreet;
+            }
+
+            return `${cleanStreet} - Ref: ${cleanReference}`;
+        },
+        resolveAddressUbigeo(addr) {
+            if (!addr) {
+                return {
+                    department_id: null,
+                    province_id: null,
+                    district_id: null,
+                    location_id: [],
+                };
+            }
+
+            let department_id = addr.department_id || null;
+            let province_id = addr.province_id || null;
+            let district_id = addr.district_id || null;
+
+            const location = Array.isArray(addr.location_id)
+                ? addr.location_id.filter(value => value !== null && value !== '' && value !== undefined)
+                : [];
+
+            if ((!department_id || !province_id || !district_id) && location.length === 3) {
+                department_id = location[0];
+                province_id = location[1];
+                district_id = location[2];
+            }
+
+            const location_id = (department_id && province_id && district_id)
+                ? [department_id, province_id, district_id]
+                : [];
+
+            return {
+                department_id,
+                province_id,
+                district_id,
+                location_id,
+            };
+        },
+        normalizeAddressRecord(addr) {
+            if (!addr) {
+                return addr;
+            }
+
+            const parsedAddress = this.splitAddressReference(addr.address || '');
+            const parsedFull = this.splitAddressReference(addr.full_address || '');
+            const street = parsedAddress.street || parsedFull.street;
+            const reference = (addr.reference || '').trim() || parsedAddress.reference || parsedFull.reference;
+            const ubigeo = this.resolveAddressUbigeo(addr);
+
+            return Object.assign({}, addr, {
+                address: street,
+                reference,
+                full_address: this.composeFullAddress(street, reference),
+                department_id: ubigeo.department_id,
+                province_id: ubigeo.province_id,
+                district_id: ubigeo.district_id,
+                location_id: ubigeo.location_id,
+            });
+        },
+        normalizeAddressList(addresses) {
+            if (!Array.isArray(addresses)) {
+                return [];
+            }
+
+            return addresses.map(item => this.normalizeAddressRecord(item));
+        },
+        getAddressStreet(addr) {
+            if (!addr) {
+                return '';
+            }
+
+            const parsed = this.splitAddressReference(addr.address || '');
+            if (parsed.street) {
+                return parsed.street;
+            }
+
+            return this.splitAddressReference(addr.full_address || '').street;
+        },
+        getAddressReference(addr) {
+            if (!addr) {
+                return '';
+            }
+
+            const explicit = (addr.reference || '').trim();
+            if (explicit) {
+                return explicit;
+            }
+
+            return this.splitAddressReference(addr.full_address || addr.address || '').reference;
+        },
+        getAddressLocationLabel(addr) {
+            if (!addr) {
+                return '';
+            }
+
+            const ubigeo = this.resolveAddressUbigeo(addr);
+            if (!ubigeo.district_id) {
+                return '';
+            }
+
+            const dept = this.departments.find(d => d.value === ubigeo.department_id);
+            const prov = dept && (dept.children || []).find(p => p.value === ubigeo.province_id);
+            const dist = prov && (prov.children || []).find(d => d.value === ubigeo.district_id);
+            const parts = [];
+
+            if (dist) {
+                parts.push(dist.label);
+            }
+            if (prov) {
+                parts.push(prov.label);
+            }
+            if (dept) {
+                parts.push(dept.label);
+            }
+
+            return parts.join(', ');
+        },
         getAddressTitle(addr, index) {
             if (!addr) return 'Dirección';
-            const text = (addr.address || addr.full_address || '').trim();
+            const text = this.getAddressStreet(addr);
             if (!text) return 'Dirección ' + ((index || 0) + 1);
             const firstPart = text.split(',')[0].trim();
             if (firstPart.length <= 42) return firstPart;
@@ -1595,9 +1744,17 @@ var app_cart = new Vue({
         getAddressDetail(addr) {
             if (!addr) return '';
             const lines = [];
-            const street = (addr.address || addr.full_address || '').trim();
-            if (street) lines.push(street);
-            if (addr.reference) lines.push('Ref: ' + addr.reference);
+            const location = this.getAddressLocationLabel(addr);
+
+            if (location) {
+                lines.push(location);
+            }
+
+            const reference = this.getAddressReference(addr);
+            if (reference) {
+                lines.push('Ref: ' + reference);
+            }
+
             return lines.join(' · ');
         },
         selectAddressInList(addressId) {
@@ -1613,13 +1770,10 @@ var app_cart = new Vue({
             this.applyAddressToModal(addr);
             this.addressModalMode = 'edit';
             this.editingAddressId = addr.id;
-
-            let fullAddress = addr.full_address || addr.address || '';
-            if (addr.reference && fullAddress.indexOf('Ref:') === -1) {
-                fullAddress += ' - Ref: ' + addr.reference;
-            }
-
-            this.form_contact.address = fullAddress;
+            this.form_contact.address = this.composeFullAddress(
+                this.getAddressStreet(addr),
+                this.getAddressReference(addr)
+            );
             this.closeAddressListModal();
             this.checkDeliveryZone();
             this.saveShippingAddress();
@@ -1681,8 +1835,9 @@ var app_cart = new Vue({
             this.districts = [];
         },
         applyAddressToModal(address) {
-            this.addressModal.address = address.address || address.full_address || '';
-            this.addressModal.reference = address.reference || '';
+            const normalized = this.normalizeAddressRecord(address);
+            this.addressModal.address = normalized.address;
+            this.addressModal.reference = normalized.reference;
             this.addressModal.preventSearch = false;
 
             if (address.latitude != null && address.longitude != null) {
@@ -1690,11 +1845,12 @@ var app_cart = new Vue({
                 this.addressModal.longitude = Number(address.longitude);
             }
 
-            if (!address.department_id) {
+            const ubigeo = this.resolveAddressUbigeo(normalized);
+            if (!ubigeo.department_id) {
                 return;
             }
 
-            const dept = this.departments.find(d => d.value === address.department_id);
+            const dept = this.departments.find(d => d.value === ubigeo.department_id);
             if (!dept) {
                 return;
             }
@@ -1706,14 +1862,14 @@ var app_cart = new Vue({
             this.selectedDistrict = '';
 
             this.$nextTick(() => {
-                const prov = this.provinces.find(p => p.value === address.province_id);
+                const prov = this.provinces.find(p => p.value === ubigeo.province_id);
                 if (!prov) {
                     return;
                 }
                 this.selectedProvince = prov.value;
                 this.districts = prov.children || [];
                 this.$nextTick(() => {
-                    const dist = this.districts.find(d => d.value === address.district_id);
+                    const dist = this.districts.find(d => d.value === ubigeo.district_id);
                     if (dist) {
                         this.selectedDistrict = dist.value;
                     }
@@ -1746,7 +1902,7 @@ var app_cart = new Vue({
             }).then(response => {
                 if (response.data && response.data.success) {
                     this.userAddresses = Array.isArray(response.data.addresses)
-                        ? response.data.addresses
+                        ? this.normalizeAddressList(response.data.addresses)
                         : [];
 
                     if (this.userAddresses.length === 0) {
@@ -1767,8 +1923,8 @@ var app_cart = new Vue({
                         this.selectedAddressId = this.userAddresses[0].id;
                     }
                     if (response.data.address) {
-                        this.userDefaultAddress = response.data.address;
-                        let fullAddress = response.data.address.full_address || response.data.address.address || '';
+                        this.userDefaultAddress = this.normalizeAddressRecord(response.data.address);
+                        let fullAddress = this.userDefaultAddress.full_address || this.userDefaultAddress.address || '';
                         this.form_contact.address = fullAddress;
                     }
                     return;
@@ -1804,15 +1960,9 @@ var app_cart = new Vue({
             this.highlightedIndex = -1;
         },
         confirmAddress() {
-            let fullAddress = '';
-            if (this.addressModal.address) {
-                fullAddress = this.addressModal.address;
-            }
-            if (this.addressModal.reference) {
-                fullAddress += ' - Ref: ' + this.addressModal.reference;
-            }
-
-            this.form_contact.address = fullAddress;
+            const street = (this.addressModal.address || '').trim();
+            const reference = (this.addressModal.reference || '').trim();
+            this.form_contact.address = this.composeFullAddress(street, reference);
             const returnToList = this.addressMapReturnToList;
             const isCreatingNew = this.addressModalMode === 'add';
             this.closeAddressModal();
@@ -2336,7 +2486,10 @@ var app_cart = new Vue({
                 return;
             }
 
-            const street = this.addressModal.address || this.form_contact.address;
+            const parsedForm = this.splitAddressReference(this.form_contact.address);
+            const street = ((this.addressModal.address || parsedForm.street || this.form_contact.address) || '').trim();
+            const reference = ((this.addressModal.reference || parsedForm.reference) || '').trim();
+
             if (!street) {
                 if (typeof onSuccess === 'function') {
                     onSuccess();
@@ -2347,9 +2500,9 @@ var app_cart = new Vue({
             const url = window.__routes?.shipping_address || '/ecommerce/shipping-address';
             const isCreatingNew = forceCreate === true || this.addressModalMode === 'add';
             const payload = {
-                address: this.addressModal.address || street,
-                reference: this.addressModal.reference || '',
-                full_address: this.form_contact.address || street,
+                address: street,
+                reference: reference,
+                full_address: this.composeFullAddress(street, reference),
                 latitude: this.addressModal.latitude,
                 longitude: this.addressModal.longitude,
                 department_id: this.selectedDepartment || null,
@@ -2366,15 +2519,15 @@ var app_cart = new Vue({
                 .then(response => {
                     if (response.data && response.data.success) {
                         if (Array.isArray(response.data.addresses)) {
-                            this.userAddresses = response.data.addresses;
+                            this.userAddresses = this.normalizeAddressList(response.data.addresses);
                         }
                         if (response.data.address) {
-                            this.userDefaultAddress = response.data.address;
+                            this.userDefaultAddress = this.normalizeAddressRecord(response.data.address);
                             if (response.data.address.id) {
                                 this.selectedAddressId = response.data.address.id;
                             }
-                            if (response.data.address.full_address) {
-                                this.form_contact.address = response.data.address.full_address;
+                            if (this.userDefaultAddress.full_address) {
+                                this.form_contact.address = this.userDefaultAddress.full_address;
                             }
                             if (this.user) {
                                 this.user.address = this.form_contact.address;
@@ -2419,11 +2572,11 @@ var app_cart = new Vue({
                 });
         },
         loadDefaultAddress() {
-            const addr = this.userDefaultAddress;
+            const addr = this.normalizeAddressRecord(this.userDefaultAddress);
             if (!addr || (!addr.address && !addr.full_address)) return;
 
-            this.addressModal.address = addr.address || addr.full_address || '';
-            this.addressModal.reference = addr.reference || '';
+            this.addressModal.address = addr.address;
+            this.addressModal.reference = addr.reference;
 
             if (addr.latitude != null && addr.longitude != null) {
                 this.addressModal.latitude = Number(addr.latitude);
@@ -2446,9 +2599,10 @@ var app_cart = new Vue({
                 this.form_contact.telephone = addr.phone;
             }
 
-            if (!addr.department_id) return;
+            const ubigeo = this.resolveAddressUbigeo(addr);
+            if (!ubigeo.department_id) return;
 
-            const dept = this.departments.find(d => d.value === addr.department_id);
+            const dept = this.departments.find(d => d.value === ubigeo.department_id);
             if (!dept) return;
 
             this.selectedDepartment = dept.value;
@@ -2457,21 +2611,21 @@ var app_cart = new Vue({
             this.districts = [];
             this.selectedDistrict = '';
 
-            if (!addr.province_id) return;
+            if (!ubigeo.province_id) return;
 
             this.$nextTick(() => {
-                const prov = this.provinces.find(p => p.value === addr.province_id);
+                const prov = this.provinces.find(p => p.value === ubigeo.province_id);
                 if (!prov) return;
 
                 this.selectedProvince = prov.value;
                 this.districts = prov.children || [];
                 this.selectedDistrict = '';
 
-                if (!addr.district_id) return;
+                if (!ubigeo.district_id) return;
 
                 this.$nextTick(() => {
                     setTimeout(() => {
-                        const dist = this.districts.find(d => d.value === addr.district_id);
+                        const dist = this.districts.find(d => d.value === ubigeo.district_id);
                         if (!dist) return;
 
                         this.selectedDistrict = dist.value;

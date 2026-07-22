@@ -475,6 +475,7 @@
                                         <span v-if="row.country_id === 'PE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="row.location_id"
+                                                 :key="`address-ubigeo-${index}-${locations.length}`"
                                                  :clearable="true"
                                                  :options="locations"
                                                  :disabled="row.country_id !== 'PE'"
@@ -1109,6 +1110,13 @@ export default {
                                 phone: null,
                             }
                         }
+                        this.form.location_id = this.normalizeAddressLocationId(
+                            this.form.location_id,
+                            this.form.department_id,
+                            this.form.province_id,
+                            this.form.district_id
+                        )
+                        this.normalizeFormAddresses()
                         this.filterProvinces()
                         this.filterDistricts()
                     }).then(() => {
@@ -1116,6 +1124,37 @@ export default {
 
                 })
             }
+        },
+        normalizeAddressLocationId(locationId, departmentId, provinceId, districtId) {
+            const filtered = Array.isArray(locationId)
+                ? locationId.filter(value => value !== null && value !== '' && value !== undefined)
+                : []
+
+            if (filtered.length === 3) {
+                return filtered
+            }
+
+            if (departmentId && provinceId && districtId) {
+                return [departmentId, provinceId, districtId]
+            }
+
+            return []
+        },
+        normalizeFormAddresses() {
+            if (!Array.isArray(this.form.addresses)) {
+                this.form.addresses = []
+                return
+            }
+
+            this.form.addresses = this.form.addresses.map(row => ({
+                ...row,
+                location_id: this.normalizeAddressLocationId(
+                    row.location_id,
+                    row.department_id,
+                    row.province_id,
+                    row.district_id
+                ),
+            }))
         },
         clickAddAddress() {
             /* this.form.more_address.push({
@@ -1277,7 +1316,14 @@ export default {
             if (this.form.addresses && this.form.addresses.length > 0) {
                 for (let i = 0; i < this.form.addresses.length; i++) {
                     const address = this.form.addresses[i];
-                    if (address.country_id === 'PE' && (!address.location_id || address.location_id.length !== 3)) {
+                    if (
+                        address.country_id === 'PE'
+                        && (
+                            !address.location_id
+                            || address.location_id.length !== 3
+                            || !address.location_id.every(value => value)
+                        )
+                    ) {
                         hasErrorInAdditionalAddresses = true;
                         addressWithError = i + 1;
                         break;

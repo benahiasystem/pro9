@@ -1278,12 +1278,20 @@ class EcommerceController extends Controller
         $reference = trim((string) $request->input('reference', ''));
         $fullAddress = trim((string) $request->input('full_address', ''));
 
-        if ($fullAddress === '') {
-            $fullAddress = $street;
-            if ($reference !== '') {
-                $fullAddress .= ' - Ref: ' . $reference;
-            }
-        }
+        $normalizedInput = $this->buildShippingAddressRecord([
+            'address'       => $street,
+            'reference'     => $reference,
+            'full_address'  => $fullAddress,
+            'latitude'      => $request->input('latitude'),
+            'longitude'     => $request->input('longitude'),
+            'department_id' => $request->input('department_id'),
+            'province_id'   => $request->input('province_id'),
+            'district_id'   => $request->input('district_id'),
+        ]);
+
+        $street = $normalizedInput['address'];
+        $reference = $normalizedInput['reference'];
+        $fullAddress = $normalizedInput['full_address'];
 
         if ($request->filled('telephone')) {
             $user->telephone = $request->input('telephone');
@@ -1293,16 +1301,7 @@ class EcommerceController extends Controller
 
         $contact = $this->getContactArray($user);
 
-        $recordData = [
-            'address'       => $street,
-            'reference'     => $reference,
-            'full_address'  => $fullAddress,
-            'latitude'      => $request->input('latitude'),
-            'longitude'     => $request->input('longitude'),
-            'department_id' => $request->input('department_id'),
-            'province_id'   => $request->input('province_id'),
-            'district_id'   => $request->input('district_id'),
-        ];
+        $recordData = $normalizedInput;
 
         $addresses = $this->getUserShippingAddresses($user);
         $requestedAddressId = trim((string) $request->input('address_id', ''));
@@ -1328,7 +1327,7 @@ class EcommerceController extends Controller
         }
 
         $personAddressId = $this->persistPersonAddressRecord($user, [
-            'address'       => $fullAddress,
+            'address'       => $street,
             'department_id' => $request->input('department_id'),
             'province_id'   => $request->input('province_id'),
             'district_id'   => $request->input('district_id'),
@@ -1589,12 +1588,15 @@ class EcommerceController extends Controller
      */
     private function buildShippingAddressFromPersonAddress(PersonAddress $personAddress, ?array $contactMatch = null): array
     {
-        $street = trim((string) ($personAddress->address ?? ''));
+        $parsedPerson = $this->splitAddressReference($personAddress->address ?? '');
+        $street = $parsedPerson['street'];
+        $reference = $parsedPerson['reference'];
+
         $record = [
             'id'            => (string) $personAddress->id,
             'address'       => $street,
-            'reference'     => '',
-            'full_address'  => $street,
+            'reference'     => $reference,
+            'full_address'  => $this->composeFullAddress($street, $reference),
             'latitude'      => null,
             'longitude'     => null,
             'department_id' => $personAddress->department_id,
@@ -1604,21 +1606,58 @@ class EcommerceController extends Controller
         ];
 
         if (!$contactMatch) {
+            $record['location_id'] = $this->buildLocationIdArray(
+                $record['department_id'] ?? null,
+                $record['province_id'] ?? null,
+                $record['district_id'] ?? null
+            );
+
             return $record;
         }
 
-        if (!empty($contactMatch['reference'])) {
-            $record['reference'] = $contactMatch['reference'];
+        $parsedContact = $this->splitAddressReference($contactMatch['address'] ?? '');
+        $parsedContactFull = $this->splitAddressReference($contactMatch['full_address'] ?? '');
+
+        if ($street === '') {
+            $street = $parsedContact['street'] ?: $parsedContactFull['street'];
         }
-        if (!empty($contactMatch['full_address'])) {
-            $record['full_address'] = $contactMatch['full_address'];
+
+        $contactReference = trim((string) ($contactMatch['reference'] ?? ''));
+        if ($contactReference === '') {
+            $contactReference = $parsedContact['reference'] ?: $parsedContactFull['reference'];
         }
+
+        if ($contactReference !== '') {
+            $reference = $contactReference;
+        }
+
+        $record['address'] = $street;
+        $record['reference'] = $reference;
+        $record['full_address'] = $this->composeFullAddress($street, $reference);
+
         if (isset($contactMatch['latitude']) && $contactMatch['latitude'] !== null && $contactMatch['latitude'] !== '') {
             $record['latitude'] = (float) $contactMatch['latitude'];
         }
         if (isset($contactMatch['longitude']) && $contactMatch['longitude'] !== null && $contactMatch['longitude'] !== '') {
             $record['longitude'] = (float) $contactMatch['longitude'];
         }
+
+        $record = array_merge($record, $this->resolveUbigeoIds($record));
+
+        if (!$record['department_id'] && $contactMatch) {
+            $contactUbigeo = $this->resolveUbigeoIds($contactMatch);
+            if ($contactUbigeo['department_id']) {
+                $record['department_id'] = $contactUbigeo['department_id'];
+                $record['province_id'] = $contactUbigeo['province_id'];
+                $record['district_id'] = $contactUbigeo['district_id'];
+            }
+        }
+
+        $record['location_id'] = $this->buildLocationIdArray(
+            $record['department_id'] ?? null,
+            $record['province_id'] ?? null,
+            $record['district_id'] ?? null
+        );
 
         return $record;
     }
@@ -1674,24 +1713,60 @@ class EcommerceController extends Controller
     }
 
     /**
+     * Separa calle y referencia cuando vienen concatenadas en un solo texto.
+     */
+    private function splitAddressReference(?string $text): array
+    {
+        $raw = trim((string) $text);
+        if ($raw === '') {
+            return ['street' => '', 'reference' => ''];
+        }
+
+        if (preg_match('/\s*-\s*Ref[.:]?\s*(.+)$/iu', $raw, $matches)) {
+            return [
+                'street'    => trim(preg_replace('/\s*-\s*Ref[.:]?\s*.+$/iu', '', $raw)),
+                'reference' => trim($matches[1]),
+            ];
+        }
+
+        return ['street' => $raw, 'reference' => ''];
+    }
+
+    /**
+     * Construye la dirección completa sin duplicar la referencia.
+     */
+    private function composeFullAddress(string $street, string $reference): string
+    {
+        $street = trim($street);
+        $reference = trim($reference);
+
+        if ($street === '') {
+            return $reference !== '' ? 'Ref: ' . $reference : '';
+        }
+
+        if ($reference === '') {
+            return $street;
+        }
+
+        return $street . ' - Ref: ' . $reference;
+    }
+
+    /**
      * Normaliza un registro de dirección de envío para contact.shipping_addresses.
      */
     private function buildShippingAddressRecord(array $data): array
     {
-        $street = trim((string) ($data['address'] ?? ''));
-        $reference = trim((string) ($data['reference'] ?? ''));
-        $fullAddress = trim((string) ($data['full_address'] ?? ''));
+        $streetInput = trim((string) ($data['address'] ?? ''));
+        $referenceInput = trim((string) ($data['reference'] ?? ''));
+        $fullInput = trim((string) ($data['full_address'] ?? ''));
 
-        if ($fullAddress === '') {
-            $fullAddress = $street;
-            if ($reference !== '') {
-                $fullAddress .= ' - Ref: ' . $reference;
-            }
-        }
+        $fromStreet = $this->splitAddressReference($streetInput);
+        $fromFull = $this->splitAddressReference($fullInput);
 
-        if ($street === '' && $fullAddress !== '') {
-            $street = preg_replace('/\s*-\s*Ref:.*$/i', '', $fullAddress);
-        }
+        $street = $fromStreet['street'] ?: $fromFull['street'];
+        $reference = $referenceInput ?: ($fromStreet['reference'] ?: $fromFull['reference']);
+        $fullAddress = $this->composeFullAddress($street, $reference);
+        $ubigeo = $this->resolveUbigeoIds($data);
 
         $id = trim((string) ($data['id'] ?? ''));
         if ($id === '') {
@@ -1710,10 +1785,52 @@ class EcommerceController extends Controller
             'longitude'     => isset($data['longitude']) && $data['longitude'] !== null && $data['longitude'] !== ''
                 ? (float) $data['longitude']
                 : null,
-            'department_id' => $data['department_id'] ?? null,
-            'province_id'   => $data['province_id'] ?? null,
-            'district_id'   => $data['district_id'] ?? null,
+            'department_id' => $ubigeo['department_id'],
+            'province_id'   => $ubigeo['province_id'],
+            'district_id'   => $ubigeo['district_id'],
+            'location_id'   => $this->buildLocationIdArray(
+                $ubigeo['department_id'],
+                $ubigeo['province_id'],
+                $ubigeo['district_id']
+            ),
         ];
+    }
+
+    /**
+     * Resuelve department/province/district desde campos sueltos o location_id.
+     */
+    private function resolveUbigeoIds(array $data): array
+    {
+        $departmentId = $data['department_id'] ?? null;
+        $provinceId = $data['province_id'] ?? null;
+        $districtId = $data['district_id'] ?? null;
+
+        $locationId = $data['location_id'] ?? null;
+        if (is_array($locationId) && count($locationId) === 3) {
+            if (!empty($locationId[0]) && !empty($locationId[1]) && !empty($locationId[2])) {
+                $departmentId = $locationId[0];
+                $provinceId = $locationId[1];
+                $districtId = $locationId[2];
+            }
+        }
+
+        return [
+            'department_id' => $departmentId ?: null,
+            'province_id'   => $provinceId ?: null,
+            'district_id'   => $districtId ?: null,
+        ];
+    }
+
+    /**
+     * Construye el arreglo location_id solo cuando los tres niveles están presentes.
+     */
+    private function buildLocationIdArray($departmentId, $provinceId, $districtId): array
+    {
+        if (empty($departmentId) || empty($provinceId) || empty($districtId)) {
+            return [];
+        }
+
+        return [$departmentId, $provinceId, $districtId];
     }
 
     /**
