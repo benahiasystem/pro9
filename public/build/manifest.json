@@ -125,7 +125,7 @@
     "css": [
       "assets/app-2be7e679.css"
     ],
-    "file": "assets/app-2fbdc453.js",
+    "file": "assets/app-490ccfcb.js",
     "imports": [
       "_vue-clipboard-57fc87a8.js",
       "__plugin-vue2_normalizer-839f22b6.js",
@@ -136,14 +136,14 @@
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-ef7b5761.css",
+    "file": "assets/system-693f793b.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-ef7b5761.css"
+      "assets/system-693f793b.css"
     ],
-    "file": "assets/system-8661cf1c.js",
+    "file": "assets/system-cbdd090d.js",
     "imports": [
       "_vue-clipboard-57fc87a8.js",
       "__plugin-vue2_normalizer-839f22b6.js",

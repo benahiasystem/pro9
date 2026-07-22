@@ -4,6 +4,7 @@ namespace App\Http\Controllers\System;
 
 use App\Http\Controllers\Controller;
 use App\Services\System\MozoConfigurationService;
+use App\Services\System\MozoLogoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -24,11 +25,76 @@ class MozoController extends Controller
         return view('system.mozo.index');
     }
 
-    public function record(MozoConfigurationService $service): JsonResponse
+    public function record(MozoConfigurationService $service, MozoLogoService $logoService): JsonResponse
     {
         $configuration = $service->get();
 
+        $configuration['useSystemLogo'] = (bool) ($configuration['useSystemLogo'] ?? true);
+        $configuration['hasCustomLogo'] = $logoService->hasCustomLogo();
+        $configuration['hasSystemLogo'] = $logoService->hasSystemLogo();
+        $configuration['logoUrl'] = $logoService->previewUrl($configuration['logoVersion'] ?? null);
+
         return response()->json($configuration);
+    }
+
+    public function updateLogo(
+        Request $request,
+        MozoConfigurationService $service,
+        MozoLogoService $logoService
+    ): JsonResponse {
+        $request->merge([
+            'useSystemLogo' => filter_var($request->input('useSystemLogo'), FILTER_VALIDATE_BOOLEAN),
+        ]);
+
+        $request->validate([
+            'useSystemLogo' => ['required', 'boolean'],
+            'logo' => [
+                'nullable',
+                'file',
+                'max:2048',
+                function ($attribute, $value, $fail) {
+                    $extension = strtolower((string) $value->getClientOriginalExtension());
+                    if (!in_array($extension, ['svg', 'png', 'jpg', 'jpeg'], true)) {
+                        $fail('El logo debe ser un archivo SVG, PNG o JPG.');
+                    }
+                },
+            ],
+        ], [
+            'logo.max' => 'El logo no puede superar los 2MB.',
+        ]);
+
+        $useSystemLogo = (bool) $request->input('useSystemLogo');
+
+        if ($useSystemLogo) {
+            $logoService->applySystemLogo();
+        } else {
+            if ($request->hasFile('logo')) {
+                $logoService->storeCustomLogo($request->file('logo'));
+            } elseif (!$logoService->hasCustomLogo()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debes subir un logo para desactivar el logo del sistema.',
+                ], 422);
+            }
+
+            $logoService->applyCustomLogo();
+        }
+
+        $version = time();
+
+        $service->update([
+            'useSystemLogo' => $useSystemLogo,
+            'logoVersion' => $version,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'El logo de Mozo se actualizó correctamente.',
+            'useSystemLogo' => $useSystemLogo,
+            'hasCustomLogo' => $logoService->hasCustomLogo(),
+            'hasSystemLogo' => $logoService->hasSystemLogo(),
+            'logoUrl' => $logoService->previewUrl($version),
+        ]);
     }
 
     public function updateBrandName(Request $request, MozoConfigurationService $service): JsonResponse
@@ -44,6 +110,8 @@ class MozoController extends Controller
         $configuration = $service->update([
             'brandName' => $validated['brandName'],
         ]);
+
+        $service->syncConfigFile();
 
         return response()->json([
             'success' => true,
@@ -61,6 +129,8 @@ class MozoController extends Controller
 
         $validated = $request->validate($rules);
         $configuration = $service->update($validated);
+
+        $service->syncConfigFile();
 
         return response()->json([
             'success' => true,
@@ -85,6 +155,8 @@ class MozoController extends Controller
 
         $validated = $request->validate($rules);
         $configuration = $service->update($validated);
+
+        $service->syncConfigFile();
 
         return response()->json([
             'success' => true,
