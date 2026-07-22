@@ -333,6 +333,16 @@ class DocumentController extends Controller
 
     public function create()
     {
+        return $this->renderDocumentCreateForm();
+    }
+
+    public function createFromTable($table, $table_id)
+    {
+        return $this->renderDocumentCreateForm($table, $table_id);
+    }
+
+    private function renderDocumentCreateForm($table = null, $table_id = null)
+    {
         if (auth()->user()->type == 'integrator')
             return redirect('/documents');
 
@@ -347,7 +357,8 @@ class DocumentController extends Controller
 
         $configuration = Configuration::first();
         $is_contingency = 0;
-        return view('tenant.documents.form', compact('is_contingency', 'configuration'));
+
+        return view('tenant.documents.form', compact('is_contingency', 'configuration', 'table', 'table_id'));
     }
 
     public function create_tensu()

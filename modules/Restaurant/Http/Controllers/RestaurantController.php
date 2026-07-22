@@ -117,7 +117,7 @@ class RestaurantController extends Controller
             'restaurant_role_id' => $user->restaurant_role_id,
             'restaurant_role_code' => $user->restaurant_role_id ? $user->restaurant_role->code : null,
             'ruc' => $company->number,
-            'app_logo' => $company->app_logo,
+            'app_logo' => $company->logo,
             'app_logo_base64' => '',
             'company' => [
                 'name' => $company->name,

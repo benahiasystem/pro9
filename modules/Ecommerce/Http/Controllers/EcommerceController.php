@@ -321,10 +321,11 @@ class EcommerceController extends Controller
         $systemConfig = Configuration::with('globalDiscountType')->first();
         $global_discount_type = $systemConfig->globalDiscountType;
 
-        // Dirección de envío del cliente autenticado (contact.shipping + persons.address + person_addresses)
+        // Dirección de envío del cliente autenticado (person_addresses + contact.shipping)
         $userAddress = null;
         $userAddresses = [];
         if ($ecommerceUser = auth('ecommerce')->user()) {
+            $ecommerceUser = $ecommerceUser->fresh();
             $userAddress = $this->buildUserShippingAddressPayload($ecommerceUser);
             $userAddresses = $this->getUserShippingAddresses($ecommerceUser);
         }
@@ -1218,6 +1219,28 @@ class EcommerceController extends Controller
     }
 
     /**
+     * Devuelve la lista actualizada de direcciones del cliente autenticado (consulta directa a BD).
+     */
+    public function listShippingAddresses()
+    {
+        $user = auth('ecommerce')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe iniciar sesión para ver sus direcciones.',
+            ], 401);
+        }
+
+        $freshUser = $user->fresh();
+
+        return response()->json([
+            'success'   => true,
+            'address'   => $this->buildUserShippingAddressPayload($freshUser),
+            'addresses' => $this->getUserShippingAddresses($freshUser),
+        ]);
+    }
+
+    /**
      * Guarda la dirección de envío del checkout (mapa + referencia) en el usuario autenticado.
      * No exige campos de perfil (nombre/email): solo datos de dirección.
      */
@@ -1255,12 +1278,20 @@ class EcommerceController extends Controller
         $reference = trim((string) $request->input('reference', ''));
         $fullAddress = trim((string) $request->input('full_address', ''));
 
-        if ($fullAddress === '') {
-            $fullAddress = $street;
-            if ($reference !== '') {
-                $fullAddress .= ' - Ref: ' . $reference;
-            }
-        }
+        $normalizedInput = $this->buildShippingAddressRecord([
+            'address'       => $street,
+            'reference'     => $reference,
+            'full_address'  => $fullAddress,
+            'latitude'      => $request->input('latitude'),
+            'longitude'     => $request->input('longitude'),
+            'department_id' => $request->input('department_id'),
+            'province_id'   => $request->input('province_id'),
+            'district_id'   => $request->input('district_id'),
+        ]);
+
+        $street = $normalizedInput['address'];
+        $reference = $normalizedInput['reference'];
+        $fullAddress = $normalizedInput['full_address'];
 
         if ($request->filled('telephone')) {
             $user->telephone = $request->input('telephone');
@@ -1270,16 +1301,7 @@ class EcommerceController extends Controller
 
         $contact = $this->getContactArray($user);
 
-        $recordData = [
-            'address'       => $street,
-            'reference'     => $reference,
-            'full_address'  => $fullAddress,
-            'latitude'      => $request->input('latitude'),
-            'longitude'     => $request->input('longitude'),
-            'department_id' => $request->input('department_id'),
-            'province_id'   => $request->input('province_id'),
-            'district_id'   => $request->input('district_id'),
-        ];
+        $recordData = $normalizedInput;
 
         $addresses = $this->getUserShippingAddresses($user);
         $requestedAddressId = trim((string) $request->input('address_id', ''));
@@ -1304,19 +1326,31 @@ class EcommerceController extends Controller
             $addresses[] = $addressRecord;
         }
 
-        $contact['shipping'] = $addressRecord;
-
-        $contact['shipping_addresses'] = array_values($addresses);
-        $user->contact = $contact;
-        $user->save();
-
-        $this->persistPersonAddressRecord($user, [
-            'address'       => $fullAddress,
+        $personAddressId = $this->persistPersonAddressRecord($user, [
+            'address'       => $street,
             'department_id' => $request->input('department_id'),
             'province_id'   => $request->input('province_id'),
             'district_id'   => $request->input('district_id'),
             'phone'         => $request->input('telephone') ?: $user->telephone,
-        ]);
+        ], $requestedAddressId !== '' ? $requestedAddressId : null, !$updated);
+
+        if ($personAddressId !== null) {
+            $numericId = (string) $personAddressId;
+            if (($addressRecord['id'] ?? '') !== $numericId) {
+                foreach ($addresses as $index => $item) {
+                    if (($item['id'] ?? null) === $addressRecord['id']) {
+                        $addresses[$index]['id'] = $numericId;
+                        break;
+                    }
+                }
+                $addressRecord['id'] = $numericId;
+            }
+        }
+
+        $contact['shipping'] = $addressRecord;
+        $contact['shipping_addresses'] = array_values($addresses);
+        $user->contact = $contact;
+        $user->save();
 
         $freshUser = $user->fresh();
 
@@ -1378,6 +1412,14 @@ class EcommerceController extends Controller
             $user->address = $next['full_address'] ?? $next['address'] ?? '';
         }
 
+        if (ctype_digit($addressId)) {
+            try {
+                $user->addresses()->where('id', (int) $addressId)->delete();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
         $user->contact = $contact;
         $user->save();
 
@@ -1395,69 +1437,56 @@ class EcommerceController extends Controller
     }
 
     /**
-     * Payload de dirección de envío para precargar el checkout.
+     * Payload de dirección de envío activa para precargar el checkout.
      */
     private function buildUserShippingAddressPayload($ecommerceUser): ?array
     {
+        $addresses = $this->getUserShippingAddresses($ecommerceUser);
         $contact = $this->getContactArray($ecommerceUser);
-        $shipping = !empty($contact['shipping']) && is_array($contact['shipping'])
-            ? $contact['shipping']
+
+        if (empty($addresses)) {
+            return null;
+        }
+
+        $activeId = !empty($contact['shipping']['id'])
+            ? (string) $contact['shipping']['id']
             : null;
 
-        if ($shipping) {
-            $firstAddress = $ecommerceUser->addresses()->orderByDesc('id')->first();
-
-            $street = $shipping['address'] ?? '';
-            $fullAddress = $shipping['full_address'] ?? '';
-
-            if ($street === '' && $fullAddress === '') {
-                return null;
+        if ($activeId) {
+            foreach ($addresses as $addr) {
+                if (($addr['id'] ?? null) === $activeId) {
+                    return $this->appendPhoneToAddressPayload($addr, $ecommerceUser);
+                }
             }
-
-            return [
-                'id'            => $shipping['id'] ?? null,
-                'address'       => $street ?: $fullAddress,
-                'full_address'  => $fullAddress ?: $street,
-                'reference'     => $shipping['reference'] ?? '',
-                'latitude'      => isset($shipping['latitude']) && $shipping['latitude'] !== null && $shipping['latitude'] !== ''
-                    ? (float) $shipping['latitude']
-                    : null,
-                'longitude'     => isset($shipping['longitude']) && $shipping['longitude'] !== null && $shipping['longitude'] !== ''
-                    ? (float) $shipping['longitude']
-                    : null,
-                'department_id' => $shipping['department_id'] ?? optional($firstAddress)->department_id,
-                'province_id'   => $shipping['province_id'] ?? optional($firstAddress)->province_id,
-                'district_id'   => $shipping['district_id'] ?? optional($firstAddress)->district_id,
-                'phone'         => $ecommerceUser->telephone ?: optional($firstAddress)->phone,
-            ];
         }
 
-        // Usuario ya migrado al listado múltiple: sin shipping activo = sin dirección.
-        if (array_key_exists('shipping_addresses', $contact)) {
-            return null;
+        $ecommerceUser->load(['addresses' => function ($query) {
+            $query->orderByDesc('main')->orderByDesc('id');
+        }]);
+
+        $mainAddress = $ecommerceUser->addresses->firstWhere('main', true)
+            ?? $ecommerceUser->addresses->first();
+
+        if ($mainAddress) {
+            $mainId = (string) $mainAddress->id;
+            foreach ($addresses as $addr) {
+                if (($addr['id'] ?? null) === $mainId) {
+                    return $this->appendPhoneToAddressPayload($addr, $ecommerceUser, $mainAddress->phone);
+                }
+            }
         }
 
-        $firstAddress = $ecommerceUser->addresses()->orderByDesc('id')->first();
+        return $this->appendPhoneToAddressPayload($addresses[0], $ecommerceUser);
+    }
 
-        $street = $ecommerceUser->address ?: optional($firstAddress)->address;
-        $fullAddress = $ecommerceUser->address ?: optional($firstAddress)->address;
+    /**
+     * Agrega teléfono al payload de dirección de envío.
+     */
+    private function appendPhoneToAddressPayload(array $address, $ecommerceUser, ?string $fallbackPhone = null): array
+    {
+        $address['phone'] = $ecommerceUser->telephone ?: ($fallbackPhone ?: ($address['phone'] ?? null));
 
-        if (empty($street) && empty($fullAddress)) {
-            return null;
-        }
-
-        return [
-            'id'            => null,
-            'address'       => $street ?: $fullAddress,
-            'full_address'  => $fullAddress ?: $street,
-            'reference'     => '',
-            'latitude'      => null,
-            'longitude'     => null,
-            'department_id' => optional($firstAddress)->department_id,
-            'province_id'   => optional($firstAddress)->province_id,
-            'district_id'   => optional($firstAddress)->district_id,
-            'phone'         => $ecommerceUser->telephone ?: optional($firstAddress)->phone,
-        ];
+        return $address;
     }
 
     /**
@@ -1475,30 +1504,39 @@ class EcommerceController extends Controller
     }
 
     /**
-     * Lista de direcciones guardadas en contact.shipping_addresses (sin cambios de esquema).
+     * Lista de direcciones del cliente: person_addresses (BD) enriquecidas con contact.shipping_addresses.
      */
     private function getUserShippingAddresses($ecommerceUser): array
     {
-        $contact = $this->getContactArray($ecommerceUser);
-        $addresses = [];
-
-        if (!empty($contact['shipping_addresses']) && is_array($contact['shipping_addresses'])) {
-            foreach ($contact['shipping_addresses'] as $item) {
-                if (is_object($item)) {
-                    $item = (array) $item;
-                }
-                if (!is_array($item)) {
-                    continue;
-                }
-                $normalized = $this->buildShippingAddressRecord($item);
-                if (!empty($normalized['address']) || !empty($normalized['full_address'])) {
-                    $addresses[] = $normalized;
-                }
-            }
+        if (!$ecommerceUser) {
+            return [];
         }
 
-        if (!empty($addresses)) {
+        $ecommerceUser->load(['addresses' => function ($query) {
+            $query->orderByDesc('main')->orderByDesc('id');
+        }]);
+
+        $contact = $this->getContactArray($ecommerceUser);
+        $contactAddresses = $this->extractContactShippingAddresses($contact);
+        $personAddresses = $ecommerceUser->addresses;
+
+        if ($personAddresses->isNotEmpty()) {
+            $addresses = [];
+
+            foreach ($personAddresses as $personAddress) {
+                $contactMatch = $this->findMatchingContactAddress($contactAddresses, $personAddress);
+                $record = $this->buildShippingAddressFromPersonAddress($personAddress, $contactMatch);
+
+                if (!empty($record['address']) || !empty($record['full_address'])) {
+                    $addresses[] = $record;
+                }
+            }
+
             return $addresses;
+        }
+
+        if (!empty($contactAddresses)) {
+            return $contactAddresses;
         }
 
         // Listado explícitamente vacío (p. ej. el usuario eliminó todas sus direcciones).
@@ -1506,12 +1544,164 @@ class EcommerceController extends Controller
             return [];
         }
 
-        $legacy = $this->buildUserShippingAddressPayload($ecommerceUser);
-        if (!$legacy) {
+        $street = trim((string) ($ecommerceUser->address ?? ''));
+        if ($street === '') {
             return [];
         }
 
-        return [$this->buildShippingAddressRecord($legacy)];
+        return [$this->buildShippingAddressRecord([
+            'address'      => $street,
+            'full_address' => $street,
+        ])];
+    }
+
+    /**
+     * Normaliza direcciones almacenadas en contact.shipping_addresses.
+     */
+    private function extractContactShippingAddresses(array $contact): array
+    {
+        $addresses = [];
+
+        if (empty($contact['shipping_addresses']) || !is_array($contact['shipping_addresses'])) {
+            return $addresses;
+        }
+
+        foreach ($contact['shipping_addresses'] as $item) {
+            if (is_object($item)) {
+                $item = (array) $item;
+            }
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $normalized = $this->buildShippingAddressRecord($item);
+            if (!empty($normalized['address']) || !empty($normalized['full_address'])) {
+                $addresses[] = $normalized;
+            }
+        }
+
+        return $addresses;
+    }
+
+    /**
+     * Convierte un registro de person_addresses al formato del checkout.
+     */
+    private function buildShippingAddressFromPersonAddress(PersonAddress $personAddress, ?array $contactMatch = null): array
+    {
+        $parsedPerson = $this->splitAddressReference($personAddress->address ?? '');
+        $street = $parsedPerson['street'];
+        $reference = $parsedPerson['reference'];
+
+        $record = [
+            'id'            => (string) $personAddress->id,
+            'address'       => $street,
+            'reference'     => $reference,
+            'full_address'  => $this->composeFullAddress($street, $reference),
+            'latitude'      => null,
+            'longitude'     => null,
+            'department_id' => $personAddress->department_id,
+            'province_id'   => $personAddress->province_id,
+            'district_id'   => $personAddress->district_id,
+            'phone'         => $personAddress->phone,
+        ];
+
+        if (!$contactMatch) {
+            $record['location_id'] = $this->buildLocationIdArray(
+                $record['department_id'] ?? null,
+                $record['province_id'] ?? null,
+                $record['district_id'] ?? null
+            );
+
+            return $record;
+        }
+
+        $parsedContact = $this->splitAddressReference($contactMatch['address'] ?? '');
+        $parsedContactFull = $this->splitAddressReference($contactMatch['full_address'] ?? '');
+
+        if ($street === '') {
+            $street = $parsedContact['street'] ?: $parsedContactFull['street'];
+        }
+
+        $contactReference = trim((string) ($contactMatch['reference'] ?? ''));
+        if ($contactReference === '') {
+            $contactReference = $parsedContact['reference'] ?: $parsedContactFull['reference'];
+        }
+
+        if ($contactReference !== '') {
+            $reference = $contactReference;
+        }
+
+        $record['address'] = $street;
+        $record['reference'] = $reference;
+        $record['full_address'] = $this->composeFullAddress($street, $reference);
+
+        if (isset($contactMatch['latitude']) && $contactMatch['latitude'] !== null && $contactMatch['latitude'] !== '') {
+            $record['latitude'] = (float) $contactMatch['latitude'];
+        }
+        if (isset($contactMatch['longitude']) && $contactMatch['longitude'] !== null && $contactMatch['longitude'] !== '') {
+            $record['longitude'] = (float) $contactMatch['longitude'];
+        }
+
+        $record = array_merge($record, $this->resolveUbigeoIds($record));
+
+        if (!$record['department_id'] && $contactMatch) {
+            $contactUbigeo = $this->resolveUbigeoIds($contactMatch);
+            if ($contactUbigeo['department_id']) {
+                $record['department_id'] = $contactUbigeo['department_id'];
+                $record['province_id'] = $contactUbigeo['province_id'];
+                $record['district_id'] = $contactUbigeo['district_id'];
+            }
+        }
+
+        $record['location_id'] = $this->buildLocationIdArray(
+            $record['department_id'] ?? null,
+            $record['province_id'] ?? null,
+            $record['district_id'] ?? null
+        );
+
+        return $record;
+    }
+
+    /**
+     * Busca en contact.shipping_addresses la entrada que corresponde a una fila de person_addresses.
+     */
+    private function findMatchingContactAddress(array $contactAddresses, PersonAddress $personAddress): ?array
+    {
+        $personId = (string) $personAddress->id;
+        $normalizedPersonAddress = $this->normalizeAddressText($personAddress->address);
+
+        foreach ($contactAddresses as $contactAddress) {
+            $contactId = (string) ($contactAddress['id'] ?? '');
+            if ($contactId !== '' && $contactId === $personId) {
+                return $contactAddress;
+            }
+        }
+
+        foreach ($contactAddresses as $contactAddress) {
+            $candidates = [
+                $contactAddress['address'] ?? '',
+                $contactAddress['full_address'] ?? '',
+            ];
+
+            foreach ($candidates as $candidate) {
+                if ($normalizedPersonAddress !== '' && $this->normalizeAddressText($candidate) === $normalizedPersonAddress) {
+                    return $contactAddress;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normaliza texto de dirección para comparaciones.
+     */
+    private function normalizeAddressText(?string $value): string
+    {
+        $normalized = trim((string) $value);
+        $normalized = preg_replace('/\s*-\s*Ref:.*$/i', '', $normalized);
+
+        return mb_strtolower(preg_replace('/\s+/', ' ', $normalized));
     }
 
     /**
@@ -1523,24 +1713,60 @@ class EcommerceController extends Controller
     }
 
     /**
+     * Separa calle y referencia cuando vienen concatenadas en un solo texto.
+     */
+    private function splitAddressReference(?string $text): array
+    {
+        $raw = trim((string) $text);
+        if ($raw === '') {
+            return ['street' => '', 'reference' => ''];
+        }
+
+        if (preg_match('/\s*-\s*Ref[.:]?\s*(.+)$/iu', $raw, $matches)) {
+            return [
+                'street'    => trim(preg_replace('/\s*-\s*Ref[.:]?\s*.+$/iu', '', $raw)),
+                'reference' => trim($matches[1]),
+            ];
+        }
+
+        return ['street' => $raw, 'reference' => ''];
+    }
+
+    /**
+     * Construye la dirección completa sin duplicar la referencia.
+     */
+    private function composeFullAddress(string $street, string $reference): string
+    {
+        $street = trim($street);
+        $reference = trim($reference);
+
+        if ($street === '') {
+            return $reference !== '' ? 'Ref: ' . $reference : '';
+        }
+
+        if ($reference === '') {
+            return $street;
+        }
+
+        return $street . ' - Ref: ' . $reference;
+    }
+
+    /**
      * Normaliza un registro de dirección de envío para contact.shipping_addresses.
      */
     private function buildShippingAddressRecord(array $data): array
     {
-        $street = trim((string) ($data['address'] ?? ''));
-        $reference = trim((string) ($data['reference'] ?? ''));
-        $fullAddress = trim((string) ($data['full_address'] ?? ''));
+        $streetInput = trim((string) ($data['address'] ?? ''));
+        $referenceInput = trim((string) ($data['reference'] ?? ''));
+        $fullInput = trim((string) ($data['full_address'] ?? ''));
 
-        if ($fullAddress === '') {
-            $fullAddress = $street;
-            if ($reference !== '') {
-                $fullAddress .= ' - Ref: ' . $reference;
-            }
-        }
+        $fromStreet = $this->splitAddressReference($streetInput);
+        $fromFull = $this->splitAddressReference($fullInput);
 
-        if ($street === '' && $fullAddress !== '') {
-            $street = preg_replace('/\s*-\s*Ref:.*$/i', '', $fullAddress);
-        }
+        $street = $fromStreet['street'] ?: $fromFull['street'];
+        $reference = $referenceInput ?: ($fromStreet['reference'] ?: $fromFull['reference']);
+        $fullAddress = $this->composeFullAddress($street, $reference);
+        $ubigeo = $this->resolveUbigeoIds($data);
 
         $id = trim((string) ($data['id'] ?? ''));
         if ($id === '') {
@@ -1559,10 +1785,52 @@ class EcommerceController extends Controller
             'longitude'     => isset($data['longitude']) && $data['longitude'] !== null && $data['longitude'] !== ''
                 ? (float) $data['longitude']
                 : null,
-            'department_id' => $data['department_id'] ?? null,
-            'province_id'   => $data['province_id'] ?? null,
-            'district_id'   => $data['district_id'] ?? null,
+            'department_id' => $ubigeo['department_id'],
+            'province_id'   => $ubigeo['province_id'],
+            'district_id'   => $ubigeo['district_id'],
+            'location_id'   => $this->buildLocationIdArray(
+                $ubigeo['department_id'],
+                $ubigeo['province_id'],
+                $ubigeo['district_id']
+            ),
         ];
+    }
+
+    /**
+     * Resuelve department/province/district desde campos sueltos o location_id.
+     */
+    private function resolveUbigeoIds(array $data): array
+    {
+        $departmentId = $data['department_id'] ?? null;
+        $provinceId = $data['province_id'] ?? null;
+        $districtId = $data['district_id'] ?? null;
+
+        $locationId = $data['location_id'] ?? null;
+        if (is_array($locationId) && count($locationId) === 3) {
+            if (!empty($locationId[0]) && !empty($locationId[1]) && !empty($locationId[2])) {
+                $departmentId = $locationId[0];
+                $provinceId = $locationId[1];
+                $districtId = $locationId[2];
+            }
+        }
+
+        return [
+            'department_id' => $departmentId ?: null,
+            'province_id'   => $provinceId ?: null,
+            'district_id'   => $districtId ?: null,
+        ];
+    }
+
+    /**
+     * Construye el arreglo location_id solo cuando los tres niveles están presentes.
+     */
+    private function buildLocationIdArray($departmentId, $provinceId, $districtId): array
+    {
+        if (empty($departmentId) || empty($provinceId) || empty($districtId)) {
+            return [];
+        }
+
+        return [$departmentId, $provinceId, $districtId];
     }
 
     /**
@@ -1580,11 +1848,11 @@ class EcommerceController extends Controller
     /**
      * Actualiza o crea el registro en person_addresses (best-effort; no bloquea si falta ubigeo).
      */
-    private function persistPersonAddressRecord($user, array $data): void
+    private function persistPersonAddressRecord($user, array $data, ?string $addressId = null, bool $forceCreate = false): ?int
     {
         $address = trim((string) ($data['address'] ?? ''));
         if ($address === '') {
-            return;
+            return null;
         }
 
         $payload = [
@@ -1598,17 +1866,35 @@ class EcommerceController extends Controller
         ];
 
         try {
-            $existing = $user->addresses()->orderByDesc('id')->first();
-            if ($existing) {
-                $existing->fill($payload);
-                $existing->save();
-            } else {
-                $user->addresses()->create($payload);
+            if ($addressId !== null && $addressId !== '' && ctype_digit($addressId)) {
+                $existing = $user->addresses()->find((int) $addressId);
+                if ($existing) {
+                    $existing->fill($payload);
+                    $existing->save();
+
+                    return (int) $existing->id;
+                }
             }
+
+            if (!$forceCreate) {
+                $existing = $user->addresses()->orderByDesc('id')->first();
+                if ($existing) {
+                    $existing->fill($payload);
+                    $existing->save();
+
+                    return (int) $existing->id;
+                }
+            }
+
+            $created = $user->addresses()->create($payload);
+
+            return (int) $created->id;
         } catch (\Throwable $e) {
             // Ubigeo inválido u otras FKs: la dirección ya quedó en persons.address / contact.shipping
             report($e);
         }
+
+        return null;
     }
 
     public function searchDocument($type, $number)

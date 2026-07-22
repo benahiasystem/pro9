@@ -4188,6 +4188,8 @@ export default {
             form_payment: {},
             document_types_guide: [],
             customers: [],
+            preloadedCustomerId: null,
+            preloadedCustomer: null,
             sellers: [],
             company: null,
             document_type_03_filter: null,
@@ -4579,7 +4581,6 @@ export default {
                 .get(`/store/record/${this.table}/${this.tableId}`)
                 .then(response => {
                     this.onSetFormData(response.data.data);
-                    this.setDefaultDocumentType()
                 })
                 .finally(() => (this.loading_submit = false));
         }
@@ -5326,6 +5327,7 @@ export default {
         // #307 Ajuste para seleccionar automaticamente el tipo de comprobante y serie
         setDefaultDocumentType(from_function) {
             if (this.authUser.multiple_default_document_types) return;
+            if (this.isGeneratedFromExternal && this.preloadedCustomerId) return;
 
             this.default_series_type = this.config.user.serie;
             this.default_document_type = this.config.user.document_id;
@@ -5369,6 +5371,11 @@ export default {
             this.customers = this.customers.filter(el => el.id !== data.customer_id)
             this.customers.push(data.customer)
 
+            if (this.isGeneratedFromExternal && data.customer) {
+                this.all_customers = this.all_customers.filter(el => el.id !== data.customer_id)
+                this.all_customers.push(data.customer)
+            }
+
             this.form.id = data.id;
             this.form.custom_fields_data = data.custom_fields_data;
             this.form.hash = data.hash;
@@ -5378,6 +5385,12 @@ export default {
             );
             this.form.time_of_issue = data.time_of_issue;
             this.form.customer_id = data.customer_id;
+
+            if (this.isGeneratedFromExternal && data.customer_id) {
+                this.preloadedCustomerId = data.customer_id;
+                this.preloadedCustomer = data.customer || null;
+            }
+
             this.form.currency_type_id = data.currency_type_id;
             this.form.exchange_rate_sale = data.exchange_rate_sale;
             this.form.external_id = data.external_id;
@@ -6293,7 +6306,9 @@ export default {
                         } */
                     });
             } else {
-                this.form.customer_id = null;
+                if (!this.shouldProtectPreloadedCustomer()) {
+                    this.form.customer_id = null;
+                }
                 this.filterCustomers();
                 this.input_person.number = null;
             }
@@ -6545,6 +6560,11 @@ export default {
             this.selectDefaultCustomer();
         },
         async selectDefaultCustomer() {
+            if (this.shouldProtectPreloadedCustomer()) {
+                this.ensurePreloadedCustomerInList();
+                return;
+            }
+
             if (this.establishment.customer_id) {
                 let temp_all_customers = this.all_customers;
                 let temp_customers = this.customers;
@@ -6600,10 +6620,49 @@ export default {
         changeDocumentType() {
             this.validateDateOfIssue();
             this.filterSeries();
-            this.cleanCustomer();
+            if (!this.shouldProtectPreloadedCustomer()) {
+                this.cleanCustomer();
+            }
             this.filterCustomers();
             this.setDefaultSerieByDocument();
             this.verifyDocumentType03ForDetraction();
+        },
+        shouldProtectPreloadedCustomer() {
+            return Boolean(
+                this.isGeneratedFromExternal && this.preloadedCustomerId
+            );
+        },
+        ensurePreloadedCustomerInList() {
+            if (!this.shouldProtectPreloadedCustomer()) {
+                return;
+            }
+
+            const customerId = this.preloadedCustomerId;
+            const existingCustomer =
+                this.preloadedCustomer ||
+                _.find(this.customers, { id: customerId }) ||
+                _.find(this.all_customers, { id: customerId });
+
+            if (!existingCustomer) {
+                return;
+            }
+
+            if (!_.find(this.all_customers, { id: customerId })) {
+                this.all_customers.push(existingCustomer);
+            }
+
+            if (!_.find(this.customers, { id: customerId })) {
+                this.customers.push(existingCustomer);
+            }
+
+            this.form.customer_id = customerId;
+        },
+        cleanCustomer() {
+            if (this.shouldProtectPreloadedCustomer()) {
+                return;
+            }
+
+            this.form.customer_id = null;
         },
         setDefaultSerieByDocument() {
             if (!this.authUser || !this.authUser.multiple_default_document_types)
@@ -6624,9 +6683,6 @@ export default {
             if (exist_serie) {
                 this.form.series_id = default_document_type_serie.series_id;
             }
-        },
-        cleanCustomer() {
-            this.form.customer_id = null;
         },
         dateValidError() {
             this.$message.error(
@@ -6709,11 +6765,13 @@ export default {
             }
         },
         filterCustomers() {
+            const protectCustomer = this.shouldProtectPreloadedCustomer();
+
             if (
                 ["0101", "1001", "1004"].includes(this.form.operation_type_id)
             ) {
                 if (this.form.document_type_id === "01") {
-                    if (!_.isNull(this.form.customer_id)) {
+                    if (!_.isNull(this.form.customer_id) && !protectCustomer) {
                         const cus = _.find(this.all_customers, {
                             id: this.form.customer_id
                         });
@@ -6737,6 +6795,8 @@ export default {
             } else {
                 this.customers = this.all_customers;
             }
+
+            this.ensurePreloadedCustomerInList();
         },
         clickAddInitGuides() {
             this.form.guides.push(
@@ -8105,12 +8165,26 @@ export default {
 
         },
         async reloadDataCustomers(customer_id) {
+            if (!customer_id) {
+                return;
+            }
+
+            const preloadedCustomer = _.find(this.customers, { id: customer_id });
+
             await this.$http
                 .get(`/${this.resource}/search/customer/${customer_id}`)
                 .then(response => {
-                    this.customers = response.data.customers;
+                    if (response.data.customers && response.data.customers.length > 0) {
+                        this.customers = response.data.customers;
+                    } else if (preloadedCustomer) {
+                        this.customers = [preloadedCustomer];
+                    }
+
                     this.form.customer_id = customer_id;
                     let customer = _.find(this.customers, {'id': customer_id});
+                    if (!customer) {
+                        return;
+                    }
                     this.form.has_retention = customer.is_agent_retention
                     if (this.form.has_retention && this.amountRetentionValidate) {
                         this.changeRetention();
@@ -8129,6 +8203,14 @@ export default {
                 });
         },
         changeCustomer() {
+            if (
+                this.preloadedCustomerId &&
+                this.form.customer_id !== this.preloadedCustomerId
+            ) {
+                this.preloadedCustomerId = null;
+                this.preloadedCustomer = null;
+            }
+
             this.checkCustomerExpiredDebt();
             this.customer_addresses = [];
             this.form.customer_address_id = null;

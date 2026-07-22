@@ -8,32 +8,54 @@
                 <li class="active"><span> App Móvil</span></li>
                 <li class="active"><span> Configuración</span></li>
             </ol>
-            <div class="right-wrapper pull-right"></div>
+            <div class="right-wrapper pull-right">
+                <button class="btn btn-sm btn-primary mt-2 me-2" @click="showColorDialog = true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                </button>
+            </div>
         </div>
         <div class="row">
             <div class="short-div col-md-8">
                 <tenant-mobile-app-permissions></tenant-mobile-app-permissions>
             </div>
             <div class="short-div col-md-4">
-                <app-logo-config></app-logo-config>
-                <app-color-config></app-color-config>
+                <div class="card">
+                    <div class="card-body text-center">
+                        <img
+                            :src="previewImage"
+                            alt="Vista previa de la app móvil"
+                            class="img-fluid app-preview-img"
+                        />
+                    </div>
+                </div>
             </div>
         </div>
+
+        <el-dialog
+            title="Gestionar color de la app"
+            :visible.sync="showColorDialog"
+            :close-on-click-modal="false"
+            width="420px"
+        >
+            <app-color-config v-if="showColorDialog"></app-color-config>
+        </el-dialog>
     </div>
 </template>
 
 <script>
     import AppColorConfig from './partials/AppColorConfig.vue'
-    import AppLogoConfig from './partials/AppLogoConfig.vue'
 
     export default {
-        components: { AppColorConfig, AppLogoConfig },
+        components: { AppColorConfig },
         data() {
             return {
                 form: {},
                 loading_submit: false,
                 resource: 'app/configurations',
                 loading: false,
+                showColorDialog: false,
+                // Se sirve desde public/, no pasa por el bundle de Vite
+                previewImage: '/images/mobile-app/preview.png',
             }
         },
         async created(){
@@ -84,3 +106,10 @@
         }
     }
 </script>
+
+<style scoped>
+.app-preview-img {
+    max-height: 640px;
+    object-fit: contain;
+}
+</style>

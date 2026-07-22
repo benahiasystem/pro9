@@ -57,7 +57,7 @@ class PersonAddress extends ModelTenant
             'id' => $this->id,
             'trade_name' => $this->trade_name,
             'country_id' => $this->country_id,
-            'location_id' => !is_null($this->location_id)?$this->location_id:[],
+            'location_id' => $this->getResolvedLocationId(),
             'address' => $this->address,
             'phone' => $this->phone,
             'email' => $this->email,
@@ -107,13 +107,39 @@ class PersonAddress extends ModelTenant
 
     public function setLocationIdAttribute($value)
     {
-        $this->attributes['department_id'] = (count($value) === 3)?$value[0]:null;
-        $this->attributes['province_id'] = (count($value) === 3)?$value[1]:null;
-        $this->attributes['district_id'] = (count($value) === 3)?$value[2]:null;
+        if (!is_array($value) || count($value) !== 3) {
+            $this->attributes['department_id'] = null;
+            $this->attributes['province_id'] = null;
+            $this->attributes['district_id'] = null;
+            return;
+        }
+
+        if (empty($value[0]) || empty($value[1]) || empty($value[2])) {
+            $this->attributes['department_id'] = null;
+            $this->attributes['province_id'] = null;
+            $this->attributes['district_id'] = null;
+            return;
+        }
+
+        $this->attributes['department_id'] = $value[0];
+        $this->attributes['province_id'] = $value[1];
+        $this->attributes['district_id'] = $value[2];
     }
 
     public function getLocationIdAttribute()
     {
+        return $this->getResolvedLocationId();
+    }
+
+    /**
+     * Devuelve un arreglo ubigeo válido [departamento, provincia, distrito] o vacío.
+     */
+    public function getResolvedLocationId(): array
+    {
+        if (!$this->department_id || !$this->province_id || !$this->district_id) {
+            return [];
+        }
+
         return [
             $this->department_id,
             $this->province_id,
