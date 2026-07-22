@@ -542,7 +542,6 @@ class SaleNoteController extends Controller
         $establishment_id =  $user->establishment_id;
         $userId =  $user->id;
         $customers = $this->table('customers');
-        logger()->info('sale-notes tables customer', ['customer' => $customers->first()]);
         $establishments = Establishment::where('id', auth()->user()->establishment_id)->get();
         $currency_types = CurrencyType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
