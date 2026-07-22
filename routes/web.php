@@ -132,12 +132,14 @@ if ($hostname) {
             // WhatsApp Bot
             Route::get('whatsapp-bot/configuration', 'Tenant\WhatsAppBotController@configuration')->name('tenant.whatsapp_bot.configuration');
             Route::post('whatsapp-bot/connect', 'Tenant\WhatsAppBotController@connect');
+            Route::post('whatsapp-bot/link-existing', 'Tenant\WhatsAppBotController@linkExisting');
             Route::get('whatsapp-bot/qr', 'Tenant\WhatsAppBotController@qr');
             Route::get('whatsapp-bot/state', 'Tenant\WhatsAppBotController@state');
             Route::post('whatsapp-bot/disconnect', 'Tenant\WhatsAppBotController@disconnect');
             Route::post('whatsapp-bot/restart', 'Tenant\WhatsAppBotController@restart');
             Route::post('whatsapp-bot/renew', 'Tenant\WhatsAppBotController@renew');
             Route::post('whatsapp-bot/toggle-enabled', 'Tenant\WhatsAppBotController@toggleEnabled');
+            Route::post('whatsapp-bot/toggle-use-qr-api-instance', 'Tenant\WhatsAppBotController@toggleUseQrApiInstance');
             Route::post('whatsapp-bot/commands', 'Tenant\WhatsAppBotController@storeCommands');
             Route::post('configurations/apiruc', 'Tenant\ConfigurationController@storeApiRuc');
             Route::post('configurations/icbper', 'Tenant\ConfigurationController@icbper');
