@@ -86,7 +86,7 @@
     "src": "modules/Marketplace/Resources/assets/img/buho-logo.svg"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.css": {
-    "file": "assets/marketplace-c8d7329e.css",
+    "file": "assets/marketplace-038f194b.css",
     "src": "modules/Marketplace/Resources/assets/js/marketplace.css"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.js": {
@@ -100,9 +100,9 @@
       "assets/jetbrains-mono-latin-ext-db5ff4db.woff2"
     ],
     "css": [
-      "assets/marketplace-c8d7329e.css"
+      "assets/marketplace-038f194b.css"
     ],
-    "file": "assets/marketplace-29252058.js",
+    "file": "assets/marketplace-52e3fba3.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js"
     ],

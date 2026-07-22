@@ -4,7 +4,7 @@
             <mkt-icon name="shield-lock" :size="18"/>
             <span>
                 Usamos una cookie técnica y registramos tu IP; al pedir un contacto, también tu
-                nombre y WhatsApp. Solo por seguridad de la comunidad (Ley 29733).
+                nombre y WhatsApp. Solo por motivos de seguridad (Ley 29733).
                 <a v-if="termsUrl" :href="termsUrl">Términos y condiciones</a><template v-if="termsUrl && arcoEmail"> · </template><a v-if="arcoEmail" :href="'mailto:' + arcoEmail">Canal ARCO</a>
             </span>
         </span>

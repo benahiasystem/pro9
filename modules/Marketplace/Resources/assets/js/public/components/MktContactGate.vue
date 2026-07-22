@@ -42,7 +42,7 @@
 
                 <div class="mkt-gate__notice">
                     <mkt-icon name="shield-lock" :size="16"/>
-                    <span>Por seguridad de la comunidad, tu nombre, WhatsApp, cookie e IP quedan registrados al generar el enlace.</span>
+                    <span>Por motivos de seguridad, tu nombre, WhatsApp, cookie e IP quedan registrados al generar el enlace.</span>
                 </div>
 
                 <p v-if="error" class="mkt-gate__error">{{ error }}</p>

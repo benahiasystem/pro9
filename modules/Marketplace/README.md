@@ -7,7 +7,7 @@ Vitrina pública de las tiendas de una comunidad. Los negocios publican su catá
 Sí hay dos cosas que se le parecen, y conviene entender sus límites:
 
 - **Precios opcionales**, opt-in por tienda. Cada negocio decide si publica los suyos; por defecto no. Son informativos: el precio final y la entrega se acuerdan en el chat.
-- **Un pedido (carrito)** que agrupa productos y los manda en **un solo WhatsApp** por tienda. No es un checkout: no hay total vinculante, no se cobra nada y el servidor ni se entera — el carrito vive en el navegador.
+- **Un pedido (carrito)** que agrupa productos y los manda en **un solo WhatsApp** por tienda. No es un checkout: no hay total vinculante ni se cobra nada. El carrito vive en el navegador; el servidor solo interviene al final, en la puerta de contacto, para armar el mensaje y dejar el rastro por motivos de seguridad.
 
 ---
 
@@ -27,7 +27,11 @@ La app móvil se compila apuntando al dominio del reseller con un token fijo. La
 
 - **Sincroniza todo su catálogo** con una sola llamada: datos de la tienda + productos + imágenes. De cada producto viajan también su **precio** y su **descripción**, si los tiene.
 - **Decide si publica precios** con un toggle en el formulario de su tienda (*Mostrar precios*, apagado por defecto). Apagarlo los oculta al instante sin resincronizar.
-- **Consulta su estado** en cualquier momento (pendiente, aprobada, rechazada, deshabilitada) y recibe el motivo escrito por el administrador tal cual.
+- **Decide si publica su dirección exacta** (*Mostrar dirección exacta*, apagado por defecto). Apagado, el público ve solo la **zona referencial** que la tienda escribió («Bloque 7», «Portería principal») — o nada.
+- **Su número de WhatsApp nunca se publica**: no viaja en el HTML ni en el JSON del feed. Los clientes le siguen escribiendo igual; el enlace nace en el servidor, en la puerta de contacto.
+- **Credencial propia por dispositivo** (trust-on-first-use): el primer sync emite un secreto que la app guarda en el almacén seguro del sistema. Nadie puede suplantar la tienda con solo conocer su `external_uuid`.
+- **Botón «Ocultar mi tienda»**: despublicación inmediata sin pasar por el administrador. Al ocultarse, la app muestra los canales de emergencia (Línea 111 de la PNP, central 1818 del Mininter). Volver a publicar es sincronizar.
+- **Consulta su estado** en cualquier momento (pendiente, aprobada, oculta, rechazada, deshabilitada) y recibe el motivo escrito por el administrador tal cual.
 - **Aceptación implícita de términos y condiciones**: al sincronizar por primera vez queda registrada. Si el reseller no tiene T&C activos, el enlace no se muestra en ninguna parte.
 - **Syncs ligeros**: las imágenes se envían solo cuando cambian (comparando hash). El primer sync puede pesar megas; los siguientes, unos KB.
 
@@ -41,7 +45,10 @@ La app móvil se compila apuntando al dominio del reseller con un token fijo. La
 - **Bloqueo automático por denuncias**: umbral configurable (100 por defecto). Al alcanzarlo, el producto se retira solo y queda el rastro en el motivo. `0` desactiva la función.
 - **Ver el ranking de recomendaciones**, por tienda y por producto, junto a las denuncias. Es el contrapeso: un producto denunciado que además acumula recomendaciones suele ser una denuncia interesada, no un problema real. Aquí el número es **exacto**; el público lo ve abreviado.
 - **Renombrar u ocultar categorías** sin romper enlaces.
-- **Ajustes**: nombre de la comunidad, titular de la portada, textos SEO, saludo de WhatsApp (de un producto **y** del pedido/carrito), **símbolo de moneda** (para las tiendas que muestran precios), paginación, límite de catálogo, motivos de denuncia y **umbral del ranking** (cuántos vecinos distintos hacen falta para que una tienda destaque; 10 por defecto, `0` lo desactiva).
+- **Rastro de contactos por tienda**: quién pidió el contacto de qué tienda y cuándo (nombre, WhatsApp declarado, cookie e IP), con **export CSV** desde la fila de la tienda — evidencia entregable ante una denuncia.
+- **Acción requerida en la fila**: las alertas de seguridad (cambio de WhatsApp post-aprobación, barrido del feed, reset de credencial) se muestran como badge en la tabla de tiendas, no en una pestaña aparte, y se atienden desde el menú de acciones.
+- **Restablecer la credencial** de una tienda que cambió o perdió su dispositivo; el siguiente sync emite una nueva.
+- **Ajustes**: nombre de la comunidad, titular de la portada, textos SEO, saludo de WhatsApp (de un producto **y** del pedido/carrito), **símbolo de moneda** (para las tiendas que muestran precios), paginación, límite de catálogo, motivos de denuncia, **umbral del ranking** (cuántos vecinos distintos hacen falta para que una tienda destaque; 10 por defecto, `0` lo desactiva), **límite de contactos por hora**, **días de retención** del rastro y **correo del canal ARCO**.
 
 El titular de la portada se edita en dos campos —el texto y el remate destacado, que se pinta en rosa y cursiva— con vista previa en vivo. Viene precargado con *«Lo que venden tus vecinos, a un WhatsApp.»*; si se vacían ambos, el titular desaparece de la portada.
 
@@ -64,11 +71,15 @@ Pantalla única en `/marketplace`, con el design system de Búho:
 
 Cada tienda tiene un enlace compartible con Open Graph, pensado para pegarse en WhatsApp; si deja de estar aprobada responde **410** con una salida amable, no un 404 seco, porque el enlace ya circuló.
 
-### La CTA es siempre WhatsApp
+### La CTA es siempre WhatsApp — pero el número solo vive en el servidor
 
-No hay checkout ni pasarela: todo termina en un chat. Para **un producto**, el enlace se arma en el servidor (`Services/WhatsAppLink`) e incluye el saludo configurable, el nombre, su **código interno** y la URL de la tienda. El código es lo que le permite al vendedor ubicar el producto de inmediato en su app, que es de donde salió el catálogo.
+No hay checkout ni pasarela: todo termina en un chat. Desde la capa de seguridad (`prompts/plan-seguridad-marketplace.md`), el número de la tienda **nunca llega al navegador**: no está en el HTML, ni en el JSON del feed, ni en las metaetiquetas. Todo camino a WhatsApp pasa por la **puerta de contacto**:
 
-Para **un pedido** (varios productos de una tienda), el mensaje se arma en el cliente (`wa-cart.js`) porque las cantidades son dinámicas: mismo formato, con la lista de ítems y sus cantidades bajo el saludo del carrito.
+1. El visitante pulsa el botón de WhatsApp (producto, tienda o pedido) y se abre el modal de la puerta.
+2. Declara su **nombre y su WhatsApp**, y resuelve un **proof-of-work estilo ALTCHA** (`Services/PowChallenge`, autohospedado, sin dependencias ni servicios externos — el checkbox «No soy un robot» del front brute-forcea el desafío en unos cientos de ms).
+3. `POST /marketplace/contacto` valida todo, **registra la solicitud** (nombre, WhatsApp declarado, cookie firmada, IP, tienda e ítems) con aviso explícito por motivos de seguridad, y recién entonces devuelve el enlace `wa.me` armado por `Services/WhatsAppLink` — para un producto (con su **código interno**), para la tienda, o para el **pedido completo** con cantidades.
+
+Encima hay un **throttle por visitante** (`contact_limit_per_hour`, 10 por defecto): al cruzar la mitad, el front muestra un aviso a pantalla completa («Vas muy rápido»); al agotarse, 429. El feed lleva su propio throttle (120 req/min por IP) y una detección de barrido de paginación que alerta al admin. Un vecino no nota nada de esto; un scraper paga cada número con CPU, fricción y rastro.
 
 ---
 
@@ -77,6 +88,8 @@ Para **un pedido** (varios productos de una tienda), el mensaje se arma en el cl
 ### La aprobación es solo para el alta
 
 Una vez aprobada, la tienda publica cambios **al instante y sin revisión**. Cambiar nombre, RUC, WhatsApp o logo no vuelve a pasar por el administrador. El control permanente es el botón «Deshabilitar», disponible siempre.
+
+Con una excepción de vigilancia: **cambiar el WhatsApp después de la aprobación se publica igual, pero nunca en silencio** — es el dato que un atacante querría capturar para desviar a los clientes, así que genera una alerta de seguridad que el admin ve como «acción requerida» en la fila de la tienda (con el antes y el después enmascarados, y la IP del sync en el detalle).
 
 ### El bloqueo de un producto es permanente
 
@@ -114,7 +127,7 @@ A diferencia de los contadores de categoría, aquí un número desactualizado un
 
 La cookie del visitante está **firmada**, así que nadie puede falsificar un `visitor_id` ajeno. Pero cada identidad nueva solo necesita **un** pulgar para contar como visitante distinto, y borrar cookies genera identidades nuevas: con el `throttle:60,60` por IP, alguien decidido puede fabricar del orden de 60 avales por minuto desde una misma IP.
 
-No se mitiga más porque hacerlo exigiría cuentas, captcha o algún tipo de verificación, y eso rompería la premisa de todo el marketplace: **mínima interacción, sin fricción**. Las dos defensas que sí existen son proporcionadas al riesgo (una comunidad cerrada, no un ranking con dinero de por medio): el **umbral** obliga a reunir varias identidades antes de que la tienda destaque siquiera, y la **IP queda registrada en cada fila**, así que un ranking sospechoso se audita de un vistazo (muchos `visitor_id` distintos desde una sola IP es la firma del abuso). Es la misma clase de decisión consciente que el [riesgo de autenticación](#riesgo-aceptado-en-la-autenticación) de la API.
+No se mitiga más porque hacerlo exigiría cuentas, captcha o algún tipo de verificación, y eso rompería la premisa de todo el marketplace: **mínima interacción, sin fricción**. Las dos defensas que sí existen son proporcionadas al riesgo (una comunidad cerrada, no un ranking con dinero de por medio): el **umbral** obliga a reunir varias identidades antes de que la tienda destaque siquiera, y la **IP queda registrada en cada fila**, así que un ranking sospechoso se audita de un vistazo (muchos `visitor_id` distintos desde una sola IP es la firma del abuso). Nótese que este equilibrio es distinto al del **contacto**, donde sí hay PoW y registro: inflar un ranking daña poco; extraer números de WhatsApp daña mucho, y cada capa es proporcional a su riesgo.
 
 ### Un pulgar es idempotente
 
@@ -122,17 +135,15 @@ No se mitiga más porque hacerlo exigiría cuentas, captcha o algún tipo de ver
 
 El endpoint lleva el estado **explícito** (`recomendar` true/false), no es un toggle ciego, para que el resultado dependa de lo que pidió el cliente y no del estado que hubiera en el servidor. El orden entre un «pon» y un «quita» concurrentes lo garantiza el cliente, que serializa las peticiones (guard `busy` en `MktRecommend`): no dispara una hasta que vuelve la anterior.
 
-### El pedido se arma y se envía desde el cliente
+### El pedido vive en el cliente; el mensaje se arma en el servidor
 
-El carrito vive **entero en el navegador** (`Resources/assets/js/public/cart.js`, persistido en `localStorage`). No hay tabla, ni endpoint, ni estado en el servidor: es una lista de la compra, coherente con que el marketplace no maneja stock, órdenes ni pagos. Tampoco calcula un total, aunque la tienda muestre precios: el importe lo confirma el vendedor en el chat.
+El carrito vive **entero en el navegador** (`Resources/assets/js/public/cart.js`, persistido en `localStorage`). No hay tabla de carritos ni estado de compra en el servidor: es una lista de la compra, coherente con que el marketplace no maneja stock, órdenes ni pagos. Tampoco calcula un total, aunque la tienda muestre precios: el importe lo confirma el vendedor en el chat.
 
-Persiste porque **el front navega con recargas de página completas** (ir a una tienda es un `location.href`): un carrito en memoria se perdería al cambiar de vista. Por eso cada ítem guarda un **snapshot** de lo que necesita para agruparse y armar el mensaje —nombre, código y los datos de su tienda—, sin depender de que el producto siga en la página actual.
+Persiste porque **el front navega con recargas de página completas** (ir a una tienda es un `location.href`): un carrito en memoria se perdería al cambiar de vista. Cada ítem guarda un **snapshot** mínimo —nombre, código y la identidad de su tienda—, sin número de WhatsApp ni URL: desde la capa de seguridad el mensaje lo compone el **servidor** (`WhatsAppLink::forCart`) cuando la puerta de contacto recibe los ids y cantidades, releyendo los nombres de la base para que el texto que recibe la tienda no sea falsificable. El saludo que lo encabeza es el ajuste **`whatsapp_cart_greeting`**, gemelo del de un producto: toda la copia que llega al WhatsApp de la tienda vive en Ajustes.
 
-El mensaje de WhatsApp se arma en el cliente (`wa-cart.js`), no en el servidor como el de un solo producto, porque **las cantidades son dinámicas**. Para eso el payload del producto expone `store.whatsapp` (no es una fuga: ese número ya viajaba dentro de `wa_link`). El saludo que encabeza el mensaje es el ajuste **`whatsapp_cart_greeting`**, gemelo del de un producto: toda la copia que llega al WhatsApp de la tienda vive en Ajustes.
+**Se agrupa por tienda y cada una envía por separado**: una tienda no puede recibir el pedido de otra. Si el carrito cruza varias, el drawer lo avisa y pinta un botón «Enviar pedido» por grupo. Al abrir el WhatsApp de una tienda, **sus líneas se vacían del carrito** — un pedido enviado no se queda en la lista invitando a reenviarse; las demás tiendas no se tocan, y si era la última el drawer se cierra solo.
 
-**Se agrupa por tienda y cada una envía por separado**: una tienda no puede recibir el pedido de otra. Si el carrito cruza varias, el drawer lo avisa y pinta un botón «Enviar pedido» por grupo. La marca «Enviado» es solo de sesión —no podemos saber si el mensaje se mandó de verdad— y no se persiste.
-
-Los ítems del carrito son un snapshot y **no se validan contra el servidor**: si un producto se bloquea o se retira después, sigue en la lista hasta que el vecino la ajuste; la tienda lo aclara por WhatsApp. Es el mismo criterio de mínima fricción del resto del módulo.
+Los ítems del carrito son un snapshot y **no se validan contra el servidor mientras se arman**: si un producto se bloquea o se retira después, sigue en la lista hasta que el vecino la ajuste. La validación real ocurre al enviar: la puerta de contacto relee los ítems de la base, así que uno bloqueado simplemente no entra en el mensaje.
 
 ### Los precios son opt-in por tienda, y el gate es de presentación
 
@@ -172,9 +183,19 @@ Limitación aceptada: un error de tipeo genera una categoría nueva. Con el volu
 
 Con el marketplace apagado, la API responde **200** con `marketplace_enabled: false`, no un `4xx`/`5xx`. La app debe leer esa bandera **antes** que `status`: es lo único que distingue «el marketplace está apagado» de «tu tienda está pendiente». El público ve un **503** con una página amable, y el administrador sigue teniendo acceso completo para poder aprobar tiendas antes de abrir.
 
-### Riesgo aceptado en la autenticación
+### La suplantación de tiendas está cerrada: credencial TOFU por tienda
 
-El token es global del reseller, compartido por todas las apps. La identidad de la tienda viaja en el payload (`external_uuid`), no en la credencial, así que **cualquier app con el token podría suplantar el `external_uuid` de otra tienda**. Es una decisión consciente del negocio dado el contexto (comunidad cerrada, información pública una vez aprobada). No se implementa mitigación.
+El plan original aceptaba que el token global del reseller permitiera suplantar el `external_uuid` de otra tienda. El contexto de extorsión lo reclasificó de «aceptado» a «urgente» y quedó cerrado con **trust-on-first-use**: el primer sync válido de una tienda emite un `store_secret` que viaja **una sola vez** en la respuesta; la app lo guarda en el almacén seguro del dispositivo (keychain/keystore) y lo envía como header `X-Store-Secret` en todo sync y en «Ocultar mi tienda». En el servidor solo se guarda su hash.
+
+Un atacante con el token del reseller conoce el uuid pero no el secreto: su sync recibe **403**. Una tienda anterior a esta versión (sin `secret_hash`) adopta credencial en su siguiente sync, por el mismo camino. Si la tienda cambia o pierde el dispositivo, el administrador **restablece la credencial** desde la fila de la tienda y el próximo sync vuelve a ser TOFU — con alerta registrada, porque un reset es exactamente lo que pediría también un suplantador.
+
+### Ocultarse es de la tienda; deshabilitar, del administrador
+
+`hidden_at` es un estado **paralelo** a `status`: la tienda sigue `approved`, pero se despublicó a sí misma con «Ocultar mi tienda» (su botón de pánico, pensado para el peor día de un comerciante). Ficha y catálogo desaparecen al instante —el enlace compartido pasa al 410 amable— y **sincronizar republica**. El admin lo ve como «Oculta por la tienda» en la tabla, sin acción requerida. `PublishedScope` y `Store::visible()` filtran ambos estados a la vez: no público = no aprobada **o** oculta.
+
+### Retención mínima por diseño (Ley 29733)
+
+El rastro existe para servir a una investigación, no para acumularse: `marketplace:purge` corre a diario (03:30, América/Lima) y borra las solicitudes de contacto más antiguas que `contact_retention_days` (365 por defecto) y anonimiza las IPs viejas de las recomendaciones. El banner del front dice la verdad sobre lo que se guarda y enlaza los T&C y el canal ARCO (`arco_email`). Una base que no guarda datos viejos no puede filtrarlos.
 
 ---
 
@@ -183,21 +204,27 @@ El token es global del reseller, compartido por todas las apps. La identidad de 
 ```
 modules/Marketplace/
 ├── Config/config.php                 # solo disk y route_prefix; el resto en BD
-├── Database/Migrations/              # 6 tablas + defaults de settings
+├── Console/PurgeCommand.php          # marketplace:purge (retención, Ley 29733)
+├── Database/Migrations/              # 8 tablas + defaults de settings
 ├── Models/                           # Store, Item, Category, Report,
-│                                     # Recommendation, Setting
+│                                     # Recommendation, Setting,
+│                                     # ContactRequest, SecurityAlert
 ├── Http/
-│   ├── Controllers/Api/              # SyncController, StatusController
-│   ├── Controllers/Admin/            # Store, Report, Category, Setting
-│   ├── Controllers/Web/              # Marketplace, Feed, Report, Recommend
+│   ├── Controllers/Api/              # SyncController, StatusController, HideController
+│   ├── Controllers/Admin/            # Store, Report, Category, Setting,
+│   │                                 # ContactRequest (CSV), SecurityAlert
+│   ├── Controllers/Web/              # Marketplace, Feed, Report, Recommend,
+│   │                                 # Contact (la puerta de contacto)
 │   ├── Middleware/                   # EnsureMarketplaceEnabled,
 │   │                                 # EnsureMarketplaceVisitor (cookie)
-│   └── Requests/                     # SyncRequest, ReportRequest, RecommendRequest
+│   └── Requests/                     # SyncRequest, ReportRequest,
+│                                     # RecommendRequest, ContactRequest
 ├── Providers/                        # MarketplaceServiceProvider, RouteServiceProvider
 ├── Scopes/PublishedScope.php
 ├── Services/                         # StoreSync, CategoryResolver, ImageStorage,
 │                                     # CatalogCounters, WhatsAppLink,
-│                                     # MarketplaceCache, Settings
+│                                     # MarketplaceCache, Settings,
+│                                     # PowChallenge (PoW estilo ALTCHA)
 ├── Support/StorePayload.php          # contrato que lee la app móvil
 ├── Support/PublicPresenter.php       # forma de lo que ve el público
 ├── Resources/
@@ -205,7 +232,7 @@ modules/Marketplace/
 │   │   ├── js/marketplace.js         # entry Vite público, standalone
 │   │   ├── js/public/                # Marketplace.vue + components/ +
 │   │   │                             # recommendations.js, cart.js (pedido),
-│   │   │                             # wa-cart.js (mensaje), format.js
+│   │   │                             # pow.js (solver), contact-usage.js, format.js
 │   │   ├── js/admin/                 # Vue 2 + Element UI (bundle `system`)
 │   │   ├── sass/                     # _design-system.scss (extraído) + marketplace.scss
 │   │   ├── fonts/                    # Figtree + JetBrains Mono (woff2)
@@ -226,12 +253,14 @@ modules/Marketplace/
 | `marketplace_reports` | Denuncias del público |
 | `marketplace_recommendations` | Pulgares del público. Unique `(visitor_id, item_id)` |
 | `marketplace_settings` | Configuración editable, con tipo |
+| `marketplace_contact_requests` | El rastro de la puerta de contacto: quién pidió qué contacto y cuándo. Se purga por retención |
+| `marketplace_security_alerts` | Avisos al admin: cambio de WhatsApp, barrido del feed, reset de credencial |
 
-`marketplace_items` tiene `price` y `description` (ambos opcionales, los envía la app). Ninguna tabla tiene `stock`, `reseller_id`, ni nada de órdenes o pagos.
+`marketplace_items` tiene `price` y `description` (ambos opcionales, los envía la app). `marketplace_stores` suma los campos de seguridad: `show_address`, `address_zone`, `secret_hash` (hash de la credencial TOFU) y `hidden_at`. Ninguna tabla tiene `stock`, `reseller_id`, ni nada de órdenes o pagos.
 
 ### `PublishedScope`
 
-Global scope en `Item`: solo son públicos los ítems `active` de tiendas `approved`. Es global precisamente para que sea imposible olvidarlo en el front.
+Global scope en `Item`: solo son públicos los ítems `active` de tiendas `approved` **y no auto-ocultadas** (`hidden_at` null). Es global precisamente para que sea imposible olvidarlo en el front.
 
 El sync y el admin necesitan ver todo, así que usan **`Item::unscoped()`**.
 
@@ -277,10 +306,11 @@ Invalidación por versión global: un solo `INCR` sobre `mkt:v` invalida todo el
 
 ### API para la app — `auth:system_api`
 
-| Método | Ruta |
-|---|---|
-| `POST` | `/api/v1/marketplace/sync` |
-| `GET` | `/api/v1/marketplace/status/{external_uuid}` |
+| Método | Ruta | Notas |
+|---|---|---|
+| `POST` | `/api/v1/marketplace/sync` | Con credencial: exige header `X-Store-Secret`. El primer sync la emite (`store_secret`, una sola vez) |
+| `GET` | `/api/v1/marketplace/status/{external_uuid}` | Incluye `hidden` |
+| `POST` | `/api/v1/marketplace/hide` | «Ocultar mi tienda». Exige uuid + `X-Store-Secret` |
 
 Eso es toda la API. No hay más endpoints.
 
@@ -296,7 +326,9 @@ Pantalla en **`/marketplace/admin`**.
 |---|---|---|
 | `GET` | `/marketplace` | La pantalla. Acepta `?p={id}` para abrir un producto |
 | `GET` | `/marketplace/tienda/{slug}` | La misma pantalla filtrada por tienda. Enlace compartible; 410 si no está aprobada |
-| `GET` | `/marketplace/feed` | JSON del componente. Con `?suggest=1` devuelve las sugerencias del buscador |
+| `GET` | `/marketplace/feed` | JSON del componente. Con `?suggest=1` devuelve las sugerencias del buscador. `throttle:120,1` por IP + detección de barrido |
+| `GET` | `/marketplace/desafio` | Un desafío proof-of-work fresco para la puerta de contacto. `throttle:30,1` |
+| `POST` | `/marketplace/contacto` | La puerta de contacto: PoW + datos del comprador → registra y devuelve el enlace `wa.me`. Límite fino por visitante (`contact_limit_per_hour`) con meta `used/limit` |
 | `POST` | `/marketplace/denuncia` | Registrar denuncia. `throttle:10,60` por IP |
 | `POST` | `/marketplace/recomendacion` | Poner o quitar un pulgar (`recomendar` true/false). Idempotente. `throttle:60,60` por IP |
 
@@ -372,3 +404,4 @@ Todas las fases completadas.
 | Antigüedad de la tienda e insignia «Nuevo» del primer mes | ✅ |
 | Precios opt-in por tienda + símbolo de moneda configurable | ✅ |
 | Descripción del producto en el modal | ✅ |
+| **Capa de seguridad** (`prompts/plan-seguridad-marketplace.md`): puerta de contacto con PoW y registro, número solo en servidor, dirección opt-in + zona referencial, credencial TOFU por tienda, «Ocultar mi tienda», alertas en la tabla de tiendas, export CSV de contactos, purga por retención y banner de datos personales | ✅ |
