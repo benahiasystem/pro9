@@ -29,6 +29,10 @@ var app_cart = new Vue({
         userAddresses: window.__ecommerce_config?.userAddresses || [],
         selectedAddressId: null,
         addressListMenuOpen: null,
+        addressListMenuStyle: {},
+        addressListMenuPlacement: 'bottom',
+        addressListMenuPositioned: false,
+        addressListMenuAnchorEvent: null,
         map: null,
         marker: null,
         geocoder: null,
@@ -1491,13 +1495,94 @@ var app_cart = new Vue({
         },
         closeAddressListModal() {
             jQuery('#addressListModal').modal('hide');
-            this.addressListMenuOpen = null;
+            this.closeAddressListMenu();
         },
-        toggleAddressListMenu(addressId) {
-            this.addressListMenuOpen = this.addressListMenuOpen === addressId ? null : addressId;
+        getAddressListMenuItem() {
+            if (!this.addressListMenuOpen) {
+                return null;
+            }
+
+            return this.userAddresses.find(item => item.id === this.addressListMenuOpen) || null;
+        },
+        toggleAddressListMenu(addressId, event) {
+            if (this.addressListMenuOpen === addressId) {
+                this.closeAddressListMenu();
+                return;
+            }
+
+            this.addressListMenuOpen = addressId;
+            this.addressListMenuAnchorEvent = event || null;
+            this.addressListMenuPositioned = false;
+            this.addressListMenuStyle = {};
+
+            this.$nextTick(() => {
+                this.positionAddressListMenu(this.addressListMenuAnchorEvent);
+                this.bindAddressListMenuListeners();
+            });
+        },
+        positionAddressListMenu(event) {
+            const btn = event && event.currentTarget;
+            const menu = this.$refs.addressListFloatingMenu;
+
+            if (!btn || !menu || !this.addressListMenuOpen) {
+                return;
+            }
+
+            const rect = btn.getBoundingClientRect();
+            const menuWidth = Math.max(menu.offsetWidth || 0, 140);
+            const menuHeight = menu.offsetHeight || 88;
+            const gap = 6;
+            const pad = 8;
+
+            const spaceBelow = window.innerHeight - rect.bottom - pad;
+            const spaceAbove = rect.top - pad;
+
+            let top;
+            if (spaceBelow >= menuHeight + gap || spaceBelow >= spaceAbove) {
+                this.addressListMenuPlacement = 'bottom';
+                top = rect.bottom + gap;
+            } else {
+                this.addressListMenuPlacement = 'top';
+                top = rect.top - gap - menuHeight;
+            }
+
+            let left = rect.right - menuWidth;
+            left = Math.max(pad, Math.min(left, window.innerWidth - menuWidth - pad));
+            top = Math.max(pad, Math.min(top, window.innerHeight - menuHeight - pad));
+
+            this.addressListMenuStyle = {
+                top: `${Math.round(top)}px`,
+                left: `${Math.round(left)}px`,
+                minWidth: `${menuWidth}px`,
+            };
+            this.addressListMenuPositioned = true;
+        },
+        bindAddressListMenuListeners() {
+            if (this._addressListMenuOnResize) {
+                return;
+            }
+
+            this._addressListMenuOnResize = () => {
+                if (this.addressListMenuOpen && this.addressListMenuAnchorEvent) {
+                    this.positionAddressListMenu(this.addressListMenuAnchorEvent);
+                }
+            };
+
+            window.addEventListener('resize', this._addressListMenuOnResize);
+        },
+        unbindAddressListMenuListeners() {
+            if (this._addressListMenuOnResize) {
+                window.removeEventListener('resize', this._addressListMenuOnResize);
+                this._addressListMenuOnResize = null;
+            }
         },
         closeAddressListMenu() {
             this.addressListMenuOpen = null;
+            this.addressListMenuStyle = {};
+            this.addressListMenuPlacement = 'bottom';
+            this.addressListMenuPositioned = false;
+            this.addressListMenuAnchorEvent = null;
+            this.unbindAddressListMenuListeners();
         },
         getAddressTitle(addr, index) {
             if (!addr) return 'Dirección';
@@ -1636,11 +1721,11 @@ var app_cart = new Vue({
             });
         },
         editSavedAddress(address) {
-            this.addressListMenuOpen = null;
+            this.closeAddressListMenu();
             this.openAddressMapModal('edit', address);
         },
         deleteSavedAddress(address) {
-            this.addressListMenuOpen = null;
+            this.closeAddressListMenu();
             if (!address || !address.id || !this.user || !this.user.id) {
                 return;
             }

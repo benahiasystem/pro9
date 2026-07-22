@@ -497,16 +497,25 @@
     }
 
     #addressListModal .addr-list-card__menu {
-        position: absolute;
-        top: calc(100% + 4px);
-        right: 0;
         min-width: 140px;
         background: #fff;
         border: 1px solid #e7edf2;
         border-radius: 12px;
         box-shadow: 0 10px 24px rgba(20, 30, 45, .14);
-        z-index: 30;
         overflow: hidden;
+    }
+
+    #addressListModal .addr-list-card__menu--floating {
+        position: fixed;
+        z-index: 1070;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .12s ease;
+    }
+
+    #addressListModal .addr-list-card__menu--floating.is-positioned {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     #addressListModal .addr-list-card__menu button {
@@ -1350,7 +1359,7 @@
                         <span>+</span> Agregar nueva dirección
                     </button>
 
-                    <div class="addr-list-scroll">
+                    <div class="addr-list-scroll" @scroll="closeAddressListMenu">
                         <p v-if="userAddresses.length === 0" class="addr-list-empty">
                             No tienes direcciones guardadas.
                             <span class="addr-list-empty-hint">Haz clic en «+ Agregar nueva dirección» para registrar una.</span>
@@ -1382,12 +1391,8 @@
                                         type="button"
                                         class="addr-list-card__menu-btn"
                                         aria-label="Opciones"
-                                        @click.stop="toggleAddressListMenu(item.id)"
+                                        @click.stop="toggleAddressListMenu(item.id, $event)"
                                     >&#8942;</button>
-                                    <div v-if="addressListMenuOpen === item.id" class="addr-list-card__menu">
-                                        <button type="button" @click="editSavedAddress(item)">Editar</button>
-                                        <button type="button" class="danger" @click="deleteSavedAddress(item)">Eliminar</button>
-                                    </div>
                                 </div>
                             </li>
                         </ul>
@@ -1405,6 +1410,19 @@
                     >Elegir dirección</button>
                 </div>
             </div>
+        </div>
+
+        <div
+            v-if="addressListMenuOpen"
+            ref="addressListFloatingMenu"
+            class="addr-list-card__menu addr-list-card__menu--floating"
+            :class="{ 'is-positioned': addressListMenuPositioned }"
+            :style="addressListMenuStyle"
+            role="menu"
+            @click.stop
+        >
+            <button type="button" role="menuitem" @click="editSavedAddress(getAddressListMenuItem())">Editar</button>
+            <button type="button" role="menuitem" class="danger" @click="deleteSavedAddress(getAddressListMenuItem())">Eliminar</button>
         </div>
     </div>
 
