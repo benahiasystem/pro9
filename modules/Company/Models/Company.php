@@ -150,16 +150,29 @@ class Company extends ModelTenant
         return $query->select($column)->firstOrFail()->{$column};
     }
 
+    // El logo de la app se toma del logo en modo claro
     public static function getAppUrlLogo()
     {
-        $app_logo = self::select('app_logo')->firstOrFail()->app_logo;
+        $logo = self::select('logo')->firstOrFail()->logo;
 
-        if($app_logo)
+        if($logo)
         {
-            $app_logo = asset('storage/uploads/logos/'.$app_logo);
+            $logo = asset('storage/uploads/logos/'.$logo);
         }
 
-        return $app_logo;
+        return $logo;
+    }
+
+    public static function getAppUrlLogoDark()
+    {
+        $logo_dark = self::select('logo_dark')->firstOrFail()->logo_dark;
+
+        if($logo_dark)
+        {
+            $logo_dark = asset('storage/uploads/logos/'.$logo_dark);
+        }
+
+        return $logo_dark;
     }
 
     public function scopeSelectDataWhatsAppApi($query)

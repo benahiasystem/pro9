@@ -44,5 +44,6 @@
     "WhatsAppBot": true,
     "ItemFormLayout": true,
     "DocumentFormLayout": true,
-    "Webhook": true
+    "Webhook": true,
+    "Marketplace": true
 }

@@ -283,78 +283,6 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-6 mt-3">
-                                <div class="form-group">
-                                    <label class="">Logo APP</label>
-                                    <div v-if="loading_company_record" class="img-thumbnail w-100 d-flex align-items-center justify-content-center bg-light image-skeleton image-skeleton-small">
-                                        <i class="el-icon-loading me-2"></i>
-                                        <span>Cargando…</span>
-                                    </div>
-                                    <div v-else class="image-container image-container-fluid">
-                                        <div v-if="form.app_logo">
-                                            <img
-                                                :src="appLogoPreviewUrl"
-                                                @error="onImageError('app_logo')"
-                                                alt="Vista previa"
-                                                class="img-fluid img-fluid-dashed img-small img-thumbnail w-100"
-                                            />
-                                            <div class="overlay">
-                                                <el-button
-                                                    class="me-2 btn btn-sm"
-                                                    @click="onShowFilePicker('app_logo')"
-                                                    :loading="loading_app_logo"
-                                                    :disabled="loading_app_logo"
-                                                >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-upload" style="margin-top: -2px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
-                                                    Cambiar
-                                                </el-button>
-                                                <el-button v-if="form.app_logo"
-                                                    @click="deleteLogo('app_logo')"
-                                                    :loading="loading_delete_app_logo"
-                                                    size="mini"
-                                                    type="danger"
-                                                    class="delete-logo-btn btn btn-sm"
-                                                    plain>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
-                                                </el-button>
-                                            </div>
-                                        </div>
-                                        <div
-                                            v-else
-                                            class="d-flex flex-column justify-content-center align-items-center gap-2 p-2 drop-zone"
-                                            :class="{'drop-zone-active': isDraggingAppLogo}"
-                                            @dragover="onDragOver($event, 'app_logo')"
-                                            @dragleave="onDragLeave($event, 'app_logo')"
-                                            @drop="onDrop($event, 'app_logo')"
-                                        >
-                                            <div class="p-2 bg-light rounded">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tabler-icon tabler-icon-photo h-8 w-8 text-muted"><path d="M15 8h.01"></path><path d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z"></path><path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5"></path><path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3"></path></svg>
-                                            </div>
-                                            <div class="">
-                                                <p class="text-center">Arrastra una imagen aquí o haz clic para seleccionar</p>
-                                                <p class="text-muted text-center">PNG, JPG, GIF o SVG · Máx. 2 MB</p>
-                                            </div>
-                                            <el-button
-                                                @click="onShowFilePicker('app_logo')"
-                                                :loading="loading_app_logo"
-                                                :disabled="loading_app_logo"
-                                                class="btn btn-sm"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-upload" style="margin-top: -2px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
-                                                Seleccionar imagen
-                                            </el-button>
-                                        </div>
-                                    </div>
-                                    <input
-                                        type="file"
-                                        @change="onGeneratePreview($event, 'app_logo')"
-                                        ref="inputAppLogo"
-                                        class="hidden"
-                                        accept="image/*"
-                                    />
-                                    <div class="sub-title text-muted mt-2"><small>Se recomienda color blanco</small></div>
-                                </div>
-                            </div>
                             <!-- <div class="col-md-6">
                                 <div class="form-group">
                                     <label class="control-label">Logo Tienda Virtual</label>
@@ -622,11 +550,9 @@ export default {
             loading_delete_logo: false,
             loading_delete_logo_dark: false,
             loading_delete_favicon: false,
-            loading_delete_app_logo: false,
             loading_logo: false,
             loading_logo_dark: false,
             loading_favicon: false,
-            loading_app_logo: false,
             loading_test: false,
             headers: headers_token,
             resource: 'companies',
@@ -635,14 +561,12 @@ export default {
             logoLightPreviewUrl: '/logo/tulogo.png',
             logoDarkPreviewUrl: '/logo/tulogo.png',
             faviconPreviewUrl: PLACEHOLDER_IMAGE_DATA_URI,
-            appLogoPreviewUrl: PLACEHOLDER_IMAGE_DATA_URI,
             // El backend guarda siempre con el mismo nombre (logo_<ruc>.ext), por lo que
             // sin este parámetro el navegador seguiría mostrando la imagen anterior en caché.
             previewCacheBust: null,
             isDraggingLogo: false,
             isDraggingLogoDark: false,
             isDraggingFavicon: false,
-            isDraggingAppLogo: false,
         }
     },
     async created() {
@@ -694,10 +618,9 @@ export default {
             this.logoLightPreviewUrl = this.getCompanyImageUrl('logo', this.form.logo)
             this.logoDarkPreviewUrl = this.getCompanyImageUrl('logo_dark', this.form.logo_dark)
             this.faviconPreviewUrl = this.getCompanyImageUrl('favicon', this.form.favicon)
-            this.appLogoPreviewUrl = this.getCompanyImageUrl('app_logo', this.form.app_logo)
         },
         getCompanyImageUrl(type, value) {
-            const defaultUrl = (type === 'favicon' || type === 'app_logo')
+            const defaultUrl = (type === 'favicon')
                 ? PLACEHOLDER_IMAGE_DATA_URI
                 : '/logo/tulogo.png'
             if (!value) return defaultUrl
@@ -708,7 +631,7 @@ export default {
             // En algunos campos (p.ej. favicon) el backend guarda "storage/...".
             if (value.startsWith('storage/')) return this.withCacheBust(`/${value}`)
 
-            if (type === 'logo' || type === 'logo_dark' || type === 'app_logo') {
+            if (type === 'logo' || type === 'logo_dark') {
                 return this.withCacheBust(`/storage/uploads/logos/${value}`)
             }
 
@@ -722,9 +645,6 @@ export default {
             if (type === 'favicon') {
                 this.faviconPreviewUrl = PLACEHOLDER_IMAGE_DATA_URI
             }
-            if (type === 'app_logo') {
-                this.appLogoPreviewUrl = PLACEHOLDER_IMAGE_DATA_URI
-            }
         },
         onShowFilePicker(type) {
             if (type === 'logo') {
@@ -735,9 +655,6 @@ export default {
             }
             if (type === 'favicon') {
                 this.$refs.inputFavicon && this.$refs.inputFavicon.click()
-            }
-            if (type === 'app_logo') {
-                this.$refs.inputAppLogo && this.$refs.inputAppLogo.click()
             }
         },
         onGeneratePreview(event, type) {
@@ -756,9 +673,6 @@ export default {
                 if (type === 'favicon') {
                     this.faviconPreviewUrl = fileReader.result
                 }
-                if (type === 'app_logo') {
-                    this.appLogoPreviewUrl = fileReader.result
-                }
             })
             fileReader.readAsDataURL(file)
 
@@ -775,7 +689,6 @@ export default {
             if (type === 'logo') this.loading_logo = true
             if (type === 'logo_dark') this.loading_logo_dark = true
             if (type === 'favicon') this.loading_favicon = true
-            if (type === 'app_logo') this.loading_app_logo = true
 
             this.$http
                 .post('/companies/uploads', payload, { headers: this.headers })
@@ -794,9 +707,6 @@ export default {
                         if (type === 'favicon') {
                             this.faviconPreviewUrl = this.getCompanyImageUrl('favicon', data.name)
                         }
-                        if (type === 'app_logo') {
-                            this.appLogoPreviewUrl = this.getCompanyImageUrl('app_logo', data.name)
-                        }
                     } else {
                         this.$message.error((data && data.message) ? data.message : 'Error al subir el archivo')
                         this.syncLogoPreviews()
@@ -811,7 +721,6 @@ export default {
                     if (type === 'logo') this.loading_logo = false
                     if (type === 'logo_dark') this.loading_logo_dark = false
                     if (type === 'favicon') this.loading_favicon = false
-                    if (type === 'app_logo') this.loading_app_logo = false
                 })
         },
         initForm() {
@@ -841,7 +750,6 @@ export default {
                 cod_digemid: null,
                 integrated_query_client_id: null,
                 integrated_query_client_secret: null,
-                app_logo: null,
                 soap_sunat_username: null,
                 soap_sunat_password: null,
                 api_sunat_id: null,
@@ -896,8 +804,7 @@ export default {
             const logoNames = {
                 'logo': 'Logo (modo claro)',
                 'logo_dark': 'Logo (modo oscuro)',
-                'favicon': 'Favicon (ícono web)',
-                'app_logo': 'Logo APP'
+                'favicon': 'Favicon (ícono web)'
             };
 
             this.$confirm(`¿Está seguro de eliminar el ${logoNames[type]}?`, 'Confirmar eliminación', {
@@ -908,9 +815,7 @@ export default {
                 // Determinar qué variable de loading usar
                 const loadingVar = type === 'logo'
                     ? 'loading_delete_logo'
-                    : (type === 'logo_dark'
-                        ? 'loading_delete_logo_dark'
-                        : (type === 'favicon' ? 'loading_delete_favicon' : 'loading_delete_app_logo'));
+                    : (type === 'logo_dark' ? 'loading_delete_logo_dark' : 'loading_delete_favicon');
 
                 this[loadingVar] = true;
 
@@ -929,9 +834,6 @@ export default {
                         }
                         if (type === 'favicon') {
                             this.faviconPreviewUrl = this.getCompanyImageUrl('favicon', null)
-                        }
-                        if (type === 'app_logo') {
-                            this.appLogoPreviewUrl = this.getCompanyImageUrl('app_logo', null)
                         }
                     } else {
                         this.$message.error(response.data.message);
@@ -958,7 +860,6 @@ export default {
             if (type === 'logo') this.isDraggingLogo = true
             if (type === 'logo_dark') this.isDraggingLogoDark = true
             if (type === 'favicon') this.isDraggingFavicon = true
-            if (type === 'app_logo') this.isDraggingAppLogo = true
         },
         onDragLeave(event, type) {
             event.preventDefault()
@@ -966,7 +867,6 @@ export default {
             if (type === 'logo') this.isDraggingLogo = false
             if (type === 'logo_dark') this.isDraggingLogoDark = false
             if (type === 'favicon') this.isDraggingFavicon = false
-            if (type === 'app_logo') this.isDraggingAppLogo = false
         },
         onDrop(event, type) {
             event.preventDefault()
@@ -975,7 +875,6 @@ export default {
             if (type === 'logo') this.isDraggingLogo = false
             if (type === 'logo_dark') this.isDraggingLogoDark = false
             if (type === 'favicon') this.isDraggingFavicon = false
-            if (type === 'app_logo') this.isDraggingAppLogo = false
 
             const files = event.dataTransfer?.files
             if (!files || !files.length) return
@@ -1010,9 +909,6 @@ export default {
                 }
                 if (type === 'favicon') {
                     this.faviconPreviewUrl = fileReader.result
-                }
-                if (type === 'app_logo') {
-                    this.appLogoPreviewUrl = fileReader.result
                 }
             })
             fileReader.readAsDataURL(file)
