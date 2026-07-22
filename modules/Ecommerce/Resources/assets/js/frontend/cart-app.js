@@ -139,6 +139,20 @@ var app_cart = new Vue({
         paymentSuccessRedirecting: false,
         successOrder: null,
         thankYouUrl: null,
+
+        // Cotización desde carrito
+        quotationModalVisible: false,
+        quotationSubmitting: false,
+        quotationSuccessVisible: false,
+        quotationSuccessRedirecting: false,
+        quotationResult: null,
+        quotationForm: {
+            contact_name: '',
+            email: '',
+            telephone: '',
+            notes: '',
+            validity_days: 7,
+        },
         
         mpScriptLoaded: false,
         mpBrickController: null,
@@ -190,6 +204,23 @@ var app_cart = new Vue({
         },
         successItemsCount() {
             return this.getSuccessOrderItemsCount(this.successOrder);
+        },
+        quotationLines() {
+            return (this.records || []).map(row => {
+                const qty = Number(row.cantidad) || 1;
+                const unit = Number(row.sale_unit_price) || 0;
+                const lineTotal = Number(row.sub_total);
+                return {
+                    id: row.id,
+                    description: row.description || row.name || 'Producto',
+                    quantity: qty,
+                    unit_price: unit,
+                    total: !isNaN(lineTotal) ? lineTotal : (unit * qty),
+                };
+            });
+        },
+        quotationModalTotal() {
+            return this.quotationLines.reduce((sum, line) => sum + (Number(line.total) || 0), 0);
         },
     },
     watch: {
@@ -1448,6 +1479,108 @@ var app_cart = new Vue({
             window.requestAnimationFrame(() => {
                 window.location.href = targetUrl;
             });
+        },
+        openQuotationModal() {
+            if (!this.user || !this.user.id) {
+                window.location = window.__routes?.login || '/ecommerce/login';
+                return;
+            }
+            if (!this.records || this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de solicitar una cotización.', 'warning');
+            }
+
+            this.quotationForm = {
+                contact_name: this.user.name || '',
+                email: this.user.email || '',
+                telephone: this.form_contact.telephone || this.user.telephone || '',
+                notes: '',
+                validity_days: 7,
+            };
+            this.quotationResult = null;
+            this.quotationSuccessVisible = false;
+            this.quotationModalVisible = true;
+            document.body.style.overflow = 'hidden';
+        },
+        closeQuotationModal() {
+            if (this.quotationSubmitting) return;
+            this.quotationModalVisible = false;
+            if (!this.quotationSuccessVisible && !this.paymentSuccessVisible && !this.processingPayment) {
+                document.body.style.overflow = '';
+            }
+        },
+        async submitQuotationRequest() {
+            if (this.quotationSubmitting) return;
+
+            if (!this.records || this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de solicitar una cotización.', 'warning');
+            }
+            if (!this.quotationForm.contact_name || !String(this.quotationForm.contact_name).trim()) {
+                return this.showSwalMessage('Dato requerido', 'Ingresa tu nombre de contacto.', 'warning');
+            }
+            if (!this.quotationForm.email || !String(this.quotationForm.email).trim()) {
+                return this.showSwalMessage('Dato requerido', 'Ingresa tu correo electrónico.', 'warning');
+            }
+            if (!this.quotationForm.telephone || !String(this.quotationForm.telephone).trim()) {
+                return this.showSwalMessage('Dato requerido', 'Ingresa tu teléfono.', 'warning');
+            }
+
+            const payload = {
+                contact_name: String(this.quotationForm.contact_name).trim(),
+                email: String(this.quotationForm.email).trim(),
+                telephone: String(this.quotationForm.telephone).trim(),
+                notes: String(this.quotationForm.notes || '').trim(),
+                validity_days: Number(this.quotationForm.validity_days) || 7,
+                items: this.records.map(row => ({
+                    item_id: row.id,
+                    quantity: Number(row.cantidad) || 1,
+                })),
+            };
+
+            this.quotationSubmitting = true;
+            try {
+                const response = await axios.post(
+                    window.__routes?.quotation_store || '/ecommerce/quotations',
+                    payload,
+                    this.getHeaderConfig()
+                );
+
+                if (response.data && response.data.success && response.data.quotation) {
+                    this.quotationResult = response.data.quotation;
+                    this.quotationModalVisible = false;
+                    this.clearCartSilently();
+                    this.quotationSuccessVisible = true;
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    this.showSwalMessage(
+                        'No se pudo cotizar',
+                        (response.data && response.data.message) || 'Intenta nuevamente.',
+                        'error'
+                    );
+                }
+            } catch (error) {
+                const message = error.response?.data?.message
+                    || (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(' '))
+                    || 'Ocurrió un error al registrar la cotización.';
+                this.showSwalMessage('Error', message, 'error');
+                console.error(error);
+            } finally {
+                this.quotationSubmitting = false;
+            }
+        },
+        confirmQuotationSuccess() {
+            if (this.quotationSuccessRedirecting) return;
+            this.quotationSuccessRedirecting = true;
+            const target = (this.quotationResult && this.quotationResult.list_url)
+                || window.__routes?.quotation_list
+                || '/ecommerce/quotation_list';
+            window.requestAnimationFrame(() => {
+                window.location.href = target;
+            });
+        },
+        openQuotationPdf() {
+            if (this.quotationResult && this.quotationResult.print_url) {
+                window.open(this.quotationResult.print_url, '_blank', 'noopener');
+            }
         },
         clearCartSilently() {
             this.errors = {};

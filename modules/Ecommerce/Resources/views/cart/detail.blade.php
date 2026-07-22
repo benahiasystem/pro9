@@ -390,6 +390,230 @@
         flex-shrink: 0;
     }
 
+    .checkout-methods .pay-btn + .pay-btn,
+    .checkout-methods .pay-btn + a.pay-btn {
+        margin-top: 10px;
+    }
+
+    .pay-btn.pay-btn--quote {
+        background: #fff;
+        color: var(--primary-color, #ff7a00);
+        border: 1.5px solid var(--primary-color, #ff7a00);
+    }
+
+    .pay-btn.pay-btn--ghost {
+        background: #fff;
+        color: #52606d;
+        border: 1.5px solid #d0d5dd;
+    }
+
+    .pay-btn.pay-btn--ghost:hover:not(.disabled):not(:disabled) {
+        background: #f3f5f7;
+        color: #0f2137;
+    }
+
+    .pay-btn.pay-btn--quote:hover:not(.disabled):not(:disabled) {
+        background: #fff7ed;
+        color: var(--primary-color, #ff7a00);
+    }
+
+    .pay-btn.pay-btn--quote.disabled,
+    .pay-btn.pay-btn--quote:disabled {
+        opacity: .55;
+        cursor: not-allowed;
+    }
+
+    .quotation-request-overlay,
+    .quotation-success-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10070;
+        display: none;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 33, 55, .55);
+        backdrop-filter: blur(4px);
+    }
+
+    .quotation-request-overlay.is-open,
+    .quotation-success-overlay.is-open {
+        display: grid;
+    }
+
+    .quotation-request-dialog {
+        width: min(560px, 94vw);
+        max-height: 92vh;
+        overflow: auto;
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 24px 70px rgba(15, 33, 55, .25);
+    }
+
+    .quotation-request-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #e9edf1;
+    }
+
+    .quotation-request-header h3 {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f2137;
+    }
+
+    .quotation-request-body {
+        padding: 18px 20px 8px;
+    }
+
+    .quotation-lines {
+        margin: 0 0 16px;
+        border: 1px solid #e9edf1;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fafbfc;
+    }
+
+    .quotation-lines table {
+        width: 100%;
+        margin: 0;
+        font-size: 0.86rem;
+    }
+
+    .quotation-lines th,
+    .quotation-lines td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #edf1f4;
+        vertical-align: top;
+    }
+
+    .quotation-lines th {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #667085;
+        background: #f3f5f7;
+    }
+
+    .quotation-lines tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .quotation-lines .ql-total {
+        font-weight: 700;
+        color: var(--primary-color, #ff7a00);
+        text-align: right;
+        padding: 12px;
+    }
+
+    .quotation-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .quotation-form-grid .qf-full {
+        grid-column: 1 / -1;
+    }
+
+    .quotation-form-grid label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #0f2137;
+    }
+
+    .quotation-form-grid input,
+    .quotation-form-grid textarea,
+    .quotation-form-grid select {
+        width: 100%;
+        border: 1px solid #d0d5dd;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        color: #0f2137;
+        background: #fff;
+    }
+
+    .quotation-form-grid textarea {
+        min-height: 78px;
+        resize: vertical;
+    }
+
+    .quotation-request-footer {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        padding: 14px 20px 20px;
+    }
+
+    .quotation-request-footer .pay-btn {
+        min-width: 140px;
+        justify-content: center;
+    }
+
+    .quotation-success-dialog {
+        width: min(440px, 94vw);
+        padding: 32px 28px 28px;
+        border-radius: 20px;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 24px 70px rgba(15, 33, 55, .25);
+    }
+
+    .quotation-success-dialog h3 {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f2137;
+    }
+
+    .quotation-success-dialog .payment-success-sub {
+        margin: 0 0 18px;
+        color: #667085;
+        font-size: 0.92rem;
+    }
+
+    .quotation-success-code {
+        display: inline-block;
+        margin-bottom: 18px;
+        padding: 8px 14px;
+        border-radius: 10px;
+        background: #fff4eb;
+        color: var(--primary-color, #ff7a00);
+        font-weight: 700;
+        letter-spacing: .02em;
+    }
+
+    .quotation-success-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .quotation-success-actions .pay-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    @media (max-width: 576px) {
+        .quotation-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quotation-request-footer {
+            flex-direction: column-reverse;
+        }
+
+        .quotation-request-footer .pay-btn {
+            width: 100%;
+        }
+    }
+
     @media (max-width: 576px) {
         .payment-process-dialog,
         .payment-success-dialog {
@@ -1508,19 +1732,29 @@
                     <a v-if="enableIzipay" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleIzipay }}</a>
                     <a v-if="enableMp" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleMp }}</a>
                     <a v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">@{{ cashPaymentTitle }}</a>
+                    <a href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--quote login-link" :class="{ disabled: !acceptedTerms }">Solicitar cotización</a>
                     @elseauth('ecommerce')
                         <button
                             v-if="selectedPaymentMethod !== 'paypal'"
                             class="pay-btn"
-                            :class="{ disabled: !acceptedTerms || processingPayment }"
-                            :disabled="!selectedPaymentMethod || !acceptedTerms || processingPayment"
+                            :class="{ disabled: !acceptedTerms || processingPayment || quotationSubmitting }"
+                            :disabled="!selectedPaymentMethod || !acceptedTerms || processingPayment || quotationSubmitting"
                             @click="executePayment"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                             <span v-if="processingPayment">Procesando…</span>
                             <span v-else>Pagar</span>
                         </button>
-
+                        <button
+                            type="button"
+                            class="pay-btn pay-btn--quote"
+                            :class="{ disabled: !acceptedTerms || processingPayment || quotationSubmitting }"
+                            :disabled="!acceptedTerms || processingPayment || quotationSubmitting || records.length < 1"
+                            @click="openQuotationModal"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg>
+                            Solicitar cotización
+                        </button>
                     @endauth
 
                 </div><!-- End .checkout-methods -->
@@ -1605,6 +1839,120 @@
                 <span v-if="paymentSuccessRedirecting">Redirigiendo…</span>
                 <span v-else>Continuar</span>
             </button>
+        </div>
+    </div>
+
+    <!-- Modal solicitar cotización -->
+    <div
+        id="quotation-request-overlay"
+        class="quotation-request-overlay"
+        :class="{ 'is-open': quotationModalVisible }"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quotation-request-title"
+        :aria-hidden="quotationModalVisible ? 'false' : 'true'"
+        @click.self="closeQuotationModal"
+    >
+        <div class="quotation-request-dialog" v-if="quotationModalVisible">
+            <div class="quotation-request-header">
+                <h3 id="quotation-request-title">Solicitar cotización</h3>
+                <button type="button" class="gateway-payment-close" @click="closeQuotationModal" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="quotation-request-body">
+                <div class="quotation-lines">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cant.</th>
+                                <th>P. unit.</th>
+                                <th>Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="line in quotationLines" :key="line.id">
+                                <td>@{{ line.description }}</td>
+                                <td>@{{ line.quantity }}</td>
+                                <td>@{{ formatMoney(line.unit_price) }}</td>
+                                <td>@{{ formatMoney(line.total) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="ql-total">Total referencial: @{{ formatMoney(quotationModalTotal) }}</div>
+                </div>
+
+                <div class="quotation-form-grid">
+                    <div class="qf-full">
+                        <label for="quote-name">Nombre</label>
+                        <input id="quote-name" type="text" v-model="quotationForm.contact_name" autocomplete="name">
+                    </div>
+                    <div>
+                        <label for="quote-email">Correo</label>
+                        <input id="quote-email" type="email" v-model="quotationForm.email" autocomplete="email">
+                    </div>
+                    <div>
+                        <label for="quote-phone">Teléfono</label>
+                        <input id="quote-phone" type="text" v-model="quotationForm.telephone" autocomplete="tel">
+                    </div>
+                    <div>
+                        <label for="quote-validity">Vigencia estimada</label>
+                        <select id="quote-validity" v-model.number="quotationForm.validity_days">
+                            <option :value="3">3 días</option>
+                            <option :value="7">7 días</option>
+                            <option :value="15">15 días</option>
+                            <option :value="30">30 días</option>
+                        </select>
+                    </div>
+                    <div class="qf-full">
+                        <label for="quote-notes">Notas</label>
+                        <textarea id="quote-notes" v-model="quotationForm.notes" placeholder="Indicaciones adicionales para tu cotización (opcional)"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="quotation-request-footer">
+                <button type="button" class="pay-btn pay-btn--ghost" :disabled="quotationSubmitting" @click="closeQuotationModal">Cancelar</button>
+                <button type="button" class="pay-btn" :disabled="quotationSubmitting" @click="submitQuotationRequest">
+                    <span v-if="quotationSubmitting" class="payment-success-btn-spinner" aria-hidden="true"></span>
+                    <span v-if="quotationSubmitting">Enviando…</span>
+                    <span v-else>Enviar solicitud</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal éxito cotización -->
+    <div
+        id="quotation-success-overlay"
+        class="quotation-success-overlay"
+        :class="{ 'is-open': quotationSuccessVisible }"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="quotation-success-title"
+        :aria-hidden="quotationSuccessVisible ? 'false' : 'true'"
+    >
+        <div class="quotation-success-dialog" v-if="quotationResult">
+            <div class="payment-success-badge" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h3 id="quotation-success-title">¡Cotización enviada!</h3>
+            <p class="payment-success-sub">Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.</p>
+            <div class="quotation-success-code">@{{ quotationResult.code || quotationResult.number_full }}</div>
+            <div class="quotation-success-actions">
+                <button type="button" class="pay-btn pay-btn--ghost" @click="openQuotationPdf" v-if="quotationResult.print_url">
+                    Ver PDF
+                </button>
+                <button
+                    type="button"
+                    class="pay-btn"
+                    :class="{ 'is-loading': quotationSuccessRedirecting }"
+                    :disabled="quotationSuccessRedirecting"
+                    @click="confirmQuotationSuccess"
+                >
+                    <span v-if="quotationSuccessRedirecting" class="payment-success-btn-spinner" aria-hidden="true"></span>
+                    <span v-if="quotationSuccessRedirecting">Redirigiendo…</span>
+                    <span v-else>Ver mis cotizaciones</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1891,6 +2239,9 @@
         izipay_record: '{{ route("tenant_ecommerce_izipay_record") }}',
         mercadopago_payment: '{{ route("tenant_ecommerce_mp") }}',
         thank_you: '{{ route("tenant_ecommerce_thank_you", ["external_id" => "EXTERNAL_ID"]) }}',
+        quotation_store: '{{ route("tenant_ecommerce_quotation_store") }}',
+        quotation_list: '{{ route("tenant_ecommerce_quotation_list") }}',
+        login: '{{ route("tenant_ecommerce_login") }}',
     };
 </script>
 

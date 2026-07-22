@@ -83,6 +83,7 @@
                             <th v-if="col.visible && col.key === 'customer'" :key="col.key">Cliente</th>
                             <th v-if="col.visible && col.key === 'state_type'" :key="col.key">Estado</th>
                             <th v-if="col.visible && col.key === 'identifier'" :key="col.key">Cotización</th>
+                            <th v-if="col.visible && col.key === 'source'" :key="col.key">Origen</th>
                             <th v-if="col.visible && col.key === 'documents'" :key="col.key">Comprobantes</th>
                             <th v-if="col.visible && col.key === 'sale_notes'" :key="col.key">Notas de venta</th>
                             <th v-if="col.visible && col.key === 'order_note'" :key="col.key">Pedido</th>
@@ -127,6 +128,15 @@
                                 </template>
                             </td>
                             <td v-if="col.visible && col.key === 'identifier'" :key="col.key">{{ row.identifier }}</td>
+                            <td v-if="col.visible && col.key === 'source'" :key="col.key">
+                                <el-tag
+                                    size="mini"
+                                    :type="row.source === 'ecommerce' ? 'warning' : 'info'"
+                                    effect="plain"
+                                >
+                                    {{ row.source_label || (row.source === 'ecommerce' ? 'Tienda virtual' : 'Empresa') }}
+                                </el-tag>
+                            </td>
                             <td v-if="col.visible && col.key === 'documents'" :key="col.key">
                                 <template v-for="(document, i) in row.documents">
                                     <template v-if="document.is_voided_or_rejected">
@@ -236,6 +246,14 @@
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-arrow-right me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 15h6" /><path d="M12.5 17.5l2.5 -2.5l-2.5 -2.5" /></svg>
                                       Enviar cotización
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item
+                                      v-if="row.external_id"
+                                      @click.native="clickRegeneratePdf(row)"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-refresh me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                                      Regenerar PDF
                                     </el-dropdown-item>
 
                                     <el-dropdown-item
@@ -394,6 +412,7 @@ export default {
                 customer:                { title: "Cliente",          visible: true,  order: 4  },
                 state_type:              { title: "Estado",           visible: true,  order: 5  },
                 identifier:              { title: "Cotización",       visible: true,  order: 6  },
+                source:                  { title: "Origen",           visible: true,  order: 6.5 },
                 documents:               { title: "Comprobantes",     visible: false, order: 7  },
                 sale_notes:              { title: "Notas de venta",   visible: false, order: 8  },
                 order_note:              { title: "Pedidos",          visible: false, order: 9  },
@@ -525,6 +544,12 @@ export default {
         clickSendQuotation(id) {
             this.recordId = id;
             this.showDialogSendEmailDocument = true;
+        },
+        clickRegeneratePdf(row) {
+            if (!row || !row.external_id) {
+                return;
+            }
+            window.open(`/quotations/print/${row.external_id}/a4`, "_blank");
         },
         ...mapActions(["loadConfiguration"]),
         canMakeOrderNote(row) {

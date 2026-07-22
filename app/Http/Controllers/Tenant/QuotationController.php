@@ -123,6 +123,18 @@ class QuotationController extends Controller
         $value = $request->input('value');
         $query = Quotation::query();
 
+        $form = json_decode($request->form ?: '{}');
+        $source = $form->source ?? 'admin';
+
+        if ($source === 'ecommerce') {
+            $query->whereSourceEcommerce();
+        } elseif ($source === 'all') {
+            // Sin filtro de origen
+        } else {
+            // Default: solo empresa (no mezclar tienda)
+            $query->whereSourceAdmin();
+        }
+
         if ($column === 'user_name') {
             $query->whereHas('user', function ($q) use ($value) {
                 $q->where('name', 'like', "%{$value}%");
@@ -145,7 +157,10 @@ class QuotationController extends Controller
             }
         } else if ($column === 'number') {
             if (!is_null($value) && $value !== '') {
-                $query->where('id', $value);
+                $query->where(function ($q) use ($value) {
+                    $q->where('id', $value)
+                        ->orWhere('number', $value);
+                });
             }
         } else {
             $query->where($column, 'like', "%{$value}%")
@@ -154,9 +169,7 @@ class QuotationController extends Controller
 
         $records = $query->latest();
 
-        $form = json_decode($request->form);
-
-        if ($form->date_start && $form->date_end) {
+        if (! empty($form->date_start) && ! empty($form->date_end)) {
             $records = $records->whereBetween('date_of_issue', [$form->date_start, $form->date_end]);
         }
 

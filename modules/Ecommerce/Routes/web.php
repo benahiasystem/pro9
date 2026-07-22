@@ -27,6 +27,13 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
 
     Route::get('order_list', 'EcommerceController@orderList')->name('tenant_order_list');
     Route::get('account', 'EcommerceController@account')->name('tenant_ecommerce_account');
+
+    // Cotizaciones desde tienda virtual
+    Route::get('quotation_list', 'QuotationStorefrontController@index')->name('tenant_ecommerce_quotation_list');
+    Route::get('quotations', 'QuotationStorefrontController@records')->name('tenant_ecommerce_quotations');
+    Route::get('quotations/{id}', 'QuotationStorefrontController@show')->name('tenant_ecommerce_quotation_show');
+    Route::post('quotations', 'QuotationStorefrontController@store')->name('tenant_ecommerce_quotation_store');
+
     Route::get('pay_cart', 'EcommerceController@pay')->name('tenant_pay_cart');
     Route::get('login', 'EcommerceController@showLogin')->name('tenant_ecommerce_login');
     Route::post('logout', 'EcommerceController@logout')->name('tenant_ecommerce_logout');

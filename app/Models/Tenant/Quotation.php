@@ -15,6 +15,12 @@ class Quotation extends ModelTenant
 {
     use SellerIdTrait;
 
+    public const SOURCE_ADMIN = 'admin';
+    public const SOURCE_ECOMMERCE = 'ecommerce';
+
+    /** Serie de 4 caracteres para cotizaciones de tienda virtual. */
+    public const SERIES_ECOMMERCE = 'COTV';
+
     protected $with = ['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments'];
 
     protected $fillable = [
@@ -28,6 +34,10 @@ class Quotation extends ModelTenant
         'payment_method_type_id',
 
         'prefix',
+        'document_type_id',
+        'series',
+        'number',
+        'number_year',
 
         'date_of_issue',
         'time_of_issue',
@@ -69,6 +79,7 @@ class Quotation extends ModelTenant
         'account_number',
         'terms_condition',
         'referential_information',
+        'source',
         'contact',
         'phone',
         'seller_id',
@@ -82,6 +93,9 @@ class Quotation extends ModelTenant
         parent::boot();
         static::creating(function (self $model) {
             self::adjustSellerIdField($model);
+            if (empty($model->source)) {
+                $model->source = self::SOURCE_ADMIN;
+            }
         });
 
     }
@@ -194,6 +208,10 @@ class Quotation extends ModelTenant
 
     public function getIdentifierAttribute()
     {
+        if ($this->isFromEcommerce() && (int) $this->number > 0) {
+            return $this->storefront_code;
+        }
+
         return $this->prefix.'-'.$this->id;
     }
 
@@ -275,6 +293,64 @@ class Quotation extends ModelTenant
         return $this->prefix.'-'.$this->id;
     }
 
+    /**
+     * Código visible en tienda: COT-TV-{YYYY}-{NNNN}
+     */
+    public function getStorefrontCodeAttribute(): string
+    {
+        $year = $this->date_of_issue
+            ? $this->date_of_issue->format('Y')
+            : date('Y');
+
+        if ((int) $this->number > 0) {
+            return sprintf('COT-TV-%s-%04d', $year, (int) $this->number);
+        }
+
+        // Legacy previo al correlativo propio
+        return sprintf('COT-%s-%04d', $year, $this->id);
+    }
+
+    /**
+     * Título para PDF: correlativo tienda o prefix-id de empresa.
+     */
+    public function getPdfTitleAttribute(): string
+    {
+        if ($this->isFromEcommerce() && (int) $this->number > 0) {
+            return $this->storefront_code;
+        }
+
+        return $this->prefix.'-'.str_pad((string) $this->id, 8, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Siguiente correlativo ecommerce para el año indicado (con lock).
+     */
+    public static function nextEcommerceNumber(int $year): int
+    {
+        $last = static::query()
+            ->where('source', self::SOURCE_ECOMMERCE)
+            ->where('series', self::SERIES_ECOMMERCE)
+            ->where('number_year', $year)
+            ->where('number', '>', 0)
+            ->lockForUpdate()
+            ->orderByDesc('number')
+            ->value('number');
+
+        return ((int) $last) + 1;
+    }
+
+    /**
+     * Etiqueta legible del origen.
+     */
+    public function getSourceLabelAttribute(): string
+    {
+        if ($this->isFromEcommerce()) {
+            return 'Tienda virtual';
+        }
+
+        return 'Empresa';
+    }
+
     public function scopeWhereStateTypeAccepted($query)
     {
         return $query->whereIn('state_type_id', ['01']);
@@ -288,6 +364,42 @@ class Quotation extends ModelTenant
     public function scopeWhereNotChanged($query)
     {
         return $query->where('changed', false);
+    }
+
+    /**
+     * Cotizaciones creadas desde el back-office de la empresa (tenant).
+     */
+    public function scopeWhereSourceAdmin($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('source', self::SOURCE_ADMIN)
+                ->orWhereNull('source');
+        });
+    }
+
+    /**
+     * Cotizaciones creadas desde la tienda virtual (ecommerce).
+     */
+    public function scopeWhereSourceEcommerce($query)
+    {
+        return $query->where(function ($q) {
+            $q->where('source', self::SOURCE_ECOMMERCE)
+                ->orWhere(function ($legacy) {
+                    // Compatibilidad con registros previos al campo source
+                    $legacy->where(function ($inner) {
+                        $inner->whereNull('source')->orWhere('source', '');
+                    })->where('referential_information', 'ecommerce');
+                });
+        });
+    }
+
+    public function isFromEcommerce(): bool
+    {
+        if ($this->source === self::SOURCE_ECOMMERCE) {
+            return true;
+        }
+
+        return empty($this->source) && $this->referential_information === 'ecommerce';
     }
 
     /**
@@ -410,6 +522,9 @@ class Quotation extends ModelTenant
             // 'delivery_date' => ($row->delivery_date) ? $row->delivery_date->format('Y-m-d') : null,
             'delivery_date' => $row->delivery_date,
             'identifier' => $row->identifier,
+            'source' => $row->source ?: self::SOURCE_ADMIN,
+            'source_label' => $row->source_label,
+            'storefront_code' => $row->isFromEcommerce() ? $row->storefront_code : null,
             'user_name' => $row->user->name,
             'seller_name' => $seller->name,
             'customer_id' => $row->customer_id,

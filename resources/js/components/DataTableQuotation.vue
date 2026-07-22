@@ -97,6 +97,15 @@
                                 <el-option v-for="(option, key) in stateTypes" :key="option.id" :value="option.id" :label="option.description"></el-option>
                             </el-select>
                         </div>
+
+                        <div class="col-md-3 form-modern">
+                            <label class="control-label">Origen</label>
+                            <el-select v-model="form.source" placeholder="Seleccionar" @change="getRecords">
+                                <el-option value="admin" label="Empresa"></el-option>
+                                <el-option value="ecommerce" label="Tienda virtual"></el-option>
+                                <el-option value="all" label="Todos"></el-option>
+                            </el-select>
+                        </div>
  
                     </div>
 
@@ -293,6 +302,7 @@
                     date_start: null,
                     date_end: null,
                     state_type_id: null,
+                    source: 'admin',
                 }
 
             },
