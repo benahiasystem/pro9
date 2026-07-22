@@ -11,9 +11,11 @@ class RouteServiceProvider extends ServiceProvider
 
     public function map()
     {
+        $this->mapConfigRoute();
+
         // Interruptor maestro (.env → config('marketplace.enabled')). Apagado,
-        // no se registra ninguna ruta: admin, api y público responden 404, así
-        // que «no es posible ingresar» de verdad, no solo se esconde el enlace.
+        // no se registra el resto: admin, api y público responden 404, así que
+        // «no es posible ingresar» de verdad, no solo se esconde el enlace.
         if (! config('marketplace.enabled', false)) {
             return;
         }
@@ -21,6 +23,16 @@ class RouteServiceProvider extends ServiceProvider
         $this->mapApiRoutes();
         $this->mapAdminRoutes();
         $this->mapWebRoutes();
+    }
+
+    protected function mapConfigRoute()
+    {
+        Route::prefix('api/v1/marketplace')
+            ->middleware(['api', 'auth:system_api'])
+            ->namespace($this->moduleNamespace)
+            ->group(function () {
+                Route::get('config', 'Api\ConfigController@show')->name('marketplace.api.config');
+            });
     }
 
     /**
