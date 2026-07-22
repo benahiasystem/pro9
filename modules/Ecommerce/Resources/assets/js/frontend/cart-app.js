@@ -129,6 +129,11 @@ var app_cart = new Vue({
 
         acceptedTerms: false,
         processingPayment: false,
+        paymentLoadingTitle: 'Estamos generando tu pedido',
+        paymentLoadingText: 'Por favor no cierres esta ventana...',
+        paymentSuccessVisible: false,
+        paymentSuccessRedirecting: false,
+        successOrder: null,
         thankYouUrl: null,
         
         mpScriptLoaded: false,
@@ -167,6 +172,20 @@ var app_cart = new Vue({
             if (num.length === 8)  return 'Boleta de Venta';
             if (num.length === 11) return 'Factura';
             return 'Nota de Venta';
+        },
+        successOrderNumber() {
+            return this.formatOrderNumber(this.successOrder && this.successOrder.id);
+        },
+        successOrderTotal() {
+            return this.formatMoney(this.successOrder && this.successOrder.total);
+        },
+        successPaymentLabel() {
+            return this.getPaymentMethodLabel(
+                this.successOrder && this.successOrder.reference_payment
+            );
+        },
+        successItemsCount() {
+            return this.getSuccessOrderItemsCount(this.successOrder);
         },
     },
     watch: {
@@ -654,26 +673,39 @@ var app_cart = new Vue({
                 return
             }
 
-            this.processingPayment = true;
+            // Métodos manuales: bloqueo inmediato mientras se genera el pedido
+            this.showPaymentLoading();
 
             let url_finally = window.__routes?.payment_cash || '/ecommerce/payment/cash';
-            let response = await axios.post(url_finally, await this.getFormPaymentCash(), this.getHeaderConfig()).then(response => {
-                    if (response.data.success) {
-                        this.saveContactDataUser()
-                        this.processingPayment = false
-                        this.showPurchaseSuccess(response.data.order)
-                    } else {
-                        this.processingPayment = false
-                    }
-                }).catch(error => {
-                    this.processingPayment = false
-                    swal("Pago No realizado", 'Sucedió algo inesperado.', "error");
-                    if (error.response && error.response.status === 422) {
-                        this.errors = error.response.data;
-                    } else {
-                        console.log(error);
-                    }
-                });
+            try {
+                const response = await axios.post(
+                    url_finally,
+                    await this.getFormPaymentCash(),
+                    this.getHeaderConfig()
+                );
+                if (response.data.success) {
+                    this.saveContactDataUser();
+                    this.showPurchaseSuccess(response.data.order);
+                } else {
+                    this.hidePaymentLoading();
+                    swal(
+                        'Pago No realizado',
+                        response.data.message || 'Sucedió algo inesperado.',
+                        'error'
+                    );
+                }
+            } catch (error) {
+                this.hidePaymentLoading();
+                const message = error.response?.data?.message
+                    || (error.response?.data?.errors && Object.values(error.response.data.errors).flat().join(' '))
+                    || 'Sucedió algo inesperado.';
+                swal('Pago No realizado', message, 'error');
+                if (error.response && error.response.status === 422) {
+                    this.errors = error.response.data;
+                } else {
+                    console.log(error);
+                }
+            }
         },
         async loadMpScript(silent = false) {
             if (window.MercadoPago) {
@@ -1298,27 +1330,114 @@ var app_cart = new Vue({
         redirectHome() {
             window.location = window.__routes?.home || "/ecommerce";
         },
+        showPaymentLoading(options = {}) {
+            this.paymentLoadingTitle = options.title || 'Estamos generando tu pedido';
+            this.paymentLoadingText = options.text || 'Por favor no cierres esta ventana...';
+            this.processingPayment = true;
+            this.paymentSuccessVisible = false;
+            document.body.style.overflow = 'hidden';
+        },
         /**
-         * Modal de éxito unificado (Yape / efectivo / transferencia / MP / Izipay).
-         * Mismo swal del sistema: título, aviso de correo y botón OK.
+         * Overlay durante el charge Culqi (token → backend).
+         * Evita el vacío visual cuando el SDK cierra y aún no llega la respuesta.
+         */
+        showCulqiBankLoading() {
+            this.showPaymentLoading({
+                title: 'Estamos hablando con su banco',
+                text: 'Por favor no cierres esta ventana...',
+            });
+        },
+        hidePaymentLoading() {
+            this.processingPayment = false;
+            if (!this.paymentSuccessVisible) {
+                document.body.style.overflow = '';
+            }
+        },
+        buildThankYouUrl(order, thankYouUrl = null) {
+            if (thankYouUrl) return thankYouUrl;
+            if (order && order.external_id && window.__routes && window.__routes.thank_you) {
+                return window.__routes.thank_you.replace('EXTERNAL_ID', order.external_id);
+            }
+            if (order && order.external_id) {
+                return `/ecommerce/thanks/${order.external_id}`;
+            }
+            return null;
+        },
+        getPaymentMethodLabel(referencePayment) {
+            const labels = {
+                efectivo: this.cashPaymentTitle || 'Pago contra entrega',
+                yape: 'Yape',
+                transferencia: 'Transferencia bancaria',
+                culqi: this.titleCulqi || 'Tarjeta (Culqi)',
+                culqui: this.titleCulqi || 'Tarjeta (Culqi)',
+                izipay: this.titleIzipay || 'Izipay',
+                mp: this.titleMp || 'Mercado Pago',
+                paypal: 'PayPal',
+            };
+            const key = String(referencePayment || '').toLowerCase();
+            return labels[key] || (key ? key.charAt(0).toUpperCase() + key.slice(1) : '—');
+        },
+        formatOrderNumber(orderId) {
+            const id = Number(orderId) || 0;
+            return `#${String(id).padStart(6, '0')}`;
+        },
+        formatMoney(amount) {
+            const value = Number(amount) || 0;
+            return `S/ ${value.toLocaleString('es-PE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`;
+        },
+        getSuccessOrderItemsCount(order) {
+            if (!order) return 0;
+            const items = order.items;
+            if (Array.isArray(items)) return items.length;
+            if (items && typeof items === 'object') return Object.keys(items).length;
+            if (typeof items === 'string') {
+                try {
+                    const parsed = JSON.parse(items);
+                    if (Array.isArray(parsed)) return parsed.length;
+                    if (parsed && typeof parsed === 'object') return Object.keys(parsed).length;
+                } catch (e) {
+                    return 0;
+                }
+            }
+            return 0;
+        },
+        /**
+         * Modal de éxito unificado para todos los métodos de pago.
+         * Culqi / Izipay / MP llegan aquí sin overlay de carga previo.
+         * Yape / efectivo / transferencia primero muestran showPaymentLoading().
          */
         showPurchaseSuccess(order, thankYouUrl = null) {
-            this.processingPayment = false;
+            this.hidePaymentLoading();
             this.response_order_total = order ? order.total : 0;
-            this.thankYouUrl = thankYouUrl || null;
-            if (!this.thankYouUrl && order && order.external_id && window.__routes && window.__routes.thank_you) {
-                this.thankYouUrl = window.__routes.thank_you.replace('EXTERNAL_ID', order.external_id);
-            }
+            this.thankYouUrl = this.buildThankYouUrl(order, thankYouUrl);
+            this.successOrder = order || null;
             this.clearCartSilently();
-            swal({
-                title: '¡Gracias por su pago!',
-                text: 'En breve le enviaremos un correo electrónico con los detalles de su compra',
-                type: 'success',
-                confirmButtonText: 'OK',
-                allowOutsideClick: false,
-                allowEscapeKey: false,
-            }).then(() => {
-                this.goToThankYou();
+            this.paymentSuccessRedirecting = false;
+            this.paymentSuccessVisible = true;
+            document.body.style.overflow = 'hidden';
+        },
+        /**
+         * No cerrar el modal antes de navegar: evita el flash del carrito vacío.
+         * El overlay permanece visible con el botón en estado de carga hasta el redirect.
+         */
+        confirmPurchaseSuccess() {
+            if (this.paymentSuccessRedirecting) return;
+
+            this.paymentSuccessRedirecting = true;
+            document.body.style.overflow = 'hidden';
+
+            const targetUrl = this.thankYouUrl
+                || (this.successOrder && this.successOrder.external_id
+                    ? this.buildThankYouUrl(this.successOrder)
+                    : null)
+                || (window.__routes?.home || '/ecommerce');
+
+            // Deja un frame para pintar el estado de carga del botón antes de navegar
+            window.requestAnimationFrame(() => {
+                window.location.href = targetUrl;
             });
         },
         clearCartSilently() {

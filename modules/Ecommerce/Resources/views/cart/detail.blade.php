@@ -205,8 +205,196 @@
         color: var(--primary-color);
     }
 
-    .gateway-payment-body {
+        .gateway-payment-body {
         padding: 24px;
+    }
+
+    /* Overlay de carga: métodos manuales (Yape / efectivo / transferencia) */
+    .payment-process-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10050;
+        display: none;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 33, 55, .55);
+        backdrop-filter: blur(4px);
+    }
+
+    .payment-process-overlay.is-open {
+        display: grid;
+    }
+
+    .payment-process-dialog {
+        width: min(420px, 92vw);
+        padding: 36px 28px 32px;
+        border-radius: 20px;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 24px 70px rgba(15, 33, 55, .25);
+    }
+
+    .payment-process-spinner {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 20px;
+        border: 3px solid #e9edf1;
+        border-top-color: var(--primary-color, #ff7a00);
+        border-radius: 50%;
+        animation: paymentProcessSpin .75s linear infinite;
+    }
+
+    @keyframes paymentProcessSpin {
+        to { transform: rotate(360deg); }
+    }
+
+    .payment-process-dialog h3 {
+        margin: 0 0 10px;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f2137;
+    }
+
+    .payment-process-dialog p {
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.45;
+        color: #667085;
+    }
+
+    /* Modal de éxito unificado */
+    .payment-success-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10060;
+        display: none;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 33, 55, .55);
+        backdrop-filter: blur(4px);
+    }
+
+    .payment-success-overlay.is-open {
+        display: grid;
+    }
+
+    .payment-success-dialog {
+        width: min(440px, 94vw);
+        padding: 32px 28px 28px;
+        border-radius: 20px;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 24px 70px rgba(15, 33, 55, .25);
+    }
+
+    .payment-success-badge {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: #fff4eb;
+        color: var(--primary-color, #ff7a00);
+    }
+
+    .payment-success-dialog h3 {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #0f2137;
+    }
+
+    .payment-success-dialog .payment-success-sub {
+        margin: 0 0 20px;
+        font-size: 0.92rem;
+        line-height: 1.45;
+        color: #667085;
+    }
+
+    .payment-success-summary {
+        margin: 0 0 18px;
+        padding: 14px 16px;
+        border: 1px solid #e9edf1;
+        border-radius: 12px;
+        text-align: left;
+        background: #fafbfc;
+    }
+
+    .payment-success-summary .psr-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 6px 0;
+        font-size: 0.9rem;
+    }
+
+    .payment-success-summary .psr-row + .psr-row {
+        border-top: 1px solid #edf1f4;
+    }
+
+    .payment-success-summary .lbl {
+        color: #667085;
+    }
+
+    .payment-success-summary .val {
+        font-weight: 600;
+        color: #0f2137;
+        text-align: right;
+    }
+
+    .payment-success-summary .psr-row--total .val {
+        font-size: 1.05rem;
+        color: var(--primary-color, #ff7a00);
+    }
+
+    .payment-success-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin: 0 0 22px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #f3f5f7;
+        font-size: 0.82rem;
+        line-height: 1.4;
+        color: #52606d;
+        text-align: left;
+    }
+
+    .payment-success-note svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+        color: var(--primary-color, #ff7a00);
+    }
+
+    .payment-success-dialog .pay-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .payment-success-dialog .pay-btn.is-loading {
+        opacity: 0.92;
+        pointer-events: none;
+        cursor: wait;
+    }
+
+    .payment-success-btn-spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.35);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: paymentProcessSpin .75s linear infinite;
+        flex-shrink: 0;
+    }
+
+    @media (max-width: 576px) {
+        .payment-process-dialog,
+        .payment-success-dialog {
+            padding: 28px 18px 22px;
+        }
     }
 
     #izipay-payment-host {
@@ -1239,9 +1427,16 @@
                     <a v-if="enableMp" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleMp }}</a>
                     <a v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">@{{ cashPaymentTitle }}</a>
                     @elseauth('ecommerce')
-                        <button v-if="selectedPaymentMethod !== 'paypal'" class="pay-btn" :class="{ disabled: !acceptedTerms }" :disabled="!selectedPaymentMethod || !acceptedTerms" @click="executePayment">
+                        <button
+                            v-if="selectedPaymentMethod !== 'paypal'"
+                            class="pay-btn"
+                            :class="{ disabled: !acceptedTerms || processingPayment }"
+                            :disabled="!selectedPaymentMethod || !acceptedTerms || processingPayment"
+                            @click="executePayment"
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                            Pagar
+                            <span v-if="processingPayment">Procesando…</span>
+                            <span v-else>Pagar</span>
                         </button>
 
                     @endauth
@@ -1260,6 +1455,76 @@
         </div><!-- End .cart-summary -->
       </div><!-- End .summary-sticky -->
     </div><!-- End .col-lg-4 -->
+
+    <!-- Overlay de carga: Yape / efectivo / transferencia -->
+    <div
+        id="payment-loading-overlay"
+        class="payment-process-overlay"
+        :class="{ 'is-open': processingPayment }"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="payment-loading-title"
+        aria-busy="true"
+        :aria-hidden="processingPayment ? 'false' : 'true'"
+    >
+        <div class="payment-process-dialog">
+            <div class="payment-process-spinner" aria-hidden="true"></div>
+            <h3 id="payment-loading-title">@{{ paymentLoadingTitle }}</h3>
+            <p>@{{ paymentLoadingText }}</p>
+        </div>
+    </div>
+
+    <!-- Modal de éxito unificado (todos los métodos) -->
+    <div
+        id="payment-success-overlay"
+        class="payment-success-overlay"
+        :class="{ 'is-open': paymentSuccessVisible }"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="payment-success-title"
+        :aria-hidden="paymentSuccessVisible ? 'false' : 'true'"
+    >
+        <div class="payment-success-dialog" v-if="successOrder">
+            <div class="payment-success-badge" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h3 id="payment-success-title">¡Pago realizado!</h3>
+            <p class="payment-success-sub">Tu pedido fue registrado con éxito.</p>
+            <div class="payment-success-summary">
+                <div class="psr-row">
+                    <span class="lbl">N° de pedido</span>
+                    <span class="val">@{{ successOrderNumber }}</span>
+                </div>
+                <div class="psr-row">
+                    <span class="lbl">Forma de pago</span>
+                    <span class="val">@{{ successPaymentLabel }}</span>
+                </div>
+                <div class="psr-row">
+                    <span class="lbl">Productos</span>
+                    <span class="val">@{{ successItemsCount }}</span>
+                </div>
+                <div class="psr-row psr-row--total">
+                    <span class="lbl">Total</span>
+                    <span class="val">@{{ successOrderTotal }}</span>
+                </div>
+            </div>
+            <div class="payment-success-note">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>En breve te enviaremos un correo electrónico con los detalles de tu compra.</span>
+            </div>
+            <button
+                type="button"
+                class="pay-btn"
+                :class="{ 'is-loading': paymentSuccessRedirecting, disabled: paymentSuccessRedirecting }"
+                :disabled="paymentSuccessRedirecting"
+                @click="confirmPurchaseSuccess"
+            >
+                <span v-if="paymentSuccessRedirecting" class="payment-success-btn-spinner" aria-hidden="true"></span>
+                <span v-if="paymentSuccessRedirecting">Redirigiendo…</span>
+                <span v-else>Continuar</span>
+            </button>
+        </div>
+    </div>
 
     <!-- Modal Mis Direcciones -->
     <div class="modal fade" id="addressListModal" tabindex="-1" role="dialog" aria-labelledby="addressListModalLabel" aria-hidden="true" @click="closeAddressListMenu">
@@ -1658,7 +1923,7 @@
                 'warning'
             );
             if (typeof app_cart !== 'undefined') {
-                app_cart.processingPayment = false;
+                app_cart.hidePaymentLoading();
             }
             return;
         }
@@ -1693,6 +1958,11 @@
     window.culqi = async function () {
         if (window.Culqi.token) {
             const token = window.Culqi.token.id;
+
+            // Feedback inmediato tras cerrar el SDK: verificación bancaria en curso
+            if (typeof app_cart !== 'undefined') {
+                app_cart.showCulqiBankLoading();
+            }
 
             let precio = Math.round((Number(jQuery("#total_amount").data('total')).toFixed(2) * 100));
             let precio_culqi = Number(jQuery("#total_amount").data('total')).toFixed(2);
@@ -1730,15 +2000,16 @@
               success: function (data) {
                 if (data.success == true) {
                   app_cart.saveContactDataUser();
+                  // Pasarelas SDK: éxito unificado (cierra el overlay de banco)
                   app_cart.showPurchaseSuccess(data.order);
                 } else {
-                  app_cart.processingPayment = false;
+                  app_cart.hidePaymentLoading();
                   window.mostrarMensaje(data.message || 'Sucedió algo inesperado.', 'error');
                 }
               },
               error: function (error_data) {
                 console.log(error_data);
-                app_cart.processingPayment = false;
+                app_cart.hidePaymentLoading();
                 let message = 'Ocurrió un error al procesar el pago.';
                 if (error_data.responseJSON && error_data.responseJSON.message) {
                     message = error_data.responseJSON.message;
@@ -1758,7 +2029,7 @@
         } else if (window.Culqi.error) {
             const error = window.Culqi.error;
             if (typeof app_cart !== 'undefined') {
-                app_cart.processingPayment = false;
+                app_cart.hidePaymentLoading();
             }
             try {
                 if (typeof window.Culqi.close === 'function') {
@@ -1772,7 +2043,7 @@
         } else {
             // Usuario cerró el modal sin token ni error explícito
             if (typeof app_cart !== 'undefined') {
-                app_cart.processingPayment = false;
+                app_cart.hidePaymentLoading();
             }
         }
     };
