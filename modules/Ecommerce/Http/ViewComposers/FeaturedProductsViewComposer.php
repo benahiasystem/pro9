@@ -51,12 +51,17 @@ class FeaturedProductsViewComposer
         });
     }
 
-    private function getExchangeRateSale(){
+    private function getExchangeRateSale()
+    {
+        try {
+            $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
 
-        $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
-
-        return (array_key_exists('sale', $exchange_rate)) ? $exchange_rate['sale'] : 1;
-
+            return (is_array($exchange_rate) && array_key_exists('sale', $exchange_rate) && $exchange_rate['sale'])
+                ? $exchange_rate['sale']
+                : 1;
+        } catch (\Throwable $e) {
+            return 1;
+        }
     }
 
 }

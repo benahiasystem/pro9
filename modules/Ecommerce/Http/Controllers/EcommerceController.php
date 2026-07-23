@@ -332,6 +332,13 @@ class EcommerceController extends Controller
 
         $enable_electronic_documents = (bool) ($configuration->enable_electronic_documents ?? false);
         $enable_store_pickup          = (bool) ($configuration->enable_store_pickup ?? false);
+        $quotation_settings           = ConfigurationEcommerce::storefrontQuotationConfig();
+        $quotation_enabled            = $quotation_settings['enabled'];
+        $quotation_mode               = $quotation_settings['mode'];
+        $quotation_show_prices        = $quotation_settings['show_prices'];
+        $quotation_success_message    = $quotation_settings['success_message'];
+        $quotation_validity_days      = $quotation_settings['validity_days'];
+        $quotation_terms              = $quotation_settings['terms'];
         $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
 
@@ -347,7 +354,27 @@ class EcommerceController extends Controller
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
             : [];
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'userAddresses', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'preferences', 'gateway_availability'));
+        return view('ecommerce::cart.detail', compact(
+            'configuration',
+            'categories',
+            'global_discount_type',
+            'userAddress',
+            'userAddresses',
+            'enable_electronic_documents',
+            'enable_store_pickup',
+            'quotation_enabled',
+            'quotation_mode',
+            'quotation_show_prices',
+            'quotation_success_message',
+            'quotation_validity_days',
+            'quotation_terms',
+            'pickup_branches',
+            'enable_yape',
+            'enable_transfer',
+            'payment_configuration',
+            'preferences',
+            'gateway_availability'
+        ));
     }
 
     public function orderList()
@@ -783,6 +810,10 @@ class EcommerceController extends Controller
 
     public function paymentCash(Request $request)
     {
+        if ($blocked = $this->rejectPurchaseIfQuoteOnly()) {
+            return $blocked;
+        }
+
         if (
             $request->input('reference_payment') === 'yape'
             && ! PaymentConfiguration::isYapeConfigured()
@@ -935,6 +966,9 @@ class EcommerceController extends Controller
 
     public function paymentMercadoPago(Request $request)
     {
+        if ($blocked = $this->rejectPurchaseIfQuoteOnly()) {
+            return $blocked;
+        }
         if (! PaymentConfiguration::isMercadoPagoConfigured()) {
             return response()->json([
                 'success' => false,
@@ -1001,6 +1035,9 @@ class EcommerceController extends Controller
 
     public function paymentIzipay(Request $request)
     {
+        if ($blocked = $this->rejectPurchaseIfQuoteOnly()) {
+            return $blocked;
+        }
         if (! PaymentConfiguration::isIzipayConfigured()) {
             return response()->json([
                 'success' => false,
@@ -1131,13 +1168,17 @@ class EcommerceController extends Controller
 
     }
 
-    private function getExchangeRateSale(){
+    private function getExchangeRateSale()
+    {
+        try {
+            $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
 
-        $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
-
-        return (array_key_exists('sale', $exchange_rate)) ? $exchange_rate['sale'] : 1;
-
-
+            return (is_array($exchange_rate) && array_key_exists('sale', $exchange_rate) && $exchange_rate['sale'])
+                ? $exchange_rate['sale']
+                : 1;
+        } catch (\Throwable $e) {
+            return 1;
+        }
     }
 
     public function account()
@@ -2147,5 +2188,20 @@ class EcommerceController extends Controller
             'found' => true,
             'zones' => $zones,
         ]);
+    }
+
+    /**
+     * Bloquea compras cuando la tienda está en modo solo cotización.
+     */
+    private function rejectPurchaseIfQuoteOnly()
+    {
+        if (! ConfigurationEcommerce::isStorefrontQuoteOnly()) {
+            return null;
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'La tienda está en modo solo cotización. No es posible realizar compras.',
+        ], 403);
     }
 }

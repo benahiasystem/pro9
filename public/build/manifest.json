@@ -45,7 +45,7 @@
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-ddd71891.js",
+    "file": "assets/cart-app-21a6dae2.js",
     "isEntry": true,
     "src": "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js"
   },
@@ -58,14 +58,14 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-1f979ed5.css",
+    "file": "assets/app-8cd409e0.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
-      "assets/app-1f979ed5.css"
+      "assets/app-8cd409e0.css"
     ],
-    "file": "assets/app-6e7e1a04.js",
+    "file": "assets/app-8ced6bad.js",
     "imports": [
       "_vue-clipboard-b1bfe123.js",
       "__plugin-vue2_normalizer-fcd81e8a.js",

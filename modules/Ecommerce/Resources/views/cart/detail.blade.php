@@ -423,7 +423,172 @@
         cursor: not-allowed;
     }
 
-    .quotation-request-overlay,
+    .quotation-contact-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 16px;
+    }
+    .quotation-contact-grid .qf-full {
+        grid-column: 1 / -1;
+    }
+    .quotation-contact-grid .input,
+    .quotation-contact-grid textarea.input {
+        width: 100%;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 14px;
+        background: #fff;
+    }
+    .quotation-contact-grid textarea.input {
+        resize: vertical;
+        min-height: 84px;
+    }
+    .quotation-conditions {
+        margin-top: 18px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+    }
+    .quotation-conditions-title {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 8px;
+        color: #1f2937;
+    }
+    .quotation-conditions-list {
+        margin: 0;
+        padding-left: 18px;
+        color: #4b5563;
+        font-size: 13px;
+        line-height: 1.55;
+    }
+    .quotation-conditions-list li + li {
+        margin-top: 6px;
+    }
+    .quotation-summary-note {
+        margin: 0 0 14px;
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.45;
+        text-align: left;
+    }
+    .quotation-mode-banner {
+        margin: 0 0 14px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+        font-size: 13px;
+        line-height: 1.45;
+        text-align: left;
+    }
+    .quotation-mode-banner strong {
+        display: block;
+        margin-bottom: 2px;
+    }
+    .cart-summary .quotation-mode-banner {
+        margin: 0 24px 4px;
+    }
+    .cart-summary.is-quote-summary .sum-body {
+        padding-top: 10px;
+    }
+    .quotation-summary-meta {
+        margin: 0 0 14px;
+        padding: 0;
+        font-size: 13.5px;
+        line-height: 1.45;
+        color: #6b7280;
+        text-align: left;
+    }
+    .cart-summary.is-quote-summary .checkout-methods .pay-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    .cart-summary.is-quote-summary .terms {
+        align-items: flex-start;
+        margin-top: 4px;
+    }
+
+    .checkout-intent-card {
+        margin-top: 1rem;
+        overflow: hidden;
+    }
+    .checkout-intent-card .card-cart-body {
+        padding: 18px 20px 20px;
+    }
+    .checkout-intent-label {
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+        color: #6b7280;
+        margin-bottom: 12px;
+    }
+    .checkout-intent-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .checkout-intent-option {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        width: 100%;
+        text-align: left;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1.5px solid #e5e7eb;
+        background: #fff;
+        color: #1f2937;
+        cursor: pointer;
+        transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .checkout-intent-option:hover {
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+    }
+    .checkout-intent-option.active {
+        border-color: #111827;
+        background: #f9fafb;
+        box-shadow: 0 0 0 1px #111827 inset;
+    }
+    .checkout-intent-option .cio-title {
+        font-size: 15px;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    .checkout-intent-option .cio-desc {
+        font-size: 12.5px;
+        line-height: 1.4;
+        color: #6b7280;
+    }
+    .checkout-intent-option.active .cio-desc {
+        color: #4b5563;
+    }
+
+    .checkout-panel-enter-active,
+    .checkout-panel-leave-active {
+        transition: opacity .28s ease, transform .28s ease;
+    }
+    .checkout-panel-enter,
+    .checkout-panel-leave-to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    @media (max-width: 767px) {
+        .quotation-contact-grid {
+            grid-template-columns: 1fr;
+        }
+        .checkout-intent-selector {
+            grid-template-columns: 1fr;
+        }
+    }
+
     .quotation-success-overlay {
         position: fixed;
         inset: 0;
@@ -435,7 +600,6 @@
         backdrop-filter: blur(4px);
     }
 
-    .quotation-request-overlay.is-open,
     .quotation-success-overlay.is-open {
         display: grid;
     }
@@ -1165,8 +1329,10 @@
     $googleMapsApiKey = app(Modules\Ecommerce\Http\Controllers\EcommerceController::class)->getGoogleMaps();
     $globalDiscountTypeId = $global_discount_type_id ?? null;
 @endphp
-<h2 class="my-4 mt-4" style="font-weight: 900;">Finalizar compra</h2>
 <div class="row" id="app">
+    <div class="col-12">
+        <h2 class="my-4 mt-4" style="font-weight: 900;">@{{ isQuotationCheckout ? 'Solicitar cotización' : 'Finalizar compra' }}</h2>
+    </div>
     <div class="col-md-8 mb-3">
         <div class="card card-cart">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#cartCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
@@ -1185,8 +1351,8 @@
                     <span class="head-summary">
                         <template v-if="records.length > 0">
                             <b>@{{ records.length }} @{{ records.length === 1 ? 'producto' : 'productos' }}</b>
-                            <span class="head-summary-sep">·</span>
-                            <span class="head-summary-amt">S/ @{{ summary.total }}</span>
+                            <span class="head-summary-sep" v-if="!isQuotationCheckout || quotationShowPrices">·</span>
+                            <span class="head-summary-amt" v-if="!isQuotationCheckout || quotationShowPrices">S/ @{{ summary.total }}</span>
                         </template>
                         <span v-else class="head-summary-warn">Carrito vacío</span>
                     </span>
@@ -1210,7 +1376,7 @@
                                 <h5 class="product-title m-0">
                                     <a href="#">@{{ row.description }}</a>
                                 </h5>
-                                <span class="price text-muted">
+                                <span class="price text-muted" v-if="!isQuotationCheckout || quotationShowPrices">
                                     @{{ row.currency_type_symbol }} @{{ row.sale_unit_price }}
                                 </span>
                             </div>
@@ -1229,7 +1395,8 @@
                                 </div>
                             </div>
 
-                            <strong class="total">@{{ row.currency_type_symbol }} @{{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
+                            <strong class="total" v-if="!isQuotationCheckout || quotationShowPrices">@{{ row.currency_type_symbol }} @{{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
+                            <strong class="total text-muted" v-else>x @{{ row.cantidad }}</strong>
 
                             <button type="button" @click="deleteItem(row.id, index)" class="btn btn-sm btn-link text-muted px-0 delete-item-btn">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
@@ -1242,7 +1409,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.966 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"/><path d="M9 11v-5a3 3 0 0 1 6 0v5"/></svg>
                         </span>
                         <p class="cart-empty-title">Tu carrito está vacío</p>
-                        <p class="cart-empty-text">Agrega productos para continuar con tu compra.</p>
+                        <p class="cart-empty-text">@{{ isQuotationCheckout ? 'Agrega productos para solicitar tu cotización.' : 'Agrega productos para continuar con tu compra.' }}</p>
                         <a href="/ecommerce" class="cart-empty-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                             Ver productos
@@ -1266,7 +1433,44 @@
             </div>
         </div>
 
-        <div class="card card-cart" v-if="records.length > 0">
+        {{-- Selector de intención (solo modo híbrido Cotizar y vender) --}}
+        <div class="card card-cart checkout-intent-card" v-if="showCheckoutIntentSelector">
+            <div class="card-cart-body">
+                <div class="checkout-intent-label">¿Qué deseas hacer con tu pedido?</div>
+                <div class="checkout-intent-selector" role="radiogroup" aria-label="Intención del checkout">
+                    <button
+                        type="button"
+                        class="checkout-intent-option"
+                        :class="{ active: checkoutIntent === 'purchase' }"
+                        role="radio"
+                        :aria-checked="checkoutIntent === 'purchase' ? 'true' : 'false'"
+                        @click="setCheckoutIntent('purchase')"
+                    >
+                        <span class="cio-title">Pagar</span>
+                        <span class="cio-desc">Compra regular con envío y método de pago</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="checkout-intent-option"
+                        :class="{ active: checkoutIntent === 'quote' }"
+                        role="radio"
+                        :aria-checked="checkoutIntent === 'quote' ? 'true' : 'false'"
+                        @click="setCheckoutIntent('quote')"
+                    >
+                        <span class="cio-title">Solicitar cotización</span>
+                        <span class="cio-desc">Envía tus datos de contacto sin pagar ahora</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="quotation-mode-banner" v-if="quoteOnlyMode && records.length > 0" style="margin-top: 1rem;">
+            <strong>Solo cotización</strong>
+            Esta tienda no procesa compras en línea. Completa tus datos de contacto para solicitar tu cotización.
+        </div>
+
+        <transition name="checkout-panel">
+        <div class="card card-cart" v-if="records.length > 0 && !isQuotationCheckout" key="delivery-card">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#deliveryCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                 <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                     <span class="icon-card">
@@ -1456,10 +1660,61 @@
                 </div>
             </div>
         </div>
+        </transition>
+
+        {{-- Datos de contacto (modo cotización) --}}
+        <transition name="checkout-panel">
+        <div class="card card-cart" v-if="records.length > 0 && isQuotationCheckout" id="quotationContactCard" key="quote-contact-card">
+            <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#quotationContactCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
+                <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
+                    <span class="icon-card">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /></svg>
+                    </span>
+                    <span class="ml-2 font-weight-bold title-card">Datos de contacto</span>
+                    <span class="head-summary">
+                        <b v-if="quotationContactSummary">@{{ quotationContactSummary }}</b>
+                        <span v-else class="head-summary-warn">Completa tus datos</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="collapse-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+                </div>
+            </button>
+            <div id="quotationContactCollapse" class="collapse show">
+                <div class="card-body card-body-h-auto card-cart-body ship-body">
+                    <div class="quotation-contact-grid">
+                        <div class="qf-full">
+                            <span class="field-label">Nombre</span>
+                            <input type="text" class="input" v-model="quotationForm.contact_name" autocomplete="name" placeholder="Tu nombre completo">
+                        </div>
+                        <div>
+                            <span class="field-label">Correo</span>
+                            <input type="email" class="input" v-model="quotationForm.email" autocomplete="email" placeholder="correo@ejemplo.com">
+                        </div>
+                        <div>
+                            <span class="field-label">Teléfono</span>
+                            <input type="tel" class="input" v-model="quotationForm.telephone" autocomplete="tel" placeholder="Ej: 987 654 321" maxlength="15" inputmode="numeric">
+                        </div>
+                        <div class="qf-full">
+                            <span class="field-label">Comentarios u observaciones</span>
+                            <textarea class="input" rows="3" v-model="quotationForm.notes" placeholder="Indicaciones adicionales para tu cotización (opcional)"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="quotation-conditions">
+                        <div class="quotation-conditions-title">Condiciones de la cotización</div>
+                        <ul class="quotation-conditions-list">
+                            <li>Vigencia: <strong>@{{ quotationValidityLabel }}</strong> (asignada automáticamente por la tienda).</li>
+                            <li v-if="quotationTerms" style="white-space: pre-line;">@{{ quotationTerms }}</li>
+                            <li v-else>Los precios y disponibilidad están referenciales hasta la confirmación comercial.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </transition>
 
         @if($enable_electronic_documents)
             {{-- Modo documentos electrónicos: solo lectura, tipo inferido del número del usuario --}}
-            <div class="card card-cart">
+            <div class="card card-cart" v-if="!isQuotationCheckout">
                 <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#documentyCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                     <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                         <span class="icon-card">
@@ -1493,7 +1748,8 @@
             </div>
         @endif
 
-        <div class="card card-cart" v-if="records.length > 0">
+        <transition name="checkout-panel">
+        <div class="card card-cart" v-if="records.length > 0 && allowPurchase" key="payment-card">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#paymentCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                 <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                     <span class="icon-card">
@@ -1655,16 +1911,24 @@
                 </div>
             </div>
         </div>
+        </transition>
     </div><!-- End .col-lg-8 -->
 
     <div class="col-md-4">
       <div class="summary-sticky">
-        <div class="cart-summary">
-            <div class="sum-head"><h3>Resumen</h3></div>
+        <div class="cart-summary" :class="{ 'is-quote-summary': isQuotationCheckout }">
+            <div class="sum-head">
+                <h3>@{{ isQuotationCheckout ? 'Resumen de cotización' : 'Resumen' }}</h3>
+            </div>
+            <div class="quotation-mode-banner" v-if="isQuotationCheckout">
+                <strong v-if="quoteOnlyMode">Modo: Solo cotizar</strong>
+                <strong v-else>Modo: Cotización</strong>
+                <span v-if="!quoteOnlyMode">Puedes volver al checkout de compra cuando quieras.</span>
+                <span v-else>En este modo no es posible pagar en la tienda.</span>
+            </div>
             <div class="sum-body">
-                <table class="table table-totals">
+                <table class="table table-totals" v-if="!isQuotationCheckout || quotationShowPrices">
                     <tbody>
-
                         <tr v-if="summary.total_exonerated > 0">
                             <td>Op. exoneradas</td>
                             <td>S/ @{{ summary.total_exonerated }}</td>
@@ -1677,7 +1941,7 @@
                             <td>IGV (18%)</td>
                             <td>S/ @{{ summary.total_igv }}</td>
                         </tr>
-                        <tr v-if="appliedCoupon && appliedCoupon.code">
+                        <tr v-if="!isQuotationCheckout && appliedCoupon && appliedCoupon.code">
                             <td>
                                 Cupón <span class="badge badge-dark">@{{ appliedCoupon.code }}</span>
                                 <button class="coupon-remove" @click="removeCoupon">Eliminar</button>
@@ -1686,7 +1950,7 @@
                                 &minus; S/ @{{ appliedCoupon.discount }}
                             </td>
                         </tr>
-                        <tr v-if="deliveryZone && parseFloat(deliveryZone.price) > 0">
+                        <tr v-if="!isQuotationCheckout && deliveryZone && parseFloat(deliveryZone.price) > 0">
                             <td>Envío <small class="text-muted">(@{{ deliveryZone.name }})</small></td>
                             <td>S/ @{{ summary.delivery }}</td>
                         </tr>
@@ -1699,8 +1963,12 @@
                     </tfoot>
                 </table>
 
+                <p class="quotation-summary-meta" v-if="isQuotationCheckout && !quotationShowPrices">
+                    @{{ records.length }} producto(s) seleccionados para cotizar.
+                </p>
+
                 <!-- Coupon input and applied coupon display -->
-                <div class="coupon-block">
+                <div class="coupon-block" v-if="!isQuotationCheckout">
                     <div class="coupon">
                         <input
                             v-model="couponField"
@@ -1721,6 +1989,11 @@
                         Cupón aplicado. Usa &quot;Eliminar&quot; para quitarlo.
                     </small>
                 </div>
+
+                <div class="quotation-summary-note" v-if="isQuotationCheckout">
+                    <small>Vigencia automática: <strong>@{{ quotationValidityLabel }}</strong></small>
+                </div>
+
                 <label class="terms" :class="{ 'terms--checked': acceptedTerms }" id="termsLabel">
                   <input type="checkbox" id="termsCheck" v-model="acceptedTerms">
                   <span class="box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
@@ -1728,14 +2001,15 @@
                 </label>
                 <div class="checkout-methods">
                     @guest('ecommerce')
-                    <a v-if="enableCulqi" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleCulqi }}</a>
-                    <a v-if="enableIzipay" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleIzipay }}</a>
-                    <a v-if="enableMp" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleMp }}</a>
-                    <a v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">@{{ cashPaymentTitle }}</a>
-                    <a href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--quote login-link" :class="{ disabled: !acceptedTerms }">Solicitar cotización</a>
+                    <a v-if="allowPurchase && enableCulqi" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleCulqi }}</a>
+                    <a v-if="allowPurchase && enableIzipay" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleIzipay }}</a>
+                    <a v-if="allowPurchase && enableMp" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleMp }}</a>
+                    <a v-if="allowPurchase && enableCash && (!cashPaymentPickupOnly || isPickupMode)" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">@{{ cashPaymentTitle }}</a>
+                    <a v-if="quotationEnabled && !showCheckoutIntentSelector" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--quote login-link" :class="{ disabled: !acceptedTerms }">Solicitar cotización</a>
+                    <a v-if="showCheckoutIntentSelector && checkoutIntent === 'quote'" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--quote login-link" :class="{ disabled: !acceptedTerms }">Inicia sesión para cotizar</a>
                     @elseauth('ecommerce')
                         <button
-                            v-if="selectedPaymentMethod !== 'paypal'"
+                            v-if="allowPurchase && selectedPaymentMethod !== 'paypal'"
                             class="pay-btn"
                             :class="{ disabled: !acceptedTerms || processingPayment || quotationSubmitting }"
                             :disabled="!selectedPaymentMethod || !acceptedTerms || processingPayment || quotationSubmitting"
@@ -1746,24 +2020,26 @@
                             <span v-else>Pagar</span>
                         </button>
                         <button
+                            v-if="isQuotationCheckout"
                             type="button"
                             class="pay-btn pay-btn--quote"
-                            :class="{ disabled: !acceptedTerms || processingPayment || quotationSubmitting }"
-                            :disabled="!acceptedTerms || processingPayment || quotationSubmitting || records.length < 1"
-                            @click="openQuotationModal"
+                            :class="{ disabled: !acceptedTerms || quotationSubmitting }"
+                            :disabled="!acceptedTerms || quotationSubmitting || records.length < 1"
+                            @click="submitQuotationRequest"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg>
-                            Solicitar cotización
+                            <span v-if="quotationSubmitting" class="payment-success-btn-spinner" aria-hidden="true"></span>
+                            <span v-if="quotationSubmitting">Enviando…</span>
+                            <span v-else>Enviar cotización</span>
                         </button>
                     @endauth
 
                 </div><!-- End .checkout-methods -->
 
-                <div class="trust">
+                <div class="trust" v-if="!isQuotationCheckout">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                     Pago 100% seguro y protegido
                 </div>
-                <div class="cards-row px-5">
+                <div class="cards-row px-5" v-if="!isQuotationCheckout">
                     <img src="{{ asset('porto-ecommerce/assets/images/payments-bordered.svg') }}" alt="payment methods" class="footer-payments">
                 </div>
             </div>
@@ -1842,84 +2118,6 @@
         </div>
     </div>
 
-    <!-- Modal solicitar cotización -->
-    <div
-        id="quotation-request-overlay"
-        class="quotation-request-overlay"
-        :class="{ 'is-open': quotationModalVisible }"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="quotation-request-title"
-        :aria-hidden="quotationModalVisible ? 'false' : 'true'"
-        @click.self="closeQuotationModal"
-    >
-        <div class="quotation-request-dialog" v-if="quotationModalVisible">
-            <div class="quotation-request-header">
-                <h3 id="quotation-request-title">Solicitar cotización</h3>
-                <button type="button" class="gateway-payment-close" @click="closeQuotationModal" aria-label="Cerrar">&times;</button>
-            </div>
-            <div class="quotation-request-body">
-                <div class="quotation-lines">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Cant.</th>
-                                <th>P. unit.</th>
-                                <th>Importe</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="line in quotationLines" :key="line.id">
-                                <td>@{{ line.description }}</td>
-                                <td>@{{ line.quantity }}</td>
-                                <td>@{{ formatMoney(line.unit_price) }}</td>
-                                <td>@{{ formatMoney(line.total) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div class="ql-total">Total referencial: @{{ formatMoney(quotationModalTotal) }}</div>
-                </div>
-
-                <div class="quotation-form-grid">
-                    <div class="qf-full">
-                        <label for="quote-name">Nombre</label>
-                        <input id="quote-name" type="text" v-model="quotationForm.contact_name" autocomplete="name">
-                    </div>
-                    <div>
-                        <label for="quote-email">Correo</label>
-                        <input id="quote-email" type="email" v-model="quotationForm.email" autocomplete="email">
-                    </div>
-                    <div>
-                        <label for="quote-phone">Teléfono</label>
-                        <input id="quote-phone" type="text" v-model="quotationForm.telephone" autocomplete="tel">
-                    </div>
-                    <div>
-                        <label for="quote-validity">Vigencia estimada</label>
-                        <select id="quote-validity" v-model.number="quotationForm.validity_days">
-                            <option :value="3">3 días</option>
-                            <option :value="7">7 días</option>
-                            <option :value="15">15 días</option>
-                            <option :value="30">30 días</option>
-                        </select>
-                    </div>
-                    <div class="qf-full">
-                        <label for="quote-notes">Notas</label>
-                        <textarea id="quote-notes" v-model="quotationForm.notes" placeholder="Indicaciones adicionales para tu cotización (opcional)"></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="quotation-request-footer">
-                <button type="button" class="pay-btn pay-btn--ghost" :disabled="quotationSubmitting" @click="closeQuotationModal">Cancelar</button>
-                <button type="button" class="pay-btn" :disabled="quotationSubmitting" @click="submitQuotationRequest">
-                    <span v-if="quotationSubmitting" class="payment-success-btn-spinner" aria-hidden="true"></span>
-                    <span v-if="quotationSubmitting">Enviando…</span>
-                    <span v-else>Enviar solicitud</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal éxito cotización -->
     <div
         id="quotation-success-overlay"
@@ -1935,7 +2133,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h3 id="quotation-success-title">¡Cotización enviada!</h3>
-            <p class="payment-success-sub">Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.</p>
+            <p class="payment-success-sub">@{{ displayedQuotationSuccessMessage }}</p>
             <div class="quotation-success-code">@{{ quotationResult.code || quotationResult.number_full }}</div>
             <div class="quotation-success-actions">
                 <button type="button" class="pay-btn pay-btn--ghost" @click="openQuotationPdf" v-if="quotationResult.print_url">
@@ -2205,6 +2403,12 @@
         userAddresses: {!! json_encode($userAddresses ?? []) !!},
         enable_electronic_documents: {!! json_encode($enable_electronic_documents ?? false) !!},
         enable_store_pickup: {!! json_encode($enable_store_pickup ?? false) !!},
+        quotation_enabled: {!! json_encode($quotation_enabled ?? false) !!},
+        quotation_mode: {!! json_encode($quotation_mode ?? 'quote_and_sell') !!},
+        quotation_show_prices: {!! json_encode($quotation_show_prices ?? true) !!},
+        quotation_success_message: {!! json_encode($quotation_success_message ?? 'Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.') !!},
+        quotation_validity_days: {!! json_encode($quotation_validity_days ?? 7) !!},
+        quotation_terms: {!! json_encode($quotation_terms ?? '') !!},
         pickup_branches: {!! json_encode($pickup_branches ?? []) !!},
         enable_yape: {!! json_encode($enable_yape ?? false) !!},
         enable_transfer: {!! json_encode($enable_transfer ?? false) !!},

@@ -120,10 +120,17 @@
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.seller_name }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
-                                <template v-if="row.state_type_id == '11'">{{ row.state_type_description }}</template>
+                                <template v-if="row.state_type_id == '11'">
+                                    <el-tag size="mini" type="info" effect="plain">{{ row.state_type_description }}</el-tag>
+                                </template>
                                 <template v-else>
-                                    <el-select v-model="row.state_type_id" @change="changeStateType(row)" style="width:120px !important">
-                                        <el-option v-for="option in state_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                    <el-select v-model="row.state_type_id" @change="changeStateType(row)" style="width:140px !important">
+                                        <el-option
+                                            v-for="option in editableStateTypes"
+                                            :key="option.id"
+                                            :value="option.id"
+                                            :label="option.description"
+                                        ></el-option>
                                     </el-select>
                                 </template>
                             </td>
@@ -393,6 +400,10 @@ export default {
         },
         tenantSelectableColumns() {
             return this.orderedColumns.filter(col => col.key !== 'personalized');
+        },
+        // Anulado se gestiona por acción dedicada; no se ofrece en el selector inline
+        editableStateTypes() {
+            return (this.state_types || []).filter(s => s.id !== '11');
         },
     },
     data() {

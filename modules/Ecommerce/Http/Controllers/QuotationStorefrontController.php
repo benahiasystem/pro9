@@ -46,6 +46,10 @@ class QuotationStorefrontController extends Controller
             return redirect('ecommerce');
         }
 
+        if (! $this->quotationsAreEnabled()) {
+            return redirect()->route('tenant.ecommerce.index');
+        }
+
         $configuration = ConfigurationEcommerce::first();
         $categories = \Modules\Item\Models\Category::has('items')->get();
 
@@ -60,6 +64,10 @@ class QuotationStorefrontController extends Controller
         $user = auth('ecommerce')->user();
         if (! $user) {
             return response()->json(['success' => false, 'message' => 'No autenticado.'], 401);
+        }
+
+        if (! $this->quotationsAreEnabled()) {
+            return $this->quotationsDisabledResponse();
         }
 
         $query = Quotation::where('customer_id', $user->id)
@@ -88,7 +96,7 @@ class QuotationStorefrontController extends Controller
                 'id' => $quotation->id,
                 'external_id' => $quotation->external_id,
                 'number_full' => $quotation->number_full,
-                'code' => $quotation->storefront_code,
+                'code' => $quotation->identifier,
                 'date_of_issue' => optional($quotation->date_of_issue)->format('Y-m-d'),
                 'date_of_due' => $quotation->date_of_due
                     ? Carbon::parse($quotation->date_of_due)->format('Y-m-d')
@@ -125,6 +133,10 @@ class QuotationStorefrontController extends Controller
         $user = auth('ecommerce')->user();
         if (! $user) {
             return response()->json(['success' => false, 'message' => 'No autenticado.'], 401);
+        }
+
+        if (! $this->quotationsAreEnabled()) {
+            return $this->quotationsDisabledResponse();
         }
 
         $quotation = Quotation::where('customer_id', $user->id)
@@ -165,7 +177,7 @@ class QuotationStorefrontController extends Controller
             'success' => true,
             'data' => [
                 'id' => $quotation->id,
-                'code' => $quotation->storefront_code,
+                'code' => $quotation->identifier,
                 'customer_name' => $customer->name ?? $user->name,
                 'customer_telephone' => $customer->telephone ?? $user->telephone,
                 'customer_email' => $customer->email ?? $user->email,
@@ -195,6 +207,10 @@ class QuotationStorefrontController extends Controller
      */
     public function store(Request $request)
     {
+        if (! $this->quotationsAreEnabled()) {
+            return $this->quotationsDisabledResponse();
+        }
+
         $user = auth('ecommerce')->user();
         if (! $user) {
             return response()->json([
@@ -207,11 +223,16 @@ class QuotationStorefrontController extends Controller
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|integer',
             'items.*.quantity' => 'required|numeric|min:0.01',
-            'contact_name' => 'nullable|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'telephone' => 'nullable|string|max:30',
+            'contact_name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'telephone' => 'required|string|max:30',
             'notes' => 'nullable|string|max:2000',
-            'validity_days' => 'nullable|integer|min:1|max:90',
+        ], [
+            'contact_name.required' => 'El nombre de contacto es obligatorio.',
+            'email.required' => 'El correo es obligatorio.',
+            'email.email' => 'Ingresa un correo válido.',
+            'telephone.required' => 'El teléfono es obligatorio.',
+            'items.required' => 'Agrega al menos un producto para cotizar.',
         ]);
 
         if ($validator->fails()) {
@@ -222,10 +243,13 @@ class QuotationStorefrontController extends Controller
             ], 422);
         }
 
+        $quotationSettings = ConfigurationEcommerce::storefrontQuotationConfig();
+        $validityDays = $quotationSettings['validity_days'];
+
         try {
             $quotation = null;
 
-            DB::connection('tenant')->transaction(function () use ($request, $user, &$quotation) {
+            DB::connection('tenant')->transaction(function () use ($request, $user, &$quotation, $quotationSettings, $validityDays) {
                 $this->syncPersonContact($user, $request);
 
                 $establishment = Establishment::first();
@@ -241,7 +265,6 @@ class QuotationStorefrontController extends Controller
 
                 $company = Company::active();
                 $exchangeRate = $this->resolveExchangeRate();
-                $validityDays = (int) ($request->input('validity_days') ?: 7);
                 $dateOfIssue = Carbon::now();
                 $dateOfDue = $dateOfIssue->copy()->addDays($validityDays);
 
@@ -257,13 +280,15 @@ class QuotationStorefrontController extends Controller
 
                 $descriptionParts = array_filter([
                     'Cotización solicitada desde la tienda virtual.',
+                    'Vigencia: '.$validityDays.' día'.($validityDays === 1 ? '' : 's').'.',
                     $notes !== '' ? 'Notas del cliente: '.$notes : null,
                 ]);
 
-                $configuration = Configuration::select('terms_condition')->first();
-
-                $ecommerceNumber = Quotation::nextEcommerceNumber((int) $dateOfIssue->format('Y'));
-                $numberYear = (int) $dateOfIssue->format('Y');
+                $tenantTerms = Configuration::select('terms_condition')->first();
+                $quotationTerms = trim((string) ($quotationSettings['terms'] ?? ''));
+                $termsCondition = $quotationTerms !== ''
+                    ? $quotationTerms
+                    : ($tenantTerms->terms_condition ?? null);
 
                 $data = [
                     'user_id' => $staffUser->id,
@@ -272,10 +297,10 @@ class QuotationStorefrontController extends Controller
                     'establishment' => EstablishmentInput::set($establishment->id),
                     'soap_type_id' => $company->soap_type_id,
                     'state_type_id' => '01',
-                    'prefix' => 'COT',
-                    'series' => Quotation::SERIES_ECOMMERCE,
-                    'number' => $ecommerceNumber,
-                    'number_year' => $numberYear,
+                    'prefix' => Quotation::SERIES_STANDARD,
+                    'series' => '',
+                    'number' => 0,
+                    'number_year' => null,
                     'date_of_issue' => $dateOfIssue->format('Y-m-d'),
                     'time_of_issue' => $dateOfIssue->format('H:i:s'),
                     'date_of_due' => $dateOfDue->format('Y-m-d'),
@@ -315,7 +340,7 @@ class QuotationStorefrontController extends Controller
                     'source' => Quotation::SOURCE_ECOMMERCE,
                     'contact' => $contactName,
                     'phone' => $telephone,
-                    'terms_condition' => $configuration->terms_condition ?? null,
+                    'terms_condition' => $termsCondition,
                     'payment_method_type_id' => '10',
                     'changed' => false,
                 ];
@@ -339,10 +364,10 @@ class QuotationStorefrontController extends Controller
                     $quotation->items()->create($row);
                 }
 
+                // Mismo motor de filename que cotizaciones de empresa: COT-{id}-{Ymd}
                 $quotation->filename = join('-', [
-                    'COT-TV',
-                    $dateOfIssue->format('Y'),
-                    str_pad((string) $quotation->number, 4, '0', STR_PAD_LEFT),
+                    $quotation->prefix ?: Quotation::SERIES_STANDARD,
+                    $quotation->id,
                     $dateOfIssue->format('Ymd'),
                 ]);
                 $quotation->save();
@@ -368,14 +393,17 @@ class QuotationStorefrontController extends Controller
                     'id' => $quotation->id,
                     'external_id' => $quotation->external_id,
                     'number_full' => $quotation->number_full,
-                    'code' => $quotation->storefront_code,
+                    'code' => $quotation->identifier,
                     'total' => (float) $quotation->total,
                     'date_of_due' => $quotation->date_of_due
                         ? Carbon::parse($quotation->date_of_due)->format('Y-m-d')
                         : null,
+                    'validity_days' => $validityDays,
                     'state_type_description' => optional($quotation->state_type)->description ?? 'Registrado',
                     'print_url' => url("quotations/print/{$quotation->external_id}/a4"),
                     'list_url' => route('tenant_ecommerce_quotation_list'),
+                    'success_message' => $quotationSettings['success_message'],
+                    'show_prices' => $quotationSettings['show_prices'],
                 ],
             ]);
         } catch (Exception $e) {
@@ -569,5 +597,24 @@ class QuotationStorefrontController extends Controller
             'items' => $rows,
             'totals' => $totals,
         ];
+    }
+
+    /**
+     * Cotizaciones habilitadas en la configuración de la tienda virtual.
+     */
+    private function quotationsAreEnabled(): bool
+    {
+        return ConfigurationEcommerce::storefrontQuotationConfig()['enabled'];
+    }
+
+    /**
+     * Respuesta JSON cuando el cotizador está desactivado.
+     */
+    private function quotationsDisabledResponse()
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Las cotizaciones no están disponibles en la tienda.',
+        ], 403);
     }
 }

@@ -11,9 +11,9 @@ use Throwable;
 
 class RegenerateEcommerceQuotationPdfsCommand extends Command
 {
-    protected $signature = 'quotations:regenerate-ecommerce-pdfs {--tenant=} {--dry}';
+    protected $signature = 'tenant:regenerate-ecommerce-pdfs {--tenant=} {--dry}';
 
-    protected $description = 'Regenera los PDF de cotizaciones de tienda virtual con el correlativo COT-TV';
+    protected $description = 'Regenera los PDF de cotizaciones de tienda virtual con el correlativo estándar COT-{id}';
 
     public function handle(): int
     {
@@ -43,12 +43,11 @@ class RegenerateEcommerceQuotationPdfsCommand extends Command
     {
         $query = Quotation::query()
             ->whereSourceEcommerce()
-            ->where('number', '>', 0)
             ->orderBy('id');
 
         $total = $query->count();
         if ($total === 0) {
-            $this->warn('  Sin cotizaciones ecommerce numeradas.');
+            $this->warn('  Sin cotizaciones ecommerce.');
 
             return;
         }
@@ -60,30 +59,22 @@ class RegenerateEcommerceQuotationPdfsCommand extends Command
         $query->chunkById(50, function ($rows) use ($dry, &$ok, &$fail) {
             foreach ($rows as $quotation) {
                 /** @var Quotation $quotation */
-                $year = $quotation->date_of_issue
-                    ? $quotation->date_of_issue->format('Y')
-                    : date('Y');
-
                 $filename = join('-', [
-                    'COT-TV',
-                    $year,
-                    str_pad((string) $quotation->number, 4, '0', STR_PAD_LEFT),
+                    $quotation->prefix ?: Quotation::SERIES_STANDARD,
+                    $quotation->id,
                     optional($quotation->date_of_issue)->format('Ymd') ?: date('Ymd'),
                 ]);
 
                 if ($dry) {
-                    $this->line("  [dry] #{$quotation->id} → {$filename}");
+                    $this->line("  [dry] #{$quotation->id} → {$filename} ({$quotation->identifier})");
                     $ok++;
                     continue;
                 }
 
                 try {
-                    if (! $quotation->number_year) {
-                        $quotation->number_year = (int) $year;
-                    }
-                    if ($quotation->series !== Quotation::SERIES_ECOMMERCE) {
-                        $quotation->series = Quotation::SERIES_ECOMMERCE;
-                    }
+                    $quotation->series = '';
+                    $quotation->number = 0;
+                    $quotation->number_year = null;
                     $quotation->filename = $filename;
                     $quotation->save();
 

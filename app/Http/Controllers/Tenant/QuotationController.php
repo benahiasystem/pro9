@@ -104,7 +104,8 @@ class QuotationController extends Controller
 
     public function filter()
     {
-        $state_types = StateType::whereIn('id', ['01', '05', '09'])->get();
+        // Mismos estados editables/filtrables que oportunidades de venta (patrón del sistema)
+        $state_types = StateType::whereIn('id', ['01', '05', '09', '11'])->get();
 
         return compact('state_types');
     }
@@ -124,16 +125,15 @@ class QuotationController extends Controller
         $query = Quotation::query();
 
         $form = json_decode($request->form ?: '{}');
-        $source = $form->source ?? 'admin';
+        // Vista unificada por defecto: empresa + tienda virtual (distinción vía source / badges)
+        $source = $form->source ?? 'all';
 
         if ($source === 'ecommerce') {
             $query->whereSourceEcommerce();
-        } elseif ($source === 'all') {
-            // Sin filtro de origen
-        } else {
-            // Default: solo empresa (no mezclar tienda)
+        } elseif ($source === 'admin') {
             $query->whereSourceAdmin();
         }
+        // source === 'all' → sin filtro de origen
 
         if ($column === 'user_name') {
             $query->whereHas('user', function ($q) use ($value) {

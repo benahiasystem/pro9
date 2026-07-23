@@ -21,22 +21,21 @@ class QuotationStorefrontCorrelativeTest extends TestCase
         ]);
     }
 
-    public function test_storefront_code_uses_ecommerce_number_not_id(): void
+    public function test_ecommerce_uses_standard_prefix_id_identifier(): void
     {
         $quotation = new Quotation();
         $quotation->syncOriginal();
         $quotation->exists = false;
         $quotation->id = 12;
         $quotation->source = Quotation::SOURCE_ECOMMERCE;
-        $quotation->series = Quotation::SERIES_ECOMMERCE;
-        $quotation->number = 5;
-        $quotation->number_year = 2026;
-        $quotation->prefix = 'COT';
+        $quotation->series = '';
+        $quotation->number = 0;
+        $quotation->prefix = Quotation::SERIES_STANDARD;
         $quotation->date_of_issue = Carbon::parse('2026-07-22');
 
-        $this->assertSame('COT-TV-2026-0005', $quotation->storefront_code);
-        $this->assertSame('COT-TV-2026-0005', $quotation->identifier);
-        $this->assertSame('COT-TV-2026-0005', $quotation->pdf_title);
+        $this->assertSame('COT-12', $quotation->storefront_code);
+        $this->assertSame('COT-12', $quotation->identifier);
+        $this->assertSame('COT-00000012', $quotation->pdf_title);
         $this->assertSame('Tienda virtual', $quotation->source_label);
         $this->assertTrue($quotation->isFromEcommerce());
     }
@@ -47,7 +46,7 @@ class QuotationStorefrontCorrelativeTest extends TestCase
         $quotation->id = 12;
         $quotation->source = Quotation::SOURCE_ADMIN;
         $quotation->number = 0;
-        $quotation->prefix = 'COT';
+        $quotation->prefix = Quotation::SERIES_STANDARD;
         $quotation->date_of_issue = Carbon::parse('2026-07-22');
 
         $this->assertSame('COT-12', $quotation->identifier);
@@ -60,6 +59,6 @@ class QuotationStorefrontCorrelativeTest extends TestCase
     {
         $this->assertSame('admin', Quotation::SOURCE_ADMIN);
         $this->assertSame('ecommerce', Quotation::SOURCE_ECOMMERCE);
-        $this->assertSame('COTV', Quotation::SERIES_ECOMMERCE);
+        $this->assertSame('COT', Quotation::SERIES_STANDARD);
     }
 }

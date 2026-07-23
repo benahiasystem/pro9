@@ -18,7 +18,12 @@ class Quotation extends ModelTenant
     public const SOURCE_ADMIN = 'admin';
     public const SOURCE_ECOMMERCE = 'ecommerce';
 
-    /** Serie de 4 caracteres para cotizaciones de tienda virtual. */
+    /** Prefijo / serie estándar de 3 caracteres (mismo motor que back-office). */
+    public const SERIES_STANDARD = 'COT';
+
+    /**
+     * @deprecated Correlativo COTV descartado en Fase 3. Conservado solo para migraciones legacy.
+     */
     public const SERIES_ECOMMERCE = 'COTV';
 
     protected $with = ['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments'];
@@ -208,10 +213,6 @@ class Quotation extends ModelTenant
 
     public function getIdentifierAttribute()
     {
-        if ($this->isFromEcommerce() && (int) $this->number > 0) {
-            return $this->storefront_code;
-        }
-
         return $this->prefix.'-'.$this->id;
     }
 
@@ -294,49 +295,19 @@ class Quotation extends ModelTenant
     }
 
     /**
-     * Código visible en tienda: COT-TV-{YYYY}-{NNNN}
+     * Código visible (tienda / admin): misma nomenclatura estándar COT-{id}.
      */
     public function getStorefrontCodeAttribute(): string
     {
-        $year = $this->date_of_issue
-            ? $this->date_of_issue->format('Y')
-            : date('Y');
-
-        if ((int) $this->number > 0) {
-            return sprintf('COT-TV-%s-%04d', $year, (int) $this->number);
-        }
-
-        // Legacy previo al correlativo propio
-        return sprintf('COT-%s-%04d', $year, $this->id);
+        return $this->identifier;
     }
 
     /**
-     * Título para PDF: correlativo tienda o prefix-id de empresa.
+     * Título para PDF: prefix + id con padding (motor estándar).
      */
     public function getPdfTitleAttribute(): string
     {
-        if ($this->isFromEcommerce() && (int) $this->number > 0) {
-            return $this->storefront_code;
-        }
-
         return $this->prefix.'-'.str_pad((string) $this->id, 8, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * Siguiente correlativo ecommerce para el año indicado (con lock).
-     */
-    public static function nextEcommerceNumber(int $year): int
-    {
-        $last = static::query()
-            ->where('source', self::SOURCE_ECOMMERCE)
-            ->where('series', self::SERIES_ECOMMERCE)
-            ->where('number_year', $year)
-            ->where('number', '>', 0)
-            ->lockForUpdate()
-            ->orderByDesc('number')
-            ->value('number');
-
-        return ((int) $last) + 1;
     }
 
     /**
@@ -524,7 +495,7 @@ class Quotation extends ModelTenant
             'identifier' => $row->identifier,
             'source' => $row->source ?: self::SOURCE_ADMIN,
             'source_label' => $row->source_label,
-            'storefront_code' => $row->isFromEcommerce() ? $row->storefront_code : null,
+            'storefront_code' => $row->isFromEcommerce() ? $row->identifier : null,
             'user_name' => $row->user->name,
             'seller_name' => $seller->name,
             'customer_id' => $row->customer_id,

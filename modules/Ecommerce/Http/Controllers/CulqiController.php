@@ -39,6 +39,13 @@ class CulqiController extends Controller
 
     public function payment(Request $request)
     {
+      if (ConfigurationEcommerce::isStorefrontQuoteOnly()) {
+        return response()->json([
+          'success' => false,
+          'message' => 'La tienda está en modo solo cotización. No es posible realizar compras.',
+        ], 403);
+      }
+
       if (! PaymentConfiguration::isCulqiConfigured()) {
         return response()->json([
           'success' => false,

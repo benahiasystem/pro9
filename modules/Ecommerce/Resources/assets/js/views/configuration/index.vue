@@ -329,6 +329,129 @@
                 </div>
               </div>
 
+              <div class="col-12 mt-4 mb-3">
+                <h4 class="mb-0"><strong>Configuración de Cotizaciones</strong></h4>
+                <small class="d-block text-muted mt-1" style="line-height: 1.5;">
+                  Define cómo funciona el cotizador en la tienda virtual.
+                </small>
+              </div>
+
+              <div class="col-12">
+                <div class="row align-items-start">
+                  <div class="col-md-6">
+                    <div class="form-group form-modern mb-3">
+                      <el-switch v-model="form.quotation_enabled" :active-value="1" :inactive-value="0"></el-switch>
+                      <label class="ms-2 mb-0">Activar cotizaciones</label>
+                      <small class="d-block text-muted ms-5" style="padding: 0 !important; line-height: 1.5;">
+                        Habilita o deshabilita la función de cotizaciones en toda la tienda.
+                      </small>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group form-modern mb-3" :class="{'has-danger': errors.quotation_success_message}">
+                      <label class="control-label">Mensaje de respuesta automático</label>
+                      <small class="d-block text-muted mb-2" style="line-height: 1.5;">
+                        Texto que verá el cliente después de enviar su solicitud de cotización.
+                      </small>
+                      <el-input
+                        type="textarea"
+                        :rows="3"
+                        v-model="form.quotation_success_message"
+                        :disabled="form.quotation_enabled != 1"
+                        placeholder="Ej: Gracias por tu solicitud. Nos pondremos en contacto contigo a la brevedad."
+                        maxlength="2000"
+                        show-word-limit
+                      ></el-input>
+                      <small
+                        class="form-control-feedback"
+                        v-if="errors.quotation_success_message"
+                        v-text="errors.quotation_success_message[0]"
+                      ></small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row align-items-start">
+                  <div class="col-md-6">
+                    <div class="form-group form-modern mb-3">
+                      <label class="control-label">Modo de operación</label>
+                      <small class="d-block text-muted mb-2" style="line-height: 1.5;">
+                        Elige si el cliente solo puede cotizar o también puede comprar.
+                      </small>
+                      <el-radio-group v-model="form.quotation_mode" :disabled="form.quotation_enabled != 1" size="small">
+                        <el-radio-button label="quote_and_sell">Cotizar y vender</el-radio-button>
+                        <el-radio-button label="quote_only">Solo cotizar</el-radio-button>
+                      </el-radio-group>
+                      <small class="d-block text-muted mt-2" style="line-height: 1.5;">
+                        Valor actual:
+                        <strong v-if="form.quotation_mode === 'quote_and_sell'">Cotizar y vender</strong>
+                        <strong v-else-if="form.quotation_mode === 'quote_only'">Solo cotizar</strong>
+                        <strong v-else>No definido</strong>
+                      </small>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group form-modern mb-3" :class="{'has-danger': errors.quotation_validity_days}">
+                      <label class="control-label">Vigencia de la cotización (días)</label>
+                      <small class="d-block text-muted mb-2" style="line-height: 1.5;">
+                        Se asigna automáticamente. El cliente no puede modificarla.
+                      </small>
+                      <el-input-number
+                        v-model="form.quotation_validity_days"
+                        :min="1"
+                        :max="90"
+                        :disabled="form.quotation_enabled != 1"
+                        controls-position="right"
+                      ></el-input-number>
+                      <small
+                        class="form-control-feedback d-block"
+                        v-if="errors.quotation_validity_days"
+                        v-text="errors.quotation_validity_days[0]"
+                      ></small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row align-items-start">
+                  <div class="col-md-6">
+                    <div class="form-group form-modern mb-3">
+                      <el-switch
+                        v-model="form.quotation_show_prices"
+                        :active-value="1"
+                        :inactive-value="0"
+                        :disabled="form.quotation_enabled != 1"
+                      ></el-switch>
+                      <label class="ms-2 mb-0">Mostrar precios en el cotizador</label>
+                      <small class="d-block text-muted ms-5" style="padding: 0 !important; line-height: 1.5;">
+                        Si está desactivado, el cliente no verá precios al armar su cotización.
+                      </small>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-group form-modern mb-3" :class="{'has-danger': errors.quotation_terms}">
+                      <label class="control-label">Condiciones comerciales</label>
+                      <small class="d-block text-muted mb-2" style="line-height: 1.5;">
+                        Texto visible para el cliente al solicitar la cotización (además de la vigencia).
+                      </small>
+                      <el-input
+                        type="textarea"
+                        :rows="3"
+                        v-model="form.quotation_terms"
+                        :disabled="form.quotation_enabled != 1"
+                        placeholder="Ej: Precios sujetos a stock. La cotización no reserva inventario."
+                        maxlength="5000"
+                        show-word-limit
+                      ></el-input>
+                      <small
+                        class="form-control-feedback"
+                        v-if="errors.quotation_terms"
+                        v-text="errors.quotation_terms[0]"
+                      ></small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
           <div class="form-actions text-end float-end pt-2">
@@ -440,6 +563,13 @@ export default {
           // configuración de documentos electrónicos y recojo en tienda
           enable_electronic_documents: data.enable_electronic_documents ? 1 : 0,
           enable_store_pickup: data.enable_store_pickup ? 1 : 0,
+          // configuración de cotizaciones
+          quotation_enabled: data.quotation_enabled ? 1 : 0,
+          quotation_mode: data.quotation_mode || 'quote_and_sell',
+          quotation_show_prices: data.quotation_show_prices !== false && data.quotation_show_prices !== 0 ? 1 : 0,
+          quotation_success_message: data.quotation_success_message || '',
+          quotation_validity_days: parseInt(data.quotation_validity_days) || 7,
+          quotation_terms: data.quotation_terms || '',
         };
       } else {
         this.initForm();
@@ -487,6 +617,12 @@ export default {
         about_us: '',
         enable_electronic_documents: 0,
         enable_store_pickup: 0,
+        quotation_enabled: 0,
+        quotation_mode: 'quote_and_sell',
+        quotation_show_prices: 1,
+        quotation_success_message: '',
+        quotation_validity_days: 7,
+        quotation_terms: '',
       };
     },
     submit() {
@@ -507,20 +643,30 @@ export default {
       delete payload.only_available_products;
       delete payload.full_width_banner;
 
+      // Normaliza modo de cotización para evitar valores vacíos/desfasados.
+      payload.quotation_mode = this.form.quotation_mode === 'quote_only'
+        ? 'quote_only'
+        : 'quote_and_sell';
+
       this.$http
         .post(`/${this.resource}/configuration`, payload)
         .then(response => {
           if (response.data.success) {
+            if (response.data.quotation_mode) {
+              this.form.quotation_mode = response.data.quotation_mode;
+            }
             this.$message.success(response.data.message);
           } else {
             this.$message.error(response.data.message);
           }
         })
         .catch(error => {
-          if (error.response.status === 422) {
-            this.errors = error.response.data;
+          if (error.response && error.response.status === 422) {
+            this.errors = error.response.data.errors || error.response.data;
+            this.$message.error('Revise los datos del formulario');
           } else {
             console.log(error);
+            this.$message.error('No se pudo guardar la configuración');
           }
         })
         .then(() => {

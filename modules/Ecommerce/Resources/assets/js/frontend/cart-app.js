@@ -108,6 +108,18 @@ var app_cart = new Vue({
         enable_electronic_documents: window.__ecommerce_config?.enable_electronic_documents || false,
         // Recojo en tienda
         enableStorePickup: window.__ecommerce_config?.enable_store_pickup || false,
+        // Cotizaciones en tienda virtual
+        quotationEnabled: !!window.__ecommerce_config?.quotation_enabled,
+        quotationMode: window.__ecommerce_config?.quotation_mode || 'quote_and_sell',
+        quotationShowPrices: window.__ecommerce_config?.quotation_show_prices !== false
+            && window.__ecommerce_config?.quotation_show_prices !== 0,
+        quotationSuccessMessage: window.__ecommerce_config?.quotation_success_message
+            || 'Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.',
+        quotationValidityDays: Number(window.__ecommerce_config?.quotation_validity_days) || 7,
+        quotationTerms: window.__ecommerce_config?.quotation_terms || '',
+        // Intención del checkout en modo híbrido: 'purchase' | 'quote'
+        // En "solo cotizar" se fuerza a 'quote' al iniciar.
+        checkoutIntent: 'purchase',
         pickupBranches: window.__ecommerce_config?.pickup_branches || [],
         selectedPickupBranch: null,
         isPickupMode: false,
@@ -222,9 +234,51 @@ var app_cart = new Vue({
         quotationModalTotal() {
             return this.quotationLines.reduce((sum, line) => sum + (Number(line.total) || 0), 0);
         },
+        // Compras bloqueadas solo si cotizaciones están ON y el modo es solo cotizar
+        quoteOnlyMode() {
+            return this.quotationEnabled && this.quotationMode === 'quote_only';
+        },
+        // Selector visible solo en modo híbrido (cotizar y vender)
+        showCheckoutIntentSelector() {
+            return this.quotationEnabled && !this.quoteOnlyMode && this.records.length > 0;
+        },
+        allowPurchase() {
+            return !this.isQuotationCheckout;
+        },
+        // Checkout de cotización (inline en el carrito)
+        isQuotationCheckout() {
+            if (!this.quotationEnabled) return false;
+            if (this.quoteOnlyMode) return true;
+            return this.checkoutIntent === 'quote';
+        },
+        displayedQuotationSuccessMessage() {
+            return (this.quotationResult && this.quotationResult.success_message)
+                || this.quotationSuccessMessage
+                || 'Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.';
+        },
+        quotationValidityLabel() {
+            const days = Number(this.quotationValidityDays) || 7;
+            return days === 1 ? '1 día' : `${days} días`;
+        },
+        quotationContactSummary() {
+            const parts = [];
+            if (this.quotationForm.contact_name) parts.push(this.quotationForm.contact_name);
+            if (this.quotationForm.telephone) parts.push(this.quotationForm.telephone);
+            if (this.quotationForm.email) parts.push(this.quotationForm.email);
+            return parts.join(' · ');
+        },
     },
     watch: {
         'addressModal.address': function(newValue) {
+        },
+        checkoutIntent(val) {
+            if (val === 'quote') {
+                if (!this.user || !this.user.id) {
+                    window.location = window.__routes?.login || '/ecommerce/login';
+                    return;
+                }
+                this.preloadQuotationContact();
+            }
         },
         selectedPaymentMethod(val, oldVal) {
             // Mostrar u ocultar el widget de PayPal que está fuera del scope de Vue
@@ -679,6 +733,13 @@ var app_cart = new Vue({
             })
         },
         executePayment() {
+            if (!this.allowPurchase) {
+                return this.showSwalMessage(
+                    'Compra no disponible',
+                    'La tienda está en modo solo cotización. Puedes solicitar una cotización.',
+                    'info'
+                );
+            }
             if (this.selectedPaymentMethod === 'culqi') {
                 if (typeof execCulqi === 'function') execCulqi();
             } else if (this.selectedPaymentMethod === 'izipay') {
@@ -690,6 +751,13 @@ var app_cart = new Vue({
             }
         },
         async paymentCash() {
+            if (!this.allowPurchase) {
+                return this.showSwalMessage(
+                    'Compra no disponible',
+                    'La tienda está en modo solo cotización. Puedes solicitar una cotización.',
+                    'info'
+                );
+            }
             if(!this.form_document.codigo_tipo_documento) {
                 return this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error')
             }
@@ -1017,6 +1085,13 @@ var app_cart = new Vue({
             }
         },
         async execMp() {
+            if (!this.allowPurchase) {
+                return this.showSwalMessage(
+                    'Compra no disponible',
+                    'La tienda está en modo solo cotización. Puedes solicitar una cotización.',
+                    'info'
+                );
+            }
             if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
                 return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
             }
@@ -1252,6 +1327,13 @@ var app_cart = new Vue({
             document.body.style.overflow = '';
         },
         async execIzipay() {
+            if (!this.allowPurchase) {
+                return this.showSwalMessage(
+                    'Compra no disponible',
+                    'La tienda está en modo solo cotización. Puedes solicitar una cotización.',
+                    'info'
+                );
+            }
             if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
                 return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
             }
@@ -1481,25 +1563,57 @@ var app_cart = new Vue({
             });
         },
         openQuotationModal() {
-            if (!this.user || !this.user.id) {
-                window.location = window.__routes?.login || '/ecommerce/login';
+            this.setCheckoutIntent('quote');
+        },
+        setCheckoutIntent(intent) {
+            if (!this.quotationEnabled && intent === 'quote') {
+                return this.showSwalMessage('Cotizaciones no disponibles', 'Las cotizaciones no están habilitadas en la tienda.', 'info');
+            }
+            if (this.quoteOnlyMode && intent === 'purchase') {
                 return;
             }
-            if (!this.records || this.records.length < 1) {
-                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de solicitar una cotización.', 'warning');
+            if (intent === 'quote') {
+                if (!this.user || !this.user.id) {
+                    try {
+                        sessionStorage.setItem('ecommerce_checkout_intent', 'quote');
+                    } catch (e) { /* ignore */ }
+                    window.location = window.__routes?.login || '/ecommerce/login';
+                    return;
+                }
+                if (!this.records || this.records.length < 1) {
+                    return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de solicitar una cotización.', 'warning');
+                }
             }
-
+            this.checkoutIntent = intent === 'quote' ? 'quote' : 'purchase';
+            if (intent === 'quote') {
+                this.preloadQuotationContact();
+                this.quotationResult = null;
+                this.quotationSuccessVisible = false;
+                this.quotationModalVisible = false;
+            } else {
+                try {
+                    sessionStorage.removeItem('ecommerce_checkout_intent');
+                } catch (e) { /* ignore */ }
+            }
+        },
+        enterQuotationCheckout() {
+            this.setCheckoutIntent('quote');
+        },
+        exitQuotationCheckout() {
+            if (this.quotationSubmitting || this.quoteOnlyMode) return;
+            this.setCheckoutIntent('purchase');
+        },
+        preloadQuotationContact() {
             this.quotationForm = {
-                contact_name: this.user.name || '',
-                email: this.user.email || '',
-                telephone: this.form_contact.telephone || this.user.telephone || '',
-                notes: '',
-                validity_days: 7,
+                contact_name: (this.user && this.user.name) || this.quotationForm.contact_name || '',
+                email: (this.user && this.user.email) || this.quotationForm.email || '',
+                telephone: this.form_contact.telephone
+                    || (this.user && this.user.telephone)
+                    || this.quotationForm.telephone
+                    || '',
+                notes: this.quotationForm.notes || '',
+                validity_days: this.quotationValidityDays,
             };
-            this.quotationResult = null;
-            this.quotationSuccessVisible = false;
-            this.quotationModalVisible = true;
-            document.body.style.overflow = 'hidden';
         },
         closeQuotationModal() {
             if (this.quotationSubmitting) return;
@@ -1510,9 +1624,19 @@ var app_cart = new Vue({
         },
         async submitQuotationRequest() {
             if (this.quotationSubmitting) return;
+            if (!this.quotationEnabled) {
+                return this.showSwalMessage('Cotizaciones no disponibles', 'Las cotizaciones no están habilitadas en la tienda.', 'info');
+            }
+            if (!this.user || !this.user.id) {
+                window.location = window.__routes?.login || '/ecommerce/login';
+                return;
+            }
 
             if (!this.records || this.records.length < 1) {
                 return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de solicitar una cotización.', 'warning');
+            }
+            if (!this.acceptedTerms) {
+                return this.showSwalMessage('Términos requeridos', 'Debes aceptar los términos y condiciones.', 'warning');
             }
             if (!this.quotationForm.contact_name || !String(this.quotationForm.contact_name).trim()) {
                 return this.showSwalMessage('Dato requerido', 'Ingresa tu nombre de contacto.', 'warning');
@@ -1524,12 +1648,14 @@ var app_cart = new Vue({
                 return this.showSwalMessage('Dato requerido', 'Ingresa tu teléfono.', 'warning');
             }
 
+            // Sincroniza teléfono al perfil de checkout por si vuelve a compra.
+            this.form_contact.telephone = String(this.quotationForm.telephone).trim();
+
             const payload = {
                 contact_name: String(this.quotationForm.contact_name).trim(),
                 email: String(this.quotationForm.email).trim(),
                 telephone: String(this.quotationForm.telephone).trim(),
                 notes: String(this.quotationForm.notes || '').trim(),
-                validity_days: Number(this.quotationForm.validity_days) || 7,
                 items: this.records.map(row => ({
                     item_id: row.id,
                     quantity: Number(row.cantidad) || 1,
@@ -1548,6 +1674,7 @@ var app_cart = new Vue({
                     this.quotationResult = response.data.quotation;
                     this.quotationModalVisible = false;
                     this.clearCartSilently();
+                    this.checkoutIntent = this.quoteOnlyMode ? 'quote' : 'purchase';
                     this.quotationSuccessVisible = true;
                     document.body.style.overflow = 'hidden';
                 } else {
@@ -2594,6 +2721,20 @@ var app_cart = new Vue({
             if (this.form_document.datos_del_cliente_o_receptor) {
                 this.form_document.datos_del_cliente_o_receptor.direccion = this.form_contact.address
                 this.form_document.datos_del_cliente_o_receptor.telefono = this.form_contact.telephone
+            }
+
+            this.preloadQuotationContact();
+            if (this.quotationEnabled && this.quotationMode === 'quote_only') {
+                this.checkoutIntent = 'quote';
+            } else if (this.quotationEnabled) {
+                let restored = null;
+                try {
+                    restored = sessionStorage.getItem('ecommerce_checkout_intent');
+                    sessionStorage.removeItem('ecommerce_checkout_intent');
+                } catch (e) { /* ignore */ }
+                this.checkoutIntent = (restored === 'quote' && this.user && this.user.id)
+                    ? 'quote'
+                    : 'purchase';
             }
 
             this.optionDocument()

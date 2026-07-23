@@ -65,11 +65,42 @@ class ConfigurationController extends Controller
             $configuration->delivery_no_coverage_message = $request->input('delivery_no_coverage_message');
         }
 
+        // Configuración de cotizaciones (tienda virtual)
+        if ($request->has('quotation_enabled')) {
+            $configuration->quotation_enabled = (bool) $request->input('quotation_enabled');
+        }
+
+        $mode = $request->input('quotation_mode', $configuration->quotation_mode ?: 'quote_and_sell');
+        if (! in_array($mode, ['quote_and_sell', 'quote_only'], true)) {
+            $mode = 'quote_and_sell';
+        }
+        if ($request->has('quotation_mode') || $request->has('quotation_enabled')) {
+            $configuration->quotation_mode = $mode;
+        }
+
+        if ($request->has('quotation_show_prices')) {
+            $configuration->quotation_show_prices = (bool) $request->input('quotation_show_prices');
+        }
+        if ($request->has('quotation_success_message')) {
+            $configuration->quotation_success_message = $request->input('quotation_success_message');
+        }
+        if ($request->has('quotation_validity_days')) {
+            $configuration->quotation_validity_days = max(1, min(90, (int) $request->input('quotation_validity_days')));
+        }
+        if ($request->has('quotation_terms')) {
+            $configuration->quotation_terms = $request->input('quotation_terms');
+        }
+
         $configuration->save();
+
+        $modeLabel = $configuration->quotation_mode === 'quote_only'
+            ? 'Solo cotizar'
+            : 'Cotizar y vender';
 
         return [
             'success' => true,
-            'message' => 'Configuración actualizada'
+            'message' => 'Configuración actualizada ('.$modeLabel.')',
+            'quotation_mode' => $configuration->quotation_mode,
         ];
     }
 
