@@ -78,6 +78,39 @@ gtag('config', 'G-8PH6FM2JEL');
             ];
         });
     @endphp
+    <script>
+      (function () {
+        var originalFetch = window.fetch.bind(window);
+        window.fetch = function (input, init) {
+          var url = typeof input === 'string' ? input : (input && input.url);
+          if (url === '/config.json') {
+            input = '/mozo/runtime-config';
+          }
+          return originalFetch(input, init);
+        };
+      })();
+    </script>
+    <script>
+      window.fetch('/mozo/runtime-config', { cache: 'no-store' })
+        .then(function (response) {
+          return response.ok ? response.json() : null;
+        })
+        .then(function (configuration) {
+          if (!configuration || !configuration.logoVersion) return;
+
+          var version = String(configuration.logoVersion);
+          document.querySelectorAll('link[rel="icon"], link[rel="mask-icon"]').forEach(function (link) {
+            var url = new URL(link.href, window.location.origin);
+            if (url.pathname !== '/mozo/images/svg/logo/isotipo-oficial.svg') return;
+
+            url.searchParams.set('v', version);
+            link.href = url.pathname + url.search;
+          });
+        })
+        .catch(function () {
+          // Mozo mantiene su comportamiento normal si el endpoint no responde.
+        });
+    </script>
     <script type="module" crossorigin src="{{ asset($mozoAssets['js']) }}"></script>
     <link rel="modulepreload" href="{{ asset($mozoAssets['vendor']) }}">
     <link rel="stylesheet" href="{{ asset($mozoAssets['css']) }}">
