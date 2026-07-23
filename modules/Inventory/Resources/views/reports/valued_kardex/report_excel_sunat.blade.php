@@ -212,27 +212,21 @@
                 </td>
 
                 {{-- ENTRADAS --}}
-                <td>
-                   {{ $row['input_quantity'] }}
-                </td>
-                <td>
-                   {{ $row['input_unit_price'] }}
-                </td>
-                <td>
-                   {{ $row['input_total'] }}
-                </td>
+                @if($row['type'] == 'input' || $row['type'] == 'opening')
+                <td>{{ $row['input_quantity'] }}</td>
+                <td>{{ $row['input_unit_price'] }}</td>
+                <td>{{ $row['input_total'] }}</td>
+                @else
+                <td></td>
+                <td></td>
+                <td></td>
+                @endif
 
                 {{-- SALIDAS --}}
                 @if($row['type'] == 'output')
-                <td>
-                   {{ $row['output_quantity'] }}
-                </td>
-                <td>
-                   {{ $row['output_unit_price'] }}
-                </td>
-                <td>
-                   {{ $row['output_total'] }}
-                </td>
+                <td>{{ $row['output_quantity'] }}</td>
+                <td>{{ $row['output_unit_price'] }}</td>
+                <td>{{ $row['output_total'] }}</td>
                 @else
                 <td></td>
                 <td></td>
@@ -241,26 +235,19 @@
 
                 {{-- SALDO --}}
                 @php
-
-                    // $balance_quantity +=  $row['quantity'] * $row['factor'];
-                    // $balance_total += $row['total'] * $row['factor'];
-                    // $balance_cost = ($balance_quantity != 0) ? round($balance_total / $balance_quantity, 4) : null;
-
-                    if($row['type'] == 'input'){
+                    if($row['type'] == 'input' || $row['type'] == 'opening'){
 
                         $totals['input_quantity'] += $row['input_quantity'];
                         $totals['input_unit_price'] += $row['input_unit_price'];
                         $totals['input_total'] += $row['input_total'];
 
-                    }else{
+                    }elseif($row['type'] == 'output'){
 
                         $totals['output_quantity'] += $row['output_quantity'];
                         $totals['output_unit_price'] += $row['output_unit_price'];
                         $totals['output_total'] += $row['output_total'];
 
                     }
-
-
                 @endphp
 
                 <td>

@@ -5,13 +5,20 @@ namespace Modules\Inventory\Helpers;
 
 use App\Models\Tenant\Item;
 use App\Models\Tenant\{
+    Document,
     DocumentItem,
+    Dispatch,
     DispatchItem,
+    Purchase,
     PurchaseItem,
+    SaleNote,
     SaleNoteItem,
 };
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Modules\Inventory\Models\Inventory;
+use Modules\Inventory\Models\InventoryKardex as InventoryKardexModel;
+use Modules\Inventory\Models\Warehouse;
 
 
 class InventoryValuedKardex
@@ -125,18 +132,296 @@ class InventoryValuedKardex
 
     public static function getDataFormatSunat($params)
     {
-        $item = Item::whereFilterValuedKardexFormatSunat($params)->findOrFail($params->item_id);
+        $item = Item::findOrFail($params->item_id);
 
-        $purchase_items = $item->purchase_item;
-        $document_items = $item->document_items;
-        $dispatch_items = $item->dispatch_items;
-        $sale_note_items = $item->sale_note_items;
+        $openingBalance = self::getOpeningBalance($params, $item);
+        $all_record_items = self::getPeriodMovementItems($params, $item);
+        $records = self::getRecordsFromItems($all_record_items, $openingBalance);
 
-        $all_record_items = self::getAllRecordItems($document_items, $purchase_items, $dispatch_items, $sale_note_items);
+        if (($openingBalance['balance_quantity'] ?? 0) != 0) {
+            array_unshift($records, self::buildOpeningBalanceRow($openingBalance, $params));
+        }
 
         return [
             'item' => $item,
-            'records' => self::getRecordsFromItems($all_record_items)
+            'records' => $records
+        ];
+    }
+
+    /**
+     * Saldo inicial: movimientos antes del periodo + stock inicial/ajustes del periodo.
+     */
+    private static function getOpeningBalance($params, Item $item)
+    {
+        $emptyBalance = [
+            'balance_quantity' => 0,
+            'balance_unit_cost' => 0,
+            'balance_total_cost' => 0,
+        ];
+
+        if (empty($params->date_start)) {
+            return $emptyBalance;
+        }
+
+        $openingEndDate = Carbon::parse($params->date_start)->subDay()->format('Y-m-d');
+
+        if ($openingEndDate >= '1900-01-01') {
+            $beforeParams = (object) [
+                'item_id' => $params->item_id,
+                'establishment_id' => $params->establishment_id ?? null,
+                'date_start' => '1900-01-01',
+                'date_end' => $openingEndDate,
+            ];
+
+            $beforeItems = self::getKardexRecordItems($beforeParams, $item, false);
+            $beforeRecords = self::getRecordsFromItems($beforeItems);
+
+            if (!empty($beforeRecords)) {
+                $last = end($beforeRecords);
+
+                return [
+                    'balance_quantity' => $last['balance_quantity'] ?? 0,
+                    'balance_unit_cost' => $last['balance_unit_cost'] ?? 0,
+                    'balance_total_cost' => $last['balance_total_cost'] ?? 0,
+                ];
+            }
+        }
+
+        $inPeriodInventoryItems = self::getInPeriodInventoryOpeningItems($params, $item);
+
+        if ($inPeriodInventoryItems->isEmpty()) {
+            return $emptyBalance;
+        }
+
+        $firstInventory = $inPeriodInventoryItems->first();
+        $issueDate = $firstInventory->date_of_issue ?? $firstInventory->created_at;
+
+        $records = self::getRecordsFromItems($inPeriodInventoryItems);
+
+        if (empty($records)) {
+            return $emptyBalance;
+        }
+
+        $last = end($records);
+
+        return [
+            'balance_quantity' => $last['balance_quantity'] ?? 0,
+            'balance_unit_cost' => $last['balance_unit_cost'] ?? 0,
+            'balance_total_cost' => $last['balance_total_cost'] ?? 0,
+            'date_of_issue' => Carbon::parse($issueDate)->format('d-m-Y'),
+        ];
+    }
+
+    /**
+     * Movimientos del periodo excluyendo stock inicial/ajustes (ya van en saldo inicial).
+     */
+    private static function getPeriodMovementItems($params, Item $item)
+    {
+        return self::getKardexRecordItems($params, $item, true);
+    }
+
+    private static function getInPeriodInventoryOpeningItems($params, Item $item)
+    {
+        $items = collect();
+
+        foreach (self::getInventoryKardexQuery($params, $item)->get() as $kardex) {
+            if ($kardex->inventory_kardexable_type !== Inventory::class) {
+                continue;
+            }
+
+            $inventory = $kardex->inventory_kardexable;
+
+            if (!$inventory || !self::inventoryAppliesToValuedKardex($inventory, $kardex)) {
+                continue;
+            }
+
+            $inventory->valued_kardex_sort_id = $kardex->id;
+            $items->push($inventory);
+        }
+
+        return $items;
+    }
+
+    private static function getKardexRecordItems($params, Item $item, $excludeInventoryOpening = false)
+    {
+        $items = collect();
+
+        foreach (self::getInventoryKardexQuery($params, $item)->get() as $kardex) {
+            if ($excludeInventoryOpening && $kardex->inventory_kardexable_type === Inventory::class) {
+                continue;
+            }
+
+            $recordItem = self::resolveRecordItemFromKardex($kardex, $item);
+
+            if ($recordItem) {
+                $recordItem->valued_kardex_sort_id = $kardex->id;
+                $items->push($recordItem);
+            }
+        }
+
+        return $items;
+    }
+
+    private static function getInventoryKardexQuery($params, Item $item)
+    {
+        $query = InventoryKardexModel::query()
+            ->where('item_id', $item->id)
+            ->whereBetween('date_of_issue', [$params->date_start, $params->date_end])
+            ->orderBy('date_of_issue')
+            ->orderBy('id');
+
+        if (!empty($params->establishment_id)) {
+            $warehouseIds = Warehouse::where('establishment_id', $params->establishment_id)->pluck('id');
+            $query->whereIn('warehouse_id', $warehouseIds);
+        }
+
+        return $query->with('inventory_kardexable');
+    }
+
+    private static function resolveRecordItemFromKardex($kardex, Item $item)
+    {
+        $related = $kardex->inventory_kardexable;
+
+        if (!$related) {
+            return null;
+        }
+
+        switch ($kardex->inventory_kardexable_type) {
+            case Document::class:
+                if (!self::documentAppliesToValuedKardex($related) || self::documentKardexShouldBeSkipped($related)) {
+                    return null;
+                }
+
+                return $related->items()->where('item_id', $item->id)->first();
+
+            case Purchase::class:
+                if (!self::purchaseAppliesToValuedKardex($related)) {
+                    return null;
+                }
+
+                return $related->items()->where('item_id', $item->id)->first();
+
+            case SaleNote::class:
+                if (!self::saleNoteAppliesToValuedKardex($related)) {
+                    return null;
+                }
+
+                return $related->items()->where('item_id', $item->id)->first();
+
+            case Dispatch::class:
+                if (!self::dispatchAppliesToValuedKardex($related) || self::dispatchKardexShouldBeSkipped($related)) {
+                    return null;
+                }
+
+                return $related->items()->where('item_id', $item->id)->first();
+
+            case Inventory::class:
+                if (!self::inventoryAppliesToValuedKardex($related, $kardex)) {
+                    return null;
+                }
+
+                return $related;
+
+            default:
+                return null;
+        }
+    }
+
+    private static function documentAppliesToValuedKardex($document)
+    {
+        return Document::where('id', $document->id)
+            ->whereStateTypeAccepted()
+            ->whereTypeUser()
+            ->whereNull('sale_note_id')
+            ->whereNull('order_note_id')
+            ->whereNull('dispatch_id')
+            ->where(function ($q) {
+                $q->whereNull('sale_notes_relateds')
+                    ->orWhere('sale_notes_relateds', '[]');
+            })
+            ->exists();
+    }
+
+    private static function documentKardexShouldBeSkipped($document)
+    {
+        if ($document->sale_note_id || $document->order_note_id) {
+            return true;
+        }
+
+        if (!empty($document->sale_notes_relateds) && $document->sale_notes_relateds !== '[]') {
+            return true;
+        }
+
+        if ($document->dispatch && optional($document->dispatch->transfer_reason_type)->discount_stock) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static function purchaseAppliesToValuedKardex($purchase)
+    {
+        return Purchase::where('id', $purchase->id)
+            ->whereStateTypeAccepted()
+            ->whereTypeUser()
+            ->exists();
+    }
+
+    private static function saleNoteAppliesToValuedKardex($saleNote)
+    {
+        return SaleNote::where('id', $saleNote->id)
+            ->whereStateTypeAccepted()
+            ->whereTypeUser()
+            ->exists();
+    }
+
+    private static function dispatchAppliesToValuedKardex($dispatch)
+    {
+        return Dispatch::where('id', $dispatch->id)
+            ->whereIn('transfer_reason_type_id', ['01', '02', '04', '13'])
+            ->whereStateTypeAccepted()
+            ->whereTypeUser()
+            ->exists();
+    }
+
+    private static function dispatchKardexShouldBeSkipped($dispatch)
+    {
+        return $dispatch->reference_sale_note_id
+            || $dispatch->reference_order_note_id
+            || $dispatch->reference_document_id;
+    }
+
+    private static function inventoryAppliesToValuedKardex($inventory, $kardex)
+    {
+        if (!empty($inventory->warehouse_destination_id)) {
+            return false;
+        }
+
+        return $kardex->quantity != 0;
+    }
+
+    private static function buildOpeningBalanceRow($openingBalance, $params)
+    {
+        return [
+            'date_of_issue' => $openingBalance['date_of_issue'] ?? Carbon::parse($params->date_start)->format('d-m-Y'),
+            'document_type_id' => '00',
+            'series' => '',
+            'number' => '',
+            'operation_type' => 'STOCK INICIAL',
+            'operation_type_code' => '',
+            'type' => 'opening',
+            'input_quantity' => $openingBalance['balance_quantity'],
+            'input_unit_price' => $openingBalance['balance_unit_cost'],
+            'input_total' => $openingBalance['balance_total_cost'],
+            'output_quantity' => null,
+            'output_unit_price' => null,
+            'output_total' => null,
+            'balance_quantity' => $openingBalance['balance_quantity'],
+            'balance_unit_cost' => $openingBalance['balance_unit_cost'],
+            'balance_total_cost' => $openingBalance['balance_total_cost'],
+            'factor' => 0,
+            'quantity' => 0,
+            'total' => 0,
         ];
     }
 
@@ -204,33 +489,30 @@ class InventoryValuedKardex
      */
     private static function transformItems($collection)
     {
-        return $collection->transform(function($row, $key){
+        return $collection->map(function($row, $key){
                     return self::getTempData($row);
                 })
-                ->sortBy('sort_date_of_issue')
-                // ->sortBy('date_of_issue')
-                // ->sortBy('time_of_issue')
+                ->sortBy(function ($row) {
+                    $timestamp = $row['sort_date_of_issue'] instanceof Carbon
+                        ? $row['sort_date_of_issue']->timestamp
+                        : 0;
+
+                    return sprintf('%010d-%010d', $timestamp, $row['sort_kardex_id'] ?? 0);
+                })
                 ->values()
                 ->all();
     }
 
-    private static function getRecordsFromItems($collection)
+    private static function getRecordsFromItems($collection, $openingBalance = null)
     {
-
-        // dd($collection);
         $new_collection = self::transformItems($collection);
-        // dd($new_collection);
 
         $data = [];
-        $balance_quantity = 0;
-        $balance_total_cost = 0;
-        $balance_unit_cost = 0;
-
+        $balance_quantity = $openingBalance['balance_quantity'] ?? 0;
+        $balance_total_cost = $openingBalance['balance_total_cost'] ?? 0;
+        $balance_unit_cost = $openingBalance['balance_unit_cost'] ?? 0;
 
         foreach ($new_collection as $key => $temp_data) {
-
-            //buscar nota de credito y asignar valores, es necesario que se encuentre el doc relacionado
-            // en el arreglo, ya que desde el mismo obtiene el doc y su costo promedio
 
             if($temp_data['model_type'] == 'document' && $temp_data['document_type_id'] == '07'){
 
@@ -243,33 +525,32 @@ class InventoryValuedKardex
                 $temp_data['total'] = $temp_data['input_unit_price'] * $temp_data['input_quantity'];
             }
 
+            if ($temp_data['type'] == 'output') {
+                $previous_balance_unit_cost = isset($data[$key - 1])
+                    ? $data[$key - 1]['balance_unit_cost']
+                    : $balance_unit_cost;
 
-            $balance_quantity +=  $temp_data['quantity'] * $temp_data['factor'];
-
-            //asignar valor acumulado del documento previo del grupo saldo - campo costo unitario
-            if(isset($data[$key - 1]) && $temp_data['type'] == 'output')
-            {
-                $temp_data['output_unit_price'] = $data[$key - 1]['balance_unit_cost'];
-                $temp_data['output_total'] = $temp_data['output_unit_price'] * $temp_data['output_quantity'];
+                if ($previous_balance_unit_cost) {
+                    $temp_data['output_unit_price'] = $previous_balance_unit_cost;
+                    $temp_data['output_total'] = round($temp_data['output_unit_price'] * $temp_data['output_quantity'], 2);
+                }
             }
 
-            // valores iniciales para el grupo saldos
-            if($key == 0)
-            {
-                $balance_unit_cost = ($balance_quantity != 0) ? round($temp_data['total']  / $temp_data['quantity'] , 4) : null;
+            $balance_quantity += $temp_data['quantity'] * $temp_data['factor'];
+
+            if ($temp_data['type'] == 'input') {
                 $balance_total_cost += $temp_data['total'] * $temp_data['factor'];
-
-            }else
-            {
-                // acumulado grupo saldo - columnas, total y costo unitario
-                $balance_total_cost += ($temp_data['type'] == 'input') ? $temp_data['total'] * $temp_data['factor'] : $temp_data['output_total'] * $temp_data['factor'];
-                $balance_unit_cost = ($balance_quantity != 0) ? round($balance_total_cost / $balance_quantity, 4) : null;
+            } else {
+                $balance_total_cost += ($temp_data['output_total'] ?? 0) * $temp_data['factor'];
             }
 
-            //asignar valores acumulados
+            $balance_unit_cost = ($balance_quantity != 0)
+                ? round($balance_total_cost / $balance_quantity, 4)
+                : null;
+
             $temp_data['balance_quantity'] = $balance_quantity;
             $temp_data['balance_unit_cost'] = $balance_unit_cost;
-            $temp_data['balance_total_cost'] = $balance_total_cost;
+            $temp_data['balance_total_cost'] = round($balance_total_cost, 2);
 
             $data[$key] = $temp_data;
 
@@ -297,6 +578,10 @@ class InventoryValuedKardex
             $date_format = $document->date_of_issue->format('Y-m-d').' '.$document->time_of_issue;
 
             return Carbon::parse($date_format);
+        }
+
+        if ($date_of_issue) {
+            return Carbon::parse($date_of_issue->format('Y-m-d'));
         }
 
         return null;
@@ -535,6 +820,69 @@ class InventoryValuedKardex
 
             ];
 
+        }else if($record_item instanceof Inventory){
+
+            $movementType = self::getInventoryMovementType($record_item);
+            $quantity = abs($record_item->quantity);
+            $unit_price = $record_item->item->purchase_unit_price ?? 0;
+            $total_value = round($unit_price * $quantity, 2);
+            $issueDate = $record_item->date_of_issue ?? $record_item->created_at;
+
+            $temp_data = [
+                'id' => $record_item->id,
+                'type' => $movementType,
+                'model_type' => 'inventory',
+                'date_of_issue' => Carbon::parse($issueDate)->format('d-m-Y'),
+                'sort_date_of_issue' => Carbon::parse($issueDate),
+                'time_of_issue' => null,
+                'document_type_id' => '00',
+                'series' => '',
+                'number' => '',
+                'operation_type' => strtoupper($record_item->description ?: 'AJUSTE DE INVENTARIO'),
+                'operation_type_code' => '16',
+                'input_quantity' => $movementType === 'input' ? $quantity : null,
+                'input_unit_price' => $movementType === 'input' ? $unit_price : null,
+                'input_total' => $movementType === 'input' ? $total_value : null,
+                'output_quantity' => $movementType === 'output' ? $quantity : null,
+                'output_unit_price' => $movementType === 'output' ? $unit_price : null,
+                'output_total' => $movementType === 'output' ? $total_value : null,
+                'factor' => $movementType === 'input' ? 1 : -1,
+                'quantity' => $quantity,
+                'total' => $total_value,
+                'balance_quantity' => 0,
+                'balance_unit_cost' => 0,
+                'balance_total_cost' => 0,
+                'affected_document_id' => null,
+            ];
+
+        }
+
+        return self::appendSortMetadata($temp_data, $record_item);
+    }
+
+    private static function getInventoryMovementType(Inventory $inventory)
+    {
+        if ((string) $inventory->type === '1') {
+            return 'input';
+        }
+
+        if (in_array((string) $inventory->type, ['2', '3'], true)) {
+            return 'output';
+        }
+
+        if ($inventory->inventory_transaction_id && $inventory->transaction) {
+            return $inventory->transaction->type === 'input' ? 'input' : 'output';
+        }
+
+        return $inventory->quantity >= 0 ? 'input' : 'output';
+    }
+
+    private static function appendSortMetadata(array $temp_data, $record_item)
+    {
+        $temp_data['sort_kardex_id'] = $record_item->valued_kardex_sort_id ?? 0;
+
+        if (empty($temp_data['sort_date_of_issue'])) {
+            $temp_data['sort_date_of_issue'] = Carbon::parse('1900-01-01');
         }
 
         return $temp_data;
