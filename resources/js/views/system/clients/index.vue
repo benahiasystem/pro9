@@ -843,9 +843,6 @@ th.sticky-column {
     left: 0px;
     z-index: 3;
 }
-.page-header {
-    position: relative;
-}
 .clients-columns-dropdown-menu {
     max-height: 80vh;
     overflow-y: auto;

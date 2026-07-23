@@ -3,256 +3,46 @@
         <header class="page-header">
             <h2>
                 <a href="/dashboard" aria-label="Volver al dashboard">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 690.77 908.59"
-                      width="20" height="20"
-                      fill="var(--dark-color)"
-                    >
-                      <g id="Layer_2" data-name="Layer 2">
-                        <g id="Layer_1-2" data-name="Layer 1">
-                          <path
-                            d="M342.17,445.17C306.48,434.8,277.36,417.8,258,396c-19.83-22.34-27.37-48.22-20.72-71.16s27.37-42.19,56.73-52.58c29.79-10.58,65.54-10.82,100.54-.65l-9.12,31.46c-28.43-8.24-57-8.23-80.42,0-19,6.74-32.54,18.27-36.19,30.84-3.46,11.88,1.54,26.53,13.72,40.23,15.06,16.93,39.51,30.95,68.89,39.47Z"
-                          />
-                          <path
-                            d="M412.54,539.72a367.79,367.79,0,0,1-101.79-15.17c-56.47-16.41-106.22-44.26-140.09-78.43-36-36.3-50.27-75.87-40.4-111.52,1.65-9.18,12.77-54.76,73-75.5l10.67,31c-45.69,15.73-51.2,48.93-51.41,50.27l-.16,1.28L162,342.7c-7,24,4.38,52.48,31.93,80.3,30,30.27,74.74,55.15,126,70,100.74,29.25,198.68,9.83,213.83-42.39,7-24-4.37-52.49-31.93-80.3-30-30.28-74.73-55.15-126-70L385,268.84c56.47,16.4,106.13,44.25,140.09,78.42,36.3,36.64,50.57,76.6,40.14,112.49C550.44,510.64,489.93,539.72,412.54,539.72Z"
-                          />
-                          <path
-                            d="M397,596.82c-155.83,0-291.56-83.41-363.62-207a307.52,307.52,0,0,0-3.91,49.34c0,172.6,139.83,312.42,312.42,312.42,145.42,0,267.74-99.42,302.56-234A422.56,422.56,0,0,1,397,596.82Z"
-                          />
-                          <path
-                            d="M290,815.76a240,240,0,0,1-153.92-68.31l-38.73,96a241,241,0,0,1,259,65.16l12.57-101A240.47,240.47,0,0,1,290,815.76Z"
-                          />
-                          <path
-                            d="M690.36,458.21c6.48-88.8-71.23-181.48-201.08-236.09L473.73,259C593.47,309.42,665.19,396.37,648.14,470.5,638.12,514,599,548.79,538,568.58c-64.57,20.93-144.76,22.17-225.77,3.54S159.54,517.3,110.67,470.25C67.46,428.7,47.2,383.68,53,342.49c.28-1,.54-1.86.84-2.88l-.32-.1c.32-1.86.62-3.72,1.05-5.58,10-43.46,49.11-78.29,110.13-98.07,64.58-20.93,144.77-22.19,225.78-3.55l9-39.1c-88-20.26-175.74-18.62-247.11,4.46-75,24.21-123.53,69.47-136.83,127.21-.67,3-1.23,6-1.73,8.94A347,347,0,0,0,0,430.58C0,621.33,155.19,776.51,345.94,776.51c171.32,0,316.84-125.4,342.17-294.84,1.14-7.73,2-15.61,2.66-23.43ZM546.61,661.43a305.73,305.73,0,0,1-200.67,75c-162.86,0-296.36-127.92-305.35-288.59A275.72,275.72,0,0,0,83,499.11c54.11,52,132.35,91.79,220.32,112a541.24,541.24,0,0,0,121,14.1c45.08,0,88-6.2,126.16-18.62a272.1,272.1,0,0,0,64.24-29.92A307.25,307.25,0,0,1,546.61,661.43Z"
-                          />
-                          <path
-                            d="M424.51,389.13s-101.27-53.36-4.06-197.36c0,0,82.39-118.15-32.68-180.28A211.9,211.9,0,0,0,362.06,0s46.79,55-20.48,130.33C341.54,130.33,174.46,327.15,424.51,389.13Z"
-                          />
-                          <path
-                            d="M535.44,432.49S458.73,392.05,532.38,283c0,0,71-101.84-44.25-145.39,0,0,35.37,41.67-15.57,98.68C472.56,236.46,346,385.41,535.44,432.49Z"
-                          />
-                        </g>
-                      </g>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 21l18 0" /><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" /><path d="M5 21l0 -10.15" /><path d="M19 21l0 -10.15" /><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" /></svg>
                 </a>
             </h2>
             <ol class="breadcrumbs">
-                <li class="active"><span>Mozo</span></li>
+                <li class="active"><span>Mozo y Vendeya</span></li>
             </ol>
         </header>
 
-        <div class="card mt-3">
-            <div class="card-header bg-info bg-info-customer-admin">
-                <h3 class="my-0">Configuración de Mozo</h3>
+        <div class="row mt-3 branding-grid">
+            <div class="col-xl-6 col-12 mb-3">
+                <branding-panel
+                    app-name="Mozo"
+                    endpoint="/configurations/mozo"
+                    :initial-colors="mozoColors"
+                    :palettes="mozoPalettes"
+                />
             </div>
-
-            <div class="card-body">
-                <div class="fw-bold text-muted mb-3">
-                    <span>Marca</span>
-                </div>
-
-                <el-form
-                    ref="form"
-                    :model="form"
-                    :rules="rules"
-                    label-position="top"
-                >
-                    <div class="row align-items-end">
-                        <div class="col-lg-6 col-12">
-                            <div class="form-group mb-0">
-                                <label class="control-label">Nombre de la marca</label>
-                                <el-input
-                                    v-model="form.brandName"
-                                    :disabled="loading"
-                                    maxlength="100"
-                                    show-word-limit
-                                    placeholder="Ejemplo: Mozo.pe"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </el-form>
-
-                <el-divider>Logo</el-divider>
-
-                <div class="row">
-                    <div class="col-lg-8 col-12">
-                        <div class="form-group mb-1">
-                            <label class="d-block">Usar logo del sistema</label>
-                            <el-switch
-                                v-model="logo.useSystemLogo"
-                                active-text="Sí"
-                                inactive-text="No"
-                                :disabled="loading || logo.saving"
-                            />
-                            <small class="d-block text-muted mt-1">
-                                Activado: Mozo usa el logo del sistema (System). Si el sistema no tiene logo, usa el de Mozo por defecto.
-                                Desactívalo para subir un logo personalizado solo para Mozo.
-                            </small>
-                            <small v-if="logo.useSystemLogo && !logo.hasSystemLogo" class="d-block text-warning mt-1">
-                                El sistema no tiene un logo subido: se usará el logo por defecto de Mozo.
-                            </small>
-                        </div>
-
-                        <div v-if="!logo.useSystemLogo" class="mt-3">
-                            <label class="control-label d-block">
-                                Logo personalizado <span class="text-muted">(SVG, PNG o JPG · máx. 2MB)</span>
-                            </label>
-                            <input
-                                ref="logoInput"
-                                type="file"
-                                accept=".svg,.png,.jpg,.jpeg"
-                                :disabled="loading || logo.saving"
-                                @change="onLogoFileChange"
-                            />
-                            <small v-if="logo.fileName" class="d-block text-muted mt-1">
-                                Seleccionado: {{ logo.fileName }}
-                            </small>
-                            <small v-else-if="logo.hasCustomLogo" class="d-block text-muted mt-1">
-                                Ya hay un logo personalizado guardado. Sube uno nuevo para reemplazarlo.
-                            </small>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4 col-12">
-                        <div class="logo-preview">
-                            <span class="logo-preview__label">Vista previa</span>
-                            <img
-                                v-if="logoPreview && !logo.previewError"
-                                :src="logoPreview"
-                                alt="Logo Mozo"
-                                class="logo-preview__img"
-                                @error="logo.previewError = true"
-                            />
-                            <span v-else class="text-muted small">Sin vista previa</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-end mt-3">
-                    <el-button
-                        type="primary"
-                        plain
-                        :loading="logo.saving"
-                        :disabled="loading || saving"
-                        @click="saveLogo"
-                    >
-                        Guardar logo
-                    </el-button>
-                </div>
-
-                <el-divider>Paleta de colores</el-divider>
-
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-                    <div class="fw-bold text-muted d-flex align-items-center gap-2">
-                        <span>{{ paletteMode === 'light' ? 'Modo claro' : 'Modo oscuro' }}</span>
-                        <el-tag :type="paletteMode === 'light' ? 'warning' : 'info'" size="mini">
-                            {{ visibleColorEntries.length }} colores
-                        </el-tag>
-                    </div>
-
-                    <button
-                        type="button"
-                        class="btn btn-sm d-flex align-items-center mode-toggle"
-                        @click="togglePaletteMode"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" />
-                            <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
-                        </svg>
-                        {{ paletteMode === 'light' ? 'Ver modo oscuro' : 'Ver modo claro' }}
-                    </button>
-                </div>
-
-                <div class="row">
-                    <div
-                        v-for="entry in visibleColorEntries"
-                        :key="entry.key"
-                        class="col-xl-4 col-lg-6 col-12 mb-3"
-                    >
-                        <div class="color-card">
-                            <div
-                                class="color-card__swatch"
-                                :style="{ backgroundColor: isValidHex(colors[entry.key].hex) ? colors[entry.key].hex : '#ffffff' }"
-                            >
-                                <label class="color-card__picker" :class="{ 'is-disabled': loading || saving }">
-                                    <input
-                                        v-model="colors[entry.key].hex"
-                                        type="color"
-                                        :disabled="loading || saving"
-                                    />
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M11 7l6 6" />
-                                        <path d="M4 16l11.7 -11.7a1 1 0 0 1 1.4 0l2.6 2.6a1 1 0 0 1 0 1.4l-11.7 11.7h-4v-4z" />
-                                    </svg>
-                                </label>
-                            </div>
-
-                            <div class="color-card__body">
-                                <div class="color-card__title">{{ entry.label }}</div>
-                                <div class="color-card__key">{{ entry.key }}</div>
-
-                                <div class="color-card__input">
-                                    <span
-                                        class="color-card__dot"
-                                        :style="{ backgroundColor: isValidHex(colors[entry.key].hex) ? colors[entry.key].hex : '#ffffff' }"
-                                    ></span>
-                                    <el-input
-                                        v-model.trim="colors[entry.key].hex"
-                                        type="text"
-                                        maxlength="7"
-                                        placeholder="#RRGGBB"
-                                        :class="{ 'is-invalid': colors[entry.key].hex && !isValidHex(colors[entry.key].hex) }"
-                                        :disabled="loading || saving"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-end mt-4">
-                    <el-button
-                        type="primary"
-                        :loading="saving"
-                        :disabled="loading"
-                        @click="saveConfiguration"
-                    >
-                        Guardar configuración
-                    </el-button>
-                </div>
+            <div class="col-xl-6 col-12 mb-3">
+                <branding-panel
+                    app-name="Vendeya"
+                    endpoint="/configurations/vendeya"
+                    :initial-colors="vendeyaColors"
+                    :palettes="vendeyaPalettes"
+                />
             </div>
         </div>
     </div>
 </template>
 
 <script>
+import BrandingPanel from './brandingPanel.vue'
+
 export default {
     name: 'SystemMozoIndex',
 
+    components: { BrandingPanel },
+
     data() {
         return {
-            loading: false,
-            saving: false,
-            paletteMode: 'light',
-            form: {
-                brandName: ''
-            },
-            logo: {
-                useSystemLogo: true,
-                hasCustomLogo: false,
-                hasSystemLogo: false,
-                serverUrl: '',
-                localPreview: '',
-                fileName: '',
-                file: null,
-                saving: false,
-                previewError: false
-            },
-            colors: {
+            mozoColors: {
                 Primary: { label: 'Color Primario', hex: '#32a56a' },
                 Secondary: { label: 'Color Secundario', hex: '#f58f00' },
                 Background: { label: 'Background', hex: '#f4f5f6' },
@@ -261,365 +51,97 @@ export default {
                 darkPrimary: { label: 'Dark Primary', hex: '#222225' },
                 darkLightText: { label: 'Dark Light Text', hex: '#d0d2dc' }
             },
-            rules: {
-                brandName: [
-                    { required: true, message: 'Ingresa el nombre de la marca', trigger: 'blur' },
-                    { max: 100, message: 'El nombre no puede superar los 100 caracteres', trigger: 'blur' }
-                ]
-            }
-        }
-    },
-
-    computed: {
-        visibleColorEntries() {
-            return Object.keys(this.colors)
-                .filter(key => this.paletteMode === 'dark'
-                    ? key.toLowerCase().startsWith('dark')
-                    : !key.toLowerCase().startsWith('dark'))
-                .map(key => ({
-                    key,
-                    label: this.colors[key].label
-                }))
-        },
-
-        logoPreview() {
-            return this.logo.localPreview || this.logo.serverUrl
-        }
-    },
-
-    watch: {
-        'logo.useSystemLogo'(useSystem) {
-            if (useSystem) {
-                this.clearLogoSelection()
-            }
-        }
-    },
-
-    created() {
-        this.loadConfiguration()
-    },
-
-    methods: {
-        isValidHex(value) {
-            return /^#[0-9a-fA-F]{6}$/.test(value)
-        },
-
-        loadConfiguration() {
-            this.loading = true
-
-            this.$http.get('/configurations/mozo/record')
-                .then(response => {
-                    this.form.brandName = response.data.brandName || ''
-
-                    Object.keys(this.colors).forEach(key => {
-                        if (response.data[key]) {
-                            this.colors[key].hex = response.data[key]
-                        }
-                    })
-
-                    this.logo.useSystemLogo = response.data.useSystemLogo !== false
-                    this.logo.hasCustomLogo = !!response.data.hasCustomLogo
-                    this.logo.hasSystemLogo = !!response.data.hasSystemLogo
-                    this.logo.serverUrl = response.data.logoUrl || ''
-                    this.logo.previewError = false
-                })
-                .catch(error => {
-                    const message = error.response && error.response.data
-                        ? error.response.data.message
-                        : 'No se pudo cargar la configuración de Mozo.'
-
-                    this.$message.error(message)
-                })
-                .then(() => {
-                    this.loading = false
-                })
-        },
-
-        saveConfiguration() {
-            this.$refs.form.validate(valid => {
-                if (!valid || this.saving) return
-
-                const invalidColor = Object.keys(this.colors)
-                    .find(key => !this.isValidHex(this.colors[key].hex))
-
-                if (invalidColor) {
-                    this.$message.error(`El valor de ${this.colors[invalidColor].label} debe tener el formato #RRGGBB.`)
-                    return
+            vendeyaColors: {
+                Primary: { label: 'Color Primario', hex: '#ff7d00' },
+                Secondary: { label: 'Color Secundario', hex: '#d5e8e8' },
+                Background: { label: 'Background', hex: '#eef5f5' },
+                Text: { label: 'Texto', hex: '#004850' },
+                lightText: { label: 'Texto Claro', hex: '#a2a5b9' },
+                darkPrimary: { label: 'Dark Primary', hex: '#121c22' },
+                darkLightText: { label: 'Dark Light Text', hex: '#a9a9b2' }
+            },
+            mozoPalettes: [
+                {
+                    name: 'Océano',
+                    colors: {
+                        Primary: '#2563eb',
+                        Secondary: '#22b8cf',
+                        Background: '#f3f6fb',
+                        Text: '#16324c',
+                        lightText: '#9db1c7',
+                        darkPrimary: '#1c2534',
+                        darkLightText: '#c9d6e6'
+                    }
+                },
+                {
+                    name: 'Terracota',
+                    colors: {
+                        Primary: '#d96846',
+                        Secondary: '#f0a868',
+                        Background: '#faf5f0',
+                        Text: '#43302a',
+                        lightText: '#bba79d',
+                        darkPrimary: '#2b211d',
+                        darkLightText: '#ddcec4'
+                    }
+                },
+                {
+                    name: 'Uva',
+                    colors: {
+                        Primary: '#7a5af8',
+                        Secondary: '#b197fc',
+                        Background: '#f6f5fb',
+                        Text: '#322c4a',
+                        lightText: '#a8a4c0',
+                        darkPrimary: '#24213a',
+                        darkLightText: '#cfccdf'
+                    }
                 }
-
-                const payload = {
-                    brandName: this.form.brandName
+            ],
+            vendeyaPalettes: [
+                {
+                    name: 'Coral',
+                    colors: {
+                        Primary: '#ef5466',
+                        Secondary: '#fde3e7',
+                        Background: '#fdf3f4',
+                        Text: '#55232c',
+                        lightText: '#c0a3a9',
+                        darkPrimary: '#251a1e',
+                        darkLightText: '#d9c6cb'
+                    }
+                },
+                {
+                    name: 'Esmeralda',
+                    colors: {
+                        Primary: '#10a37f',
+                        Secondary: '#d3f2e7',
+                        Background: '#eef8f4',
+                        Text: '#0d4a3d',
+                        lightText: '#9fb8b0',
+                        darkPrimary: '#14231f',
+                        darkLightText: '#b9cdc6'
+                    }
+                },
+                {
+                    name: 'Índigo',
+                    colors: {
+                        Primary: '#4f5be7',
+                        Secondary: '#dde1fb',
+                        Background: '#f2f3fc',
+                        Text: '#272c55',
+                        lightText: '#a6aac6',
+                        darkPrimary: '#1b1e33',
+                        darkLightText: '#c3c6dd'
+                    }
                 }
-
-                Object.keys(this.colors).forEach(key => {
-                    payload[key] = this.colors[key].hex
-                })
-
-                this.saving = true
-
-                this.$http.put('/configurations/mozo', payload)
-                    .then(response => {
-                        const configuration = response.data.configuration || {}
-                        this.form.brandName = configuration.brandName || this.form.brandName
-
-                        Object.keys(this.colors).forEach(key => {
-                            if (configuration[key]) {
-                                this.colors[key].hex = configuration[key]
-                            }
-                        })
-
-                        this.$message.success(response.data.message)
-                    })
-                    .catch(error => {
-                        const data = error.response && error.response.data
-                        let validationMessage = null
-
-                        if (data && data.errors) {
-                            const firstKey = Object.keys(data.errors)[0]
-                            validationMessage = firstKey ? data.errors[firstKey][0] : null
-                        }
-
-                        this.$message.error(
-                            validationMessage || (data && data.message) || 'No se pudo guardar la configuración de Mozo.'
-                        )
-                    })
-                    .then(() => {
-                        this.saving = false
-                    })
-            })
-        },
-
-        togglePaletteMode() {
-            this.paletteMode = this.paletteMode === 'light' ? 'dark' : 'light'
-        },
-
-        clearLogoSelection() {
-            if (this.logo.localPreview) {
-                URL.revokeObjectURL(this.logo.localPreview)
-            }
-            this.logo.localPreview = ''
-            this.logo.file = null
-            this.logo.fileName = ''
-            this.logo.previewError = false
-            if (this.$refs.logoInput) {
-                this.$refs.logoInput.value = ''
-            }
-        },
-
-        onLogoFileChange(event) {
-            const file = event.target.files && event.target.files[0]
-            if (!file) return
-
-            const isValidExt = /\.(svg|png|jpe?g)$/i.test(file.name)
-            if (!isValidExt) {
-                this.$message.error('El logo debe ser un archivo SVG, PNG o JPG.')
-                this.clearLogoSelection()
-                return
-            }
-
-            if (file.size > 2 * 1024 * 1024) {
-                this.$message.error('El logo no puede superar los 2MB.')
-                this.clearLogoSelection()
-                return
-            }
-
-            if (this.logo.localPreview) {
-                URL.revokeObjectURL(this.logo.localPreview)
-            }
-            this.logo.file = file
-            this.logo.fileName = file.name
-            this.logo.localPreview = URL.createObjectURL(file)
-            this.logo.previewError = false
-        },
-
-        saveLogo() {
-            if (this.logo.saving) return
-
-            if (!this.logo.useSystemLogo && !this.logo.file && !this.logo.hasCustomLogo) {
-                this.$message.error('Sube un logo para desactivar el logo del sistema.')
-                return
-            }
-
-            const formData = new FormData()
-            formData.append('useSystemLogo', this.logo.useSystemLogo ? '1' : '0')
-            if (!this.logo.useSystemLogo && this.logo.file) {
-                formData.append('logo', this.logo.file)
-            }
-
-            this.logo.saving = true
-
-            this.$http.post('/configurations/mozo/logo', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
-                .then(response => {
-                    this.logo.useSystemLogo = response.data.useSystemLogo !== false
-                    this.logo.hasCustomLogo = !!response.data.hasCustomLogo
-                    this.logo.hasSystemLogo = !!response.data.hasSystemLogo
-                    this.logo.serverUrl = response.data.logoUrl || ''
-
-                    if (this.logo.localPreview) {
-                        URL.revokeObjectURL(this.logo.localPreview)
-                        this.logo.localPreview = ''
-                    }
-                    this.logo.file = null
-                    this.logo.fileName = ''
-                    this.logo.previewError = false
-                    if (this.$refs.logoInput) {
-                        this.$refs.logoInput.value = ''
-                    }
-
-                    this.$message.success(response.data.message)
-                })
-                .catch(error => {
-                    const data = error.response && error.response.data
-                    let validationMessage = null
-
-                    if (data && data.errors) {
-                        const firstKey = Object.keys(data.errors)[0]
-                        validationMessage = firstKey ? data.errors[firstKey][0] : null
-                    }
-
-                    this.$message.error(
-                        validationMessage || (data && data.message) || 'No se pudo guardar el logo de Mozo.'
-                    )
-                })
-                .then(() => {
-                    this.logo.saving = false
-                })
+            ]
         }
     }
 }
 </script>
-<style>
-.color-card__input .el-input.el-input--small .el-input__inner {
-    height: 32px !important;
-}
-</style>
+
 <style scoped>
-.mode-toggle {
-    color: #606266;
-    background: #fff;
-    border: 1px solid #dcdfe6;
-    border-radius: 6px;
-    transition: all 0.15s ease;
-}
-
-.mode-toggle:hover {
-    color: var(--primary, #32a56a);
-    border-color: var(--primary, #32a56a);
-}
-
-.color-card {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    border: 1px solid #ebeef5;
-    border-radius: 8px;
-    overflow: hidden;
-    background: #fff;
-    transition: box-shadow 0.15s ease, border-color 0.15s ease;
-}
-
-.color-card:hover {
-    border-color: #dcdfe6;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-}
-
-.color-card__swatch {
-    position: relative;
-    height: 72px;
-    border-bottom: 1px solid #ebeef5;
-}
-
-.color-card__picker {
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    width: 30px;
-    height: 30px;
-    margin: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: #303133;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    cursor: pointer;
-    transition: transform 0.15s ease;
-}
-
-.color-card__picker:hover {
-    transform: scale(1.08);
-}
-
-.color-card__picker.is-disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.color-card__picker input[type="color"] {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: inherit;
-}
-
-.color-card__body {
-    padding: 12px 14px 14px;
-    flex: 1 1 auto;
-}
-
-.color-card__title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--dark-color, #282425);
-    line-height: 1.2;
-}
-
-.color-card__key {
-    font-size: 11px;
-    color: #a2a5b9;
-    margin-bottom: 10px;
-}
-
-.color-card__input {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.color-card__dot {
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 6px;
-    border: 1px solid #dcdfe6;
-}
-
-.logo-preview {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 110px;
-    padding: 14px;
-    border: 1px dashed #dcdfe6;
-    border-radius: 8px;
-    background: #f8f9fb;
-}
-
-.logo-preview__label {
-    font-size: 11px;
-    color: #a2a5b9;
-}
-
-.logo-preview__img {
-    max-width: 100%;
-    max-height: 60px;
-    object-fit: contain;
-}
+.branding-grid > div { display: flex; }
+.branding-grid .branding-panel { width: 100%; }
 </style>

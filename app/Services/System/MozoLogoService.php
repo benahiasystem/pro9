@@ -20,6 +20,11 @@ class MozoLogoService
         'logo-iso-light.svg',
     ];
 
+    /** Recursos usados por el navegador como favicon, fuera de images/logos. */
+    private const FAVICON_FILES = [
+        'images/svg/logo/isotipo-oficial.svg',
+    ];
+
     private const RASTER_MIMES = [
         'png' => 'image/png',
         'jpg' => 'image/jpeg',
@@ -73,6 +78,19 @@ class MozoLogoService
                 File::copy($live, $backup);
             }
         }
+
+        foreach (self::FAVICON_FILES as $file) {
+            $backup = $this->originalsDir() . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $file);
+            $live = $this->liveRoot() . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $file);
+
+            if (!File::isDirectory(dirname($backup))) {
+                File::makeDirectory(dirname($backup), 0755, true);
+            }
+
+            if (!File::exists($backup) && File::exists($live)) {
+                File::copy($live, $backup);
+            }
+        }
     }
 
     /**
@@ -117,6 +135,16 @@ class MozoLogoService
                 File::copy($backup, $live);
             }
         }
+
+        foreach (self::FAVICON_FILES as $file) {
+            $relative = str_replace('/', DIRECTORY_SEPARATOR, $file);
+            $backup = $this->originalsDir() . DIRECTORY_SEPARATOR . $relative;
+            $live = $this->liveRoot() . DIRECTORY_SEPARATOR . $relative;
+
+            if (File::exists($backup) && $this->differs($live, md5_file($backup))) {
+                File::copy($backup, $live);
+            }
+        }
     }
 
     /**
@@ -125,14 +153,15 @@ class MozoLogoService
      */
     public function ensureHtaccess(): void
     {
-        if (!File::isDirectory($this->liveDir())) {
-            return;
-        }
+        foreach ([$this->liveDir(), $this->liveRoot() . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'svg' . DIRECTORY_SEPARATOR . 'logo'] as $directory) {
+            if (!File::isDirectory($directory)) {
+                continue;
+            }
 
-        $path = $this->liveDir() . DIRECTORY_SEPARATOR . '.htaccess';
-
-        if (!File::exists($path)) {
-            File::put($path, self::HTACCESS_CONTENT);
+            $path = $directory . DIRECTORY_SEPARATOR . '.htaccess';
+            if (!File::exists($path)) {
+                File::put($path, self::HTACCESS_CONTENT);
+            }
         }
     }
 
@@ -187,6 +216,16 @@ class MozoLogoService
         return File::exists($this->customLogoPath());
     }
 
+    /** Elimina el logo personalizado y restaura los recursos originales del build. */
+    public function deleteCustomLogo(): void
+    {
+        if ($this->hasCustomLogo()) {
+            File::delete($this->customLogoPath());
+        }
+
+        $this->restoreDefaultLogo();
+    }
+
     /**
      * Escribe el logo personalizado guardado sobre las 4 rutas del build.
      */
@@ -216,6 +255,19 @@ class MozoLogoService
                 File::put($live, $svg);
             }
         }
+
+        foreach (self::FAVICON_FILES as $file) {
+            $live = $this->liveRoot() . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $file);
+
+            if ($this->differs($live, $hash)) {
+                File::put($live, $svg);
+            }
+        }
+    }
+
+    private function liveRoot(): string
+    {
+        return public_path('mozo');
     }
 
     /**

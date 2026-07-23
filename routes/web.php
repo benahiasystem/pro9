@@ -1095,6 +1095,13 @@ if ($hostname) {
             Route::put('configurations/mozo/brand-name', 'System\MozoController@updateBrandName')->name('system.mozo.brand_name.update');
             Route::put('configurations/mozo/colors', 'System\MozoController@updateColors')->name('system.mozo.colors.update');
             Route::post('configurations/mozo/logo', 'System\MozoController@updateLogo')->name('system.mozo.logo.update');
+            Route::delete('configurations/mozo/logo', 'System\MozoController@destroyLogo')->name('system.mozo.logo.destroy');
+            Route::get('configurations/vendeya/record', 'System\VendeyaController@record')->name('system.vendeya.record');
+            Route::put('configurations/vendeya', 'System\VendeyaController@update')->name('system.vendeya.update');
+            Route::put('configurations/vendeya/brand-name', 'System\VendeyaController@updateBrandName')->name('system.vendeya.brand_name.update');
+            Route::put('configurations/vendeya/colors', 'System\VendeyaController@updateColors')->name('system.vendeya.colors.update');
+            Route::post('configurations/vendeya/logo', 'System\VendeyaController@updateLogo')->name('system.vendeya.logo.update');
+            Route::delete('configurations/vendeya/logo', 'System\VendeyaController@destroyLogo')->name('system.vendeya.logo.destroy');
             Route::post('configurations/login', 'System\ConfigurationController@storeLoginSettings');
             Route::post('configurations/bg', 'System\ConfigurationController@storeBgLogin');
             Route::post('configurations/other-configuration', 'System\ConfigurationController@storeOtherConfiguration');
