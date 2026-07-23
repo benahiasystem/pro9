@@ -12,6 +12,8 @@ use Modules\Marketplace\Services\MarketplaceCache;
 
 class StoreController extends Controller
 {
+    private const ITEMS_MAX = 200;
+
     public function index(Request $request): JsonResponse
     {
         $query = Store::query();
@@ -51,17 +53,35 @@ class StoreController extends Controller
     }
 
     /**
-     * Vista previa del catálogo para la fila expandible.
+     * Catálogo de una tienda: alimenta tanto la vista previa de la fila
+     * expandible (limit chico) como el panel lateral, que además filtra.
      * Sin el scope de publicación: el admin necesita ver también los inactivos
      * y los bloqueados, que son justamente los que va a querer revisar.
      */
-    public function items(int $id): JsonResponse
+    public function items(Request $request, int $id): JsonResponse
     {
-        $items = Item::unscoped()
-            ->where('store_id', $id)
+        $limit = max(1, min((int) $request->input('limit', self::ITEMS_MAX), self::ITEMS_MAX));
+
+        $query = Item::unscoped()->where('store_id', $id);
+
+        if ($q = trim((string) $request->input('q'))) {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('internal_code', 'like', "%{$q}%");
+            });
+        }
+
+        if (in_array($status = $request->input('status'), [Item::STATUS_ACTIVE, Item::STATUS_INACTIVE, Item::STATUS_BLOCKED], true)) {
+            $query->where('status', $status);
+        }
+
+        $total = (clone $query)->count();
+
+        $items = $query
             ->orderByRaw("FIELD(status, 'blocked', 'active', 'inactive')")
+            ->orderByDesc('reports_count')
             ->orderBy('name')
-            ->limit(200)
+            ->limit($limit)
             ->get()
             ->map(fn (Item $i) => [
                 'id' => $i->id,
@@ -74,7 +94,7 @@ class StoreController extends Controller
                 'image_url' => $i->image_path ? \Illuminate\Support\Facades\Storage::disk(config('marketplace.disk'))->url($i->image_path) : null,
             ]);
 
-        return response()->json(['data' => $items]);
+        return response()->json(['data' => $items, 'total' => $total]);
     }
 
     public function approve(int $id): JsonResponse

@@ -7,71 +7,88 @@
             </el-radio-group>
         </div>
 
-        <el-table :data="records" v-loading="loading" empty-text="No hay denuncias">
-            <el-table-column label="Denunciado" min-width="260">
-                <template slot-scope="scope">
-                    <div v-if="scope.row.item" class="d-flex align-items-center">
-                        <img v-if="scope.row.item.image_url" :src="scope.row.item.image_url" class="mkt-thumb" alt="">
-                        <span v-else class="mkt-thumb mkt-thumb--placeholder">{{ scope.row.item.name.charAt(0) }}</span>
-                        <div>
-                            <strong>{{ scope.row.item.name }}</strong>
-                            <span v-if="scope.row.item.status === 'blocked'" class="badge badge-pill badge-danger ms-1">
-                                Bloqueado
-                            </span>
-                            <br>
-                            <small class="text-muted">
-                                {{ scope.row.item.internal_code || 'sin código' }} ·
-                                {{ scope.row.store ? scope.row.store.name : '' }}
-                            </small>
+        <div class="table-responsive" v-loading="loading">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Denunciado</th>
+                    <th>Motivo</th>
+                    <th class="text-center">Acumuladas</th>
+                    <th>IP</th>
+                    <th>Fecha</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="row in records" :key="row.id">
+                    <td>
+                        <div v-if="row.item" class="d-flex align-items-center">
+                            <img v-if="row.item.image_url" :src="row.item.image_url" class="mkt-thumb" alt="">
+                            <span v-else class="mkt-thumb mkt-thumb--placeholder">{{ row.item.name.charAt(0) }}</span>
+                            <div>
+                                <strong>{{ row.item.name }}</strong>
+                                <span v-if="row.item.status === 'blocked'" class="badge badge-pill badge-danger ms-1">
+                                    Bloqueado
+                                </span>
+                                <br>
+                                <small class="text-muted">
+                                    {{ row.item.internal_code || 'sin código' }} ·
+                                    {{ row.store ? row.store.name : '' }}
+                                </small>
+                            </div>
                         </div>
-                    </div>
-                    <div v-else-if="scope.row.store">
-                        <strong>{{ scope.row.store.name }}</strong>
-                        <span class="badge badge-pill badge-secondary ms-1">Tienda</span>
-                    </div>
-                </template>
-            </el-table-column>
+                        <div v-else-if="row.store">
+                            <strong>{{ row.store.name }}</strong>
+                            <span class="badge badge-pill badge-secondary ms-1">Tienda</span>
+                        </div>
+                    </td>
+                    <td>{{ row.reason }}</td>
+                    <td class="text-center">
+                        <span class="badge badge-pill badge-danger">
+                            {{ row.item ? row.item.reports_count : (row.store ? row.store.reports_count : 0) }}
+                        </span>
+                    </td>
+                    <td>{{ row.ip }}</td>
+                    <td>{{ row.created_at }}</td>
+                    <td class="text-end">
+                        <el-dropdown v-if="row.status === 'open'" trigger="click">
+                            <el-button type="text" class="dropdown-trigger">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </el-button>
+                            <el-dropdown-menu slot="dropdown">
+                                <el-dropdown-item v-if="row.item && row.item.status !== 'blocked'"
+                                                  @click.native="blockItem(row)" class="text-danger option-delete">
+                                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-ban me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M5.7 5.7l12.6 12.6" /></svg>
+                                                  Bloquear producto
+                                </el-dropdown-item>
+                                <el-dropdown-item v-if="row.item && row.item.status === 'blocked'"
+                                                  @click.native="unblockItem(row)">
+                                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
+                                                  Desbloquear producto
+                                </el-dropdown-item>
+                                <el-dropdown-item @click.native="disableStore(row)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                                    Deshabilitar tienda
+                                </el-dropdown-item>
 
-            <el-table-column label="Motivo" prop="reason" width="180"/>
+                                <el-dropdown-item divided></el-dropdown-item>
 
-            <el-table-column label="Acumuladas" width="110" align="center">
-                <template slot-scope="scope">
-                    <span class="badge badge-pill badge-danger">
-                        {{ scope.row.item ? scope.row.item.reports_count : (scope.row.store ? scope.row.store.reports_count : 0) }}
-                    </span>
-                </template>
-            </el-table-column>
+                                <el-dropdown-item @click.native="dismiss(row)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12l5 5l10 -10" /></svg>
+                                    Descartar
+                                </el-dropdown-item>
+                            </el-dropdown-menu>
+                        </el-dropdown>
+                        <span v-else class="text-muted">—</span>
+                    </td>
+                </tr>
 
-            <el-table-column label="IP" prop="ip" width="130"/>
-            <el-table-column label="Fecha" prop="created_at" width="130"/>
-
-            <el-table-column label="Acciones" width="120" align="right">
-                <template slot-scope="scope">
-                    <el-dropdown v-if="scope.row.status === 'open'" trigger="click">
-                        <el-button type="text" class="dropdown-trigger">
-                            <i class="fas fa-ellipsis-v"></i>
-                        </el-button>
-                        <el-dropdown-menu slot="dropdown">
-                            <el-dropdown-item v-if="scope.row.item && scope.row.item.status !== 'blocked'"
-                                              @click.native="blockItem(scope.row)">
-                                <i class="el-icon-remove-outline"></i> Bloquear producto
-                            </el-dropdown-item>
-                            <el-dropdown-item v-if="scope.row.item && scope.row.item.status === 'blocked'"
-                                              @click.native="unblockItem(scope.row)">
-                                <i class="el-icon-circle-check"></i> Desbloquear producto
-                            </el-dropdown-item>
-                            <el-dropdown-item @click.native="disableStore(scope.row)">
-                                <i class="el-icon-close"></i> Deshabilitar tienda
-                            </el-dropdown-item>
-                            <el-dropdown-item divided @click.native="dismiss(scope.row)">
-                                <i class="el-icon-check"></i> Descartar
-                            </el-dropdown-item>
-                        </el-dropdown-menu>
-                    </el-dropdown>
-                    <span v-else class="text-muted">—</span>
-                </template>
-            </el-table-column>
-        </el-table>
+                <tr v-if="!records.length && !loading">
+                    <td colspan="6" class="text-center text-muted">No hay denuncias</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
 
         <el-pagination v-if="pagination.total > pagination.per_page" class="mt-3" background
                        layout="prev, pager, next"

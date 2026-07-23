@@ -6,41 +6,47 @@
             sus productos siguen publicados bajo «Otros».
         </div>
 
-        <el-table :data="records" v-loading="loading" empty-text="Aún no hay categorías">
-            <el-table-column label="Nombre" min-width="240">
-                <template slot-scope="scope">
-                    <el-input v-if="editing === scope.row.id" v-model="draft" :maxlength="120"
-                              @keyup.enter.native="save(scope.row)"/>
-                    <span v-else>{{ scope.row.name }}</span>
-                </template>
-            </el-table-column>
+        <div class="table-responsive" v-loading="loading">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Slug</th>
+                    <th class="text-center">Productos</th>
+                    <th class="text-center">Visible</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr v-for="row in records" :key="row.id">
+                    <td>
+                        <el-input v-if="editing === row.id" v-model="draft" :maxlength="120"
+                                  @keyup.enter.native="save(row)"/>
+                        <span v-else>{{ row.name }}</span>
+                    </td>
+                    <td><code class="text-muted">{{ row.slug }}</code></td>
+                    <td class="text-center">{{ row.items_count }}</td>
+                    <td class="text-center">
+                        <el-switch :value="row.is_visible" @change="toggle(row, $event)"/>
+                    </td>
+                    <td class="text-end">
+                        <template v-if="editing === row.id">
+                            <el-button type="primary" @click="save(row)">Guardar</el-button>
+                            <el-button @click="editing = null">Cancelar</el-button>
+                        </template>
+                        <el-button v-else @click="edit(row)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-1"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                            Renombrar
+                        </el-button>
+                    </td>
+                </tr>
 
-            <el-table-column label="Slug" min-width="200">
-                <template slot-scope="scope">
-                    <code class="text-muted">{{ scope.row.slug }}</code>
-                </template>
-            </el-table-column>
-
-            <el-table-column label="Productos" prop="items_count" width="110" align="center"/>
-
-            <el-table-column label="Visible" width="100" align="center">
-                <template slot-scope="scope">
-                    <el-switch :value="scope.row.is_visible" @change="toggle(scope.row, $event)"/>
-                </template>
-            </el-table-column>
-
-            <el-table-column label="Acciones" width="180" align="right">
-                <template slot-scope="scope">
-                    <template v-if="editing === scope.row.id">
-                        <el-button type="primary" @click="save(scope.row)">Guardar</el-button>
-                        <el-button @click="editing = null">Cancelar</el-button>
-                    </template>
-                    <el-button v-else type="text" @click="edit(scope.row)">
-                        <i class="el-icon-edit"></i> Renombrar
-                    </el-button>
-                </template>
-            </el-table-column>
-        </el-table>
+                <tr v-if="!records.length && !loading">
+                    <td colspan="5" class="text-center text-muted">Aún no hay categorías</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </template>
 

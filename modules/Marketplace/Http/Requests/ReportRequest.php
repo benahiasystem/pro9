@@ -18,7 +18,7 @@ class ReportRequest extends FormRequest
         return [
             // Uno de los dos: se denuncia un producto o la tienda entera.
             'item_id' => ['nullable', 'integer'],
-            'store_id' => ['required_without:item_id', 'nullable', 'integer'],
+            'store' => ['required_without:item_id', 'nullable', 'string', 'max:180'],
 
             // Solo motivos de la lista configurada: el campo es un select, no
             // texto libre, así que cualquier otra cosa es manipulación.

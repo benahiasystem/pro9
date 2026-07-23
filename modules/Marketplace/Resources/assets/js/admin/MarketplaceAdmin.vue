@@ -8,13 +8,21 @@
             <ol class="breadcrumbs">
                 <li class="active"><span>Marketplace</span></li>
             </ol>
-            <div class="right-wrapper pull-right">
-                <span class="badge badge-pill me-2" :class="state.is_enabled ? 'badge-success' : 'badge-secondary'">
+
+            <el-tooltip class="item" :content="stateHelp" effect="dark" placement="bottom-start">
+                <button type="button" class="badge badge-pill mkt-state mt-2"
+                        :class="state.is_enabled ? 'badge-success' : 'badge-warning'"
+                        @click="tab = 'settings'">
+                    <span class="mkt-state__dot"></span>
                     {{ state.is_enabled ? 'Publicado' : 'Apagado' }}
-                </span>
+                </button>
+            </el-tooltip>
+
+            <div class="right-wrapper pull-right">
                 <a :href="state.public_url" target="_blank" rel="noopener">
                     <button type="button" class="btn btn-custom btn-sm mt-2 me-2">
-                        <i class="fa fa-eye"></i> Ver el marketplace
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-1"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                        Ver el marketplace
                     </button>
                 </a>
             </div>
@@ -76,6 +84,14 @@ export default {
         }
     },
 
+    computed: {
+        stateHelp() {
+            return this.state.is_enabled
+                ? 'El público puede navegar el marketplace y las apps sincronizan con normalidad. Clic para ir a Ajustes.'
+                : 'Los visitantes ven una página de «no disponible» y las apps reciben un aviso, no un error. No se pierde ningún dato. Clic para ir a Ajustes y publicarlo.'
+        },
+    },
+
     watch: {
         tab(value) {
             this.loaded[value] = true
@@ -91,3 +107,24 @@ export default {
     },
 }
 </script>
+
+<style scoped>
+.mkt-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 14px;
+    padding: 4px 12px;
+    border: none;
+    vertical-align: middle;
+    font-size: 12px;
+    cursor: pointer;
+}
+.mkt-state__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+}
+</style>

@@ -21,10 +21,17 @@
         <form autocomplete="off" @submit.prevent="save">
             <div class="row">
                 <div class="form-group col-lg-6 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.community_name }">
-                    <label class="control-label">Nombre de la comunidad</label>
+                    <label class="control-label">
+                        Nombre de la comunidad
+                        <el-tooltip class="item"
+                                    content="Se muestra en la cabecera, el titular y el pie del marketplace."
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input v-model="form.community_name" :maxlength="120"
                               placeholder="Ej. Condominio Los Parques de Santa Clara"/>
-                    <small class="text-muted">Se muestra en la cabecera, el titular y el pie del marketplace.</small>
                     <small v-if="errors.community_name" class="form-control-feedback" v-text="errors.community_name[0]"></small>
                 </div>
                 <div class="form-group col-lg-6 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.title }">
@@ -44,42 +51,66 @@
 
             <div class="row">
                 <div class="form-group col-lg-8 col-md-7 col-sm-12 mb-2" :class="{ 'has-danger': errors.hero_title }">
-                    <label class="control-label">Titular de la portada</label>
+                    <label class="control-label">
+                        Titular de la portada
+                        <el-tooltip class="item"
+                                    content="Deja este campo y el remate vacíos para ocultar el titular de la portada."
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input v-model="form.hero_title" :maxlength="120"/>
                     <small v-if="errors.hero_title" class="form-control-feedback" v-text="errors.hero_title[0]"></small>
                 </div>
                 <div class="form-group col-lg-4 col-md-5 col-sm-12 mb-2" :class="{ 'has-danger': errors.hero_highlight }">
-                    <label class="control-label">Remate destacado</label>
+                    <label class="control-label">
+                        Remate destacado
+                        <el-tooltip class="item"
+                                    content="Se pinta en rosa y cursiva, a continuación del titular."
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input v-model="form.hero_highlight" :maxlength="60"/>
                     <small v-if="errors.hero_highlight" class="form-control-feedback" v-text="errors.hero_highlight[0]"></small>
                 </div>
+                <!-- La vista previa se queda: no es texto explicativo, es el
+                     resultado real y se entiende sin leer nada. -->
                 <div class="col-12">
                     <div class="mkt-hero-preview">
                         <span>{{ form.hero_title }}</span>
                         <em v-if="form.hero_highlight">{{ form.hero_highlight }}</em>
                     </div>
-                    <small class="text-muted">
-                        Así se verá en la portada. El remate se pinta en rosa y cursiva.
-                        Deja ambos vacíos para ocultar el titular.
-                    </small>
                 </div>
             </div>
 
             <div class="row">
                 <div class="form-group col-lg-6 col-md-12 mb-2" :class="{ 'has-danger': errors.whatsapp_greeting }">
-                    <label class="control-label">Saludo de WhatsApp (un producto)</label>
+                    <label class="control-label">
+                        Saludo de WhatsApp (un producto)
+                        <el-tooltip class="item"
+                                    content="Se antepone al nombre y código del producto en el mensaje que abre el comprador."
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input v-model="form.whatsapp_greeting" :maxlength="255"/>
-                    <small class="text-muted">
-                        Se antepone al nombre y código del producto en el mensaje que abre el comprador.
-                    </small>
                     <small v-if="errors.whatsapp_greeting" class="form-control-feedback" v-text="errors.whatsapp_greeting[0]"></small>
                 </div>
                 <div class="form-group col-lg-6 col-md-12 mb-2" :class="{ 'has-danger': errors.whatsapp_cart_greeting }">
-                    <label class="control-label">Saludo del pedido (carrito)</label>
+                    <label class="control-label">
+                        Saludo del pedido (carrito)
+                        <el-tooltip class="item"
+                                    content="Encabeza el mensaje del carrito; debajo va la lista de productos con sus cantidades."
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input v-model="form.whatsapp_cart_greeting" :maxlength="255"/>
-                    <small class="text-muted">
-                        Encabeza el mensaje del carrito; debajo va la lista de productos con sus cantidades.
-                    </small>
                     <small v-if="errors.whatsapp_cart_greeting" class="form-control-feedback" v-text="errors.whatsapp_cart_greeting[0]"></small>
                 </div>
             </div>
@@ -92,46 +123,60 @@
                     <small v-if="errors.items_per_page" class="form-control-feedback" v-text="errors.items_per_page[0]"></small>
                 </div>
                 <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.max_items_per_store }">
-                    <label class="control-label">Máximo de productos por tienda</label>
+                    <label class="control-label">
+                        Máximo de productos por tienda
+                        <el-tooltip class="item"
+                                    content="Un sync que lo supere se rechaza con error 422."
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input-number v-model="form.max_items_per_store" :min="1" :max="5000"
                                      controls-position="right" class="w-100"/>
-                    <small class="text-muted">Un sync que lo supere se rechaza con error 422.</small>
                     <small v-if="errors.max_items_per_store" class="form-control-feedback" v-text="errors.max_items_per_store[0]"></small>
                 </div>
                 <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.currency_symbol }">
-                    <label class="control-label">Símbolo de moneda</label>
+                    <label class="control-label">
+                        Símbolo de moneda
+                        <el-tooltip class="item"
+                                    content="Con el que se pintan los precios de las tiendas que los muestran."
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input v-model="form.currency_symbol" :maxlength="8" placeholder="S/"/>
-                    <small class="text-muted">Con el que se pintan los precios de las tiendas que los muestran.</small>
                     <small v-if="errors.currency_symbol" class="form-control-feedback" v-text="errors.currency_symbol[0]"></small>
                 </div>
+                <!-- Estos dos explican lo que hace el valor actual, así que el
+                     texto del globo se recalcula al cambiar el número. -->
                 <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.auto_block_reports }">
-                    <label class="control-label">Bloqueo automático por denuncias</label>
+                    <label class="control-label">
+                        Bloqueo automático por denuncias
+                        <el-tooltip class="item"
+                                    :content="autoBlockHelp"
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input-number v-model="form.auto_block_reports" :min="0" :max="10000"
                                      controls-position="right" class="w-100"/>
-                    <small class="text-muted">
-                        <template v-if="form.auto_block_reports > 0">
-                            Un producto se retira solo al llegar a {{ form.auto_block_reports }} denuncias.
-                            Solo tú puedes desbloquearlo.
-                        </template>
-                        <template v-else>
-                            Desactivado: ningún producto se bloqueará solo.
-                        </template>
-                    </small>
                     <small v-if="errors.auto_block_reports" class="form-control-feedback" v-text="errors.auto_block_reports[0]"></small>
                 </div>
                 <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2" :class="{ 'has-danger': errors.ranking_threshold }">
-                    <label class="control-label">Umbral del ranking</label>
+                    <label class="control-label">
+                        Umbral del ranking
+                        <el-tooltip class="item"
+                                    :content="rankingHelp"
+                                    effect="dark"
+                                    placement="top-start">
+                            <i class="fa fa-info-circle"></i>
+                        </el-tooltip>
+                    </label>
                     <el-input-number v-model="form.ranking_threshold" :min="0" :max="10000"
                                      controls-position="right" class="w-100"/>
-                    <small class="text-muted">
-                        <template v-if="form.ranking_threshold > 0">
-                            Una tienda muestra su número de recomendaciones y gana posición solo al llegar a
-                            {{ form.ranking_threshold }} vecinos distintos. Por debajo no destaca.
-                        </template>
-                        <template v-else>
-                            Sin umbral: el ranking se muestra desde la primera recomendación.
-                        </template>
-                    </small>
                     <small v-if="errors.ranking_threshold" class="form-control-feedback" v-text="errors.ranking_threshold[0]"></small>
                 </div>
             </div>
@@ -183,6 +228,20 @@ export default {
                 auto_block_reports: 100, ranking_threshold: 10, report_reasons: [],
             },
         }
+    },
+
+    computed: {
+        autoBlockHelp() {
+            return this.form.auto_block_reports > 0
+                ? `Un producto se retira solo al llegar a ${this.form.auto_block_reports} denuncias. Solo tú puedes desbloquearlo.`
+                : 'Desactivado: ningún producto se bloqueará solo.'
+        },
+
+        rankingHelp() {
+            return this.form.ranking_threshold > 0
+                ? `Una tienda muestra su número de recomendaciones y gana posición solo al llegar a ${this.form.ranking_threshold} vecinos distintos. Por debajo no destaca.`
+                : 'Sin umbral: el ranking se muestra desde la primera recomendación.'
+        },
     },
 
     created() {
@@ -239,7 +298,7 @@ export default {
             this.errors = {}
 
             return this.$http.put('/marketplace/admin/settings', payload).then(({ data }) => {
-                this.$notify({ title: 'Éxito', message: data.message, type: 'success' })
+                this.$message.success(data.message)
                 this.form = { ...this.form, ...data.data }
                 this.$emit('changed')
             }).catch((error) => {
@@ -249,11 +308,9 @@ export default {
                 if (error.response && error.response.status === 422 && typeof message === 'object') {
                     this.errors = message
                 } else {
-                    this.$notify({
-                        title: 'Error',
-                        message: typeof message === 'string' ? message : 'Ocurrió un error al guardar',
-                        type: 'error',
-                    })
+                    this.$message.error(
+                        typeof message === 'string' ? message : 'Ocurrió un error al guardar'
+                    )
                 }
             })
         },

@@ -21,7 +21,6 @@ class ReportController extends Controller
     public function store(ReportRequest $request): JsonResponse
     {
         $item = null;
-        $storeId = $request->input('store_id');
 
         if ($request->filled('item_id')) {
             // Con el scope de publicación: no se puede denunciar algo que no
@@ -32,10 +31,10 @@ class ReportController extends Controller
                 return response()->json(['message' => 'El producto ya no está disponible.'], 404);
             }
 
-            $storeId = $item->store_id;
+            $store = Store::approved()->find($item->store_id);
+        } else {
+            $store = Store::approved()->where('slug', $request->input('store'))->first();
         }
-
-        $store = Store::approved()->find($storeId);
 
         if (! $store) {
             return response()->json(['message' => 'La tienda ya no está disponible.'], 404);

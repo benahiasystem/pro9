@@ -54,7 +54,7 @@ export default {
 
     computed: {
         isProduct() {
-            return !!this.target.id
+            return this.target.id !== undefined
         },
         targetLabel() {
             return this.isProduct
@@ -70,7 +70,7 @@ export default {
 
             const payload = this.isProduct
                 ? { item_id: this.target.id, reason: this.reason }
-                : { store_id: this.target.id, reason: this.reason }
+                : { store: this.target.slug, reason: this.reason }
 
             this.$http.post(`/${this.prefix}/denuncia`, payload)
                 .then(() => { this.sent = true })
