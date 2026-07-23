@@ -2311,6 +2311,12 @@ class Item extends ModelTenant
                             $q->whereValuedKardexFormatSunat($params)
                                 ->where('establishment_id', $params->establishment_id);
                         });
+                    },
+                    'sale_note_items' => function ($q) use ($params) {
+                        $q->whereHas('sale_note', function ($q) use ($params) {
+                            $q->whereValuedKardexFormatSunat($params)
+                                ->where('establishment_id', $params->establishment_id);
+                        });
                     }
                 ])
                 ->without([
@@ -2332,6 +2338,11 @@ class Item extends ModelTenant
                 },
                 'dispatch_items' => function ($q) use ($params) {
                     $q->whereHas('dispatch', function ($q) use ($params) {
+                        $q->whereValuedKardexFormatSunat($params);
+                    });
+                },
+                'sale_note_items' => function ($q) use ($params) {
+                    $q->whereHas('sale_note', function ($q) use ($params) {
                         $q->whereValuedKardexFormatSunat($params);
                     });
                 }

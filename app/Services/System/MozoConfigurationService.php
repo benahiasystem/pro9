@@ -22,6 +22,11 @@ class MozoConfigurationService
         'darkLightText',
     ];
 
+    private const LOGO_KEYS = [
+        'useSystemLogo',
+        'logoVersion',
+    ];
+
     public function get(): array
     {
         $configuration = Configuration::query()->first();
@@ -31,18 +36,56 @@ class MozoConfigurationService
             $stored = $this->buildFallback();
         }
 
-        return array_replace($this->defaults(), $this->onlyBrandingValues($stored));
+        return array_replace($this->defaults(), $this->onlyKnownValues($stored));
     }
 
     public function update(array $values): array
     {
         $configuration = Configuration::query()->firstOrFail();
-        $branding = array_replace($this->get(), $this->onlyBrandingValues($values));
+        $branding = array_replace($this->get(), $this->onlyKnownValues($values));
 
         $configuration->mozo_configuration = $branding;
         $configuration->save();
 
         return $branding;
+    }
+
+    /**
+     * Escribe la marca guardada en BD (nombre + colores) sobre el config.json
+     * que lee el Mozo, preservando las claves ajenas a la marca (apiUrl, apiSsl,
+     * isStoreEnabled, etc.). Idempotente: solo escribe si hubo cambios.
+     *
+     * Permite que la personalización de marca persista tras actualizar el build.
+     *
+     * @return bool true si el archivo se actualizó, false si no hubo cambios o no fue posible.
+     */
+    public function syncConfigFile(): bool
+    {
+        $path = public_path('mozo/config.json');
+
+        if (!is_file($path) || !is_writable($path)) {
+            return false;
+        }
+
+        $existing = [];
+        $contents = @file_get_contents($path);
+        if ($contents !== false) {
+            $decoded = json_decode($contents, true);
+            if (is_array($decoded)) {
+                $existing = $decoded;
+            }
+        }
+
+        $branding = array_intersect_key($this->get(), array_flip(self::BRANDING_KEYS));
+        $merged = array_replace($existing, $branding);
+
+        if ($merged === $existing) {
+            return false;
+        }
+
+        $json = json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        return file_put_contents($path, $json) !== false;
     }
 
     private function buildFallback(): array
@@ -57,13 +100,15 @@ class MozoConfigurationService
         $decoded = $contents === false ? null : json_decode($contents, true);
 
         return is_array($decoded)
-            ? array_replace($this->defaults(), $this->onlyBrandingValues($decoded))
+            ? array_replace($this->defaults(), $this->onlyKnownValues($decoded))
             : $this->defaults();
     }
 
-    private function onlyBrandingValues(array $values): array
+    private function onlyKnownValues(array $values): array
     {
-        return array_intersect_key($values, array_flip(self::BRANDING_KEYS));
+        $known = array_merge(self::BRANDING_KEYS, self::LOGO_KEYS);
+
+        return array_intersect_key($values, array_flip($known));
     }
 
     private function defaults(): array
@@ -82,6 +127,8 @@ class MozoConfigurationService
             'darkAccent' => '#313135',
             'darkBackground' => '#3b3b40',
             'darkLightText' => '#d0d2dc',
+            'useSystemLogo' => true,
+            'logoVersion' => null,
         ];
     }
 }

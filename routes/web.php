@@ -132,12 +132,14 @@ if ($hostname) {
             // WhatsApp Bot
             Route::get('whatsapp-bot/configuration', 'Tenant\WhatsAppBotController@configuration')->name('tenant.whatsapp_bot.configuration');
             Route::post('whatsapp-bot/connect', 'Tenant\WhatsAppBotController@connect');
+            Route::post('whatsapp-bot/link-existing', 'Tenant\WhatsAppBotController@linkExisting');
             Route::get('whatsapp-bot/qr', 'Tenant\WhatsAppBotController@qr');
             Route::get('whatsapp-bot/state', 'Tenant\WhatsAppBotController@state');
             Route::post('whatsapp-bot/disconnect', 'Tenant\WhatsAppBotController@disconnect');
             Route::post('whatsapp-bot/restart', 'Tenant\WhatsAppBotController@restart');
             Route::post('whatsapp-bot/renew', 'Tenant\WhatsAppBotController@renew');
             Route::post('whatsapp-bot/toggle-enabled', 'Tenant\WhatsAppBotController@toggleEnabled');
+            Route::post('whatsapp-bot/toggle-use-qr-api-instance', 'Tenant\WhatsAppBotController@toggleUseQrApiInstance');
             Route::post('whatsapp-bot/commands', 'Tenant\WhatsAppBotController@storeCommands');
             Route::post('configurations/apiruc', 'Tenant\ConfigurationController@storeApiRuc');
             Route::post('configurations/icbper', 'Tenant\ConfigurationController@icbper');
@@ -1092,6 +1094,7 @@ if ($hostname) {
             Route::put('configurations/mozo', 'System\MozoController@update')->name('system.mozo.update');
             Route::put('configurations/mozo/brand-name', 'System\MozoController@updateBrandName')->name('system.mozo.brand_name.update');
             Route::put('configurations/mozo/colors', 'System\MozoController@updateColors')->name('system.mozo.colors.update');
+            Route::post('configurations/mozo/logo', 'System\MozoController@updateLogo')->name('system.mozo.logo.update');
             Route::post('configurations/login', 'System\ConfigurationController@storeLoginSettings');
             Route::post('configurations/bg', 'System\ConfigurationController@storeBgLogin');
             Route::post('configurations/other-configuration', 'System\ConfigurationController@storeOtherConfiguration');

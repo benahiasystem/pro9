@@ -261,10 +261,6 @@
                     }
 
 
-                    $totals['balance_quantity'] += $row['balance_quantity'];
-                    $totals['balance_total'] += $row['balance_total_cost'];
-                    $totals['balance_cost'] += $row['balance_unit_cost'];
-
                 @endphp
 
                 <td>
@@ -281,9 +277,14 @@
                 </td>
             </tr>
         @endforeach
-        <tr>
-
-        </tr>
+        @php
+            $lastRecord = !empty($records) ? $records[count($records) - 1] : null;
+            if ($lastRecord) {
+                $totals['balance_quantity'] = $lastRecord['balance_quantity'];
+                $totals['balance_total'] = $lastRecord['balance_total_cost'];
+                $totals['balance_cost'] = $lastRecord['balance_unit_cost'];
+            }
+        @endphp
         <tr>
             <td colspan="5" align="right">
                 TOTALES

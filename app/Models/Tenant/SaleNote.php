@@ -708,6 +708,19 @@ use Modules\Sale\Models\Agent;
         }
 
         /**
+         * @param $query
+         * @param $params
+         *
+         * @return mixed
+         */
+        public function scopeWhereValuedKardexFormatSunat($query, $params)
+        {
+            return $query->whereStateTypeAccepted()
+                ->whereTypeUser()
+                ->whereBetween('date_of_issue', [$params->date_start, $params->date_end]);
+        }
+
+        /**
          * @return BelongsTo
          */
         public function quotation()

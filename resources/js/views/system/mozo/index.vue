@@ -74,6 +74,74 @@
                     </div>
                 </el-form>
 
+                <el-divider>Logo</el-divider>
+
+                <div class="row">
+                    <div class="col-lg-8 col-12">
+                        <div class="form-group mb-1">
+                            <label class="d-block">Usar logo del sistema</label>
+                            <el-switch
+                                v-model="logo.useSystemLogo"
+                                active-text="Sí"
+                                inactive-text="No"
+                                :disabled="loading || logo.saving"
+                            />
+                            <small class="d-block text-muted mt-1">
+                                Activado: Mozo usa el logo del sistema (System). Si el sistema no tiene logo, usa el de Mozo por defecto.
+                                Desactívalo para subir un logo personalizado solo para Mozo.
+                            </small>
+                            <small v-if="logo.useSystemLogo && !logo.hasSystemLogo" class="d-block text-warning mt-1">
+                                El sistema no tiene un logo subido: se usará el logo por defecto de Mozo.
+                            </small>
+                        </div>
+
+                        <div v-if="!logo.useSystemLogo" class="mt-3">
+                            <label class="control-label d-block">
+                                Logo personalizado <span class="text-muted">(SVG, PNG o JPG · máx. 2MB)</span>
+                            </label>
+                            <input
+                                ref="logoInput"
+                                type="file"
+                                accept=".svg,.png,.jpg,.jpeg"
+                                :disabled="loading || logo.saving"
+                                @change="onLogoFileChange"
+                            />
+                            <small v-if="logo.fileName" class="d-block text-muted mt-1">
+                                Seleccionado: {{ logo.fileName }}
+                            </small>
+                            <small v-else-if="logo.hasCustomLogo" class="d-block text-muted mt-1">
+                                Ya hay un logo personalizado guardado. Sube uno nuevo para reemplazarlo.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4 col-12">
+                        <div class="logo-preview">
+                            <span class="logo-preview__label">Vista previa</span>
+                            <img
+                                v-if="logoPreview && !logo.previewError"
+                                :src="logoPreview"
+                                alt="Logo Mozo"
+                                class="logo-preview__img"
+                                @error="logo.previewError = true"
+                            />
+                            <span v-else class="text-muted small">Sin vista previa</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-end mt-3">
+                    <el-button
+                        type="primary"
+                        plain
+                        :loading="logo.saving"
+                        :disabled="loading || saving"
+                        @click="saveLogo"
+                    >
+                        Guardar logo
+                    </el-button>
+                </div>
+
                 <el-divider>Paleta de colores</el-divider>
 
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
@@ -173,6 +241,17 @@ export default {
             form: {
                 brandName: ''
             },
+            logo: {
+                useSystemLogo: true,
+                hasCustomLogo: false,
+                hasSystemLogo: false,
+                serverUrl: '',
+                localPreview: '',
+                fileName: '',
+                file: null,
+                saving: false,
+                previewError: false
+            },
             colors: {
                 Primary: { label: 'Color Primario', hex: '#32a56a' },
                 Secondary: { label: 'Color Secundario', hex: '#f58f00' },
@@ -201,6 +280,18 @@ export default {
                     key,
                     label: this.colors[key].label
                 }))
+        },
+
+        logoPreview() {
+            return this.logo.localPreview || this.logo.serverUrl
+        }
+    },
+
+    watch: {
+        'logo.useSystemLogo'(useSystem) {
+            if (useSystem) {
+                this.clearLogoSelection()
+            }
         }
     },
 
@@ -225,6 +316,12 @@ export default {
                             this.colors[key].hex = response.data[key]
                         }
                     })
+
+                    this.logo.useSystemLogo = response.data.useSystemLogo !== false
+                    this.logo.hasCustomLogo = !!response.data.hasCustomLogo
+                    this.logo.hasSystemLogo = !!response.data.hasSystemLogo
+                    this.logo.serverUrl = response.data.logoUrl || ''
+                    this.logo.previewError = false
                 })
                 .catch(error => {
                     const message = error.response && error.response.data
@@ -294,6 +391,101 @@ export default {
 
         togglePaletteMode() {
             this.paletteMode = this.paletteMode === 'light' ? 'dark' : 'light'
+        },
+
+        clearLogoSelection() {
+            if (this.logo.localPreview) {
+                URL.revokeObjectURL(this.logo.localPreview)
+            }
+            this.logo.localPreview = ''
+            this.logo.file = null
+            this.logo.fileName = ''
+            this.logo.previewError = false
+            if (this.$refs.logoInput) {
+                this.$refs.logoInput.value = ''
+            }
+        },
+
+        onLogoFileChange(event) {
+            const file = event.target.files && event.target.files[0]
+            if (!file) return
+
+            const isValidExt = /\.(svg|png|jpe?g)$/i.test(file.name)
+            if (!isValidExt) {
+                this.$message.error('El logo debe ser un archivo SVG, PNG o JPG.')
+                this.clearLogoSelection()
+                return
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                this.$message.error('El logo no puede superar los 2MB.')
+                this.clearLogoSelection()
+                return
+            }
+
+            if (this.logo.localPreview) {
+                URL.revokeObjectURL(this.logo.localPreview)
+            }
+            this.logo.file = file
+            this.logo.fileName = file.name
+            this.logo.localPreview = URL.createObjectURL(file)
+            this.logo.previewError = false
+        },
+
+        saveLogo() {
+            if (this.logo.saving) return
+
+            if (!this.logo.useSystemLogo && !this.logo.file && !this.logo.hasCustomLogo) {
+                this.$message.error('Sube un logo para desactivar el logo del sistema.')
+                return
+            }
+
+            const formData = new FormData()
+            formData.append('useSystemLogo', this.logo.useSystemLogo ? '1' : '0')
+            if (!this.logo.useSystemLogo && this.logo.file) {
+                formData.append('logo', this.logo.file)
+            }
+
+            this.logo.saving = true
+
+            this.$http.post('/configurations/mozo/logo', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            })
+                .then(response => {
+                    this.logo.useSystemLogo = response.data.useSystemLogo !== false
+                    this.logo.hasCustomLogo = !!response.data.hasCustomLogo
+                    this.logo.hasSystemLogo = !!response.data.hasSystemLogo
+                    this.logo.serverUrl = response.data.logoUrl || ''
+
+                    if (this.logo.localPreview) {
+                        URL.revokeObjectURL(this.logo.localPreview)
+                        this.logo.localPreview = ''
+                    }
+                    this.logo.file = null
+                    this.logo.fileName = ''
+                    this.logo.previewError = false
+                    if (this.$refs.logoInput) {
+                        this.$refs.logoInput.value = ''
+                    }
+
+                    this.$message.success(response.data.message)
+                })
+                .catch(error => {
+                    const data = error.response && error.response.data
+                    let validationMessage = null
+
+                    if (data && data.errors) {
+                        const firstKey = Object.keys(data.errors)[0]
+                        validationMessage = firstKey ? data.errors[firstKey][0] : null
+                    }
+
+                    this.$message.error(
+                        validationMessage || (data && data.message) || 'No se pudo guardar el logo de Mozo.'
+                    )
+                })
+                .then(() => {
+                    this.logo.saving = false
+                })
         }
     }
 }
@@ -405,5 +597,29 @@ export default {
     height: 22px;
     border-radius: 6px;
     border: 1px solid #dcdfe6;
+}
+
+.logo-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 110px;
+    padding: 14px;
+    border: 1px dashed #dcdfe6;
+    border-radius: 8px;
+    background: #f8f9fb;
+}
+
+.logo-preview__label {
+    font-size: 11px;
+    color: #a2a5b9;
+}
+
+.logo-preview__img {
+    max-width: 100%;
+    max-height: 60px;
+    object-fit: contain;
 }
 </style>
