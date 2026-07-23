@@ -10,17 +10,10 @@ class MozoSyncCommand extends Command
 {
     protected $signature = 'mozo:sync';
 
-    protected $description = 'Reaplica la configuración del Mozo (nombre, colores y logo) desde la BD sobre '
-        . 'los archivos del build. Permite que la personalización persista tras actualizar el compilado del Mozo.';
+    protected $description = 'Reaplica el logo configurado de Mozo sobre los archivos del build.';
 
     public function handle(MozoConfigurationService $configService, MozoLogoService $logoService): int
     {
-        if ($configService->syncConfigFile()) {
-            $this->info('config.json actualizado con la marca guardada (nombre y colores).');
-        } else {
-            $this->line('config.json ya estaba al día (o no se pudo escribir).');
-        }
-
         $logoService->ensureHtaccess();
 
         $config = $configService->get();

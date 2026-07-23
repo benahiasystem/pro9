@@ -4,7 +4,7 @@ namespace App\Services\System;
 
 use App\Models\System\Configuration;
 
-class MozoConfigurationService
+class VendeyaConfigurationService
 {
     private const BRANDING_KEYS = [
         'brandName',
@@ -30,7 +30,7 @@ class MozoConfigurationService
     public function get(): array
     {
         $configuration = Configuration::query()->first();
-        $stored = $configuration?->mozo_configuration;
+        $stored = $configuration?->vendeya_configuration;
 
         if (!is_array($stored) || empty($stored)) {
             $stored = $this->defaults();
@@ -44,7 +44,7 @@ class MozoConfigurationService
         $configuration = Configuration::query()->firstOrFail();
         $branding = array_replace($this->get(), $this->onlyKnownValues($values));
 
-        $configuration->mozo_configuration = $branding;
+        $configuration->vendeya_configuration = $branding;
         $configuration->save();
 
         return $branding;
@@ -54,25 +54,28 @@ class MozoConfigurationService
     {
         $known = array_merge(self::BRANDING_KEYS, self::LOGO_KEYS);
 
-        return array_intersect_key($values, array_flip($known));
+        return array_filter(
+            array_intersect_key($values, array_flip($known)),
+            static fn ($value) => $value !== null
+        );
     }
 
     private function defaults(): array
     {
         return [
-            'brandName' => 'Mozo.pe',
-            'Primary' => '#32a56a',
-            'Secondary' => '#f58f00',
-            'Accent' => '#115733',
-            'Background' => '#f4f5f6',
+            'brandName' => 'Vendeya.pe',
+            'Primary' => '#ff7d00',
+            'Secondary' => '#d5e8e8',
+            'Accent' => '#ffffff',
+            'Background' => '#eef5f5',
             'White' => '#ffffff',
-            'Text' => '#1d3a3a',
+            'Text' => '#004850',
             'lightText' => '#a2a5b9',
-            'darkPrimary' => '#222225',
-            'darkSecondary' => '#27272a',
-            'darkAccent' => '#313135',
-            'darkBackground' => '#3b3b40',
-            'darkLightText' => '#d0d2dc',
+            'darkPrimary' => '#121c22',
+            'darkSecondary' => '#1c2a32',
+            'darkAccent' => '#253945',
+            'darkBackground' => '#1b262c',
+            'darkLightText' => '#a9a9b2',
             'useSystemLogo' => true,
             'logoVersion' => null,
         ];

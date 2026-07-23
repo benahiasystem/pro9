@@ -1230,14 +1230,12 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                     <a class="nav-link" href="{{ route('tenant.restaurant.configuration') }}">
                                         Configuración
                                     </a>
-                                    <div class="ms-3">
-                                        <button
-                                            type="button"
-                                            class="{{ ($firstLevel === 'quotations') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"
-                                            title="Mozo"
-                                            onclick="openMozoApp('{{ auth()->user()->api_token ?? '' }}')">Ver Mozo
-                                        </button>
-                                    </div>
+                                    <button
+                                        type="button"
+                                        class="{{ ($firstLevel === 'quotations') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"
+                                        title="Mozo"
+                                        onclick="openMozoApp('{{ auth()->user()->api_token ?? '' }}')">Ver Mozo
+                                    </button>
                                 </li>
                             </ul>
                         </li>

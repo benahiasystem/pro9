@@ -181,6 +181,17 @@ class ConfigurationController extends Controller
                         'logoVersion' => time(),
                     ]);
                 }
+
+                $vendeyaConfigService = app(\App\Services\System\VendeyaConfigurationService::class);
+                $vendeyaConfig = $vendeyaConfigService->get();
+
+                if (($vendeyaConfig['useSystemLogo'] ?? true)) {
+                    app(\App\Services\System\VendeyaLogoService::class)->applySystemLogo();
+                    $vendeyaConfigService->update([
+                        'useSystemLogo' => true,
+                        'logoVersion' => time(),
+                    ]);
+                }
             }
         }
 

@@ -19,7 +19,7 @@
     --danger: #ff0066;
     --success: #00c666;
     --warning: #ff8400;
-    --primary: #007bff;
+    --primary: var(--primary-color);
     --info: #1dadff; 
 }
 html, body {
@@ -243,6 +243,16 @@ html.sidebar-white .el-button--primary {
     color: #FFFFFF;
     background-color: var(--primary-color);
     border-color: var(--primary-color);
+}
+.el-button--danger.is-plain {
+    color: var(--danger) !important;
+    background: color-mix(in srgb, var(--danger) 10%, #fff) !important;
+    border-color: color-mix(in srgb, var(--danger) 30%, #fff) !important;
+}
+.el-button--danger.is-plain:hover {
+    color: #fff !important;
+    background: var(--danger) !important;
+    border-color: var(--danger) !important;
 }
 .btn-danger {
     background-color: var(--danger);

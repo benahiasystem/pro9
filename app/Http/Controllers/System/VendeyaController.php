@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\System;
 
 use App\Http\Controllers\Controller;
-use App\Services\System\MozoConfigurationService;
-use App\Services\System\MozoLogoService;
+use App\Services\System\VendeyaConfigurationService;
+use App\Services\System\VendeyaLogoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class MozoController extends Controller
+class VendeyaController extends Controller
 {
     private const COLOR_KEYS = [
         'Primary',
@@ -20,15 +20,9 @@ class MozoController extends Controller
         'darkLightText',
     ];
 
-    public function index()
-    {
-        return view('system.mozo.index');
-    }
-
-    public function record(MozoConfigurationService $service, MozoLogoService $logoService): JsonResponse
+    public function record(VendeyaConfigurationService $service, VendeyaLogoService $logoService): JsonResponse
     {
         $configuration = $service->get();
-
         $configuration['useSystemLogo'] = (bool) ($configuration['useSystemLogo'] ?? true);
         $configuration['hasCustomLogo'] = $logoService->hasCustomLogo();
         $configuration['hasSystemLogo'] = $logoService->hasSystemLogo();
@@ -39,8 +33,8 @@ class MozoController extends Controller
 
     public function updateLogo(
         Request $request,
-        MozoConfigurationService $service,
-        MozoLogoService $logoService
+        VendeyaConfigurationService $service,
+        VendeyaLogoService $logoService
     ): JsonResponse {
         $request->merge([
             'useSystemLogo' => filter_var($request->input('useSystemLogo'), FILTER_VALIDATE_BOOLEAN),
@@ -80,7 +74,6 @@ class MozoController extends Controller
         }
 
         $version = time();
-
         $service->update([
             'useSystemLogo' => $useSystemLogo,
             'logoVersion' => $version,
@@ -88,7 +81,7 @@ class MozoController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'El logo de Mozo se actualizó correctamente.',
+            'message' => 'El logo de Vendeya se actualizó correctamente.',
             'useSystemLogo' => $useSystemLogo,
             'hasCustomLogo' => $logoService->hasCustomLogo(),
             'hasSystemLogo' => $logoService->hasSystemLogo(),
@@ -96,30 +89,21 @@ class MozoController extends Controller
         ]);
     }
 
-    public function updateBrandName(Request $request, MozoConfigurationService $service): JsonResponse
+    public function updateBrandName(Request $request, VendeyaConfigurationService $service): JsonResponse
     {
-        $request->merge([
-            'brandName' => trim((string) $request->input('brandName')),
-        ]);
-
-        $validated = $request->validate([
-            'brandName' => ['required', 'string', 'max:100'],
-        ]);
-
-        $configuration = $service->update([
-            'brandName' => $validated['brandName'],
-        ]);
+        $validated = $this->validateBrandName($request);
+        $configuration = $service->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'El nombre de Mozo se actualizó correctamente.',
+            'message' => 'El nombre de Vendeya se actualizó correctamente.',
             'brandName' => $configuration['brandName'],
         ]);
     }
 
     public function destroyLogo(
-        MozoConfigurationService $service,
-        MozoLogoService $logoService
+        VendeyaConfigurationService $service,
+        VendeyaLogoService $logoService
     ): JsonResponse {
         $logoService->deleteCustomLogo();
         $version = time();
@@ -131,7 +115,7 @@ class MozoController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'El logo personalizado de Mozo se eliminó y se restauró el logo predeterminado.',
+            'message' => 'El logo personalizado de Vendeya se eliminó y se restauró el logo predeterminado.',
             'useSystemLogo' => false,
             'hasCustomLogo' => false,
             'hasSystemLogo' => $logoService->hasSystemLogo(),
@@ -139,44 +123,50 @@ class MozoController extends Controller
         ]);
     }
 
-    public function updateColors(Request $request, MozoConfigurationService $service): JsonResponse
+    public function updateColors(Request $request, VendeyaConfigurationService $service): JsonResponse
+    {
+        $validated = $request->validate($this->colorRules());
+        $configuration = $service->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'La paleta de colores de Vendeya se actualizó correctamente.',
+            'colors' => array_intersect_key($configuration, array_flip(self::COLOR_KEYS)),
+        ]);
+    }
+
+    public function update(Request $request, VendeyaConfigurationService $service): JsonResponse
+    {
+        $request->merge(['brandName' => trim((string) $request->input('brandName'))]);
+        $rules = array_merge([
+            'brandName' => ['required', 'string', 'max:100'],
+        ], $this->colorRules());
+
+        $configuration = $service->update($request->validate($rules));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'La configuración de Vendeya se actualizó correctamente.',
+            'configuration' => $configuration,
+        ]);
+    }
+
+    private function validateBrandName(Request $request): array
+    {
+        $request->merge(['brandName' => trim((string) $request->input('brandName'))]);
+
+        return $request->validate([
+            'brandName' => ['required', 'string', 'max:100'],
+        ]);
+    }
+
+    private function colorRules(): array
     {
         $rules = [];
         foreach (self::COLOR_KEYS as $key) {
             $rules[$key] = ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'];
         }
 
-        $validated = $request->validate($rules);
-        $configuration = $service->update($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'La paleta de colores de Mozo se actualizó correctamente.',
-            'colors' => array_intersect_key($configuration, array_flip(self::COLOR_KEYS)),
-        ]);
-    }
-
-    public function update(Request $request, MozoConfigurationService $service): JsonResponse
-    {
-        $request->merge([
-            'brandName' => trim((string) $request->input('brandName')),
-        ]);
-
-        $rules = [
-            'brandName' => ['required', 'string', 'max:100'],
-        ];
-
-        foreach (self::COLOR_KEYS as $key) {
-            $rules[$key] = ['required', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'];
-        }
-
-        $validated = $request->validate($rules);
-        $configuration = $service->update($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'La configuración de Mozo se actualizó correctamente.',
-            'configuration' => $configuration,
-        ]);
+        return $rules;
     }
 }
