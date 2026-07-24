@@ -302,6 +302,7 @@ if ($hostname) {
             Route::get('items/search/item/{item}', 'Tenant\ItemController@searchItemById');
             Route::get('items/item/tables', 'Tenant\ItemController@item_tables');
             Route::get('items/table/{table}', 'Tenant\DocumentController@table');
+            Route::get('items/export/barcode/count', 'Tenant\ItemController@barcodeExportCount');
             Route::get('items/export/barcode', 'Tenant\ItemController@exportBarCode')->name('tenant.items.export.barcode');
             Route::get('items/export/extra_atrributes/PDF', 'Tenant\ItemController@downloadExtraDataPdf');
             Route::get('items/export/extra_atrributes/XLSX', 'Tenant\ItemController@downloadExtraDataItemsExcel');
