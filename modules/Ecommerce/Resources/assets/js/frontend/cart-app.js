@@ -118,8 +118,68 @@ var app_cart = new Vue({
         mpScriptLoaded: false,
         mpBrickController: null,
         krScriptLoaded: false,
+
+        // Guest checkout — fase 1
+        guestCheckoutAccepted: false,
+        showGuestForm: false,
+        guestWarningChecked: false,
+        guest_form: {
+            email: '',
+            telephone: '',
+            identity_document_type_id: '1',
+            number: '',
+            name: '',
+        },
     },
     computed: {
+        isLoggedIn() {
+            return !!(this.user && this.user.id);
+        },
+        isGuestCheckoutActive() {
+            return !this.isLoggedIn && this.guestCheckoutAccepted && this.showGuestForm;
+        },
+        isGuestContactReady() {
+            return this.isGuestCheckoutActive && this.isGuestFormValid();
+        },
+        isGuestCheckoutComplete() {
+            if (!this.isGuestCheckoutActive) {
+                return false;
+            }
+
+            const email = (this.guest_form.email || '').trim();
+            const phone = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            const name = (this.guest_form.name || '').trim();
+            const number = (this.guest_form.number || '').trim();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const phoneDigits = phone.replace(/\D/g, '');
+
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return false;
+            }
+            if (!phoneDigits || phoneDigits.length < 7) {
+                return false;
+            }
+            if (!name || !number) {
+                return false;
+            }
+            if (docType === '1' && number.replace(/\D/g, '').length !== 8) {
+                return false;
+            }
+            if (docType === '6' && number.replace(/\D/g, '').length !== 11) {
+                return false;
+            }
+            if (!this.isPickupMode && !(this.form_contact.address || '').trim()) {
+                return false;
+            }
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                return false;
+            }
+
+            return true;
+        },
+        isGuestFormReady() {
+            return this.isGuestCheckoutComplete;
+        },
         maxLength: function () {
             if (this.typeDocuments === '6') {
                 return 11
@@ -146,6 +206,29 @@ var app_cart = new Vue({
         },
     },
     watch: {
+        'form_contact.telephone'(value) {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            const phone = (value || '').trim();
+            if (phone && phone !== (this.guest_form.telephone || '').trim()) {
+                this.guest_form.telephone = phone;
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+            }
+        },
+        guest_form: {
+            deep: true,
+            handler() {
+                if (!this.showGuestForm || this.isLoggedIn) {
+                    return;
+                }
+
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+            },
+        },
         'addressModal.address': function(newValue) {
         },
         selectedPaymentMethod(val) {
@@ -220,8 +303,335 @@ var app_cart = new Vue({
             })
         }
         this.initForm();
+        this.restoreGuestCheckoutState();
     },
     methods: {
+        restoreGuestCheckoutState() {
+            if (this.isLoggedIn) {
+                return;
+            }
+
+            const accepted = sessionStorage.getItem('guest_checkout_accepted') === 'true';
+            if (!accepted) {
+                return;
+            }
+
+            this.guestCheckoutAccepted = true;
+            this.showGuestForm = true;
+            this.initGuestFormStructure();
+            this.loadGuestFormDraft();
+        },
+        initGuestFormStructure() {
+            this.form_document = {
+                acciones: {
+                    enviar_email: true,
+                    formato_pdf: 'a4',
+                },
+                serie_documento: '',
+                numero_documento: '#',
+                fecha_de_emision: moment().format('YYYY-MM-DD'),
+                hora_de_emision: moment().format('HH:mm:ss'),
+                codigo_tipo_operacion: '0101',
+                codigo_tipo_documento: '80',
+                codigo_tipo_moneda: 'PEN',
+                fecha_de_vencimiento: moment().format('YYYY-MM-DD'),
+                datos_del_cliente_o_receptor: {
+                    codigo_tipo_documento_identidad: '0',
+                    numero_documento: '0',
+                    apellidos_y_nombres_o_razon_social: '',
+                    codigo_pais: 'PE',
+                    ubigeo: '150101',
+                    direccion: '',
+                    correo_electronico: '',
+                    telefono: '',
+                },
+                totales: {},
+                items: [],
+            };
+
+            this.typeDocuments = '0';
+            this.numberDocument = '0';
+            this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '6']);
+            this.optionDocument();
+        },
+        normalizeGuestContactFields() {
+            const contactPhone = (this.form_contact.telephone || '').trim();
+            const guestPhone = (this.guest_form.telephone || '').trim();
+
+            if (guestPhone) {
+                this.form_contact.telephone = guestPhone;
+            } else if (contactPhone) {
+                this.guest_form.telephone = contactPhone;
+            }
+        },
+        ensureGuestFormDocument() {
+            if (!this.guestCheckoutAccepted || !this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            if (!this.form_document || !this.form_document.datos_del_cliente_o_receptor) {
+                this.initGuestFormStructure();
+            }
+
+            this.normalizeGuestContactFields();
+            this.syncGuestFormToDocument();
+        },
+        syncGuestFormToDocument() {
+            if (!this.form_document || !this.form_document.datos_del_cliente_o_receptor) {
+                if (this.showGuestForm && !this.isLoggedIn) {
+                    this.initGuestFormStructure();
+                } else {
+                    return;
+                }
+            }
+
+            this.normalizeGuestContactFields();
+
+            const doc = this.form_document.datos_del_cliente_o_receptor;
+            doc.correo_electronico = (this.guest_form.email || '').trim();
+            doc.telefono = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            doc.apellidos_y_nombres_o_razon_social = (this.guest_form.name || '').trim();
+            doc.numero_documento = (this.guest_form.number || '').trim();
+            doc.codigo_tipo_documento_identidad = this.guest_form.identity_document_type_id || '0';
+            doc.identity_document_type_id = this.guest_form.identity_document_type_id || '0';
+            doc.direccion = this.form_contact.address || '';
+
+            this.numberDocument = doc.numero_documento;
+            this.typeDocuments = doc.codigo_tipo_documento_identidad;
+
+            if (this.form_contact.telephone !== doc.telefono) {
+                this.form_contact.telephone = doc.telefono;
+            }
+        },
+        saveGuestFormDraft() {
+            if (!this.showGuestForm) {
+                return;
+            }
+
+            sessionStorage.setItem('guest_contact_draft', JSON.stringify(this.guest_form));
+        },
+        loadGuestFormDraft() {
+            const raw = sessionStorage.getItem('guest_contact_draft');
+            if (!raw) {
+                return;
+            }
+
+            try {
+                const draft = JSON.parse(raw);
+                this.guest_form = Object.assign({}, this.guest_form, draft);
+                if (this.guest_form.telephone && !this.form_contact.telephone) {
+                    this.form_contact.telephone = this.guest_form.telephone;
+                }
+                this.syncGuestFormToDocument();
+            } catch (error) {
+                console.warn('No se pudo restaurar el borrador de invitado', error);
+            }
+        },
+        getGuestFormValidationErrors() {
+            this.ensureGuestFormDocument();
+
+            const errors = [];
+            const email = (this.guest_form.email || '').trim();
+            const phone = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            const name = (this.guest_form.name || '').trim();
+            const number = (this.guest_form.number || '').trim();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const phoneDigits = phone.replace(/\D/g, '');
+
+            if (!email) {
+                errors.push('correo electrónico');
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errors.push('correo electrónico válido');
+            }
+
+            if (!phoneDigits) {
+                errors.push('teléfono');
+            } else if (phoneDigits.length < 7) {
+                errors.push('teléfono válido');
+            }
+
+            if (!name) {
+                errors.push('nombre o razón social');
+            }
+
+            if (!number) {
+                errors.push('número de documento');
+            } else if (docType === '1' && number.replace(/\D/g, '').length !== 8) {
+                errors.push('DNI de 8 dígitos');
+            } else if (docType === '6' && number.replace(/\D/g, '').length !== 11) {
+                errors.push('RUC de 11 dígitos');
+            }
+
+            return errors;
+        },
+        isGuestFormValid() {
+            return this.getGuestFormValidationErrors().length === 0;
+        },
+        validateGuestFormForPayment() {
+            this.ensureGuestFormDocument();
+            const errors = this.getGuestFormValidationErrors();
+
+            if (errors.length > 0) {
+                return {
+                    valid: false,
+                    message: 'Completa: ' + errors.join(', ') + '.',
+                };
+            }
+
+            if (!this.isPickupMode && !(this.form_contact.address || '').trim()) {
+                return {
+                    valid: false,
+                    message: 'Agrega una dirección de entrega antes de pagar.',
+                };
+            }
+
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                return {
+                    valid: false,
+                    message: 'Selecciona una sucursal de recojo antes de pagar.',
+                };
+            }
+
+            return { valid: true, message: '' };
+        },
+        scrollToGuestForm() {
+            this.$nextTick(() => {
+                const el = document.getElementById('guestContactCollapse');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        },
+        scrollToPaymentSection() {
+            this.$nextTick(() => {
+                const el = document.getElementById('paymentCollapse');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        },
+        dispatchPayment(method) {
+            if (method === 'culqi') {
+                if (typeof execCulqi === 'function') {
+                    execCulqi();
+                }
+            } else if (method === 'izipay') {
+                this.execIzipay();
+            } else if (method === 'mp') {
+                this.execMp();
+            } else if (['cash', 'yape', 'transfer'].includes(method)) {
+                this.paymentCash();
+            }
+        },
+        runPayment(method) {
+            if (this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de continuar.', 'warning');
+            }
+
+            if (!this.acceptedTerms) {
+                return this.showSwalMessage('Términos y condiciones', 'Debes aceptar los términos y condiciones.', 'warning');
+            }
+
+            if (!method) {
+                return this.showSwalMessage('Método de pago', 'Selecciona un método de pago para continuar.', 'warning');
+            }
+
+            this.selectedPaymentMethod = method;
+            this.refreshSetDataCustomer();
+
+            if (this.isGuestCheckoutActive) {
+                const validation = this.validateGuestFormForPayment();
+                if (!validation.valid) {
+                    this.scrollToGuestForm();
+                    return this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+                }
+            } else if (!this.validateCheckoutBeforePayment()) {
+                return;
+            }
+
+            this.dispatchPayment(method);
+        },
+        handleCheckoutClick() {
+            if (this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de continuar.', 'warning');
+            }
+
+            if (!this.acceptedTerms) {
+                return this.showSwalMessage('Términos y condiciones', 'Debes aceptar los términos y condiciones.', 'warning');
+            }
+
+            if (this.isLoggedIn) {
+                return this.executePayment();
+            }
+
+            if (!this.guestCheckoutAccepted || !this.showGuestForm) {
+                return this.openGuestIdentityModal();
+            }
+
+            const validation = this.validateGuestFormForPayment();
+            if (!validation.valid) {
+                this.scrollToGuestForm();
+                return this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+            }
+
+            this.scrollToPaymentSection();
+            if (!this.selectedPaymentMethod) {
+                return this.showSwalMessage(
+                    'Método de pago',
+                    'Selecciona un método de pago y confirma desde el botón correspondiente.',
+                    'info'
+                );
+            }
+        },
+        openGuestIdentityModal() {
+            this.guestWarningChecked = false;
+            $('#guestIdentityModal').modal('show');
+        },
+        closeGuestIdentityModal() {
+            $('#guestIdentityModal').modal('hide');
+        },
+        chooseGuestCheckout() {
+            this.closeGuestIdentityModal();
+            this.$nextTick(() => {
+                $('#guestWarningModal').modal('show');
+            });
+        },
+        closeGuestWarningModal() {
+            this.guestWarningChecked = false;
+            $('#guestWarningModal').modal('hide');
+        },
+        backToGuestIdentityModal() {
+            this.closeGuestWarningModal();
+            this.$nextTick(() => {
+                this.openGuestIdentityModal();
+            });
+        },
+        confirmGuestCheckout() {
+            if (!this.guestWarningChecked) {
+                return;
+            }
+
+            sessionStorage.setItem('guest_checkout_accepted', 'true');
+            this.guestCheckoutAccepted = true;
+            this.showGuestForm = true;
+            this.initGuestFormStructure();
+
+            if (this.form_contact.telephone) {
+                this.guest_form.telephone = this.form_contact.telephone;
+            }
+
+            this.ensureGuestFormDocument();
+            this.closeGuestWarningModal();
+            this.scrollToGuestForm();
+        },
+        openLoginRegisterModal() {
+            this.closeGuestIdentityModal();
+            this.$nextTick(() => {
+                if (typeof window.jQuery !== 'undefined') {
+                    $('#login_register_modal').modal('show');
+                }
+            });
+        },
         extractAndSetUbigeoFromComponents(components) {
             if (!components) return;
 
@@ -525,11 +935,53 @@ var app_cart = new Vue({
             })
         },
         refreshSetDataCustomer() {
+            if (this.isGuestCheckoutActive) {
+                this.ensureGuestFormDocument();
+                return;
+            }
+
+            if (!this.form_document.datos_del_cliente_o_receptor) {
+                return;
+            }
+
             this.form_document.datos_del_cliente_o_receptor.direccion = this.form_contact.address
             this.form_document.datos_del_cliente_o_receptor.telefono = this.form_contact.telephone
             this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments
             this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument
             this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments
+        },
+        validateCheckoutBeforePayment() {
+            if (this.isGuestCheckoutActive) {
+                const validation = this.validateGuestFormForPayment();
+                if (!validation.valid) {
+                    this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+                    return false;
+                }
+                return true;
+            }
+
+            if (!this.form_document.codigo_tipo_documento) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error');
+                return false;
+            }
+
+            if (!this.isPickupMode && !this.form_contact.address) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo dirección es obligatorio', 'error');
+                return false;
+            }
+
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                this.showSwalMessage('Ocurrió un error!', 'Selecciona una sucursal de recojo', 'error');
+                return false;
+            }
+
+            const phone = (this.form_contact.telephone || '').trim();
+            if (!phone) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo teléfono es obligatorio', 'error');
+                return false;
+            }
+
+            return true;
         },
         async getFormPaymentCash() {
             this.refreshSetDataCustomer()
@@ -580,29 +1032,9 @@ var app_cart = new Vue({
             })
         },
         executePayment() {
-            if (this.selectedPaymentMethod === 'culqi') {
-                if (typeof execCulqi === 'function') execCulqi();
-            } else if (this.selectedPaymentMethod === 'izipay') {
-                this.execIzipay();
-            } else if (this.selectedPaymentMethod === 'mp') {
-                this.execMp();
-            } else if (['cash', 'yape', 'transfer'].includes(this.selectedPaymentMethod)) {
-                this.paymentCash();
-            }
+            this.runPayment(this.selectedPaymentMethod);
         },
         async paymentCash() {
-            if(!this.form_document.codigo_tipo_documento) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error')
-            }
-
-            if(!this.form_contact.address) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo dirección es obligatorio', 'error')
-            }
-
-            if(!this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo teléfono es obligatorio', 'error')
-            }
-
             let product = JSON.parse(localStorage.getItem('products_cart'));
 
             if (product.length < 1){
@@ -650,9 +1082,6 @@ var app_cart = new Vue({
             });
         },
         async execMp() {
-            if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
-            }
             if (this.records.length < 1){
                 return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
             }
@@ -840,9 +1269,6 @@ var app_cart = new Vue({
             return izipaySdkLoadPromise;
         },
         async execIzipay() {
-            if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
-            }
             if (this.records.length < 1){
                 return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
             }
@@ -1336,8 +1762,8 @@ var app_cart = new Vue({
         initForm() {
             this.errors = {}
             this.user = window.__ecommerce_config?.user || {};
-            if(!this.user){
-                return false
+            if (!this.user || !this.user.id) {
+                return false;
             }
 
             this.form_document = {

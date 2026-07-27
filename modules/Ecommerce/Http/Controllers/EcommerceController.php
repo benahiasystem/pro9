@@ -899,14 +899,17 @@ class EcommerceController extends Controller
                     }
                 }
 
-                $customer_email = $user->email;
+                $contact = $this->resolveOrderCustomerContact($request, $user);
+
                 $document = new stdClass;
-                $document->client = $user->name;
+                $document->client = $contact['name'];
                 $document->product = $request->producto;
                 $document->total = $request->precio_culqi;
                 $document->items = $request->items;
 
-                $this->paymentCashEmail($customer_email, $document);
+                if (!empty($contact['email'])) {
+                    $this->paymentCashEmail($contact['email'], $document);
+                }
 
                 //Mail::to($customer_email)->send(new CulqiEmail($document));
                 return [
@@ -1412,5 +1415,51 @@ class EcommerceController extends Controller
         }
         
         return $result;
+    }
+
+    /**
+     * Obtiene email y nombre del cliente desde el usuario autenticado o el payload del request (invitado).
+     */
+    private function resolveOrderCustomerContact(Request $request, $user = null): array
+    {
+        $customer = $request->customer;
+        if (is_string($customer)) {
+            $customer = json_decode($customer, true) ?? [];
+        } elseif (is_object($customer)) {
+            $customer = (array) $customer;
+        } elseif (!is_array($customer)) {
+            $customer = [];
+        }
+
+        $purchase = $request->purchase;
+        if (is_string($purchase)) {
+            $purchase = json_decode($purchase, true) ?? [];
+        } elseif (is_object($purchase)) {
+            $purchase = (array) $purchase;
+        } elseif (!is_array($purchase)) {
+            $purchase = [];
+        }
+
+        $purchaseCustomer = $purchase['datos_del_cliente_o_receptor'] ?? [];
+        if (is_object($purchaseCustomer)) {
+            $purchaseCustomer = (array) $purchaseCustomer;
+        } elseif (!is_array($purchaseCustomer)) {
+            $purchaseCustomer = [];
+        }
+
+        $email = $user?->email
+            ?? ($customer['correo_electronico'] ?? null)
+            ?? ($customer['email'] ?? null)
+            ?? ($purchaseCustomer['correo_electronico'] ?? null);
+
+        $name = $user?->name
+            ?? ($customer['apellidos_y_nombres_o_razon_social'] ?? null)
+            ?? ($purchaseCustomer['apellidos_y_nombres_o_razon_social'] ?? null)
+            ?? 'Cliente';
+
+        return [
+            'email' => $email,
+            'name' => $name,
+        ];
     }
 }
