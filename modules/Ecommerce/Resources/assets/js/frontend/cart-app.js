@@ -122,8 +122,11 @@ var app_cart = new Vue({
 
         // Guest checkout — fase 1
         guestCheckoutAccepted: false,
-        showGuestForm: false,
-        guestWarningChecked: false,
+        showGuestForm: true,
+        guestDocumentLookupLoading: false,
+        guestDocumentStatus: null,
+        guestExistingCustomer: false,
+        guestDocumentVerifyTimeout: null,
         guest_form: {
             email: '',
             telephone: '',
@@ -215,6 +218,32 @@ var app_cart = new Vue({
             }
             return raw;
         },
+        showCheckoutSections() {
+            return this.isLoggedIn || this.guestCheckoutAccepted;
+        },
+        guestInvoiceTypeLabel() {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType === '1') return 'Boleta de venta';
+            if (docType === '6') return 'Factura de venta';
+            return 'Nota de venta';
+        },
+        guestInvoiceNotice() {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return null;
+            }
+
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType === '1') {
+                return 'Al ingresar tu DNI se generará automáticamente una Boleta de venta.';
+            }
+            if (docType === '6') {
+                return 'Al ingresar tu RUC se generará automáticamente una Factura de venta.';
+            }
+            if (this.enable_electronic_documents) {
+                return 'Sin DNI ni RUC se emitirá una Nota de venta.';
+            }
+            return null;
+        },
     },
     watch: {
         'form_contact.telephone'(value) {
@@ -239,6 +268,24 @@ var app_cart = new Vue({
                 this.syncGuestFormToDocument();
                 this.saveGuestFormDraft();
             },
+        },
+        'guest_form.identity_document_type_id'() {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.guestDocumentStatus = null;
+            this.guestExistingCustomer = false;
+            this.applyGuestDocumentDefaults();
+            this.scheduleGuestDocumentVerify();
+        },
+        'guest_form.number'(value) {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.applyGuestDocumentDefaults();
+            this.scheduleGuestDocumentVerify(value);
         },
         'addressModal.address': function(newValue) {
         },
@@ -314,6 +361,10 @@ var app_cart = new Vue({
             })
         }
         this.initForm();
+        if (!this.isLoggedIn) {
+            this.initGuestFormStructure();
+            this.loadGuestFormDraft();
+        }
         this.restoreGuestCheckoutState();
     },
     methods: {
@@ -331,6 +382,9 @@ var app_cart = new Vue({
             this.showGuestForm = true;
             this.initGuestFormStructure();
             this.loadGuestFormDraft();
+            if (this.guest_form.number) {
+                this.scheduleGuestDocumentVerify(this.guest_form.number);
+            }
         },
         initGuestFormStructure() {
             this.form_document = {
@@ -364,6 +418,7 @@ var app_cart = new Vue({
             this.numberDocument = '0';
             this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '6']);
             this.optionDocument();
+            this.applyGuestDocumentDefaults();
         },
         normalizeGuestContactFields() {
             const contactPhone = (this.form_contact.telephone || '').trim();
@@ -412,6 +467,194 @@ var app_cart = new Vue({
 
             if (this.form_contact.telephone !== doc.telefono) {
                 this.form_contact.telephone = doc.telefono;
+            }
+
+            this.applyGuestDocumentDefaults();
+        },
+        applyGuestDocumentDefaults() {
+            if (!this.showGuestForm || this.isLoggedIn || !this.form_document) {
+                return;
+            }
+
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const number = (this.guest_form.number || '').replace(/\D/g, '');
+
+            if (!this.enable_electronic_documents) {
+                this.form_document.codigo_tipo_documento = '80';
+                this.typeDocuments = docType === '0' ? '0' : docType;
+                this.numberDocument = number || '0';
+                if (this.form_document.datos_del_cliente_o_receptor) {
+                    this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments;
+                    this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument;
+                }
+                return;
+            }
+
+            if (docType === '1') {
+                this.form_document.codigo_tipo_documento = '03';
+                this.typeDocuments = '1';
+            } else if (docType === '6') {
+                this.form_document.codigo_tipo_documento = '01';
+                this.typeDocuments = '6';
+            } else {
+                this.form_document.codigo_tipo_documento = '80';
+                this.typeDocuments = '0';
+            }
+
+            this.numberDocument = number || '0';
+            if (this.form_document.datos_del_cliente_o_receptor) {
+                this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments;
+                this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument;
+                this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments;
+            }
+        },
+        scheduleGuestDocumentVerify(value) {
+            clearTimeout(this.guestDocumentVerifyTimeout);
+
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType === '0') {
+                this.guestDocumentStatus = null;
+                this.guestExistingCustomer = false;
+                return;
+            }
+
+            const number = String(value !== undefined ? value : this.guest_form.number || '').replace(/\D/g, '');
+            const expectedLength = docType === '6' ? 11 : 8;
+
+            if (number.length !== expectedLength) {
+                this.guestDocumentStatus = null;
+                this.guestExistingCustomer = false;
+                return;
+            }
+
+            this.guestDocumentVerifyTimeout = setTimeout(() => {
+                this.verifyGuestDocument(number);
+            }, 400);
+        },
+        async verifyGuestDocument(number) {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType === '0') {
+                return;
+            }
+
+            const cleanNumber = String(number || this.guest_form.number || '').replace(/\D/g, '');
+            const expectedLength = docType === '6' ? 11 : 8;
+
+            if (cleanNumber.length !== expectedLength) {
+                return;
+            }
+
+            this.guestDocumentLookupLoading = true;
+            this.guestDocumentStatus = { type: 'loading', message: 'Consultando documento...' };
+
+            try {
+                const searchUrl = window.__routes?.search_document || '/ecommerce/search-document';
+                const response = await axios.get(`${searchUrl}/${cleanNumber}`, {
+                    params: { checkout: 1 },
+                });
+                const data = response.data || {};
+
+                if (data.success) {
+                    if (data.name) {
+                        this.guest_form.name = data.name;
+                    }
+                    if (data.email) {
+                        this.guest_form.email = data.email;
+                    }
+                    if (data.telephone) {
+                        this.guest_form.telephone = data.telephone;
+                        this.form_contact.telephone = data.telephone;
+                    }
+                    if (data.identity_document_type_id) {
+                        this.guest_form.identity_document_type_id = String(data.identity_document_type_id);
+                    }
+
+                    this.guestExistingCustomer = !!data.from_database;
+                    this.applyGuestAddressFromLookup(data);
+
+                    if (data.from_database) {
+                        this.guestDocumentStatus = {
+                            type: 'info',
+                            message: data.message || 'Datos recuperados de tu registro anterior.',
+                        };
+                    } else if (data.name) {
+                        this.guestDocumentStatus = {
+                            type: 'success',
+                            message: '✓ ' + data.name,
+                        };
+                    } else {
+                        this.guestDocumentStatus = null;
+                    }
+                } else {
+                    this.guestExistingCustomer = false;
+                    this.guestDocumentStatus = {
+                        type: 'warning',
+                        message: data.message || 'No se encontraron datos. Completa manualmente.',
+                    };
+                }
+            } catch (error) {
+                this.guestExistingCustomer = false;
+                this.guestDocumentStatus = {
+                    type: 'warning',
+                    message: 'No se pudo consultar el documento. Completa tus datos manualmente.',
+                };
+            } finally {
+                this.guestDocumentLookupLoading = false;
+                this.applyGuestDocumentDefaults();
+                this.syncGuestFormToDocument();
+            }
+        },
+        applyGuestAddressFromLookup(data) {
+            if (!data || !data.address) {
+                return;
+            }
+
+            if (!this.form_contact.address) {
+                this.form_contact.address = data.address;
+                this.addressModal.address = data.address;
+            }
+
+            if (!data.department_id) {
+                return;
+            }
+
+            const applyUbigeo = () => {
+                const dept = this.departments.find(d => d.value === data.department_id);
+                if (!dept) {
+                    return;
+                }
+
+                this.selectedDepartment = dept.value;
+                this.provinces = dept.children || [];
+                this.selectedProvince = '';
+                this.districts = [];
+                this.selectedDistrict = '';
+
+                if (!data.province_id) {
+                    return;
+                }
+
+                const prov = this.provinces.find(p => p.value === data.province_id);
+                if (!prov) {
+                    return;
+                }
+
+                this.selectedProvince = prov.value;
+                this.districts = prov.children || [];
+
+                if (data.district_id) {
+                    const dist = this.districts.find(d => d.value === data.district_id);
+                    if (dist) {
+                        this.selectedDistrict = dist.value;
+                        this.checkDeliveryZone();
+                    }
+                }
+            };
+
+            if (this.departments.length > 0) {
+                applyUbigeo();
+            } else {
+                this.fetchLocations().then(applyUbigeo);
             }
         },
         saveGuestFormDraft() {
@@ -506,8 +749,11 @@ var app_cart = new Vue({
             return { valid: true, message: '' };
         },
         scrollToGuestForm() {
+            this.scrollToContactSection();
+        },
+        scrollToContactSection() {
             this.$nextTick(() => {
-                const el = document.getElementById('guestContactCollapse');
+                const el = document.getElementById('contactDataCollapse');
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
@@ -575,8 +821,9 @@ var app_cart = new Vue({
                 return this.executePayment();
             }
 
-            if (!this.guestCheckoutAccepted || !this.showGuestForm) {
-                return this.openGuestIdentityModal();
+            if (!this.guestCheckoutAccepted) {
+                this.scrollToContactSection();
+                return this.startGuestCheckout();
             }
 
             const validation = this.validateGuestFormForPayment();
@@ -594,52 +841,61 @@ var app_cart = new Vue({
                 );
             }
         },
-        openGuestIdentityModal() {
-            this.guestWarningChecked = false;
-            $('#guestIdentityModal').modal('show');
-        },
-        closeGuestIdentityModal() {
-            $('#guestIdentityModal').modal('hide');
-        },
-        chooseGuestCheckout() {
-            this.closeGuestIdentityModal();
-            this.$nextTick(() => {
-                $('#guestWarningModal').modal('show');
-            });
-        },
-        closeGuestWarningModal() {
-            this.guestWarningChecked = false;
-            $('#guestWarningModal').modal('hide');
-        },
-        backToGuestIdentityModal() {
-            this.closeGuestWarningModal();
-            this.$nextTick(() => {
-                this.openGuestIdentityModal();
-            });
-        },
-        confirmGuestCheckout() {
-            if (!this.guestWarningChecked) {
-                return;
+        startGuestCheckout() {
+            if (this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de continuar.', 'warning');
+            }
+
+            if (this.guestCheckoutAccepted) {
+                return this.scrollToDeliverySection();
+            }
+
+            const errors = this.getGuestFormValidationErrors();
+            if (errors.length > 0) {
+                this.scrollToContactSection();
+                return this.showSwalMessage('Datos incompletos', 'Completa: ' + errors.join(', ') + '.', 'warning');
             }
 
             sessionStorage.setItem('guest_checkout_accepted', 'true');
             this.guestCheckoutAccepted = true;
             this.showGuestForm = true;
+            this.guestDocumentStatus = null;
+            this.guestExistingCustomer = false;
             this.initGuestFormStructure();
 
             if (this.form_contact.telephone) {
                 this.guest_form.telephone = this.form_contact.telephone;
+            } else if (this.guest_form.telephone) {
+                this.form_contact.telephone = this.guest_form.telephone;
             }
 
             this.ensureGuestFormDocument();
-            this.closeGuestWarningModal();
-            this.scrollToGuestForm();
+            this.saveGuestFormDraft();
+            this.$nextTick(() => {
+                this.scrollToDeliverySection();
+            });
+        },
+        scrollToDeliverySection() {
+            this.$nextTick(() => {
+                const el = document.getElementById('deliveryCollapse');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
         },
         openLoginRegisterModal() {
-            this.closeGuestIdentityModal();
             this.$nextTick(() => {
                 if (typeof window.jQuery !== 'undefined') {
                     $('#login_register_modal').modal('show');
+                }
+            });
+        },
+        openRegisterModal() {
+            this.openLoginRegisterModal();
+            this.$nextTick(() => {
+                const container = document.getElementById('contenedor-form');
+                if (container) {
+                    container.classList.add('active');
                 }
             });
         },
@@ -1571,6 +1827,11 @@ var app_cart = new Vue({
             this.form_contact.address = fullAddress
             this.closeAddressModal()
             this.checkDeliveryZone()
+
+            if (this.showGuestForm && !this.isLoggedIn) {
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+            }
         },
         initMap() {
             const defaultLocation = { lat: -12.046374, lng: -77.042793 };
@@ -1933,8 +2194,11 @@ var app_cart = new Vue({
 
             this.form_document.codigo_tipo_documento = null
             this.optionDocument()
-            // Re-aplicar defaults tras cada cálculo para mantener el tipo forzado
-            this.applyDocumentDefaults()
+            if (this.isGuestCheckoutActive) {
+                this.applyGuestDocumentDefaults();
+            } else {
+                this.applyDocumentDefaults();
+            }
 
             this.payment_cash.amount = this.summary.total;
         },

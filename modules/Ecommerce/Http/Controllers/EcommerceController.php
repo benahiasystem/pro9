@@ -1107,8 +1107,11 @@ class EcommerceController extends Controller
     /**
      * Consulta pública de RUC/DNI para autocompletar el nombre / razón social
      * en el formulario de registro del ecommerce (invitados, sin auth).
+     *
+     * Con ?checkout=1 devuelve datos del cliente existente para autocompletar
+     * el checkout invitado sin crear registros duplicados.
      */
-    public function searchDocumentPublic($number)
+    public function searchDocumentPublic(Request $request, $number)
     {
         $number = preg_replace('/\D/', '', (string) $number);
 
@@ -1123,9 +1126,18 @@ class EcommerceController extends Controller
             ];
         }
 
-        $exists = Person::where('number', $number)->exists();
+        $isCheckout = $request->boolean('checkout')
+            || $request->get('context') === 'checkout';
 
-        if ($exists) {
+        $person = Person::where('number', $number)
+            ->where('type', 'customers')
+            ->first();
+
+        if ($person) {
+            if ($isCheckout) {
+                return $this->buildCheckoutCustomerLookupResponse($person, $type);
+            }
+
             return [
                 'success' => false,
                 'exists' => true,
@@ -1149,10 +1161,43 @@ class EcommerceController extends Controller
             ];
         }
 
-        return [
+        $response = [
             'success' => true,
             'type' => $type,
             'name' => $result['data']['name'] ?? '',
+        ];
+
+        if ($isCheckout && $type === 'ruc' && !empty($result['data']['address'])) {
+            $response['address'] = $result['data']['address'];
+            $response['department_id'] = $result['data']['location_id'][0] ?? null;
+            $response['province_id'] = $result['data']['location_id'][1] ?? null;
+            $response['district_id'] = $result['data']['location_id'][2] ?? null;
+        }
+
+        return $response;
+    }
+
+    /**
+     * Respuesta de autocompletado para checkout invitado con cliente ya registrado.
+     */
+    protected function buildCheckoutCustomerLookupResponse(Person $person, string $type): array
+    {
+        $firstAddress = $person->addresses()->first();
+
+        return [
+            'success' => true,
+            'exists' => true,
+            'from_database' => true,
+            'type' => $type,
+            'name' => $person->name,
+            'email' => $person->email,
+            'telephone' => $person->telephone,
+            'identity_document_type_id' => (string) ($person->identity_document_type_id ?? (strlen($person->number) === 11 ? 6 : 1)),
+            'address' => $firstAddress->address ?? $person->address,
+            'department_id' => $firstAddress->department_id ?? $person->department_id,
+            'province_id' => $firstAddress->province_id ?? $person->province_id,
+            'district_id' => $firstAddress->district_id ?? $person->district_id,
+            'message' => 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.',
         ];
     }
 
