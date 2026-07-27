@@ -266,6 +266,10 @@
     import moment from "moment";
     import ListRestrictItems from '@components/secondary/ListRestrictItems.vue'
     import {fnRestrictSaleItemsCpe} from '@mixins/functions'
+    import {
+        hydrateItemLots,
+        validateItemsLots,
+    } from '../../../../helpers/lotValidation'
 
     export default {
         components: {DocumentOptions, ListRestrictItems},
@@ -323,6 +327,48 @@
            // console.log(moment().format('YYYY-MM-DD'))
         },
         methods: {
+            /**
+             * Regenera IdLoteSelected en cada ítem (fila + item),
+             * igual que invoice_generate.ensureItemsLotsForSubmit().
+             */
+            ensureItemsLotsForSubmit() {
+                if (!Array.isArray(this.document.items)) return;
+
+                this.document.items.forEach((row, index) => {
+                    if (!row) return;
+
+                    hydrateItemLots(row);
+
+                    const resolved = row.IdLoteSelected;
+                    if (resolved === null || resolved === undefined || resolved === '') {
+                        return;
+                    }
+
+                    const normalized = Array.isArray(resolved)
+                        ? resolved.map(lot => ({
+                            id: lot.id,
+                            code: lot.code,
+                            compromise_quantity: Number(lot.compromise_quantity) || 0,
+                            date_of_due: lot.date_of_due || null,
+                        }))
+                        : resolved;
+
+                    this.$set(row, 'IdLoteSelected', normalized);
+                    if (row.item) {
+                        this.$set(row.item, 'IdLoteSelected', normalized);
+                    }
+                    this.$set(this.document.items, index, row);
+                });
+            },
+            firstLotValidationError(errors) {
+                if (!errors || typeof errors !== 'object') return null;
+                const keys = Object.keys(errors);
+                const preferred = keys.find(key => key.includes('IdLoteSelected'));
+                const key = preferred || keys[0];
+                if (!key) return null;
+                const messages = errors[key];
+                return Array.isArray(messages) ? messages[0] : String(messages);
+            },
             changeDatePaymentCondition(index)
             {
                 const max_date = _.maxBy(this.document.fee, 'date')
@@ -539,6 +585,14 @@
 
                 if(this.document.items.length === 0) return this.$message.error('No tiene productos agregados.')
 
+                // Regenerar IdLoteSelected antes de validar/enviar (mismo flujo que invoice_generate)
+                this.ensureItemsLotsForSubmit();
+
+                const lotsValidation = validateItemsLots(this.document.items);
+                if (!lotsValidation.valid) {
+                    return this.$message.error(lotsValidation.message);
+                }
+
                 if(this.generate_dispatch){
                     if(!this.dispatch_id){
                         return this.$message.error('Debe seleccionar una guía base')
@@ -561,6 +615,9 @@
                 this.loading_submit = true;
 
                 this.document.exchange_rate_sale = 1;
+
+                // Reasegurar lotes justo antes del POST (por si mutaron en validaciones previas)
+                this.ensureItemsLotsForSubmit();
 
                 await this.$http.post(`/${this.resource_documents}`, this.document).then( async (response) => {
                         if (response.data.success) {
@@ -586,11 +643,15 @@
                             this.$message.error(response.data.message);
                         }
                     }).catch(error => {
-                        if (error.response.status === 422) {
+                        if (error.response && error.response.status === 422) {
                             this.errors = error.response.data;
+                            const lotError = this.firstLotValidationError(error.response.data);
+                            if (lotError) {
+                                this.$message.error(lotError);
+                            }
                         }
                         else {
-                            this.$message.error(error.response.data.message);
+                            this.$message.error((error.response && error.response.data && error.response.data.message) || 'Ocurrió un error al generar el comprobante');
                         }
                     }).then(() => {
                         this.loading_submit = false;
@@ -689,6 +750,11 @@
                 this.document.payment_condition_id =q.payment_condition_id;
                 if(this.document.payment_condition_id === undefined || this.document.payments.length > 0) {
                     this.document.payment_condition_id = "01";
+                }
+
+                // Precargar/regenerar lotes desde la NV (item.IdLoteSelected o lots_group)
+                if (Array.isArray(this.document.items)) {
+                    this.document.items.forEach(row => hydrateItemLots(row));
                 }
 
                 this.assignPlateNumberToItems(q)
