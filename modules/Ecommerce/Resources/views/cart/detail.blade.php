@@ -237,25 +237,78 @@
         transform: translateY(-10px);
     }
 
-    .contact-guest-actions {
+    .contact-access-block {
+        margin: 0;
+    }
+
+    .contact-access-notice {
         display: flex;
-        flex-direction: column;
+        align-items: flex-start;
         gap: .75rem;
-        margin-top: 1.25rem;
-        padding-top: 1.25rem;
-        border-top: 1px solid #eef1f4;
+        padding: 1rem 1.15rem;
+        border-radius: 12px;
+        background: hsl(var(--primary-h, 29), var(--primary-s, 85%), 96%);
+        border: 1px solid hsl(var(--primary-h, 29), var(--primary-s, 70%), 88%);
     }
 
-    .contact-guest-actions__alt {
+    .contact-access-notice__icon {
+        flex-shrink: 0;
         display: flex;
-        flex-wrap: wrap;
-        gap: .5rem;
+        align-items: center;
         justify-content: center;
+        width: 22px;
+        height: 22px;
+        margin-top: 1px;
+        color: var(--primary-color, #e67e22);
+        opacity: .85;
     }
 
-    .contact-guest-actions__alt .pay-btn--ghost {
-        flex: 1;
-        min-width: 140px;
+    .contact-access-notice__text {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.65;
+        color: #4b5563;
+    }
+
+    .contact-access-link {
+        display: inline;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background: none;
+        font: inherit;
+        font-weight: 600;
+        color: var(--title-color, #1f2937);
+        text-decoration: none;
+        cursor: pointer;
+        transition: color .18s ease;
+    }
+
+    .contact-access-link:hover,
+    .contact-access-link:focus {
+        color: var(--primary-color, #e67e22);
+        outline: none;
+    }
+
+    .contact-access-link:focus-visible {
+        outline: 2px solid hsl(var(--primary-h, 29), var(--primary-s, 85%), 75%);
+        outline-offset: 2px;
+        border-radius: 2px;
+    }
+
+    .contact-guest-form {
+        animation: contactFormIn .3s ease;
+    }
+
+    @keyframes contactFormIn {
+        from {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 @endpush
@@ -399,14 +452,36 @@
                     </span>
                     <span class="ml-2 font-weight-bold title-card">Datos de contacto</span>
                     <span class="head-summary">
-                        <b v-if="guest_form.email">@{{ guest_form.email }}</b>
-                        <span v-else class="head-summary-warn">Completa tus datos</span>
+                        <b v-if="guestCheckoutAccepted && guest_form.email">@{{ guest_form.email }}</b>
+                        <span v-else-if="guestCheckoutAccepted" class="head-summary-warn">Completa tus datos</span>
+                        <span v-else class="head-summary-warn">Elige cómo continuar</span>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="collapse-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
                 </div>
             </button>
             <div id="contactDataBody" class="collapse show">
                 <div class="card-body card-body-h-auto card-cart-body">
+                    {{-- Paso 1: aviso con enlaces de acceso en línea --}}
+                    <div class="contact-access-block" v-if="!guestCheckoutAccepted">
+                        <div class="contact-access-notice" role="status">
+                            <span class="contact-access-notice__icon" aria-hidden="true">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="5" y="11" width="14" height="10" rx="2"/>
+                                    <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                                </svg>
+                            </span>
+                            <p class="contact-access-notice__text">
+                                Puedes
+                                <button type="button" class="contact-access-link" @click="startGuestCheckout">comprar como invitado</button>
+                                o
+                                <button type="button" class="contact-access-link" @click="openLoginRegisterModal">iniciar sesión</button>
+                                para guardar tus datos.
+                            </p>
+                        </div>
+                    </div>
+
+                    {{-- Paso 2: formulario de contacto (solo tras elegir invitado) --}}
+                    <div class="contact-guest-form" v-if="guestCheckoutAccepted">
                     <p class="hint mb-3">Estos datos se usarán solo para esta compra. No se creará una cuenta ni se solicitará contraseña.</p>
                     <div class="guest-form-grid">
                         <div class="field-full">
@@ -511,19 +586,7 @@
                         </div>
                     </div>
 
-                    <div class="contact-guest-actions" v-if="!guestCheckoutAccepted">
-                        <button type="button" class="pay-btn" @click="startGuestCheckout">
-                            Comprar como invitado
-                        </button>
-                        <div class="contact-guest-actions__alt">
-                            <button type="button" class="pay-btn pay-btn--ghost" @click="openLoginRegisterModal">
-                                Iniciar sesión
-                            </button>
-                            <button type="button" class="pay-btn pay-btn--ghost" @click="openRegisterModal">
-                                Registrarse
-                            </button>
-                        </div>
-                    </div>
+                    </div>{{-- /.contact-guest-form --}}
                 </div>
             </div>
         </div>
@@ -1037,12 +1100,12 @@
                         v-if="!isLoggedIn && !guestCheckoutAccepted"
                         type="button"
                         class="pay-btn"
-                        :class="{ disabled: !acceptedTerms || records.length === 0 }"
-                        :disabled="!acceptedTerms || records.length === 0"
-                        @click="startGuestCheckout"
+                        :class="{ disabled: records.length === 0 }"
+                        :disabled="records.length === 0"
+                        @click="scrollToContactSection"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                        Comprar como invitado
+                        Elegir forma de acceso
                     </button>
                     <button
                         v-else-if="!isLoggedIn && guestCheckoutAccepted && !isGuestCheckoutComplete"

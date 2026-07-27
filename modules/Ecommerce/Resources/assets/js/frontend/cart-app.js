@@ -122,7 +122,7 @@ var app_cart = new Vue({
 
         // Guest checkout — fase 1
         guestCheckoutAccepted: false,
-        showGuestForm: true,
+        showGuestForm: false,
         guestDocumentLookupLoading: false,
         guestDocumentStatus: null,
         guestExistingCustomer: false,
@@ -361,10 +361,6 @@ var app_cart = new Vue({
             })
         }
         this.initForm();
-        if (!this.isLoggedIn) {
-            this.initGuestFormStructure();
-            this.loadGuestFormDraft();
-        }
         this.restoreGuestCheckoutState();
     },
     methods: {
@@ -847,13 +843,13 @@ var app_cart = new Vue({
             }
 
             if (this.guestCheckoutAccepted) {
-                return this.scrollToDeliverySection();
-            }
+                const errors = this.getGuestFormValidationErrors();
+                if (errors.length > 0) {
+                    this.scrollToContactSection();
+                    return this.showSwalMessage('Datos incompletos', 'Completa: ' + errors.join(', ') + '.', 'warning');
+                }
 
-            const errors = this.getGuestFormValidationErrors();
-            if (errors.length > 0) {
-                this.scrollToContactSection();
-                return this.showSwalMessage('Datos incompletos', 'Completa: ' + errors.join(', ') + '.', 'warning');
+                return this.scrollToDeliverySection();
             }
 
             sessionStorage.setItem('guest_checkout_accepted', 'true');
@@ -862,17 +858,16 @@ var app_cart = new Vue({
             this.guestDocumentStatus = null;
             this.guestExistingCustomer = false;
             this.initGuestFormStructure();
+            this.loadGuestFormDraft();
 
             if (this.form_contact.telephone) {
                 this.guest_form.telephone = this.form_contact.telephone;
-            } else if (this.guest_form.telephone) {
-                this.form_contact.telephone = this.guest_form.telephone;
             }
 
             this.ensureGuestFormDocument();
             this.saveGuestFormDraft();
             this.$nextTick(() => {
-                this.scrollToDeliverySection();
+                this.scrollToContactSection();
             });
         },
         scrollToDeliverySection() {
