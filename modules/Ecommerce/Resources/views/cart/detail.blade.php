@@ -129,67 +129,7 @@
         }
     }
 
-    /* Guest checkout modals */
-    .guest-modal .modal-content {
-        border: 0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .guest-modal .modal-header {
-        border-bottom: 1px solid #eef1f4;
-        padding: 1.25rem 1.5rem 1rem;
-    }
-
-    .guest-modal .modal-title {
-        font-weight: 700;
-        color: #1f2937;
-    }
-
-    .guest-modal .modal-body {
-        padding: 0 1.5rem 1.25rem;
-        color: #4b5563;
-        line-height: 1.55;
-    }
-
-    .guest-modal .modal-footer {
-        border-top: 1px solid #eef1f4;
-        padding: 1rem 1.5rem 1.25rem;
-        gap: .5rem;
-    }
-
-    .guest-modal__intro {
-        margin-bottom: 1rem;
-    }
-
-    .guest-modal__actions {
-        display: flex;
-        flex-direction: column;
-        gap: .75rem;
-    }
-
-    .guest-modal__warning-list {
-        margin: 0 0 1rem;
-        padding-left: 1.15rem;
-    }
-
-    .guest-modal__warning-list li {
-        margin-bottom: .45rem;
-    }
-
-    .guest-modal__check {
-        display: flex;
-        align-items: flex-start;
-        gap: .65rem;
-        margin: 0;
-        cursor: pointer;
-        user-select: none;
-    }
-
-    .guest-modal__check input {
-        margin-top: .2rem;
-    }
-
+    /* Guest checkout modals — removidos; se conservan estilos de formulario invitado */
     .guest-form-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -233,6 +173,90 @@
         margin: 0 0 8px;
         line-height: 1.4;
     }
+
+    .contact-options {
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
+    }
+
+    .contact-options__intro {
+        font-size: 14px;
+        color: #4b5563;
+        margin: 0 0 .25rem;
+        line-height: 1.5;
+    }
+
+    .document-notice {
+        display: flex;
+        align-items: flex-start;
+        gap: .65rem;
+        padding: .85rem 1rem;
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.45;
+        margin-top: 1rem;
+    }
+
+    .document-notice--info {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e40af;
+    }
+
+    .document-notice--success {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+    }
+
+    .document-notice--warning {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        color: #92400e;
+    }
+
+    .document-notice--loading {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        color: #4b5563;
+    }
+
+    .document-notice strong {
+        display: block;
+        margin-bottom: .15rem;
+    }
+
+    .checkout-section-enter-active {
+        transition: opacity 0.35s ease, transform 0.35s ease;
+        overflow: hidden;
+    }
+
+    .checkout-section-enter {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    .contact-guest-actions {
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
+        margin-top: 1.25rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #eef1f4;
+    }
+
+    .contact-guest-actions__alt {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        justify-content: center;
+    }
+
+    .contact-guest-actions__alt .pay-btn--ghost {
+        flex: 1;
+        min-width: 140px;
+    }
 </style>
 @endpush
 
@@ -252,7 +276,8 @@
     $globalDiscountTypeId = $global_discount_type_id ?? null;
 @endphp
 <h2 class="my-4 mt-4" style="font-weight: 900;">Finalizar compra</h2>
-<div class="row" id="app">
+<div id="app">
+<div class="row checkout-layout">
     <div class="col-md-8 mb-3">
         <div class="card card-cart">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#cartCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
@@ -358,7 +383,153 @@
             </div>
         </div>
 
-        <div class="card card-cart" v-if="records.length > 0">
+        {{-- Datos de contacto: opciones iniciales o formulario de invitado --}}
+        <div
+            class="card card-cart contact-data-card"
+            v-if="records.length > 0 && !isLoggedIn"
+            id="contactDataCollapse"
+        >
+            <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#contactDataBody" aria-expanded="true" style="text-decoration: none; display: block;">
+                <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
+                    <span class="icon-card">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                        </svg>
+                    </span>
+                    <span class="ml-2 font-weight-bold title-card">Datos de contacto</span>
+                    <span class="head-summary">
+                        <b v-if="guest_form.email">@{{ guest_form.email }}</b>
+                        <span v-else class="head-summary-warn">Completa tus datos</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="collapse-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+                </div>
+            </button>
+            <div id="contactDataBody" class="collapse show">
+                <div class="card-body card-body-h-auto card-cart-body">
+                    <p class="hint mb-3">Estos datos se usarán solo para esta compra. No se creará una cuenta ni se solicitará contraseña.</p>
+                    <div class="guest-form-grid">
+                        <div class="field-full">
+                            <label class="field-label" for="guest_email">Correo electrónico *</label>
+                            <input
+                                id="guest_email"
+                                type="email"
+                                class="input"
+                                v-model.trim="guest_form.email"
+                                placeholder="tu@correo.com"
+                                autocomplete="email"
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label class="field-label" for="guest_phone">Teléfono *</label>
+                            <input
+                                id="guest_phone"
+                                type="tel"
+                                class="input"
+                                v-model.trim="guest_form.telephone"
+                                placeholder="Ej: 987 654 321"
+                                maxlength="15"
+                                inputmode="numeric"
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label class="field-label" for="guest_doc_type">Tipo de documento *</label>
+                            <select
+                                id="guest_doc_type"
+                                class="input"
+                                v-model="guest_form.identity_document_type_id"
+                            >
+                                <option value="1">DNI</option>
+                                <option value="6">RUC</option>
+                                <option value="0">Sin documento</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label" for="guest_doc_number">Número de documento *</label>
+                            <input
+                                id="guest_doc_number"
+                                type="text"
+                                class="input"
+                                v-model.trim="guest_form.number"
+                                :maxlength="guest_form.identity_document_type_id === '6' ? 11 : (guest_form.identity_document_type_id === '1' ? 8 : 15)"
+                                inputmode="numeric"
+                                required
+                            >
+                        </div>
+                        <div class="field-full">
+                            <label class="field-label" for="guest_name">Nombres / Razón social *</label>
+                            <input
+                                id="guest_name"
+                                type="text"
+                                class="input"
+                                v-model.trim="guest_form.name"
+                                placeholder="Nombre completo o razón social"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="guestInvoiceNotice"
+                        class="document-notice document-notice--info"
+                        role="status"
+                    >
+                        <span aria-hidden="true">&#9432;</span>
+                        <div>
+                            <strong>Comprobante: @{{ guestInvoiceTypeLabel }}</strong>
+                            @{{ guestInvoiceNotice }}
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="guestDocumentStatus"
+                        class="document-notice"
+                        :class="{
+                            'document-notice--loading': guestDocumentStatus.type === 'loading',
+                            'document-notice--success': guestDocumentStatus.type === 'success',
+                            'document-notice--info': guestDocumentStatus.type === 'info',
+                            'document-notice--warning': guestDocumentStatus.type === 'warning',
+                        }"
+                        role="status"
+                    >
+                        <span v-if="guestDocumentStatus.type === 'info'" aria-hidden="true">&#9432;</span>
+                        <span v-else-if="guestDocumentStatus.type === 'success'" aria-hidden="true">&#10003;</span>
+                        <span v-else-if="guestDocumentStatus.type === 'warning'" aria-hidden="true">&#9888;</span>
+                        <div>
+                            <strong v-if="guestExistingCustomer">Cliente registrado</strong>
+                            @{{ guestDocumentStatus.message }}
+                            <button
+                                v-if="guestExistingCustomer"
+                                type="button"
+                                class="btn btn-link p-0 align-baseline ml-1"
+                                @click="openLoginRegisterModal"
+                            >
+                                Iniciar sesión
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="contact-guest-actions" v-if="!guestCheckoutAccepted">
+                        <button type="button" class="pay-btn" @click="startGuestCheckout">
+                            Comprar como invitado
+                        </button>
+                        <div class="contact-guest-actions__alt">
+                            <button type="button" class="pay-btn pay-btn--ghost" @click="openLoginRegisterModal">
+                                Iniciar sesión
+                            </button>
+                            <button type="button" class="pay-btn pay-btn--ghost" @click="openRegisterModal">
+                                Registrarse
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <transition name="checkout-section">
+        <div class="card card-cart" v-if="records.length > 0 && showCheckoutSections" key="delivery-section">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#deliveryCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                 <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                     <span class="icon-card">
@@ -548,101 +719,11 @@
                 </div>
             </div>
         </div>
-
-        {{-- Formulario de datos de invitado (fase 1) --}}
-        <div
-            class="card card-cart guest-contact-card"
-            v-if="records.length > 0 && showGuestForm && !isLoggedIn"
-            id="guestContactCollapse"
-        >
-            <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#guestContactBody" aria-expanded="true" style="text-decoration: none; display: block;">
-                <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
-                    <span class="icon-card">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
-                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-                        </svg>
-                    </span>
-                    <span class="ml-2 font-weight-bold title-card">Datos de contacto (invitado)</span>
-                    <span class="head-summary">
-                        <b v-if="guest_form.email">@{{ guest_form.email }}</b>
-                        <span v-else class="head-summary-warn">Completa tus datos</span>
-                    </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="collapse-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
-                </div>
-            </button>
-            <div id="guestContactBody" class="collapse show">
-                <div class="card-body card-body-h-auto card-cart-body">
-                    <p class="hint mb-3">Estos datos se usarán solo para esta compra. No se creará una cuenta ni se solicitará contraseña.</p>
-                    <div class="guest-form-grid">
-                        <div class="field-full">
-                            <label class="field-label" for="guest_email">Correo electrónico *</label>
-                            <input
-                                id="guest_email"
-                                type="email"
-                                class="input"
-                                v-model.trim="guest_form.email"
-                                placeholder="tu@correo.com"
-                                autocomplete="email"
-                                required
-                            >
-                        </div>
-                        <div>
-                            <label class="field-label" for="guest_phone">Teléfono *</label>
-                            <input
-                                id="guest_phone"
-                                type="tel"
-                                class="input"
-                                v-model.trim="guest_form.telephone"
-                                placeholder="Ej: 987 654 321"
-                                maxlength="15"
-                                inputmode="numeric"
-                                required
-                            >
-                        </div>
-                        <div>
-                            <label class="field-label" for="guest_doc_type">Tipo de documento *</label>
-                            <select
-                                id="guest_doc_type"
-                                class="input"
-                                v-model="guest_form.identity_document_type_id"
-                            >
-                                <option value="1">DNI</option>
-                                <option value="6">RUC</option>
-                                <option value="0">Sin documento</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="field-label" for="guest_doc_number">Número de documento *</label>
-                            <input
-                                id="guest_doc_number"
-                                type="text"
-                                class="input"
-                                v-model.trim="guest_form.number"
-                                :maxlength="guest_form.identity_document_type_id === '6' ? 11 : (guest_form.identity_document_type_id === '1' ? 8 : 15)"
-                                inputmode="numeric"
-                                required
-                            >
-                        </div>
-                        <div class="field-full">
-                            <label class="field-label" for="guest_name">Nombres / Razón social *</label>
-                            <input
-                                id="guest_name"
-                                type="text"
-                                class="input"
-                                v-model.trim="guest_form.name"
-                                placeholder="Nombre completo o razón social"
-                                required
-                            >
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </transition>
 
         @if($enable_electronic_documents)
             {{-- Modo documentos electrónicos: solo lectura, tipo inferido del número del usuario --}}
-            <div class="card card-cart">
+            <div class="card card-cart" v-if="isLoggedIn">
                 <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#documentyCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                     <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                         <span class="icon-card">
@@ -676,7 +757,8 @@
             </div>
         @endif
 
-        <div class="card card-cart" v-if="records.length > 0">
+        <transition name="checkout-section">
+        <div class="card card-cart" v-if="records.length > 0 && showCheckoutSections" key="payment-section">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#paymentCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                 <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                     <span class="icon-card">
@@ -707,8 +789,8 @@
                             <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'paypal'">PayPal</b>
                             <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'mp'">@{{ titleMp }}</b>
                             <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'izipay'">@{{ titleIzipay }}</b>
-                            <span v-else-if="showGuestForm" class="head-summary-warn">Completa envío y contacto</span>
-                            <span v-else class="head-summary-warn">Identifícate para pagar</span>
+                            <span v-else-if="guestCheckoutAccepted" class="head-summary-warn">Completa envío y contacto</span>
+                            <span v-else class="head-summary-warn">Continúa como invitado</span>
                         </template>
                         <template v-else>
                             <b v-if="selectedPaymentMethod === 'culqi'">@{{ titleCulqi }}</b>
@@ -726,13 +808,7 @@
             </button>
             <div id="paymentCollapse" class="collapse show">
                 <div class="card-body card-body-h-auto card-cart-body">
-                    <div class="login-note" v-if="!isLoggedIn && !showGuestForm">
-                        <span class="login-note-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-                        </span>
-                        <p>Puedes <button type="button" class="btn btn-link p-0 align-baseline" @click="handleCheckoutClick">comprar como invitado</button> o <button type="button" class="btn btn-link p-0 align-baseline" @click="openLoginRegisterModal">iniciar sesión</button> para guardar tus datos.</p>
-                    </div>
-                    <div class="login-note" v-else-if="!isLoggedIn && showGuestForm && !isGuestCheckoutComplete">
+                    <div class="login-note" v-if="!isLoggedIn && guestCheckoutAccepted && !isGuestCheckoutComplete">
                         <span class="login-note-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/></svg>
                         </span>
@@ -895,9 +971,10 @@
                 </div>
             </div>
         </div>
+        </transition>
     </div><!-- End .col-lg-8 -->
 
-    <div class="col-md-4">
+    <div class="col-md-4 checkout-summary-col">
       <div class="summary-sticky">
         <div class="cart-summary">
             <div class="sum-head"><h3>Resumen</h3></div>
@@ -953,11 +1030,22 @@
                   <span class="terms-txt">He leído y acepto los <a href="#" data-modal-open="termsModal" @click.prevent>Términos y Condiciones</a>.</span>
                 </label>
                 <div class="checkout-methods">
-                    <p v-if="!isLoggedIn && showGuestForm && isGuestCheckoutComplete" class="checkout-hint">
+                    <p v-if="!isLoggedIn && guestCheckoutAccepted && isGuestCheckoutComplete" class="checkout-hint">
                         Elige un método de pago y confirma desde el botón correspondiente.
                     </p>
                     <button
-                        v-if="!isLoggedIn && !(showGuestForm && isGuestCheckoutComplete)"
+                        v-if="!isLoggedIn && !guestCheckoutAccepted"
+                        type="button"
+                        class="pay-btn"
+                        :class="{ disabled: !acceptedTerms || records.length === 0 }"
+                        :disabled="!acceptedTerms || records.length === 0"
+                        @click="startGuestCheckout"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        Comprar como invitado
+                    </button>
+                    <button
+                        v-else-if="!isLoggedIn && guestCheckoutAccepted && !isGuestCheckoutComplete"
                         type="button"
                         class="pay-btn"
                         :class="{ disabled: !acceptedTerms || records.length === 0 }"
@@ -965,7 +1053,7 @@
                         @click="handleCheckoutClick"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                        @{{ showGuestForm ? 'Completar datos' : 'Comprar como invitado' }}
+                        Completar datos
                     </button>
                     <button
                         v-else-if="isLoggedIn && selectedPaymentMethod !== 'paypal'"
@@ -992,75 +1080,7 @@
       </div><!-- End .summary-sticky -->
     </div><!-- End .col-lg-4 -->
 
-    <!-- Modal M-01: Elección de identidad (Guest Checkout) -->
-    <div class="modal fade guest-modal" id="guestIdentityModal" tabindex="-1" role="dialog" aria-labelledby="guestIdentityModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="guestIdentityModalLabel">¿Cómo deseas continuar?</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" @click="closeGuestIdentityModal">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p class="guest-modal__intro mb-0">
-                        Puedes completar tu compra sin crear una cuenta o acceder con tu usuario registrado.
-                    </p>
-                    <div class="guest-modal__actions mt-4">
-                        <button type="button" class="pay-btn" @click="chooseGuestCheckout">
-                            Comprar como invitado
-                        </button>
-                        <button type="button" class="pay-btn pay-btn--ghost" @click="openLoginRegisterModal">
-                            Iniciar sesión / Registrarse
-                        </button>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-link text-muted" data-dismiss="modal" @click="closeGuestIdentityModal">Cancelar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal M-02: Advertencia de compra invitada -->
-    <div class="modal fade guest-modal" id="guestWarningModal" tabindex="-1" role="dialog" aria-labelledby="guestWarningModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="guestWarningModalLabel">Compra como invitado</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" @click="closeGuestWarningModal">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">
-                        Si continúas sin iniciar sesión no podrás seguir tu pedido en línea ni ver el historial de compras desde tu cuenta.
-                    </p>
-                    <ul class="guest-modal__warning-list">
-                        <li>No se creará una cuenta ni se solicitará contraseña.</li>
-                        <li>El seguimiento se realizará por correo electrónico.</li>
-                        <li>Tus datos se usarán únicamente para procesar esta compra.</li>
-                    </ul>
-                    <label class="guest-modal__check">
-                        <input type="checkbox" v-model="guestWarningChecked">
-                        <span>Entiendo y deseo continuar como invitado</span>
-                    </label>
-                </div>
-                <div class="modal-footer d-flex justify-content-between">
-                    <button type="button" class="btn btn-link text-muted px-0" @click="backToGuestIdentityModal">Volver</button>
-                    <button
-                        type="button"
-                        class="pay-btn"
-                        :disabled="!guestWarningChecked"
-                        :class="{ disabled: !guestWarningChecked }"
-                        @click="confirmGuestCheckout"
-                    >
-                        Continuar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+</div><!-- End .checkout-layout -->
 
     <!-- Modal de Dirección -->
     <div class="modal fade" id="addressModal" tabindex="-1" role="dialog" aria-labelledby="addressModalLabel" aria-hidden="true">
@@ -1233,7 +1253,7 @@
         </div>
     </div>
 
-</div><!-- End .row -->
+</div><!-- End #app -->
 
 @if(auth('ecommerce')->check() && $information->script_paypal)
 <div id="paypal-widget-container" style="display:none;">
@@ -1290,6 +1310,7 @@
         izipay_transaction: '{{ route("tenant_ecommerce_izipay_transaction") }}',
         mercadopago_payment: '{{ route("tenant_ecommerce_mp") }}',
         thank_you: '{{ route("tenant_ecommerce_thank_you", ["external_id" => "EXTERNAL_ID"]) }}',
+        search_document: '{{ url("ecommerce/search-document") }}',
     };
 </script>
 
