@@ -1,4 +1,6 @@
-
+<script>
+    window.__storefront_show_prices = {!! json_encode($storefront_show_prices ?? true) !!};
+</script>
 <style>
 #header_bar .header-menu {
     max-height: 300px !important;
@@ -220,7 +222,8 @@ div.cart-dropdown {
                             <span class="search_title d-flex align-items-end ml-3" style="font-size: 1.0em;"> @{{ result.description }} </span>
                         </a>
                         <div class="col-5 px-0 d-flex justify-content-between align-items-center">
-                            <span>@{{ result.sale_unit_price }}</span>
+                            <span v-if="showPrices">@{{ result.sale_unit_price }}</span>
+                            <span v-else></span>
                             <div>
                                 <button class="btn-add-cart btn-success" v-if="!getCartQuantity(result.id)" @click.stop.prevent="addToCart(result)">
                                     Agregar al carrito
@@ -445,6 +448,7 @@ div.cart-dropdown {
                     resource: 'ecommerce',
                     results: [],
                     cartQuantities: {},
+                    showPrices: window.__storefront_show_prices !== false && window.__storefront_show_prices !== 0,
                 },
                 created() {
                     this.getItems();

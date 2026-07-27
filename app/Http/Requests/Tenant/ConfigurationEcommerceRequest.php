@@ -81,11 +81,16 @@ class ConfigurationEcommerceRequest extends FormRequest
         $booleanFields = ['quotation_enabled', 'quotation_show_prices'];
 
         foreach ($booleanFields as $field) {
-            if ($this->has($field)) {
-                $this->merge([
-                    $field => filter_var($this->input($field), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
-                        ?? (bool) $this->input($field),
-                ]);
+            if (! $this->exists($field)) {
+                continue;
+            }
+
+            $raw = $this->input($field);
+            // Normaliza 0/1/"0"/"1"/true/false sin ambigüedad de filter_var(int).
+            if ($raw === true || $raw === 1 || $raw === '1' || $raw === 'true' || $raw === 'on' || $raw === 'yes') {
+                $this->merge([$field => true]);
+            } else {
+                $this->merge([$field => false]);
             }
         }
     }

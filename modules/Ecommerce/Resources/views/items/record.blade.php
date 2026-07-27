@@ -127,10 +127,12 @@
 
                 </div>
 
+                @if($storefront_show_prices ?? true)
                 <div class="price-box">
                     <span class="old-price">{{ $record->currency_type['symbol'] }} {{ number_format( ($record->sale_unit_price * 1.2 ) , 2 ) }}</span>
                     <span class="product-price">{{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}</span>
                 </div><!-- End .price-box -->
+                @endif
 
                 <div class="product-desc pb-0">
                     @if ($record->category && $record->category->name)
@@ -204,7 +206,11 @@
                         @php
                             $waPhoneRaw = preg_replace('/\D+/', '', $phoneWhatsapp);
                             $waPhone = (strlen($waPhoneRaw) == 9 && str_starts_with($waPhoneRaw, '9')) ? '51'.$waPhoneRaw : $waPhoneRaw;
-                            $waText = rawurlencode("Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?");
+                            $waText = rawurlencode(
+                                ($storefront_show_prices ?? true)
+                                    ? "Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?"
+                                    : "Buenas, deseo consultar acerca del producto *{$record->description}*. ¿Podrían brindarme más información?"
+                            );
                             $waLink = "https://wa.me/{$waPhone}?text={$waText}";
                         @endphp
                         <a href="{{ $waLink }}" class="btn-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">

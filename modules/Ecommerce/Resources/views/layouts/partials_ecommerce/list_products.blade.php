@@ -54,12 +54,14 @@
                     @endif
                 </div>
                 <div class="product-price-ecommerce mt-auto">
+                    @if($storefront_show_prices ?? true)
                     <div class="price-box-ecommerce">
                         <span class="old-price">S/ {{ number_format(round($item->sale_unit_price * 1.25), 2) }}</span>
 
 
                         <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($item->sale_unit_price, 2) }}</span>
                     </div>
+                    @endif
                     <div class="product-action">
                         @if(stock($item, $configuration))
                     <span class="product-danger">

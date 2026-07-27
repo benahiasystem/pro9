@@ -67,7 +67,7 @@
             </div>
 
             {{-- Total --}}
-            <div class="dropdown-cart-total m-0">
+            <div class="dropdown-cart-total m-0" id="cart-dd-total-row">
                 <span>Total</span>
                 <span class="cart-total-price">S/ 0.00</span>
             </div>
@@ -85,6 +85,10 @@
 @push('scripts')
 <script type="text/javascript">
 
+    function storefrontShowsPrices() {
+        return window.__storefront_show_prices !== false && window.__storefront_show_prices !== 0;
+    }
+
     function remove(id) {
         let array = localStorage.getItem('products_cart');
         array = JSON.parse(array);
@@ -96,6 +100,12 @@
     }
 
     function calculatetotal() {
+        let $totalRow = $("#cart-dd-total-row");
+        if (!storefrontShowsPrices()) {
+            $totalRow.hide();
+            return;
+        }
+        $totalRow.show();
         let array = localStorage.getItem('products_cart');
         array = JSON.parse(array);
         let total = 0;
@@ -114,6 +124,7 @@
         let array = localStorage.getItem('products_cart');
         array = JSON.parse(array);
         let count = array.length;
+        const showPrices = storefrontShowsPrices();
 
         const defaultImagePath = '{{ $defaultImagePath }}';
 
@@ -139,6 +150,9 @@
                 const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
                     ? `/storage/uploads/items/${element.image_small}`
                     : defaultImagePath;
+                const priceHtml = showPrices
+                    ? `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> × S/ ${parseFloat(element.sale_unit_price).toFixed(2)}</span>`
+                    : `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> und.</span>`;
                 $(".dropdown-cart-products").append(`
                     <div class="product cart-product-row">
                         <figure class="product-image-container">
@@ -156,9 +170,7 @@
                             <h4 class="product-title">
                                 <a href="#">${element.description}</a>
                             </h4>
-                            <span class="cart-product-info">
-                                <span class="cart-product-qty">${qty}</span> × S/ ${parseFloat(element.sale_unit_price).toFixed(2)}
-                            </span>
+                            ${priceHtml}
                         </div>
                     </div>
                 `);

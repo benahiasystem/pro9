@@ -423,7 +423,7 @@
                       ></el-switch>
                       <label class="ms-2 mb-0">Mostrar precios en el cotizador</label>
                       <small class="d-block text-muted ms-5" style="padding: 0 !important; line-height: 1.5;">
-                        Si está desactivado, el cliente no verá precios al armar su cotización.
+                        Aplica en «Cotizar y vender» y «Solo cotizar»: oculta montos en la tienda (listado, ficha, búsqueda) y al cotizar. Si está on, se muestran normalmente.
                       </small>
                     </div>
                   </div>
@@ -566,7 +566,7 @@ export default {
           // configuración de cotizaciones
           quotation_enabled: data.quotation_enabled ? 1 : 0,
           quotation_mode: data.quotation_mode || 'quote_and_sell',
-          quotation_show_prices: data.quotation_show_prices !== false && data.quotation_show_prices !== 0 ? 1 : 0,
+          quotation_show_prices: (data.quotation_show_prices === true || data.quotation_show_prices === 1 || data.quotation_show_prices === '1') ? 1 : 0,
           quotation_success_message: data.quotation_success_message || '',
           quotation_validity_days: parseInt(data.quotation_validity_days) || 7,
           quotation_terms: data.quotation_terms || '',
@@ -643,10 +643,12 @@ export default {
       delete payload.only_available_products;
       delete payload.full_width_banner;
 
-      // Normaliza modo de cotización para evitar valores vacíos/desfasados.
+      // Normaliza modo y flag de precios (0/1) para persistencia fiable.
       payload.quotation_mode = this.form.quotation_mode === 'quote_only'
         ? 'quote_only'
         : 'quote_and_sell';
+      payload.quotation_enabled = this.form.quotation_enabled == 1 ? 1 : 0;
+      payload.quotation_show_prices = this.form.quotation_show_prices == 1 ? 1 : 0;
 
       this.$http
         .post(`/${this.resource}/configuration`, payload)
@@ -654,6 +656,9 @@ export default {
           if (response.data.success) {
             if (response.data.quotation_mode) {
               this.form.quotation_mode = response.data.quotation_mode;
+            }
+            if (typeof response.data.quotation_show_prices !== 'undefined') {
+              this.form.quotation_show_prices = response.data.quotation_show_prices ? 1 : 0;
             }
             this.$message.success(response.data.message);
           } else {

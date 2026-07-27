@@ -9,6 +9,81 @@ const IZIPAY_KR_EXT_SRC = 'https://static.micuentaweb.pe/static/js/krypton-clien
 const MP_BRICK_HOST_ID = 'mp-brick-container';
 const MP_LOGO_SRC = '/porto-ecommerce/assets/images/payment-gateways/mercado-pago-official.svg?v=2';
 
+function parseEcommerceConfigBool(value, defaultValue = true) {
+    if (value === undefined || value === null || value === '') {
+        return defaultValue;
+    }
+    if (value === true || value === 1 || value === '1' || value === 'true' || value === 'on' || value === 'yes') {
+        return true;
+    }
+    if (value === false || value === 0 || value === '0' || value === 'false' || value === 'off' || value === 'no') {
+        return false;
+    }
+    return !!value;
+}
+
+/**
+ * Estado inicial del modal de intención (síncrono, sin API).
+ * Usa config inyectada por Blade + localStorage del carrito.
+ */
+function resolveCheckoutIntentBootState() {
+    const fromWindow = window.__checkoutIntentBootState;
+    if (fromWindow && typeof fromWindow === 'object') {
+        return {
+            checkoutIntent: fromWindow.checkoutIntent === 'quote' ? 'quote' : 'purchase',
+            checkoutIntentChosen: !!fromWindow.checkoutIntentChosen,
+            checkoutIntentModalVisible: !!fromWindow.checkoutIntentModalVisible,
+        };
+    }
+
+    const boot = window.__ecommerce_quotation_boot || {};
+    const cfg = window.__ecommerce_config || {};
+    const enabled = typeof boot.enabled === 'boolean'
+        ? boot.enabled
+        : parseEcommerceConfigBool(cfg.quotation_enabled, false);
+    const mode = boot.mode || cfg.quotation_mode || 'quote_and_sell';
+    const quoteOnly = enabled && mode === 'quote_only';
+    const hybrid = enabled && mode === 'quote_and_sell';
+    const userId = boot.user_id || (cfg.user && cfg.user.id) || null;
+
+    let hasItems = false;
+    try {
+        const raw = localStorage.getItem('products_cart');
+        const arr = raw ? JSON.parse(raw) : [];
+        hasItems = Array.isArray(arr) && arr.length > 0;
+    } catch (e) { /* ignore */ }
+
+    let restored = null;
+    try {
+        restored = sessionStorage.getItem('ecommerce_checkout_intent');
+    } catch (e) { /* ignore */ }
+    const restoreQuote = restored === 'quote' && !!userId;
+
+    if (!enabled) {
+        return { checkoutIntent: 'purchase', checkoutIntentChosen: true, checkoutIntentModalVisible: false };
+    }
+    if (quoteOnly) {
+        return { checkoutIntent: 'quote', checkoutIntentChosen: true, checkoutIntentModalVisible: false };
+    }
+    if (restoreQuote) {
+        return { checkoutIntent: 'quote', checkoutIntentChosen: true, checkoutIntentModalVisible: false };
+    }
+    if (hybrid && hasItems) {
+        return { checkoutIntent: 'purchase', checkoutIntentChosen: false, checkoutIntentModalVisible: true };
+    }
+    return { checkoutIntent: 'purchase', checkoutIntentChosen: true, checkoutIntentModalVisible: false };
+}
+
+function dismissCheckoutIntentBootOverlay() {
+    const el = document.getElementById('checkout-intent-boot');
+    if (!el) return;
+    el.classList.remove('is-open');
+    el.style.display = 'none';
+    el.setAttribute('aria-hidden', 'true');
+}
+
+const __checkoutIntentBoot = resolveCheckoutIntentBootState();
+
 var app_cart = new Vue({
     el: '#app',
     data: {
@@ -109,17 +184,18 @@ var app_cart = new Vue({
         // Recojo en tienda
         enableStorePickup: window.__ecommerce_config?.enable_store_pickup || false,
         // Cotizaciones en tienda virtual
-        quotationEnabled: !!window.__ecommerce_config?.quotation_enabled,
+        quotationEnabled: parseEcommerceConfigBool(window.__ecommerce_config?.quotation_enabled, false),
         quotationMode: window.__ecommerce_config?.quotation_mode || 'quote_and_sell',
-        quotationShowPrices: window.__ecommerce_config?.quotation_show_prices !== false
-            && window.__ecommerce_config?.quotation_show_prices !== 0,
+        quotationShowPrices: parseEcommerceConfigBool(window.__ecommerce_config?.quotation_show_prices, true),
         quotationSuccessMessage: window.__ecommerce_config?.quotation_success_message
             || 'Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.',
         quotationValidityDays: Number(window.__ecommerce_config?.quotation_validity_days) || 7,
         quotationTerms: window.__ecommerce_config?.quotation_terms || '',
         // Intención del checkout en modo híbrido: 'purchase' | 'quote'
-        // En "solo cotizar" se fuerza a 'quote' al iniciar.
-        checkoutIntent: 'purchase',
+        // Inicializado en sincronía (Blade + localStorage) para modal instantáneo.
+        checkoutIntent: __checkoutIntentBoot.checkoutIntent,
+        checkoutIntentModalVisible: __checkoutIntentBoot.checkoutIntentModalVisible,
+        checkoutIntentChosen: __checkoutIntentBoot.checkoutIntentChosen,
         pickupBranches: window.__ecommerce_config?.pickup_branches || [],
         selectedPickupBranch: null,
         isPickupMode: false,
@@ -238,18 +314,30 @@ var app_cart = new Vue({
         quoteOnlyMode() {
             return this.quotationEnabled && this.quotationMode === 'quote_only';
         },
-        // Selector visible solo en modo híbrido (cotizar y vender)
-        showCheckoutIntentSelector() {
-            return this.quotationEnabled && !this.quoteOnlyMode && this.records.length > 0;
+        // Modo híbrido: cotizar y vender
+        isHybridQuotationMode() {
+            return this.quotationEnabled && !this.quoteOnlyMode;
         },
         allowPurchase() {
             return !this.isQuotationCheckout;
         },
         // Checkout de cotización (inline en el carrito)
+        // Activo en: Solo cotizar, o Cotizar y vender con intención "quote".
         isQuotationCheckout() {
             if (!this.quotationEnabled) return false;
             if (this.quoteOnlyMode) return true;
             return this.checkoutIntent === 'quote';
+        },
+        /**
+         * Precios visibles en carrito:
+         * - Compra (híbrido + Pagar): siempre sí
+         * - Cotización (híbrido + cotizar, o solo cotizar): según quotation_show_prices
+         */
+        showCartPrices() {
+            if (!this.isQuotationCheckout) {
+                return true;
+            }
+            return !!this.quotationShowPrices;
         },
         displayedQuotationSuccessMessage() {
             return (this.quotationResult && this.quotationResult.success_message)
@@ -350,6 +438,10 @@ var app_cart = new Vue({
         if (this.enableMp) {
             this.preloadMpResources();
         }
+        // Modal ya abierto desde boot síncrono; no esperar nextTick.
+        dismissCheckoutIntentBootOverlay();
+        this.bindCheckoutIntentBootHandler();
+        this.flushPendingCheckoutIntentChoice();
     },
     created() {
         let array = localStorage.getItem('products_cart');
@@ -369,6 +461,13 @@ var app_cart = new Vue({
             })
         }
         this.initForm();
+        // Si el boot pidió modal, mantener overflow bloqueado desde el primer tick de Vue
+        if (this.checkoutIntentModalVisible) {
+            document.body.style.overflow = 'hidden';
+        }
+        dismissCheckoutIntentBootOverlay();
+        this.bindCheckoutIntentBootHandler();
+        this.flushPendingCheckoutIntentChoice();
     },
     methods: {
         extractAndSetUbigeoFromComponents(components) {
@@ -1565,6 +1664,56 @@ var app_cart = new Vue({
         openQuotationModal() {
             this.setCheckoutIntent('quote');
         },
+        maybeOpenCheckoutIntentModal() {
+            if (!this.quotationEnabled) {
+                this.checkoutIntentModalVisible = false;
+                dismissCheckoutIntentBootOverlay();
+                return;
+            }
+            // Solo cotizar: sin modal, flujo forzado a cotización
+            if (this.quoteOnlyMode) {
+                this.checkoutIntent = 'quote';
+                this.checkoutIntentChosen = true;
+                this.checkoutIntentModalVisible = false;
+                this.preloadQuotationContact();
+                dismissCheckoutIntentBootOverlay();
+                return;
+            }
+            // Híbrido: si boot ya abrió el modal, no retrasar; solo asegurar estado
+            if (this.isHybridQuotationMode && this.records.length > 0 && !this.checkoutIntentChosen) {
+                this.checkoutIntentModalVisible = true;
+                document.body.style.overflow = 'hidden';
+            }
+            dismissCheckoutIntentBootOverlay();
+        },
+        bindCheckoutIntentBootHandler() {
+            window.__confirmCheckoutIntentBoot = (intent) => {
+                this.confirmCheckoutIntent(intent);
+            };
+        },
+        flushPendingCheckoutIntentChoice() {
+            const pending = window.__checkoutIntentPendingChoice;
+            if (!pending) return;
+            window.__checkoutIntentPendingChoice = null;
+            this.confirmCheckoutIntent(pending === 'quote' ? 'quote' : 'purchase');
+        },
+        confirmCheckoutIntent(intent) {
+            const target = intent === 'quote' ? 'quote' : 'purchase';
+            this.checkoutIntentChosen = true;
+            this.checkoutIntentModalVisible = false;
+            dismissCheckoutIntentBootOverlay();
+            if (!this.quotationSuccessVisible && !this.paymentSuccessVisible && !this.processingPayment) {
+                document.body.style.overflow = '';
+            }
+            this.setCheckoutIntent(target);
+        },
+        reopenCheckoutIntentModal() {
+            if (!this.isHybridQuotationMode || this.quoteOnlyMode || this.records.length < 1) {
+                return;
+            }
+            this.checkoutIntentModalVisible = true;
+            document.body.style.overflow = 'hidden';
+        },
         setCheckoutIntent(intent) {
             if (!this.quotationEnabled && intent === 'quote') {
                 return this.showSwalMessage('Cotizaciones no disponibles', 'Las cotizaciones no están habilitadas en la tienda.', 'info');
@@ -1585,6 +1734,7 @@ var app_cart = new Vue({
                 }
             }
             this.checkoutIntent = intent === 'quote' ? 'quote' : 'purchase';
+            this.checkoutIntentChosen = true;
             if (intent === 'quote') {
                 this.preloadQuotationContact();
                 this.quotationResult = null;
@@ -1618,7 +1768,7 @@ var app_cart = new Vue({
         closeQuotationModal() {
             if (this.quotationSubmitting) return;
             this.quotationModalVisible = false;
-            if (!this.quotationSuccessVisible && !this.paymentSuccessVisible && !this.processingPayment) {
+            if (!this.quotationSuccessVisible && !this.paymentSuccessVisible && !this.processingPayment && !this.checkoutIntentModalVisible) {
                 document.body.style.overflow = '';
             }
         },
@@ -2724,17 +2874,27 @@ var app_cart = new Vue({
             }
 
             this.preloadQuotationContact();
+            // Respetar estado de boot (modal / solo cotizar / restore post-login)
             if (this.quotationEnabled && this.quotationMode === 'quote_only') {
                 this.checkoutIntent = 'quote';
-            } else if (this.quotationEnabled) {
+                this.checkoutIntentChosen = true;
+                this.checkoutIntentModalVisible = false;
+            } else if (this.quotationEnabled && this.quotationMode === 'quote_and_sell') {
                 let restored = null;
                 try {
                     restored = sessionStorage.getItem('ecommerce_checkout_intent');
-                    sessionStorage.removeItem('ecommerce_checkout_intent');
+                    if (restored === 'quote') {
+                        sessionStorage.removeItem('ecommerce_checkout_intent');
+                    }
                 } catch (e) { /* ignore */ }
-                this.checkoutIntent = (restored === 'quote' && this.user && this.user.id)
-                    ? 'quote'
-                    : 'purchase';
+                if (restored === 'quote' && this.user && this.user.id) {
+                    this.checkoutIntent = 'quote';
+                    this.checkoutIntentChosen = true;
+                    this.checkoutIntentModalVisible = false;
+                } else if (!this.checkoutIntentChosen && this.records.length > 0) {
+                    // Mantener modal visible decidido en boot síncrono
+                    this.checkoutIntentModalVisible = true;
+                }
             }
 
             this.optionDocument()

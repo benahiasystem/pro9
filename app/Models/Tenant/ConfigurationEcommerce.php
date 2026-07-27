@@ -105,4 +105,20 @@ class ConfigurationEcommerce extends ModelTenant
         return $settings['enabled'] && $settings['mode'] === 'quote_only';
     }
 
+    /**
+     * ¿Mostrar precios en la tienda virtual?
+     * Si cotizaciones están desactivadas, siempre sí.
+     * Si están activas (híbrido o solo cotizar), respeta quotation_show_prices.
+     */
+    public static function storefrontShowsPrices(): bool
+    {
+        $settings = self::storefrontQuotationConfig();
+
+        if (! $settings['enabled']) {
+            return true;
+        }
+
+        return (bool) $settings['show_prices'];
+    }
+
 }

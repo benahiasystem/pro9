@@ -517,57 +517,135 @@
         overflow: hidden;
     }
     .checkout-intent-card .card-cart-body {
-        padding: 18px 20px 20px;
+        padding: 14px 18px;
     }
-    .checkout-intent-label {
+    .checkout-intent-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .checkout-intent-summary--in-summary {
+        margin: 12px 24px 0;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+    }
+    /* Mismo aire entre título ↔ aviso y aviso ↔ totales */
+    .cart-summary .sum-head:has(+ .checkout-intent-summary--in-summary) {
+        padding-bottom: 0;
+    }
+    .cart-summary .checkout-intent-summary--in-summary + .sum-body {
+        padding-top: 12px;
+    }
+    .cart-summary.is-quote-summary .checkout-intent-summary--in-summary + .sum-body {
+        padding-top: 12px;
+    }
+    .cart-summary .checkout-intent-summary--in-summary + .sum-body .table-totals > tbody > tr:first-child > td {
+        padding-top: 0;
+    }
+    .checkout-intent-summary-text {
+        font-size: 13px;
+        color: #9a3412;
+        line-height: 1.4;
+        flex: 1 1 auto;
+        text-align: left;
+    }
+    .checkout-intent-summary-text strong {
+        color: #9a3412;
+    }
+    .checkout-intent-change {
+        border: none;
+        background: transparent;
+        color: var(--primary-color, #ff7a00);
         font-size: 13px;
         font-weight: 700;
-        letter-spacing: .02em;
-        text-transform: uppercase;
-        color: #6b7280;
-        margin-bottom: 12px;
+        padding: 0;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        flex-shrink: 0;
     }
-    .checkout-intent-selector {
+    .checkout-intent-change:hover {
+        opacity: .85;
+    }
+
+    .checkout-intent-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10060;
+        display: none;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 33, 55, .55);
+        backdrop-filter: blur(4px);
+    }
+    .checkout-intent-overlay.is-open {
+        display: grid;
+    }
+    .checkout-intent-boot.is-open {
+        /* Prioridad visual inmediata, antes de que Vue monte */
+        z-index: 10080;
+    }
+    .checkout-intent-dialog {
+        width: min(520px, 94vw);
+        padding: 28px 24px 24px;
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 24px 70px rgba(15, 33, 55, .25);
+        text-align: center;
+    }
+    .checkout-intent-dialog h3 {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: var(--title-color, #0f2137);
+        line-height: 1.25;
+    }
+    .checkout-intent-dialog .checkout-intent-sub {
+        margin: 0 0 22px;
+        font-size: 14px;
+        line-height: 1.45;
+        color: #6b7280;
+    }
+    .checkout-intent-dialog-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 12px;
     }
-    .checkout-intent-option {
+    .checkout-intent-choice {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        gap: 4px;
+        gap: 6px;
         width: 100%;
         text-align: left;
-        padding: 14px 16px;
-        border-radius: 12px;
+        padding: 16px 14px;
+        border-radius: 14px;
         border: 1.5px solid #e5e7eb;
         background: #fff;
         color: #1f2937;
         cursor: pointer;
         transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
     }
-    .checkout-intent-option:hover {
-        border-color: #cbd5e1;
+    .checkout-intent-choice:hover {
+        border-color: var(--primary-color, #ff7a00);
+        background: #fff7ed;
         transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(15, 33, 55, .06);
     }
-    .checkout-intent-option.active {
-        border-color: #111827;
-        background: #f9fafb;
-        box-shadow: 0 0 0 1px #111827 inset;
-    }
-    .checkout-intent-option .cio-title {
+    .checkout-intent-choice .cic-title {
         font-size: 15px;
         font-weight: 800;
         line-height: 1.2;
+        color: var(--title-color, #0f2137);
     }
-    .checkout-intent-option .cio-desc {
+    .checkout-intent-choice .cic-desc {
         font-size: 12.5px;
         line-height: 1.4;
         color: #6b7280;
-    }
-    .checkout-intent-option.active .cio-desc {
-        color: #4b5563;
     }
 
     .checkout-panel-enter-active,
@@ -584,7 +662,7 @@
         .quotation-contact-grid {
             grid-template-columns: 1fr;
         }
-        .checkout-intent-selector {
+        .checkout-intent-dialog-actions {
             grid-template-columns: 1fr;
         }
     }
@@ -1328,7 +1406,87 @@
     $itemsBasePath = asset('storage/uploads/items');
     $googleMapsApiKey = app(Modules\Ecommerce\Http\Controllers\EcommerceController::class)->getGoogleMaps();
     $globalDiscountTypeId = $global_discount_type_id ?? null;
+
+    $quoteEnabledBoot = (bool) ($quotation_enabled ?? false);
+    $quoteModeBoot = $quotation_mode ?? 'quote_and_sell';
+    $quoteHybridBoot = $quoteEnabledBoot && $quoteModeBoot === 'quote_and_sell';
+    $quoteOnlyBoot = $quoteEnabledBoot && $quoteModeBoot === 'quote_only';
 @endphp
+
+{{-- Config mínima + overlay inmediato (antes de Vite/Vue) para evitar flickeo --}}
+<script>
+    window.__ecommerce_quotation_boot = {
+        enabled: {!! json_encode($quoteEnabledBoot) !!},
+        mode: {!! json_encode($quoteModeBoot) !!},
+        hybrid: {!! json_encode($quoteHybridBoot) !!},
+        quote_only: {!! json_encode($quoteOnlyBoot) !!},
+        user_id: {!! json_encode(optional(Auth::guard('ecommerce')->user())->id) !!}
+    };
+</script>
+<div
+    id="checkout-intent-boot"
+    class="checkout-intent-overlay checkout-intent-boot"
+    style="display: none;"
+    role="dialog"
+    aria-modal="true"
+    aria-hidden="true"
+    aria-labelledby="checkout-intent-boot-title"
+>
+    <div class="checkout-intent-dialog">
+        <h3 id="checkout-intent-boot-title">¿Qué desea hacer con su pedido?</h3>
+        <p class="checkout-intent-sub">Elija cómo continuar. Podrá cambiar esta opción más adelante.</p>
+        <div class="checkout-intent-dialog-actions">
+            <button type="button" class="checkout-intent-choice" data-intent="purchase">
+                <span class="cic-title">Comprar</span>
+                <span class="cic-desc">Checkout con envío y métodos de pago</span>
+            </button>
+            <button type="button" class="checkout-intent-choice checkout-intent-choice--quote" data-intent="quote">
+                <span class="cic-title">Solicitar cotización</span>
+                <span class="cic-desc">Solo datos de contacto, sin pagar ahora</span>
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+(function () {
+    var boot = window.__ecommerce_quotation_boot || {};
+    var hasItems = false;
+    try {
+        var raw = localStorage.getItem('products_cart');
+        var arr = raw ? JSON.parse(raw) : [];
+        hasItems = Array.isArray(arr) && arr.length > 0;
+    } catch (e) {}
+    var restored = null;
+    try {
+        restored = sessionStorage.getItem('ecommerce_checkout_intent');
+    } catch (e) {}
+    var restoreQuote = restored === 'quote' && !!boot.user_id;
+    var showModal = !!(boot.hybrid && hasItems && !boot.quote_only && !restoreQuote);
+    window.__checkoutIntentBootState = {
+        checkoutIntent: (boot.quote_only || restoreQuote) ? 'quote' : 'purchase',
+        checkoutIntentChosen: !!(boot.quote_only || restoreQuote || !boot.hybrid || !hasItems),
+        checkoutIntentModalVisible: showModal
+    };
+    if (!showModal) return;
+    var el = document.getElementById('checkout-intent-boot');
+    if (!el) return;
+    el.style.display = 'grid';
+    el.classList.add('is-open');
+    el.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    el.querySelectorAll('[data-intent]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var intent = btn.getAttribute('data-intent') === 'quote' ? 'quote' : 'purchase';
+            if (typeof window.__confirmCheckoutIntentBoot === 'function') {
+                window.__confirmCheckoutIntentBoot(intent);
+            } else {
+                window.__checkoutIntentPendingChoice = intent;
+            }
+        });
+    });
+})();
+</script>
+
 <div class="row" id="app">
     <div class="col-12">
         <h2 class="my-4 mt-4" style="font-weight: 900;">@{{ isQuotationCheckout ? 'Solicitar cotización' : 'Finalizar compra' }}</h2>
@@ -1351,8 +1509,8 @@
                     <span class="head-summary">
                         <template v-if="records.length > 0">
                             <b>@{{ records.length }} @{{ records.length === 1 ? 'producto' : 'productos' }}</b>
-                            <span class="head-summary-sep" v-if="!isQuotationCheckout || quotationShowPrices">·</span>
-                            <span class="head-summary-amt" v-if="!isQuotationCheckout || quotationShowPrices">S/ @{{ summary.total }}</span>
+                            <span class="head-summary-sep" v-if="showCartPrices">·</span>
+                            <span class="head-summary-amt" v-if="showCartPrices">S/ @{{ summary.total }}</span>
                         </template>
                         <span v-else class="head-summary-warn">Carrito vacío</span>
                     </span>
@@ -1376,7 +1534,7 @@
                                 <h5 class="product-title m-0">
                                     <a href="#">@{{ row.description }}</a>
                                 </h5>
-                                <span class="price text-muted" v-if="!isQuotationCheckout || quotationShowPrices">
+                                <span class="price text-muted" v-if="showCartPrices">
                                     @{{ row.currency_type_symbol }} @{{ row.sale_unit_price }}
                                 </span>
                             </div>
@@ -1395,7 +1553,7 @@
                                 </div>
                             </div>
 
-                            <strong class="total" v-if="!isQuotationCheckout || quotationShowPrices">@{{ row.currency_type_symbol }} @{{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
+                            <strong class="total" v-if="showCartPrices">@{{ row.currency_type_symbol }} @{{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
                             <strong class="total text-muted" v-else>x @{{ row.cantidad }}</strong>
 
                             <button type="button" @click="deleteItem(row.id, index)" class="btn btn-sm btn-link text-muted px-0 delete-item-btn">
@@ -1433,44 +1591,14 @@
             </div>
         </div>
 
-        {{-- Selector de intención (solo modo híbrido Cotizar y vender) --}}
-        <div class="card card-cart checkout-intent-card" v-if="showCheckoutIntentSelector">
-            <div class="card-cart-body">
-                <div class="checkout-intent-label">¿Qué deseas hacer con tu pedido?</div>
-                <div class="checkout-intent-selector" role="radiogroup" aria-label="Intención del checkout">
-                    <button
-                        type="button"
-                        class="checkout-intent-option"
-                        :class="{ active: checkoutIntent === 'purchase' }"
-                        role="radio"
-                        :aria-checked="checkoutIntent === 'purchase' ? 'true' : 'false'"
-                        @click="setCheckoutIntent('purchase')"
-                    >
-                        <span class="cio-title">Pagar</span>
-                        <span class="cio-desc">Compra regular con envío y método de pago</span>
-                    </button>
-                    <button
-                        type="button"
-                        class="checkout-intent-option"
-                        :class="{ active: checkoutIntent === 'quote' }"
-                        role="radio"
-                        :aria-checked="checkoutIntent === 'quote' ? 'true' : 'false'"
-                        @click="setCheckoutIntent('quote')"
-                    >
-                        <span class="cio-title">Solicitar cotización</span>
-                        <span class="cio-desc">Envía tus datos de contacto sin pagar ahora</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
+        {{-- Banner solo cotizar (sin opción de compra) --}}
         <div class="quotation-mode-banner" v-if="quoteOnlyMode && records.length > 0" style="margin-top: 1rem;">
             <strong>Solo cotización</strong>
             Esta tienda no procesa compras en línea. Completa tus datos de contacto para solicitar tu cotización.
         </div>
 
         <transition name="checkout-panel">
-        <div class="card card-cart" v-if="records.length > 0 && !isQuotationCheckout" key="delivery-card">
+        <div class="card card-cart" v-if="records.length > 0 && !isQuotationCheckout && (checkoutIntentChosen || !isHybridQuotationMode)" key="delivery-card">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#deliveryCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                 <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                     <span class="icon-card">
@@ -1664,7 +1792,7 @@
 
         {{-- Datos de contacto (modo cotización) --}}
         <transition name="checkout-panel">
-        <div class="card card-cart" v-if="records.length > 0 && isQuotationCheckout" id="quotationContactCard" key="quote-contact-card">
+        <div class="card card-cart" v-if="records.length > 0 && isQuotationCheckout && (checkoutIntentChosen || quoteOnlyMode)" id="quotationContactCard" key="quote-contact-card">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#quotationContactCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                 <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                     <span class="icon-card">
@@ -1714,7 +1842,7 @@
 
         @if($enable_electronic_documents)
             {{-- Modo documentos electrónicos: solo lectura, tipo inferido del número del usuario --}}
-            <div class="card card-cart" v-if="!isQuotationCheckout">
+            <div class="card card-cart" v-if="!isQuotationCheckout && (checkoutIntentChosen || !isHybridQuotationMode)">
                 <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#documentyCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                     <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                         <span class="icon-card">
@@ -1749,7 +1877,7 @@
         @endif
 
         <transition name="checkout-panel">
-        <div class="card card-cart" v-if="records.length > 0 && allowPurchase" key="payment-card">
+        <div class="card card-cart" v-if="records.length > 0 && allowPurchase && (checkoutIntentChosen || !isHybridQuotationMode)" key="payment-card">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#paymentCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                 <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
                     <span class="icon-card">
@@ -1920,14 +2048,31 @@
             <div class="sum-head">
                 <h3>@{{ isQuotationCheckout ? 'Resumen de cotización' : 'Resumen' }}</h3>
             </div>
-            <div class="quotation-mode-banner" v-if="isQuotationCheckout">
-                <strong v-if="quoteOnlyMode">Modo: Solo cotizar</strong>
-                <strong v-else>Modo: Cotización</strong>
-                <span v-if="!quoteOnlyMode">Puedes volver al checkout de compra cuando quieras.</span>
-                <span v-else>En este modo no es posible pagar en la tienda.</span>
+
+            {{-- Solo Cotizar y vender: aviso de modo debajo del título --}}
+            <div
+                class="checkout-intent-summary checkout-intent-summary--in-summary"
+                v-if="isHybridQuotationMode && records.length > 0 && checkoutIntentChosen && !checkoutIntentModalVisible"
+            >
+                <div class="checkout-intent-summary-text">
+                    <template v-if="checkoutIntent === 'quote'">
+                        Estás en modo <strong>Solicitar cotización</strong>.
+                    </template>
+                    <template v-else>
+                        Estás en modo <strong>Comprar</strong>.
+                    </template>
+                </div>
+                <button type="button" class="checkout-intent-change" @click="reopenCheckoutIntentModal">
+                    Cambiar
+                </button>
+            </div>
+
+            <div class="quotation-mode-banner" v-if="quoteOnlyMode && isQuotationCheckout">
+                <strong>Modo: Solo cotizar</strong>
+                <span>En este modo no es posible pagar en la tienda.</span>
             </div>
             <div class="sum-body">
-                <table class="table table-totals" v-if="!isQuotationCheckout || quotationShowPrices">
+                <table class="table table-totals" v-if="showCartPrices">
                     <tbody>
                         <tr v-if="summary.total_exonerated > 0">
                             <td>Op. exoneradas</td>
@@ -1963,7 +2108,7 @@
                     </tfoot>
                 </table>
 
-                <p class="quotation-summary-meta" v-if="isQuotationCheckout && !quotationShowPrices">
+                <p class="quotation-summary-meta" v-if="isQuotationCheckout && !showCartPrices">
                     @{{ records.length }} producto(s) seleccionados para cotizar.
                 </p>
 
@@ -2005,8 +2150,8 @@
                     <a v-if="allowPurchase && enableIzipay" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleIzipay }}</a>
                     <a v-if="allowPurchase && enableMp" href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">@{{ titleMp }}</a>
                     <a v-if="allowPurchase && enableCash && (!cashPaymentPickupOnly || isPickupMode)" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">@{{ cashPaymentTitle }}</a>
-                    <a v-if="quotationEnabled && !showCheckoutIntentSelector" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--quote login-link" :class="{ disabled: !acceptedTerms }">Solicitar cotización</a>
-                    <a v-if="showCheckoutIntentSelector && checkoutIntent === 'quote'" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--quote login-link" :class="{ disabled: !acceptedTerms }">Inicia sesión para cotizar</a>
+                    <a v-if="quotationEnabled && !isHybridQuotationMode" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--quote login-link" :class="{ disabled: !acceptedTerms }">Solicitar cotización</a>
+                    <a v-if="isHybridQuotationMode && checkoutIntent === 'quote'" href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--quote login-link" :class="{ disabled: !acceptedTerms }">Inicia sesión para cotizar</a>
                     @elseauth('ecommerce')
                         <button
                             v-if="allowPurchase && selectedPaymentMethod !== 'paypal'"
@@ -2047,6 +2192,40 @@
         </div><!-- End .cart-summary -->
       </div><!-- End .summary-sticky -->
     </div><!-- End .col-lg-4 -->
+
+    <!-- Modal de intención: Comprar vs Solicitar cotización (modo híbrido) -->
+    <div
+        id="checkout-intent-overlay"
+        class="checkout-intent-overlay"
+        :class="{ 'is-open': checkoutIntentModalVisible }"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="checkout-intent-title"
+        :aria-hidden="checkoutIntentModalVisible ? 'false' : 'true'"
+    >
+        <div class="checkout-intent-dialog">
+            <h3 id="checkout-intent-title">¿Qué desea hacer con su pedido?</h3>
+            <p class="checkout-intent-sub">Elija cómo continuar. Podrá cambiar esta opción más adelante.</p>
+            <div class="checkout-intent-dialog-actions">
+                <button
+                    type="button"
+                    class="checkout-intent-choice"
+                    @click="confirmCheckoutIntent('purchase')"
+                >
+                    <span class="cic-title">Comprar</span>
+                    <span class="cic-desc">Checkout con envío y métodos de pago</span>
+                </button>
+                <button
+                    type="button"
+                    class="checkout-intent-choice checkout-intent-choice--quote"
+                    @click="confirmCheckoutIntent('quote')"
+                >
+                    <span class="cic-title">Solicitar cotización</span>
+                    <span class="cic-desc">Solo datos de contacto, sin pagar ahora</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Overlay de carga: Yape / efectivo / transferencia -->
     <div
@@ -2136,7 +2315,7 @@
             <p class="payment-success-sub">@{{ displayedQuotationSuccessMessage }}</p>
             <div class="quotation-success-code">@{{ quotationResult.code || quotationResult.number_full }}</div>
             <div class="quotation-success-actions">
-                <button type="button" class="pay-btn pay-btn--ghost" @click="openQuotationPdf" v-if="quotationResult.print_url">
+                <button type="button" class="pay-btn pay-btn--ghost" @click="openQuotationPdf" v-if="quotationResult.print_url && showCartPrices">
                     Ver PDF
                 </button>
                 <button

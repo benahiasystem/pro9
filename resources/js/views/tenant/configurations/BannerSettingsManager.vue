@@ -2,13 +2,13 @@
   <div class="promotions mt-4">
     <hr>
     <div class="card tab-content-default row-new mb-0 bg-transparent promotions-section">
-      <div class=" col-12 d-flex justify-content-between align-items-center bg-transparent promotions-header">
-        <h3 class="">Banners principales</h3>
-        <div class="right-wrapper pull-right">
+      <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 bg-transparent promotions-header">
+        <h3 class="promotions-title mb-0">Banners principales</h3>
+        <div class="right-wrapper promotions-header-actions">
           <template>
             <button
               type="button"
-              class="btn btn-custom btn-sm me-2"
+              class="btn btn-custom btn-sm"
               @click.prevent="clickCreate()"
             >
               <i class="fa fa-plus-circle"></i> Nuevo
@@ -16,7 +16,7 @@
           </template>
         </div>
       </div>
-      <div class="card-body">
+      <div class="card-body promotions-body">
         <data-table :apply-filter="false" :promotionType="'banners'" :resource="resource">
           <tr slot="heading" width="100%">
             <!-- <th>#</th> -->
@@ -111,13 +111,13 @@
     </div> -->
 
     <div class="card tab-content-default row-new mb-0 bg-transparent promotions-section">
-      <div class="col-12 d-flex justify-content-between align-items-center bg-transparent promotions-header">
-        <h3 class="">Listado de Promociones <small class="text-muted">(Hasta 4 imágenes)</small></h3>
-        <div class="right-wrapper pull-right">
+      <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 bg-transparent promotions-header">
+        <h3 class="promotions-title mb-0">Listado de Promociones <small class="text-muted">(Hasta 4 imágenes)</small></h3>
+        <div class="right-wrapper promotions-header-actions">
           <template>
             <button
               type="button"
-              class="btn btn-custom btn-sm me-2"
+              class="btn btn-custom btn-sm"
               @click.prevent="clickCreateSpotList()"
             >
               <i class="fa fa-plus-circle"></i> Nuevo
@@ -125,7 +125,7 @@
           </template>
         </div>
       </div>
-      <div class="card-body">
+      <div class="card-body promotions-body">
         <data-table :apply-filter="false" :promotionType="'spots'" :resource="resource">
           <tr slot="heading" width="100%">  
             <th>Nombre</th>          
@@ -171,20 +171,81 @@
 }
 </style>
 <style scoped>
+.promotions {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.promotions-section {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.promotions-header {
+  gap: 12px;
+  padding: 12px 20px 8px;
+  box-sizing: border-box;
+}
+
+.promotions-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-right: 8px;
+  font-size: 1.15rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.promotions-header-actions {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.promotions-body {
+  padding: 12px 20px 20px !important;
+  box-sizing: border-box;
+}
+
+.promotions-body .table-responsive {
+  margin: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .card-body .table {
   width: 100%;
   table-layout: fixed;
+  margin-bottom: 0;
+}
+
+.card-body .table th,
+.card-body .table td {
+  padding-left: 12px;
+  padding-right: 12px;
+  vertical-align: middle;
+}
+
+.card-body .table th:first-child,
+.card-body .table td:first-child {
+  padding-left: 4px;
+}
+
+.card-body .table th:last-child,
+.card-body .table td:last-child {
+  padding-right: 4px;
 }
 
 .card-body .table th:nth-child(1),
 .card-body .table td:nth-child(1) {
-  width: 20%;
+  width: 28%;
   word-wrap: break-word;
 }
 
 .card-body .table th:nth-child(2),
 .card-body .table td:nth-child(2) {
-  width: 30%;
+  width: 42%;
   word-wrap: break-word;
 }
 
@@ -193,15 +254,41 @@
   width: 30%;
 }
 
-.card-body .table th:nth-child(4),
-.card-body .table td:nth-child(4) {
-  width: 20%;
-}
 .card-body .table img {
   max-width: 100%;
   height: auto;
   display: block;
   margin: 0 auto;
+}
+
+@media (max-width: 767.98px) {
+  .promotions-header {
+    padding: 12px 14px 8px;
+  }
+
+  .promotions-body {
+    padding: 8px 14px 16px !important;
+  }
+
+  .promotions-title {
+    font-size: 1.05rem;
+    width: 100%;
+  }
+
+  .promotions-header-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .promotions-header-actions .btn {
+    width: 100%;
+  }
+
+  .card-body .table th,
+  .card-body .table td {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
 }
 </style>
 <script>

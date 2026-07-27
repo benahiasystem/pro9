@@ -89,7 +89,9 @@
                 @php
                     $oldPrice = $record->sale_unit_price * 1.2;
                     $savings = $oldPrice - $record->sale_unit_price;
+                    $showPrices = $storefront_show_prices ?? true;
                 @endphp
+                @if($showPrices)
                 <div class="price-box preview d-flex align-items-end justify-content-start w-100 mb-1" style="gap: 10px">
                     <span class="product-price">{{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}</span>
                     <span class="old-price">{{ $record->currency_type['symbol'] }} {{ number_format($oldPrice, 2) }}</span>
@@ -97,6 +99,7 @@
                         Ahorras {{ $record->currency_type['symbol'] }} {{ number_format($savings, 2) }}
                     </span>
                 </div><!-- End .price-box -->
+                @endif
                 <div class="stock-row mb-1">
                     <?php
                     if($record->getStockByWarehouseMain() > 0){?>
@@ -142,7 +145,11 @@
                         title="Add to Cart" style="flex: 1; height: 39px; padding: 0 12px;">
                         <svg clip-rule="evenodd" fill-rule="evenodd" height="24" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 512 512" width="24" xmlns="http://www.w3.org/2000/svg" id="fi_4893746"><path d="m211.892 383.468c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm176.22 0c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm-288.464-273.226s63.534 222.705 63.534 222.705c6.591 23.103 27.703 39.034 51.727 39.034h157.478c33.502 0 61.98-24.47 67.023-57.59 4.821-31.664 11.838-77.75 17.065-112.081 2.869-18.84-2.626-37.994-15.046-52.449-12.42-14.454-30.529-22.769-49.586-22.769h-235.394l-8.72-30.567c-7.633-26.757-32.085-45.209-59.91-45.209-23.033 0-51.825 0-51.825 0-13.798 0-25 11.202-25 25s11.202 25 25 25h51.825c5.494 0 10.321 3.643 11.829 8.926zm71.066 66.85h221.129c4.482 0 8.741 1.956 11.663 5.355 2.921 3.4 4.213 7.905 3.539 12.337 0 0-17.066 112.081-17.066 112.081-1.323 8.693-8.798 15.116-17.592 15.116h-157.478c-1.693 0-3.181-1.122-3.645-2.751 0 0-40.55-142.138-40.55-142.138z"></path></svg>
                         <span class="font-weight-bold qv-add-label" style="white-space: nowrap;">
-                            Agregar a Carrito · {{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}
+                            @if($showPrices ?? ($storefront_show_prices ?? true))
+                                Agregar a Carrito · {{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}
+                            @else
+                                Agregar a Carrito
+                            @endif
                         </span>
                     </a>
                     @php
@@ -152,7 +159,11 @@
                         @php
                             $waPhoneRaw = preg_replace('/\D+/', '', $phoneWhatsapp);
                             $waPhone = (strlen($waPhoneRaw) == 9 && str_starts_with($waPhoneRaw, '9')) ? '51'.$waPhoneRaw : $waPhoneRaw;
-                            $waText = rawurlencode("Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?");
+                            $waText = rawurlencode(
+                                ($storefront_show_prices ?? true)
+                                    ? "Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?"
+                                    : "Buenas, deseo consultar acerca del producto *{$record->description}*. ¿Podrían brindarme más información?"
+                            );
                             $waLink = "https://wa.me/{$waPhone}?text={$waText}";
                         @endphp
                         <a href="{{ $waLink }}" class="btn-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">

@@ -102,7 +102,7 @@
             <thead>
                 <tr>
                     <th>Código</th>
-                    <th>Total</th>
+                    <th v-if="showPrices">Total</th>
                     <th>Fecha</th>
                     <th>Vigencia</th>
                     <th>Estado</th>
@@ -111,7 +111,7 @@
             </thead>
             <tbody>
                 <tr v-if="!loading && records.length === 0">
-                    <td colspan="6" class="text-center text-muted py-5">
+                    <td :colspan="showPrices ? 6 : 5" class="text-center text-muted py-5">
                         Aún no tienes cotizaciones. Solicítalas desde el carrito de compras.
                     </td>
                 </tr>
@@ -125,7 +125,7 @@
                     <td class="text-left">
                         <strong>@{{ row.code || row.number_full }}</strong>
                     </td>
-                    <td class="text-success">S/ @{{ formatMoney(row.total) }}</td>
+                    <td class="text-success" v-if="showPrices">S/ @{{ formatMoney(row.total) }}</td>
                     <td>@{{ formatDateOnly(row.date_of_issue) }}</td>
                     <td>@{{ formatDateOnly(row.date_of_due) }}</td>
                     <td>
@@ -142,7 +142,7 @@
                     <td @click.stop>
                         <div class="quote-actions">
                             <a
-                                v-if="row.print_url"
+                                v-if="row.print_url && showPrices"
                                 :href="row.print_url"
                                 target="_blank"
                                 rel="noopener"
@@ -150,6 +150,7 @@
                             >
                                 Ver PDF
                             </a>
+                            <span v-else class="text-muted" style="font-size:12px;">Ver detalle</span>
                         </div>
                     </td>
                 </tr>
@@ -183,7 +184,8 @@
     <quotation-detail
         :visible.sync="showQuotationModal"
         :record="selectedQuotation"
-        :loading="detailLoading">
+        :loading="detailLoading"
+        :show-prices="showPrices">
     </quotation-detail>
 </div>
 @include('ecommerce::document_list.quotation_detail')
@@ -193,7 +195,7 @@
 <script type="text/javascript">
     Vue.use(ELEMENT, { locale: ELEMENT.lang.es });
     Vue.component('quotation-detail', {
-        props: ['visible', 'record', 'loading'],
+        props: ['visible', 'record', 'loading', 'showPrices'],
         template: '#quotation-detail-template',
         watch: {
             visible(val) {
@@ -224,6 +226,7 @@
             detailLoading: false,
             showQuotationModal: false,
             selectedQuotation: null,
+            showPrices: {!! json_encode((bool) ($quotationShowPrices ?? true)) !!},
             filters: {
                 date_of_start: null,
                 date_of_end: null,
@@ -264,6 +267,9 @@
                             throw new Error(payload.message || 'No se pudo cargar el detalle');
                         }
                         this.selectedQuotation = payload.data || payload;
+                        if (typeof this.selectedQuotation.show_prices !== 'undefined') {
+                            this.showPrices = !!this.selectedQuotation.show_prices;
+                        }
                         this.showQuotationModal = true;
                     })
                     .catch(error => {
@@ -285,6 +291,9 @@
                     .then(response => {
                         const payload = response.data || {};
                         this.records = payload.data || [];
+                        if (typeof payload.show_prices !== 'undefined') {
+                            this.showPrices = !!payload.show_prices;
+                        }
                         this.last_page = (payload.meta && payload.meta.last_page)
                             || (payload.links && payload.links.last_page)
                             || 1;

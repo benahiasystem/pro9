@@ -111,31 +111,6 @@
 
                 </div>
             </div>
-
-            <!-- Filtros rápidos de origen (siempre visibles) -->
-            <div class="col-md-12 mb-2" v-if="applyFilter">
-                <div class="d-flex flex-wrap align-items-center" style="gap: 8px;">
-                    <span class="text-muted" style="font-size: 12px; font-weight: 600;">Origen:</span>
-                    <el-button
-                        size="mini"
-                        :type="form.source === 'all' ? 'primary' : 'default'"
-                        plain
-                        @click="setSourceFilter('all')"
-                    >Todos</el-button>
-                    <el-button
-                        size="mini"
-                        :type="form.source === 'admin' ? 'primary' : 'default'"
-                        plain
-                        @click="setSourceFilter('admin')"
-                    >Empresa</el-button>
-                    <el-button
-                        size="mini"
-                        :type="form.source === 'ecommerce' ? 'warning' : 'default'"
-                        plain
-                        @click="setSourceFilter('ecommerce')"
-                    >Tienda virtual</el-button>
-                </div>
-            </div>
             </div>
 
 
@@ -331,10 +306,6 @@
                     source: 'all',
                 }
 
-            },
-            setSourceFilter(source) {
-                this.form.source = source || 'all';
-                this.getRecords();
             },
             customIndex(index) {
                 return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1

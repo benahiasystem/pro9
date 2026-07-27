@@ -22,7 +22,7 @@
               <h2 class="product-title  tony">
                   <a href="#">{{$item->name}}</a>
               </h2>
-              <div class="price-box">
+              <div class="price-box" @if(!($storefront_show_prices ?? true)) style="display:none" @endif>
                   <span class="product-price">S/ {{ number_format($item->sale_unit_price, 2) }}</span>
               </div><!-- End .price-box -->
 

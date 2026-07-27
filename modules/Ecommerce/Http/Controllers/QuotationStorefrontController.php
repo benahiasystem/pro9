@@ -35,6 +35,7 @@ class QuotationStorefrontController extends Controller
             'ecommerceDescription',
             EcommerceController::getEcommerceDescription($companyModel)
         );
+        view()->share('storefront_show_prices', ConfigurationEcommerce::storefrontShowsPrices());
     }
 
     /**
@@ -52,8 +53,13 @@ class QuotationStorefrontController extends Controller
 
         $configuration = ConfigurationEcommerce::first();
         $categories = \Modules\Item\Models\Category::has('items')->get();
+        $quotationShowPrices = ConfigurationEcommerce::storefrontQuotationConfig()['show_prices'];
 
-        return view('ecommerce::document_list.quotation', compact('configuration', 'categories'));
+        return view('ecommerce::document_list.quotation', compact(
+            'configuration',
+            'categories',
+            'quotationShowPrices'
+        ));
     }
 
     /**
@@ -86,8 +92,9 @@ class QuotationStorefrontController extends Controller
         }
 
         $paginator = $query->paginate(config('tenant.items_per_page', 10));
+        $showPrices = ConfigurationEcommerce::storefrontQuotationConfig()['show_prices'];
 
-        $rows = collect($paginator->items())->map(function (Quotation $quotation) {
+        $rows = collect($paginator->items())->map(function (Quotation $quotation) use ($showPrices) {
             $isExpired = $quotation->state_type_id !== '11'
                 && $quotation->date_of_due
                 && Carbon::parse($quotation->date_of_due)->endOfDay()->lt(now());
@@ -101,21 +108,25 @@ class QuotationStorefrontController extends Controller
                 'date_of_due' => $quotation->date_of_due
                     ? Carbon::parse($quotation->date_of_due)->format('Y-m-d')
                     : null,
-                'total' => (float) $quotation->total,
+                'total' => $showPrices ? (float) $quotation->total : null,
                 'currency_type_id' => $quotation->currency_type_id,
                 'state_type_id' => $quotation->state_type_id,
                 'is_expired' => $isExpired,
                 'state_type_description' => $isExpired
                     ? 'Vencida'
                     : (optional($quotation->state_type)->description ?? 'Registrado'),
-                'print_url' => url("quotations/print/{$quotation->external_id}/a4"),
+                'print_url' => $showPrices
+                    ? url("quotations/print/{$quotation->external_id}/a4")
+                    : null,
                 'items_count' => $quotation->items()->count(),
+                'show_prices' => $showPrices,
             ];
         });
 
         return [
             'success' => true,
             'data' => $rows,
+            'show_prices' => $showPrices,
             'links' => $paginator->toArray(),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
@@ -156,7 +167,9 @@ class QuotationStorefrontController extends Controller
         $itemIds = $quotation->items->pluck('item_id')->filter()->unique()->values();
         $imagesById = Item::whereIn('id', $itemIds)->pluck('image', 'id');
 
-        $items = $quotation->items->map(function ($row) use ($imagesById) {
+        $showPrices = ConfigurationEcommerce::storefrontQuotationConfig()['show_prices'];
+
+        $items = $quotation->items->map(function ($row) use ($imagesById, $showPrices) {
             $snapshot = is_object($row->item) ? $row->item : (object) [];
             $image = $imagesById[$row->item_id] ?? 'imagen-no-disponible.jpg';
 
@@ -166,8 +179,8 @@ class QuotationStorefrontController extends Controller
                     ?? $row->name_product_pdf
                     ?? 'Producto',
                 'quantity' => (float) $row->quantity,
-                'unit_price' => (float) $row->unit_price,
-                'total' => (float) $row->total,
+                'unit_price' => $showPrices ? (float) $row->unit_price : null,
+                'total' => $showPrices ? (float) $row->total : null,
                 'image' => $image,
                 'currency_symbol' => 'S/',
             ];
@@ -194,9 +207,12 @@ class QuotationStorefrontController extends Controller
                 'state_type_description' => $isExpired
                     ? 'Vencida'
                     : (optional($quotation->state_type)->description ?? 'Registrado'),
-                'total' => (float) $quotation->total,
+                'total' => $showPrices ? (float) $quotation->total : null,
                 'currency_symbol' => 'S/',
-                'print_url' => url("quotations/print/{$quotation->external_id}/a4"),
+                'print_url' => $showPrices
+                    ? url("quotations/print/{$quotation->external_id}/a4")
+                    : null,
+                'show_prices' => $showPrices,
                 'items' => $items,
             ],
         ];
@@ -394,13 +410,15 @@ class QuotationStorefrontController extends Controller
                     'external_id' => $quotation->external_id,
                     'number_full' => $quotation->number_full,
                     'code' => $quotation->identifier,
-                    'total' => (float) $quotation->total,
+                    'total' => $quotationSettings['show_prices'] ? (float) $quotation->total : null,
                     'date_of_due' => $quotation->date_of_due
                         ? Carbon::parse($quotation->date_of_due)->format('Y-m-d')
                         : null,
                     'validity_days' => $validityDays,
                     'state_type_description' => optional($quotation->state_type)->description ?? 'Registrado',
-                    'print_url' => url("quotations/print/{$quotation->external_id}/a4"),
+                    'print_url' => $quotationSettings['show_prices']
+                        ? url("quotations/print/{$quotation->external_id}/a4")
+                        : null,
                     'list_url' => route('tenant_ecommerce_quotation_list'),
                     'success_message' => $quotationSettings['success_message'],
                     'show_prices' => $quotationSettings['show_prices'],

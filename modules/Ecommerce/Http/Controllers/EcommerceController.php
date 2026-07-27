@@ -69,6 +69,9 @@ class EcommerceController extends Controller
         $companyModel = \App\Models\Tenant\Company::first();
         $ecommerceDescription = self::getEcommerceDescription($companyModel);
         view()->share('ecommerceDescription', $ecommerceDescription);
+
+        // Visibilidad de precios en listados / ficha / header (ambos modos de cotización)
+        view()->share('storefront_show_prices', ConfigurationEcommerce::storefrontShowsPrices());
     }
 
     // public function index()

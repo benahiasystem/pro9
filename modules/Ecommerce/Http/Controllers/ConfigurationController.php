@@ -66,28 +66,29 @@ class ConfigurationController extends Controller
         }
 
         // Configuración de cotizaciones (tienda virtual)
-        if ($request->has('quotation_enabled')) {
-            $configuration->quotation_enabled = (bool) $request->input('quotation_enabled');
+        if ($request->has('quotation_enabled') || $request->exists('quotation_enabled')) {
+            $configuration->quotation_enabled = $request->boolean('quotation_enabled');
         }
 
         $mode = $request->input('quotation_mode', $configuration->quotation_mode ?: 'quote_and_sell');
         if (! in_array($mode, ['quote_and_sell', 'quote_only'], true)) {
             $mode = 'quote_and_sell';
         }
-        if ($request->has('quotation_mode') || $request->has('quotation_enabled')) {
+        if ($request->exists('quotation_mode') || $request->exists('quotation_enabled')) {
             $configuration->quotation_mode = $mode;
         }
 
-        if ($request->has('quotation_show_prices')) {
-            $configuration->quotation_show_prices = (bool) $request->input('quotation_show_prices');
+        // exists() incluye false/0 (has() a veces falla con booleanos)
+        if ($request->exists('quotation_show_prices')) {
+            $configuration->quotation_show_prices = $request->boolean('quotation_show_prices');
         }
-        if ($request->has('quotation_success_message')) {
+        if ($request->exists('quotation_success_message')) {
             $configuration->quotation_success_message = $request->input('quotation_success_message');
         }
-        if ($request->has('quotation_validity_days')) {
+        if ($request->exists('quotation_validity_days')) {
             $configuration->quotation_validity_days = max(1, min(90, (int) $request->input('quotation_validity_days')));
         }
-        if ($request->has('quotation_terms')) {
+        if ($request->exists('quotation_terms')) {
             $configuration->quotation_terms = $request->input('quotation_terms');
         }
 
@@ -101,6 +102,7 @@ class ConfigurationController extends Controller
             'success' => true,
             'message' => 'Configuración actualizada ('.$modeLabel.')',
             'quotation_mode' => $configuration->quotation_mode,
+            'quotation_show_prices' => (bool) $configuration->quotation_show_prices,
         ];
     }
 

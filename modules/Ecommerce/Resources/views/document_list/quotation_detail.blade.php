@@ -213,8 +213,8 @@
                         <tr>
                             <th>Producto</th>
                             <th width="70" class="text-center">Cant.</th>
-                            <th width="110" class="text-right">Precio</th>
-                            <th width="110" class="text-right">Subtotal</th>
+                            <th width="110" class="text-right" v-if="showPrices">Precio</th>
+                            <th width="110" class="text-right" v-if="showPrices">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -226,27 +226,27 @@
                                 </div>
                             </td>
                             <td class="text-center">@{{ item.quantity }}</td>
-                            <td class="text-right">
+                            <td class="text-right" v-if="showPrices">
                                 @{{ item.currency_symbol }} @{{ Number(item.unit_price).toFixed(2) }}
                             </td>
-                            <td class="text-right">
+                            <td class="text-right" v-if="showPrices">
                                 @{{ item.currency_symbol }} @{{ Number(item.total).toFixed(2) }}
                             </td>
                         </tr>
                         <tr v-if="!record.items || record.items.length === 0">
-                            <td colspan="4" class="text-center text-muted py-4">Sin productos</td>
+                            <td :colspan="showPrices ? 4 : 2" class="text-center text-muted py-4">Sin productos</td>
                         </tr>
                     </tbody>
                 </table>
 
-                <div class="total-box">
+                <div class="total-box" v-if="showPrices">
                     <span class="label">Total</span>
                     <span class="amount">
                         @{{ record.currency_symbol }} @{{ Number(record.total).toFixed(2) }}
                     </span>
                 </div>
 
-                <div class="modal-footer-actions" v-if="record.print_url">
+                <div class="modal-footer-actions" v-if="record.print_url && showPrices">
                     <a :href="record.print_url" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">
                         Ver PDF
                     </a>
