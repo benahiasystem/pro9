@@ -45,7 +45,7 @@
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-826f8cde.js",
+    "file": "assets/cart-app-913b918e.js",
     "isEntry": true,
     "src": "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js"
   },

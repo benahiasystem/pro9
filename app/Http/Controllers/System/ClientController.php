@@ -975,7 +975,7 @@ use Illuminate\Support\Facades\Mail;
             $advancedStatuses = [
                 // === ESTADOS FINANCIEROS (Payment) ===
                 ['description' => 'Pago pendiente', 'color' => '#ffc107', 'is_initial' => true, 'is_final' => false, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => false, 'sort_order' => 1],
-                ['description' => 'Pago completado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => true, 'sort_order' => 2],
+                ['description' => 'Pago completado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => true, 'action_generate_document' => true, 'sort_order' => 2],
                 ['description' => 'Pago rechazado', 'color' => '#dc3545', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 3],
                 ['description' => 'Reembolso', 'color' => '#6c757d', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 4],
 

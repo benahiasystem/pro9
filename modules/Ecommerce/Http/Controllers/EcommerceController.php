@@ -43,6 +43,7 @@ use App\Models\System\Configuration as SystemConfiguration;
 use Modules\Ecommerce\Jobs\SendOrderStatusEmail;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use App\Services\Tenant\OrderDocumentFromStatusService;
 
 
 class EcommerceController extends Controller
@@ -1014,6 +1015,11 @@ class EcommerceController extends Controller
         $result = $mpController->mercadoPagoCreatePayment($paymentReq);
 
         if (!empty($result['paid']) || !empty($result['pending'])) {
+            // Igual que Culqi: pago aprobado → action_mark_payment; pendiente → estado inicial de pago.
+            $paymentStatusId = ! empty($result['paid'])
+                ? StatusOrder::resolvePaidPaymentStatusId()
+                : StatusOrder::resolveInitialPaymentStatusId();
+
             $order = Order::create([
                 'external_id' => Str::uuid()->toString(),
                 'customer' => $customer,
@@ -1021,8 +1027,16 @@ class EcommerceController extends Controller
                 'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
                 'total' => $request->precio_culqi,
                 'reference_payment' => $request->input('reference_payment', 'mp'),
+                'status_order_id' => StatusOrder::resolveInitialOrderStatusId(),
+                'payment_status_order_id' => $paymentStatusId,
                 'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
             ]);
+
+            if (! empty($result['paid'])) {
+                app(OrderDocumentFromStatusService::class)->afterGatewayPaymentCompleted($order);
+                $order->refresh();
+            }
+
             $result['order'] = $order;
             $result['thank_you_url'] = route('tenant_ecommerce_thank_you', [
                 'external_id' => $order->external_id,
@@ -1050,6 +1064,7 @@ class EcommerceController extends Controller
 
         $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array) $request->customer;
 
+        // Pedido previo al formulario: inicia en pago pendiente hasta confirmar PAID.
         $order = Order::create([
             'external_id' => Str::uuid()->toString(),
             'customer' => $customer,
@@ -1057,6 +1072,8 @@ class EcommerceController extends Controller
             'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
             'total' => $request->precio_culqi,
             'reference_payment' => 'izipay',
+            'status_order_id' => StatusOrder::resolveInitialOrderStatusId(),
+            'payment_status_order_id' => StatusOrder::resolveInitialPaymentStatusId(),
             'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
         ]);
 
@@ -1093,8 +1110,42 @@ class EcommerceController extends Controller
         ]);
 
         $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $izipayController->izipayTransaction($paymentReq);
 
-        return response()->json($izipayController->izipayTransaction($paymentReq));
+        // Pago confirmado (PAID): asignar estado con action_mark_payment, igual que Culqi.
+        if (! empty($result['paid'])) {
+            $externalId = $request->input('external_id')
+                ?: data_get($result, 'result.answer.orderDetails.orderId')
+                ?: data_get($result, 'result.answer.orderId');
+
+            $order = $externalId
+                ? Order::where('external_id', $externalId)->first()
+                : null;
+
+            if ($order) {
+                $paidPaymentStatusId = StatusOrder::resolvePaidPaymentStatusId();
+                $dirty = false;
+
+                if ($paidPaymentStatusId && (int) $order->payment_status_order_id !== $paidPaymentStatusId) {
+                    $order->payment_status_order_id = $paidPaymentStatusId;
+                    $dirty = true;
+                }
+
+                if (! $order->status_order_id) {
+                    $order->status_order_id = StatusOrder::resolveInitialOrderStatusId();
+                    $dirty = true;
+                }
+
+                if ($dirty) {
+                    $order->save();
+                }
+
+                app(OrderDocumentFromStatusService::class)->afterGatewayPaymentCompleted($order);
+                $result['order'] = $order->fresh(['sale_note', 'payment_status_order']);
+            }
+        }
+
+        return response()->json($result);
     }
 
     public function izipayRecord()

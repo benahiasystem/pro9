@@ -20,6 +20,7 @@ use Exception;
 use App\Models\Tenant\ConfigurationEcommerce;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Tenant\StatusOrder;
+use App\Services\Tenant\OrderDocumentFromStatusService;
 use Modules\Payment\Models\PaymentConfiguration;
 
 
@@ -117,17 +118,10 @@ class CulqiController extends Controller
         }
 
         // Estado inicial de la orden
-        $initialOrderStatus = StatusOrder::where('is_order_status', true)->where('is_initial', true)->orderBy('sort_order')->first()
-            ?: StatusOrder::where('is_order_status', true)->orderBy('sort_order')->first();
-        $initialStatusId = $initialOrderStatus ? $initialOrderStatus->id : null;
+        $initialStatusId = StatusOrder::resolveInitialOrderStatusId();
 
-        // Estado de pago "Pagado" (aquel que tiene action_mark_payment = true o no es el inicial)
-        $paidPaymentStatus = StatusOrder::where('is_payment_status', true)->where('action_mark_payment', true)->first();
-        if (!$paidPaymentStatus) {
-            $paidPaymentStatus = StatusOrder::where('is_payment_status', true)->where('is_initial', false)->first()
-                ?: StatusOrder::where('is_payment_status', true)->first();
-        }
-        $paidPaymentStatusId = $paidPaymentStatus ? $paidPaymentStatus->id : null;
+        // Estado de pago "Pagado" (action_mark_payment = true)
+        $paidPaymentStatusId = StatusOrder::resolvePaidPaymentStatusId();
 
         $order = Order::create([
             'external_id' => Str::uuid()->toString(),
@@ -140,6 +134,10 @@ class CulqiController extends Controller
             'payment_status_order_id' => $paidPaymentStatusId,
             'purchase' => json_decode($request->purchase)
         ]);
+
+        // Misma generación de comprobante que al marcar "Pago completado" en admin
+        app(OrderDocumentFromStatusService::class)->afterGatewayPaymentCompleted($order);
+        $order->refresh();
 
         $customer_email = $request->email;
         $document = new stdClass;

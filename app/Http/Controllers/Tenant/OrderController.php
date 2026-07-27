@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\ItemWarehouse;
 use App\Models\Tenant\StatusOrder;
+use App\Services\Tenant\OrderDocumentFromStatusService;
 use Illuminate\Support\Facades\Cache;
 use Hyn\Tenancy\Contracts\CurrentHostname;
 use App\Http\Resources\Tenant\OrderCollection;
@@ -119,98 +120,34 @@ class OrderController extends Controller
                 return ['message' => 'Pedido no encontrado', 'type' => 'error'];
             }
 
-            // Validar que no se genere doble. Si ya existe, solo actualizar el estatus.
-            // Conversión profunda: purchase se guarda como object (stdClass) y los sub-objetos
-            // también son stdClass. json_decode/json_encode garantiza un array asociativo puro
-            // en todos los niveles, evitando fallos en SaleNoteHelper::transformForOrder.
-            $purchase = json_decode(json_encode($order->purchase), true);
-            $tipo_doc = $purchase['codigo_tipo_documento'] ?? '03';
-
-            $already_has_document = false;
-
-            if ($tipo_doc == '80') {
-                if ($order->sale_note || $order->has_sale_note) {
-                    $already_has_document = true;
-                }
-            } else {
-                if ($order->document_external_id) {
-                    $already_has_document = true;
-                }
-            }
-
-            if ($already_has_document) {
-                $order->update([$field => $request->record[$field]]);
-                return ['message' => 'Estatus actualizado correctamente', 'type' => 'success'];
-            }
-
-            // 1. Actualizar siempre el estatus primero
+            // Actualizar siempre el estatus primero
             $order->update([$field => $request->record[$field]]);
+            $order->refresh();
 
-            try {
-                // Buscar serie activa
-                $establishment_id = $purchase['establishment_id'] ?? Establishment::first()->id;
-                $series = Series::where('establishment_id', $establishment_id)
-                    ->where('document_type_id', $tipo_doc)
-                    ->first();
+            $docResult = app(OrderDocumentFromStatusService::class)
+                ->generateIfConfigured($order, $statusOrder);
 
-                if (!$series) {
-                    \Log::error('No hay series disponibles para generar el comprobante. Tipo doc: ' . $tipo_doc);
-                    return ['message' => 'Estado actualizado, pero hubo un problema al generar el comprobante (revisa los logs)', 'type' => 'warning'];
-                }
-
-                if ($tipo_doc == '80') {
-                    $purchase['serie_documento'] = $series->id;
-                    $sale_note_data = \Modules\Sale\Helpers\SaleNoteHelper::transformForOrder($purchase);
-                    $sale_note_data['series_id'] = $series->id;
-                    $sale_note_data['prefix'] = 'NV';
-                    $sale_note_data['order_id'] = $order->id;
-                    
-                    $saleNoteController = app(\App\Http\Controllers\Tenant\SaleNoteController::class);
-                    $response = $saleNoteController->storeWithData($sale_note_data);
-                    
-                    if (!isset($response['success']) || !$response['success']) {
-                        \Log::error('Error al generar la nota de venta automática: ' . ($response['message'] ?? ''));
-                        return ['message' => 'Estado actualizado, pero hubo un problema al generar el comprobante (revisa los logs)', 'type' => 'warning'];
-                    }
-
-                    // Devolver el ID de la nota de venta para que el frontend abra el modal de opciones
-                    return [
-                        'message'      => 'Estatus actualizado y nota de venta generada exitosamente',
-                        'type'         => 'success',
-                        'sale_note_id' => $response['data']['id'] ?? null,
-                    ];
-                } else {
-                    $purchase['serie_documento'] = $series->id;
-                    $requestDocument = new \Illuminate\Http\Request();
-                    $requestDocument->replace($purchase);
-                    
-                    $documentController = app(\App\Http\Controllers\Tenant\Api\DocumentController::class);
-                    $response = $documentController->store($requestDocument);
-                    
-                    if (isset($response['success']) && $response['success']) {
-                        $document_external_id = $response['data']['external_id'];
-                        $number_document = $response['data']['number'];
-                        
-                        $order->update([
-                            'document_external_id' => $document_external_id,
-                            'number_document' => $number_document
-                        ]);
-                    } else {
-                        \Log::error('Error al generar el comprobante automático: ' . ($response['message'] ?? ''));
-                        return ['message' => 'Estado actualizado, pero hubo un problema al generar el comprobante (revisa los logs)', 'type' => 'warning'];
-                    }
-                }
-
-                return ['message' => 'Estatus actualizado y comprobante generado exitosamente', 'type' => 'success'];
-
-            } catch (\Throwable $e) {
-                \Log::error('Excepción al generar comprobante automático: ' . $e->getMessage());
-                \Log::error($e->getTraceAsString());
+            if (($docResult['type'] ?? null) === 'warning') {
                 return [
-                    'message' => 'Estado actualizado. Hubo un error al generar el comprobante: ' . $e->getMessage(),
-                    'type'    => 'warning',
+                    'message' => 'Estado actualizado, pero hubo un problema al generar el comprobante'
+                        .(! empty($docResult['message']) ? ': '.$docResult['message'] : ' (revisa los logs)'),
+                    'type' => 'warning',
                 ];
             }
+
+            if (! empty($docResult['sale_note_id'])) {
+                return [
+                    'message' => 'Estatus actualizado y nota de venta generada exitosamente',
+                    'type' => 'success',
+                    'sale_note_id' => $docResult['sale_note_id'],
+                ];
+            }
+
+            if (! empty($docResult['generated'])) {
+                return ['message' => 'Estatus actualizado y comprobante generado exitosamente', 'type' => 'success'];
+            }
+
+            return ['message' => 'Estatus actualizado correctamente', 'type' => 'success'];
         }
 
         // Descuento de stock: antes hardcodeado para id=3, ahora guiado por el flag del estado

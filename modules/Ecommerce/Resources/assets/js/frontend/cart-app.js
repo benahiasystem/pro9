@@ -1467,12 +1467,15 @@ var app_cart = new Vue({
                         window.KR.onSubmit(async (paymentResponse) => {
                             const uuid = paymentResponse.clientAnswer.transactions[0].uuid;
 
-                            axios.post(window.__routes?.izipay_transaction || '/ecommerce/izipay/transaction', { uuid: uuid }, this.getHeaderConfig())
+                            axios.post(window.__routes?.izipay_transaction || '/ecommerce/izipay/transaction', {
+                                uuid: uuid,
+                                external_id: order && order.external_id ? order.external_id : null,
+                            }, this.getHeaderConfig())
                             .then(res => {
                                 if(res.data.success && res.data.paid) {
                                     this.hideIzipayPaymentHost();
                                     this.saveContactDataUser();
-                                    this.showPurchaseSuccess(order);
+                                    this.showPurchaseSuccess(res.data.order || order);
                                 } else {
                                     this.hideIzipayPaymentHost();
                                     swal("Pago Rechazado", "Su pago no fue aprobado o fue denegado", "error");
