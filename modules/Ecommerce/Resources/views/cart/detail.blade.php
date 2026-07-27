@@ -128,6 +128,111 @@
                 "thumb quantity quantity total delete";
         }
     }
+
+    /* Guest checkout modals */
+    .guest-modal .modal-content {
+        border: 0;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .guest-modal .modal-header {
+        border-bottom: 1px solid #eef1f4;
+        padding: 1.25rem 1.5rem 1rem;
+    }
+
+    .guest-modal .modal-title {
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .guest-modal .modal-body {
+        padding: 0 1.5rem 1.25rem;
+        color: #4b5563;
+        line-height: 1.55;
+    }
+
+    .guest-modal .modal-footer {
+        border-top: 1px solid #eef1f4;
+        padding: 1rem 1.5rem 1.25rem;
+        gap: .5rem;
+    }
+
+    .guest-modal__intro {
+        margin-bottom: 1rem;
+    }
+
+    .guest-modal__actions {
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
+    }
+
+    .guest-modal__warning-list {
+        margin: 0 0 1rem;
+        padding-left: 1.15rem;
+    }
+
+    .guest-modal__warning-list li {
+        margin-bottom: .45rem;
+    }
+
+    .guest-modal__check {
+        display: flex;
+        align-items: flex-start;
+        gap: .65rem;
+        margin: 0;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .guest-modal__check input {
+        margin-top: .2rem;
+    }
+
+    .guest-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .guest-form-grid .field-full {
+        grid-column: 1 / -1;
+    }
+
+    @media (max-width: 767px) {
+        .guest-form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .pay-method-panel {
+        padding: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        background: #fafafa;
+    }
+
+    .pay-method-panel p {
+        font-size: 13px;
+        color: #555;
+        margin-bottom: 0;
+        white-space: pre-line;
+    }
+
+    .pay-method-action {
+        width: 100%;
+        margin-top: 12px;
+    }
+
+    .checkout-hint {
+        font-size: 13px;
+        color: #666;
+        text-align: center;
+        margin: 0 0 8px;
+        line-height: 1.4;
+    }
 </style>
 @endpush
 
@@ -435,6 +540,97 @@
             </div>
         </div>
 
+        {{-- Formulario de datos de invitado (fase 1) --}}
+        <div
+            class="card card-cart guest-contact-card"
+            v-if="records.length > 0 && showGuestForm && !isLoggedIn"
+            id="guestContactCollapse"
+        >
+            <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#guestContactBody" aria-expanded="true" style="text-decoration: none; display: block;">
+                <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
+                    <span class="icon-card">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                        </svg>
+                    </span>
+                    <span class="ml-2 font-weight-bold title-card">Datos de contacto (invitado)</span>
+                    <span class="head-summary">
+                        <b v-if="guest_form.email">@{{ guest_form.email }}</b>
+                        <span v-else class="head-summary-warn">Completa tus datos</span>
+                    </span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="collapse-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
+                </div>
+            </button>
+            <div id="guestContactBody" class="collapse show">
+                <div class="card-body card-body-h-auto card-cart-body">
+                    <p class="hint mb-3">Estos datos se usarán solo para esta compra. No se creará una cuenta ni se solicitará contraseña.</p>
+                    <div class="guest-form-grid">
+                        <div class="field-full">
+                            <label class="field-label" for="guest_email">Correo electrónico *</label>
+                            <input
+                                id="guest_email"
+                                type="email"
+                                class="input"
+                                v-model.trim="guest_form.email"
+                                placeholder="tu@correo.com"
+                                autocomplete="email"
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label class="field-label" for="guest_phone">Teléfono *</label>
+                            <input
+                                id="guest_phone"
+                                type="tel"
+                                class="input"
+                                v-model.trim="guest_form.telephone"
+                                placeholder="Ej: 987 654 321"
+                                maxlength="15"
+                                inputmode="numeric"
+                                required
+                            >
+                        </div>
+                        <div>
+                            <label class="field-label" for="guest_doc_type">Tipo de documento *</label>
+                            <select
+                                id="guest_doc_type"
+                                class="input"
+                                v-model="guest_form.identity_document_type_id"
+                            >
+                                <option value="1">DNI</option>
+                                <option value="6">RUC</option>
+                                <option value="0">Sin documento</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label" for="guest_doc_number">Número de documento *</label>
+                            <input
+                                id="guest_doc_number"
+                                type="text"
+                                class="input"
+                                v-model.trim="guest_form.number"
+                                :maxlength="guest_form.identity_document_type_id === '6' ? 11 : (guest_form.identity_document_type_id === '1' ? 8 : 15)"
+                                inputmode="numeric"
+                                required
+                            >
+                        </div>
+                        <div class="field-full">
+                            <label class="field-label" for="guest_name">Nombres / Razón social *</label>
+                            <input
+                                id="guest_name"
+                                type="text"
+                                class="input"
+                                v-model.trim="guest_form.name"
+                                placeholder="Nombre completo o razón social"
+                                required
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         @if($enable_electronic_documents)
             {{-- Modo documentos electrónicos: solo lectura, tipo inferido del número del usuario --}}
             <div class="card card-cart">
@@ -494,45 +690,123 @@
                     </span>
                     <span class="ml-2 font-weight-bold title-card">Método de pago</span>
                     <span class="head-summary">
-                        @guest('ecommerce')
-                            <span class="head-summary-warn">Inicia sesión</span>
-                        @else
-                            <b v-if="selectedPaymentMethod === 'culqi'">Tarjeta (VISA)</b>
-                            <b v-else-if="selectedPaymentMethod === 'cash'">Efectivo</b>
+                        <template v-if="!isLoggedIn">
+                            <b v-if="isGuestFormReady && selectedPaymentMethod === 'culqi'">@{{ titleCulqi }}</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'cash'">@{{ cashPaymentTitle }}</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'yape'">Yape</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'transfer'">Transferencia</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'paypal'">PayPal</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'mp'">@{{ titleMp }}</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'izipay'">@{{ titleIzipay }}</b>
+                            <span v-else-if="showGuestForm" class="head-summary-warn">Completa envío y contacto</span>
+                            <span v-else class="head-summary-warn">Identifícate para pagar</span>
+                        </template>
+                        <template v-else>
+                            <b v-if="selectedPaymentMethod === 'culqi'">@{{ titleCulqi }}</b>
+                            <b v-else-if="selectedPaymentMethod === 'cash'">@{{ cashPaymentTitle }}</b>
                             <b v-else-if="selectedPaymentMethod === 'yape'">Yape</b>
                             <b v-else-if="selectedPaymentMethod === 'transfer'">Transferencia</b>
                             <b v-else-if="selectedPaymentMethod === 'paypal'">PayPal</b>
+                            <b v-else-if="selectedPaymentMethod === 'mp'">@{{ titleMp }}</b>
+                            <b v-else-if="selectedPaymentMethod === 'izipay'">@{{ titleIzipay }}</b>
                             <span v-else class="head-summary-warn">Elige un método</span>
-                        @endguest
+                        </template>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="collapse-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
                 </div>
             </button>
             <div id="paymentCollapse" class="collapse show">
                 <div class="card-body card-body-h-auto card-cart-body">
-                    @guest('ecommerce')
-                    <div class="login-note">
+                    <div class="login-note" v-if="!isLoggedIn && !showGuestForm">
                         <span class="login-note-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
                         </span>
-                        <p><a href="{{route('tenant_ecommerce_login')}}" class="login-link">Inicia sesión</a> para seleccionar y guardar tu método de pago.</p>
+                        <p>Puedes <button type="button" class="btn btn-link p-0 align-baseline" @click="handleCheckoutClick">comprar como invitado</button> o <button type="button" class="btn btn-link p-0 align-baseline" @click="openLoginRegisterModal">iniciar sesión</button> para guardar tus datos.</p>
                     </div>
-                    @elseauth('ecommerce')
-                    <div class="pay-methods" role="radiogroup">
-                        <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
+                    <div class="login-note" v-else-if="!isLoggedIn && showGuestForm && !isGuestCheckoutComplete">
+                        <span class="login-note-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/></svg>
+                        </span>
+                        <p>Completa tus datos de contacto y la información de envío para habilitar los métodos de pago.</p>
+                    </div>
+                    <div class="pay-methods" v-if="isLoggedIn || isGuestCheckoutComplete" role="radiogroup">
+                        
+                        <label v-if="enableCulqi" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="culqi" autocomplete="off">
                             <span class="pay-method-ic">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                             </span>
-                            <span class="pay-method-label">Pagar con tarjeta (VISA)</span>
+                            <span class="pay-method-label">@{{ titleCulqi }}</span>
                         </label>
-                        <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
+                        <div v-if="selectedPaymentMethod === 'culqi'" class="pay-method-panel">
+                            <p v-if="descriptionCulqi">@{{ descriptionCulqi }}</p>
+                            <button
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('culqi')"
+                            >
+                                Pagar con @{{ titleCulqi }}
+                            </button>
+                        </div>
+
+                        <label v-if="enableIzipay" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'izipay' }">
+                            <input type="radio" v-model="selectedPaymentMethod" value="izipay" autocomplete="off">
+                            <span class="pay-method-ic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2M4 14v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                            </span>
+                            <span class="pay-method-label">@{{ titleIzipay }}</span>
+                        </label>
+                        <div v-if="selectedPaymentMethod === 'izipay'" class="pay-method-panel">
+                            <p v-if="descriptionIzipay">@{{ descriptionIzipay }}</p>
+                            <button
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('izipay')"
+                            >
+                                Pagar con @{{ titleIzipay }}
+                            </button>
+                        </div>
+
+                        <label v-if="enableMp" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'mp' }">
+                            <input type="radio" v-model="selectedPaymentMethod" value="mp" autocomplete="off">
+                            <span class="pay-method-ic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            </span>
+                            <span class="pay-method-label">@{{ titleMp }}</span>
+                        </label>
+                        <div v-if="selectedPaymentMethod === 'mp'" class="pay-method-panel">
+                            <p v-if="descriptionMp">@{{ descriptionMp }}</p>
+                            <button
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('mp')"
+                            >
+                                Pagar con @{{ titleMp }}
+                            </button>
+                        </div>
+
+                        <label v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="cash" autocomplete="off">
                             <span class="pay-method-ic">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
                             </span>
-                            <span class="pay-method-label">Pagar con efectivo</span>
+                            <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
+                        
+                        <div v-if="selectedPaymentMethod === 'cash'" class="pay-method-panel">
+                            <p v-if="cashPaymentDescription">@{{ cashPaymentDescription }}</p>
+                            <button
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('cash')"
+                            >
+                                Confirmar pedido — @{{ cashPaymentTitle }}
+                            </button>
+                        </div>
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="yape" autocomplete="off">
                             <span class="pay-method-ic">
@@ -540,6 +814,31 @@
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
+                        
+                        <div v-if="selectedPaymentMethod === 'yape'" class="pay-method-panel">
+                            <p>Escanea el código QR desde tu app de Yape.</p>
+                            @if(!empty($payment_configuration->image_url_yape))
+                            <div style="text-align: center; margin: 15px 0;">
+                                <img src="{{ $payment_configuration->image_url_yape }}" alt="QR Yape" style="max-width: 150px; border-radius: 8px; border: 1px solid #eee;">
+                            </div>
+                            @endif
+                            <div style="font-size: 14px; text-align: center; margin-bottom: 10px;">
+                                <strong>Titular:</strong> {{ $payment_configuration->name_yape ?? 'No registrado' }}<br>
+                                <strong>Teléfono:</strong> <span>{{ $payment_configuration->telephone_yape ?? 'No registrado' }}</span>
+                                <button type="button" @click.prevent="copyToClipboard('{{ $payment_configuration->telephone_yape ?? '' }}')" class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">
+                                    Copiar
+                                </button>
+                            </div>
+                            <button
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('yape')"
+                            >
+                                Confirmar pedido con Yape
+                            </button>
+                        </div>
+
                         <label v-if="enableTransfer" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'transfer' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="transfer" autocomplete="off">
                             <span class="pay-method-ic">
@@ -547,6 +846,33 @@
                             </span>
                             <span class="pay-method-label">Transferencia bancaria</span>
                         </label>
+                        
+                        <div v-if="selectedPaymentMethod === 'transfer'" class="pay-method-panel">
+                            <p>Realiza el depósito en alguna de nuestras cuentas bancarias y envíanos el voucher por WhatsApp.</p>
+                            @if(isset($bank_accounts) && count($bank_accounts) > 0)
+                                <ul style="list-style: none; padding-left: 0; font-size: 13px; margin: 10px 0 0;">
+                                @foreach($bank_accounts as $account)
+                                    <li style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+                                        <strong>Banco:</strong> {{ $account->bank->description }} ({{ $account->currency_type->symbol }})<br>
+                                        <strong>Cuenta:</strong> {{ $account->number }}<br>
+                                        @if($account->cci)
+                                        <strong>CCI:</strong> {{ $account->cci }}
+                                        @endif
+                                    </li>
+                                @endforeach
+                                </ul>
+                            @else
+                                <p style="font-size: 13px; font-weight: bold; color: #d9534f; margin-top: 10px;">No hay cuentas bancarias configuradas.</p>
+                            @endif
+                            <button
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('transfer')"
+                            >
+                                Confirmar pedido con transferencia
+                            </button>
+                        </div>
                         @if($information->script_paypal)
                         <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'paypal' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="paypal" autocomplete="off">
@@ -557,7 +883,6 @@
                         </label>
                         @endif
                     </div>
-                    @endauth
                 </div>
             </div>
         </div>
@@ -608,24 +933,10 @@
                 <!-- Coupon input and applied coupon display -->
                 <div class="coupon-block">
                     <div class="coupon">
-                        <input
-                            v-model="couponField"
-                            type="text"
-                            class="input"
-                            placeholder="Código de cupón"
-                            :disabled="couponLoading || !!(appliedCoupon && appliedCoupon.code)"
-                        >
-                        <button
-                            class="coupon-btn"
-                            @click="applyCoupon"
-                            :disabled="couponLoading || !!(appliedCoupon && appliedCoupon.code)"
-                            :title="(appliedCoupon && appliedCoupon.code) ? 'Ya hay un cupón aplicado' : 'Aplicar cupón'"
-                        >Aplicar</button>
+                        <input v-model="couponField" type="text" class="input" placeholder="Código de cupón">
+                        <button class="coupon-btn" @click="applyCoupon" :disabled="couponLoading">Aplicar</button>
                     </div>
                     <small class="coupon-msg text-danger" v-if="couponMessage">@{{ couponMessage }}</small>
-                    <small class="coupon-msg text-muted" v-else-if="appliedCoupon && appliedCoupon.code">
-                        Cupón aplicado. Usa &quot;Eliminar&quot; para quitarlo.
-                    </small>
                 </div>
                 <label class="terms" :class="{ 'terms--checked': acceptedTerms }" id="termsLabel">
                   <input type="checkbox" id="termsCheck" v-model="acceptedTerms">
@@ -633,18 +944,30 @@
                   <span class="terms-txt">He leído y acepto los <a href="#" data-modal-open="termsModal" @click.prevent>Términos y Condiciones</a>.</span>
                 </label>
                 <div class="checkout-methods">
-                    @guest('ecommerce')
-                    <a href="{{route('tenant_ecommerce_login')}}" class="pay-btn login-link culqi" :class="{ disabled: !acceptedTerms }">Pagar con VISA</a>
-                    <a href="{{route('tenant_ecommerce_login')}}" class="pay-btn pay-btn--ghost login-link" :class="{ disabled: !acceptedTerms }">Pagar con efectivo</a>
-
-                    @elseauth('ecommerce')
-                        <button v-if="selectedPaymentMethod !== 'paypal'" class="pay-btn" :class="{ disabled: !acceptedTerms }" :disabled="!selectedPaymentMethod || !acceptedTerms" @click="executePayment">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                            Pagar
-                        </button>
-
-                    @endauth
-
+                    <p v-if="!isLoggedIn && showGuestForm && isGuestCheckoutComplete" class="checkout-hint">
+                        Elige un método de pago y confirma desde el botón correspondiente.
+                    </p>
+                    <button
+                        v-if="!isLoggedIn && !(showGuestForm && isGuestCheckoutComplete)"
+                        type="button"
+                        class="pay-btn"
+                        :class="{ disabled: !acceptedTerms || records.length === 0 }"
+                        :disabled="!acceptedTerms || records.length === 0"
+                        @click="handleCheckoutClick"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        @{{ showGuestForm ? 'Completar datos' : 'Comprar como invitado' }}
+                    </button>
+                    <button
+                        v-else-if="isLoggedIn && selectedPaymentMethod !== 'paypal'"
+                        class="pay-btn"
+                        :class="{ disabled: !acceptedTerms }"
+                        :disabled="!selectedPaymentMethod || !acceptedTerms"
+                        @click="executePayment"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        Pagar
+                    </button>
                 </div><!-- End .checkout-methods -->
 
                 <div class="trust">
@@ -659,6 +982,76 @@
         </div><!-- End .cart-summary -->
       </div><!-- End .summary-sticky -->
     </div><!-- End .col-lg-4 -->
+
+    <!-- Modal M-01: Elección de identidad (Guest Checkout) -->
+    <div class="modal fade guest-modal" id="guestIdentityModal" tabindex="-1" role="dialog" aria-labelledby="guestIdentityModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="guestIdentityModalLabel">¿Cómo deseas continuar?</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" @click="closeGuestIdentityModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="guest-modal__intro mb-0">
+                        Puedes completar tu compra sin crear una cuenta o acceder con tu usuario registrado.
+                    </p>
+                    <div class="guest-modal__actions mt-4">
+                        <button type="button" class="pay-btn" @click="chooseGuestCheckout">
+                            Comprar como invitado
+                        </button>
+                        <button type="button" class="pay-btn pay-btn--ghost" @click="openLoginRegisterModal">
+                            Iniciar sesión / Registrarse
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link text-muted" data-dismiss="modal" @click="closeGuestIdentityModal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal M-02: Advertencia de compra invitada -->
+    <div class="modal fade guest-modal" id="guestWarningModal" tabindex="-1" role="dialog" aria-labelledby="guestWarningModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="guestWarningModalLabel">Compra como invitado</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar" @click="closeGuestWarningModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">
+                        Si continúas sin iniciar sesión no podrás seguir tu pedido en línea ni ver el historial de compras desde tu cuenta.
+                    </p>
+                    <ul class="guest-modal__warning-list">
+                        <li>No se creará una cuenta ni se solicitará contraseña.</li>
+                        <li>El seguimiento se realizará por correo electrónico.</li>
+                        <li>Tus datos se usarán únicamente para procesar esta compra.</li>
+                    </ul>
+                    <label class="guest-modal__check">
+                        <input type="checkbox" v-model="guestWarningChecked">
+                        <span>Entiendo y deseo continuar como invitado</span>
+                    </label>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-link text-muted px-0" @click="backToGuestIdentityModal">Volver</button>
+                    <button
+                        type="button"
+                        class="pay-btn"
+                        :disabled="!guestWarningChecked"
+                        :class="{ disabled: !guestWarningChecked }"
+                        @click="confirmGuestCheckout"
+                    >
+                        Continuar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal de Dirección -->
     <div class="modal fade" id="addressModal" tabindex="-1" role="dialog" aria-labelledby="addressModalLabel" aria-hidden="true">
@@ -839,6 +1232,10 @@
 </div>
 @endif
 
+<!-- DOM Containers for MP and Izipay (fuera de #app para evitar conflicto con Vue) -->
+<div id="mp-brick-container" style="display:none"></div>
+<div id="izipay-payment-host" class="kr-izipay-container-inner" style="display:none"></div>
+
 <input type="hidden" id="total_amount" data-total="0.0">
 
 @endsection
@@ -856,6 +1253,21 @@
         pickup_branches: {!! json_encode($pickup_branches ?? []) !!},
         enable_yape: {!! json_encode($enable_yape ?? false) !!},
         enable_transfer: {!! json_encode($enable_transfer ?? false) !!},
+        enable_cash: {!! json_encode(isset($configuration->preferences['enable_cash']) && $configuration->preferences['enable_cash'] == 1) !!},
+        cash_payment_title: {!! json_encode($configuration->preferences['cash_title'] ?? 'Pago contra entrega') !!},
+        cash_payment_description: {!! json_encode($configuration->preferences['cash_description'] ?? '') !!},
+        cash_payment_pickup_only: {!! json_encode(isset($configuration->preferences['cash_pickup_only']) && $configuration->preferences['cash_pickup_only'] == 1) !!},
+        enable_izipay: {!! json_encode($payment_configuration->enabled_izipay ?? false) !!},
+        public_key_izipay: {!! json_encode($payment_configuration->publickey_izipay ?? '') !!},
+        title_izipay: {!! json_encode($preferences['title_izipay'] ?? 'Pago con Izipay') !!},
+        description_izipay: {!! json_encode($preferences['description_izipay'] ?? '') !!},
+        enable_mp: {!! json_encode($payment_configuration->enabled_mp ?? false) !!},
+        public_key_mp: {!! json_encode($payment_configuration->public_key_mp ?? '') !!},
+        title_mp: {!! json_encode($preferences['title_mp'] ?? 'Mercado Pago') !!},
+        description_mp: {!! json_encode($preferences['description_mp'] ?? '') !!},
+        enable_culqi: {!! json_encode($payment_configuration->enabled_culqi ?? false) !!},
+        title_culqi: {!! json_encode($preferences['title_culqi'] ?? 'Pago con Tarjeta (Culqi)') !!},
+        description_culqi: {!! json_encode($preferences['description_culqi'] ?? '') !!},
     };
 
     window.__routes = {
@@ -864,6 +1276,9 @@
         locations: '{{ route("get_location_cascade") }}',
         home: '{{ route("tenant.ecommerce.index") }}',
         culqi: '{{ route("tenant_ecommerce_culqui") }}',
+        izipay_payment: '{{ route("tenant_ecommerce_izipay") }}',
+        izipay_transaction: '{{ route("tenant_ecommerce_izipay_transaction") }}',
+        mercadopago_payment: '{{ route("tenant_ecommerce_mp") }}',
         thank_you: '{{ route("tenant_ecommerce_thank_you", ["external_id" => "EXTERNAL_ID"]) }}',
     };
 </script>
@@ -926,65 +1341,10 @@
 @vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
 
 <script>
-    // Globales requeridos por Culqi v3 (evitan ReferenceError en consola)
-    window.closeCheckout = function () {
-        console.log('El usuario cerró el modal de Culqi.');
-        if (typeof app_cart !== 'undefined') {
-            app_cart.processingPayment = false;
-        }
-    };
-
-    window.mostrarMensaje = function (mensaje, tipo) {
-        tipo = tipo || 'error';
-        console.error('[Culqi]: ' + mensaje);
-
-        if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
-            Swal.fire({
-                icon: tipo,
-                title: tipo === 'error' ? 'Hubo un inconveniente' : 'Información',
-                text: mensaje,
-                confirmButtonColor: '#3085d6'
-            });
-        } else if (typeof swal === 'function') {
-            swal({
-                title: tipo === 'error' ? 'Hubo un inconveniente' : 'Información',
-                text: mensaje,
-                type: tipo,
-                icon: tipo
-            });
-        } else {
-            alert(mensaje);
-        }
-    };
-
-    function getCulqiErrorMessage(error) {
-        if (!error) {
-            return 'El pago fue cancelado o no se pudo completar.';
-        }
-
-        var code = String(error.code || error.type || '').toLowerCase();
-        var raw = String(
-            error.user_message || error.merchant_message || error.message || ''
-        ).toLowerCase();
-
-        var isEncryptError = code.indexOf('encrypt') !== -1
-            || raw.indexOf('encript') !== -1
-            || raw.indexOf('encrypt') !== -1;
-
-        if (isEncryptError || !window.isSecureContext) {
-            return 'El pago con tarjeta requiere HTTPS. En local usa https://local.pro9.test (habilita SSL en Laragon) o prueba desde un entorno seguro.';
-        }
-
-        return error.user_message
-            || error.merchant_message
-            || error.message
-            || 'No se pudo procesar el pago. Intente nuevamente.';
-    }
-
-    Culqi.publicKey = {!! json_encode($configuration->token_public_culqui ) !!};
+    Culqi.publicKey = {!! json_encode($payment_configuration->publickey_culqi ?? '') !!};
     if(!Culqi.publicKey)
     {
-      jQuery('.culqi').hide()
+      $('.culqi').hide()
 /*
         swal({
             title: "Culqi configuración",
@@ -1001,35 +1361,19 @@
 
     async function askedDocument(order) {
         app_cart.order_generated = order
-        jQuery('#modal_ask_document').modal('show')
+        $('#modal_ask_document').modal('show')
     }
 
     async function execCulqi() {
-        if (!Culqi.publicKey) {
-            window.mostrarMensaje('El pago con tarjeta aún no está configurado. Elija otro método de pago.', 'warning');
-            return;
-        }
 
-        // Culqi usa Web Crypto: en dominios .test solo funciona con HTTPS (HTTP no es "secure context")
-        if (!window.isSecureContext) {
-            if (location.protocol === 'http:') {
-                try {
-                    sessionStorage.setItem('culqi_open_after_https', '1');
-                } catch (e) { /* ignore */ }
-                location.replace('https://' + location.host + location.pathname + location.search + location.hash);
-                return;
-            }
-            window.mostrarMensaje(
-                'Culqi no puede encriptar la tarjeta en un contexto no seguro. Usa HTTPS o otro método de pago.',
-                'warning'
-            );
-            if (typeof app_cart !== 'undefined') {
-                app_cart.processingPayment = false;
-            }
-            return;
-        }
+       console.log( 'errores', app_cart.errors)
 
-        let precio = Math.round((Number(jQuery("#total_amount").data('total')) * 100).toFixed(2));
+       //app_cart.errors = 'demo'
+
+    //   console.log( 'errores22', app_cart.errors)
+
+
+        let precio = Math.round((Number($("#total_amount").data('total')) * 100).toFixed(2));
         if (precio > 0) {
             Culqi.settings({
                 title: "Productos Ecommerce",
@@ -1040,25 +1384,10 @@
             Culqi.open();
         }
     }
-    window.execCulqi = execCulqi;
 
-    // Si redirigimos a HTTPS por Culqi, reabrir el checkout automáticamente
-    document.addEventListener('DOMContentLoaded', function () {
-        try {
-            if (window.isSecureContext && sessionStorage.getItem('culqi_open_after_https') === '1') {
-                sessionStorage.removeItem('culqi_open_after_https');
-                setTimeout(function () {
-                    if (typeof window.execCulqi === 'function') {
-                        window.execCulqi();
-                    }
-                }, 600);
-            }
-        } catch (e) { /* ignore */ }
-    });
 
-    window.culqi = async function () {
-        if (window.Culqi.token) {
-            const token = window.Culqi.token.id;
+    async function culqi() {
+        if (Culqi.token) {
 
             swal({
                 title: "Estamos hablando con su banco",
@@ -1069,11 +1398,13 @@
                 }
             });
 
-            let precio = Math.round((Number(jQuery("#total_amount").data('total')).toFixed(2) * 100));
-            let precio_culqi = Number(jQuery("#total_amount").data('total')).toFixed(2);
+            let precio = Math.round((Number($("#total_amount").data('total')).toFixed(2) * 100));
+            let precio_culqi = Number($("#total_amount").data('total')).toFixed(2);
 
-            var email = window.Culqi.token.email;
-            var installments = window.Culqi.token.metadata.installments;
+            var url = "/culqi";
+            var token = Culqi.token.id;
+            var email = Culqi.token.email;
+            var installments = Culqi.token.metadata.installments;
 
             const formpayment = await app_cart.getFormPaymentCash()
 
@@ -1094,11 +1425,11 @@
                 shipping_address: formpayment.shipping_address || '',
             }
 
-            jQuery.ajax({
+            $.ajax({
               url: "{{route('tenant_ecommerce_culqui')}}",
               method: 'post',
               headers: {
-                  'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
+                  'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
               },
               data: data,
               dataType: 'JSON',
@@ -1115,48 +1446,22 @@
                     //window.location = "{{ route('tenant.ecommerce.index') }}";
                   })
                 } else {
-                  app_cart.processingPayment = false;
-                  window.mostrarMensaje(data.message || 'Sucedió algo inesperado.', 'error');
+                  const message = data.message
+                  swal("Pago No realizado", message, "error");
                 }
               },
               error: function (error_data) {
-                console.log(error_data);
-                app_cart.processingPayment = false;
-                let message = 'Ocurrió un error al procesar el pago.';
-                if (error_data.responseJSON && error_data.responseJSON.message) {
-                    message = error_data.responseJSON.message;
-                } else if (error_data.status === 422 && error_data.responseText) {
-                    let parsed = JSON.parse(error_data.responseText);
-                    if (parsed.message) {
-                        message = parsed.message;
-                    } else {
-                        message = 'Faltan completar campos';
-                        app_cart.errors = parsed;
-                    }
+                console.log(error_data)
+                if (error_data.status === 422) {
+                    app_cart.errors = JSON.parse( error_data.responseText);
                 }
-                window.mostrarMensaje(message, 'error');
+                swal("Pago No realizado", 'Faltan completar campos', "error");
               }
             });
 
-        } else if (window.Culqi.error) {
-            const error = window.Culqi.error;
-            if (typeof app_cart !== 'undefined') {
-                app_cart.processingPayment = false;
-            }
-            try {
-                if (typeof window.Culqi.close === 'function') {
-                    window.Culqi.close();
-                }
-            } catch (e) { /* modal ya cerrado */ }
-            window.mostrarMensaje(
-                getCulqiErrorMessage(error) || error.user_message || error.merchant_message,
-                'error'
-            );
         } else {
-            // Usuario cerró el modal sin token ni error explícito
-            if (typeof app_cart !== 'undefined') {
-                app_cart.processingPayment = false;
-            }
+            console.log(Culqi.error);
+            swal("Pago No realizado", Culqi.error.user_message, "error");
         }
     };
 

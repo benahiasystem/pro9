@@ -1,6 +1,8 @@
 // Cart Application - Ecommerce Module
 // Main Vue instance for shopping cart detail page
 
+let izipaySdkLoadPromise = null;
+
 var app_cart = new Vue({
     el: '#app',
     data: {
@@ -79,6 +81,7 @@ var app_cart = new Vue({
         userDefaultAddress: window.__ecommerce_config?.userAddress || null,
         // Método de pago seleccionado: 'culqi' | 'cash' | null
         selectedPaymentMethod: null,
+
         // Controla si se emiten documentos electrónicos (factura/boleta) o solo notas de venta
         enable_electronic_documents: window.__ecommerce_config?.enable_electronic_documents || false,
         // Recojo en tienda
@@ -87,15 +90,96 @@ var app_cart = new Vue({
         selectedPickupBranch: null,
         isPickupMode: false,
         // Métodos de pago adicionales
+        enableCash: window.__ecommerce_config?.enable_cash || false,
+        cashPaymentTitle: window.__ecommerce_config?.cash_payment_title || 'Pago contra entrega',
+        cashPaymentDescription: window.__ecommerce_config?.cash_payment_description || '',
+        cashPaymentPickupOnly: window.__ecommerce_config?.cash_payment_pickup_only || false,
         enableYape: window.__ecommerce_config?.enable_yape || false,
         enableTransfer: window.__ecommerce_config?.enable_transfer || false,
+        
+        enableIzipay: window.__ecommerce_config?.enable_izipay || false,
+        titleIzipay: window.__ecommerce_config?.title_izipay || 'Pago con Izipay',
+        descriptionIzipay: window.__ecommerce_config?.description_izipay || '',
+        
+        enableMp: window.__ecommerce_config?.enable_mp || false,
+        titleMp: window.__ecommerce_config?.title_mp || 'Mercado Pago',
+        descriptionMp: window.__ecommerce_config?.description_mp || '',
+        
+        enableCulqi: window.__ecommerce_config?.enable_culqi || false,
+        titleCulqi: window.__ecommerce_config?.title_culqi || 'Tarjeta (VISA)',
+        descriptionCulqi: window.__ecommerce_config?.description_culqi || '',
+
         acceptedTerms: false,
         successOrder: null,
         showConfirmModal: false,
         processingPayment: false,
         thankYouUrl: null,
+        
+        mpScriptLoaded: false,
+        mpBrickController: null,
+        krScriptLoaded: false,
+
+        // Guest checkout — fase 1
+        guestCheckoutAccepted: false,
+        showGuestForm: false,
+        guestWarningChecked: false,
+        guest_form: {
+            email: '',
+            telephone: '',
+            identity_document_type_id: '1',
+            number: '',
+            name: '',
+        },
     },
     computed: {
+        isLoggedIn() {
+            return !!(this.user && this.user.id);
+        },
+        isGuestCheckoutActive() {
+            return !this.isLoggedIn && this.guestCheckoutAccepted && this.showGuestForm;
+        },
+        isGuestContactReady() {
+            return this.isGuestCheckoutActive && this.isGuestFormValid();
+        },
+        isGuestCheckoutComplete() {
+            if (!this.isGuestCheckoutActive) {
+                return false;
+            }
+
+            const email = (this.guest_form.email || '').trim();
+            const phone = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            const name = (this.guest_form.name || '').trim();
+            const number = (this.guest_form.number || '').trim();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const phoneDigits = phone.replace(/\D/g, '');
+
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return false;
+            }
+            if (!phoneDigits || phoneDigits.length < 7) {
+                return false;
+            }
+            if (!name || !number) {
+                return false;
+            }
+            if (docType === '1' && number.replace(/\D/g, '').length !== 8) {
+                return false;
+            }
+            if (docType === '6' && number.replace(/\D/g, '').length !== 11) {
+                return false;
+            }
+            if (!this.isPickupMode && !(this.form_contact.address || '').trim()) {
+                return false;
+            }
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                return false;
+            }
+
+            return true;
+        },
+        isGuestFormReady() {
+            return this.isGuestCheckoutComplete;
+        },
         maxLength: function () {
             if (this.typeDocuments === '6') {
                 return 11
@@ -122,12 +206,42 @@ var app_cart = new Vue({
         },
     },
     watch: {
+        'form_contact.telephone'(value) {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            const phone = (value || '').trim();
+            if (phone && phone !== (this.guest_form.telephone || '').trim()) {
+                this.guest_form.telephone = phone;
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+            }
+        },
+        guest_form: {
+            deep: true,
+            handler() {
+                if (!this.showGuestForm || this.isLoggedIn) {
+                    return;
+                }
+
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+            },
+        },
         'addressModal.address': function(newValue) {
         },
         selectedPaymentMethod(val) {
             // Mostrar u ocultar el widget de PayPal que está fuera del scope de Vue
             const el = document.getElementById('paypal-widget-container');
             if (el) el.style.display = (val === 'paypal') ? 'block' : 'none';
+        },
+        isPickupMode(val) {
+            // Si el método Pago contra entrega solo aplica para recojo y se cambia a delivery,
+            // deseleccionar el método si estaba activo
+            if (!val && this.cashPaymentPickupOnly && this.selectedPaymentMethod === 'cash') {
+                this.selectedPaymentMethod = null;
+            }
         }
     },
     async mounted() {
@@ -136,9 +250,9 @@ var app_cart = new Vue({
         let exchange_rate_sale = this.exchange_rate_sale
         let contex = this
 
-        jQuery(".input_quantity").change(function (e) {
-            let value = parseFloat(jQuery(this).val())
-            let id = jQuery(this).data('product')
+        $(".input_quantity").change(function (e) {
+            let value = parseFloat($(this).val())
+            let id = $(this).data('product')
             let row = contex.records.find(x => x.id == id)
 
             if(row.currency_type_id === 'USD') {
@@ -189,8 +303,335 @@ var app_cart = new Vue({
             })
         }
         this.initForm();
+        this.restoreGuestCheckoutState();
     },
     methods: {
+        restoreGuestCheckoutState() {
+            if (this.isLoggedIn) {
+                return;
+            }
+
+            const accepted = sessionStorage.getItem('guest_checkout_accepted') === 'true';
+            if (!accepted) {
+                return;
+            }
+
+            this.guestCheckoutAccepted = true;
+            this.showGuestForm = true;
+            this.initGuestFormStructure();
+            this.loadGuestFormDraft();
+        },
+        initGuestFormStructure() {
+            this.form_document = {
+                acciones: {
+                    enviar_email: true,
+                    formato_pdf: 'a4',
+                },
+                serie_documento: '',
+                numero_documento: '#',
+                fecha_de_emision: moment().format('YYYY-MM-DD'),
+                hora_de_emision: moment().format('HH:mm:ss'),
+                codigo_tipo_operacion: '0101',
+                codigo_tipo_documento: '80',
+                codigo_tipo_moneda: 'PEN',
+                fecha_de_vencimiento: moment().format('YYYY-MM-DD'),
+                datos_del_cliente_o_receptor: {
+                    codigo_tipo_documento_identidad: '0',
+                    numero_documento: '0',
+                    apellidos_y_nombres_o_razon_social: '',
+                    codigo_pais: 'PE',
+                    ubigeo: '150101',
+                    direccion: '',
+                    correo_electronico: '',
+                    telefono: '',
+                },
+                totales: {},
+                items: [],
+            };
+
+            this.typeDocuments = '0';
+            this.numberDocument = '0';
+            this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '6']);
+            this.optionDocument();
+        },
+        normalizeGuestContactFields() {
+            const contactPhone = (this.form_contact.telephone || '').trim();
+            const guestPhone = (this.guest_form.telephone || '').trim();
+
+            if (guestPhone) {
+                this.form_contact.telephone = guestPhone;
+            } else if (contactPhone) {
+                this.guest_form.telephone = contactPhone;
+            }
+        },
+        ensureGuestFormDocument() {
+            if (!this.guestCheckoutAccepted || !this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            if (!this.form_document || !this.form_document.datos_del_cliente_o_receptor) {
+                this.initGuestFormStructure();
+            }
+
+            this.normalizeGuestContactFields();
+            this.syncGuestFormToDocument();
+        },
+        syncGuestFormToDocument() {
+            if (!this.form_document || !this.form_document.datos_del_cliente_o_receptor) {
+                if (this.showGuestForm && !this.isLoggedIn) {
+                    this.initGuestFormStructure();
+                } else {
+                    return;
+                }
+            }
+
+            this.normalizeGuestContactFields();
+
+            const doc = this.form_document.datos_del_cliente_o_receptor;
+            doc.correo_electronico = (this.guest_form.email || '').trim();
+            doc.telefono = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            doc.apellidos_y_nombres_o_razon_social = (this.guest_form.name || '').trim();
+            doc.numero_documento = (this.guest_form.number || '').trim();
+            doc.codigo_tipo_documento_identidad = this.guest_form.identity_document_type_id || '0';
+            doc.identity_document_type_id = this.guest_form.identity_document_type_id || '0';
+            doc.direccion = this.form_contact.address || '';
+
+            this.numberDocument = doc.numero_documento;
+            this.typeDocuments = doc.codigo_tipo_documento_identidad;
+
+            if (this.form_contact.telephone !== doc.telefono) {
+                this.form_contact.telephone = doc.telefono;
+            }
+        },
+        saveGuestFormDraft() {
+            if (!this.showGuestForm) {
+                return;
+            }
+
+            sessionStorage.setItem('guest_contact_draft', JSON.stringify(this.guest_form));
+        },
+        loadGuestFormDraft() {
+            const raw = sessionStorage.getItem('guest_contact_draft');
+            if (!raw) {
+                return;
+            }
+
+            try {
+                const draft = JSON.parse(raw);
+                this.guest_form = Object.assign({}, this.guest_form, draft);
+                if (this.guest_form.telephone && !this.form_contact.telephone) {
+                    this.form_contact.telephone = this.guest_form.telephone;
+                }
+                this.syncGuestFormToDocument();
+            } catch (error) {
+                console.warn('No se pudo restaurar el borrador de invitado', error);
+            }
+        },
+        getGuestFormValidationErrors() {
+            this.ensureGuestFormDocument();
+
+            const errors = [];
+            const email = (this.guest_form.email || '').trim();
+            const phone = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            const name = (this.guest_form.name || '').trim();
+            const number = (this.guest_form.number || '').trim();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const phoneDigits = phone.replace(/\D/g, '');
+
+            if (!email) {
+                errors.push('correo electrónico');
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errors.push('correo electrónico válido');
+            }
+
+            if (!phoneDigits) {
+                errors.push('teléfono');
+            } else if (phoneDigits.length < 7) {
+                errors.push('teléfono válido');
+            }
+
+            if (!name) {
+                errors.push('nombre o razón social');
+            }
+
+            if (!number) {
+                errors.push('número de documento');
+            } else if (docType === '1' && number.replace(/\D/g, '').length !== 8) {
+                errors.push('DNI de 8 dígitos');
+            } else if (docType === '6' && number.replace(/\D/g, '').length !== 11) {
+                errors.push('RUC de 11 dígitos');
+            }
+
+            return errors;
+        },
+        isGuestFormValid() {
+            return this.getGuestFormValidationErrors().length === 0;
+        },
+        validateGuestFormForPayment() {
+            this.ensureGuestFormDocument();
+            const errors = this.getGuestFormValidationErrors();
+
+            if (errors.length > 0) {
+                return {
+                    valid: false,
+                    message: 'Completa: ' + errors.join(', ') + '.',
+                };
+            }
+
+            if (!this.isPickupMode && !(this.form_contact.address || '').trim()) {
+                return {
+                    valid: false,
+                    message: 'Agrega una dirección de entrega antes de pagar.',
+                };
+            }
+
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                return {
+                    valid: false,
+                    message: 'Selecciona una sucursal de recojo antes de pagar.',
+                };
+            }
+
+            return { valid: true, message: '' };
+        },
+        scrollToGuestForm() {
+            this.$nextTick(() => {
+                const el = document.getElementById('guestContactCollapse');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        },
+        scrollToPaymentSection() {
+            this.$nextTick(() => {
+                const el = document.getElementById('paymentCollapse');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        },
+        dispatchPayment(method) {
+            if (method === 'culqi') {
+                if (typeof execCulqi === 'function') {
+                    execCulqi();
+                }
+            } else if (method === 'izipay') {
+                this.execIzipay();
+            } else if (method === 'mp') {
+                this.execMp();
+            } else if (['cash', 'yape', 'transfer'].includes(method)) {
+                this.paymentCash();
+            }
+        },
+        runPayment(method) {
+            if (this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de continuar.', 'warning');
+            }
+
+            if (!this.acceptedTerms) {
+                return this.showSwalMessage('Términos y condiciones', 'Debes aceptar los términos y condiciones.', 'warning');
+            }
+
+            if (!method) {
+                return this.showSwalMessage('Método de pago', 'Selecciona un método de pago para continuar.', 'warning');
+            }
+
+            this.selectedPaymentMethod = method;
+            this.refreshSetDataCustomer();
+
+            if (this.isGuestCheckoutActive) {
+                const validation = this.validateGuestFormForPayment();
+                if (!validation.valid) {
+                    this.scrollToGuestForm();
+                    return this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+                }
+            } else if (!this.validateCheckoutBeforePayment()) {
+                return;
+            }
+
+            this.dispatchPayment(method);
+        },
+        handleCheckoutClick() {
+            if (this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de continuar.', 'warning');
+            }
+
+            if (!this.acceptedTerms) {
+                return this.showSwalMessage('Términos y condiciones', 'Debes aceptar los términos y condiciones.', 'warning');
+            }
+
+            if (this.isLoggedIn) {
+                return this.executePayment();
+            }
+
+            if (!this.guestCheckoutAccepted || !this.showGuestForm) {
+                return this.openGuestIdentityModal();
+            }
+
+            const validation = this.validateGuestFormForPayment();
+            if (!validation.valid) {
+                this.scrollToGuestForm();
+                return this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+            }
+
+            this.scrollToPaymentSection();
+            if (!this.selectedPaymentMethod) {
+                return this.showSwalMessage(
+                    'Método de pago',
+                    'Selecciona un método de pago y confirma desde el botón correspondiente.',
+                    'info'
+                );
+            }
+        },
+        openGuestIdentityModal() {
+            this.guestWarningChecked = false;
+            $('#guestIdentityModal').modal('show');
+        },
+        closeGuestIdentityModal() {
+            $('#guestIdentityModal').modal('hide');
+        },
+        chooseGuestCheckout() {
+            this.closeGuestIdentityModal();
+            this.$nextTick(() => {
+                $('#guestWarningModal').modal('show');
+            });
+        },
+        closeGuestWarningModal() {
+            this.guestWarningChecked = false;
+            $('#guestWarningModal').modal('hide');
+        },
+        backToGuestIdentityModal() {
+            this.closeGuestWarningModal();
+            this.$nextTick(() => {
+                this.openGuestIdentityModal();
+            });
+        },
+        confirmGuestCheckout() {
+            if (!this.guestWarningChecked) {
+                return;
+            }
+
+            sessionStorage.setItem('guest_checkout_accepted', 'true');
+            this.guestCheckoutAccepted = true;
+            this.showGuestForm = true;
+            this.initGuestFormStructure();
+
+            if (this.form_contact.telephone) {
+                this.guest_form.telephone = this.form_contact.telephone;
+            }
+
+            this.ensureGuestFormDocument();
+            this.closeGuestWarningModal();
+            this.scrollToGuestForm();
+        },
+        openLoginRegisterModal() {
+            this.closeGuestIdentityModal();
+            this.$nextTick(() => {
+                if (typeof window.jQuery !== 'undefined') {
+                    $('#login_register_modal').modal('show');
+                }
+            });
+        },
         extractAndSetUbigeoFromComponents(components) {
             if (!components) return;
 
@@ -427,6 +868,42 @@ var app_cart = new Vue({
         saveCartToLocalStorage() {
             localStorage.setItem('products_cart', JSON.stringify(this.records));
         },
+        copyToClipboard(textToCopy) {
+            if (window.isSecureContext && navigator.clipboard) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    this.showSwalMessage('¡Copiado!', 'El número ha sido copiado al portapapeles.', 'success')
+                }, () => {
+                    this.fallbackCopyTextToClipboard(textToCopy);
+                });
+            } else {
+                this.fallbackCopyTextToClipboard(textToCopy);
+            }
+        },
+        fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+                if(successful) {
+                    this.showSwalMessage('¡Copiado!', 'El número ha sido copiado al portapapeles.', 'success')
+                } else {
+                    this.showSwalMessage('Error', 'No se pudo copiar el número.', 'error')
+                }
+            } catch (err) {
+                this.showSwalMessage('Error', 'No se pudo copiar el número.', 'error')
+            }
+            document.body.removeChild(textArea);
+        },
         async changeExchangeRate(exchange_rate_date){
             var response = await axios.get(`/exchange_rate/ecommence/${exchange_rate_date}`)
             this.exchange_rate_sale = parseFloat(response.data.sale)
@@ -458,11 +935,53 @@ var app_cart = new Vue({
             })
         },
         refreshSetDataCustomer() {
+            if (this.isGuestCheckoutActive) {
+                this.ensureGuestFormDocument();
+                return;
+            }
+
+            if (!this.form_document.datos_del_cliente_o_receptor) {
+                return;
+            }
+
             this.form_document.datos_del_cliente_o_receptor.direccion = this.form_contact.address
             this.form_document.datos_del_cliente_o_receptor.telefono = this.form_contact.telephone
             this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments
             this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument
             this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments
+        },
+        validateCheckoutBeforePayment() {
+            if (this.isGuestCheckoutActive) {
+                const validation = this.validateGuestFormForPayment();
+                if (!validation.valid) {
+                    this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+                    return false;
+                }
+                return true;
+            }
+
+            if (!this.form_document.codigo_tipo_documento) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error');
+                return false;
+            }
+
+            if (!this.isPickupMode && !this.form_contact.address) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo dirección es obligatorio', 'error');
+                return false;
+            }
+
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                this.showSwalMessage('Ocurrió un error!', 'Selecciona una sucursal de recojo', 'error');
+                return false;
+            }
+
+            const phone = (this.form_contact.telephone || '').trim();
+            if (!phone) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo teléfono es obligatorio', 'error');
+                return false;
+            }
+
+            return true;
         },
         async getFormPaymentCash() {
             this.refreshSetDataCustomer()
@@ -500,6 +1019,8 @@ var app_cart = new Vue({
                 transfer: 'transferencia',
                 culqi:    'culqi',
                 paypal:   'paypal',
+                izipay:   'izipay',
+                mp:       'mp',
             };
             return map[this.selectedPaymentMethod] || 'efectivo';
         },
@@ -511,25 +1032,9 @@ var app_cart = new Vue({
             })
         },
         executePayment() {
-            if (this.selectedPaymentMethod === 'culqi') {
-                execCulqi();
-            } else if (['cash', 'yape', 'transfer'].includes(this.selectedPaymentMethod)) {
-                this.paymentCash();
-            }
+            this.runPayment(this.selectedPaymentMethod);
         },
         async paymentCash() {
-            if(!this.form_document.codigo_tipo_documento) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error')
-            }
-
-            if(!this.form_contact.address) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo dirección es obligatorio', 'error')
-            }
-
-            if(!this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo teléfono es obligatorio', 'error')
-            }
-
             let product = JSON.parse(localStorage.getItem('products_cart'));
 
             if (product.length < 1){
@@ -555,12 +1060,317 @@ var app_cart = new Vue({
                 }).catch(error => {
                     this.processingPayment = false
                     swal("Pago No realizado", 'Sucedió algo inesperado.', "error");
-                    if (error.response.status === 422) {
+                    if (error.response && error.response.status === 422) {
                         this.errors = error.response.data;
                     } else {
                         console.log(error);
                     }
                 });
+        },
+        async loadMpScript() {
+            if (window.MercadoPago) {
+                this.mpScriptLoaded = true;
+                return;
+            }
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://sdk.mercadopago.com/js/v2';
+                script.async = true;
+                script.onload = () => { this.mpScriptLoaded = true; resolve(); };
+                script.onerror = () => { this.showSwalMessage('Error', 'No se pudo cargar MercadoPago', 'error'); reject(); };
+                document.head.appendChild(script);
+            });
+        },
+        async execMp() {
+            if (this.records.length < 1){
+                return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
+            }
+            
+            this.processingPayment = true;
+            try {
+                await this.loadMpScript();
+                const publicKey = window.__ecommerce_config?.public_key_mp || '';
+                const mp = new window.MercadoPago(publicKey, { locale: 'es-PE' });
+                const bricksBuilder = mp.bricks();
+                
+                // Limpiar container previo si existe
+                if (this.mpBrickController) {
+                    this.mpBrickController.unmount();
+                }
+
+                // Generamos los datos preliminares de formulario para luego crear la orden
+                const rawFormData = await this.getFormPaymentCash();
+
+                const settings = {
+                    initialization: {
+                        amount: Number(rawFormData.precio_culqi).toFixed(2),
+                        payer: { email: rawFormData.customer.correo_electronico || '' },
+                    },
+                    customization: {
+                        visual: { style: { theme: 'default' } },
+                        paymentMethods: { creditCard: 'all', debitCard: 'all' },
+                    },
+                    callbacks: {
+                        onReady: () => {
+                            this.processingPayment = false;
+                            $('#mp-modal').modal('show'); // asumiendo que abriremos el container en un modal o está en el DOM
+                        },
+                        onSubmit: (formDataRecv) => {
+                            return new Promise((resolve, reject) => {
+                                swal({ title: "Estamos hablando con MercadoPago", text: "Procesando pago...", onOpen: () => { Swal.showLoading() } });
+                                
+                                const payload = { ...rawFormData, form_data: formDataRecv.formData };
+                                axios.post(window.__routes?.mercadopago_payment || '/ecommerce/mercadopago/payment', payload, this.getHeaderConfig())
+                                .then(response => {
+                                    if(response.data.success) {
+                                        swal.close();
+                                        $('#mp-modal').modal('hide');
+                                        this.saveContactDataUser();
+                                        this.showPurchaseSuccess(response.data.order);
+                                        resolve();
+                                    } else {
+                                        swal("Pago Rechazado", response.data.message || 'No se pudo procesar el pago.', "error");
+                                        reject();
+                                    }
+                                }).catch(err => {
+                                    swal("Pago Fallido", 'Ocurrió un error con la pasarela.', "error");
+                                    console.log(err);
+                                    reject();
+                                });
+                            });
+                        },
+                        onError: (error) => {
+                            console.error(error);
+                            this.showSwalMessage('Error', 'Ocurrió un problema con el formulario de pago.', 'error');
+                        },
+                    },
+                };
+                
+                // Necesitamos tener un wrapper visible, abrimos un sweetalert o modal
+                swal({
+                    title: 'Pago Seguro con Mercado Pago',
+                    html: '<div id="mp-swal-container" style="min-height: 300px;"></div>',
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    onOpen: async () => {
+                        this.mpBrickController = await bricksBuilder.create('payment', 'mp-swal-container', settings);
+                    },
+                    onClose: () => {
+                        if (this.mpBrickController) this.mpBrickController.unmount();
+                    }
+                });
+
+            } catch (err) {
+                this.processingPayment = false;
+                console.error(err);
+            }
+        },
+        async loadIzipaySDK() {
+            if (typeof window.KR !== 'undefined' && window.KR) {
+                this.krScriptLoaded = true;
+                return;
+            }
+
+            if (izipaySdkLoadPromise) {
+                return izipaySdkLoadPromise;
+            }
+
+            const KR_MAIN_SRC = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js';
+            const KR_CSS_HREF = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css';
+            const KR_EXT_SRC = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js';
+
+            const isSdkPresentInDom = () =>
+                document.head.querySelector(`script[src="${KR_MAIN_SRC}"]`) ||
+                document.head.querySelector(`script[src="${KR_EXT_SRC}"]`) ||
+                document.head.querySelector(`link[href="${KR_CSS_HREF}"]`);
+
+            izipaySdkLoadPromise = new Promise((resolve, reject) => {
+                let settled = false;
+                let pollInterval = null;
+                let pollTimeout = null;
+
+                const cleanup = () => {
+                    if (pollInterval) clearInterval(pollInterval);
+                    if (pollTimeout) clearTimeout(pollTimeout);
+                };
+
+                const succeed = () => {
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    this.krScriptLoaded = true;
+                    resolve();
+                };
+
+                const fail = (message) => {
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    swal('Error', message || 'No se pudo conectar con la pasarela de pagos', 'error');
+                    const err = new Error(message || 'No se pudo conectar con la pasarela de pagos');
+                    err.izipaySdkError = true;
+                    reject(err);
+                };
+
+                const waitForKR = () => {
+                    if (typeof window.KR !== 'undefined' && window.KR) {
+                        succeed();
+                        return;
+                    }
+
+                    pollInterval = setInterval(() => {
+                        if (typeof window.KR !== 'undefined' && window.KR) {
+                            succeed();
+                        }
+                    }, 100);
+
+                    pollTimeout = setTimeout(() => {
+                        fail('No se pudo conectar con la pasarela de pagos');
+                    }, 10000);
+                };
+
+                const injectThemeAssets = () => {
+                    if (!document.head.querySelector(`link[href="${KR_CSS_HREF}"]`)) {
+                        const style = document.createElement('link');
+                        style.rel = 'stylesheet';
+                        style.href = KR_CSS_HREF;
+                        document.head.appendChild(style);
+                    }
+
+                    if (!document.head.querySelector(`script[src="${KR_EXT_SRC}"]`)) {
+                        const extScript = document.createElement('script');
+                        extScript.src = KR_EXT_SRC;
+                        extScript.onerror = () => fail('No se pudo conectar con la pasarela de pagos');
+                        document.head.appendChild(extScript);
+                    }
+                };
+
+                // SDK ya en DOM (p. ej. KryptonPopinButton) — solo esperar, sin reinyectar
+                if (isSdkPresentInDom()) {
+                    waitForKR();
+                    return;
+                }
+
+                // Respaldo: inyectar solo si no hay rastro del SDK en el DOM
+                const mainScript = document.createElement('script');
+                mainScript.src = KR_MAIN_SRC;
+                mainScript.setAttribute('kr-public-key', window.__ecommerce_config?.public_key_izipay || '');
+                mainScript.setAttribute('kr-language', 'es-Es');
+                mainScript.onerror = () => fail('No se pudo conectar con la pasarela de pagos');
+                mainScript.onload = () => {
+                    injectThemeAssets();
+                    waitForKR();
+                };
+                document.head.appendChild(mainScript);
+            }).finally(() => {
+                izipaySdkLoadPromise = null;
+            });
+
+            return izipaySdkLoadPromise;
+        },
+        async execIzipay() {
+            if (this.records.length < 1){
+                return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
+            }
+            
+            this.processingPayment = true;
+            try {
+                await this.loadIzipaySDK();
+                const rawFormData = await this.getFormPaymentCash();
+                
+                swal({ title: "Iniciando pago...", text: "Cargando conectividad con el banco", onOpen: () => { Swal.showLoading() } });
+
+                // 1. Get formToken from Backend
+                const response = await axios.post(window.__routes?.izipay_payment || '/ecommerce/izipay/payment', rawFormData, this.getHeaderConfig());
+                if(response.data.success && response.data.formToken) {
+                    swal.close();
+
+                    const formToken = response.data.formToken;
+                    const order = response.data.order;
+
+                    try {
+                        await window.KR.setFormConfig({
+                            formToken: formToken,
+                            'kr-language': 'es-Es',
+                        });
+
+                        window.KR.onSubmit(async (paymentResponse) => {
+                            const uuid = paymentResponse.clientAnswer.transactions[0].uuid;
+                            swal({ title: "Verificando...", text: "Validando la transacción...", onOpen: () => { Swal.showLoading() } });
+
+                            axios.post(window.__routes?.izipay_transaction || '/ecommerce/izipay/transaction', { uuid: uuid }, this.getHeaderConfig())
+                            .then(res => {
+                                if(res.data.success && res.data.paid) {
+                                    swal.close();
+                                    this.saveContactDataUser();
+                                    this.showPurchaseSuccess(order);
+                                } else {
+                                    swal("Pago Rechazado", "Su pago no fue aprobado o fue denegado", "error");
+                                }
+                            }).catch(err => {
+                                console.error('Izipay transaction verify failed:', err);
+                                swal("Error", "Sucedió un error al verificar la transacción", "error");
+                            });
+                        });
+
+                        // Creación dinámica
+                        let container = document.getElementById('izipay-payment-host');
+                        if (!container) {
+                            container = document.createElement('div');
+                            container.id = 'izipay-payment-host';
+                            document.body.appendChild(container);
+                        }
+
+                        // Estilos de Overlay (Visibilidad forzada)
+                        container.style.position = 'fixed';
+                        container.style.top = '50%';
+                        container.style.left = '50%';
+                        container.style.transform = 'translate(-50%, -50%)';
+                        container.style.zIndex = '9999';
+                        container.style.backgroundColor = 'white';
+                        container.style.padding = '20px';
+                        container.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+                        container.style.display = 'block';
+
+                        // Limpieza e Inyección de estructura
+                        container.innerHTML = '';
+                        const krSmartForm = document.createElement('div');
+                        krSmartForm.className = 'kr-smart-form';
+                        container.appendChild(krSmartForm);
+
+                        // Renderizado seguro
+                        try {
+                            await window.KR.renderElements('#izipay-payment-host');
+                        } catch (renderErr) {
+                            console.error('Error capturado al renderizar KR.renderElements():', renderErr);
+                            console.log('Estado actual del contenedor:', container.outerHTML);
+                            throw renderErr; // Propagamos para el catch general
+                        }
+
+                        this.processingPayment = false;
+                    } catch (renderErr) {
+                        console.error('Izipay embedded form setup/render failed:', renderErr);
+                        swal.close();
+                        this.processingPayment = false;
+                        swal('Error', 'No se pudo mostrar el formulario de pago. Intente nuevamente.', 'error');
+                    }
+                } else {
+                    this.processingPayment = false;
+                    swal("Error", "No se pudo comunicar con Izipay", "error");
+                }
+            } catch (err) {
+                this.processingPayment = false;
+                console.error(err);
+                if (err.izipaySdkError) {
+                    return;
+                }
+                if (err.response && err.response.status === 422) {
+                    this.errors = err.response.data;
+                    swal("Error", "Revise los campos", "error");
+                } else {
+                    swal("Error", "Error al procesar", "error");
+                }
+            }
         },
         redirectHome() {
             window.location = window.__routes?.home || "/ecommerce";
@@ -569,7 +1379,8 @@ var app_cart = new Vue({
         buildSuccessOrder(order) {
             const paymentLabels = {
                 cash: 'Efectivo', yape: 'Yape', transfer: 'Transferencia',
-                culqi: 'Tarjeta (VISA)', paypal: 'PayPal'
+                culqi: this.titleCulqi || 'Tarjeta (VISA)', paypal: 'PayPal',
+                izipay: this.titleIzipay || 'Izipay', mp: this.titleMp || 'Mercado Pago'
             };
             const deliveryLabel = (this.isPickupMode && this.selectedPickupBranch)
                 ? 'Recojo en tienda — ' + this.selectedPickupBranch.name
@@ -614,7 +1425,7 @@ var app_cart = new Vue({
                 total_exonerated: '0.0', total_igv: '0.0', delivery: '0.00'
             };
             this.payment_cash.amount = '0.00';
-            jQuery("#total_amount").data('total', '0.00');
+            $("#total_amount").data('total', '0.00');
         },
         goToThankYou() {
             if (this.thankYouUrl) {
@@ -719,7 +1530,7 @@ var app_cart = new Vue({
             };
         },
         openAddressModal() {
-            jQuery('#addressModal').modal('show')
+            $('#addressModal').modal('show')
             setTimeout(() => {
                 if (!this.map) {
                     this.initMap()
@@ -732,7 +1543,7 @@ var app_cart = new Vue({
         closeAddressModal() {
             const modalElement = document.getElementById('addressModal');
             if (modalElement) {
-                jQuery(modalElement).modal('hide');
+                $(modalElement).modal('hide');
             } else {
                 console.error('No se encontró el elemento del modal.');
             }
@@ -951,8 +1762,8 @@ var app_cart = new Vue({
         initForm() {
             this.errors = {}
             this.user = window.__ecommerce_config?.user || {};
-            if(!this.user){
-                return false
+            if (!this.user || !this.user.id) {
+                return false;
             }
 
             this.form_document = {
@@ -1107,7 +1918,7 @@ var app_cart = new Vue({
             this.summary.total            = computedTotal.toFixed(2)
             this.aux_totals               = Object.assign({}, this.summary)
 
-            jQuery("#total_amount").data('total', this.summary.total);
+            $("#total_amount").data('total', this.summary.total);
 
             this.form_document.codigo_tipo_documento = null
             this.optionDocument()
@@ -1287,36 +2098,13 @@ var app_cart = new Vue({
             }
             this.calculateSummary();
         },
-        /**
-         * Subtotal de ítems sin cupón ni delivery.
-         * Debe coincidir con la base que usa calculateSummary al restar el descuento.
-         */
-        getTotalBeforeCoupon() {
-            let total = 0;
-            (this.records || []).forEach(function (item) {
-                total += parseFloat(item.sub_total) || 0;
-            });
-            return Math.round(total * 100) / 100;
-        },
-
         async applyCoupon() {
             if (!this.couponField || this.couponLoading) return;
-
-            // Un solo cupón por carrito: bloquear reaplicación acumulativa
-            if (this.appliedCoupon && this.appliedCoupon.code) {
-                this.couponMessage = 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.';
-                return;
-            }
-
             this.couponLoading = true;
             this.couponMessage = null;
 
             try {
-                const payload = {
-                    code: this.couponField,
-                    order_total: this.getTotalBeforeCoupon(),
-                    coupon_already_applied: !!(this.appliedCoupon && this.appliedCoupon.code)
-                };
+                const payload = { code: this.couponField, order_total: this.summary.total };
                 const res = await axios.post('/ecommerce/validate-coupon', payload, this.getHeaderConfig());
                 if (res.data && res.data.success) {
                     const d = res.data.data;
@@ -1326,9 +2114,10 @@ var app_cart = new Vue({
                         discount: parseFloat(d.discount),
                         free_shipping: d.free_shipping
                     };
-                    // Recalcular resumen una sola vez (items - descuento + delivery)
-                    this.calculateSummary();
-                    this.couponField = d.code || this.couponField;
+                    if (typeof d.new_total !== 'undefined') {
+                        this.summary.total = parseFloat(d.new_total).toFixed(2);
+                        this.payment_cash.amount = this.summary.total;
+                    }
                     this.couponMessage = null;
                 } else {
                     this.couponMessage = (res.data && res.data.message) ? res.data.message : 'cupon no valido';
