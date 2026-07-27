@@ -1,5 +1,6 @@
 <template>
     <el-dialog :visible="showDialog"
+               :close-on-click-modal="false"
                class="dialog-import"
                title="Codigo de barras"
                @close="close">
@@ -18,8 +19,6 @@
                         </el-select>
                     </div>
 
-
-                    <!-- Minimo -->
                     <div class="col-6">
                         <div class="form-group">
                             <label class="control-label">
@@ -32,14 +31,14 @@
                                 </el-tooltip>
                             </label>
                             <el-input-number
-                                v-model="form.range[0]"
+                                v-model="rangeMin"
                                 :max="max_item"
                                 :min="1"
                                 :precision="0"
-                                :step="1"></el-input-number>
+                                :step="1"
+                                @change="syncFromInputs"></el-input-number>
                         </div>
                     </div>
-                    <!-- Minimo -->
                     <div class="col-6">
                         <div class="form-group">
                             <label class="control-label">
@@ -52,11 +51,12 @@
                                 </el-tooltip>
                             </label>
                             <el-input-number
-                                v-model="form.range[1]"
+                                v-model="rangeMax"
                                 :max="max_item"
                                 :min="1"
                                 :precision="0"
-                                :step="1"></el-input-number>
+                                :step="1"
+                                @change="syncFromInputs"></el-input-number>
                         </div>
                     </div>
 
@@ -72,7 +72,7 @@
                                 </el-tooltip>
                             </label>
                             <el-slider
-                                v-model="form.range"
+                                v-model="sliderRange"
                                 :max="max_item"
                                 :min="1"
                                 range>
@@ -94,6 +94,7 @@
 
 <script>
 import queryString from 'query-string'
+import Swal from 'sweetalert2'
 
 export default {
     props: [
@@ -106,9 +107,8 @@ export default {
             headers: headers_token,
             resource: 'items',
             errors: {},
-            form: {
-                range: [1, 100]
-            },
+            rangeMin: 1,
+            rangeMax: 1,
             max_item: 1,
             type: 0,
             fromPharmacy: false,
@@ -116,6 +116,17 @@ export default {
                 {'id': 0, 'description': 'Normal'},
                 {'id': 1, 'description': 'Impresión 5cm x 2.5cm'},
             ],
+        }
+    },
+    computed: {
+        sliderRange: {
+            get() {
+                return [this.rangeMin, this.rangeMax]
+            },
+            set(value) {
+                this.rangeMin = value[0]
+                this.rangeMax = value[1]
+            }
         }
     },
     created() {
@@ -133,31 +144,91 @@ export default {
             this.$emit('update:showDialog', false)
             this.initForm()
         },
-        submit() {
-            this.loading_submit = true
-
-            let query = queryString.stringify({
-                isPharmacy: this.fromPharmacy,
-                ...this.form.range
-            });
-            if (this.type == 1) {
-                window.open(`/${this.resource}/export/barcode_full/?${query}`, '_blank');
-            } else {
-                window.open(`/${this.resource}/export/barcode/?${query}`, '_blank');
+        syncFromInputs() {
+            if (this.rangeMin > this.rangeMax) {
+                this.rangeMax = this.rangeMin
             }
-            this.loading_submit = false
-            this.$emit('update:showDialog', false)
-            this.initForm()
+            if (this.rangeMax < this.rangeMin) {
+                this.rangeMin = this.rangeMax
+            }
+        },
+        showNoResultsAlert(message) {
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Sin resultados',
+                text: message,
+                confirmButtonText: 'Entendido',
+                customClass: {
+                    container: 'barcode-export-swal-container',
+                },
+                didOpen: () => {
+                    const container = document.querySelector('.barcode-export-swal-container')
+                    if (container) {
+                        container.style.zIndex = '100000'
+                    }
+                },
+            })
+        },
+        async submit() {
+            this.loading_submit = true
+            this.syncFromInputs()
+
+            try {
+                const params = {
+                    isPharmacy: this.fromPharmacy,
+                    0: this.rangeMin,
+                    1: this.rangeMax,
+                    full: this.type == 1,
+                }
+
+                const { data } = await this.$http.get(`/${this.resource}/export/barcode/count`, { params })
+
+                if (!data.count) {
+                    await this.showNoResultsAlert(data.message)
+                    return
+                }
+
+                const query = queryString.stringify({
+                    isPharmacy: this.fromPharmacy,
+                    0: this.rangeMin,
+                    1: this.rangeMax,
+                })
+
+                const endpoint = this.type == 1 ? 'barcode_full' : 'barcode'
+                window.open(`/${this.resource}/export/${endpoint}/?${query}`, '_blank')
+
+                this.$emit('update:showDialog', false)
+                this.initForm()
+            } catch (error) {
+                this.$message.error('No se pudo validar el rango de exportación.')
+            } finally {
+                this.loading_submit = false
+            }
         },
         lastItem() {
-            this.$http.get(`${this.resource}/export/barcode/last`)
+            this.$http.get(`${this.resource}/export/barcode/last`, {
+                params: {
+                    isPharmacy: this.fromPharmacy,
+                }
+            })
                 .then(response => {
-                    let total = response.data.data;
+                    let total = parseInt(response.data.data, 10)
 
-                    if(isNaN(total)) total = 1
+                    if (isNaN(total) || total < 1) {
+                        total = 1
+                    }
+
                     this.max_item = total
+                    this.rangeMin = 1
+                    this.rangeMax = total
                 })
         }
     }
 }
 </script>
+
+<style>
+.barcode-export-swal-container {
+    z-index: 100000 !important;
+}
+</style>

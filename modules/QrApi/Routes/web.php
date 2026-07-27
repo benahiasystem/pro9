@@ -21,6 +21,7 @@ if($current_hostname) {
                 Route::post('/configuration/update', 'QrApiController@updateConfig');
 
                 Route::post('/connect', 'QrApiController@connect');
+                Route::post('/link-existing', 'QrApiController@linkExisting');
                 Route::get('/qr', 'QrApiController@qr');
                 Route::get('/state', 'QrApiController@state');
                 Route::post('/disconnect', 'QrApiController@disconnect');

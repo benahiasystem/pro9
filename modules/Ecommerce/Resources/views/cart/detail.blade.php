@@ -240,6 +240,9 @@
 
 @php
     $configurationModel = \App\Models\Tenant\Configuration::first();
+    $ecommerceConfiguration = $configuration ?? \App\Models\Tenant\ConfigurationEcommerce::first();
+    $phoneWhatsapp = $ecommerceConfiguration->phone_whatsapp ?? $configurationModel->phone_whatsapp ?? null;
+    $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
     $defaultImage = $configurationModel->product_default_image ?? 'imagen-no-disponible.jpg';
     $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
         ? asset('logo/imagen-no-disponible.jpg')
@@ -334,6 +337,12 @@
                 </div>
 
                 <div class="card-footer card-cart-footer border-0">
+                    <div v-if="showWhatsapp && records.length > 0" class="mb-3">
+                        <button type="button" @click="clickConsultWhatsappCart" class="btn btn-whatsapp w-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
+                            Consultar por WhatsApp
+                        </button>
+                    </div>
                     <div class="row">
                         <div class="col-6">
                             <a href="/ecommerce" class="text-muted text-capitalize">
@@ -1244,7 +1253,8 @@
 <!-- Configuration globals para cart app -->
 <script>
     window.__ecommerce_config = {
-        phone_whatsapp: {!! json_encode($configuration->phone_whatsapp ?? '') !!},
+        phone_whatsapp: {!! json_encode($phoneWhatsapp ?? '') !!},
+        enable_whatsapp: {!! json_encode($showWhatsapp ?? false) !!},
         global_discount_type: {!! json_encode($global_discount_type ?? []) !!},
         user: {!! json_encode(optional(Auth::guard("ecommerce")->user())->makeHidden(['password', 'remember_token'])) !!},
         userAddress: {!! json_encode($userAddress ?? null) !!},

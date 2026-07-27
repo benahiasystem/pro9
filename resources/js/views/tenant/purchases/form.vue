@@ -727,7 +727,7 @@
                             class="btn btn-primary btn-submit-default"
                             type="primary"
                         >
-                            {{ isEditing ? 'Actualizar' : 'Generar' }}
+                            {{ submitButtonLabel }}
                         </el-button>
                     </div>
                 </form>
@@ -830,6 +830,17 @@ export default {
         isFromPurchaseOrder()
         {
             return this.purchase_order_id != undefined && this.purchase_order_id != null
+        },
+        submitButtonLabel() {
+            if (this.isEditing) {
+                return 'Actualizar'
+            }
+
+            if (this.isFromPurchaseOrder) {
+                return 'Generar compra'
+            }
+
+            return 'Generar'
         },
 
     },
@@ -941,11 +952,13 @@ export default {
         this.changeHasPayment()
         this.changeHasClient()
         
-        if (this.purchase_id) {
+        if (this.purchase_id && !this.purchase_order_id) {
             this.isEditing = true;
-            this.resourceId = m[1];
+            this.resourceId = this.purchase_id;
             this.pageTitle = 'Editar Compra';
             await this.initRecord();
+        } else if (this.purchase_order_id) {
+            this.pageTitle = 'Nueva Compra';
         }
     },
     created() {

@@ -689,7 +689,7 @@ class InventoryController extends Controller
                 $data = $import->getData();
                 return [
                     'success' => true,
-                    'message' => __('app.actions.upload.success'),
+                    'message' => $this->buildStockImportMessage($data),
                     'data' => $data
                 ];
             } catch (Exception $e) {
@@ -703,6 +703,34 @@ class InventoryController extends Controller
             'success' => false,
             'message' => __('app.actions.upload.error'),
         ];
+    }
+
+    private function buildStockImportMessage(array $data): string
+    {
+        $registered = (int) ($data['registered'] ?? 0);
+        $skipped = (int) ($data['skipped'] ?? 0);
+        $errors = $data['errors'] ?? [];
+
+        if ($registered === 0) {
+            return 'No se encontraron productos para ajustar. Verifique que el stock real sea distinto al stock del sistema.';
+        }
+
+        $message = "Se importaron {$registered} producto(s) correctamente.";
+
+        if ($skipped > 0) {
+            $message .= " Se omitieron {$skipped} fila(s) sin cambios o vacías.";
+        }
+
+        if (!empty($errors)) {
+            $warnings = array_slice($errors, 0, 5);
+            $message .= ' Advertencias: ' . implode(' | ', $warnings);
+
+            if (count($errors) > 5) {
+                $message .= ' ... y ' . (count($errors) - 5) . ' más.';
+            }
+        }
+
+        return $message;
     }
 
     public function stockEstablishmentImport(Request $request)

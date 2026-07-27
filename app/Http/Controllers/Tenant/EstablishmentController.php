@@ -73,6 +73,7 @@ class EstablishmentController extends Controller
             $has_igv_31556 = ($request->input('has_igv_31556') === 'true');
             $addresses = ($request->input('addresses'))??[];
             $establishment = Establishment::firstOrNew(['id' => $id]);
+            $originalCode = $establishment->exists ? $establishment->code : null;
             if ($request->hasFile('file') && $request->file('file')->isValid()) {
                 $request->validate(['file' => 'mimes:jpeg,png,jpg,webp|max:1024']);
                 $file = $request->file('file');
@@ -106,6 +107,9 @@ class EstablishmentController extends Controller
                 $establishment->fill($request->all());
             } else {
                 $establishment->fill($request->except('logo'));
+            }
+            if ($id) {
+                $establishment->code = $originalCode;
             }
             $establishment->has_igv_31556 = $has_igv_31556;
             $establishment->email = $request->email;

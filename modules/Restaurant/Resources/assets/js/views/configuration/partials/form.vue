@@ -113,7 +113,7 @@
                     </el-tab-pane>
                 </el-tabs>
             </div>
-            <div class="form-actions text-right mt-4">
+            <div class="form-actions text-end mt-4">
                 <el-button class="second-buton" @click.prevent="close()">Cancelar</el-button>
                 <el-button :loading="loading_submit" native-type="submit" type="primary"
                 >Guardar

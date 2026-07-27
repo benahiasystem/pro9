@@ -182,6 +182,50 @@ class EvolutionClient
     }
 
     /**
+     * Confirma que $instance existe, esta conectada, que el numero realmente
+     * vinculado coincide con $expectedNumber, y que $expectedToken coincide
+     * con el token propio de esa instancia en Evolution (distinto del apikey
+     * maestro del servidor, solo visible en el Evolution Manager de quien
+     * administra esa instancia). El numero por si solo no alcanza como
+     * prueba de propiedad porque suele ser publico (facturas, web, etc.) —
+     * sin el token, cualquiera podria intentar "adoptar" una instancia ajena
+     * solo adivinando o conociendo su numero.
+     */
+    public function verifyOwnership(string $instance, string $expectedNumber, string $expectedToken): array
+    {
+        $expectedNumber = preg_replace('/\D/', '', $expectedNumber);
+        $expectedToken = trim($expectedToken);
+
+        $state = $this->connectionState($instance);
+        if (!self::isConnected($state)) {
+            return ['success' => false, 'message' => 'Esa instancia no existe o no esta conectada.'];
+        }
+
+        $info = $this->fetchInstance($instance);
+        $first = is_array($info) && isset($info[0]) ? $info[0] : $info;
+        $owner = data_get($first, 'instance.owner')
+            ?: data_get($first, 'owner')
+            ?: data_get($first, 'ownerJid');
+        $realToken = data_get($first, 'instance.token') ?: data_get($first, 'token');
+
+        if (!$owner) {
+            return ['success' => false, 'message' => 'No se pudo obtener el numero conectado a esa instancia.'];
+        }
+
+        $connectedNumber = preg_replace('/\D/', '', explode('@', (string) $owner)[0]);
+
+        if ($connectedNumber !== $expectedNumber) {
+            return ['success' => false, 'message' => 'El numero no coincide con el conectado a esa instancia.'];
+        }
+
+        if (!$realToken || !hash_equals((string) $realToken, $expectedToken)) {
+            return ['success' => false, 'message' => 'El token no coincide con el de esa instancia. Copialo desde el Evolution Manager de esa instancia.'];
+        }
+
+        return ['success' => true, 'message' => null, 'connected_phone' => $connectedNumber];
+    }
+
+    /**
      * Actualiza el webhook del tenant. En modo proxy el webhook de Evolution
      * ya apunta al proxy desde la creacion de la instancia — esto solo
      * actualiza a donde reenvia el proxy internamente. En modo directo

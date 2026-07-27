@@ -61,6 +61,7 @@ var app_cart = new Vue({
         typeDocumentList: [],
         numberDocument: '',
         phone_whatsapp: window.__ecommerce_config?.phone_whatsapp || '',
+        enable_whatsapp: window.__ecommerce_config?.enable_whatsapp || false,
         global_discount_type: window.__ecommerce_config?.global_discount_type || {},
         all_identity_document_types : [{id: '6', name: 'RUC'}, {id: '0', name: 'DOC'},{id: '4', name: 'CE'},{id: '1', name: 'DNI'}],
         addressSuggestions: [],
@@ -203,6 +204,16 @@ var app_cart = new Vue({
             if (num.length === 8)  return 'Boleta de Venta';
             if (num.length === 11) return 'Factura';
             return 'Nota de Venta';
+        },
+        showWhatsapp: function () {
+            return this.enable_whatsapp && !!this.phone_whatsapp;
+        },
+        whatsappPhone: function () {
+            const raw = String(this.phone_whatsapp || '').replace(/\D+/g, '');
+            if (raw.length === 9 && raw.startsWith('9')) {
+                return '51' + raw;
+            }
+            return raw;
         },
     },
     watch: {
@@ -1946,7 +1957,18 @@ var app_cart = new Vue({
                 });
         },
         clickSendWhatsapp(order_id) {
-            window.open(`https://wa.me/51${this.phone_whatsapp}?text=Se ha generado un nuevo pedido con código nro. ${order_id}`, '_blank');
+            window.open(`https://wa.me/${this.whatsappPhone}?text=${encodeURIComponent('Se ha generado un nuevo pedido con código nro. ' + order_id)}`, '_blank');
+        },
+        getWhatsappUrl(text) {
+            return `https://wa.me/${this.whatsappPhone}?text=${encodeURIComponent(text)}`;
+        },
+        clickConsultWhatsappCart() {
+            const lines = this.records.map((row) => {
+                const lineTotal = (parseFloat(row.sale_unit_price) * parseFloat(row.cantidad)).toFixed(2);
+                return `• ${row.description} x${row.cantidad} - ${row.currency_type_symbol}${lineTotal}`;
+            });
+            const text = `Buenas, deseo consultar/finalizar mi pedido:\n\n${lines.join('\n')}\n\n*Total: S/ ${this.summary.total}*\n\n¿Podrían ayudarme a completar la compra?`;
+            window.open(this.getWhatsappUrl(text), '_blank');
         },
         onAddressInput() {
             console.log('Input detectado:', this.addressModal.address);

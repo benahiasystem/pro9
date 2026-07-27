@@ -83,6 +83,86 @@ gtag('config', 'G-8PH6FM2JEL');
             ];
         });
     @endphp
+    <script>
+      (function () {
+        var originalFetch = window.fetch.bind(window);
+        window.fetch = function (input, init) {
+          var url = typeof input === 'string' ? input : (input && input.url);
+          if (url === '/vendeya/config.json') {
+            input = '/vendeya/runtime-config';
+          }
+          return originalFetch(input, init);
+        };
+      })();
+    </script>
+    <script>
+      (function () {
+        var logoPaths = [
+          '/vendeya/images/logos/logo-horizontal-light.svg',
+          '/vendeya/images/logos/logo-iso-light.svg',
+          '/vendeya/images/logos/logo-oficial-horizontal.svg',
+          '/vendeya/images/logos/logo-oficial-iso.svg',
+          '/vendeya/images/logos/logo-oficial-vertical.svg',
+          '/vendeya/images/logos/logo-vertical-light.svg'
+        ];
+
+        function versionLogo(image, version) {
+          if (!image || !image.getAttribute) return;
+
+          var source = image.getAttribute('src');
+          if (!source) return;
+
+          var url;
+          try {
+            url = new URL(source, window.location.origin);
+          } catch (error) {
+            return;
+          }
+
+          if (logoPaths.indexOf(url.pathname) === -1 || url.searchParams.get('v') === version) {
+            return;
+          }
+
+          url.searchParams.set('v', version);
+          image.setAttribute('src', url.pathname + url.search + url.hash);
+        }
+
+        function versionLogos(root, version) {
+          if (root.nodeType === 1 && root.matches('img')) {
+            versionLogo(root, version);
+          }
+
+          if (root.querySelectorAll) {
+            root.querySelectorAll('img').forEach(function (image) {
+              versionLogo(image, version);
+            });
+          }
+        }
+
+        window.fetch('/vendeya/runtime-config', { cache: 'no-store' })
+          .then(function (response) {
+            return response.ok ? response.json() : null;
+          })
+          .then(function (configuration) {
+            if (!configuration || !configuration.logoVersion) return;
+
+            var version = String(configuration.logoVersion);
+            versionLogos(document, version);
+
+            new MutationObserver(function (mutations) {
+              mutations.forEach(function (mutation) {
+                mutation.addedNodes.forEach(function (node) {
+                  versionLogos(node, version);
+                });
+              });
+            }).observe(document.documentElement, { childList: true, subtree: true });
+          })
+          .catch(function () {
+            // La aplicación mantiene su comportamiento normal si el endpoint
+            // no está disponible temporalmente.
+          });
+      })();
+    </script>
     <script type="module" crossorigin src="{{ asset($vendeyaAssets['js']) }}"></script>
     <link rel="modulepreload" href="{{ asset($vendeyaAssets['vendor']) }}">
     <link rel="stylesheet" href="{{ asset($vendeyaAssets['css']) }}">

@@ -67,16 +67,13 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
 
 
         /**
-         * Este $purchase_order_id puede ser de los modelos Purchase o PurchaseOrder.
+         * Crea una nueva compra. Si se recibe un ID de orden de compra, precarga el formulario.
          */
         public function create($purchase_order_id = null)
         {
-
-            $_po = PurchaseOrder::find($purchase_order_id);
-            $purchase_order_id = optional($_po)->id;
-
-            $_p = Purchase::find($purchase_order_id);
-            $purchase_id = optional($_p)->id;
+            $purchaseOrder = PurchaseOrder::find($purchase_order_id);
+            $purchase_order_id = optional($purchaseOrder)->id;
+            $purchase_id = null;
 
             return view('tenant.purchases.form', compact('purchase_order_id', 'purchase_id'));
         }

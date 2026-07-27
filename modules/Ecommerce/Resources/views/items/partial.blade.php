@@ -121,7 +121,16 @@
                     data-unit-price="{{ $record->sale_unit_price }}"
                     data-symbol="{{ $record->currency_type['symbol'] }}"
                     data-qv-product="{{ json_encode( $record ) }}">
-                    @php $stockQv = $record->getStockByWarehouseMain(); @endphp
+                    @php
+                        $stockQv = $record->getStockByWarehouseMain();
+                        $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
+                        if ($showWhatsapp) {
+                            $waPhoneRaw = preg_replace('/\D+/', '', $phoneWhatsapp);
+                            $waPhone = (strlen($waPhoneRaw) == 9 && str_starts_with($waPhoneRaw, '9')) ? '51'.$waPhoneRaw : $waPhoneRaw;
+                            $waText = rawurlencode("Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?");
+                            $waLink = "https://wa.me/{$waPhone}?text={$waText}";
+                        }
+                    @endphp
                     @if($stockQv > 0)
                     <div class="input-group input-group-sm modern-quantity-container w-auto">
                         <div class="input-group-prepend">
@@ -145,21 +154,6 @@
                             Agregar a Carrito · {{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}
                         </span>
                     </a>
-                    @php
-                        $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
-                    @endphp
-                    @if($showWhatsapp)
-                        @php
-                            $waPhoneRaw = preg_replace('/\D+/', '', $phoneWhatsapp);
-                            $waPhone = (strlen($waPhoneRaw) == 9 && str_starts_with($waPhoneRaw, '9')) ? '51'.$waPhoneRaw : $waPhoneRaw;
-                            $waText = rawurlencode("Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?");
-                            $waLink = "https://wa.me/{$waPhone}?text={$waText}";
-                        @endphp
-                        <a href="{{ $waLink }}" class="btn-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-whatsapp" style="margin-top: -3px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
-                            <span>Consultar por WhatsApp</span>
-                        </a>
-                    @endif
                     @else
                     <div class="d-flex flex-column w-100" style="gap: 10px">
                         <button class="btn btn-disabled">
@@ -172,6 +166,13 @@
                             Seguir buscando
                         </button>
                     </div>
+                    @endif
+
+                    @if($showWhatsapp)
+                        <a href="{{ $waLink }}" class="btn-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-whatsapp" style="margin-top: -3px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
+                            <span>Consultar por WhatsApp</span>
+                        </a>
                     @endif
 
                 </div><!-- End .product-action -->

@@ -33,6 +33,7 @@ use App\Models\Tenant\Company;
 use Modules\BusinessTurn\Models\BusinessTurn;
 use Modules\MobileApp\Models\AppConfiguration;
 use App\Services\System\MozoConfigurationService;
+use App\Services\System\VendeyaConfigurationService;
 
 
 class RestaurantController extends Controller
@@ -58,22 +59,9 @@ class RestaurantController extends Controller
         return view('restaurant::vendeya.index');
     }
 
-    public function configVendeya()
+    public function configVendeya(VendeyaConfigurationService $service)
     {
-        return $this->buildConfigResponse([
-            'brandName' => 'Vendeya.pe',
-            'Primary' => '#ff7d00',
-            'Secondary' => '#d5e8e8',
-            'Background' => '#eef5f5',
-            'White' => '#ffffff',
-            'Text' => '#004850',
-            'lightText' => '#a2a5b9',
-            'darkPrimary' => '#121c22',
-            'darkSecondary' => '#1c2a32',
-            'darkrAccent' => '#253945',
-            'darkBackground' => '#1b262c',
-            'darkText' => '#a9a9b2'
-        ]);
+        return $this->buildConfigResponse($service->get());
     }
 
     /**

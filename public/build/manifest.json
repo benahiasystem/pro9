@@ -1,53 +1,113 @@
 {
-  "__plugin-vue2_normalizer-fcd81e8a.js": {
+  "__plugin-vue2_normalizer-839f22b6.js": {
+    "file": "assets/_plugin-vue2_normalizer-839f22b6.js"
+  },
+  "_claim_form-62a9b16c.js": {
+    "css": [
+      "assets/claim_form-b455b368.css"
+    ],
+    "file": "assets/claim_form-62a9b16c.js",
+    "imports": [
+      "__plugin-vue2_normalizer-839f22b6.js"
+    ]
+  },
+  "_index-00ca7a5d.js": {
     "assets": [
       "assets/element-icons-ab40a589.woff",
       "assets/element-icons-a30f5b3b.ttf"
     ],
     "css": [
-      "assets/_plugin-vue2_normalizer-ceb821ee.css"
+      "assets/index-ceb821ee.css"
     ],
-    "file": "assets/_plugin-vue2_normalizer-fcd81e8a.js"
-  },
-  "_claim_form-bae5a303.js": {
-    "css": [
-      "assets/claim_form-752a1451.css"
-    ],
-    "file": "assets/claim_form-bae5a303.js",
+    "file": "assets/index-00ca7a5d.js",
     "imports": [
-      "__plugin-vue2_normalizer-fcd81e8a.js"
+      "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_plugin-vue2_normalizer.css": {
-    "file": "assets/_plugin-vue2_normalizer-ceb821ee.css",
-    "src": "_plugin-vue2_normalizer.css"
-  },
-  "_vue-clipboard-9e0535ce.js": {
+  "_vue-clipboard-57fc87a8.js": {
     "css": [
-      "assets/vue-clipboard-e8d99178.css"
+      "assets/vue-clipboard-2de710db.css"
     ],
-    "file": "assets/vue-clipboard-9e0535ce.js",
+    "file": "assets/vue-clipboard-57fc87a8.js",
     "imports": [
-      "__plugin-vue2_normalizer-fcd81e8a.js"
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-00ca7a5d.js"
     ]
   },
   "claim_form.css": {
-    "file": "assets/claim_form-752a1451.css",
+    "file": "assets/claim_form-b455b368.css",
     "src": "claim_form.css"
   },
+  "index.css": {
+    "file": "assets/index-ceb821ee.css",
+    "src": "index.css"
+  },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-faebb4ab.js",
+    "file": "assets/app-2177b09b.js",
     "imports": [
-      "__plugin-vue2_normalizer-fcd81e8a.js",
-      "_claim_form-bae5a303.js"
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-00ca7a5d.js",
+      "_claim_form-62a9b16c.js"
     ],
     "isEntry": true,
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-0b00e2f5.js",
+    "file": "assets/cart-app-8251266e.js",
     "isEntry": true,
     "src": "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js"
+  },
+  "modules/Marketplace/Resources/assets/fonts/figtree-italic-latin-ext.woff2": {
+    "file": "assets/figtree-italic-latin-ext-a0cc105b.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/figtree-italic-latin-ext.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/figtree-italic-latin.woff2": {
+    "file": "assets/figtree-italic-latin-7242fa62.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/figtree-italic-latin.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/figtree-latin-ext.woff2": {
+    "file": "assets/figtree-latin-ext-bf7828e2.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/figtree-latin-ext.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/figtree-latin.woff2": {
+    "file": "assets/figtree-latin-4ba7d3d0.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/figtree-latin.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin-ext.woff2": {
+    "file": "assets/jetbrains-mono-latin-ext-db5ff4db.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin-ext.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin.woff2": {
+    "file": "assets/jetbrains-mono-latin-83c005d4.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin.woff2"
+  },
+  "modules/Marketplace/Resources/assets/img/buho-logo.svg": {
+    "file": "assets/buho-logo-06a37b2e.svg",
+    "src": "modules/Marketplace/Resources/assets/img/buho-logo.svg"
+  },
+  "modules/Marketplace/Resources/assets/js/marketplace.css": {
+    "file": "assets/marketplace-216dc831.css",
+    "src": "modules/Marketplace/Resources/assets/js/marketplace.css"
+  },
+  "modules/Marketplace/Resources/assets/js/marketplace.js": {
+    "assets": [
+      "assets/buho-logo-06a37b2e.svg",
+      "assets/figtree-latin-4ba7d3d0.woff2",
+      "assets/figtree-latin-ext-bf7828e2.woff2",
+      "assets/figtree-italic-latin-7242fa62.woff2",
+      "assets/figtree-italic-latin-ext-a0cc105b.woff2",
+      "assets/jetbrains-mono-latin-83c005d4.woff2",
+      "assets/jetbrains-mono-latin-ext-db5ff4db.woff2"
+    ],
+    "css": [
+      "assets/marketplace-216dc831.css"
+    ],
+    "file": "assets/marketplace-72a09875.js",
+    "imports": [
+      "__plugin-vue2_normalizer-839f22b6.js"
+    ],
+    "isEntry": true,
+    "src": "modules/Marketplace/Resources/assets/js/marketplace.js"
   },
   "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.ttf": {
     "file": "assets/element-icons-a30f5b3b.ttf",
@@ -58,40 +118,42 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-d841b155.css",
+    "file": "assets/app-1ed56637.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
-      "assets/app-d841b155.css"
+      "assets/app-1ed56637.css"
     ],
-    "file": "assets/app-77c6ed88.js",
+    "file": "assets/app-fbc29576.js",
     "imports": [
-      "_vue-clipboard-9e0535ce.js",
-      "__plugin-vue2_normalizer-fcd81e8a.js",
-      "_claim_form-bae5a303.js"
+      "_vue-clipboard-57fc87a8.js",
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-00ca7a5d.js",
+      "_claim_form-62a9b16c.js"
     ],
     "isEntry": true,
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-c8557080.css",
+    "file": "assets/system-080f5509.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-c8557080.css"
+      "assets/system-080f5509.css"
     ],
-    "file": "assets/system-a435a09b.js",
+    "file": "assets/system-b9608009.js",
     "imports": [
-      "_vue-clipboard-9e0535ce.js",
-      "__plugin-vue2_normalizer-fcd81e8a.js"
+      "_vue-clipboard-57fc87a8.js",
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-00ca7a5d.js"
     ],
     "isEntry": true,
     "src": "resources/js/system.js"
   },
   "vue-clipboard.css": {
-    "file": "assets/vue-clipboard-e8d99178.css",
+    "file": "assets/vue-clipboard-2de710db.css",
     "src": "vue-clipboard.css"
   }
 }

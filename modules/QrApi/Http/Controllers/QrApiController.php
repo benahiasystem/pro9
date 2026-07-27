@@ -43,10 +43,12 @@ class QrApiController extends Controller
             'qr_api_use_bot_instance' => (bool) ($data->qr_api_use_bot_instance ?? false),
             'qr_api_pdf_format' => $data->qr_api_pdf_format ?? 'ticket',
             'qr_api_instance' => $data->qr_api_instance,
+            'qr_api_instance_adopted' => (bool) ($data->qr_api_instance_adopted ?? false),
             'qr_api_connected_phone' => $data->qr_api_connected_phone,
             'qr_api_profile_name' => $data->qr_api_profile_name,
             'qr_api_connection_state' => $data->qr_api_connection_state ?? 'disconnected',
             'evolution_instance' => $data->evolution_instance,
+            'evolution_instance_adopted' => (bool) ($data->evolution_instance_adopted ?? false),
             'evolution_connected_phone' => $data->evolution_connected_phone,
             'whatsapp_messages_used' => $whatsapp_usage['used'],
             'whatsapp_messages_limit' => $whatsapp_usage['limit'],
@@ -73,16 +75,21 @@ class QrApiController extends Controller
             $newValue = (bool) $request->qr_api_use_bot_instance;
 
             // Si está activando "usar el mismo del bot" y hay una instancia propia,
-            // la desconectamos para no dejar instancias zombie en Evolution.
+            // la desconectamos para no dejar instancias zombie en Evolution. Si esa
+            // instancia fue adoptada (compartida con ChatBuho), NO se elimina —
+            // solo se desvincula localmente.
             if ($newValue && !$config->qr_api_use_bot_instance && !empty($config->qr_api_instance)) {
-                try {
-                    (new EvolutionClient())->deleteInstance($config->qr_api_instance);
-                } catch (\Throwable $e) {
-                    Log::warning('[QrApi] No se pudo borrar instancia previa al cambiar a modo bot', [
-                        'exception' => $e->getMessage(),
-                    ]);
+                if (!$config->qr_api_instance_adopted) {
+                    try {
+                        (new EvolutionClient())->deleteInstance($config->qr_api_instance);
+                    } catch (\Throwable $e) {
+                        Log::warning('[QrApi] No se pudo borrar instancia previa al cambiar a modo bot', [
+                            'exception' => $e->getMessage(),
+                        ]);
+                    }
                 }
                 $config->qr_api_instance = null;
+                $config->qr_api_instance_adopted = false;
                 $config->qr_api_connected_phone = null;
                 $config->qr_api_profile_name = null;
                 $config->qr_api_connection_state = 'disconnected';
@@ -123,6 +130,7 @@ class QrApiController extends Controller
         }
 
         $config->qr_api_instance = $instance;
+        $config->qr_api_instance_adopted = false;
         $config->qr_api_connected_phone = null;
         $config->qr_api_profile_name = null;
         $config->qr_api_connection_state = 'connecting';
@@ -134,6 +142,60 @@ class QrApiController extends Controller
             'success' => true,
             'instance_name' => $instance,
             'message' => 'Instancia creada. Escanea el código QR para vincular el WhatsApp.',
+        ];
+    }
+
+    /**
+     * Adopta una instancia que ya existe y ya está conectada (ej. porque se
+     * conectó primero desde Chatwoot) en vez de crear una nueva. No llama a
+     * createInstance() — solo verifica propiedad y registra el webhook.
+     */
+    public function linkExisting(Request $request)
+    {
+        $data = $request->validate([
+            'instance_name' => ['required', 'string', 'regex:/^[A-Za-z0-9_\-]{3,40}$/'],
+            'phone_number' => ['required', 'string', 'regex:/^\d{8,15}$/'],
+            'token' => ['required', 'string'],
+        ]);
+
+        $instance = $data['instance_name'];
+
+        $client = new EvolutionClient();
+        $verification = $client->verifyOwnership($instance, $data['phone_number'], $data['token']);
+
+        if (!$verification['success']) {
+            return ['success' => false, 'message' => $verification['message']];
+        }
+
+        $config = Configuration::first();
+        if (empty($config->qr_api_webhook_token)) {
+            $config->qr_api_webhook_token = Str::random(40);
+        }
+
+        try {
+            $webhookUrl = $this->buildWebhookUrl($config->qr_api_webhook_token);
+            $client->setWebhook($instance, $webhookUrl);
+        } catch (\Throwable $e) {
+            Log::error('[QrApi] linkExisting: no se pudo registrar webhook', [
+                'instance' => $instance,
+                'exception' => $e->getMessage(),
+            ]);
+            return ['success' => false, 'message' => 'No se pudo vincular la instancia: ' . $e->getMessage()];
+        }
+
+        $config->qr_api_instance = $instance;
+        $config->qr_api_instance_adopted = true;
+        $config->qr_api_connected_phone = $verification['connected_phone'];
+        $config->qr_api_connection_state = 'open';
+        $config->qr_api_connected_at = now();
+        $config->qr_api_use_bot_instance = false;
+        $config->qr_api_enable = true;
+        $config->save();
+
+        return [
+            'success' => true,
+            'instance_name' => $instance,
+            'message' => 'Instancia vinculada con éxito.',
         ];
     }
 
@@ -178,17 +240,21 @@ class QrApiController extends Controller
                     $config->qr_api_connection_state = 'open';
                     $config->qr_api_connected_at = now();
                 }
-                if ($connected && (empty($config->qr_api_connected_phone) || empty($config->qr_api_profile_name))) {
+                if ($connected && (empty($config->qr_api_connected_phone) || empty($config->qr_api_profile_name) || empty($config->qr_api_instance_token))) {
                     try {
                         $info = $client->fetchInstance($instance);
                         $first = is_array($info) && isset($info[0]) ? $info[0] : $info;
-                        $owner = data_get($first, 'instance.owner') ?: data_get($first, 'owner');
+                        $owner = data_get($first, 'instance.owner') ?: data_get($first, 'owner') ?: data_get($first, 'ownerJid');
                         $profileName = data_get($first, 'instance.profileName') ?: data_get($first, 'profileName');
+                        $token = data_get($first, 'instance.token') ?: data_get($first, 'token');
                         if ($owner) {
                             $config->qr_api_connected_phone = preg_replace('/\D/', '', explode('@', (string) $owner)[0]);
                         }
                         if ($profileName) {
                             $config->qr_api_profile_name = $profileName;
+                        }
+                        if ($token) {
+                            $config->qr_api_instance_token = $token;
                         }
                     } catch (\Throwable $e) {
                         Log::warning('[QrApi] fetchInstance fallo', ['exception' => $e->getMessage()]);
@@ -200,23 +266,40 @@ class QrApiController extends Controller
                 $config->save();
             }
 
+            $instanceAdopted = $config->qr_api_use_bot_instance
+                ? (bool) $config->evolution_instance_adopted
+                : (bool) $config->qr_api_instance_adopted;
+            // El token solo se expone cuando la instancia es propia de QrApi
+            // (no compartida con el bot, no adoptada) — es el que hay que
+            // copiar hacia ChatBuho para que ellos puedan adoptarla ahí.
+            $instanceToken = (!$config->qr_api_use_bot_instance && !$instanceAdopted)
+                ? $config->qr_api_instance_token
+                : null;
+
             return [
                 'success' => true,
                 'connected' => $connected,
                 'state' => $state,
                 'instance_name' => $instance,
+                'instance_adopted' => $instanceAdopted,
                 'connected_phone' => $config->qr_api_use_bot_instance
                     ? $config->evolution_connected_phone
                     : $config->qr_api_connected_phone,
                 'profile_name' => $config->qr_api_use_bot_instance
                     ? $config->evolution_profile_name
                     : $config->qr_api_profile_name,
+                'instance_token' => $instanceToken,
             ];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => 'Error al consultar estado: ' . $e->getMessage()];
         }
     }
 
+    /**
+     * Desconecta QrApi de su instancia. Si la instancia fue adoptada (vino de
+     * ChatBuho, ver linkExisting()), NO se elimina en Evolution — solo se
+     * desvincula localmente, para no romper la conexión de ChatBuho.
+     */
     public function disconnect()
     {
         $config = Configuration::first();
@@ -224,15 +307,20 @@ class QrApiController extends Controller
             return ['success' => false, 'message' => self::NO_INSTANCE_MSG];
         }
 
-        try {
-            (new EvolutionClient())->deleteInstance($config->qr_api_instance);
-        } catch (\Throwable $e) {
-            Log::warning('[QrApi] deleteInstance fallo (continuo limpiando local)', [
-                'exception' => $e->getMessage(),
-            ]);
+        $wasAdopted = (bool) $config->qr_api_instance_adopted;
+
+        if (!$wasAdopted) {
+            try {
+                (new EvolutionClient())->deleteInstance($config->qr_api_instance);
+            } catch (\Throwable $e) {
+                Log::warning('[QrApi] deleteInstance fallo (continuo limpiando local)', [
+                    'exception' => $e->getMessage(),
+                ]);
+            }
         }
 
         $config->qr_api_instance = null;
+        $config->qr_api_instance_adopted = false;
         $config->qr_api_connected_phone = null;
         $config->qr_api_profile_name = null;
         $config->qr_api_connection_state = 'disconnected';
@@ -240,7 +328,12 @@ class QrApiController extends Controller
         $config->qr_api_enable = false;
         $config->save();
 
-        return ['success' => true, 'message' => 'Número desconectado.'];
+        return [
+            'success' => true,
+            'message' => $wasAdopted
+                ? 'Instancia desvinculada de QrApi. Sigue conectada en ChatBuho.'
+                : 'Número desconectado.',
+        ];
     }
 
     public function restart()
@@ -264,6 +357,13 @@ class QrApiController extends Controller
         $config = Configuration::first();
         if (empty($config->qr_api_instance)) {
             return ['success' => false, 'message' => self::NO_INSTANCE_MSG];
+        }
+
+        if ($config->qr_api_instance_adopted) {
+            return [
+                'success' => false,
+                'message' => 'Esta instancia está vinculada desde ChatBuho — renovarla la eliminaría también ahí. Desvincúlala primero o renuévala desde ChatBuho.',
+            ];
         }
 
         $instance = $config->qr_api_instance;
