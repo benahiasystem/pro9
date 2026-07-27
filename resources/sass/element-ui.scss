@@ -2,6 +2,72 @@ html {
   scrollbar-gutter: stable;
 }
 
+/*
+  Modales sin salto de layout y con un solo scroll.
+
+  1) Element UI (y sweetalert2) agregan padding-right al body para compensar la
+     barra que ocultan al abrir el modal. Como el carril ya está reservado con
+     scrollbar-gutter, esa compensación desplaza el contenido de la página.
+  2) Element hace scroll del diálogo completo (.el-dialog__wrapper), lo que suma
+     una segunda barra junto al carril del html. En su lugar el scroll vive en
+     el cuerpo del diálogo, dejando cabecera y pie siempre visibles.
+*/
+body.el-popup-parent--hidden,
+body.swal2-shown {
+  padding-right: 0 !important;
+}
+
+.el-dialog__wrapper {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.el-dialog {
+  display: flex;
+  flex-direction: column;
+  // Deja que flex encoja el diálogo respetando el margin-top del prop `top`.
+  min-height: 0;
+  overflow: hidden;
+
+  .el-dialog__header,
+  .el-dialog__footer {
+    flex: 0 0 auto;
+  }
+
+  .el-dialog__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+
+    // Barra discreta, igual a la de los widgets del dashboard.
+    scrollbar-width: thin;
+    scrollbar-color: rgba(155, 161, 173, 0.28) transparent;
+
+    &::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(155, 161, 173, 0.28);
+      border-radius: 999px;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+      background: rgba(155, 161, 173, 0.46);
+    }
+  }
+
+  &.is-fullscreen {
+    overflow: hidden;
+  }
+}
+
 @font-face {
   font-family: "element-icons";
   src: url("/fonts/element-icons.woff") format("woff"),
