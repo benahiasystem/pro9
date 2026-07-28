@@ -2,11 +2,11 @@
   "__plugin-vue2_normalizer-839f22b6.js": {
     "file": "assets/_plugin-vue2_normalizer-839f22b6.js"
   },
-  "_claim_form-62a9b16c.js": {
+  "_claim_form-18abe8a1.js": {
     "css": [
-      "assets/claim_form-b455b368.css"
+      "assets/claim_form-752a1451.css"
     ],
-    "file": "assets/claim_form-62a9b16c.js",
+    "file": "assets/claim_form-18abe8a1.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js"
     ]
@@ -24,18 +24,18 @@
       "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_vue-clipboard-5c8fb615.js": {
+  "_vue-clipboard-5a92ddfd.js": {
     "css": [
-      "assets/vue-clipboard-2de710db.css"
+      "assets/vue-clipboard-e8d99178.css"
     ],
-    "file": "assets/vue-clipboard-5c8fb615.js",
+    "file": "assets/vue-clipboard-5a92ddfd.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js",
       "_index-596c10f0.js"
     ]
   },
   "claim_form.css": {
-    "file": "assets/claim_form-b455b368.css",
+    "file": "assets/claim_form-752a1451.css",
     "src": "claim_form.css"
   },
   "index.css": {
@@ -43,11 +43,11 @@
     "src": "index.css"
   },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-84cbdc9f.js",
+    "file": "assets/app-afc50696.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js",
       "_index-596c10f0.js",
-      "_claim_form-62a9b16c.js"
+      "_claim_form-18abe8a1.js"
     ],
     "isEntry": true,
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
@@ -82,16 +82,16 @@
     "src": "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin.woff2"
   },
   "modules/Marketplace/Resources/assets/img/buho-logo.svg": {
-    "file": "assets/buho-logo-06a37b2e.svg",
+    "file": "assets/buho-logo-beab4b94.svg",
     "src": "modules/Marketplace/Resources/assets/img/buho-logo.svg"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.css": {
-    "file": "assets/marketplace-216dc831.css",
+    "file": "assets/marketplace-d0ccd9ee.css",
     "src": "modules/Marketplace/Resources/assets/js/marketplace.css"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.js": {
     "assets": [
-      "assets/buho-logo-06a37b2e.svg",
+      "assets/buho-logo-beab4b94.svg",
       "assets/figtree-latin-4ba7d3d0.woff2",
       "assets/figtree-latin-ext-bf7828e2.woff2",
       "assets/figtree-italic-latin-7242fa62.woff2",
@@ -100,9 +100,9 @@
       "assets/jetbrains-mono-latin-ext-db5ff4db.woff2"
     ],
     "css": [
-      "assets/marketplace-216dc831.css"
+      "assets/marketplace-d0ccd9ee.css"
     ],
-    "file": "assets/marketplace-72a09875.js",
+    "file": "assets/marketplace-5084ddd9.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js"
     ],
@@ -118,34 +118,34 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-b2fdba87.css",
+    "file": "assets/app-1f55dc82.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
-      "assets/app-b2fdba87.css"
+      "assets/app-1f55dc82.css"
     ],
-    "file": "assets/app-8a49a0dc.js",
+    "file": "assets/app-abff99f4.js",
     "imports": [
-      "_vue-clipboard-5c8fb615.js",
+      "_vue-clipboard-5a92ddfd.js",
       "__plugin-vue2_normalizer-839f22b6.js",
       "_index-596c10f0.js",
-      "_claim_form-62a9b16c.js"
+      "_claim_form-18abe8a1.js"
     ],
     "isEntry": true,
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-080f5509.css",
+    "file": "assets/system-68220f53.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-080f5509.css"
+      "assets/system-68220f53.css"
     ],
-    "file": "assets/system-cf71b8fc.js",
+    "file": "assets/system-f85e16dc.js",
     "imports": [
-      "_vue-clipboard-5c8fb615.js",
+      "_vue-clipboard-5a92ddfd.js",
       "__plugin-vue2_normalizer-839f22b6.js",
       "_index-596c10f0.js"
     ],
@@ -153,7 +153,7 @@
     "src": "resources/js/system.js"
   },
   "vue-clipboard.css": {
-    "file": "assets/vue-clipboard-2de710db.css",
+    "file": "assets/vue-clipboard-e8d99178.css",
     "src": "vue-clipboard.css"
   }
 }

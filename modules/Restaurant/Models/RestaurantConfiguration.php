@@ -6,6 +6,7 @@ use App\Models\Tenant\ModelTenant;
 use Modules\Restaurant\Models\RestaurantTable;
 use App\Models\Tenant\Configuration;
 use Illuminate\Support\Facades\DB;
+use Modules\Inventory\Models\InventoryConfiguration;
 
 class RestaurantConfiguration extends ModelTenant
 {
@@ -80,6 +81,8 @@ class RestaurantConfiguration extends ModelTenant
             ];
         }
 
+        $inventory_cfg = InventoryConfiguration::first();
+        
         return [
             'menu_pos' => (bool)$this->menu_pos,
             'menu_order' => (bool)$this->menu_order,
@@ -127,6 +130,7 @@ class RestaurantConfiguration extends ModelTenant
             'show_item_description_pack' => (bool)optional($configurations_global)->show_item_description_pack,
             'allow_edit_unit_price_to_seller' => (bool)optional($configurations_global)->allow_edit_unit_price_to_seller,
             'enable_list_product' => (bool)optional($configurations_global)->enable_list_product,
+            'validate_stock_add_item' => $inventory_cfg->validate_stock_add_item
         ];
     }
 }
