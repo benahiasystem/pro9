@@ -228,21 +228,18 @@ var app_cart = new Vue({
             return 'Nota de venta';
         },
         guestInvoiceNotice() {
-            if (!this.showGuestForm || this.isLoggedIn) {
+            if (!this.showGuestForm || this.isLoggedIn || !this.enable_electronic_documents) {
                 return null;
             }
 
             const docType = String(this.guest_form.identity_document_type_id || '0');
             if (docType === '1') {
-                return 'Al ingresar tu DNI se generará automáticamente una Boleta de venta.';
+                return 'Al ingresar tu DNI se generará automáticamente tu Boleta de venta electrónica.';
             }
             if (docType === '6') {
-                return 'Al ingresar tu RUC se generará automáticamente una Factura de venta.';
+                return 'Al ingresar tu RUC se generará automáticamente tu Factura electrónica.';
             }
-            if (this.enable_electronic_documents) {
-                return 'Sin DNI ni RUC se emitirá una Nota de venta.';
-            }
-            return null;
+            return 'Sin DNI ni RUC se emitirá una Nota de venta.';
         },
     },
     watch: {
