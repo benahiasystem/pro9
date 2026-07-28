@@ -1129,15 +1129,19 @@ class EcommerceController extends Controller
         $isCheckout = $request->boolean('checkout')
             || $request->get('context') === 'checkout';
 
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $telephone = preg_replace('/\D/', '', (string) $request->input('telephone', ''));
+        $requestedDocTypeId = (string) $request->input('identity_document_type_id', '');
+        $hasTripleInput = $isCheckout
+            && $email !== ''
+            && strlen($telephone) >= 7
+            && in_array($requestedDocTypeId, ['1', '6'], true);
+
         $person = Person::where('number', $number)
             ->where('type', 'customers')
             ->first();
 
-        if ($person) {
-            if ($isCheckout) {
-                return $this->buildCheckoutCustomerLookupResponse($person, $type);
-            }
-
+        if ($person && !$isCheckout) {
             return [
                 'success' => false,
                 'exists' => true,
@@ -1145,60 +1149,227 @@ class EcommerceController extends Controller
             ];
         }
 
-        try {
-            $result = $this->searchDocument($type, $number);
-        } catch (\Throwable $e) {
-            return [
-                'success' => false,
-                'message' => 'No se pudo consultar el documento. Intente nuevamente.',
+        if ($person && $isCheckout) {
+            $response = $this->buildCheckoutDocumentLookupResponse($person, $type);
+        } else {
+            try {
+                $result = $this->searchDocument($type, $number);
+            } catch (\Throwable $e) {
+                return [
+                    'success' => false,
+                    'message' => 'No se pudo consultar el documento. Intente nuevamente.',
+                ];
+            }
+
+            if (empty($result['success'])) {
+                return [
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Datos no encontrados.',
+                ];
+            }
+
+            $response = [
+                'success' => true,
+                'type' => $type,
+                'name' => $result['data']['name'] ?? '',
             ];
         }
 
-        if (empty($result['success'])) {
-            return [
-                'success' => false,
-                'message' => $result['message'] ?? 'Datos no encontrados.',
-            ];
-        }
+        if ($isCheckout && $hasTripleInput) {
+            $tripleResult = $this->resolveGuestCheckoutTripleMatch(
+                $number,
+                $requestedDocTypeId,
+                $email,
+                $telephone,
+                $person
+            );
 
-        $response = [
-            'success' => true,
-            'type' => $type,
-            'name' => $result['data']['name'] ?? '',
-        ];
+            $response['triple_match'] = $tripleResult['triple_match'];
 
-        if ($isCheckout && $type === 'ruc' && !empty($result['data']['address'])) {
-            $response['address'] = $result['data']['address'];
-            $response['department_id'] = $result['data']['location_id'][0] ?? null;
-            $response['province_id'] = $result['data']['location_id'][1] ?? null;
-            $response['district_id'] = $result['data']['location_id'][2] ?? null;
+            if ($tripleResult['triple_match'] && !empty($tripleResult['is_registered_customer'])) {
+                $response['exists'] = true;
+                $response['from_database'] = true;
+                $response['is_registered_customer'] = true;
+                $response['message'] = 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.';
+            } elseif ($tripleResult['triple_match'] && !empty($tripleResult['address'])) {
+                $response['address_loaded'] = true;
+                $response['is_returning_guest'] = !empty($tripleResult['is_returning_guest']);
+                $response['address'] = $tripleResult['address'];
+                $response['department_id'] = $tripleResult['department_id'] ?? null;
+                $response['province_id'] = $tripleResult['province_id'] ?? null;
+                $response['district_id'] = $tripleResult['district_id'] ?? null;
+            }
         }
 
         return $response;
     }
 
     /**
-     * Respuesta de autocompletado para checkout invitado con cliente ya registrado.
+     * Respuesta inicial de checkout invitado al consultar solo el documento (sin triple validación).
      */
-    protected function buildCheckoutCustomerLookupResponse(Person $person, string $type): array
+    protected function buildCheckoutDocumentLookupResponse(Person $person, string $type): array
+    {
+        $response = [
+            'success' => true,
+            'type' => $type,
+            'name' => $person->name,
+        ];
+
+        if (!empty($person->password)) {
+            $response['exists'] = true;
+            $response['from_database'] = true;
+            $response['is_registered_customer'] = true;
+            $response['message'] = 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.';
+        }
+
+        return $response;
+    }
+
+    /**
+     * Valida coincidencia exacta de documento + correo + teléfono y recupera dirección guardada.
+     */
+    protected function resolveGuestCheckoutTripleMatch(
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone,
+        ?Person $person = null
+    ): array {
+        if (!$this->guestDocumentTypeMatchesNumber($docTypeId, $number)) {
+            return ['triple_match' => false];
+        }
+
+        if ($person) {
+            if (!$this->personMatchesGuestTriple($person, $number, $docTypeId, $email, $telephone)) {
+                return ['triple_match' => false];
+            }
+
+            if (!empty($person->password)) {
+                return [
+                    'triple_match' => true,
+                    'is_registered_customer' => true,
+                ];
+            }
+
+            $addressData = $this->extractPersonShippingAddress($person);
+            if (!empty($addressData['address'])) {
+                return array_merge([
+                    'triple_match' => true,
+                    'is_returning_guest' => true,
+                ], $addressData);
+            }
+        } else {
+            $orderAddress = $this->findGuestOrderAddressByTripleMatch($number, $docTypeId, $email, $telephone);
+            if ($orderAddress && !empty($orderAddress['address'])) {
+                return array_merge([
+                    'triple_match' => true,
+                    'is_returning_guest' => true,
+                ], $orderAddress);
+            }
+
+            return ['triple_match' => false];
+        }
+
+        $orderAddress = $this->findGuestOrderAddressByTripleMatch($number, $docTypeId, $email, $telephone);
+        if ($orderAddress && !empty($orderAddress['address'])) {
+            return array_merge([
+                'triple_match' => true,
+                'is_returning_guest' => true,
+            ], $orderAddress);
+        }
+
+        return ['triple_match' => true];
+    }
+
+    protected function guestDocumentTypeMatchesNumber(string $docTypeId, string $number): bool
+    {
+        if ($docTypeId === '1') {
+            return strlen($number) === 8;
+        }
+
+        if ($docTypeId === '6') {
+            return strlen($number) === 11;
+        }
+
+        return false;
+    }
+
+    protected function personMatchesGuestTriple(
+        Person $person,
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone
+    ): bool {
+        $personNumber = preg_replace('/\D/', '', (string) $person->number);
+        $personDocType = (string) ($person->identity_document_type_id ?? (strlen($personNumber) === 11 ? '6' : '1'));
+        $personEmail = strtolower(trim((string) ($person->email ?? '')));
+        $personPhone = preg_replace('/\D/', '', (string) ($person->telephone ?? ''));
+
+        return $personNumber === $number
+            && $personDocType === $docTypeId
+            && $personEmail === $email
+            && $personPhone === $telephone;
+    }
+
+    protected function extractPersonShippingAddress(Person $person): array
     {
         $firstAddress = $person->addresses()->first();
 
         return [
-            'success' => true,
-            'exists' => true,
-            'from_database' => true,
-            'type' => $type,
-            'name' => $person->name,
-            'email' => $person->email,
-            'telephone' => $person->telephone,
-            'identity_document_type_id' => (string) ($person->identity_document_type_id ?? (strlen($person->number) === 11 ? 6 : 1)),
             'address' => $firstAddress->address ?? $person->address,
             'department_id' => $firstAddress->department_id ?? $person->department_id,
             'province_id' => $firstAddress->province_id ?? $person->province_id,
             'district_id' => $firstAddress->district_id ?? $person->district_id,
-            'message' => 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.',
         ];
+    }
+
+    protected function findGuestOrderAddressByTripleMatch(
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone
+    ): ?array {
+        $orders = Order::query()
+            ->whereNotNull('shipping_address')
+            ->where('shipping_address', '!=', '')
+            ->orderByDesc('id')
+            ->limit(300)
+            ->get(['customer', 'shipping_address']);
+
+        foreach ($orders as $order) {
+            $customer = $order->customer;
+            if (!$customer) {
+                continue;
+            }
+
+            $customerNumber = preg_replace('/\D/', '', (string) ($customer->numero_documento ?? ''));
+            $customerDocType = (string) ($customer->identity_document_type_id ?? $customer->codigo_tipo_documento_identidad ?? '');
+            $customerEmail = strtolower(trim((string) ($customer->correo_electronico ?? '')));
+            $customerPhone = preg_replace('/\D/', '', (string) ($customer->telefono ?? ''));
+
+            if ($customerNumber !== $number) {
+                continue;
+            }
+            if ($customerDocType !== $docTypeId) {
+                continue;
+            }
+            if ($customerEmail !== $email) {
+                continue;
+            }
+            if ($customerPhone !== $telephone) {
+                continue;
+            }
+
+            return [
+                'address' => $order->shipping_address,
+                'department_id' => null,
+                'province_id' => null,
+                'district_id' => null,
+            ];
+        }
+
+        return null;
     }
 
     public function getGoogleMaps()

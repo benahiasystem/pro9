@@ -63,7 +63,13 @@ var app_cart = new Vue({
         phone_whatsapp: window.__ecommerce_config?.phone_whatsapp || '',
         enable_whatsapp: window.__ecommerce_config?.enable_whatsapp || false,
         global_discount_type: window.__ecommerce_config?.global_discount_type || {},
-        all_identity_document_types : [{id: '6', name: 'RUC'}, {id: '0', name: 'DOC'},{id: '4', name: 'CE'},{id: '1', name: 'DNI'}],
+        all_identity_document_types : [
+            {id: '1', name: 'DNI'},
+            {id: '6', name: 'RUC'},
+            {id: '0', name: 'Otro documento'},
+            {id: '4', name: 'Carnet de extranjería'},
+            {id: '7', name: 'Pasaporte'},
+        ],
         addressSuggestions: [],
         departments: [],
         provinces: [],
@@ -127,6 +133,12 @@ var app_cart = new Vue({
         guestDocumentStatus: null,
         guestExistingCustomer: false,
         guestDocumentVerifyTimeout: null,
+        guestTripleVerifyTimeout: null,
+        guestMatchedTripleKey: null,
+        guestAutoAddressSnapshot: null,
+        guestReturningAddressNotice: false,
+        guestTripleLookupLoading: false,
+        guestHighAmountThreshold: 700,
         guest_form: {
             email: '',
             telephone: '',
@@ -156,6 +168,7 @@ var app_cart = new Vue({
             const number = (this.guest_form.number || '').trim();
             const docType = String(this.guest_form.identity_document_type_id || '0');
             const phoneDigits = phone.replace(/\D/g, '');
+            const cleanNumber = number.replace(/\D/g, '');
 
             if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
                 return false;
@@ -163,15 +176,32 @@ var app_cart = new Vue({
             if (!phoneDigits || phoneDigits.length < 7) {
                 return false;
             }
-            if (!name || !number) {
-                return false;
+
+            if (this.guestRequiresIdentityDocument) {
+                if (!name) {
+                    return false;
+                }
+                if (docType !== '1' && docType !== '6') {
+                    return false;
+                }
+                if (docType === '1' && cleanNumber.length !== 8) {
+                    return false;
+                }
+                if (docType === '6' && cleanNumber.length !== 11) {
+                    return false;
+                }
+            } else {
+                if (!name || !number) {
+                    return false;
+                }
+                if (docType === '1' && cleanNumber.length !== 8) {
+                    return false;
+                }
+                if (docType === '6' && cleanNumber.length !== 11) {
+                    return false;
+                }
             }
-            if (docType === '1' && number.replace(/\D/g, '').length !== 8) {
-                return false;
-            }
-            if (docType === '6' && number.replace(/\D/g, '').length !== 11) {
-                return false;
-            }
+
             if (!this.isPickupMode && !(this.form_contact.address || '').trim()) {
                 return false;
             }
@@ -221,6 +251,47 @@ var app_cart = new Vue({
         showCheckoutSections() {
             return this.isLoggedIn || this.guestCheckoutAccepted;
         },
+        guestCheckoutTotal() {
+            return parseFloat(this.summary.total || 0);
+        },
+        guestRequiresIdentityDocument() {
+            return this.guestCheckoutTotal > this.guestHighAmountThreshold;
+        },
+        guestHighAmountIdentityComplete() {
+            if (!this.guestRequiresIdentityDocument) {
+                return true;
+            }
+
+            const name = (this.guest_form.name || '').trim();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const cleanNumber = (this.guest_form.number || '').replace(/\D/g, '');
+
+            if (!name) {
+                return false;
+            }
+            if (docType !== '1' && docType !== '6') {
+                return false;
+            }
+            if (docType === '1' && cleanNumber.length !== 8) {
+                return false;
+            }
+            if (docType === '6' && cleanNumber.length !== 11) {
+                return false;
+            }
+
+            return true;
+        },
+        guestHighAmountIdentityNotice() {
+            if (!this.isGuestCheckoutActive || !this.guestRequiresIdentityDocument) {
+                return null;
+            }
+
+            if (this.guestHighAmountIdentityComplete) {
+                return null;
+            }
+
+            return 'Por normativa, en compras mayores a S/ 700.00 debes ingresar tu nombre y un documento válido (DNI o RUC).';
+        },
         guestInvoiceTypeLabel() {
             const docType = String(this.guest_form.identity_document_type_id || '0');
             if (docType === '1') return 'Boleta de venta';
@@ -241,6 +312,25 @@ var app_cart = new Vue({
             }
             return 'Sin DNI ni RUC se emitirá una Nota de venta.';
         },
+        guestDocumentTypeOptions() {
+            return [
+                { id: '1', label: 'DNI' },
+                { id: '6', label: 'RUC' },
+                { id: '0', label: 'Otro documento' },
+                { id: '4', label: 'Carnet de extranjería' },
+                { id: '7', label: 'Pasaporte' },
+            ];
+        },
+        guestDocumentNumberMaxLength() {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType === '6') {
+                return 11;
+            }
+            if (docType === '1') {
+                return 8;
+            }
+            return 15;
+        },
     },
     watch: {
         'form_contact.telephone'(value) {
@@ -250,9 +340,12 @@ var app_cart = new Vue({
 
             const phone = (value || '').trim();
             if (phone && phone !== (this.guest_form.telephone || '').trim()) {
+                this.invalidateGuestAutoAddressIfNeeded();
+                this.guestReturningAddressNotice = false;
                 this.guest_form.telephone = phone;
                 this.syncGuestFormToDocument();
                 this.saveGuestFormDraft();
+                this.scheduleGuestTripleVerify();
             }
         },
         guest_form: {
@@ -271,18 +364,42 @@ var app_cart = new Vue({
                 return;
             }
 
+            this.invalidateGuestAutoAddressIfNeeded();
             this.guestDocumentStatus = null;
             this.guestExistingCustomer = false;
+            this.guestReturningAddressNotice = false;
             this.applyGuestDocumentDefaults();
             this.scheduleGuestDocumentVerify();
+            this.scheduleGuestTripleVerify();
         },
         'guest_form.number'(value) {
             if (!this.showGuestForm || this.isLoggedIn) {
                 return;
             }
 
+            this.invalidateGuestAutoAddressIfNeeded();
+            this.guestReturningAddressNotice = false;
             this.applyGuestDocumentDefaults();
             this.scheduleGuestDocumentVerify(value);
+            this.scheduleGuestTripleVerify();
+        },
+        'guest_form.email'() {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.invalidateGuestAutoAddressIfNeeded();
+            this.guestReturningAddressNotice = false;
+            this.scheduleGuestTripleVerify();
+        },
+        'guest_form.telephone'() {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.invalidateGuestAutoAddressIfNeeded();
+            this.guestReturningAddressNotice = false;
+            this.scheduleGuestTripleVerify();
         },
         'addressModal.address': function(newValue) {
         },
@@ -377,6 +494,9 @@ var app_cart = new Vue({
             this.loadGuestFormDraft();
             if (this.guest_form.number) {
                 this.scheduleGuestDocumentVerify(this.guest_form.number);
+            }
+            if (this.isGuestTripleMatchInputReady()) {
+                this.scheduleGuestTripleVerify();
             }
         },
         initGuestFormStructure() {
@@ -491,7 +611,7 @@ var app_cart = new Vue({
                 this.typeDocuments = '6';
             } else {
                 this.form_document.codigo_tipo_documento = '80';
-                this.typeDocuments = '0';
+                this.typeDocuments = docType;
             }
 
             this.numberDocument = number || '0';
@@ -501,13 +621,180 @@ var app_cart = new Vue({
                 this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments;
             }
         },
+        enforceGuestHighAmountIdentityRule() {
+            // La validación de montos > S/ 700 se aplica al enviar; no se restringe la selección en el selector.
+        },
+        normalizeGuestEmail(email) {
+            return String(email || '').trim().toLowerCase();
+        },
+        normalizeGuestPhone(phone) {
+            return String(phone || '').replace(/\D/g, '');
+        },
+        buildGuestTripleMatchKey() {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const number = this.normalizeGuestPhone(this.guest_form.number || '');
+            const email = this.normalizeGuestEmail(this.guest_form.email || '');
+            const phone = this.normalizeGuestPhone(
+                this.guest_form.telephone || this.form_contact.telephone || ''
+            );
+
+            return [docType, number, email, phone].join('|');
+        },
+        isGuestTripleMatchInputReady() {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType !== '1' && docType !== '6') {
+                return false;
+            }
+
+            const number = this.normalizeGuestPhone(this.guest_form.number || '');
+            const expectedLength = docType === '6' ? 11 : 8;
+            if (number.length !== expectedLength) {
+                return false;
+            }
+
+            const email = this.normalizeGuestEmail(this.guest_form.email || '');
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return false;
+            }
+
+            const phone = this.normalizeGuestPhone(
+                this.guest_form.telephone || this.form_contact.telephone || ''
+            );
+
+            return phone.length >= 7;
+        },
+        invalidateGuestAutoAddressIfNeeded() {
+            if (!this.guestAutoAddressSnapshot || !this.guestMatchedTripleKey) {
+                return;
+            }
+
+            if (this.buildGuestTripleMatchKey() !== this.guestMatchedTripleKey) {
+                this.clearGuestAutoFilledAddress();
+            }
+        },
+        clearGuestAutoFilledAddress() {
+            if (!this.guestAutoAddressSnapshot) {
+                this.guestReturningAddressNotice = false;
+                return;
+            }
+
+            const snapshot = this.guestAutoAddressSnapshot;
+            const currentAddress = (this.form_contact.address || '').trim();
+            const snapshotAddress = (snapshot.address || '').trim();
+
+            if (currentAddress === snapshotAddress) {
+                this.form_contact.address = '';
+            }
+
+            if ((this.addressModal.address || '').trim() === snapshotAddress) {
+                this.addressModal.address = '';
+            }
+
+            if (
+                String(this.selectedDepartment || '') === String(snapshot.department_id || '') &&
+                String(this.selectedProvince || '') === String(snapshot.province_id || '') &&
+                String(this.selectedDistrict || '') === String(snapshot.district_id || '')
+            ) {
+                this.selectedDepartment = '';
+                this.selectedProvince = '';
+                this.selectedDistrict = '';
+                this.provinces = [];
+                this.districts = [];
+                this.deliveryZone = null;
+                this.availableDeliveryZones = [];
+                this.deliveryMessage = '';
+                this.calculateSummary();
+            }
+
+            this.guestAutoAddressSnapshot = null;
+            this.guestMatchedTripleKey = null;
+            this.guestReturningAddressNotice = false;
+        },
+        scheduleGuestTripleVerify() {
+            clearTimeout(this.guestTripleVerifyTimeout);
+
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.invalidateGuestAutoAddressIfNeeded();
+
+            if (!this.isGuestTripleMatchInputReady()) {
+                return;
+            }
+
+            this.guestTripleVerifyTimeout = setTimeout(() => {
+                this.verifyGuestTripleMatch();
+            }, 400);
+        },
+        async verifyGuestTripleMatch() {
+            if (!this.isGuestTripleMatchInputReady()) {
+                return;
+            }
+
+            const requestKey = this.buildGuestTripleMatchKey();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const cleanNumber = this.normalizeGuestPhone(this.guest_form.number || '');
+            const email = this.normalizeGuestEmail(this.guest_form.email || '');
+            const phone = this.normalizeGuestPhone(
+                this.guest_form.telephone || this.form_contact.telephone || ''
+            );
+
+            this.guestTripleLookupLoading = true;
+
+            try {
+                const searchUrl = window.__routes?.search_document || '/ecommerce/search-document';
+                const response = await axios.get(`${searchUrl}/${cleanNumber}`, {
+                    params: {
+                        checkout: 1,
+                        email,
+                        telephone: phone,
+                        identity_document_type_id: docType,
+                    },
+                });
+                const data = response.data || {};
+
+                if (requestKey !== this.buildGuestTripleMatchKey()) {
+                    return;
+                }
+
+                if (!data.success || !data.triple_match) {
+                    this.clearGuestAutoFilledAddress();
+                    return;
+                }
+
+                if (data.is_registered_customer || data.from_database) {
+                    this.guestExistingCustomer = true;
+                    this.guestDocumentStatus = {
+                        type: 'info',
+                        message: data.message || 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.',
+                    };
+                    this.clearGuestAutoFilledAddress();
+                    return;
+                }
+
+                if (data.address_loaded && data.address) {
+                    this.applyGuestAddressFromLookup(data, { trackAutoFill: true });
+                    this.guestReturningAddressNotice = !!data.is_returning_guest;
+                } else {
+                    this.clearGuestAutoFilledAddress();
+                }
+            } catch (error) {
+                if (requestKey === this.buildGuestTripleMatchKey()) {
+                    this.clearGuestAutoFilledAddress();
+                }
+            } finally {
+                this.guestTripleLookupLoading = false;
+            }
+        },
         scheduleGuestDocumentVerify(value) {
             clearTimeout(this.guestDocumentVerifyTimeout);
 
             const docType = String(this.guest_form.identity_document_type_id || '0');
-            if (docType === '0') {
+            if (docType !== '1' && docType !== '6') {
                 this.guestDocumentStatus = null;
                 this.guestExistingCustomer = false;
+                this.clearGuestAutoFilledAddress();
                 return;
             }
 
@@ -517,6 +804,7 @@ var app_cart = new Vue({
             if (number.length !== expectedLength) {
                 this.guestDocumentStatus = null;
                 this.guestExistingCustomer = false;
+                this.clearGuestAutoFilledAddress();
                 return;
             }
 
@@ -526,7 +814,7 @@ var app_cart = new Vue({
         },
         async verifyGuestDocument(number) {
             const docType = String(this.guest_form.identity_document_type_id || '0');
-            if (docType === '0') {
+            if (docType !== '1' && docType !== '6') {
                 return;
             }
 
@@ -551,32 +839,20 @@ var app_cart = new Vue({
                     if (data.name) {
                         this.guest_form.name = data.name;
                     }
-                    if (data.email) {
-                        this.guest_form.email = data.email;
-                    }
-                    if (data.telephone) {
-                        this.guest_form.telephone = data.telephone;
-                        this.form_contact.telephone = data.telephone;
-                    }
-                    if (data.identity_document_type_id) {
-                        this.guest_form.identity_document_type_id = String(data.identity_document_type_id);
-                    }
 
-                    this.guestExistingCustomer = !!data.from_database;
-                    this.applyGuestAddressFromLookup(data);
+                    this.guestExistingCustomer = !!(data.from_database || data.is_registered_customer);
 
-                    if (data.from_database) {
+                    if (data.from_database || data.is_registered_customer) {
                         this.guestDocumentStatus = {
                             type: 'info',
-                            message: data.message || 'Datos recuperados de tu registro anterior.',
-                        };
-                    } else if (data.name) {
-                        this.guestDocumentStatus = {
-                            type: 'success',
-                            message: '✓ ' + data.name,
+                            message: data.message || 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.',
                         };
                     } else {
                         this.guestDocumentStatus = null;
+                    }
+
+                    if (this.isGuestTripleMatchInputReady()) {
+                        this.scheduleGuestTripleVerify();
                     }
                 } else {
                     this.guestExistingCustomer = false;
@@ -597,14 +873,24 @@ var app_cart = new Vue({
                 this.syncGuestFormToDocument();
             }
         },
-        applyGuestAddressFromLookup(data) {
+        applyGuestAddressFromLookup(data, options = {}) {
+            const { trackAutoFill = false } = options;
+
             if (!data || !data.address) {
                 return;
             }
 
-            if (!this.form_contact.address) {
-                this.form_contact.address = data.address;
-                this.addressModal.address = data.address;
+            this.form_contact.address = data.address;
+            this.addressModal.address = data.address;
+
+            if (trackAutoFill) {
+                this.guestAutoAddressSnapshot = {
+                    address: data.address,
+                    department_id: data.department_id || '',
+                    province_id: data.province_id || '',
+                    district_id: data.district_id || '',
+                };
+                this.guestMatchedTripleKey = this.buildGuestTripleMatchKey();
             }
 
             if (!data.department_id) {
@@ -684,6 +970,7 @@ var app_cart = new Vue({
             const number = (this.guest_form.number || '').trim();
             const docType = String(this.guest_form.identity_document_type_id || '0');
             const phoneDigits = phone.replace(/\D/g, '');
+            const cleanNumber = number.replace(/\D/g, '');
 
             if (!email) {
                 errors.push('correo electrónico');
@@ -697,16 +984,30 @@ var app_cart = new Vue({
                 errors.push('teléfono válido');
             }
 
-            if (!name) {
-                errors.push('nombre o razón social');
-            }
+            if (this.guestRequiresIdentityDocument) {
+                if (!name) {
+                    errors.push('nombre o razón social');
+                }
 
-            if (!number) {
-                errors.push('número de documento');
-            } else if (docType === '1' && number.replace(/\D/g, '').length !== 8) {
-                errors.push('DNI de 8 dígitos');
-            } else if (docType === '6' && number.replace(/\D/g, '').length !== 11) {
-                errors.push('RUC de 11 dígitos');
+                if (docType !== '1' && docType !== '6') {
+                    errors.push('DNI o RUC (obligatorio por monto superior a S/ 700.00)');
+                } else if (docType === '1' && cleanNumber.length !== 8) {
+                    errors.push('DNI de 8 dígitos');
+                } else if (docType === '6' && cleanNumber.length !== 11) {
+                    errors.push('RUC de 11 dígitos');
+                }
+            } else {
+                if (!name) {
+                    errors.push('nombre o razón social');
+                }
+
+                if (!number) {
+                    errors.push('número de documento');
+                } else if (docType === '1' && cleanNumber.length !== 8) {
+                    errors.push('DNI de 8 dígitos');
+                } else if (docType === '6' && cleanNumber.length !== 11) {
+                    errors.push('RUC de 11 dígitos');
+                }
             }
 
             return errors;
@@ -716,6 +1017,34 @@ var app_cart = new Vue({
         },
         validateGuestFormForPayment() {
             this.ensureGuestFormDocument();
+
+            if (this.guestRequiresIdentityDocument) {
+                const docType = String(this.guest_form.identity_document_type_id || '0');
+                const name = (this.guest_form.name || '').trim();
+                const cleanNumber = (this.guest_form.number || '').replace(/\D/g, '');
+
+                if (!name || (docType !== '1' && docType !== '6')) {
+                    return {
+                        valid: false,
+                        message: 'Por montos superiores a S/ 700.00 debes ingresar tu nombre y un DNI o RUC válido.',
+                    };
+                }
+
+                if (docType === '1' && cleanNumber.length !== 8) {
+                    return {
+                        valid: false,
+                        message: 'Por montos superiores a S/ 700.00 debes ingresar un DNI válido de 8 dígitos.',
+                    };
+                }
+
+                if (docType === '6' && cleanNumber.length !== 11) {
+                    return {
+                        valid: false,
+                        message: 'Por montos superiores a S/ 700.00 debes ingresar un RUC válido de 11 dígitos.',
+                    };
+                }
+            }
+
             const errors = this.getGuestFormValidationErrors();
 
             if (errors.length > 0) {
@@ -854,6 +1183,8 @@ var app_cart = new Vue({
             this.showGuestForm = true;
             this.guestDocumentStatus = null;
             this.guestExistingCustomer = false;
+            this.guestReturningAddressNotice = false;
+            this.clearGuestAutoFilledAddress();
             this.initGuestFormStructure();
             this.loadGuestFormDraft();
 
@@ -2187,6 +2518,7 @@ var app_cart = new Vue({
             this.form_document.codigo_tipo_documento = null
             this.optionDocument()
             if (this.isGuestCheckoutActive) {
+                this.enforceGuestHighAmountIdentityRule();
                 this.applyGuestDocumentDefaults();
             } else {
                 this.applyDocumentDefaults();

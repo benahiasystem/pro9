@@ -516,9 +516,11 @@
                                 class="input"
                                 v-model="guest_form.identity_document_type_id"
                             >
-                                <option value="1">DNI</option>
-                                <option value="6">RUC</option>
-                                <option value="0">Sin documento</option>
+                                <option
+                                    v-for="option in guestDocumentTypeOptions"
+                                    :key="option.id"
+                                    :value="option.id"
+                                >@{{ option.label }}</option>
                             </select>
                         </div>
                         <div>
@@ -528,7 +530,7 @@
                                 type="text"
                                 class="input"
                                 v-model.trim="guest_form.number"
-                                :maxlength="guest_form.identity_document_type_id === '6' ? 11 : (guest_form.identity_document_type_id === '1' ? 8 : 15)"
+                                :maxlength="guestDocumentNumberMaxLength"
                                 inputmode="numeric"
                                 required
                             >
@@ -544,6 +546,15 @@
                                 required
                             >
                         </div>
+                    </div>
+
+                    <div
+                        v-if="guestHighAmountIdentityNotice"
+                        class="document-notice document-notice--warning mt-3"
+                        role="status"
+                    >
+                        <span aria-hidden="true">&#9888;</span>
+                        <div>@{{ guestHighAmountIdentityNotice }}</div>
                     </div>
 
                     <div
@@ -713,6 +724,16 @@
 
                             {{-- Modo delivery normal --}}
                             <template v-else>
+                                <div
+                                    v-if="guestReturningAddressNotice && isGuestCheckoutActive"
+                                    class="document-notice document-notice--success mb-3"
+                                    role="status"
+                                >
+                                    <span aria-hidden="true">&#10003;</span>
+                                    <div>
+                                        Gracias por volver de nuevo. Tenemos tu dirección guardada; puedes confirmarla, cambiarla o actualizarla
+                                    </div>
+                                </div>
                                 <span class="field-label">Dirección de entrega</span>
                                 <button v-if="!form_contact.address" type="button" class="addr-btn" @click="openAddressModal">
                                     <span class="plus">+</span>
