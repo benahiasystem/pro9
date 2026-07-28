@@ -11,27 +11,27 @@
       "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_index-00ca7a5d.js": {
+  "_index-596c10f0.js": {
     "assets": [
       "assets/element-icons-ab40a589.woff",
       "assets/element-icons-a30f5b3b.ttf"
     ],
     "css": [
-      "assets/index-ceb821ee.css"
+      "assets/index-fd3e0cf7.css"
     ],
-    "file": "assets/index-00ca7a5d.js",
+    "file": "assets/index-596c10f0.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_vue-clipboard-67402ab3.js": {
+  "_vue-clipboard-f29045b2.js": {
     "css": [
       "assets/vue-clipboard-33a1033f.css"
     ],
-    "file": "assets/vue-clipboard-67402ab3.js",
+    "file": "assets/vue-clipboard-f29045b2.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js",
-      "_index-00ca7a5d.js"
+      "_index-596c10f0.js"
     ]
   },
   "claim_form.css": {
@@ -39,14 +39,14 @@
     "src": "claim_form.css"
   },
   "index.css": {
-    "file": "assets/index-ceb821ee.css",
+    "file": "assets/index-fd3e0cf7.css",
     "src": "index.css"
   },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-dec615b4.js",
+    "file": "assets/app-afc50696.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js",
-      "_index-00ca7a5d.js",
+      "_index-596c10f0.js",
       "_claim_form-18abe8a1.js"
     ],
     "isEntry": true,
@@ -125,11 +125,11 @@
     "css": [
       "assets/app-2e3f4052.css"
     ],
-    "file": "assets/app-373ceffc.js",
+    "file": "assets/app-3e08e9ec.js",
     "imports": [
-      "_vue-clipboard-67402ab3.js",
+      "_vue-clipboard-f29045b2.js",
       "__plugin-vue2_normalizer-839f22b6.js",
-      "_index-00ca7a5d.js",
+      "_index-596c10f0.js",
       "_claim_form-18abe8a1.js"
     ],
     "isEntry": true,
@@ -143,11 +143,11 @@
     "css": [
       "assets/system-68220f53.css"
     ],
-    "file": "assets/system-6a1e799b.js",
+    "file": "assets/system-8cacd5fa.js",
     "imports": [
-      "_vue-clipboard-67402ab3.js",
+      "_vue-clipboard-f29045b2.js",
       "__plugin-vue2_normalizer-839f22b6.js",
-      "_index-00ca7a5d.js"
+      "_index-596c10f0.js"
     ],
     "isEntry": true,
     "src": "resources/js/system.js"
