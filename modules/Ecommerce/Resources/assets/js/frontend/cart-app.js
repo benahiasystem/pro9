@@ -330,11 +330,12 @@ var app_cart = new Vue({
         },
         /**
          * Precios visibles en carrito:
-         * - Compra (híbrido + Pagar): siempre sí
-         * - Cotización (híbrido + cotizar, o solo cotizar): según quotation_show_prices
+         * - Compra: siempre sí
+         * - Cotizar y vender: siempre sí (no se pueden ocultar)
+         * - Solo cotizar: según quotation_show_prices
          */
         showCartPrices() {
-            if (!this.isQuotationCheckout) {
+            if (!this.isQuotationCheckout || this.isHybridQuotationMode) {
                 return true;
             }
             return !!this.quotationShowPrices;

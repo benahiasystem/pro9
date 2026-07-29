@@ -2686,6 +2686,69 @@
 @vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
 
 <script>
+    // Culqi Checkout v3 espera estos callbacks globales.
+    // Si faltan, el rechazo del pago no muestra modal (solo queda el overlay cerrado).
+    window.closeCheckout = function () {
+        if (typeof app_cart !== 'undefined' && typeof app_cart.hidePaymentLoading === 'function') {
+            app_cart.hidePaymentLoading();
+        } else if (typeof app_cart !== 'undefined') {
+            app_cart.processingPayment = false;
+        }
+    };
+
+    window.mostrarMensaje = function (mensaje, tipo) {
+        tipo = tipo || 'error';
+        var title = (tipo === 'error') ? 'Pago no realizado' : 'Información';
+
+        // SweetAlert2 v7 (porto): usa `type`. v8+ acepta `icon`.
+        if (typeof Swal !== 'undefined' && typeof Swal.fire === 'function') {
+            Swal.fire({
+                type: tipo,
+                icon: tipo,
+                title: title,
+                text: mensaje,
+                confirmButtonColor: '#3085d6'
+            });
+            return;
+        }
+
+        if (typeof swal === 'function') {
+            swal({
+                title: title,
+                text: mensaje,
+                type: tipo,
+                icon: tipo
+            });
+            return;
+        }
+
+        alert(mensaje);
+    };
+
+    function getCulqiErrorMessage(error) {
+        if (!error) {
+            return 'El pago fue cancelado o no se pudo completar.';
+        }
+
+        var code = String(error.code || error.type || '').toLowerCase();
+        var raw = String(
+            error.user_message || error.merchant_message || error.message || ''
+        ).toLowerCase();
+
+        var isEncryptError = code.indexOf('encrypt') !== -1
+            || raw.indexOf('encript') !== -1
+            || raw.indexOf('encrypt') !== -1;
+
+        if (isEncryptError || !window.isSecureContext) {
+            return 'El pago con tarjeta requiere HTTPS. En local usa https://local.pro9.test (habilita SSL en Laragon) o prueba desde un entorno seguro.';
+        }
+
+        return error.user_message
+            || error.merchant_message
+            || error.message
+            || 'No se pudo procesar el pago. Intente nuevamente.';
+    }
+
     Culqi.publicKey = {!! json_encode($payment_configuration->publickey_culqi ?? '') !!};
     if(!Culqi.publicKey)
     {
@@ -2837,19 +2900,25 @@
               },
               error: function (error_data) {
                 console.log(error_data);
-                app_cart.hidePaymentLoading();
-                let message = 'Ocurrió un error al procesar el pago.';
-                if (error_data.responseJSON && error_data.responseJSON.message) {
-                    message = error_data.responseJSON.message;
-                } else if (error_data.status === 422 && error_data.responseText) {
-                    let parsed = JSON.parse(error_data.responseText);
-                    if (parsed.message) {
-                        message = parsed.message;
-                    } else {
-                        message = 'Faltan completar campos';
-                        app_cart.errors = parsed;
-                    }
+                if (typeof app_cart !== 'undefined' && typeof app_cart.hidePaymentLoading === 'function') {
+                    app_cart.hidePaymentLoading();
                 }
+                let message = 'Ocurrió un error al procesar el pago.';
+                try {
+                    if (error_data.responseJSON && error_data.responseJSON.message) {
+                        message = error_data.responseJSON.message;
+                    } else if (error_data.responseText) {
+                        var parsed = JSON.parse(error_data.responseText);
+                        if (parsed && parsed.message) {
+                            message = parsed.message;
+                        } else if (error_data.status === 422) {
+                            message = 'Faltan completar campos';
+                            if (typeof app_cart !== 'undefined') {
+                                app_cart.errors = parsed;
+                            }
+                        }
+                    }
+                } catch (e) { /* respuesta no JSON */ }
                 window.mostrarMensaje(message, 'error');
               }
             });

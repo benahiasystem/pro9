@@ -84,10 +84,17 @@ class ConfigurationEcommerce extends ModelTenant
     {
         $config = self::first();
 
+        $enabled = (bool) optional($config)->quotation_enabled;
+        $mode = optional($config)->quotation_mode ?: 'quote_and_sell';
+        // Ocultar precios solo aplica en modo "solo cotizar".
+        $showPrices = ($enabled && $mode === 'quote_only')
+            ? (bool) (optional($config)->quotation_show_prices ?? true)
+            : true;
+
         return [
-            'enabled' => (bool) optional($config)->quotation_enabled,
-            'mode' => optional($config)->quotation_mode ?: 'quote_and_sell',
-            'show_prices' => (bool) (optional($config)->quotation_show_prices ?? true),
+            'enabled' => $enabled,
+            'mode' => $mode,
+            'show_prices' => $showPrices,
             'success_message' => optional($config)->quotation_success_message
                 ?: 'Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.',
             'validity_days' => max(1, min(90, (int) (optional($config)->quotation_validity_days ?: 7))),
@@ -107,18 +114,12 @@ class ConfigurationEcommerce extends ModelTenant
 
     /**
      * ¿Mostrar precios en la tienda virtual?
-     * Si cotizaciones están desactivadas, siempre sí.
-     * Si están activas (híbrido o solo cotizar), respeta quotation_show_prices.
+     * Si cotizaciones están desactivadas o el modo es "cotizar y vender", siempre sí.
+     * Solo en "solo cotizar" se respeta quotation_show_prices.
      */
     public static function storefrontShowsPrices(): bool
     {
-        $settings = self::storefrontQuotationConfig();
-
-        if (! $settings['enabled']) {
-            return true;
-        }
-
-        return (bool) $settings['show_prices'];
+        return (bool) self::storefrontQuotationConfig()['show_prices'];
     }
 
 }

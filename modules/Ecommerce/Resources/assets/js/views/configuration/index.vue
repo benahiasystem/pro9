@@ -378,7 +378,12 @@
                       <small class="d-block text-muted mb-2" style="line-height: 1.5;">
                         Elige si el cliente solo puede cotizar o también puede comprar.
                       </small>
-                      <el-radio-group v-model="form.quotation_mode" :disabled="form.quotation_enabled != 1" size="small">
+                      <el-radio-group
+                        v-model="form.quotation_mode"
+                        :disabled="form.quotation_enabled != 1"
+                        size="small"
+                        @change="onQuotationModeChange"
+                      >
                         <el-radio-button label="quote_and_sell">Cotizar y vender</el-radio-button>
                         <el-radio-button label="quote_only">Solo cotizar</el-radio-button>
                       </el-radio-group>
@@ -420,10 +425,11 @@
                         :active-value="1"
                         :inactive-value="0"
                         :disabled="form.quotation_enabled != 1"
+                        @change="onQuotationShowPricesChange"
                       ></el-switch>
                       <label class="ms-2 mb-0">Mostrar precios en el cotizador</label>
                       <small class="d-block text-muted ms-5" style="padding: 0 !important; line-height: 1.5;">
-                        Aplica en «Cotizar y vender» y «Solo cotizar»: oculta montos en la tienda (listado, ficha, búsqueda) y al cotizar. Si está on, se muestran normalmente.
+                        Solo se puede ocultar precios en «Solo cotizar». En «Cotizar y vender» los precios siempre deben verse porque el cliente puede comprar.
                       </small>
                     </div>
                   </div>
@@ -566,7 +572,9 @@ export default {
           // configuración de cotizaciones
           quotation_enabled: data.quotation_enabled ? 1 : 0,
           quotation_mode: data.quotation_mode || 'quote_and_sell',
-          quotation_show_prices: (data.quotation_show_prices === true || data.quotation_show_prices === 1 || data.quotation_show_prices === '1') ? 1 : 0,
+          quotation_show_prices: (data.quotation_mode || 'quote_and_sell') === 'quote_and_sell'
+            ? 1
+            : ((data.quotation_show_prices === true || data.quotation_show_prices === 1 || data.quotation_show_prices === '1') ? 1 : 0),
           quotation_success_message: data.quotation_success_message || '',
           quotation_validity_days: parseInt(data.quotation_validity_days) || 7,
           quotation_terms: data.quotation_terms || '',
@@ -577,6 +585,19 @@ export default {
     });
   },
   methods: {
+    onQuotationModeChange(mode) {
+      if (mode === 'quote_and_sell') {
+        this.form.quotation_show_prices = 1;
+      }
+    },
+    onQuotationShowPricesChange(value) {
+      if (this.form.quotation_mode === 'quote_and_sell' && value == 0) {
+        this.$nextTick(() => {
+          this.form.quotation_show_prices = 1;
+        });
+        this.$message.error('No es posible activar esta función en este modo');
+      }
+    },
     startResize(e) {
       this.isResizing = true
 
@@ -648,7 +669,13 @@ export default {
         ? 'quote_only'
         : 'quote_and_sell';
       payload.quotation_enabled = this.form.quotation_enabled == 1 ? 1 : 0;
-      payload.quotation_show_prices = this.form.quotation_show_prices == 1 ? 1 : 0;
+      // En híbrido no se permite ocultar precios.
+      if (payload.quotation_mode === 'quote_and_sell') {
+        this.form.quotation_show_prices = 1;
+        payload.quotation_show_prices = 1;
+      } else {
+        payload.quotation_show_prices = this.form.quotation_show_prices == 1 ? 1 : 0;
+      }
 
       this.$http
         .post(`/${this.resource}/configuration`, payload)

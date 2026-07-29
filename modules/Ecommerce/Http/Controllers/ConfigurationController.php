@@ -78,8 +78,10 @@ class ConfigurationController extends Controller
             $configuration->quotation_mode = $mode;
         }
 
-        // exists() incluye false/0 (has() a veces falla con booleanos)
-        if ($request->exists('quotation_show_prices')) {
+        // Ocultar precios solo es válido en "solo cotizar". En híbrido siempre se muestran.
+        if ($configuration->quotation_mode === 'quote_and_sell') {
+            $configuration->quotation_show_prices = true;
+        } elseif ($request->exists('quotation_show_prices')) {
             $configuration->quotation_show_prices = $request->boolean('quotation_show_prices');
         }
         if ($request->exists('quotation_success_message')) {

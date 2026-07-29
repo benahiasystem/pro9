@@ -45,7 +45,7 @@
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-913b918e.js",
+    "file": "assets/cart-app-d990d35c.js",
     "isEntry": true,
     "src": "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js"
   },
@@ -65,7 +65,7 @@
     "css": [
       "assets/app-15e1ee40.css"
     ],
-    "file": "assets/app-bc7b7ebe.js",
+    "file": "assets/app-b5c25547.js",
     "imports": [
       "_vue-clipboard-b1bfe123.js",
       "__plugin-vue2_normalizer-fcd81e8a.js",
