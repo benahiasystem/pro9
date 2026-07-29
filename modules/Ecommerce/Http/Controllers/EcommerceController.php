@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use App\Models\Tenant\Order;
 use App\Models\Tenant\ItemsRating;
 use App\Models\Tenant\ConfigurationEcommerce;
+use App\Models\Tenant\BankAccount;
 use App\Models\Tenant\StatusOrder;
 use Modules\Ecommerce\Http\Resources\ItemBarCollection;
 use stdClass;
@@ -342,12 +343,29 @@ class EcommerceController extends Controller
             ? (is_string($configuration->preferences) ? json_decode($configuration->preferences, true) : $configuration->preferences)
             : [];
 
+        $bank_account_ids = array_values(array_filter(
+            array_map('intval', (array) ($preferences['ecommerce_bank_account_ids'] ?? []))
+        ));
+        $bank_accounts = collect();
+        if ($enable_transfer && !empty($bank_account_ids)) {
+            $bank_accounts = BankAccount::with('bank', 'currency_type')
+                ->whereIn('id', $bank_account_ids)
+                ->where('status', 1)
+                ->get()
+                ->sortBy(function ($account) use ($bank_account_ids) {
+                    $pos = array_search((int) $account->id, $bank_account_ids, true);
+
+                    return $pos === false ? PHP_INT_MAX : $pos;
+                })
+                ->values();
+        }
+
         // Sucursales de recojo activas para el checkout
         $pickup_branches = $enable_store_pickup
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
             : [];
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'userAddresses', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'preferences', 'gateway_availability'));
+        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'userAddresses', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'preferences', 'gateway_availability', 'bank_accounts'));
     }
 
     public function orderList()
