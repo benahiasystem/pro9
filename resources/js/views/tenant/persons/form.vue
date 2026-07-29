@@ -1298,19 +1298,8 @@ export default {
             //     }
             // }
 
-            if( this.form.location_id.every(lid => lid !== null ) &&  this.form.addresses.length==0 && this.form.location_id.length===3 && this.form.address!=null ){
-                this.form.addresses.push({
-                    'id': null,
-                    'country_id': 'PE',
-                    'location_id': this.form.location_id,
-                    'address': this.form.address,
-                    'email': this.form.email,
-                    'phone': this.form.telephone,
-                    'main': false,
-                    'establishment_code':this.form.establishment_code,
-                    'has_consigned' : false
-                });
-            }
+            // La dirección principal se persiste en person.address; no duplicar en person_addresses.
+            // Las secundarias provienen del panel de establecimientos o del alta manual.
 
             this.loading_submit = true
             this.form.parent_id = parseInt(this.parent);

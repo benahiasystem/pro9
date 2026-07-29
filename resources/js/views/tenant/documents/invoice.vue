@@ -221,8 +221,8 @@
                                  class="form-group col-sm-6 mb-0">
                                 <label class="control-label font-weight-bold text-info">Dirección</label>
                                 <el-select v-model="form.customer_address_id">
-                                    <el-option v-for="option in customer_addresses"
-                                               :key="option.id"
+                                    <el-option v-for="(option, addressIndex) in customer_addresses"
+                                               :key="option.id != null ? option.id : 'principal-' + addressIndex"
                                                :label="option.address"
                                                :value="option.id"></el-option>
                                 </el-select>
@@ -1758,6 +1758,51 @@ export default {
 
     },
     methods: {
+        normalizeAddressText(address) {
+            return (address || '').trim().toLowerCase();
+        },
+        buildCustomerAddresses(customer) {
+            if (!customer) {
+                return [];
+            }
+
+            const seen = new Set();
+            const result = [];
+
+            (customer.addresses || [])
+                .filter(el => !el.has_consigned)
+                .forEach(addressRow => {
+                    const normalized = this.normalizeAddressText(addressRow.address);
+                    if (!normalized || seen.has(normalized)) {
+                        return;
+                    }
+
+                    seen.add(normalized);
+                    result.push(addressRow);
+                });
+
+            if (customer.address) {
+                const normalizedPrincipal = this.normalizeAddressText(customer.address);
+                if (normalizedPrincipal && !seen.has(normalizedPrincipal)) {
+                    result.unshift({
+                        id: null,
+                        address: customer.address
+                    });
+                }
+            }
+
+            return result;
+        },
+        selectDefaultCustomerAddress() {
+            if (this.customer_addresses.length === 0) {
+                this.form.customer_address_id = null;
+                return;
+            }
+
+            const mainAddress = _.find(this.customer_addresses, { main: 1 });
+            const defaultAddress = mainAddress || this.customer_addresses[0];
+            this.form.customer_address_id = defaultAddress.id;
+        },
         ...mapActions([
             'loadConfiguration',
         ]),
@@ -1994,17 +2039,14 @@ export default {
         },
         async prepareDataCustomer(){
 
-            this.customer_addresses = [];
             let customer = await _.find(this.customers, {'id': this.form.customer_id})
-            this.customer_addresses = customer.addresses
+            if (!customer) return;
 
+            this.customer_addresses = this.buildCustomerAddresses(customer);
             this.form.customer_address_id = this.form.customer ? this.form.customer.address_id : null
 
-            if (customer.address) {
-                this.customer_addresses.unshift({
-                    id: null,
-                    address: customer.address
-                })
+            if (!this.form.customer_address_id && this.customer_addresses.length > 0) {
+                this.selectDefaultCustomerAddress();
             }
 
         },
@@ -3585,13 +3627,12 @@ export default {
             location.href = (this.is_contingency) ? `/contingencies` : `/${this.resource}`
         },
         async reloadDataCustomers(customer_id) {
-            // this.$http.get(`/${this.resource}/table/customers`).then((response) => {
-            //     this.customers = response.data
-            //     this.form.customer_id = customer_id
-            // })
             await this.$http.get(`/${this.resource}/search/customer/${customer_id}`).then((response) => {
                 this.customers = response.data.customers
                 this.form.customer_id = customer_id
+                this.$nextTick(() => {
+                    this.changeCustomer();
+                });
             })
         },
         changeCustomer() {
@@ -3600,13 +3641,12 @@ export default {
             this.form.customer_address_id = null;
 
             let customer = _.find(this.customers, {'id': this.form.customer_id});
-            this.customer_addresses = customer.addresses;
-            if (customer.address) {
-                this.customer_addresses.unshift({
-                    id: null,
-                    address: customer.address
-                })
+            if (!customer) {
+                return;
             }
+
+            this.customer_addresses = this.buildCustomerAddresses(customer);
+            this.selectDefaultCustomerAddress();
 
 
             let seller = this.sellers.find(element => element.id == customer.seller_id)
@@ -3617,11 +3657,6 @@ export default {
 
             // retencion para clientes con ruc
             this.validateCustomerRetention(customer.identity_document_type_id)
-
-            /*if(this.customer_addresses.length > 0) {
-                let address = _.find(this.customer_addresses, {'main' : 1});
-                this.form.customer_address_id = address.id;
-            }*/
         },
         validateCustomerRetention(identity_document_type_id) {
 
