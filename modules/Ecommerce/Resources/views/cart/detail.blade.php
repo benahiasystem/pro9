@@ -217,14 +217,16 @@
     }
 
     .document-notice--loading {
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        color: #4b5563;
+        display: none !important;
     }
 
     .document-notice strong {
         display: block;
         margin-bottom: .15rem;
+    }
+
+    .document-notice--plan-query-limit {
+        display: none !important;
     }
 
     .checkout-section-enter-active {
@@ -577,6 +579,10 @@
                             'document-notice--success': guestDocumentStatus.type === 'success',
                             'document-notice--info': guestDocumentStatus.type === 'info',
                             'document-notice--warning': guestDocumentStatus.type === 'warning',
+                            'document-notice--plan-query-limit': guestDocumentStatus.message && (
+                                guestDocumentStatus.message.toLowerCase().indexOf('límite de consultas') !== -1
+                                || guestDocumentStatus.message.toLowerCase().indexOf('limite de consultas') !== -1
+                            ),
                         }"
                         role="status"
                     >

@@ -798,6 +798,11 @@ var app_cart = new Vue({
                 return;
             }
 
+            // DNI: sin consulta ni autorrelleno de nombres; el usuario lo ingresa manualmente.
+            if (docType === '1') {
+                return;
+            }
+
             const number = String(value !== undefined ? value : this.guest_form.number || '').replace(/\D/g, '');
             const expectedLength = docType === '6' ? 11 : 8;
 
@@ -815,6 +820,11 @@ var app_cart = new Vue({
         async verifyGuestDocument(number) {
             const docType = String(this.guest_form.identity_document_type_id || '0');
             if (docType !== '1' && docType !== '6') {
+                return;
+            }
+
+            // DNI: sin consulta ni autorrelleno de nombres; el usuario lo ingresa manualmente.
+            if (docType === '1') {
                 return;
             }
 
