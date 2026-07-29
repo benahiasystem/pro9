@@ -926,6 +926,93 @@
                 "thumb quantity quantity total delete";
         }
     }
+
+    /* Contenedor del botón X — posicionado sobre la tarjeta blanca de Culqi */
+    #culqi-js .culqi-modal-close-anchor {
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 1000000000001;
+        opacity: 0;
+        visibility: hidden;
+        overflow: visible;
+        transition: opacity .22s ease, visibility .22s ease;
+    }
+
+    #culqi-js .culqi-modal-close-anchor--visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    /* Botón de cierre estilo Culqi: plano, naranja, sin sombras */
+    #culqi-js .culqi-modal-close-btn {
+        display: none;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 2;
+        width: 32px;
+        height: 32px;
+        margin: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        color: #ff6b00;
+        line-height: 1;
+        pointer-events: auto;
+        transition: color .15s ease, opacity .22s ease;
+        opacity: 0;
+    }
+
+    #culqi-js .culqi-modal-close-btn--visible {
+        display: flex;
+        opacity: 1;
+    }
+
+    #culqi-js .culqi-modal-close-btn:hover {
+        background: transparent;
+        color: #e55f00;
+        box-shadow: none;
+    }
+
+    #culqi-js .culqi-modal-close-btn:focus {
+        outline: none;
+    }
+
+    #culqi-js .culqi-modal-close-btn:focus-visible {
+        outline: 2px solid rgba(255, 107, 0, 0.45);
+        outline-offset: 2px;
+    }
+
+    #culqi-js .culqi-modal-close-btn svg {
+        display: block;
+        width: 22px;
+        height: 22px;
+        pointer-events: none;
+        stroke: currentColor;
+        stroke-width: 2.5;
+    }
+
+    @media (max-width: 520px) {
+        #culqi-js .culqi-modal-close-btn {
+            top: 12px;
+            right: 12px;
+            width: 30px;
+            height: 30px;
+        }
+
+        #culqi-js .culqi-modal-close-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+    }
 </style>
 @endpush
 
@@ -1952,121 +2039,580 @@
 @vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
 
 <script>
-    Culqi.publicKey = {!! json_encode($payment_configuration->publickey_culqi ?? '') !!};
-    if(!Culqi.publicKey)
-    {
-      jQuery('.culqi').hide()
-/*
-        swal({
-            title: "Culqi configuración",
-            text: "El pago con visa aun no esta disponible. Intente con efectivo.",
-            type: "error",
-            position: 'top-end',
-            icon: 'warning',
-        })
-*/
-    }
-    const ecommercePrimaryCssColor = getComputedStyle(document.documentElement)
-        .getPropertyValue('--primary-color').trim() || '#ff7a00';
-    const ecommerceColorProbe = document.createElement('span');
-    ecommerceColorProbe.style.color = ecommercePrimaryCssColor;
-    document.body.appendChild(ecommerceColorProbe);
-    const ecommercePrimaryRgb = getComputedStyle(ecommerceColorProbe).color;
-    ecommerceColorProbe.remove();
-    const ecommercePrimaryColor = '#' + (ecommercePrimaryRgb.match(/\d+/g) || [255, 122, 0])
-        .slice(0, 3)
-        .map(value => Number(value).toString(16).padStart(2, '0'))
-        .join('');
+(function () {
+    const culqiPublicKey = {!! json_encode($payment_configuration->publickey_culqi ?? '') !!};
+    const culqiRsaId = {!! json_encode($payment_configuration->idrsa_culqi ?? '') !!};
+    const culqiRsaPublicKey = {!! json_encode($payment_configuration->rsa_culqi ?? '') !!};
+    let culqiReady = false;
+    let culqiReadyPromise = null;
+    let culqiCloseMountTimer = null;
+    let culqiClosePositionTimer = null;
+    let culqiCloseResizeHandler = null;
+    let culqiEscapeHandler = null;
 
-    Culqi.options({
-        installments: true,
-        style: {
-            logo: "{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi.svg') }}?v=2",
-            bannerColor: '#ffffff',
-            buttonBackground: ecommercePrimaryColor,
-            menuColor: ecommercePrimaryColor,
-            linksColor: ecommercePrimaryColor,
-            buttonText: 'Pagar',
-            buttonTextColor: '#ffffff',
-            priceColor: ecommercePrimaryColor
+    function getCulqiErrorMessage(error) {
+        if (!error) return '';
+        return error.user_message || error.merchant_message || '';
+    }
+
+    function waitForCulqi(maxAttempts, intervalMs) {
+        maxAttempts = maxAttempts || 50;
+        intervalMs = intervalMs || 100;
+
+        return new Promise(function (resolve, reject) {
+            let attempts = 0;
+
+            function check() {
+                if (typeof window.Culqi !== 'undefined') {
+                    resolve(window.Culqi);
+                    return;
+                }
+
+                attempts += 1;
+                if (attempts >= maxAttempts) {
+                    reject(new Error('Culqi SDK no cargó'));
+                    return;
+                }
+
+                setTimeout(check, intervalMs);
+            }
+
+            check();
+        });
+    }
+
+    function initCulqi(Culqi) {
+        Culqi.publicKey = culqiPublicKey;
+
+        if (!Culqi.publicKey) {
+            jQuery('.culqi').hide();
+            return;
         }
-    });
+
+        const ecommercePrimaryCssColor = getComputedStyle(document.documentElement)
+            .getPropertyValue('--primary-color').trim() || '#ff7a00';
+        const ecommerceColorProbe = document.createElement('span');
+        ecommerceColorProbe.style.color = ecommercePrimaryCssColor;
+        document.body.appendChild(ecommerceColorProbe);
+        const ecommercePrimaryRgb = getComputedStyle(ecommerceColorProbe).color;
+        ecommerceColorProbe.remove();
+        const ecommercePrimaryColor = '#' + (ecommercePrimaryRgb.match(/\d+/g) || [255, 122, 0])
+            .slice(0, 3)
+            .map(function (value) { return Number(value).toString(16).padStart(2, '0'); })
+            .join('');
+
+        Culqi.options({
+            lang: 'es',
+            installments: true,
+            paymentMethods: {
+                tarjeta: true,
+                yape: true,
+                bancaMovil: true,
+                agente: true,
+            },
+            style: {
+                logo: "{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi.svg') }}?v=2",
+                bannerColor: '#ffffff',
+                buttonBackground: ecommercePrimaryColor,
+                menuColor: ecommercePrimaryColor,
+                linksColor: ecommercePrimaryColor,
+                buttonText: 'Pagar',
+                buttonTextColor: '#ffffff',
+                priceColor: ecommercePrimaryColor
+            }
+        });
+    }
+
+    function ensureCulqiReady() {
+        if (culqiReady && typeof window.Culqi !== 'undefined') {
+            return Promise.resolve(window.Culqi);
+        }
+
+        if (!culqiReadyPromise) {
+            culqiReadyPromise = waitForCulqi().then(function (Culqi) {
+                initCulqi(Culqi);
+                culqiReady = true;
+                return Culqi;
+            });
+        }
+
+        return culqiReadyPromise;
+    }
+
+    function teardownCulqiCloseButton() {
+        const root = findCulqiModalRoot();
+        if (root) {
+            const anchor = root.querySelector('#culqi-modal-close-anchor');
+            if (anchor) {
+                anchor.remove();
+            }
+        }
+
+        const iframe = findCulqiIframe();
+        if (iframe) {
+            delete iframe.dataset.culqiCloseBound;
+            delete iframe.dataset.culqiLoadDetectedAt;
+        }
+    }
+
+    function createCulqiCloseButton() {
+        const root = findCulqiModalRoot();
+        if (!root) {
+            return null;
+        }
+
+        teardownCulqiCloseButton();
+
+        const anchor = document.createElement('div');
+        anchor.id = 'culqi-modal-close-anchor';
+        anchor.className = 'culqi-modal-close-anchor';
+        anchor.setAttribute('aria-hidden', 'true');
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'culqi-modal-close-btn';
+        btn.className = 'culqi-modal-close-btn';
+        btn.setAttribute('aria-label', 'Cerrar formulario de pago');
+        btn.title = 'Cerrar';
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6l-12 12"/><path d="M6 6l12 12"/></svg>';
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            closeCulqiModal();
+        });
+
+        anchor.appendChild(btn);
+        root.appendChild(anchor);
+
+        return { anchor: anchor, btn: btn };
+    }
+
+    function findCulqiIframe() {
+        const root = findCulqiModalRoot();
+        if (!root) {
+            return null;
+        }
+
+        return root.querySelector('#culqi_checkout_frame')
+            || root.querySelector('iframe.culqi_checkout')
+            || root.querySelector('iframe');
+    }
+
+    /**
+     * Dimensiones de la tarjeta blanca del checkout Culqi v4.
+     * El iframe ocupa todo el viewport; la tarjeta blanca va centrada dentro.
+     */
+    function getCulqiFormCardRect() {
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        let cardWidth;
+        let cardHeight;
+        let top;
+        let left;
+
+        if (vw <= 520) {
+            cardWidth = vw - 24;
+            cardHeight = vh - 24;
+            left = 12;
+            top = 12;
+        } else if (vw <= 768) {
+            cardWidth = Math.min(420, vw - 32);
+            cardHeight = Math.min(620, vh - 40);
+            left = (vw - cardWidth) / 2;
+            top = Math.max(16, (vh - cardHeight) / 2);
+        } else {
+            cardWidth = 420;
+            cardHeight = Math.min(580, vh - 48);
+            left = (vw - cardWidth) / 2;
+            top = Math.max(20, (vh - cardHeight) / 2);
+        }
+
+        return {
+            top: top,
+            left: left,
+            right: left + cardWidth,
+            bottom: top + cardHeight,
+            width: cardWidth,
+            height: cardHeight,
+        };
+    }
+
+    function positionCulqiCloseAnchor(anchor) {
+        const card = getCulqiFormCardRect();
+
+        if (!anchor || !card || card.width <= 0 || card.height <= 0) {
+            return false;
+        }
+
+        anchor.style.top = Math.round(card.top) + 'px';
+        anchor.style.left = Math.round(card.left) + 'px';
+        anchor.style.width = Math.round(card.width) + 'px';
+        anchor.style.height = Math.round(card.height) + 'px';
+
+        return true;
+    }
+
+    function positionCulqiCloseButton(anchor, btn) {
+        if (!anchor || !btn) {
+            return false;
+        }
+
+        return positionCulqiCloseAnchor(anchor);
+    }
+
+    function findCulqiModalRoot() {
+        return document.getElementById('culqi-js');
+    }
+
+    function mountCulqiCloseButton() {
+        const root = findCulqiModalRoot();
+        if (!root || !isCulqiOverlayVisible() || !isCulqiCheckoutReady()) {
+            return false;
+        }
+
+        const elements = createCulqiCloseButton();
+        if (!elements) {
+            return false;
+        }
+
+        const anchor = elements.anchor;
+        const btn = elements.btn;
+
+        if (!positionCulqiCloseButton(anchor, btn)) {
+            teardownCulqiCloseButton();
+            return false;
+        }
+
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                anchor.classList.add('culqi-modal-close-anchor--visible');
+                btn.classList.add('culqi-modal-close-btn--visible');
+            });
+        });
+
+        return true;
+    }
+
+    function bindCulqiEscapeClose() {
+        if (culqiEscapeHandler) {
+            return;
+        }
+
+        culqiEscapeHandler = function (e) {
+            if (e.key === 'Escape') {
+                closeCulqiModal();
+            }
+        };
+        document.addEventListener('keydown', culqiEscapeHandler);
+    }
+
+    function unbindCulqiEscapeClose() {
+        if (!culqiEscapeHandler) {
+            return;
+        }
+        document.removeEventListener('keydown', culqiEscapeHandler);
+        culqiEscapeHandler = null;
+    }
+
+    function isCulqiOverlayVisible() {
+        const root = findCulqiModalRoot();
+        if (!root) {
+            return false;
+        }
+
+        const style = window.getComputedStyle(root);
+        if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0) {
+            return false;
+        }
+
+        const rect = root.getBoundingClientRect();
+        return rect.width > 50 && rect.height > 50;
+    }
+
+    function isCulqiCheckoutReady() {
+        if (!isCulqiOverlayVisible()) {
+            return false;
+        }
+
+        const iframe = findCulqiIframe();
+        if (!iframe || !iframe.getAttribute('src')) {
+            return false;
+        }
+
+        const rect = iframe.getBoundingClientRect();
+        return rect.width > 200 && rect.height > 200;
+    }
+
+    function waitForCulqiFormReady(callback) {
+        let finished = false;
+        let contentReadyTriggered = false;
+        let iframeLoadFired = false;
+        let iframeDetectedAt = null;
+        const startedAt = Date.now();
+        const maxWaitMs = 15000;
+        const minWaitAfterIframeMs = 900;
+        const paintSettleMs = 700;
+
+        function cleanupPollTimer() {
+            if (culqiCloseMountTimer) {
+                clearInterval(culqiCloseMountTimer);
+                culqiCloseMountTimer = null;
+            }
+        }
+
+        function finish(isReady) {
+            if (finished) {
+                return;
+            }
+            finished = true;
+            cleanupPollTimer();
+            callback(isReady);
+        }
+
+        function revealAfterPaintSettle() {
+            if (contentReadyTriggered) {
+                return;
+            }
+            contentReadyTriggered = true;
+
+            requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                    setTimeout(function () {
+                        finish(isCulqiOverlayVisible() && isCulqiCheckoutReady());
+                    }, paintSettleMs);
+                });
+            });
+        }
+
+        function markIframeContentReady() {
+            if (!iframeLoadFired) {
+                iframeLoadFired = true;
+            }
+
+            if (!iframeDetectedAt) {
+                return;
+            }
+
+            const elapsed = Date.now() - iframeDetectedAt;
+            if (elapsed >= minWaitAfterIframeMs) {
+                revealAfterPaintSettle();
+            }
+        }
+
+        function bindIframeLoad(iframe) {
+            if (!iframe || iframe.dataset.culqiCloseBound === '1') {
+                return;
+            }
+
+            iframe.dataset.culqiCloseBound = '1';
+            iframe.addEventListener('load', function () {
+                iframeLoadFired = true;
+                markIframeContentReady();
+            }, { once: true });
+        }
+
+        function pollCheckoutReady() {
+            if (finished) {
+                return;
+            }
+
+            if (Date.now() - startedAt > maxWaitMs) {
+                finish(false);
+                return;
+            }
+
+            if (!isCulqiOverlayVisible()) {
+                return;
+            }
+
+            const iframe = findCulqiIframe();
+            if (!iframe || !iframe.getAttribute('src')) {
+                return;
+            }
+
+            if (!iframeDetectedAt) {
+                iframeDetectedAt = Date.now();
+                iframe.dataset.culqiLoadDetectedAt = String(iframeDetectedAt);
+            }
+
+            bindIframeLoad(iframe);
+
+            if (!iframeLoadFired && iframeDetectedAt) {
+                const elapsed = Date.now() - iframeDetectedAt;
+                if (elapsed >= minWaitAfterIframeMs + 400) {
+                    iframeLoadFired = true;
+                }
+            }
+
+            if (!iframeLoadFired) {
+                return;
+            }
+
+            markIframeContentReady();
+        }
+
+        pollCheckoutReady();
+        culqiCloseMountTimer = setInterval(pollCheckoutReady, 120);
+    }
+
+    function revealCulqiCloseButton() {
+        if (!mountCulqiCloseButton()) {
+            return false;
+        }
+
+        bindCulqiEscapeClose();
+
+        if (!culqiClosePositionTimer) {
+            culqiCloseResizeHandler = function () {
+                const root = findCulqiModalRoot();
+                const anchor = root ? root.querySelector('#culqi-modal-close-anchor') : null;
+                const btn = anchor ? anchor.querySelector('#culqi-modal-close-btn') : null;
+                if (anchor && btn && btn.classList.contains('culqi-modal-close-btn--visible')) {
+                    positionCulqiCloseButton(anchor, btn);
+                }
+            };
+
+            window.addEventListener('resize', culqiCloseResizeHandler);
+            culqiClosePositionTimer = setInterval(culqiCloseResizeHandler, 250);
+        }
+
+        return true;
+    }
+
+    function showCulqiCloseButton() {
+        hideCulqiCloseButton();
+
+        waitForCulqiFormReady(function (isReady) {
+            if (!isReady) {
+                return;
+            }
+            revealCulqiCloseButton();
+        });
+    }
+
+    function hideCulqiCloseButton() {
+        teardownCulqiCloseButton();
+
+        if (culqiCloseMountTimer) {
+            clearInterval(culqiCloseMountTimer);
+            culqiCloseMountTimer = null;
+        }
+
+        if (culqiClosePositionTimer) {
+            clearInterval(culqiClosePositionTimer);
+            culqiClosePositionTimer = null;
+        }
+
+        if (culqiCloseResizeHandler) {
+            window.removeEventListener('resize', culqiCloseResizeHandler);
+            culqiCloseResizeHandler = null;
+        }
+
+        unbindCulqiEscapeClose();
+    }
+
+    function cleanupCulqiDomFallback() {
+        const root = findCulqiModalRoot();
+        if (root) {
+            root.style.display = 'none';
+            return;
+        }
+
+        document.querySelectorAll('iframe[src*="culqi"], [id*="culqi"], [class*="culqi"]').forEach(function (el) {
+            if (el.id === 'culqi-modal-close-btn') {
+                return;
+            }
+
+            const overlay = el.closest('[class*="culqi"]') || el;
+            if (overlay && overlay !== document.body && overlay.id !== 'culqi-modal-close-btn') {
+                overlay.style.display = 'none';
+            }
+        });
+    }
+
+    function closeCulqiModal() {
+        hideCulqiCloseButton();
+
+        try {
+            if (typeof window.Culqi !== 'undefined' && typeof window.Culqi.close === 'function') {
+                window.Culqi.close();
+            }
+        } catch (e) { /* ignore */ }
+
+        cleanupCulqiDomFallback();
+
+        if (typeof app_cart !== 'undefined') {
+            app_cart.hidePaymentLoading();
+        } else {
+            document.body.style.overflow = '';
+        }
+    }
+
+    window.closeCulqiModal = closeCulqiModal;
 
     async function askedDocument(order) {
-        app_cart.order_generated = order
-        jQuery('#modal_ask_document').modal('show')
+        app_cart.order_generated = order;
+        jQuery('#modal_ask_document').modal('show');
     }
 
     async function execCulqi() {
-        if (!Culqi.publicKey) {
+        if (!culqiPublicKey) {
             window.mostrarMensaje('El pago con tarjeta aún no está configurado. Elija otro método de pago.', 'warning');
             return;
         }
 
-        // Culqi usa Web Crypto: en dominios .test solo funciona con HTTPS (HTTP no es "secure context")
-        if (!window.isSecureContext) {
-            if (location.protocol === 'http:') {
-                try {
-                    sessionStorage.setItem('culqi_open_after_https', '1');
-                } catch (e) { /* ignore */ }
-                location.replace('https://' + location.host + location.pathname + location.search + location.hash);
-                return;
-            }
-            window.mostrarMensaje(
-                'Culqi no puede encriptar la tarjeta en un contexto no seguro. Usa HTTPS o otro método de pago.',
-                'warning'
-            );
+        let Culqi;
+        try {
+            Culqi = await ensureCulqiReady();
+        } catch (e) {
             if (typeof app_cart !== 'undefined') {
                 app_cart.hidePaymentLoading();
             }
+            window.mostrarMensaje('No se pudo cargar el formulario de Culqi. Recargue la página e intente de nuevo.', 'error');
             return;
         }
 
-        let precio = Math.round((Number(jQuery("#total_amount").data('total')) * 100).toFixed(2));
-        if (precio > 0) {
-            Culqi.settings({
-                title: "Productos Ecommerce",
-                currency: 'PEN',
-                description: 'Compras Ecommerce Facturador Pro',
-                amount: precio
-            });
-            Culqi.open();
+        const precio = Math.round(Number(jQuery('#total_amount').data('total')) * 100);
+        if (precio <= 0) {
+            window.mostrarMensaje('El monto del pedido debe ser mayor a cero.', 'warning');
+            return;
         }
+
+        const settings = {
+            title: 'Productos Ecommerce',
+            currency: 'PEN',
+            description: 'Compras Ecommerce Facturador Pro',
+            amount: precio,
+        };
+
+        if (culqiRsaId && culqiRsaPublicKey) {
+            settings.xculqirsaid = culqiRsaId;
+            settings.rsapublickey = culqiRsaPublicKey;
+        }
+
+        Culqi.settings(settings);
+        Culqi.open();
+        showCulqiCloseButton();
     }
+
     window.execCulqi = execCulqi;
 
-    // Si redirigimos a HTTPS por Culqi, reabrir el checkout automáticamente
-    document.addEventListener('DOMContentLoaded', function () {
-        try {
-            if (window.isSecureContext && sessionStorage.getItem('culqi_open_after_https') === '1') {
-                sessionStorage.removeItem('culqi_open_after_https');
-                setTimeout(function () {
-                    if (typeof window.execCulqi === 'function') {
-                        window.execCulqi();
-                    }
-                }, 600);
-            }
-        } catch (e) { /* ignore */ }
-    });
-
     window.culqi = async function () {
-        if (window.Culqi.token) {
+        if (window.Culqi && window.Culqi.token) {
+            hideCulqiCloseButton();
             const token = window.Culqi.token.id;
 
-            // Feedback inmediato tras cerrar el SDK: verificación bancaria en curso
             if (typeof app_cart !== 'undefined') {
                 app_cart.showCulqiBankLoading();
             }
 
-            let precio = Math.round((Number(jQuery("#total_amount").data('total')).toFixed(2) * 100));
-            let precio_culqi = Number(jQuery("#total_amount").data('total')).toFixed(2);
+            const precio = Math.round(Number(jQuery('#total_amount').data('total')) * 100);
+            const precio_culqi = Number(jQuery('#total_amount').data('total')).toFixed(2);
+            const email = window.Culqi.token.email;
+            const installments = window.Culqi.token.metadata.installments;
+            const formpayment = await app_cart.getFormPaymentCash();
 
-            var email = window.Culqi.token.email;
-            var installments = window.Culqi.token.metadata.installments;
-
-            const formpayment = await app_cart.getFormPaymentCash()
-
-            var data = {
+            const data = {
                 producto: 'Compras Ecommerce Facturador Pro',
                 precio: precio,
                 precio_culqi: precio_culqi,
@@ -2076,51 +2622,49 @@
                 customer: JSON.stringify(formpayment.customer),
                 items: JSON.stringify(getItems()),
                 purchase: JSON.stringify(formpayment.purchase),
-                // Coupon fields
                 discount_coupon_code: formpayment.discount_coupon_code,
                 discount_coupon_id: formpayment.discount_coupon_id,
                 total_discount: formpayment.total_discount,
                 shipping_address: formpayment.shipping_address || '',
-            }
+            };
 
             jQuery.ajax({
-              url: "{{route('tenant_ecommerce_culqui')}}",
-              method: 'post',
-              headers: {
-                  'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
-              },
-              data: data,
-              dataType: 'JSON',
-              success: function (data) {
-                if (data.success == true) {
-                  app_cart.saveContactDataUser();
-                  // Pasarelas SDK: éxito unificado (cierra el overlay de banco)
-                  app_cart.showPurchaseSuccess(data.order);
-                } else {
-                  app_cart.hidePaymentLoading();
-                  window.mostrarMensaje(data.message || 'Sucedió algo inesperado.', 'error');
-                }
-              },
-              error: function (error_data) {
-                console.log(error_data);
-                app_cart.hidePaymentLoading();
-                let message = 'Ocurrió un error al procesar el pago.';
-                if (error_data.responseJSON && error_data.responseJSON.message) {
-                    message = error_data.responseJSON.message;
-                } else if (error_data.status === 422 && error_data.responseText) {
-                    let parsed = JSON.parse(error_data.responseText);
-                    if (parsed.message) {
-                        message = parsed.message;
+                url: "{{ route('tenant_ecommerce_culqui') }}",
+                method: 'post',
+                headers: {
+                    'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
+                },
+                data: data,
+                dataType: 'JSON',
+                success: function (data) {
+                    if (data.success == true) {
+                        app_cart.saveContactDataUser();
+                        app_cart.showPurchaseSuccess(data.order);
                     } else {
-                        message = 'Faltan completar campos';
-                        app_cart.errors = parsed;
+                        app_cart.hidePaymentLoading();
+                        window.mostrarMensaje(data.message || 'Sucedió algo inesperado.', 'error');
                     }
+                },
+                error: function (error_data) {
+                    console.log(error_data);
+                    app_cart.hidePaymentLoading();
+                    let message = 'Ocurrió un error al procesar el pago.';
+                    if (error_data.responseJSON && error_data.responseJSON.message) {
+                        message = error_data.responseJSON.message;
+                    } else if (error_data.status === 422 && error_data.responseText) {
+                        const parsed = JSON.parse(error_data.responseText);
+                        if (parsed.message) {
+                            message = parsed.message;
+                        } else {
+                            message = 'Faltan completar campos';
+                            app_cart.errors = parsed;
+                        }
+                    }
+                    window.mostrarMensaje(message, 'error');
                 }
-                window.mostrarMensaje(message, 'error');
-              }
             });
-
-        } else if (window.Culqi.error) {
+        } else if (window.Culqi && window.Culqi.error) {
+            hideCulqiCloseButton();
             const error = window.Culqi.error;
             if (typeof app_cart !== 'undefined') {
                 app_cart.hidePaymentLoading();
@@ -2135,12 +2679,21 @@
                 'error'
             );
         } else {
-            // Usuario cerró el modal sin token ni error explícito
+            hideCulqiCloseButton();
             if (typeof app_cart !== 'undefined') {
                 app_cart.hidePaymentLoading();
             }
         }
     };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (culqiPublicKey) {
+            ensureCulqiReady().catch(function () {
+                console.warn('Culqi v4 no disponible al cargar la página.');
+            });
+        }
+    });
+})();
 
     function getCustomer() {
         let user = JSON.parse('{!! json_encode( Auth::guard("ecommerce")->user() ) !!}')
