@@ -64,7 +64,8 @@
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
 
                                     <div v-if="api_service_token != false">
-                                        <x-input-service v-model="form.number"
+                                        <x-input-service ref="input_service"
+                                                         v-model="form.number"
                                                          :identity_document_type_id="form.identity_document_type_id"
                                                          @search="searchNumber"></x-input-service>
                                     </div>
@@ -1050,13 +1051,33 @@ export default {
             if (this.external && this.input_person) {
                 if (this.form.number.length === 8 || this.form.number.length === 11) {
                     if (this.api_service_token != false) {
-                        await this.$eventHub.$emit('enableClickSearch')
+                        await this.$nextTick()
+                        if (this.$refs.input_service) {
+                            await this.$refs.input_service.clickSearch()
+                            await this.regenerateAddressesMain()
+                        }
                     } else {
                         this.searchCustomer()
                     }
                 }
             }
 
+        },
+
+        async regenerateAddressesMain() {
+            this.form.addresses.push({
+                'id': null,
+                'country_id': 'PE',
+                'location_id': this.form.location_id,
+                'address': this.form.address,
+                'email': null,
+                'phone': null,
+                'main': false,
+                'establishment_code':'0000',
+                'has_consigned': false,
+                'consigned_id': null,
+            })
+            
         },
         create() {
             // console.log(this.input_person)
@@ -1109,8 +1130,8 @@ export default {
                                 phone: null,
                             }
                         }
-                        this.filterProvinces()
-                        this.filterDistricts()
+                        // this.filterProvinces()
+                        // this.filterDistricts()
                     }).then(() => {
                     this.updateEmail()
 
