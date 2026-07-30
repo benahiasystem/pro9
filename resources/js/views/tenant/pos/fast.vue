@@ -670,6 +670,8 @@
                         <fast-payment
                             :is_payment.sync="is_payment"
                             :form="form"
+                            :configuration="configuration"
+                            :config="config"
                             :currency-type-id-active="form.currency_type_id"
                             :currency-type-active="currency_type"
                             :exchange-rate-sale="form.exchange_rate_sale"
@@ -807,9 +809,10 @@ import WarehousesDetail from "../items/partials/warehouses.vue";
 import queryString from "query-string";
 import TableItems from "./partials/table.vue";
 import ItemUnitTypes from "./partials/item_unit_types.vue";
+import { mapState, mapActions } from "vuex/dist/vuex.mjs";
 
 export default {
-    props: ["configuration", "soapCompany", "businessTurns", "typeUser", "isPrint"],
+    props: ["configuration2", "configuration", "soapCompany", "businessTurns", "typeUser", "isPrint"],
     components: {
         FastPayment,
         ItemForm,
@@ -864,11 +867,15 @@ export default {
         };
     },
     async created() {
+        this.loadConfiguration();
+        this.$store.commit("setConfiguration", this.configuration2);
+
         await this.initForm();
         await this.getTables();
         this.events();
 
         await this.getFormPosLocalStorage();
+        this.applyFastSaleTerms();
         await this.initCurrencyType();
         this.customer = await this.getLocalStorageIndex("customer");
 
@@ -878,6 +885,7 @@ export default {
     },
 
     computed: {
+        ...mapState(["config"]),
         classObjectCol() {
             let cols = this.configuration.colums_grid_item;
 
@@ -920,6 +928,15 @@ export default {
         }
     },
     methods: {
+        ...mapActions(["loadConfiguration"]),
+        applyFastSaleTerms() {
+            this.form.created_from_pos = true;
+            this.form.show_terms_condition = true;
+            const cfg = this.config || this.configuration || {};
+            if (cfg.terms_condition_sale) {
+                this.form.terms_condition = cfg.terms_condition_sale;
+            }
+        },
         keyupEnterQuantity() {
             this.initFocus();
         },
@@ -1340,9 +1357,13 @@ export default {
                 actions: {
                     format_pdf: "a4"
                 },
-                reference_data: null
+                reference_data: null,
+                created_from_pos: true,
+                show_terms_condition: true,
+                terms_condition: ''
             };
 
+            this.applyFastSaleTerms();
             this.initFormItem();
             this.changeDateOfIssue();
             this.initInputPerson();
