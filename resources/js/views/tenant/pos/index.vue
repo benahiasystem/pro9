@@ -1362,6 +1362,12 @@ export default {
         this.events();
 
         await this.getFormPosLocalStorage();
+        this.form.created_from_pos = true;
+        this.form.show_terms_condition = true;
+        const cfg = this.config || this.configuration || {};
+        if (cfg.terms_condition_sale) {
+            this.form.terms_condition = cfg.terms_condition_sale;
+        }
         await this.initCurrencyType();
         this.customer = await this.getLocalStorageIndex("customer");
 
@@ -2107,6 +2113,8 @@ export default {
                 total_pending_payment: 0,
                 total_tips: 0, //propinas
                 created_from_pos: true,
+                show_terms_condition: true,
+                terms_condition: '',
                 token_validated_for_discount: false,
                 agent_id: null,
                 dispatch_ticket_pdf: this.configuration
@@ -2114,8 +2122,9 @@ export default {
                     : false
             };
             // console.log(this.configuration.show_terms_condition_pos);
-            if (this.configuration.show_terms_condition_pos) {
-                this.form.terms_condition = this.configuration.terms_condition_sale;
+            const cfg = this.config || this.configuration || {};
+            if (cfg.terms_condition_sale) {
+                this.form.terms_condition = cfg.terms_condition_sale;
             }
 
             this.initFormItem();
