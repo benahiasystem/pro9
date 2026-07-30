@@ -2044,10 +2044,11 @@ export default {
                 this.reloadDataItems(item_id);
             });
 
-            await this.$eventHub.$on("saleSuccess", () => {
+            await this.$eventHub.$on("saleSuccess", async () => {
                 // this.is_payment = false
                 this.initForm();
-                this.getTables();
+                await this.getTables();
+                this.selectDefaultCustomer();
                 this.setFormPosLocalStorage();
             });
 
