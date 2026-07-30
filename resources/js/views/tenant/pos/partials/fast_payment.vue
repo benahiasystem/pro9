@@ -777,6 +777,10 @@ export default {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
 
+            if (this.configuration.show_terms_condition_pos) {
+                this.form.terms_condition = this.configuration.terms_condition_sale;
+            }
+
             if (this.form.document_type_id === "80") {
                 this.form.prefix = "NV";
                 this.form.paid = 1;
