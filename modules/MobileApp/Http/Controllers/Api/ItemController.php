@@ -22,6 +22,7 @@ use Modules\Item\Models\{
 };
 use App\Http\Controllers\Tenant\ItemController as ItemControllerWeb;
 use App\Models\Tenant\Catalogs\AffectationIgvType;
+use App\Models\Tenant\Catalogs\UnitType;
 
 
 class ItemController extends Controller
@@ -36,7 +37,8 @@ class ItemController extends Controller
     public function tables()
     {
         return [
-            'categories' => $this->table('categories')
+            'categories' => $this->table('categories'),
+            'unit_types' => $this->table('unit_types')
         ];
     }
 
@@ -57,6 +59,15 @@ class ItemController extends Controller
                 break;
             case 'affectation_igv_types':
                 $data = AffectationIgvType::whereActive()->get();
+                break;
+            case 'unit_types':
+                $data = UnitType::whereActive()->get()->transform(function($row){
+                    return [
+                        'id' => $row->id,
+                        'description' => $row->description,
+                        'symbol' => $row->symbol,
+                    ];
+                });
                 break;
         }
 
