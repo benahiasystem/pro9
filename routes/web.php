@@ -387,6 +387,8 @@ if ($hostname) {
             // Route::get('documents/remove/{document}', 'Tenant\DocumentController@remove');
             // Route::get('documents/consult_cdr/{document}', 'Tenant\DocumentController@consultCdr');
             Route::post('documents/email', 'Tenant\DocumentController@email');
+            // debe declararse antes del wildcard documents/note/{document}
+            Route::get('documents/note/penalty-item', 'Tenant\NoteController@penaltyItem');
             Route::get('documents/note/{document}', 'Tenant\NoteController@create');
             Route::get('documents/note/record/{document}', 'Tenant\NoteController@record');
             Route::get('documents/item/tables', 'Tenant\DocumentController@item_tables');
