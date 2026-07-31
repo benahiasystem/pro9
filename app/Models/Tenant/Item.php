@@ -3050,6 +3050,9 @@ class Item extends ModelTenant
             'unit_type_id' => $this->unit_type_id,
             'sale_affectation_igv_type_id' => $this->sale_affectation_igv_type_id,
             'has_igv' => (bool) $this->has_igv,
+            'purchase_has_igv' => (bool) $this->purchase_has_igv,
+            'purchase_affectation_igv_type_id' => $this->purchase_affectation_igv_type_id,
+            'percentage_of_profit' => (float) $this->percentage_of_profit,
             'favorite' => $this->favorite,
             'quantity' => 0,
             'item_unit_types' => $this->item_unit_types->transform(function ($row) use ($decimal_units) {

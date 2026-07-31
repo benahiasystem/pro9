@@ -209,7 +209,7 @@
             $internal_id = isset($row->item->internal_id) ? $row->item->internal_id : $items->find($row->item_id)->internal_id;
         @endphp
         <tr>
-            <td class="text-center align-top">
+            <td class="text-center align-top desc-9">
                 @if(!empty($row->item->esFusionado))
                     001
                 @else
