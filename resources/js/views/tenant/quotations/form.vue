@@ -177,8 +177,8 @@
                                         v-model="form.customer_address_id"
                                     >
                                         <el-option
-                                            v-for="option in customer_addresses"
-                                            :key="option.id"
+                                            v-for="(option, addressIndex) in customer_addresses"
+                                            :key="option.id != null ? option.id : 'principal-' + addressIndex"
                                             :value="option.id"
                                             :label="option.address"
                                         ></el-option>
@@ -1884,6 +1884,51 @@ export default {
         },
     },
     methods: {
+        normalizeAddressText(address) {
+            return (address || '').trim().toLowerCase();
+        },
+        buildCustomerAddresses(customer) {
+            if (!customer) {
+                return [];
+            }
+
+            const seen = new Set();
+            const result = [];
+
+            (customer.addresses || [])
+                .filter(el => !el.has_consigned)
+                .forEach(addressRow => {
+                    const normalized = this.normalizeAddressText(addressRow.address);
+                    if (!normalized || seen.has(normalized)) {
+                        return;
+                    }
+
+                    seen.add(normalized);
+                    result.push(addressRow);
+                });
+
+            if (customer.address) {
+                const normalizedPrincipal = this.normalizeAddressText(customer.address);
+                if (normalizedPrincipal && !seen.has(normalizedPrincipal)) {
+                    result.unshift({
+                        id: null,
+                        address: customer.address
+                    });
+                }
+            }
+
+            return result;
+        },
+        selectDefaultCustomerAddress() {
+            if (this.customer_addresses.length === 0) {
+                this.form.customer_address_id = null;
+                return;
+            }
+
+            const mainAddress = _.find(this.customer_addresses, { main: 1 });
+            const defaultAddress = mainAddress || this.customer_addresses[0];
+            this.form.customer_address_id = defaultAddress.id;
+        },
         changeTypeDiscount() {
             this.calculateTotal();
         },
@@ -2113,16 +2158,12 @@ export default {
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
             });
-            this.customer_addresses = customer.addresses || [];
-
-            if (customer.address) {
-                if (!_.find(this.customer_addresses, { id: null })) {
-                    this.customer_addresses.unshift({
-                        id: null,
-                        address: customer.address
-                    });
-                }
+            if (!customer) {
+                return;
             }
+
+            this.customer_addresses = this.buildCustomerAddresses(customer);
+            this.selectDefaultCustomerAddress();
 
             this.selected_option_price = customer?.price_label_id
                 ? `price_label_${customer.price_label_id}`
@@ -2677,13 +2718,9 @@ export default {
                 .then(response => {
                     this.customers = response.data.customers;
                     this.form.customer_id = customer_id;
-                    let customer = this.customers.find(
-                        c => String(c.id) === String(customer_id)
-                    );
-
-                    this.selected_option_price = customer?.price_label_id
-                        ? `price_label_${customer.price_label_id}`
-                        : 1;
+                    this.$nextTick(() => {
+                        this.changeCustomer();
+                    });
                 });
         },
         setDescriptionOfItem(item) {

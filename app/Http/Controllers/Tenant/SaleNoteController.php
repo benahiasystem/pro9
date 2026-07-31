@@ -936,6 +936,15 @@ class SaleNoteController extends Controller
 
 //        $inputs->merge($values);
         $inputs = array_merge($inputs, $values);
+
+        if (trim(strip_tags(html_entity_decode($inputs['terms_condition'] ?? ''))) === '') {
+            if (!array_key_exists('show_terms_condition', $inputs)
+                || filter_var($inputs['show_terms_condition'], FILTER_VALIDATE_BOOLEAN)) {
+                $configuration = Configuration::select('terms_condition_sale')->first();
+                $inputs['terms_condition'] = $configuration->terms_condition_sale ?? '';
+            }
+        }
+
         return $inputs;
     }
 

@@ -84,7 +84,7 @@
             },
             clickSearch() {
                 this.loading = true;
-                this.$http.get(`/${this.resource}/${this.value}`)
+                return this.$http.get(`/${this.resource}/${this.value}`)
                     .then(response => {
                         let res = response.data;
 

@@ -254,7 +254,7 @@ export default {
     components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
     mixins: [buhoprinter],
 
-    props: ['form', 'customer', 'configuration','currencyTypeActive', 'exchangeRateSale', 'is_payment', 'soapCompany', 'businessTurns', 'isPrint', 'rowsItems'],
+    props: ['form', 'customer', 'configuration', 'config', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'soapCompany', 'businessTurns', 'isPrint', 'rowsItems'],
     data() {
         return {
             enabled_discount: false,
@@ -775,6 +775,13 @@ export default {
 
             if (!this.form.series_id) {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
+            }
+
+            this.form.created_from_pos = true;
+            this.form.show_terms_condition = true;
+            const cfg = this.config || this.configuration || {};
+            if (cfg.terms_condition_sale) {
+                this.form.terms_condition = cfg.terms_condition_sale;
             }
 
             if (this.form.document_type_id === "80") {
