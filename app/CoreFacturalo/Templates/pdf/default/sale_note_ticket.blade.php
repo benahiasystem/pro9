@@ -16,6 +16,8 @@
     }
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
+    $max_chars_description = config('tenant.enabled_template_ticket_80') ? 46 : 47;
+
 @endphp
 <html>
 <head>
@@ -171,12 +173,8 @@
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr>
-        <th class="border-top-bottom desc-9 text-left">COD.</th>
-        <th class="border-top-bottom desc-9 text-left">CANT.</th>
-        <th class="border-top-bottom desc-9 text-left">UNIDAD</th>
-        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
-        <th class="border-top-bottom desc-9 text-left">P.UNIT</th>
-        <th class="border-top-bottom desc-9 text-left">TOTAL</th>
+        <th colspan="2" class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
+        <th class="border-top-bottom desc-9 text-right">IMPORTE</th>
     </tr>
     </thead>
     <tbody>
@@ -189,18 +187,22 @@
         @php
             $cantidad_fusionada = $fusionados->sum('quantity');
             $total_fusionado = $fusionados->sum('total');
+            $cantidad_fusionada_format = ((int)$cantidad_fusionada != $cantidad_fusionada) ? $cantidad_fusionada : number_format($cantidad_fusionada, 0);
         @endphp
         <tr>
-            <td class="text-center align-top">001</td>
-            <td class="text-center desc-9 align-top">
-                {{ ((int)$cantidad_fusionada != $cantidad_fusionada) ? $cantidad_fusionada : number_format($cantidad_fusionada, 0) }}
+            <td colspan="3" class="text-left desc-9 align-top pt-3">
+                <span style="font-size: 7px;">001</span> Por consumo
             </td>
-            <td class="text-center desc-9 align-top">NIU</td>
-            <td class="text-left desc-9 align-top">Por consumo</td>
-            <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
-            <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
         </tr>
-        <tr><td colspan="6" class="border-bottom"></td></tr>
+        <tr>
+            <td colspan="2" class="text-left desc-9 pb-3">
+                {{ $cantidad_fusionada_format }} NIU x {{ number_format($total_fusionado, 2) }}
+            </td>
+            <td class="text-right desc-9 font-bold pb-3">{{ number_format($total_fusionado, 2) }}</td>
+        </tr>
+        @if($no_fusionados->count() === 0)
+            <tr><td colspan="3" class="border-bottom"></td></tr>
+        @endif
     @endif
     {{-- Mostrar productos no fusionados --}}
     @foreach($no_fusionados as $row)
@@ -208,37 +210,34 @@
         @php
             $internal_id = isset($row->item->internal_id) ? $row->item->internal_id : $items->find($row->item_id)->internal_id;
         @endphp
+        @php
+            $item_code = !empty($row->item->esFusionado) ? '001' : $internal_id;
+            $item_unit = !empty($row->item->esFusionado) ? 'NIU' : $row->item->unit_type_id;
+            $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
+
+            if(!empty($row->item->esFusionado)) {
+                $item_description = 'Por consumo';
+            } else {
+                $item_description = $row->name_product_pdf ? $row->name_product_pdf : $row->item->description;
+            }
+            $show_item_code = $item_code !== '' && $item_code !== null
+                && mb_strpos(strip_tags((string) $item_description), (string) $item_code) === false;
+
+            if (!empty($row->item->presentation)) {
+                $item_description .= ' '.$row->item->presentation->description;
+            }
+            $item_description = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $item_description))));
+            $available_chars = $max_chars_description;
+            if ($show_item_code) {
+                $available_chars -= (int) ceil(mb_strlen((string) $item_code) * 7 / 9) + 1;
+            }
+            if (mb_strlen($item_description) > $available_chars) {
+                $item_description = rtrim(mb_substr($item_description, 0, max($available_chars - 1, 1))).'.';
+            }
+        @endphp
         <tr>
-            <td class="text-center align-top desc-9">
-                @if(!empty($row->item->esFusionado))
-                    001
-                @else
-                    {{ $internal_id }}
-                @endif
-            </td>
-            <td class="text-center desc-9 align-top">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
-            </td>
-            <td class="text-center desc-9 align-top">
-                @if(!empty($row->item->esFusionado))
-                    NIU
-                @else
-                    {{ $row->item->unit_type_id }}
-                @endif
-            </td>
-            <td class="text-left desc-9 align-top">
-                @if(!empty($row->item->esFusionado))
-                    Por consumo
-                @elseif($row->name_product_pdf)
-                    {!!$row->name_product_pdf!!}
-                @else
-                    {!!$row->item->description!!}
-                @endif
-                    @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
+            <td colspan="3" class="text-left desc-9 align-top pt-2">
+                @if($show_item_code)<span style="font-size: 7px;">{{ $item_code }}</span> @endif{{ $item_description }}
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
                         <br/>{!! $attr->description !!} : {{ $attr->value }}
@@ -264,7 +263,6 @@
                     <br>
                     <small>*** Canjeado por {{$row->item->used_points_for_exchange}}  puntos ***</small>
                 @endif
-                <br>
                 @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                 @php
                     $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
@@ -293,46 +291,52 @@
                     @endisset
                 </small>
             </td>
-            <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td>
-            <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td>
         </tr>
         <tr>
-            <td colspan="6" class="border-bottom"></td>
+            <td colspan="2" class="text-left desc-9 pb-2">
+                {{ $item_quantity }} {{ $item_unit }} x {{ number_format($row->unit_price, 2) }}
+            </td>
+            <td class="text-right desc-9 font-bold pb-2">{{ number_format($row->total, 2) }}</td>
         </tr>
+        @if($loop->last)
+            <tr>
+                <td colspan="3" class="border-bottom"></td>
+            </tr>
+        @endif
     @endforeach
         @if($document->total_exportation > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="text-right font-bold desc">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_exportation, 2) }}</td>
             </tr>
         @endif
         @if($document->total_free > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_free, 2) }}</td>
             </tr>
         @endif
         @if($document->total_unaffected > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_unaffected, 2) }}</td>
             </tr>
         @endif
         @if($document->total_exonerated > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_exonerated, 2) }}</td>
             </tr>
         @endif
         {{-- @if($document->total_taxed > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_taxed, 2) }}</td>
             </tr>
         @endif --}}
          @if($document->total_discount_with_igv > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="text-right font-bold desc">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_discount_with_igv, 2) }}</td>
             </tr>
         @endif
@@ -343,14 +347,14 @@
 
         @if($document->total_charge > 0 && $document->charges)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">CARGOS ({{$document->getTotalFactor()}}%): {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="text-right font-bold desc">CARGOS ({{$document->getTotalFactor()}}%): {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_charge, 2) }}</td>
             </tr>
         @endif
 
         <tr>
-            <td colspan="3" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-            <td colspan="2" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td class="text-right font-bold desc" style="white-space: nowrap;">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total, 2) }}</td>
         </tr>
 
@@ -360,7 +364,7 @@
 
         @if($change_payment < 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
+                <td colspan="2" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format(abs($change_payment),2, ".", "") }}</td>
             </tr>
         @endif
