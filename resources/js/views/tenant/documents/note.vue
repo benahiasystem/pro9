@@ -197,11 +197,19 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row" v-if="isDebitNoteAndType13">
+                        <div class="col-md-12">
+                            <el-alert type="info" :closable="false" show-icon
+                                      title="Las penalidades son operaciones inafectas del IGV"
+                                      description="Solo se puede agregar el servicio Penalidad. Ingrese el monto de la penalidad como precio unitario."></el-alert>
+                        </div>
+                    </div>
                     <div class="row">
                         <div class="col-lg-2 col-md-6 d-flex align-items-end pt-2">
                             <div class="form-group">
                                 <button type="button" class="btn waves-effect waves-light btn-primary"
-                                        @click.prevent="clickAddItemNote()">+ Agregar Producto
+                                        @click.prevent="clickAddItemNote()">
+                                    + Agregar {{ isDebitNoteAndType13 ? 'Penalidad' : 'Producto' }}
                                 </button>
                             </div>
                         </div>
@@ -366,6 +374,7 @@
                             :percentage-igv="percentage_igv"
                             :isCreditNoteAndType03="isCreditNoteAndType03"
                             :isCreditNote="isCreditNote"
+                            :presetItemId="presetItemId"
                             :documentId="(isCreditNote) ? document.id: null"
                             @add="addRow"></document-form-item>
 
@@ -416,6 +425,8 @@ export default {
             selected_credit_note_type_13: false,
             apply_change_has_discounts: false,
             selected_credit_note_type_03: false,
+            selected_debit_note_type_13: false,
+            penalty_item_id: null,
         }
     },
     async created() {
@@ -463,6 +474,15 @@ export default {
         isDebitNote()
         {
             return (this.form.document_type_id === '08')
+        },
+        isDebitNoteAndType13()
+        {
+            return (this.isDebitNote && this.form.note_credit_or_debit_type_id === '13')
+        },
+        //ítem que se preselecciona en el modal, solo aplica a la nota de débito por penalidad
+        presetItemId()
+        {
+            return (this.isDebitNoteAndType13) ? this.penalty_item_id : null
         },
     },
     methods: {
@@ -551,7 +571,72 @@ export default {
                 row.amount = amount;
             })
         },
-        changeNoteDebitType() {
+        async changeNoteDebitType() {
+
+            if (this.isDebitNoteAndType13) {
+                //Penalidades: la nota solo debe llevar el servicio de penalidad, inafecto al IGV
+
+                const found = await this.getPenaltyItem()
+
+                if (!found) {
+                    this.form.note_credit_or_debit_type_id = null
+                    return
+                }
+
+                this.selected_debit_note_type_13 = true
+
+                //se descartan los items del cpe relacionado, no forman parte de la penalidad
+                this.form.items = []
+                this.calculateTotal()
+
+                //se abre el modal con el servicio ya seleccionado, solo resta ingresar el monto
+                this.clickAddItemNote()
+
+                return
+            }
+
+            this.resetDebitNoteType13()
+
+        },
+        async getPenaltyItem() {
+
+            let found = false
+
+            await this.$http.get(`/${this.resource}/note/penalty-item`)
+                .then(response => {
+
+                    if (response.data.success) {
+                        this.penalty_item_id = response.data.data.id
+                        found = true
+                    } else {
+                        this.$message.error(response.data.message)
+                    }
+
+                })
+                .catch(() => {
+                    this.$message.error('No se pudo obtener el servicio de penalidad')
+                })
+
+            return found
+        },
+        //al dejar el motivo 13 se recuperan los items del comprobante relacionado
+        resetDebitNoteType13() {
+
+            if (!this.selected_debit_note_type_13) return
+
+            this.selected_debit_note_type_13 = false
+            this.penalty_item_id = null
+
+            this.form.items = this.document.items
+
+            this.form.items.forEach((item) => {
+                item.input_unit_price_value = item.unit_price
+                item.additional_information = null
+                item.IdLoteSelected = item.item.IdLoteSelected
+            })
+
+            this.calculateTotal()
+
         },
         changeNoteCreditType() {
 
@@ -721,6 +806,8 @@ export default {
             this.selected_credit_note_type_13 = false
             this.selected_credit_note_type_03 = false
             this.apply_change_has_discounts = false
+            this.selected_debit_note_type_13 = false
+            this.penalty_item_id = null
 
         },
         validateHasDiscounts() {
@@ -807,6 +894,7 @@ export default {
 
         },
         changeDocumentType() {
+            this.resetDebitNoteType13()
             this.form.note_credit_or_debit_type_id = null
             this.form.series_id = null
             if (this.is_contingency) {
@@ -942,13 +1030,17 @@ export default {
         applyPercentageChange(affectation_igv_type_id)
         {
             const affectations = ['20', '30', '40']
-            const debit_note_types = ['02', '01', '03']
+            const debit_note_types = ['02', '01', '03', '13']
 
             return (affectations.includes(affectation_igv_type_id) && this.isDebitNote && debit_note_types.includes(this.form.note_credit_or_debit_type_id))
         },
         async submit() {
 
             await this.checkPercentageIgvDebitNote()
+
+            if (this.isDebitNoteAndType13 && parseFloat(this.form.total_igv) > 0) {
+                return this.$message.error('Las penalidades son operaciones inafectas del IGV')
+            }
 
             if (this.isCreditNote && this.hasDiscounts && this.form.total > this.document.total) {
                 return this.$message.error(`El monto total de la nota de credito debe ser menor o igual al monto del documento relacionado (${this.document.total})`)
