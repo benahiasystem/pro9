@@ -521,8 +521,8 @@
         @if($showColumns['cantidad']) <th class="border-top-bottom desc-9 text-left">CANT.</th> @endif
         @if($showColumns['unidad']) <th class="border-top-bottom desc-9 text-left">U.</th> @endif
         @if($showColumns['descripcion']) <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th> @endif
-        @if($showColumns['precio_unitario']) <th class="border-top-bottom desc-9 text-right">P.U</th> @endif
-        @if($showColumns['descuento']) <th class="border-top-bottom desc-9 text-right">DTO.</th> @endif
+        @if($showColumns['precio_unitario']) <th class="border-top-bottom desc-9 text-right" style="padding-right: 6px;">P.U</th> @endif
+        @if($showColumns['descuento']) <th class="border-top-bottom desc-9 text-right" style="padding-right: 6px;">DTO.</th> @endif
         @if($showColumns['total']) <th class="border-top-bottom desc-9 text-right">TOTAL</th> @endif
     </tr>
     </thead>
@@ -671,9 +671,9 @@
                     @endif
                 </td>
                 @endif
-                @if($showColumns['precio_unitario']) <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td> @endif
+                @if($showColumns['precio_unitario']) <td class="text-right desc-9 align-top" style="padding-right: 6px;">{{ number_format($row->unit_price, 2) }}</td> @endif
                 @if($showColumns['descuento'])
-                    <td class="text-right desc-9 align-top">
+                    <td class="text-right desc-9 align-top" style="padding-right: 6px;">
                         @if($row->discounts)
                             @php
                                 $total_discount_line = 0;
