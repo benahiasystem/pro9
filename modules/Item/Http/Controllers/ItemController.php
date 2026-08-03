@@ -10,6 +10,7 @@ use \Exception;
     use App\Models\Tenant\SaleNote;
     use App\Models\Tenant\Quotation;
     use App\Models\Tenant\Item;
+    use App\Models\Tenant\ItemSet;
     use App\Models\Tenant\PurchaseItem;
     use App\Models\Tenant\SaleNoteItem;
     use App\Models\Tenant\QuotationItem;
@@ -189,8 +190,9 @@ use Maatwebsite\Excel\Facades\Excel as FacadesExcel;
         {
 
             $form = json_decode($request->form);
+            $saleItemIds = $this->getSaleHistoryItemIds((int) $form->item_id);
 
-            $sale_notes = SaleNoteItem::where('item_id', $form->item_id)
+            $sale_notes = SaleNoteItem::whereIn('item_id', $saleItemIds)
                 ->join('sale_notes', 'sale_note_items.sale_note_id', '=', 'sale_notes.id')
                 ->join('persons', 'sale_notes.customer_id', '=', 'persons.id')
                 ->select(DB::raw("sale_note_items.id as id, sale_notes.series as series, sale_notes.number as number,
@@ -198,7 +200,7 @@ use Maatwebsite\Excel\Facades\Excel as FacadesExcel;
                                             persons.number as customer_number, persons.name as customer_name, sale_note_items.quantity as quantity,
                                             sale_notes.created_at as created_at"));
 
-            $documents = DocumentItem::where('item_id', $form->item_id)
+            $documents = DocumentItem::whereIn('item_id', $saleItemIds)
                 ->join('documents', 'document_items.document_id', '=', 'documents.id')
                 ->join('persons', 'documents.customer_id', '=', 'persons.id')
                 ->select(DB::raw("document_items.id as id, documents.series as series, documents.number as number,
@@ -208,6 +210,16 @@ use Maatwebsite\Excel\Facades\Excel as FacadesExcel;
 
             return new ItemHistorySalesCollection($documents->union($sale_notes)->orderBy('created_at', 'desc')->paginate(config('tenant.items_per_page_simple_d_table_params')));
 
+        }
+
+        /**
+         * IDs de ítems a consultar en historial de ventas: el producto y packs que lo contienen.
+         */
+        private function getSaleHistoryItemIds(int $itemId): array
+        {
+            $packIds = ItemSet::where('individual_item_id', $itemId)->pluck('item_id')->toArray();
+
+            return array_values(array_unique(array_merge([$itemId], $packIds)));
         }
 
 
@@ -242,33 +254,34 @@ use Maatwebsite\Excel\Facades\Excel as FacadesExcel;
 
             $type_document = $request->type_document;
             $customer_id = $request->customer_id;
-            $item_id = $request->item_id;
+            $item_id = (int) $request->item_id;
+            $saleItemIds = $this->getSaleHistoryItemIds($item_id);
 
             $item = null;
             if($type_document == 'CPE') {
 
                 $item = DocumentItem::whereHas('document', function ($query) use ($customer_id) {
                     $query->where('customer_id', $customer_id);
-                })->orderBy('id', 'desc')->where('item_id', $item_id)->first();
+                })->orderBy('id', 'desc')->whereIn('item_id', $saleItemIds)->first();
 
             }
             else if($type_document == 'NV') {
 
                 $item = SaleNoteItem::whereHas('sale_note', function ($query) use ($customer_id) {
                     $query->where('customer_id', $customer_id);
-                })->orderBy('id', 'desc')->where('item_id', $item_id)->first();
+                })->orderBy('id', 'desc')->whereIn('item_id', $saleItemIds)->first();
 
             }
             else  if($type_document == 'QUOTATION') {
 
                 $document_cpe_item = DocumentItem::whereHas('document', function ($query) use ($customer_id) {
                     $query->where('customer_id', $customer_id);
-                })->orderBy('id', 'desc')->where('item_id', $item_id)->first();
+                })->orderBy('id', 'desc')->whereIn('item_id', $saleItemIds)->first();
 
 
                 $sale_note_item = SaleNoteItem::whereHas('sale_note', function ($query) use ($customer_id) {
                     $query->where('customer_id', $customer_id);
-                })->orderBy('id', 'desc')->where('item_id', $item_id)->first();
+                })->orderBy('id', 'desc')->whereIn('item_id', $saleItemIds)->first();
 
                 if($document_cpe_item && $sale_note_item) {
 
