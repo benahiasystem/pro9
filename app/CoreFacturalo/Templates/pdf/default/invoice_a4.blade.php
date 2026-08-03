@@ -847,7 +847,7 @@ $total_pending_payment = $document->total_pending_payment;
                     @php
                     $total_discount_line = 0;
                     foreach ($row->discounts as $disto) {
-                        if ($disto->from_global_distribution) continue;
+                        if (optional($disto)->from_global_distribution) continue;
                         $amount = $disto->discount_type_id == "00" ? $disto->amount_without_rounded * 1.18 : $disto->amount;
                         $total_discount_line = $total_discount_line + $amount;
                     }
