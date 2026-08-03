@@ -47,7 +47,15 @@ class EstablishmentRequest extends FormRequest
             ],
             'code' => [
                 'required',
+                Rule::unique('tenant.establishments')->ignore($id),
             ],
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'code.unique' => 'El código de domicilio fiscal ingresado ya existe. Por favor ingrese uno nuevo',
         ];
     }
 }
