@@ -11,6 +11,7 @@ use Modules\Pos\Http\Resources\HistoryPurchasesCollection;
 use App\Models\Tenant\SaleNoteItem;
 use App\Models\Tenant\DocumentItem;
 use App\Models\Tenant\PurchaseItem;
+use App\Models\Tenant\ItemSet;
 
 class HistoryController extends Controller
 {
@@ -19,8 +20,9 @@ class HistoryController extends Controller
     {
 
         $form = json_decode($request->form);
+        $saleItemIds = $this->getSaleHistoryItemIds((int) $form->item_id);
         
-        $sale_notes = SaleNoteItem::where('item_id', $form->item_id);
+        $sale_notes = SaleNoteItem::whereIn('item_id', $saleItemIds);
         if(!$form->all_user){
             $sale_notes = $sale_notes->whereHas('sale_note', function($query) use($form){
                 $query->where('customer_id', $form->customer_id);
@@ -32,7 +34,7 @@ class HistoryController extends Controller
                                     sale_note_items.unit_price as price, sale_notes.date_of_issue as date_of_issue,persons.name as name'));
 
 
-        $documents = DocumentItem::where('item_id', $form->item_id);
+        $documents = DocumentItem::whereIn('item_id', $saleItemIds);
         if(!$form->all_user){
             $documents = $documents->whereHas('document', function($query) use($form){
                 $query->where('customer_id', $form->customer_id);
@@ -47,6 +49,13 @@ class HistoryController extends Controller
 
         return new HistorySalesCollection($records->paginate(config('tenant.items_per_page_simple_d_table_params')));
 
+    }
+
+    private function getSaleHistoryItemIds(int $itemId): array
+    {
+        $packIds = ItemSet::where('individual_item_id', $itemId)->pluck('item_id')->toArray();
+
+        return array_values(array_unique(array_merge([$itemId], $packIds)));
     }
 
     

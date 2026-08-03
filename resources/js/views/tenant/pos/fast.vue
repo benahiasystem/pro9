@@ -1229,15 +1229,22 @@ export default {
             });
             this.customer = customer;
 
-            if (this.configuration.default_document_type_03) {
-                this.form.document_type_id = "03";
-            } else {
-                this.form.document_type_id =
-                    customer.identity_document_type_id == "6" ? "01" : "03";
-            }
+            this.form.document_type_id = this.resolveDefaultDocumentTypeId(customer);
 
             this.setLocalStorageIndex("customer", this.customer);
             this.setFormPosLocalStorage();
+        },
+        resolveDefaultDocumentTypeId(customer = null) {
+            if (this.configuration.default_document_type_80) {
+                return "80";
+            }
+            if (this.configuration.default_document_type_03) {
+                return "03";
+            }
+            if (customer && customer.identity_document_type_id == "6") {
+                return "01";
+            }
+            return "03";
         },
 
         getLocalStorageIndex(key, re_default = null) {
@@ -1317,7 +1324,7 @@ export default {
         initForm() {
             this.form = {
                 establishment_id: null,
-                document_type_id: "03",
+                document_type_id: this.resolveDefaultDocumentTypeId(),
                 series_id: null,
                 prefix: null,
                 number: "#",

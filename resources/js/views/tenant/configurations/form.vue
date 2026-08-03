@@ -3357,7 +3357,7 @@ export default {
             get() {
                 if (this.form.default_document_type_03) return '03';
                 if (this.form.default_document_type_80) return '80';
-                return '01'; // Default to Factura if neither Boleta nor Nota de Venta are selected
+                return '80';
             },
             set(value) {
                 this.form.default_document_type_03 = value === '03';
@@ -3506,7 +3506,7 @@ export default {
                 header_image: null,
                 legend_footer: false,
                 default_document_type_03: false,
-                default_document_type_80: false,
+                default_document_type_80: true,
                 search_item_by_barcode: false,
                 destination_sale: false,
                 quotation_allow_seller_generate_sale: false,
