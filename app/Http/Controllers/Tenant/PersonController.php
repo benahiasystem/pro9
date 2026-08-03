@@ -82,7 +82,7 @@ class PersonController extends Controller
     public function tables()
     {
         $countries = Country::whereActive()->orderByDescription()->get();
-        $identity_document_types = IdentityDocumentType::whereActive()->get();
+        $identity_document_types = IdentityDocumentType::whereActive()->orderByPersonPriority()->get();
         $person_types = PersonType::get();
         $locations = func_get_locations();
         $zones = Zone::all();

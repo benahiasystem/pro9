@@ -13,6 +13,7 @@
 
 // Rutas públicas (no deben forzar login principal)
 Route::get('/config.json', 'RestaurantController@config');
+Route::get('/mozo/runtime-config', 'RestaurantController@config');
 Route::get('/mozo/auth/login', 'RestaurantController@public');
 Route::get('/mozo/{any?}', 'RestaurantController@public')
 ->where('any', '.*')
@@ -20,6 +21,7 @@ Route::get('/mozo/{any?}', 'RestaurantController@public')
 
 // Vendeya (mismo patrón que mozo)
 Route::get('/vendeya/config.json', 'RestaurantController@configVendeya');
+Route::get('/vendeya/runtime-config', 'RestaurantController@configVendeya');
 Route::get('/vendeya/auth/login', 'RestaurantController@publicVendeya');
 Route::get('/vendeya/{any}', 'RestaurantController@publicVendeya')
 ->where('any', '.*')

@@ -142,6 +142,7 @@ if (!function_exists('func_get_identity_document_types')) {
 
         $identity_document_types = IdentityDocumentType::query()
             ->where('active', true)
+            ->orderByPersonPriority()
             ->get();
 
         Cache::put('identity_document_types', $identity_document_types, 1440);

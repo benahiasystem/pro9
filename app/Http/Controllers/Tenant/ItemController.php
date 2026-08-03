@@ -1568,20 +1568,16 @@ class ItemController extends Controller
 
         $start = $request[0];
         $end = $request[1];
+        $isPharmacy = $this->isPharmacyExport($request);
 
-        $records = Item::whereBetween('id', [$start, $end]);
-        $extradata = [];
-        $isPharmacy = false;
-        if($request->has('isPharmacy') ){
-            $isPharmacy = ($request->isPharmacy==='true')?true:false;
-        }
-        if($isPharmacy == true){
-            $extradata[]='sanitary';
-            $extradata[]='cod_digemid';
-            $records->Pharmacy();
-        }
+        $records = $this->barcodeExportQuery($request)->get();
+        $extradata = $isPharmacy ? ['sanitary', 'cod_digemid'] : [];
         $extra_data = $extradata;
-        $records = $records->get();
+
+        if ($records->isEmpty()) {
+            abort(404, $this->barcodeExportEmptyMessage($start, $end, $isPharmacy));
+        }
+
         $pdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => [
@@ -1597,7 +1593,7 @@ class ItemController extends Controller
 
         $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
 
-        $pdf->output('etiquetas_'.now()->format('Y_m_d').'.pdf', 'I');
+        $pdf->output('etiquetas_'.now()->format('Y_m_d').'.pdf', 'D');
     }
 
     /**
@@ -1616,31 +1612,21 @@ class ItemController extends Controller
 
         $start = $request[0];
         $end = $request[1];
+        $isPharmacy = $this->isPharmacyExport($request);
 
-        $records = Item::whereBetween('id', [$start, $end])
-            ->where(function($q){
-                $q->orwhere('barcode','!=','');
-                $q->orwhere('internal_id','!=','');
-            })
-            // ->wherenotnull('barcode')
-        ;
-        $extradata = [];
-        $establishment = \Auth::user()->establishment;
-        $isPharmacy = false;
-        if($request->has('isPharmacy') ){
-            $isPharmacy = ($request->isPharmacy==='true')?true:false;
-        }
-        if($isPharmacy == true){
-            $extradata[]='sanitary';
-            $extradata[]='cod_digemid';
-            $records->Pharmacy();
-        }
+        $records = $this->barcodeExportQuery($request, true)->get();
+        $extradata = $isPharmacy ? ['sanitary', 'cod_digemid'] : [];
         $extra_data = $extradata;
-        $records = $records->get();
+
+        if ($records->isEmpty()) {
+            abort(404, $this->barcodeExportEmptyMessage($start, $end, $isPharmacy));
+        }
+
         $height = 30;
 
         $width = 48;
         $pdfj = new Fpdi();
+        $establishment = \Auth::user()->establishment;
         /** @var Item $item */
         foreach($records as $item){
             $pdf = new Mpdf([
@@ -1760,10 +1746,63 @@ class ItemController extends Controller
 
     }
 
-    public function itemLast()
+    public function itemLast(Request $request)
     {
-        $record = Item::latest()->first();
-        return json_encode(['data' => $record->id]);
+        $query = Item::query();
+
+        if ($request->input('isPharmacy') === 'true') {
+            $query->Pharmacy();
+        }
+
+        $record = $query->orderByDesc('items.id')->first();
+
+        return response()->json(['data' => $record ? $record->id : 1]);
+    }
+
+    public function barcodeExportCount(Request $request)
+    {
+        $start = $request[0];
+        $end = $request[1];
+        $full = filter_var($request->input('full'), FILTER_VALIDATE_BOOLEAN);
+        $isPharmacy = $this->isPharmacyExport($request);
+        $count = $this->barcodeExportQuery($request, $full)->count();
+
+        return response()->json([
+            'count' => $count,
+            'message' => $this->barcodeExportEmptyMessage($start, $end, $isPharmacy),
+        ]);
+    }
+
+    private function isPharmacyExport(Request $request): bool
+    {
+        return $request->input('isPharmacy') === 'true';
+    }
+
+    private function barcodeExportQuery(Request $request, bool $full = false)
+    {
+        $query = Item::whereBetween('items.id', [$request[0], $request[1]]);
+
+        if ($full) {
+            $query->where(function ($q) {
+                $q->orWhere('items.barcode', '!=', '');
+                $q->orWhere('items.internal_id', '!=', '');
+            });
+        }
+
+        if ($this->isPharmacyExport($request)) {
+            $query->Pharmacy();
+        }
+
+        return $query;
+    }
+
+    private function barcodeExportEmptyMessage($start, $end, $isPharmacy): string
+    {
+        $scope = $isPharmacy
+            ? ' de farmacia vinculados al catálogo DIGEMID'
+            : '';
+
+        return "No se encontraron productos{$scope} con ID entre {$start} y {$end}.";
     }
 
     public function tablesImport()

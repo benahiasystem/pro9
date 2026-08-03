@@ -2053,8 +2053,10 @@
                                                     <tr
                                                         v-if="
                                                             form.subtotal > 0 &&
-                                                                form.total_discount >
-                                                                    0
+                                                                (form.total_discount >
+                                                                    0 ||
+                                                                    totalDiscount >
+                                                                        0)
                                                         "
                                                     >
                                                         <td>SUBTOTAL:</td>
@@ -2062,7 +2064,9 @@
                                                             {{
                                                                 currency_type.symbol
                                                             }}
-                                                            {{ form.subtotal }}
+                                                            {{
+                                                                displaySubtotalBeforeDiscount
+                                                            }}
                                                         </td>
                                                     </tr>
 
@@ -3008,13 +3012,14 @@
                                     <tr
                                         v-if="
                                             form.subtotal > 0 &&
-                                                form.total_discount > 0
+                                                (form.total_discount > 0 ||
+                                                    totalDiscount > 0)
                                         "
                                     >
                                         <td>SUBTOTAL:</td>
                                         <td>
                                             {{ currency_type.symbol }}
-                                            {{ form.subtotal }}
+                                            {{ displaySubtotalBeforeDiscount }}
                                         </td>
                                     </tr>
 
@@ -4208,6 +4213,8 @@ export default {
             activePanel: 0,
             total_global_discount: 0,
             total_global_charge: 0,
+            // Subtotal UI antes del dto global tipo 02 (form.subtotal sigue = total para XML TaxInclusiveAmount)
+            subtotal_before_global_discount: 0,
             loading_search: false,
             is_amount: true,
             enabled_discount_global: false,
@@ -4512,24 +4519,38 @@ export default {
             if (this.form.items.length > 0) {
                 this.form.items.forEach(item => {
                     if (!item.discounts) return;
-                    console.log(item.discounts);
-                    
+
                     item.discounts.forEach(discount => {
                         const is_base = discount.discount_type_id === "00";
-                        const base_amount = discount.amount_without_rounded 
+                        const base_amount = discount.amount_without_rounded
                             ? discount.amount_without_rounded
                             : discount.amount;
-                        total_items += is_base ? base_amount * igv_factor : discount.amount;
+                        total_items += is_base
+                            ? base_amount * igv_factor
+                            : discount.amount;
                     });
                 });
             }
 
-            const global_amount = this.form.discounts.length > 0 ? this.form.discounts[0].amount_without_rounded : 0;
-            const total_global = this.isGlobalDiscountBase ? global_amount * igv_factor : global_amount;
-            console.log({ total_items, total_global });
-            
+            const global_amount =
+                this.form.discounts.length > 0
+                    ? this.form.discounts[0].amount_without_rounded
+                    : 0;
+            const total_global = this.isGlobalDiscountBase
+                ? global_amount * igv_factor
+                : global_amount;
 
             return _.round(total_items + total_global, 2);
+        },
+        displaySubtotalBeforeDiscount() {
+            // Tipo 02: mostrar total con IGV ANTES del dto (UI). form.subtotal = total post-dto (XML).
+            if (
+                this.isGlobalDiscountBase &&
+                this.subtotal_before_global_discount > 0
+            ) {
+                return this.subtotal_before_global_discount;
+            }
+            return this.form.subtotal;
         },
         guarantee_fund: function() {
             let detraction = this.form.detraction || {};
@@ -6954,6 +6975,13 @@ export default {
             this.calculateTotal();
         },
         calculateTotal() {
+            // Restaurar ítems ANTES de sumar: si no, el descuento global se acumula
+            // en cada recalculo y SUNAT rechaza con error 3271 (LineExtensionAmount).
+            if (this.enabled_discount_global) {
+                this.clearGlobalDistributionDiscounts();
+            }
+            this.subtotal_before_global_discount = 0;
+
             let total_discount = 0;
             let total_charge = 0;
             let total_exportation = 0;
@@ -7506,40 +7534,68 @@ export default {
          * @param ctx
          */
         /**
-         * Elimina IN-PLACE los descuentos marcados como from_global_distribution
-         * de todos los items. Usa splice en reversa para mutar el mismo array
-         * (no crea uno nuevo), de modo que cualquier referencia externa al array
-         * también vea la eliminación y los objetos descuento queden sin referencias
-         * vivas para ser liberados por el GC.
+         * Elimina descuentos from_global_distribution y restaura los importes
+         * originales del ítem (unit_price, unit_value, totales) para que el
+         * siguiente prorrateo no acumule descuentos (error SUNAT 3271).
          */
         clearGlobalDistributionDiscounts() {
             this.form.items.forEach((item, index) => {
-                item.discounts = item.discounts.filter( le => !le.from_global_distribution) || [];
-                // if (!item.discounts || item.discounts.length === 0) return;
-                // let changed = false;
-                // for (let i = item.discounts.length - 1; i >= 0; i--) {
-                //     if (item.discounts[i].from_global_distribution) {
-                //         item.discounts.splice(i, 1);
-                //         changed = true;
-                //     }
-                // }
-                // if (changed) {
-                //     this.form.items.splice(
-                //         index,
-                //         1,
-                //         calculateRowItem(
-                //             item,
-                //             this.form.currency_type_id,
-                //             this.form.exchange_rate_sale,
-                //             this.percentage_igv
-                //         )
-                //     );
-                // }
+                if (!item.discounts || item.discounts.length === 0) {
+                    if (item._original_before_global_discount) {
+                        this.restoreItemFromGlobalDiscountSnapshot(item);
+                    }
+                    return;
+                }
+
+                const beforeLen = item.discounts.length;
+                item.discounts = item.discounts.filter(
+                    d => !d.from_global_distribution
+                );
+
+                const removed = beforeLen !== item.discounts.length;
+                if (!removed && !item._original_before_global_discount) return;
+
+                if (item._original_before_global_discount) {
+                    // El snapshot ya refleja descuentos de ítem previos al global
+                    this.restoreItemFromGlobalDiscountSnapshot(item);
+                } else if (removed) {
+                    this.form.items.splice(
+                        index,
+                        1,
+                        calculateRowItem(
+                            item,
+                            this.form.currency_type_id,
+                            this.form.exchange_rate_sale,
+                            this.percentage_igv
+                        )
+                    );
+                }
             });
+        },
+        restoreItemFromGlobalDiscountSnapshot(item) {
+            const orig = item._original_before_global_discount;
+            if (!orig) return;
+
+            item.unit_price = orig.unit_price;
+            item.unit_value = orig.unit_value;
+            item.total_value = orig.total_value;
+            item.total_base_igv = orig.total_base_igv;
+            item.total_igv = orig.total_igv;
+            item.total_taxes = orig.total_taxes;
+            item.total = orig.total;
+            item.total_discount = orig.total_discount;
+            item.total_value_without_rounding = orig.total_value_without_rounding;
+            item.total_base_igv_without_rounding =
+                orig.total_base_igv_without_rounding;
+            item.total_igv_without_rounding = orig.total_igv_without_rounding;
+            item.total_taxes_without_rounding =
+                orig.total_taxes_without_rounding;
+            item.total_without_rounding = orig.total_without_rounding;
+            delete item._original_before_global_discount;
         },
         discountGlobalItems(ctx) {
              let total_discounts_item = 0;
-             // Limpiar descuentos globales previamente distribuidos para no acumular en cada recalculo
+             // Seguridad: no acumular si calculateTotal no restauró antes
              this.clearGlobalDistributionDiscounts();
 
              if (!this.total_global_discount || this.total_global_discount <= 0) return;
@@ -7599,9 +7655,6 @@ export default {
                 if (item_discount_amount <= 0) return;
 
                 total_discounts_item += item_discount_amount;
-
-                console.log("amount discount item 1", item_discount_amount);
-                console.log("amount discount item round", _.round(item_discount_amount, 2));
                 
                 let factor = _.round(item_discount_amount / item_value, 5);
 
@@ -7609,11 +7662,9 @@ export default {
                 
                 let $_discount_type_id  = discount_type_id === "02" ? "00" : "01"
                 
-
-                
                 item.discounts.push({
                     discount_type_id: $_discount_type_id, 
-                    discount_type : _.filter(this.discount_types, { id: $_discount_type_id }), 
+                    discount_type : _.find(this.discount_types, { id: $_discount_type_id }), 
                     description: description,
                     factor: factor,
                     percentage: _.round(factor * 100, 5),
@@ -7624,7 +7675,7 @@ export default {
                     from_global_distribution: true
                 });
 
-                item = this.recalcItemBasesAndIgv(item);
+                this.recalcItemBasesAndIgv(item);
 
             });
 
@@ -7657,8 +7708,6 @@ export default {
                      );
 
                     this.form.total_value = total_taxed + total_out;
-                    console.log(this.percentage_igv);
-                    
 
                     this.form.total_igv = _.round(
                         total_taxed * this.percentage_igv,
@@ -7671,7 +7720,10 @@ export default {
                         2
                     );
                     this.form.total = _.round(total, 2);
+                    // TaxInclusiveAmount en XML usa form.subtotal: debe ser el total YA con dto
                     this.form.subtotal = this.form.total;
+                    // Solo para UI: subtotal antes del descuento (ctx.total incluye IGV)
+                    this.subtotal_before_global_discount = _.round(ctx.total, 2);
 
                     if (this.form.total <= 0)
                         this.$message.error(
@@ -7684,6 +7736,7 @@ export default {
                 else {
                     this.form.total = _.round(this.form.total - amount, 2);
                     this.form.total_discount += _.round(amount, 2);
+                    this.subtotal_before_global_discount = 0;
                 }
 
             // this.form.total_discount = _.round(total_discounts_item, 2);
@@ -7694,23 +7747,57 @@ export default {
          * inafecta, exportación o gratuita). El descuento reduce siempre el
          * total_value y la base imponible del item; el IGV solo se genera cuando
          * la afectación es gravada ('10') — en el resto queda en 0 por norma SUNAT.
+         *
+         * SUNAT:
+         * - 3271: LineExtensionAmount = qty * unit_value - AllowanceCharge
+         *   → unit_value se mantiene ORIGINAL (pre-descuento)
+         * - 3270: PricingReference/PriceAmount ≈ (LineExtensionAmount + IGV) / qty
+         *   → unit_price se actualiza al precio de operación POST-descuento
          */
         recalcItemBasesAndIgv(item) {
             const pigv = this.percentage_igv;
             const affectation = item.affectation_igv_type_id;
 
-            const unit_value = affectation === '10'
-                ? parseFloat(item.unit_price) / (1 + pigv)
-                : parseFloat(item.unit_price);
+            // Snapshot de importes previos al dto global (una sola vez)
+            if (!item._original_before_global_discount) {
+                item._original_before_global_discount = {
+                    unit_price: parseFloat(item.unit_price),
+                    unit_value: parseFloat(item.unit_value),
+                    total_value: parseFloat(item.total_value),
+                    total_base_igv: parseFloat(item.total_base_igv),
+                    total_igv: parseFloat(item.total_igv),
+                    total_taxes: parseFloat(item.total_taxes),
+                    total: parseFloat(item.total),
+                    total_discount: parseFloat(item.total_discount || 0),
+                    total_value_without_rounding: parseFloat(
+                        item.total_value_without_rounding || item.total_value
+                    ),
+                    total_base_igv_without_rounding: parseFloat(
+                        item.total_base_igv_without_rounding || item.total_base_igv
+                    ),
+                    total_igv_without_rounding: parseFloat(
+                        item.total_igv_without_rounding || item.total_igv
+                    ),
+                    total_taxes_without_rounding: parseFloat(
+                        item.total_taxes_without_rounding || item.total_taxes
+                    ),
+                    total_without_rounding: parseFloat(
+                        item.total_without_rounding || item.total
+                    )
+                };
+            }
 
-            const total_value_partial = unit_value * parseFloat(item.quantity);
+            const orig = item._original_before_global_discount;
+            const total_value_partial = orig.total_value_without_rounding;
 
             let discount_base = 0;
             let discount_no_base = 0;
             if (item.discounts && item.discounts.length > 0) {
                 item.discounts.forEach(d => {
                     if (!d.from_global_distribution) return;
-                    const amount = d.amount_without_rounded ? d.amount_without_rounded : d.amount;
+                    const amount = d.amount_without_rounded
+                        ? d.amount_without_rounded
+                        : d.amount;
                     discount_base += parseFloat(amount);
                 });
             }
@@ -7747,20 +7834,24 @@ export default {
             const total_taxes = total_igv + total_isc + total_plastic_bag_taxes;
             const total = total_value + total_taxes;
 
-            const quantity = parseFloat(item.quantity);
-            // Recalcular unit_price para que SUNAT no marque diferencia entre
-            // (unit_price * quantity) y el total de línea tras el descuento base.
-            const new_unit_price = quantity > 0
-                ? (total_value + total_taxes - discount_no_base) / quantity
-                : parseFloat(item.unit_price);
+            const quantity = parseFloat(item.quantity) || 1;
+            // 3270: precio unitario de la operación = total de línea con impuestos / cant.
+            const unit_price_operation =
+                quantity > 0
+                    ? (total_value + total_taxes - discount_no_base) / quantity
+                    : orig.unit_price;
 
-            // item.unit_value = _.round(unit_value,2);
-            item.unit_price = _.round(new_unit_price, 6);
+            // 3271: unit_value ORIGINAL; 3270: unit_price = precio operación post-dto
+            item.unit_value = orig.unit_value;
+            item.unit_price = _.round(unit_price_operation, 6);
             item.total_value = _.round(total_value, 2);
             item.total_base_igv = _.round(total_base_igv, 2);
             item.total_igv = _.round(total_igv, 2);
             item.total_taxes = _.round(total_taxes, 2);
-            item.total_discount = _.round(discount_base + discount_no_base, 2);
+            item.total_discount = _.round(
+                orig.total_discount + discount_base + discount_no_base,
+                2
+            );
             item.total = _.round(total, 2);
 
             item.total_value_without_rounding = total_value;
@@ -7771,20 +7862,33 @@ export default {
 
             return item;
         },
-        // Descuento por item
+        // Descuento por item (incluye prorrateo del descuento global)
         setTextDiscountItem(item) {
             let discount = 0;
-            
+            if (!item.discounts) return "0";
+
+            const igvFactor = 1 + this.percentage_igv;
+
             item.discounts.forEach(dis => {
-                if (dis.from_global_distribution) return;
-                    
+                if (dis.from_global_distribution) {
+                    const baseAmount = dis.amount_without_rounded
+                        ? parseFloat(dis.amount_without_rounded)
+                        : parseFloat(dis.amount);
+                    // Mostrar con IGV para alinear Precio Unitario / Total (con IGV)
+                    discount +=
+                        dis.discount_type_id === "00"
+                            ? baseAmount * igvFactor
+                            : baseAmount;
+                    return;
+                }
+
                 if (dis.discount_type && dis.discount_type.base) {
-                    discount += dis.amount_without_rounded * 1.18;
+                    discount += dis.amount_without_rounded * igvFactor;
                 } else {
-                    discount += dis.amount ; 
+                    discount += dis.amount;
                 }
             });
-            
+
             return discount > 0 ? _.round(discount, 2) : "0";
         },
 
