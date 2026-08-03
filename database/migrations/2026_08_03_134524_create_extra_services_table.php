@@ -15,6 +15,8 @@ return new class extends Migration
     {
         Schema::create('extra_services', function (Blueprint $table) {
             $table->id();
+            $table->string('urlObtainApidocs')->nullable();
+            $table->string('urlServiceApidocs')->nullable();
             $table->boolean('isActiveApidocs')->default(false);
             $table->timestamps();
         });

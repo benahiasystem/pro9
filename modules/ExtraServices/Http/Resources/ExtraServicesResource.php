@@ -15,6 +15,7 @@ class ExtraServicesResource extends JsonResource
     public function toArray($request)
     {
         return [
+            'urlObtainApidocs' => $this->urlObtainApidocs,
             'isActiveApidocs' => (bool) $this->isActiveApidocs,
         ];
     }

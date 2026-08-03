@@ -119,13 +119,15 @@ class ServiceData
             return $response;
         }
 
-        $data = $response['data'];
-        $meta = $response['meta'] ?? [];
+        \Log::info('transformExtraServiceResponse', ['response' => $response, 'type' => $type]);
+
+        // Extraer la información desde el nivel de anidación correcto ($response['data']['data'])
+        $data = $response['data']['data'] ?? $response['data'] ?? [];
+        $meta = $response['data']['meta'] ?? $response['meta'] ?? [];
         $source = $meta['source'] ?? 'unknown';
         $res_data = [];
-
+        
         if ($type === 'dni') {
-            // Para DNI, la estructura es similar en ambas fuentes
             $ubigeo = $data['ubigeo'] ?? [];
             $department_id = $ubigeo[0] ?? null;
             $province_id = $ubigeo[1] ?? null;
@@ -155,14 +157,12 @@ class ServiceData
                 $is_agent_retention = ($data['es_agente_de_retencion'] === 'SI');
             }
 
-            // Procesar ubigeo según la fuente
-            // API real retorna: ["15", "1501", "150122"]
             $ubigeo = $data['ubigeo'] ?? [];
 
             $res_data = [
                 'name' => $data['nombre_o_razon_social'] ?? '',
-                'trade_name' => '',
-                'address' => $data['direccion'] ?? '',
+                'trade_name' => $data['nombre_comercial'] ?? '',
+                'address' => $data['direccion_completa'] ?? $data['direccion'] ?? '',
                 'location_id' => $ubigeo,
                 'condition' => $data['condicion'] ?? '',
                 'state' => $data['estado'] ?? '',
@@ -173,6 +173,8 @@ class ServiceData
         $response['data'] = $res_data;
         // Agregar fuente original en la respuesta
         $response['source'] = $source === 'beta' ? 'apiperu.dev' : $source;
+
+        \Log::info('transformExtraServiceResponse - Final', ['response' => $response]);
 
         return $response;
     }

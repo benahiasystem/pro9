@@ -63,6 +63,7 @@ export default {
       loading: false,
       configLoaded: false,
       form: {
+        urlObtainApidocs: '',
         isActiveApidocs: false,
       },
       message_service: {
