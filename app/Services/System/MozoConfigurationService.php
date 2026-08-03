@@ -22,22 +22,27 @@ class MozoConfigurationService
         'darkLightText',
     ];
 
+    private const LOGO_KEYS = [
+        'useSystemLogo',
+        'logoVersion',
+    ];
+
     public function get(): array
     {
         $configuration = Configuration::query()->first();
         $stored = $configuration?->mozo_configuration;
 
         if (!is_array($stored) || empty($stored)) {
-            $stored = $this->buildFallback();
+            $stored = $this->defaults();
         }
 
-        return array_replace($this->defaults(), $this->onlyBrandingValues($stored));
+        return array_replace($this->defaults(), $this->onlyKnownValues($stored));
     }
 
     public function update(array $values): array
     {
         $configuration = Configuration::query()->firstOrFail();
-        $branding = array_replace($this->get(), $this->onlyBrandingValues($values));
+        $branding = array_replace($this->get(), $this->onlyKnownValues($values));
 
         $configuration->mozo_configuration = $branding;
         $configuration->save();
@@ -45,25 +50,11 @@ class MozoConfigurationService
         return $branding;
     }
 
-    private function buildFallback(): array
+    private function onlyKnownValues(array $values): array
     {
-        $path = public_path('mozo/config.json');
+        $known = array_merge(self::BRANDING_KEYS, self::LOGO_KEYS);
 
-        if (!is_file($path) || !is_readable($path)) {
-            return $this->defaults();
-        }
-
-        $contents = file_get_contents($path);
-        $decoded = $contents === false ? null : json_decode($contents, true);
-
-        return is_array($decoded)
-            ? array_replace($this->defaults(), $this->onlyBrandingValues($decoded))
-            : $this->defaults();
-    }
-
-    private function onlyBrandingValues(array $values): array
-    {
-        return array_intersect_key($values, array_flip(self::BRANDING_KEYS));
+        return array_intersect_key($values, array_flip($known));
     }
 
     private function defaults(): array
@@ -82,6 +73,8 @@ class MozoConfigurationService
             'darkAccent' => '#313135',
             'darkBackground' => '#3b3b40',
             'darkLightText' => '#d0d2dc',
+            'useSystemLogo' => true,
+            'logoVersion' => null,
         ];
     }
 }

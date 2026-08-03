@@ -38,7 +38,6 @@ use Modules\Ecommerce\Models\Tenant\DiscountCouponUsage;
 use Modules\Ecommerce\Models\Tenant\PickupBranch;
 use App\Models\Tenant\PersonAddress;
 use Modules\Payment\Models\PaymentConfiguration;
-
 use App\Models\System\Configuration as SystemConfiguration;
 use Modules\Ecommerce\Jobs\SendOrderStatusEmail;
 use Illuminate\Support\Facades\Log;
@@ -346,6 +345,11 @@ class EcommerceController extends Controller
         $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
 
+        // Sucursales de recojo activas para el checkout
+        $pickup_branches = $enable_store_pickup
+            ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
+            : [];
+
         $payment_configuration = PaymentConfiguration::first();
         $gateway_availability = PaymentConfiguration::getEcommerceGatewayAvailability();
         $enable_yape = $enable_yape && $gateway_availability['yape'];
@@ -353,10 +357,25 @@ class EcommerceController extends Controller
             ? (is_string($configuration->preferences) ? json_decode($configuration->preferences, true) : $configuration->preferences)
             : [];
 
-        // Sucursales de recojo activas para el checkout
-        $pickup_branches = $enable_store_pickup
-            ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
-            : [];
+        // Validación estricta: Si el switch de Ecommerce está apagado, forzamos false en las credenciales
+        // en memoria para asegurarnos que la vista no intente inyectar scripts de pasarelas no autorizadas.
+        if (!($preferences['enable_izipay'] ?? false)) {
+            $payment_configuration->enabled_izipay = false;
+        }
+        if (!($preferences['enable_mp'] ?? false)) {
+            $payment_configuration->enabled_mp = false;
+        }
+        if (!($preferences['enable_culqi'] ?? false)) {
+            $payment_configuration->enabled_culqi = false;
+        }
+
+        $ecommerce_bank_account_ids = $preferences['ecommerce_bank_account_ids'] ?? [];
+
+        if (count($ecommerce_bank_account_ids) > 0) {
+            $bank_accounts = \App\Models\Tenant\BankAccount::whereIn('id', $ecommerce_bank_account_ids)->get();
+        } else {
+            $bank_accounts = collect(); // Por seguridad, si no selecciona ninguna, no se muestran
+        }
 
         return view('ecommerce::cart.detail', compact(
             'configuration',
@@ -376,6 +395,7 @@ class EcommerceController extends Controller
             'enable_yape',
             'enable_transfer',
             'payment_configuration',
+            'bank_accounts',
             'preferences',
             'gateway_availability'
         ));
@@ -426,10 +446,8 @@ class EcommerceController extends Controller
                 $records = $records->whereBetween('created_at', [$date_of_start, $date_of_end]);
             }
 
-            // Mostrar primero los pedidos más recientes.
-            $records = $records
-                ->orderByDesc('id')
-                ->paginate(config('tenant.items_per_page', 10));
+            // Obtener los resultados paginados
+            $records = $records->paginate(config('tenant.items_per_page', 10));
 
             // Transformar los datos manteniendo la estructura de paginación
             $records->getCollection()->transform(function ($row) {
@@ -681,14 +699,6 @@ class EcommerceController extends Controller
      */
     public function validateCoupon(Request $request)
     {
-        // Bloquear reaplicación acumulativa si el cliente ya tiene cupón activo
-        if (filter_var($request->input('coupon_already_applied', false), FILTER_VALIDATE_BOOLEAN)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.'
-            ], 422);
-        }
-
         $codes = [];
         if ($request->codes && is_array($request->codes)) {
             $codes = $request->codes;
@@ -718,8 +728,6 @@ class EcommerceController extends Controller
             if (!$coupon->canBeUsedBy($person_id, $order_total)) continue;
 
             $discount = $coupon->calculateDiscountAmount($order_total);
-            // Nunca descontar más que el total (evita totales negativos)
-            $discount = min($discount, max(0, $order_total));
             $validCoupons[] = [
                 'coupon' => $coupon,
                 'discount' => $discount
@@ -766,14 +774,6 @@ class EcommerceController extends Controller
             return response()->json(['success' => false, 'message' => 'Orden no encontrada'], 404);
         }
 
-        // Un solo cupón por orden: idempotente / bloqueante tras el primero
-        if ($order->discount_coupon_id || $order->discount_coupon_code) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.'
-            ], 422);
-        }
-
         $user = auth('ecommerce')->user();
         $person_id = $user?->id;
 
@@ -793,7 +793,6 @@ class EcommerceController extends Controller
         }
 
         $discount = $coupon->calculateDiscountAmount($order->total);
-        $discount = min($discount, max(0, (float) $order->total));
 
         // Actualizar la orden (un solo cupón por venta)
         $order->total_discount = $discount;
@@ -828,13 +827,12 @@ class EcommerceController extends Controller
             ], 422);
         }
 
-        $validator = Validator::make($request->customer, [
-            'telefono' => 'required|numeric',
-            'direccion' => 'required',
-            'codigo_tipo_documento_identidad' => 'required|numeric',
-            'numero_documento' => 'required|numeric',
-            'identity_document_type_id' => 'required|numeric'
-        ]);
+        $customer = $this->extractPaymentCustomerFromRequest($request);
+        $shippingAddress = (string) $request->input('shipping_address', '');
+        $customer = $this->normalizePaymentCustomerData($customer, $shippingAddress);
+        $request->merge(['customer' => $customer]);
+
+        $validator = $this->makePaymentCustomerValidator($customer, $shippingAddress);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -936,21 +934,24 @@ class EcommerceController extends Controller
 
                 // Encolar notificación por correo si el estado inicial lo requiere
                 if ($initialOrderStatus && ($initialOrderStatus->action_send_email ?? false)) {
-    try {
-        dispatch(new SendOrderStatusEmail($order->id, $initialOrderStatus->id, $this->buildOrderListUrl()));
+                    try {
+                        dispatch(new SendOrderStatusEmail($order->id, $initialOrderStatus->id, $this->buildOrderListUrl()));
                     } catch (\Throwable $e) {
                         \Log::error('Failed to dispatch SendOrderStatusEmail on order creation: '.$e->getMessage());
                     }
                 }
 
-                $customer_email = $user->email;
+                $contact = $this->resolveOrderCustomerContact($request, $user);
+
                 $document = new stdClass;
-                $document->client = $user->name;
+                $document->client = $contact['name'];
                 $document->product = $request->producto;
                 $document->total = $request->precio_culqi;
                 $document->items = $request->items;
 
-                $this->paymentCashEmail($customer_email, $document);
+                if (!empty($contact['email'])) {
+                    $this->paymentCashEmail($contact['email'], $document);
+                }
 
                 //Mail::to($customer_email)->send(new CulqiEmail($document));
                 return [
@@ -1294,19 +1295,26 @@ class EcommerceController extends Controller
 
         $user->save();
 
-        // Persistir dirección de entrega si viene en el payload (p. ej. desde cuenta o checkout)
-        $deliveryAddress = $request->input('delivery_address') ?: $request->input('address');
-        if ($deliveryAddress) {
-            $user->address = $deliveryAddress;
-            $user->save();
+        // Registrar la dirección de entrega en el historial de direcciones del cliente si tiene ubigeo completo
+        $deliveryAddress = $request->input('delivery_address');
+        $districtId      = $request->input('district_id');
 
-            $this->persistPersonAddressRecord($user, [
-                'address'       => $deliveryAddress,
-                'department_id' => $request->input('department_id'),
-                'province_id'   => $request->input('province_id'),
-                'district_id'   => $request->input('district_id'),
-                'phone'         => $request->input('telephone') ?: $user->telephone,
-            ]);
+        if ($deliveryAddress && $districtId) {
+            $user->addresses()->firstOrCreate(
+                [
+                    'address'     => $deliveryAddress,
+                    'district_id' => $districtId,
+                ],
+                [
+                    'country_id'    => 'PE',
+                    'department_id' => $request->input('department_id'),
+                    'province_id'   => $request->input('province_id'),
+                    'district_id'   => $districtId,
+                    'address'       => $deliveryAddress,
+                    'phone'         => $request->input('telephone'),
+                    'main'          => false,
+                ]
+            );
         }
 
         return ['success' => true, 'message' => 'Datos actualizados correctamente'];
@@ -2011,8 +2019,11 @@ class EcommerceController extends Controller
     /**
      * Consulta pública de RUC/DNI para autocompletar el nombre / razón social
      * en el formulario de registro del ecommerce (invitados, sin auth).
+     *
+     * Con ?checkout=1 devuelve datos del cliente existente para autocompletar
+     * el checkout invitado sin crear registros duplicados.
      */
-    public function searchDocumentPublic($number)
+    public function searchDocumentPublic(Request $request, $number)
     {
         $number = preg_replace('/\D/', '', (string) $number);
 
@@ -2027,9 +2038,22 @@ class EcommerceController extends Controller
             ];
         }
 
-        $exists = Person::where('number', $number)->exists();
+        $isCheckout = $request->boolean('checkout')
+            || $request->get('context') === 'checkout';
 
-        if ($exists) {
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $telephone = preg_replace('/\D/', '', (string) $request->input('telephone', ''));
+        $requestedDocTypeId = (string) $request->input('identity_document_type_id', '');
+        $hasTripleInput = $isCheckout
+            && $email !== ''
+            && strlen($telephone) >= 7
+            && in_array($requestedDocTypeId, ['1', '6'], true);
+
+        $person = Person::where('number', $number)
+            ->where('type', 'customers')
+            ->first();
+
+        if ($person && !$isCheckout) {
             return [
                 'success' => false,
                 'exists' => true,
@@ -2037,27 +2061,227 @@ class EcommerceController extends Controller
             ];
         }
 
-        try {
-            $result = $this->searchDocument($type, $number);
-        } catch (\Throwable $e) {
-            return [
-                'success' => false,
-                'message' => 'No se pudo consultar el documento. Intente nuevamente.',
+        if ($person && $isCheckout) {
+            $response = $this->buildCheckoutDocumentLookupResponse($person, $type);
+        } else {
+            try {
+                $result = $this->searchDocument($type, $number);
+            } catch (\Throwable $e) {
+                return [
+                    'success' => false,
+                    'message' => 'No se pudo consultar el documento. Intente nuevamente.',
+                ];
+            }
+
+            if (empty($result['success'])) {
+                return [
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Datos no encontrados.',
+                ];
+            }
+
+            $response = [
+                'success' => true,
+                'type' => $type,
+                'name' => $result['data']['name'] ?? '',
             ];
         }
 
-        if (empty($result['success'])) {
-            return [
-                'success' => false,
-                'message' => $result['message'] ?? 'Datos no encontrados.',
-            ];
+        if ($isCheckout && $hasTripleInput) {
+            $tripleResult = $this->resolveGuestCheckoutTripleMatch(
+                $number,
+                $requestedDocTypeId,
+                $email,
+                $telephone,
+                $person
+            );
+
+            $response['triple_match'] = $tripleResult['triple_match'];
+
+            if ($tripleResult['triple_match'] && !empty($tripleResult['is_registered_customer'])) {
+                $response['exists'] = true;
+                $response['from_database'] = true;
+                $response['is_registered_customer'] = true;
+                $response['message'] = 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.';
+            } elseif ($tripleResult['triple_match'] && !empty($tripleResult['address'])) {
+                $response['address_loaded'] = true;
+                $response['is_returning_guest'] = !empty($tripleResult['is_returning_guest']);
+                $response['address'] = $tripleResult['address'];
+                $response['department_id'] = $tripleResult['department_id'] ?? null;
+                $response['province_id'] = $tripleResult['province_id'] ?? null;
+                $response['district_id'] = $tripleResult['district_id'] ?? null;
+            }
         }
 
-        return [
+        return $response;
+    }
+
+    /**
+     * Respuesta inicial de checkout invitado al consultar solo el documento (sin triple validación).
+     */
+    protected function buildCheckoutDocumentLookupResponse(Person $person, string $type): array
+    {
+        $response = [
             'success' => true,
             'type' => $type,
-            'name' => $result['data']['name'] ?? '',
+            'name' => $person->name,
         ];
+
+        if (!empty($person->password)) {
+            $response['exists'] = true;
+            $response['from_database'] = true;
+            $response['is_registered_customer'] = true;
+            $response['message'] = 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.';
+        }
+
+        return $response;
+    }
+
+    /**
+     * Valida coincidencia exacta de documento + correo + teléfono y recupera dirección guardada.
+     */
+    protected function resolveGuestCheckoutTripleMatch(
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone,
+        ?Person $person = null
+    ): array {
+        if (!$this->guestDocumentTypeMatchesNumber($docTypeId, $number)) {
+            return ['triple_match' => false];
+        }
+
+        if ($person) {
+            if (!$this->personMatchesGuestTriple($person, $number, $docTypeId, $email, $telephone)) {
+                return ['triple_match' => false];
+            }
+
+            if (!empty($person->password)) {
+                return [
+                    'triple_match' => true,
+                    'is_registered_customer' => true,
+                ];
+            }
+
+            $addressData = $this->extractPersonShippingAddress($person);
+            if (!empty($addressData['address'])) {
+                return array_merge([
+                    'triple_match' => true,
+                    'is_returning_guest' => true,
+                ], $addressData);
+            }
+        } else {
+            $orderAddress = $this->findGuestOrderAddressByTripleMatch($number, $docTypeId, $email, $telephone);
+            if ($orderAddress && !empty($orderAddress['address'])) {
+                return array_merge([
+                    'triple_match' => true,
+                    'is_returning_guest' => true,
+                ], $orderAddress);
+            }
+
+            return ['triple_match' => false];
+        }
+
+        $orderAddress = $this->findGuestOrderAddressByTripleMatch($number, $docTypeId, $email, $telephone);
+        if ($orderAddress && !empty($orderAddress['address'])) {
+            return array_merge([
+                'triple_match' => true,
+                'is_returning_guest' => true,
+            ], $orderAddress);
+        }
+
+        return ['triple_match' => true];
+    }
+
+    protected function guestDocumentTypeMatchesNumber(string $docTypeId, string $number): bool
+    {
+        if ($docTypeId === '1') {
+            return strlen($number) === 8;
+        }
+
+        if ($docTypeId === '6') {
+            return strlen($number) === 11;
+        }
+
+        return false;
+    }
+
+    protected function personMatchesGuestTriple(
+        Person $person,
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone
+    ): bool {
+        $personNumber = preg_replace('/\D/', '', (string) $person->number);
+        $personDocType = (string) ($person->identity_document_type_id ?? (strlen($personNumber) === 11 ? '6' : '1'));
+        $personEmail = strtolower(trim((string) ($person->email ?? '')));
+        $personPhone = preg_replace('/\D/', '', (string) ($person->telephone ?? ''));
+
+        return $personNumber === $number
+            && $personDocType === $docTypeId
+            && $personEmail === $email
+            && $personPhone === $telephone;
+    }
+
+    protected function extractPersonShippingAddress(Person $person): array
+    {
+        $firstAddress = $person->addresses()->first();
+
+        return [
+            'address' => $firstAddress->address ?? $person->address,
+            'department_id' => $firstAddress->department_id ?? $person->department_id,
+            'province_id' => $firstAddress->province_id ?? $person->province_id,
+            'district_id' => $firstAddress->district_id ?? $person->district_id,
+        ];
+    }
+
+    protected function findGuestOrderAddressByTripleMatch(
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone
+    ): ?array {
+        $orders = Order::query()
+            ->whereNotNull('shipping_address')
+            ->where('shipping_address', '!=', '')
+            ->orderByDesc('id')
+            ->limit(300)
+            ->get(['customer', 'shipping_address']);
+
+        foreach ($orders as $order) {
+            $customer = $order->customer;
+            if (!$customer) {
+                continue;
+            }
+
+            $customerNumber = preg_replace('/\D/', '', (string) ($customer->numero_documento ?? ''));
+            $customerDocType = (string) ($customer->identity_document_type_id ?? $customer->codigo_tipo_documento_identidad ?? '');
+            $customerEmail = strtolower(trim((string) ($customer->correo_electronico ?? '')));
+            $customerPhone = preg_replace('/\D/', '', (string) ($customer->telefono ?? ''));
+
+            if ($customerNumber !== $number) {
+                continue;
+            }
+            if ($customerDocType !== $docTypeId) {
+                continue;
+            }
+            if ($customerEmail !== $email) {
+                continue;
+            }
+            if ($customerPhone !== $telephone) {
+                continue;
+            }
+
+            return [
+                'address' => $order->shipping_address,
+                'department_id' => null,
+                'province_id' => null,
+                'district_id' => null,
+            ];
+        }
+
+        return null;
     }
 
     public function getGoogleMaps()
@@ -2257,5 +2481,111 @@ class EcommerceController extends Controller
             'success' => false,
             'message' => 'La tienda está en modo solo cotización. No es posible realizar compras.',
         ], 403);
+    }
+
+    /**
+     * Normaliza el payload customer del checkout (invitado o autenticado).
+     */
+    private function extractPaymentCustomerFromRequest(Request $request): array
+    {
+        $customer = $request->customer;
+
+        if (is_string($customer)) {
+            $customer = json_decode($customer, true) ?? [];
+        } elseif (is_object($customer)) {
+            $customer = (array) $customer;
+        } elseif (!is_array($customer)) {
+            $customer = [];
+        }
+
+        return $customer;
+    }
+
+    private function isPickupShippingAddress(?string $shippingAddress): bool
+    {
+        return stripos(trim((string) $shippingAddress), 'Recojo en tienda') === 0;
+    }
+
+    private function normalizePaymentCustomerData(array $customer, ?string $shippingAddress = null): array
+    {
+        $customer['telefono'] = preg_replace('/\D/', '', (string) ($customer['telefono'] ?? ''));
+
+        $docType = (string) ($customer['identity_document_type_id']
+            ?? $customer['codigo_tipo_documento_identidad']
+            ?? '0');
+        $customer['codigo_tipo_documento_identidad'] = $docType;
+        $customer['identity_document_type_id'] = $docType;
+        $customer['numero_documento'] = preg_replace('/\D/', '', (string) ($customer['numero_documento'] ?? '0')) ?: '0';
+
+        $direccion = trim((string) ($customer['direccion'] ?? ''));
+        if ($direccion === '' && $this->isPickupShippingAddress($shippingAddress)) {
+            $customer['direccion'] = trim((string) $shippingAddress) ?: 'Recojo en tienda';
+        }
+
+        return $customer;
+    }
+
+    private function makePaymentCustomerValidator(array $customer, ?string $shippingAddress = null)
+    {
+        $rules = [
+            'telefono' => 'required|numeric',
+            'codigo_tipo_documento_identidad' => 'required|numeric',
+            'numero_documento' => 'required|numeric',
+            'identity_document_type_id' => 'required|numeric',
+        ];
+
+        if (!$this->isPickupShippingAddress($shippingAddress)) {
+            $rules['direccion'] = 'required|string';
+        } else {
+            $rules['direccion'] = 'nullable|string';
+        }
+
+        return Validator::make($customer, $rules);
+    }
+
+    /**
+     * Obtiene email y nombre del cliente desde el usuario autenticado o el payload del request (invitado).
+     */
+    private function resolveOrderCustomerContact(Request $request, $user = null): array
+    {
+        $customer = $request->customer;
+        if (is_string($customer)) {
+            $customer = json_decode($customer, true) ?? [];
+        } elseif (is_object($customer)) {
+            $customer = (array) $customer;
+        } elseif (!is_array($customer)) {
+            $customer = [];
+        }
+
+        $purchase = $request->purchase;
+        if (is_string($purchase)) {
+            $purchase = json_decode($purchase, true) ?? [];
+        } elseif (is_object($purchase)) {
+            $purchase = (array) $purchase;
+        } elseif (!is_array($purchase)) {
+            $purchase = [];
+        }
+
+        $purchaseCustomer = $purchase['datos_del_cliente_o_receptor'] ?? [];
+        if (is_object($purchaseCustomer)) {
+            $purchaseCustomer = (array) $purchaseCustomer;
+        } elseif (!is_array($purchaseCustomer)) {
+            $purchaseCustomer = [];
+        }
+
+        $email = $user?->email
+            ?? ($customer['correo_electronico'] ?? null)
+            ?? ($customer['email'] ?? null)
+            ?? ($purchaseCustomer['correo_electronico'] ?? null);
+
+        $name = $user?->name
+            ?? ($customer['apellidos_y_nombres_o_razon_social'] ?? null)
+            ?? ($purchaseCustomer['apellidos_y_nombres_o_razon_social'] ?? null)
+            ?? 'Cliente';
+
+        return [
+            'email' => $email,
+            'name' => $name,
+        ];
     }
 }

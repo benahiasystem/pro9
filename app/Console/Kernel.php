@@ -35,6 +35,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('tenancy:run suscription:send-reminders') ->everyMinute() ->sendOutputTo(storage_path('logs/suscription_reminders.log'));
         // Limpieza de órdenes de impresión ya impresas (status=2) — pdf_b64 es pesado
         $schedule->command('tenancy:run print-orders:prune')->dailyAt('04:00')->timezone('America/Lima')->appendOutputTo(storage_path('logs/print_orders_prune.log'));
+        // Marketplace: minimización de retención (Ley 29733) — purga contactos e IPs viejas
+        $schedule->command('marketplace:purge')->dailyAt('03:30')->timezone('America/Lima')->appendOutputTo(storage_path('logs/marketplace_purge.log'));
+        $schedule->command('mozo:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/mozo_sync.log'));
+        $schedule->command('vendeya:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/vendeya_sync.log'));
         // Llena las tablas para libro mayor - Se desactiva CMAR - buscar opcion de url
         // $schedule->command('account_ledger:fill')->hourly();
         

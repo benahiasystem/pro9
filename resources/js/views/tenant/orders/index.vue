@@ -62,7 +62,7 @@
                         <th class="text-end">Opciones</th>
                     </tr>
                     <tr></tr>
-                    <tr slot-scope="{ index, row }">
+                    <tr slot-scope="{ index, row }" :class="{ 'order-voided-row': isVoided(row) }">
                         <!-- <td>{{ index }}</td> -->
                         <td>
                             <a href="#" @click.prevent="openDetail(row)" class="text-primary">
@@ -185,6 +185,7 @@
                                     v-model="row.payment_status_order_id"
                                     placeholder="Estado de pago"
                                     :value="row.payment_status_order_id"
+                                    :disabled="isVoided(row)"
                                     @change="updateStatus(row, 'payment_status_order_id')"
                                 >
                                     <el-option
@@ -214,6 +215,7 @@
                                     v-model="row.shipping_status_order_id"
                                     placeholder="Estado de envío"
                                     :value="row.shipping_status_order_id"
+                                    :disabled="isVoided(row)"
                                     @change="updateStatus(row, 'shipping_status_order_id')"
                                 >
                                     <el-option
@@ -243,6 +245,7 @@
                                     v-model="row.status_order_id"
                                     placeholder="Estado de pedido"
                                     :value="row.status_order_id"
+                                    :disabled="isVoided(row)"
                                     @change="updateStatus(row, 'status_order_id')"
                                 >
                                     <el-option
@@ -266,28 +269,37 @@
                             </template>
                         </td>
                         <td class="text-end">
-                            <template v-if="row.document_type_id == '80'">
+                            <el-tag v-if="isVoided(row)" type="danger" size="small" effect="plain">
+                                Anulado
+                            </el-tag>
+                            <div v-else class="d-inline-flex align-items-center justify-content-end gap-1">
+                                <template v-if="row.document_type_id == '80'">
+                                    <el-button
+                                        type="primary"
+                                        size="mini"
+                                        icon="el-icon-tickets"
+                                        title="Opciones de nota de venta"
+                                        @click.prevent="openSaleNoteOptions(row)"
+                                    ></el-button>
+                                </template>
+                                <template v-else>
+                                    <el-button
+                                        type="primary"
+                                        size="mini"
+                                        icon="el-icon-tickets"
+                                        title="Opciones de comprobante"
+                                        @click.prevent="openDocumentOptions(row)"
+                                    ></el-button>
+                                </template>
                                 <el-button
-                                    v-if="row.sale_note_id"
-                                    class="submit"
-                                    type="success"
-                                    icon="el-icon-tickets"
-                                    @click.prevent="
-                                        clickOptions(row.sale_note_id)
-                                    "
+                                    v-if="canGenerateGuide(row)"
+                                    type="default"
+                                    size="mini"
+                                    icon="el-icon-truck"
+                                    title="Generar guía"
+                                    @click.prevent="goToGuide(row)"
                                 ></el-button>
-                            </template>
-                            <template v-else>
-                                <el-button
-                                    v-if="row.document_external_id"
-                                    class="submit"
-                                    type="success"
-                                    icon="el-icon-tickets"
-                                    @click.prevent="
-                                        clickDownload(row.document_external_id)
-                                    "
-                                ></el-button>
-                            </template>
+                            </div>
                         </td>
                     </tr>
                 </data-table>
@@ -383,6 +395,8 @@
             :showDialog.sync="showDialogSaleNote"
             :orderId="order_id"
             :dataSaleNote="dataSaleNote"
+            :statusField="statusField"
+            :statusValue="record ? record[statusField] : null"
         >
         </sale-note-form>
         <status-order-modal
@@ -396,6 +410,11 @@
     </div>
 </template>
 <style>
+/* Pedido anulado: texto en rojo en toda la fila (patrón consistente con anulaciones) */
+.order-voided-row td,
+.order-voided-row td a {
+    color: #c0392b !important;
+}
 /* Estado con color: se pinta el propio select (borde, fondo, texto) con el punto dentro */
 .status-select-wrap {
     position: relative;
@@ -549,6 +568,36 @@ export default {
             this.resource_options = "sale-notes";
             this.showDialogOptions = true;
         },
+        openSaleNoteOptions(row) {
+            if (!row.sale_note_id) {
+                return this.$message.warning('Este pedido aún no tiene nota de venta. Cambia el estado del pedido para generarla.');
+            }
+
+            this.clickOptions(row.sale_note_id);
+        },
+        openDocumentOptions(row) {
+            if (!row.document_external_id) {
+                return this.$message.warning('Este pedido aún no tiene comprobante electrónico. Cambia el estado del pedido para generarlo.');
+            }
+
+            this.clickDownload(row.document_external_id);
+        },
+        // El pedido está anulado si alguno de sus estados actuales tiene "Anular pedido".
+        isVoided(row) {
+            const ids = [
+                row.status_order_id,
+                row.payment_status_order_id,
+                row.shipping_status_order_id,
+            ];
+            return this.options.some(o => ids.includes(o.id) && o.action_void_order);
+        },
+        // La guía se arma sobre la nota de venta: basta con que exista para permitirla.
+        canGenerateGuide(row) {
+            return !!row.sale_note_id;
+        },
+        goToGuide(row) {
+            window.location.href = `/dispatches/create_new/sale_note/${row.sale_note_id}`;
+        },
         async clickDownload(row) {
             await this.$http
                 .get(`/documents/search/externalId/${row}`)
@@ -596,7 +645,37 @@ export default {
             // Obtener el objeto de estado completo desde las opciones cargadas
             const selectedStatus = this.options.find(o => o.id === record[field])
 
-            if (selectedStatus && selectedStatus.action_discount_stock) {
+            if (selectedStatus && selectedStatus.action_void_order) {
+                this.$confirm(
+                    'Se anulará el pedido y se revertirá el stock (y la nota de venta si existe). Esta acción no se puede deshacer.',
+                    'Anular pedido',
+                    { confirmButtonText: 'Anular', cancelButtonText: 'Cancelar', type: 'warning' }
+                ).then(() => {
+                    this.saveUpdateStatus();
+                    this.$eventHub.$emit('reloadData');
+                }).catch(() => {
+                    // Cancelado: revertir el estado visual al valor de BD
+                    this.$eventHub.$emit('reloadData');
+                });
+                return;
+            } else if (selectedStatus && selectedStatus.action_generate_document) {
+                this.order_id = record.id;
+
+                if (record.purchase.codigo_tipo_documento == "80") {
+                    if (record.has_sale_note)
+                        return this.$message.success(
+                            "Ya existe una nota de venta"
+                        );
+                    this.openDialogSaleNote(record.purchase);
+                } else {
+                    if (record.document_external_id) {
+                        return this.$message.success(
+                            "Ya existe un comprobante."
+                        );
+                    }
+                    this.$refs.document_form.sendPreview(record.purchase);
+                }
+            } else if (selectedStatus && selectedStatus.action_discount_stock) {
                 // Si la orden ya tiene el flag de stock descontado, no continuar
                 if (record.stock_discounted) {
                     this.$message.success('El stock ya fue descontado para esta orden');

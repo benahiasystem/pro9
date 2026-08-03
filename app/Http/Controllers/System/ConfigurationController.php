@@ -169,6 +169,30 @@ class ConfigurationController extends Controller
             }
             $config->login = $loginConfig;
             $config->save();
+
+            if (request('type') !== 'bg') {
+                $mozoConfigService = app(\App\Services\System\MozoConfigurationService::class);
+                $mozoConfig = $mozoConfigService->get();
+
+                if (($mozoConfig['useSystemLogo'] ?? true)) {
+                    app(\App\Services\System\MozoLogoService::class)->applySystemLogo();
+                    $mozoConfigService->update([
+                        'useSystemLogo' => true,
+                        'logoVersion' => time(),
+                    ]);
+                }
+
+                $vendeyaConfigService = app(\App\Services\System\VendeyaConfigurationService::class);
+                $vendeyaConfig = $vendeyaConfigService->get();
+
+                if (($vendeyaConfig['useSystemLogo'] ?? true)) {
+                    app(\App\Services\System\VendeyaLogoService::class)->applySystemLogo();
+                    $vendeyaConfigService->update([
+                        'useSystemLogo' => true,
+                        'logoVersion' => time(),
+                    ]);
+                }
+            }
         }
 
         return response()->json([

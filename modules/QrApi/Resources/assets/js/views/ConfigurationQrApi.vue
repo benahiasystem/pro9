@@ -101,6 +101,63 @@
                                 Conectar
                             </el-button>
                         </div>
+
+                        <hr>
+                        <div v-if="!linkMode" class="text-center">
+                            <el-button type="text" size="small" @click="linkMode = true">
+                                ¿Ya tienes un canal conectado en ChatBuho? Vincúlalo aquí
+                            </el-button>
+                        </div>
+                        <div v-else>
+                            <p class="text-muted small">
+                                Vincula un canal que ya está conectado y escaneado en ChatBuho, sin volver a escanear
+                                el QR.
+                            </p>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label class="control-label">Nombre de canal/instancia</label>
+                                    <el-input v-model="linkInstanceName" placeholder="ej. 51987654321"></el-input>
+                                </div>
+                                <div class="col-md-12 mt-3">
+                                    <label class="control-label">Número de WhatsApp conectado a ese canal</label>
+                                    <div class="d-flex phone-input-group">
+                                        <el-select v-model="linkCountryCode" class="phone-country-select">
+                                            <el-option
+                                                v-for="c in countryCodes"
+                                                :key="c.code"
+                                                :value="c.code"
+                                                :label="`${c.flag} +${c.code}`">
+                                            </el-option>
+                                        </el-select>
+                                        <el-input
+                                            v-model="linkLocalNumber"
+                                            placeholder="987654321"
+                                            @input="linkLocalNumber = linkLocalNumber.replace(/\D/g, '')">
+                                        </el-input>
+                                    </div>
+                                </div>
+                                <div class="col-md-12 mt-3">
+                                    <label class="control-label">Token de la instancia</label>
+                                    <el-input v-model="linkToken" placeholder="ej. 26459C33-29BF-43F4-AE55-E02B23B74483" show-password></el-input>
+                                    <small class="text-muted">
+                                        Cópialo desde el Evolution Manager de esa instancia (no es el número, es el
+                                        código que aparece oculto debajo del nombre del canal). Es necesario para
+                                        confirmar que administras esa instancia.
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="mt-3 text-end">
+                                <el-button size="small" @click="linkMode = false">Cancelar</el-button>
+                                <el-button
+                                    size="small"
+                                    type="primary"
+                                    :loading="loading_link"
+                                    :disabled="!canLink"
+                                    @click="linkExisting">
+                                    Conectar con ChatBuho
+                                </el-button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Estado: disconnected -->
@@ -117,11 +174,13 @@
                             <el-button size="small" type="primary" :loading="loading" icon="el-icon-link" @click="startReconnect">
                                 Reconectar instancia
                             </el-button>
-                            <el-button size="small" type="danger" plain :loading="loading_renew" icon="el-icon-refresh-right" @click="confirmRenew">
+                            <el-button
+                                v-if="!instanceAdopted"
+                                size="small" type="danger" plain :loading="loading_renew" icon="el-icon-refresh-right" @click="confirmRenew">
                                 Renovar instancia
                             </el-button>
                             <el-button size="small" type="warning" :loading="loading_disconnect" @click="confirmDisconnect">
-                                Conectar nuevo número
+                                {{ instanceAdopted ? 'Desvincular' : 'Conectar nuevo número' }}
                             </el-button>
                         </div>
                     </div>
@@ -165,6 +224,26 @@
                                     </el-tag>
                                 </div>
                             </div>
+                            <div v-if="form.instance_token" class="col-md-12 mt-2">
+                                <small class="text-muted d-block mb-1">
+                                    Token de la instancia — cópialo si quieres vincular esta misma instancia desde ChatBuho.
+                                </small>
+                                <div class="d-flex phone-input-group">
+                                    <el-input
+                                        :value="form.instance_token"
+                                        :type="tokenVisible ? 'text' : 'password'"
+                                        readonly>
+                                        <template slot="suffix">
+                                            <i
+                                                class="el-icon-view"
+                                                style="cursor: pointer; padding: 0 8px;"
+                                                @click="tokenVisible = !tokenVisible">
+                                            </i>
+                                        </template>
+                                    </el-input>
+                                    <el-button icon="el-icon-document-copy" @click="copyToken(form.instance_token)"></el-button>
+                                </div>
+                            </div>
                         </div>
                         <div class="qr-action-row mt-3">
                             <el-button size="small" :loading="loading_check" icon="el-icon-view" @click="checkStateManual">
@@ -173,11 +252,13 @@
                             <el-button size="small" :loading="loading_restart" icon="el-icon-refresh" @click="restart">
                                 Reiniciar conexión
                             </el-button>
-                            <el-button size="small" type="danger" plain :loading="loading_renew" icon="el-icon-refresh-right" @click="confirmRenew">
+                            <el-button
+                                v-if="!instanceAdopted"
+                                size="small" type="danger" plain :loading="loading_renew" icon="el-icon-refresh-right" @click="confirmRenew">
                                 Renovar instancia
                             </el-button>
                             <el-button size="small" type="warning" :loading="loading_disconnect" @click="confirmDisconnect">
-                                Conectar nuevo número
+                                {{ instanceAdopted ? 'Desvincular' : 'Conectar nuevo número' }}
                             </el-button>
                         </div>
                     </div>
@@ -198,10 +279,13 @@ export default {
                 qr_api_use_bot_instance: false,
                 qr_api_pdf_format: 'ticket',
                 qr_api_instance: null,
+                qr_api_instance_adopted: false,
                 qr_api_connected_phone: null,
                 qr_api_profile_name: null,
+                instance_token: null,
                 qr_api_connection_state: 'disconnected',
                 evolution_instance: null,
+                evolution_instance_adopted: false,
                 evolution_connected_phone: null,
                 whatsapp_messages_used: 0,
                 whatsapp_messages_limit: null,
@@ -216,6 +300,29 @@ export default {
             loading_restart: false,
             loading_renew: false,
             loading_disconnect: false,
+            loading_link: false,
+            tokenVisible: false,
+            linkMode: false,
+            linkInstanceName: '',
+            linkCountryCode: '51',
+            linkLocalNumber: '',
+            linkToken: '',
+            countryCodes: [
+                { code: '51', flag: '🇵🇪', name: 'Perú' },
+                { code: '57', flag: '🇨🇴', name: 'Colombia' },
+                { code: '52', flag: '🇲🇽', name: 'México' },
+                { code: '56', flag: '🇨🇱', name: 'Chile' },
+                { code: '593', flag: '🇪🇨', name: 'Ecuador' },
+                { code: '591', flag: '🇧🇴', name: 'Bolivia' },
+                { code: '54', flag: '🇦🇷', name: 'Argentina' },
+                { code: '58', flag: '🇻🇪', name: 'Venezuela' },
+                { code: '507', flag: '🇵🇦', name: 'Panamá' },
+                { code: '595', flag: '🇵🇾', name: 'Paraguay' },
+                { code: '598', flag: '🇺🇾', name: 'Uruguay' },
+                { code: '506', flag: '🇨🇷', name: 'Costa Rica' },
+                { code: '1', flag: '🇩🇴', name: 'Rep. Dominicana' },
+                { code: '34', flag: '🇪🇸', name: 'España' },
+            ],
             pollTimer: null,
             resource: 'qrapi',
         };
@@ -229,6 +336,19 @@ export default {
         },
         canStart() {
             return /^[A-Za-z0-9_\-]{3,40}$/.test(this.instanceName);
+        },
+        linkFullNumber() {
+            return `${this.linkCountryCode}${this.linkLocalNumber}`;
+        },
+        canLink() {
+            return /^[A-Za-z0-9_\-]{3,40}$/.test(this.linkInstanceName)
+                && /^\d{6,13}$/.test(this.linkLocalNumber)
+                && this.linkToken.trim().length > 0;
+        },
+        instanceAdopted() {
+            return this.form.qr_api_use_bot_instance
+                ? !!this.form.evolution_instance_adopted
+                : !!this.form.qr_api_instance_adopted;
         },
         whatsappUsagePct() {
             if (this.form.whatsapp_messages_unlimited || !this.form.whatsapp_messages_limit) return 0;
@@ -249,12 +369,21 @@ export default {
         this.stopPolling();
     },
     methods: {
+        async copyToken(token) {
+            try {
+                await navigator.clipboard.writeText(token);
+                this.$message({ message: 'Token copiado', type: 'success' });
+            } catch (e) {
+                this.$message({ message: 'No se pudo copiar el token', type: 'error' });
+            }
+        },
         async getConfig() {
             try {
                 const { data } = await this.$http.get(`/${this.resource}/configuration`);
                 this.form = { ...this.form, ...data };
                 this.lastState = data.qr_api_connection_state;
                 if (this.step === 'connected') {
+                    this.checkState();
                     this.startPolling(15000);
                 }
             } catch (e) {
@@ -276,12 +405,16 @@ export default {
         async onToggleUseBot(value) {
             // Si se activa el toggle y ya hay un número conectado, confirmar la desconexión
             if (value && this.form.qr_api_instance) {
+                const message = this.form.qr_api_instance_adopted
+                    ? `Tu número actual (${this.form.qr_api_instance}) se desvinculará de QrApi, pero seguirá conectado en ` +
+                      `ChatBuho (no se elimina en Evolution). ¿Continuar?`
+                    : `Tu número actual (${this.form.qr_api_instance}) se desconectará y se eliminará. ` +
+                      `Si quieres volver a usarlo, tendrás que escanear un QR nuevo. ¿Continuar?`;
                 try {
                     await this.$confirm(
-                        `Tu número actual (${this.form.qr_api_instance}) se desconectará y se eliminará. ` +
-                        `Si quieres volver a usarlo, tendrás que escanear un QR nuevo. ¿Continuar?`,
+                        message,
                         'Usar el número del Bot',
-                        { confirmButtonText: 'Sí, desconectar y usar el del Bot', cancelButtonText: 'Cancelar', type: 'warning' }
+                        { confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar', type: 'warning' }
                     );
                 } catch {
                     return;
@@ -302,6 +435,7 @@ export default {
             // Si activamos el toggle y se desconectó el número propio, reflejarlo en la UI
             if (value) {
                 this.form.qr_api_instance = null;
+                this.form.qr_api_instance_adopted = false;
                 this.form.qr_api_connected_phone = null;
                 this.form.qr_api_profile_name = null;
                 this.form.qr_api_connection_state = 'disconnected';
@@ -319,6 +453,7 @@ export default {
                 if (data.success) {
                     this.form.qr_api_instance = data.instance_name;
                     this.form.qr_api_connection_state = 'connecting';
+                    this.form.qr_api_instance_adopted = false;
                     this.reconnecting = true;
                     await this.$nextTick();
                     this.refreshQr();
@@ -330,6 +465,36 @@ export default {
                 this.$message({ message: 'Error al iniciar la conexión', type: 'error' });
             } finally {
                 this.loading = false;
+            }
+        },
+        async linkExisting() {
+            this.loading_link = true;
+            try {
+                const { data } = await this.$http.post(`/${this.resource}/link-existing`, {
+                    instance_name: this.linkInstanceName,
+                    phone_number: this.linkFullNumber,
+                    token: this.linkToken,
+                });
+                if (data.success) {
+                    this.form.qr_api_instance = data.instance_name;
+                    this.form.qr_api_connection_state = 'open';
+                    this.form.qr_api_instance_adopted = true;
+                    this.form.qr_api_use_bot_instance = false;
+                    this.lastState = 'open';
+                    this.linkMode = false;
+                    this.linkInstanceName = '';
+                    this.linkLocalNumber = '';
+                    this.linkToken = '';
+                    this.$message({ message: data.message, type: 'success' });
+                    await this.checkState();
+                    this.startPolling(15000);
+                } else {
+                    this.$message({ message: data.message || 'No se pudo vincular la instancia', type: 'error' });
+                }
+            } catch (e) {
+                this.$message({ message: 'Error al vincular la instancia', type: 'error' });
+            } finally {
+                this.loading_link = false;
             }
         },
         async refreshQr(attempts = 4) {
@@ -362,6 +527,13 @@ export default {
                 this.pollTimer = null;
             }
         },
+        setInstanceAdopted(value) {
+            if (this.form.qr_api_use_bot_instance) {
+                this.form.evolution_instance_adopted = value;
+            } else {
+                this.form.qr_api_instance_adopted = value;
+            }
+        },
         async checkState() {
             try {
                 const { data } = await this.$http.get(`/${this.resource}/state`);
@@ -369,6 +541,8 @@ export default {
                 this.lastState = data.state;
                 if (data.connected_phone) this.form.qr_api_connected_phone = data.connected_phone;
                 if (data.profile_name) this.form.qr_api_profile_name = data.profile_name;
+                if (data.instance_adopted !== undefined) this.setInstanceAdopted(data.instance_adopted);
+                this.form.instance_token = data.instance_token || null;
                 if (data.connected && this.form.qr_api_connection_state !== 'open') {
                     this.form.qr_api_connection_state = 'open';
                     this.reconnecting = false;
@@ -389,6 +563,8 @@ export default {
                 const { data } = await this.$http.get(`/${this.resource}/state`);
                 if (data.success) {
                     this.lastState = data.state;
+                    if (data.instance_adopted !== undefined) this.setInstanceAdopted(data.instance_adopted);
+                    this.form.instance_token = data.instance_token || null;
                     this.$message({
                         message: data.connected ? `Conectado (${data.state})` : `Estado: ${data.state}`,
                         type: data.connected ? 'success' : 'warning',
@@ -441,6 +617,7 @@ export default {
                 const { data } = await this.$http.post(`/${this.resource}/renew`);
                 if (data.success) {
                     this.form.qr_api_connection_state = 'connecting';
+                    this.form.qr_api_instance_adopted = false;
                     this.qrImage = null;
                     this.lastState = 'connecting';
                     this.reconnecting = true;
@@ -458,10 +635,14 @@ export default {
             }
         },
         confirmDisconnect() {
+            const message = this.instanceAdopted
+                ? 'Esto desvinculará QrApi de esta instancia, pero seguirá conectada en ChatBuho (no se elimina en Evolution). ¿Continuar?'
+                : 'Esto desconectará el WhatsApp actual y eliminará la instancia. Tendrás que escanear un nuevo QR. ¿Continuar?';
+            const title = this.instanceAdopted ? 'Desvincular' : 'Conectar nuevo número';
             this.$confirm(
-                'Esto desconectará el WhatsApp actual y eliminará la instancia. Tendrás que escanear un nuevo QR. ¿Continuar?',
-                'Conectar nuevo número',
-                { confirmButtonText: 'Sí, desconectar', cancelButtonText: 'Cancelar', type: 'warning' }
+                message,
+                title,
+                { confirmButtonText: this.instanceAdopted ? 'Sí, desvincular' : 'Sí, desconectar', cancelButtonText: 'Cancelar', type: 'warning' }
             ).then(() => this.disconnect()).catch(() => {});
         },
         async disconnect() {
@@ -470,12 +651,17 @@ export default {
                 const { data } = await this.$http.post(`/${this.resource}/disconnect`);
                 if (data.success) {
                     this.form.qr_api_instance = null;
+                    this.form.qr_api_instance_adopted = false;
                     this.form.qr_api_connection_state = 'disconnected';
                     this.form.qr_api_connected_phone = null;
                     this.form.qr_api_profile_name = null;
                     this.instanceName = '';
                     this.qrImage = null;
                     this.lastState = null;
+                    this.linkMode = false;
+                    this.linkInstanceName = '';
+                    this.linkLocalNumber = '';
+                    this.linkToken = '';
                     this.stopPolling();
                     this.$message({ message: data.message, type: 'success' });
                 } else {
@@ -521,5 +707,11 @@ export default {
 }
 .qr-action-row > .el-button {
     margin-left: 0 !important;
+}
+.phone-input-group {
+    gap: 8px;
+}
+.phone-country-select {
+    flex: 0 0 130px;
 }
 </style>

@@ -19,7 +19,7 @@
     --danger: #ff0066;
     --success: #00c666;
     --warning: #ff8400;
-    --primary: #007bff;
+    --primary: var(--primary-color);
     --info: #1dadff; 
 }
 html, body {
@@ -137,7 +137,7 @@ label.control-label {
 }
 
 .text-info {
-    color: var(--primary-color) !important;
+    color: var(--info) !important;
 }
 .sidebar-left .sidebar-header{
     margin-bottom: 0;
@@ -244,6 +244,16 @@ html.sidebar-white .el-button--primary {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
 }
+.el-button--danger.is-plain {
+    color: var(--danger) !important;
+    background: color-mix(in srgb, var(--danger) 10%, #fff) !important;
+    border-color: color-mix(in srgb, var(--danger) 30%, #fff) !important;
+}
+.el-button--danger.is-plain:hover {
+    color: #fff !important;
+    background: var(--danger) !important;
+    border-color: var(--danger) !important;
+}
 .btn-danger {
     background-color: var(--danger);
     border-color: var(--danger);
@@ -264,27 +274,27 @@ html.sidebar-white .el-button--primary {
     box-shadow: unset;
 }
 .badge-info {
-    background: #1dacff42 !important;
+    background: color-mix(in srgb, var(--info) 10%, #ffffff00) !important;
     color: var(--info) !important;
 }
 .badge-success{
-    background: rgb(35 218 149 / 20%) !important;
-    color: #23da95 !important;
+    background: color-mix(in srgb, var(--success) 10%, #ffffff00) !important;
+    color: var(--success) !important;
 }
 .badge-warning {
-    background-color: #ff840036 !important;
+    background-color: color-mix(in srgb, var(--warning) 10%, #ffffff00) !important;
     color: var(--warning) !important;
 }
 .badge-primary{
-    background-color: #007bff45 !important;
+    background-color: color-mix(in srgb, var(--primary-color) 10%, #ffffff00) !important;
     color: var(--primary) !important;
 }
 .badge-dark{
-    background-color: #27374736 !important;
+    background-color: color-mix(in srgb, var(--dark-color) 10%, #ffffff00) !important;
     color: var(--dark-color) !important;
 }
 .badge-secondary{
-    background-color: #75859536 !important;
+    background-color: color-mix(in srgb, var(--muted) 10%, #ffffff00) !important;
     color: var(--muted) !important;
 }
 .number-code-country{
@@ -674,7 +684,9 @@ html.sidebar-left-big-icons.sidebar-light .sidebar-left .configuration-nav .nav-
     color: var(--dark-color);
 }
 .text-primary-new,
-.text-primary{
+.text-primary,
+.el-tabs__item.is-active,
+.el-tabs__item:hover{
     color: var(--primary-color) !important;
 }
 .card-body, .card-header+.card-body, .card-header {
@@ -1139,8 +1151,12 @@ tbody tr:hover td.sticky-column {
     color: var(--danger) !important;
 }
 .text-danger.option-delete:hover {
-    background-color: #ffebeb !important;
+    background-color: color-mix(in srgb, var(--danger) 10%, #fff) !important;
     color: var(--danger) !important;
+}
+.text-danger.option-warning:hover {
+    background-color: color-mix(in srgb, var(--warning) 10%, #fff) !important;
+    color: var(--warning) !important;
 }
 .table>:not(caption)>*>* {
     border: none;
@@ -1297,6 +1313,16 @@ div.sub-title.text-muted{
 .table-background td{
     background-color: color-mix(in srgb, var(--primary-color) 8%, #ffffff00) !important;
 } */
+.el-radio-button__inner:hover {
+    color: var(--primary-color) !important;
+}
+.el-radio-button__orig-radio:checked+.el-radio-button__inner {
+    color: #fff !important;
+    background-color: var(--primary-color) !important;
+    border-color: var(--primary-color) !important;
+    -webkit-box-shadow: -1px 0 0 0 var(--primary-color) !important;
+    box-shadow: -1px 0 var(--primary-color) !important;
+}
 @media only screen and (max-width: 767px) {
     html.sidebar-left-big-icons .sidebar-left {
         left: -100% !important;

@@ -331,10 +331,8 @@
                                 </div>
                             </div>
                         </div>
-                        </div>
 
-                        <div class="subsection-panel">
-                            <div class="row section-subgroup">
+                            <div class="row mt-2">
                                 <div class="col-12 mb-2">
                                     <h6 class="section-subtitle-sm">Detalles de dirección</h6>
                                 </div>
@@ -432,29 +430,29 @@
                             </div>
                         </div>
                         <div v-for="(row, index) in form.addresses"
-                             class="row m-t-10">
-                            <div class="col-md-12">
-                                <label v-if="index === 0"
-                                       class="control-label">
-                                    Dirección principal
-                                </label>
-                                <label v-else
-                                       class="control-label">
-                                    Dirección secundaria # {{ index }}
-                                    <el-button class="btn-default-danger"
-                                               icon="el-icon-minus"
-                                               size="mini"
-                                               @click.prevent="clickRemoveAddress(index)">Eliminar dirección
-                                    </el-button>
-                                </label>
+                             :key="'person-address-' + index"
+                             class="address-card">
+                            <div class="address-card__header">
+                                <span class="address-card__title">
+                                    <template v-if="index === 0">Dirección principal</template>
+                                    <template v-else>Dirección secundaria #{{ index }}</template>
+                                </span>
+                                <el-button v-if="index !== 0"
+                                           class="address-card__remove"
+                                           type="danger"
+                                           plain
+                                           icon="el-icon-delete"
+                                           size="mini"
+                                           @click.prevent="clickRemoveAddress(index)">
+                                    Eliminar dirección
+                                </el-button>
                             </div>
+                            <div class="row">
                             <div class="col-md-4">
                                 <div :class="{'has-danger': errors.country_id}"
                                      class="form-group">
                                     <label class="control-label">País</label>
                                     <el-select v-model="row.country_id"
-                                               filterable
-                                               @change="handleCountryChange(row, index)">
                                                filterable
                                                @change="handleCountryChange(row, index)">
                                         <el-option v-for="option in countries"
@@ -561,6 +559,7 @@
                                         class="invalid-feedback"
                                         v-text="errors.consigned_id[0]"></small>
                                 </div>
+                            </div>
                             </div>
                         </div>
                     </el-tab-pane>
@@ -1707,6 +1706,47 @@ export default {
   font-weight: 600;
   color: #1f3a8a;
   font-size: 0.98rem;
+}
+
+/* ---- Tarjetas de direcciones adicionales ---- */
+.address-card {
+  border: 1px solid #dbe9f8;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 1rem 1rem 0.35rem;
+  margin-top: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.address-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #e7eff9;
+}
+
+.address-card__title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1f3a8a;
+  line-height: 1.3;
+}
+
+.address-card__remove.el-button--danger.is-plain {
+  color: #c45656;
+  background: #fff5f5;
+  border-color: #f0c0c0;
+}
+
+.address-card__remove.el-button--danger.is-plain:hover,
+.address-card__remove.el-button--danger.is-plain:focus {
+  color: #fff;
+  background: #f56c6c;
+  border-color: #f56c6c;
 }
 
 .section-subtitle-sm {

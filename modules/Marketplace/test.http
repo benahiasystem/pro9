@@ -1,0 +1,375 @@
+# Marketplace — API para la app móvil
+#
+# Recorrido completo del ciclo de vida de una tienda, en orden.
+# Sirve como referencia de integración: cada bloque es un estado real por el
+# que pasa la app.
+#
+# Requiere la extensión REST Client de VSCode (humao.rest-client).
+#
+# Autenticación: token global del reseller (api_token de App\Models\System\User).
+# Es el mismo que la app ya usa. No hay tokens por tienda.
+# La identidad de la tienda viaja en el payload: `external_uuid`.
+
+@token    = 1qva7l8VHuAbSppuFkT4rQ9YA7hXKDDEhBunzz3IQ1Lu9wx1OHp3uUlrlAeP
+@api_url  = http://facturaloperu-pro8.oo
+@base     = {{api_url}}/api/v1/marketplace
+
+# UUID de la tienda. En producción la app envía el uuid de su instalación.
+@uuid     = 11111111-1111-4111-8111-111111111111
+
+
+###############################################################################
+# 1. ARRANQUE — la app abre por primera vez
+###############################################################################
+
+### 1.1 ¿Esta tienda ya sincronizó alguna vez?
+# 404 = nunca sincronizó. La app muestra la pantalla de "publica tu tienda".
+GET {{base}}/status/{{uuid}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+
+###############################################################################
+# 2. MARKETPLACE APAGADO — el admin aún no lo publicó
+#
+# >>> En el admin (/marketplace/admin -> Ajustes): interruptor APAGADO
+###############################################################################
+
+### 2.1 Sync con el marketplace apagado
+# Responde 200, NO un error. No escribe nada: la app reintentará más tarde.
+#
+#   { "marketplace_enabled": false, "message": "...", "status": null, ... }
+#
+# REGLA DE INTEGRACIÓN: leer `marketplace_enabled` ANTES que `status`.
+# Es lo único que distingue "el marketplace está apagado" de "tu tienda
+# está pendiente de aprobación". Si es false, mostrar el `message` y
+# reintentar luego; nunca tratarlo como fallo de red.
+POST {{base}}/sync
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "store": {
+    "external_uuid": "{{uuid}}",
+    "name": "Bodega Doña Carmen",
+    "whatsapp": "51987003344"
+  },
+  "items": []
+}
+
+
+###############################################################################
+# 3. DATOS INVÁLIDOS — qué errores debe manejar la app
+#
+# >>> En el admin: ENCENDER el interruptor antes de seguir
+###############################################################################
+
+### 3.1 Errores de validación -> 422
+# Tres fallos a la vez:
+#   - whatsapp: debe ser E.164 SIN "+" ni espacios (51987003344)
+#   - external_uuid: 36 caracteres
+#   - items: external_id duplicado (colisiona con el unique store+external_id)
+#
+# Respuesta: { "success": false, "message": { "campo": ["mensaje"], ... } }
+# La app debe mostrar esos mensajes por campo.
+POST {{base}}/sync
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "store": {
+    "external_uuid": "no-es-un-uuid",
+    "name": "Bodega Doña Carmen",
+    "whatsapp": "+51 987 003 344"
+  },
+  "items": [
+    { "external_id": "A-105", "name": "Arroz Costeño 5KG" },
+    { "external_id": "A-105", "name": "Arroz Costeño 5KG (duplicado)" }
+  ]
+}
+
+
+###############################################################################
+# 4. PRIMER SYNC CORRECTO — la tienda queda pendiente de aprobación
+###############################################################################
+
+### 4.1 Enviar tienda + catálogo completo
+# Es el único endpoint de escritura: siempre se manda TODO el catálogo.
+#
+# Esperado: status "pending", public_url null, items_published 0.
+# Al sincronizar por primera vez, la tienda acepta implícitamente los T&C
+# (usar `terms_url` para enlazarlos; si llega null, no mostrar el enlace).
+#
+# Las 3 grafías de "Abarrotes" colapsan en UNA sola categoría (llave = slug).
+POST {{base}}/sync
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "store": {
+    "external_uuid": "{{uuid}}",
+    "name": "Bodega Doña Carmen",
+    "tax_id": "20512345678",
+    "email": "carmen@bodega.pe",
+    "whatsapp": "51987003344",
+    "description": "Abarrotes, bebidas y todo lo del día a día.",
+    "address": "Block 4 · tienda 3",
+    "show_prices": true
+  },
+  "items": [
+    {
+      "external_id": "A-105",
+      "name": "Arroz Costeño Extra 5KG",
+      "internal_code": "AR-5",
+      "barcode": "7501234567890",
+      "category": "Abarrotes",
+      "price": 24.90,
+      "description": "Saco de 5 kg, grano extra."
+    },
+    {
+      "external_id": "A-021",
+      "name": "Aceite Primor Clásico 1L",
+      "internal_code": "AC-1",
+      "category": "ABARROTES",
+      "price": 12.50
+    },
+    {
+      "external_id": "A-044",
+      "name": "Leche Gloria Azul Pack x6",
+      "internal_code": "LG-6",
+      "category": "abarrotes"
+    }
+  ],
+  "app_version": "3.4.0"
+}
+# Campos nuevos (todos opcionales):
+#   store.show_prices  bool  — si el catálogo publica precios. Ausente = false.
+#   items[].price      num   — precio de venta. Se guarda siempre; solo se
+#                              muestra si show_prices está activo.
+#   items[].description str  — descripción del producto (modal). Se omite si
+#                              coincide con el nombre.
+
+
+### 4.2 Consultar estado mientras espera aprobación
+# La app puede llamar a esto al abrir, sin reenviar el catálogo.
+# Esperado: "pending", public_url null.
+GET {{base}}/status/{{uuid}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+
+###############################################################################
+# 5. APROBADA — ya es visible al público
+#
+# >>> En el admin -> Tiendas: aprobar "Bodega Doña Carmen"
+###############################################################################
+
+### 5.1 Estado tras la aprobación
+# Esperado: "approved", public_url con la URL compartible, items_published 3.
+# La app ya puede mostrar el botón "compartir mi tienda" con esa URL.
+GET {{base}}/status/{{uuid}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+
+###############################################################################
+# 6. SYNC DE ACTUALIZACIÓN — el día a día de la tienda
+###############################################################################
+
+### 6.1 Cambia el nombre, se añade un producto, se quita otro, llega una imagen
+# Una tienda aprobada publica al instante: no vuelve a pasar por revisión.
+#
+# Cuatro cosas que comprobar en la respuesta y en el admin:
+#   - sigue "approved"
+#   - public_url NO cambia pese al nuevo nombre (el slug es inmutable, para no
+#     romper los enlaces ya compartidos por WhatsApp)
+#   - A-044 desaparece del payload -> queda "inactive", NO se borra
+#   - A-105 trae image_base64 -> se guarda su foto
+#
+# Sobre imágenes: enviar `image_base64` SOLO cuando la foto cambie. Mandar
+# siempre `image_hash` permite omitir el base64 y mantener los syncs en KB.
+POST {{base}}/sync
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "store": {
+    "external_uuid": "{{uuid}}",
+    "name": "Minimarket Doña Carmen EIRL",
+    "tax_id": "20512345678",
+    "email": "carmen@bodega.pe",
+    "whatsapp": "51987003344",
+    "description": "Abarrotes, bebidas y delivery dentro del condominio.",
+    "address": "Block 4 · tienda 3",
+    "logo_hash": "logo-v1",
+    "logo_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+  },
+  "items": [
+    {
+      "external_id": "A-105",
+      "name": "Arroz Costeño Extra 5KG",
+      "internal_code": "AR-5",
+      "barcode": "7501234567890",
+      "category": "Abarrotes",
+      "image_hash": "img-a105-v1",
+      "image_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+    },
+    {
+      "external_id": "A-021",
+      "name": "Aceite Primor Clásico 1L",
+      "internal_code": "AC-1",
+      "category": "Abarrotes"
+    },
+    {
+      "external_id": "B-300",
+      "name": "Detergente Bolívar Floral 4KG",
+      "internal_code": "DB-4",
+      "category": "Limpieza"
+    }
+  ],
+  "app_version": "3.5.0"
+}
+
+
+### 6.2 Sync sin imágenes -> conserva las que ya tenía
+# Mismo catálogo, sin ningún `*_base64`. El logo y la foto de A-105 siguen ahí.
+# Así son todos los syncs del día a día: pocos KB.
+POST {{base}}/sync
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "store": {
+    "external_uuid": "{{uuid}}",
+    "name": "Minimarket Doña Carmen EIRL",
+    "tax_id": "20512345678",
+    "whatsapp": "51987003344",
+    "description": "Abarrotes, bebidas y delivery dentro del condominio.",
+    "address": "Block 4 · tienda 3",
+    "logo_hash": "logo-v1"
+  },
+  "items": [
+    { "external_id": "A-105", "name": "Arroz Costeño Extra 5KG", "internal_code": "AR-5", "category": "Abarrotes", "image_hash": "img-a105-v1" },
+    { "external_id": "A-021", "name": "Aceite Primor Clásico 1L", "internal_code": "AC-1", "category": "Abarrotes" },
+    { "external_id": "B-300", "name": "Detergente Bolívar Floral 4KG", "internal_code": "DB-4", "category": "Limpieza" }
+  ],
+  "app_version": "3.5.0"
+}
+
+
+###############################################################################
+# 7. PRODUCTO BLOQUEADO — el bloqueo es permanente
+#
+# >>> En el admin -> Tiendas: expandir la fila y bloquear "Arroz Costeño"
+###############################################################################
+
+### 7.1 Resincronizar con el producto bloqueado presente
+# El producto sigue en el payload y se actualiza (nombre, foto, categoría),
+# pero NO vuelve a publicarse. Solo el admin puede desbloquearlo.
+#
+# Comprobar: items_published baja en 1. En el admin sigue marcado "Bloqueado".
+# La app no recibe aviso del bloqueo: es una decisión del administrador.
+POST {{base}}/sync
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "store": {
+    "external_uuid": "{{uuid}}",
+    "name": "Minimarket Doña Carmen EIRL",
+    "whatsapp": "51987003344"
+  },
+  "items": [
+    { "external_id": "A-105", "name": "Arroz Costeño Extra 5KG", "internal_code": "AR-5", "category": "Abarrotes" },
+    { "external_id": "A-021", "name": "Aceite Primor Clásico 1L", "internal_code": "AC-1", "category": "Abarrotes" },
+    { "external_id": "B-300", "name": "Detergente Bolívar Floral 4KG", "internal_code": "DB-4", "category": "Limpieza" }
+  ],
+  "app_version": "3.5.0"
+}
+
+
+###############################################################################
+# 8. RECHAZO Y CORRECCIÓN — "corregir y reenviar"
+#
+# >>> En el admin -> Tiendas: rechazar con el motivo
+#     "El RUC no corresponde a la razón social"
+###############################################################################
+
+### 8.1 La tienda consulta por qué fue rechazada
+# Esperado: status "rejected" y `status_reason` con el texto LITERAL que
+# escribió el admin. La app debe mostrarlo tal cual: es lo único que le dice
+# a la tienda qué corregir.
+GET {{base}}/status/{{uuid}}
+Accept: application/json
+Authorization: Bearer {{token}}
+
+
+### 8.2 Corregir y reenviar
+# Al sincronizar tras un rechazo, la tienda vuelve automáticamente a "pending"
+# y se limpia `status_reason`. No hay endpoint de "reenviar a revisión":
+# sincronizar ES reenviar.
+POST {{base}}/sync
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "store": {
+    "external_uuid": "{{uuid}}",
+    "name": "Minimarket Doña Carmen EIRL",
+    "tax_id": "20487654321",
+    "email": "carmen@bodega.pe",
+    "whatsapp": "51987003344",
+    "description": "Abarrotes, bebidas y delivery dentro del condominio.",
+    "address": "Block 4 · tienda 3"
+  },
+  "items": [
+    { "external_id": "A-021", "name": "Aceite Primor Clásico 1L", "internal_code": "AC-1", "category": "Abarrotes" },
+    { "external_id": "B-300", "name": "Detergente Bolívar Floral 4KG", "internal_code": "DB-4", "category": "Limpieza" }
+  ],
+  "app_version": "3.5.0"
+}
+
+
+###############################################################################
+# RESUMEN PARA LA APP
+#
+# Solo hay 2 endpoints:
+#   POST /sync                    enviar tienda + catálogo completo
+#   GET  /status/{external_uuid}  consultar estado
+#
+# Campos de la respuesta (idénticos en ambos):
+#   marketplace_enabled  leer SIEMPRE primero; si es false, mostrar `message`
+#   status               pending | approved | rejected | disabled
+#   status_reason        motivo del admin; mostrar tal cual cuando exista
+#   public_url           URL compartible; solo cuando está aprobada
+#   items_published      productos visibles al público ahora mismo
+#   terms_url            enlace a T&C, o null -> no mostrar el enlace
+#   last_synced_at       ISO 8601
+#
+# Códigos:
+#   200  todo bien (incluido el marketplace apagado)
+#   401  token ausente o inválido
+#   404  solo en /status: esa tienda nunca sincronizó
+#   422  validación; `message` es un objeto {campo: [errores]}
+#
+# Qué hace cada estado al recibir un sync:
+#   (no existe)  -> pending, se graba la aceptación de T&C
+#   pending      -> sigue pending
+#   approved     -> sigue approved, publica al instante y sin revisión
+#   rejected     -> vuelve a pending y se limpia el motivo
+#   disabled     -> sigue disabled; solo el admin lo revierte
+#
+# Reglas que conviene tener claras al integrar:
+#   - Enviar SIEMPRE el catálogo completo. Lo que falte pasa a inactivo.
+#   - `external_id` debe ser estable e irrepetible dentro de la tienda.
+#   - `image_base64` solo cuando la imagen cambie; mandar siempre `image_hash`.
+#   - `whatsapp` en E.164 sin "+": 51987003344.
+#   - La URL pública nunca cambia, aunque la tienda se renombre.
+###############################################################################

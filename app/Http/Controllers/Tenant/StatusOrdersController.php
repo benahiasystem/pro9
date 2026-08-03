@@ -58,11 +58,7 @@ class StatusOrdersController extends Controller
             'is_shipping_status'       => 'boolean',
             'action_generate_document' => 'boolean',
             'action_discount_stock'    => 'boolean',
-            'action_mark_payment'      => 'boolean',
             'action_send_email'        => 'boolean',
-            'action_notify_dispatch'   => 'boolean',
-            'action_generate_remission'=> 'boolean',
-            'action_free_reserved_stock' => 'boolean',
             'action_block_returns'     => 'boolean',
             'action_void_order'        => 'boolean',
         ]);
@@ -81,6 +77,12 @@ class StatusOrdersController extends Controller
                 ->update(['is_final' => false]);
         }
 
+        // Generar comprobante: único en todo el sistema (un pedido emite un solo comprobante)
+        if ($request->boolean('action_generate_document')) {
+            StatusOrder::where('action_generate_document', true)
+                ->update(['action_generate_document' => false]);
+        }
+
         // Asignar sort_order como el siguiente disponible
         $nextSortOrder = (StatusOrder::max('sort_order') ?? -1) + 1;
 
@@ -88,9 +90,8 @@ class StatusOrdersController extends Controller
             $request->only([
                 'description', 'color', 'is_initial', 'is_final',
                 'action_generate_document', 'action_discount_stock',
-                'action_mark_payment', 'action_send_email',
-                'action_notify_dispatch', 'action_generate_remission',
-                'action_free_reserved_stock', 'action_block_returns',
+                'action_send_email',
+                'action_block_returns',
                 'action_void_order',
             ]),
             $this->resolveTypeFlags($request),
@@ -122,11 +123,7 @@ class StatusOrdersController extends Controller
             'is_shipping_status'       => 'boolean',
             'action_generate_document' => 'boolean',
             'action_discount_stock'    => 'boolean',
-            'action_mark_payment'      => 'boolean',
             'action_send_email'        => 'boolean',
-            'action_notify_dispatch'   => 'boolean',
-            'action_generate_remission'=> 'boolean',
-            'action_free_reserved_stock' => 'boolean',
             'action_block_returns'     => 'boolean',
             'action_void_order'        => 'boolean',
         ]);
@@ -149,13 +146,19 @@ class StatusOrdersController extends Controller
                 ->update(['is_final' => false]);
         }
 
+        // Generar comprobante: único en todo el sistema (un pedido emite un solo comprobante)
+        if ($request->boolean('action_generate_document')) {
+            StatusOrder::where('action_generate_document', true)
+                ->where('id', '!=', $id)
+                ->update(['action_generate_document' => false]);
+        }
+
         $status->update(array_merge(
             $request->only([
                 'description', 'color', 'is_initial', 'is_final',
                 'action_generate_document', 'action_discount_stock',
-                'action_mark_payment', 'action_send_email',
-                'action_notify_dispatch', 'action_generate_remission',
-                'action_free_reserved_stock', 'action_block_returns',
+                'action_send_email',
+                'action_block_returns',
                 'action_void_order',
             ]),
             $this->resolveTypeFlags($request)

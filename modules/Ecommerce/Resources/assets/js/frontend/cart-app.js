@@ -158,8 +158,15 @@ var app_cart = new Vue({
         typeDocumentList: [],
         numberDocument: '',
         phone_whatsapp: window.__ecommerce_config?.phone_whatsapp || '',
+        enable_whatsapp: window.__ecommerce_config?.enable_whatsapp || false,
         global_discount_type: window.__ecommerce_config?.global_discount_type || {},
-        all_identity_document_types : [{id: '6', name: 'RUC'}, {id: '0', name: 'DOC'},{id: '4', name: 'CE'},{id: '1', name: 'DNI'}],
+        all_identity_document_types : [
+            {id: '1', name: 'DNI'},
+            {id: '6', name: 'RUC'},
+            {id: '0', name: 'Otro documento'},
+            {id: '4', name: 'Carnet de extranjería'},
+            {id: '7', name: 'Pasaporte'},
+        ],
         addressSuggestions: [],
         departments: [],
         provinces: [],
@@ -253,8 +260,95 @@ var app_cart = new Vue({
         krScriptLoaded: false,
         izipayPublicKey: null,
         izipayPublicKeyPromise: null,
+
+        // Guest checkout — fase 1
+        guestCheckoutAccepted: false,
+        showGuestForm: false,
+        guestDocumentLookupLoading: false,
+        guestDocumentStatus: null,
+        guestExistingCustomer: false,
+        guestDocumentVerifyTimeout: null,
+        guestTripleVerifyTimeout: null,
+        guestMatchedTripleKey: null,
+        guestAutoAddressSnapshot: null,
+        guestReturningAddressNotice: false,
+        guestTripleLookupLoading: false,
+        guestHighAmountThreshold: 700,
+        guest_form: {
+            email: '',
+            telephone: '',
+            identity_document_type_id: '1',
+            number: '',
+            name: '',
+        },
     },
     computed: {
+        isLoggedIn() {
+            return !!(this.user && this.user.id);
+        },
+        isGuestCheckoutActive() {
+            return !this.isLoggedIn && this.guestCheckoutAccepted && this.showGuestForm;
+        },
+        isGuestContactReady() {
+            return this.isGuestCheckoutActive && this.isGuestFormValid();
+        },
+        isGuestCheckoutComplete() {
+            if (!this.isGuestCheckoutActive) {
+                return false;
+            }
+
+            const email = (this.guest_form.email || '').trim();
+            const phone = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            const name = (this.guest_form.name || '').trim();
+            const number = (this.guest_form.number || '').trim();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const phoneDigits = phone.replace(/\D/g, '');
+            const cleanNumber = number.replace(/\D/g, '');
+
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return false;
+            }
+            if (!phoneDigits || phoneDigits.length < 7) {
+                return false;
+            }
+
+            if (this.guestRequiresIdentityDocument) {
+                if (!name) {
+                    return false;
+                }
+                if (docType !== '1' && docType !== '6') {
+                    return false;
+                }
+                if (docType === '1' && cleanNumber.length !== 8) {
+                    return false;
+                }
+                if (docType === '6' && cleanNumber.length !== 11) {
+                    return false;
+                }
+            } else {
+                if (!name || !number) {
+                    return false;
+                }
+                if (docType === '1' && cleanNumber.length !== 8) {
+                    return false;
+                }
+                if (docType === '6' && cleanNumber.length !== 11) {
+                    return false;
+                }
+            }
+
+            if (!this.isPickupMode && !(this.form_contact.address || '').trim()) {
+                return false;
+            }
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                return false;
+            }
+
+            return true;
+        },
+        isGuestFormReady() {
+            return this.isGuestCheckoutComplete;
+        },
         maxLength: function () {
             if (this.typeDocuments === '6') {
                 return 11
@@ -279,19 +373,98 @@ var app_cart = new Vue({
             if (num.length === 11) return 'Factura';
             return 'Nota de Venta';
         },
-        successOrderNumber() {
-            return this.formatOrderNumber(this.successOrder && this.successOrder.id);
+        showWhatsapp: function () {
+            return this.enable_whatsapp && !!this.phone_whatsapp;
         },
-        successOrderTotal() {
-            return this.formatMoney(this.successOrder && this.successOrder.total);
+        whatsappPhone: function () {
+            const raw = String(this.phone_whatsapp || '').replace(/\D+/g, '');
+            if (raw.length === 9 && raw.startsWith('9')) {
+                return '51' + raw;
+            }
+            return raw;
         },
-        successPaymentLabel() {
-            return this.getPaymentMethodLabel(
-                this.successOrder && this.successOrder.reference_payment
-            );
+        showCheckoutSections() {
+            return this.isLoggedIn || this.guestCheckoutAccepted;
         },
-        successItemsCount() {
-            return this.getSuccessOrderItemsCount(this.successOrder);
+        guestCheckoutTotal() {
+            return parseFloat(this.summary.total || 0);
+        },
+        guestRequiresIdentityDocument() {
+            return this.guestCheckoutTotal > this.guestHighAmountThreshold;
+        },
+        guestHighAmountIdentityComplete() {
+            if (!this.guestRequiresIdentityDocument) {
+                return true;
+            }
+
+            const name = (this.guest_form.name || '').trim();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const cleanNumber = (this.guest_form.number || '').replace(/\D/g, '');
+
+            if (!name) {
+                return false;
+            }
+            if (docType !== '1' && docType !== '6') {
+                return false;
+            }
+            if (docType === '1' && cleanNumber.length !== 8) {
+                return false;
+            }
+            if (docType === '6' && cleanNumber.length !== 11) {
+                return false;
+            }
+
+            return true;
+        },
+        guestHighAmountIdentityNotice() {
+            if (!this.isGuestCheckoutActive || !this.guestRequiresIdentityDocument) {
+                return null;
+            }
+
+            if (this.guestHighAmountIdentityComplete) {
+                return null;
+            }
+
+            return 'Por normativa, en compras mayores a S/ 700.00 debes ingresar tu nombre y un documento válido (DNI o RUC).';
+        },
+        guestInvoiceTypeLabel() {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType === '1') return 'Boleta de venta';
+            if (docType === '6') return 'Factura de venta';
+            return 'Nota de venta';
+        },
+        guestInvoiceNotice() {
+            if (!this.showGuestForm || this.isLoggedIn || !this.enable_electronic_documents) {
+                return null;
+            }
+
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType === '1') {
+                return 'Al ingresar tu DNI se generará automáticamente tu Boleta de venta electrónica.';
+            }
+            if (docType === '6') {
+                return 'Al ingresar tu RUC se generará automáticamente tu Factura electrónica.';
+            }
+            return 'Sin DNI ni RUC se emitirá una Nota de venta.';
+        },
+        guestDocumentTypeOptions() {
+            return [
+                { id: '1', label: 'DNI' },
+                { id: '6', label: 'RUC' },
+                { id: '0', label: 'Otro documento' },
+                { id: '4', label: 'Carnet de extranjería' },
+                { id: '7', label: 'Pasaporte' },
+            ];
+        },
+        guestDocumentNumberMaxLength() {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType === '6') {
+                return 11;
+            }
+            if (docType === '1') {
+                return 8;
+            }
+            return 15;
         },
         quotationLines() {
             return (this.records || []).map(row => {
@@ -358,6 +531,74 @@ var app_cart = new Vue({
         },
     },
     watch: {
+        'form_contact.telephone'(value) {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            const phone = (value || '').trim();
+            if (phone && phone !== (this.guest_form.telephone || '').trim()) {
+                this.invalidateGuestAutoAddressIfNeeded();
+                this.guestReturningAddressNotice = false;
+                this.guest_form.telephone = phone;
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+                this.scheduleGuestTripleVerify();
+            }
+        },
+        guest_form: {
+            deep: true,
+            handler() {
+                if (!this.showGuestForm || this.isLoggedIn) {
+                    return;
+                }
+
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+            },
+        },
+        'guest_form.identity_document_type_id'() {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.invalidateGuestAutoAddressIfNeeded();
+            this.guestDocumentStatus = null;
+            this.guestExistingCustomer = false;
+            this.guestReturningAddressNotice = false;
+            this.applyGuestDocumentDefaults();
+            this.scheduleGuestDocumentVerify();
+            this.scheduleGuestTripleVerify();
+        },
+        'guest_form.number'(value) {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.invalidateGuestAutoAddressIfNeeded();
+            this.guestReturningAddressNotice = false;
+            this.applyGuestDocumentDefaults();
+            this.scheduleGuestDocumentVerify(value);
+            this.scheduleGuestTripleVerify();
+        },
+        'guest_form.email'() {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.invalidateGuestAutoAddressIfNeeded();
+            this.guestReturningAddressNotice = false;
+            this.scheduleGuestTripleVerify();
+        },
+        'guest_form.telephone'() {
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.invalidateGuestAutoAddressIfNeeded();
+            this.guestReturningAddressNotice = false;
+            this.scheduleGuestTripleVerify();
+        },
         'addressModal.address': function(newValue) {
         },
         checkoutIntent(val) {
@@ -373,19 +614,6 @@ var app_cart = new Vue({
             // Mostrar u ocultar el widget de PayPal que está fuera del scope de Vue
             const el = document.getElementById('paypal-widget-container');
             if (el) el.style.display = (val === 'paypal') ? 'block' : 'none';
-
-            if (val === 'mp') {
-                this.scheduleMpBrickPrepare();
-            } else if (oldVal === 'mp') {
-                this.unmountMpBrick();
-            } else if (val === 'izipay') {
-                this.loadIzipaySDK().catch(() => {});
-            }
-        },
-        'summary.total'() {
-            if (this.selectedPaymentMethod === 'mp') {
-                this.scheduleMpBrickPrepare();
-            }
         },
         isPickupMode(val) {
             // Si el método Pago contra entrega solo aplica para recojo y se cambia a delivery,
@@ -401,9 +629,9 @@ var app_cart = new Vue({
         let exchange_rate_sale = this.exchange_rate_sale
         let contex = this
 
-        jQuery(".input_quantity").change(function (e) {
-            let value = parseFloat(jQuery(this).val())
-            let id = jQuery(this).data('product')
+        $(".input_quantity").change(function (e) {
+            let value = parseFloat($(this).val())
+            let id = $(this).data('product')
             let row = contex.records.find(x => x.id == id)
 
             if(row.currency_type_id === 'USD') {
@@ -469,8 +697,772 @@ var app_cart = new Vue({
         dismissCheckoutIntentBootOverlay();
         this.bindCheckoutIntentBootHandler();
         this.flushPendingCheckoutIntentChoice();
+        this.restoreGuestCheckoutState();
     },
     methods: {
+        restoreGuestCheckoutState() {
+            if (this.isLoggedIn) {
+                return;
+            }
+
+            const accepted = sessionStorage.getItem('guest_checkout_accepted') === 'true';
+            if (!accepted) {
+                return;
+            }
+
+            this.guestCheckoutAccepted = true;
+            this.showGuestForm = true;
+            this.initGuestFormStructure();
+            this.loadGuestFormDraft();
+            if (this.guest_form.number) {
+                this.scheduleGuestDocumentVerify(this.guest_form.number);
+            }
+            if (this.isGuestTripleMatchInputReady()) {
+                this.scheduleGuestTripleVerify();
+            }
+        },
+        initGuestFormStructure() {
+            this.form_document = {
+                acciones: {
+                    enviar_email: true,
+                    formato_pdf: 'a4',
+                },
+                serie_documento: '',
+                numero_documento: '#',
+                fecha_de_emision: moment().format('YYYY-MM-DD'),
+                hora_de_emision: moment().format('HH:mm:ss'),
+                codigo_tipo_operacion: '0101',
+                codigo_tipo_documento: '80',
+                codigo_tipo_moneda: 'PEN',
+                fecha_de_vencimiento: moment().format('YYYY-MM-DD'),
+                datos_del_cliente_o_receptor: {
+                    codigo_tipo_documento_identidad: '0',
+                    numero_documento: '0',
+                    apellidos_y_nombres_o_razon_social: '',
+                    codigo_pais: 'PE',
+                    ubigeo: '150101',
+                    direccion: '',
+                    correo_electronico: '',
+                    telefono: '',
+                },
+                totales: {},
+                items: [],
+            };
+
+            this.typeDocuments = '0';
+            this.numberDocument = '0';
+            this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '6']);
+            this.optionDocument();
+            this.applyGuestDocumentDefaults();
+        },
+        normalizeGuestContactFields() {
+            const contactPhone = (this.form_contact.telephone || '').trim();
+            const guestPhone = (this.guest_form.telephone || '').trim();
+
+            if (guestPhone) {
+                this.form_contact.telephone = guestPhone;
+            } else if (contactPhone) {
+                this.guest_form.telephone = contactPhone;
+            }
+        },
+        ensureGuestFormDocument() {
+            if (!this.guestCheckoutAccepted || !this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            if (!this.form_document || !this.form_document.datos_del_cliente_o_receptor) {
+                this.initGuestFormStructure();
+            }
+
+            this.normalizeGuestContactFields();
+            this.syncGuestFormToDocument();
+        },
+        syncGuestFormToDocument() {
+            if (!this.form_document || !this.form_document.datos_del_cliente_o_receptor) {
+                if (this.showGuestForm && !this.isLoggedIn) {
+                    this.initGuestFormStructure();
+                } else {
+                    return;
+                }
+            }
+
+            this.normalizeGuestContactFields();
+
+            const doc = this.form_document.datos_del_cliente_o_receptor;
+            doc.correo_electronico = (this.guest_form.email || '').trim();
+            doc.telefono = (this.guest_form.telephone || this.form_contact.telephone || '').replace(/\D/g, '');
+            doc.apellidos_y_nombres_o_razon_social = (this.guest_form.name || '').trim();
+            doc.numero_documento = (this.guest_form.number || '').replace(/\D/g, '') || '0';
+            doc.codigo_tipo_documento_identidad = this.guest_form.identity_document_type_id || '0';
+            doc.identity_document_type_id = this.guest_form.identity_document_type_id || '0';
+            doc.direccion = this.resolveCustomerAddressForPayment();
+
+            this.numberDocument = doc.numero_documento;
+            this.typeDocuments = doc.codigo_tipo_documento_identidad;
+
+            if (this.form_contact.telephone !== doc.telefono) {
+                this.form_contact.telephone = doc.telefono;
+            }
+
+            this.applyGuestDocumentDefaults();
+        },
+        applyGuestDocumentDefaults() {
+            if (!this.showGuestForm || this.isLoggedIn || !this.form_document) {
+                return;
+            }
+
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const number = (this.guest_form.number || '').replace(/\D/g, '');
+
+            if (!this.enable_electronic_documents) {
+                this.form_document.codigo_tipo_documento = '80';
+                this.typeDocuments = docType === '0' ? '0' : docType;
+                this.numberDocument = number || '0';
+                if (this.form_document.datos_del_cliente_o_receptor) {
+                    this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments;
+                    this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument;
+                    this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments;
+                }
+                return;
+            }
+
+            if (docType === '1') {
+                this.form_document.codigo_tipo_documento = '03';
+                this.typeDocuments = '1';
+            } else if (docType === '6') {
+                this.form_document.codigo_tipo_documento = '01';
+                this.typeDocuments = '6';
+            } else {
+                this.form_document.codigo_tipo_documento = '80';
+                this.typeDocuments = docType;
+            }
+
+            this.numberDocument = number || '0';
+            if (this.form_document.datos_del_cliente_o_receptor) {
+                this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments;
+                this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument;
+                this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments;
+            }
+        },
+        enforceGuestHighAmountIdentityRule() {
+            // La validación de montos > S/ 700 se aplica al enviar; no se restringe la selección en el selector.
+        },
+        normalizeGuestEmail(email) {
+            return String(email || '').trim().toLowerCase();
+        },
+        normalizeGuestPhone(phone) {
+            return String(phone || '').replace(/\D/g, '');
+        },
+        buildGuestTripleMatchKey() {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const number = this.normalizeGuestPhone(this.guest_form.number || '');
+            const email = this.normalizeGuestEmail(this.guest_form.email || '');
+            const phone = this.normalizeGuestPhone(
+                this.guest_form.telephone || this.form_contact.telephone || ''
+            );
+
+            return [docType, number, email, phone].join('|');
+        },
+        isGuestTripleMatchInputReady() {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType !== '1' && docType !== '6') {
+                return false;
+            }
+
+            const number = this.normalizeGuestPhone(this.guest_form.number || '');
+            const expectedLength = docType === '6' ? 11 : 8;
+            if (number.length !== expectedLength) {
+                return false;
+            }
+
+            const email = this.normalizeGuestEmail(this.guest_form.email || '');
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return false;
+            }
+
+            const phone = this.normalizeGuestPhone(
+                this.guest_form.telephone || this.form_contact.telephone || ''
+            );
+
+            return phone.length >= 7;
+        },
+        invalidateGuestAutoAddressIfNeeded() {
+            if (!this.guestAutoAddressSnapshot || !this.guestMatchedTripleKey) {
+                return;
+            }
+
+            if (this.buildGuestTripleMatchKey() !== this.guestMatchedTripleKey) {
+                this.clearGuestAutoFilledAddress();
+            }
+        },
+        clearGuestAutoFilledAddress() {
+            if (!this.guestAutoAddressSnapshot) {
+                this.guestReturningAddressNotice = false;
+                return;
+            }
+
+            const snapshot = this.guestAutoAddressSnapshot;
+            const currentAddress = (this.form_contact.address || '').trim();
+            const snapshotAddress = (snapshot.address || '').trim();
+
+            if (currentAddress === snapshotAddress) {
+                this.form_contact.address = '';
+            }
+
+            if ((this.addressModal.address || '').trim() === snapshotAddress) {
+                this.addressModal.address = '';
+            }
+
+            if (
+                String(this.selectedDepartment || '') === String(snapshot.department_id || '') &&
+                String(this.selectedProvince || '') === String(snapshot.province_id || '') &&
+                String(this.selectedDistrict || '') === String(snapshot.district_id || '')
+            ) {
+                this.selectedDepartment = '';
+                this.selectedProvince = '';
+                this.selectedDistrict = '';
+                this.provinces = [];
+                this.districts = [];
+                this.deliveryZone = null;
+                this.availableDeliveryZones = [];
+                this.deliveryMessage = '';
+                this.calculateSummary();
+            }
+
+            this.guestAutoAddressSnapshot = null;
+            this.guestMatchedTripleKey = null;
+            this.guestReturningAddressNotice = false;
+        },
+        scheduleGuestTripleVerify() {
+            clearTimeout(this.guestTripleVerifyTimeout);
+
+            if (!this.showGuestForm || this.isLoggedIn) {
+                return;
+            }
+
+            this.invalidateGuestAutoAddressIfNeeded();
+
+            if (!this.isGuestTripleMatchInputReady()) {
+                return;
+            }
+
+            this.guestTripleVerifyTimeout = setTimeout(() => {
+                this.verifyGuestTripleMatch();
+            }, 400);
+        },
+        async verifyGuestTripleMatch() {
+            if (!this.isGuestTripleMatchInputReady()) {
+                return;
+            }
+
+            const requestKey = this.buildGuestTripleMatchKey();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const cleanNumber = this.normalizeGuestPhone(this.guest_form.number || '');
+            const email = this.normalizeGuestEmail(this.guest_form.email || '');
+            const phone = this.normalizeGuestPhone(
+                this.guest_form.telephone || this.form_contact.telephone || ''
+            );
+
+            this.guestTripleLookupLoading = true;
+
+            try {
+                const searchUrl = window.__routes?.search_document || '/ecommerce/search-document';
+                const response = await axios.get(`${searchUrl}/${cleanNumber}`, {
+                    params: {
+                        checkout: 1,
+                        email,
+                        telephone: phone,
+                        identity_document_type_id: docType,
+                    },
+                });
+                const data = response.data || {};
+
+                if (requestKey !== this.buildGuestTripleMatchKey()) {
+                    return;
+                }
+
+                if (!data.success || !data.triple_match) {
+                    this.clearGuestAutoFilledAddress();
+                    return;
+                }
+
+                if (data.is_registered_customer || data.from_database) {
+                    this.guestExistingCustomer = true;
+                    this.guestDocumentStatus = {
+                        type: 'info',
+                        message: data.message || 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.',
+                    };
+                    this.clearGuestAutoFilledAddress();
+                    return;
+                }
+
+                if (data.address_loaded && data.address) {
+                    this.applyGuestAddressFromLookup(data, { trackAutoFill: true });
+                    this.guestReturningAddressNotice = !!data.is_returning_guest;
+                } else {
+                    this.clearGuestAutoFilledAddress();
+                }
+            } catch (error) {
+                if (requestKey === this.buildGuestTripleMatchKey()) {
+                    this.clearGuestAutoFilledAddress();
+                }
+            } finally {
+                this.guestTripleLookupLoading = false;
+            }
+        },
+        scheduleGuestDocumentVerify(value) {
+            clearTimeout(this.guestDocumentVerifyTimeout);
+
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType !== '1' && docType !== '6') {
+                this.guestDocumentStatus = null;
+                this.guestExistingCustomer = false;
+                this.clearGuestAutoFilledAddress();
+                return;
+            }
+
+            // DNI: sin consulta ni autorrelleno de nombres; el usuario lo ingresa manualmente.
+            if (docType === '1') {
+                return;
+            }
+
+            const number = String(value !== undefined ? value : this.guest_form.number || '').replace(/\D/g, '');
+            const expectedLength = docType === '6' ? 11 : 8;
+
+            if (number.length !== expectedLength) {
+                this.guestDocumentStatus = null;
+                this.guestExistingCustomer = false;
+                this.clearGuestAutoFilledAddress();
+                return;
+            }
+
+            this.guestDocumentVerifyTimeout = setTimeout(() => {
+                this.verifyGuestDocument(number);
+            }, 400);
+        },
+        async verifyGuestDocument(number) {
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            if (docType !== '1' && docType !== '6') {
+                return;
+            }
+
+            // DNI: sin consulta ni autorrelleno de nombres; el usuario lo ingresa manualmente.
+            if (docType === '1') {
+                return;
+            }
+
+            const cleanNumber = String(number || this.guest_form.number || '').replace(/\D/g, '');
+            const expectedLength = docType === '6' ? 11 : 8;
+
+            if (cleanNumber.length !== expectedLength) {
+                return;
+            }
+
+            this.guestDocumentLookupLoading = true;
+            this.guestDocumentStatus = { type: 'loading', message: 'Consultando documento...' };
+
+            try {
+                const searchUrl = window.__routes?.search_document || '/ecommerce/search-document';
+                const response = await axios.get(`${searchUrl}/${cleanNumber}`, {
+                    params: { checkout: 1 },
+                });
+                const data = response.data || {};
+
+                if (data.success) {
+                    if (data.name) {
+                        this.guest_form.name = data.name;
+                    }
+
+                    this.guestExistingCustomer = !!(data.from_database || data.is_registered_customer);
+
+                    if (data.from_database || data.is_registered_customer) {
+                        this.guestDocumentStatus = {
+                            type: 'info',
+                            message: data.message || 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.',
+                        };
+                    } else {
+                        this.guestDocumentStatus = null;
+                    }
+
+                    if (this.isGuestTripleMatchInputReady()) {
+                        this.scheduleGuestTripleVerify();
+                    }
+                } else {
+                    this.guestExistingCustomer = false;
+                    this.guestDocumentStatus = {
+                        type: 'warning',
+                        message: data.message || 'No se encontraron datos. Completa manualmente.',
+                    };
+                }
+            } catch (error) {
+                this.guestExistingCustomer = false;
+                this.guestDocumentStatus = {
+                    type: 'warning',
+                    message: 'No se pudo consultar el documento. Completa tus datos manualmente.',
+                };
+            } finally {
+                this.guestDocumentLookupLoading = false;
+                this.applyGuestDocumentDefaults();
+                this.syncGuestFormToDocument();
+            }
+        },
+        applyGuestAddressFromLookup(data, options = {}) {
+            const { trackAutoFill = false } = options;
+
+            if (!data || !data.address) {
+                return;
+            }
+
+            this.form_contact.address = data.address;
+            this.addressModal.address = data.address;
+
+            if (trackAutoFill) {
+                this.guestAutoAddressSnapshot = {
+                    address: data.address,
+                    department_id: data.department_id || '',
+                    province_id: data.province_id || '',
+                    district_id: data.district_id || '',
+                };
+                this.guestMatchedTripleKey = this.buildGuestTripleMatchKey();
+            }
+
+            if (!data.department_id) {
+                return;
+            }
+
+            const applyUbigeo = () => {
+                const dept = this.departments.find(d => d.value === data.department_id);
+                if (!dept) {
+                    return;
+                }
+
+                this.selectedDepartment = dept.value;
+                this.provinces = dept.children || [];
+                this.selectedProvince = '';
+                this.districts = [];
+                this.selectedDistrict = '';
+
+                if (!data.province_id) {
+                    return;
+                }
+
+                const prov = this.provinces.find(p => p.value === data.province_id);
+                if (!prov) {
+                    return;
+                }
+
+                this.selectedProvince = prov.value;
+                this.districts = prov.children || [];
+
+                if (data.district_id) {
+                    const dist = this.districts.find(d => d.value === data.district_id);
+                    if (dist) {
+                        this.selectedDistrict = dist.value;
+                        this.checkDeliveryZone();
+                    }
+                }
+            };
+
+            if (this.departments.length > 0) {
+                applyUbigeo();
+            } else {
+                this.fetchLocations().then(applyUbigeo);
+            }
+        },
+        saveGuestFormDraft() {
+            if (!this.showGuestForm) {
+                return;
+            }
+
+            sessionStorage.setItem('guest_contact_draft', JSON.stringify(this.guest_form));
+        },
+        loadGuestFormDraft() {
+            const raw = sessionStorage.getItem('guest_contact_draft');
+            if (!raw) {
+                return;
+            }
+
+            try {
+                const draft = JSON.parse(raw);
+                this.guest_form = Object.assign({}, this.guest_form, draft);
+                if (this.guest_form.telephone && !this.form_contact.telephone) {
+                    this.form_contact.telephone = this.guest_form.telephone;
+                }
+                this.syncGuestFormToDocument();
+            } catch (error) {
+                console.warn('No se pudo restaurar el borrador de invitado', error);
+            }
+        },
+        getGuestFormValidationErrors() {
+            this.ensureGuestFormDocument();
+
+            const errors = [];
+            const email = (this.guest_form.email || '').trim();
+            const phone = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            const name = (this.guest_form.name || '').trim();
+            const number = (this.guest_form.number || '').trim();
+            const docType = String(this.guest_form.identity_document_type_id || '0');
+            const phoneDigits = phone.replace(/\D/g, '');
+            const cleanNumber = number.replace(/\D/g, '');
+
+            if (!email) {
+                errors.push('correo electrónico');
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errors.push('correo electrónico válido');
+            }
+
+            if (!phoneDigits) {
+                errors.push('teléfono');
+            } else if (phoneDigits.length < 7) {
+                errors.push('teléfono válido');
+            }
+
+            if (this.guestRequiresIdentityDocument) {
+                if (!name) {
+                    errors.push('nombre o razón social');
+                }
+
+                if (docType !== '1' && docType !== '6') {
+                    errors.push('DNI o RUC (obligatorio por monto superior a S/ 700.00)');
+                } else if (docType === '1' && cleanNumber.length !== 8) {
+                    errors.push('DNI de 8 dígitos');
+                } else if (docType === '6' && cleanNumber.length !== 11) {
+                    errors.push('RUC de 11 dígitos');
+                }
+            } else {
+                if (!name) {
+                    errors.push('nombre o razón social');
+                }
+
+                if (!number) {
+                    errors.push('número de documento');
+                } else if (docType === '1' && cleanNumber.length !== 8) {
+                    errors.push('DNI de 8 dígitos');
+                } else if (docType === '6' && cleanNumber.length !== 11) {
+                    errors.push('RUC de 11 dígitos');
+                }
+            }
+
+            return errors;
+        },
+        isGuestFormValid() {
+            return this.getGuestFormValidationErrors().length === 0;
+        },
+        validateGuestFormForPayment() {
+            this.ensureGuestFormDocument();
+
+            if (this.guestRequiresIdentityDocument) {
+                const docType = String(this.guest_form.identity_document_type_id || '0');
+                const name = (this.guest_form.name || '').trim();
+                const cleanNumber = (this.guest_form.number || '').replace(/\D/g, '');
+
+                if (!name || (docType !== '1' && docType !== '6')) {
+                    return {
+                        valid: false,
+                        message: 'Por montos superiores a S/ 700.00 debes ingresar tu nombre y un DNI o RUC válido.',
+                    };
+                }
+
+                if (docType === '1' && cleanNumber.length !== 8) {
+                    return {
+                        valid: false,
+                        message: 'Por montos superiores a S/ 700.00 debes ingresar un DNI válido de 8 dígitos.',
+                    };
+                }
+
+                if (docType === '6' && cleanNumber.length !== 11) {
+                    return {
+                        valid: false,
+                        message: 'Por montos superiores a S/ 700.00 debes ingresar un RUC válido de 11 dígitos.',
+                    };
+                }
+            }
+
+            const errors = this.getGuestFormValidationErrors();
+
+            if (errors.length > 0) {
+                return {
+                    valid: false,
+                    message: 'Completa: ' + errors.join(', ') + '.',
+                };
+            }
+
+            if (!this.isPickupMode && !(this.form_contact.address || '').trim()) {
+                return {
+                    valid: false,
+                    message: 'Agrega una dirección de entrega antes de pagar.',
+                };
+            }
+
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                return {
+                    valid: false,
+                    message: 'Selecciona una sucursal de recojo antes de pagar.',
+                };
+            }
+
+            return { valid: true, message: '' };
+        },
+        scrollToGuestForm() {
+            this.scrollToContactSection();
+        },
+        scrollToContactSection() {
+            this.$nextTick(() => {
+                const el = document.getElementById('contactDataCollapse');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        },
+        scrollToPaymentSection() {
+            this.$nextTick(() => {
+                const el = document.getElementById('paymentCollapse');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        },
+        dispatchPayment(method) {
+            if (method === 'culqi') {
+                if (typeof execCulqi === 'function') {
+                    execCulqi();
+                }
+            } else if (method === 'izipay') {
+                this.execIzipay();
+            } else if (method === 'mp') {
+                this.execMp();
+            } else if (['cash', 'yape', 'transfer'].includes(method)) {
+                this.paymentCash();
+            }
+        },
+        runPayment(method) {
+            if (!this.allowPurchase) {
+                return this.showSwalMessage(
+                    'Compra no disponible',
+                    'La tienda está en modo solo cotización. Puedes solicitar una cotización.',
+                    'info'
+                );
+            }
+
+            if (this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de continuar.', 'warning');
+            }
+
+            if (!this.acceptedTerms) {
+                return this.showSwalMessage('Términos y condiciones', 'Debes aceptar los términos y condiciones.', 'warning');
+            }
+
+            if (!method) {
+                return this.showSwalMessage('Método de pago', 'Selecciona un método de pago para continuar.', 'warning');
+            }
+
+            this.selectedPaymentMethod = method;
+            this.refreshSetDataCustomer();
+
+            if (this.isGuestCheckoutActive) {
+                const validation = this.validateGuestFormForPayment();
+                if (!validation.valid) {
+                    this.scrollToGuestForm();
+                    return this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+                }
+            } else if (!this.validateCheckoutBeforePayment()) {
+                return;
+            }
+
+            this.dispatchPayment(method);
+        },
+        handleCheckoutClick() {
+            if (this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de continuar.', 'warning');
+            }
+
+            if (!this.acceptedTerms) {
+                return this.showSwalMessage('Términos y condiciones', 'Debes aceptar los términos y condiciones.', 'warning');
+            }
+
+            if (this.isLoggedIn) {
+                return this.executePayment();
+            }
+
+            if (!this.guestCheckoutAccepted) {
+                this.scrollToContactSection();
+                return this.startGuestCheckout();
+            }
+
+            const validation = this.validateGuestFormForPayment();
+            if (!validation.valid) {
+                this.scrollToGuestForm();
+                return this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+            }
+
+            this.scrollToPaymentSection();
+            if (!this.selectedPaymentMethod) {
+                return this.showSwalMessage(
+                    'Método de pago',
+                    'Selecciona un método de pago y confirma desde el botón correspondiente.',
+                    'info'
+                );
+            }
+        },
+        startGuestCheckout() {
+            if (this.records.length < 1) {
+                return this.showSwalMessage('Carrito vacío', 'Agrega productos antes de continuar.', 'warning');
+            }
+
+            if (this.guestCheckoutAccepted) {
+                const errors = this.getGuestFormValidationErrors();
+                if (errors.length > 0) {
+                    this.scrollToContactSection();
+                    return this.showSwalMessage('Datos incompletos', 'Completa: ' + errors.join(', ') + '.', 'warning');
+                }
+
+                return this.scrollToDeliverySection();
+            }
+
+            sessionStorage.setItem('guest_checkout_accepted', 'true');
+            this.guestCheckoutAccepted = true;
+            this.showGuestForm = true;
+            this.guestDocumentStatus = null;
+            this.guestExistingCustomer = false;
+            this.guestReturningAddressNotice = false;
+            this.clearGuestAutoFilledAddress();
+            this.initGuestFormStructure();
+            this.loadGuestFormDraft();
+
+            if (this.form_contact.telephone) {
+                this.guest_form.telephone = this.form_contact.telephone;
+            }
+
+            this.ensureGuestFormDocument();
+            this.saveGuestFormDraft();
+            this.$nextTick(() => {
+                this.scrollToContactSection();
+            });
+        },
+        scrollToDeliverySection() {
+            this.$nextTick(() => {
+                const el = document.getElementById('deliveryCollapse');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        },
+        openLoginRegisterModal() {
+            this.$nextTick(() => {
+                if (typeof window.jQuery !== 'undefined') {
+                    $('#login_register_modal').modal('show');
+                }
+            });
+        },
+        openRegisterModal() {
+            this.openLoginRegisterModal();
+            this.$nextTick(() => {
+                const container = document.getElementById('contenedor-form');
+                if (container) {
+                    container.classList.add('active');
+                }
+            });
+        },
         extractAndSetUbigeoFromComponents(components) {
             if (!components) return;
 
@@ -778,23 +1770,111 @@ var app_cart = new Vue({
             })
         },
         refreshSetDataCustomer() {
-            this.form_document.datos_del_cliente_o_receptor.direccion = this.form_contact.address
-            this.form_document.datos_del_cliente_o_receptor.telefono = this.form_contact.telephone
+            if (this.isGuestCheckoutActive) {
+                this.ensureGuestFormDocument();
+                return;
+            }
+
+            if (!this.form_document.datos_del_cliente_o_receptor) {
+                return;
+            }
+
+            this.form_document.datos_del_cliente_o_receptor.direccion = this.resolveCustomerAddressForPayment()
+            this.form_document.datos_del_cliente_o_receptor.telefono = (this.form_contact.telephone || '').replace(/\D/g, '')
             this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments
             this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument
             this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments
         },
+        validateCheckoutBeforePayment() {
+            if (this.isGuestCheckoutActive) {
+                const validation = this.validateGuestFormForPayment();
+                if (!validation.valid) {
+                    this.showSwalMessage('Datos incompletos', validation.message, 'warning');
+                    return false;
+                }
+                return true;
+            }
+
+            if (!this.form_document.codigo_tipo_documento) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error');
+                return false;
+            }
+
+            if (!this.isPickupMode && !this.form_contact.address) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo dirección es obligatorio', 'error');
+                return false;
+            }
+
+            if (this.isPickupMode && !this.selectedPickupBranch) {
+                this.showSwalMessage('Ocurrió un error!', 'Selecciona una sucursal de recojo', 'error');
+                return false;
+            }
+
+            const phone = (this.form_contact.telephone || '').trim();
+            if (!phone) {
+                this.showSwalMessage('Ocurrió un error!', 'El campo teléfono es obligatorio', 'error');
+                return false;
+            }
+
+            return true;
+        },
+        buildShippingAddress() {
+            if (this.isPickupMode && this.selectedPickupBranch) {
+                return 'Recojo en tienda: ' + this.selectedPickupBranch.name +
+                    (this.selectedPickupBranch.address ? ' — ' + this.selectedPickupBranch.address : '');
+            }
+
+            return (this.form_contact.address || '').trim();
+        },
+        resolveCustomerAddressForPayment() {
+            const shippingAddress = this.buildShippingAddress();
+            if (this.isPickupMode && shippingAddress) {
+                return shippingAddress;
+            }
+
+            return (this.form_contact.address || '').trim();
+        },
+        resolvePaymentCustomer() {
+            this.refreshSetDataCustomer();
+
+            const source = this.form_document?.datos_del_cliente_o_receptor || {};
+            const customer = Object.assign({}, source);
+            const shippingAddress = this.buildShippingAddress();
+
+            customer.telefono = String(
+                customer.telefono || this.form_contact.telephone || this.guest_form?.telephone || ''
+            ).replace(/\D/g, '');
+            customer.correo_electronico = (
+                customer.correo_electronico
+                || this.guest_form?.email
+                || (this.user && this.user.email)
+                || ''
+            ).trim();
+
+            let direccion = (customer.direccion || this.form_contact.address || '').trim();
+            if (!direccion && this.isPickupMode && shippingAddress) {
+                direccion = shippingAddress;
+            }
+            customer.direccion = direccion;
+
+            const docType = String(
+                customer.identity_document_type_id
+                || customer.codigo_tipo_documento_identidad
+                || this.typeDocuments
+                || '0'
+            );
+            customer.codigo_tipo_documento_identidad = docType;
+            customer.identity_document_type_id = docType;
+            customer.numero_documento = String(customer.numero_documento || this.numberDocument || '0')
+                .replace(/\D/g, '') || '0';
+
+            return customer;
+        },
         async getFormPaymentCash() {
             this.refreshSetDataCustomer()
 
-            // Calcular la dirección de envio según el modo seleccionado
-            let shippingAddress = '';
-            if (this.isPickupMode && this.selectedPickupBranch) {
-                shippingAddress = 'Recojo en tienda: ' + this.selectedPickupBranch.name +
-                    (this.selectedPickupBranch.address ? ' — ' + this.selectedPickupBranch.address : '');
-            } else {
-                shippingAddress = this.form_contact.address || '';
-            }
+            const shippingAddress = this.buildShippingAddress();
+            const customer = this.resolvePaymentCustomer();
 
             let precio = Math.round(Number(this.summary.total) * 100).toFixed(2);
             let precio_culqi = Number(Number(this.summary.total).toFixed(2));
@@ -802,7 +1882,7 @@ var app_cart = new Vue({
                 producto: 'Compras Ecommerce Facturador Pro',
                 precio: precio,
                 precio_culqi: precio_culqi,
-                customer: this.form_document.datos_del_cliente_o_receptor,
+                customer: customer,
                 items: this.records,
                 purchase: await this.getDocument(),
                 discount_coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null,
@@ -840,15 +1920,7 @@ var app_cart = new Vue({
                     'info'
                 );
             }
-            if (this.selectedPaymentMethod === 'culqi') {
-                if (typeof execCulqi === 'function') execCulqi();
-            } else if (this.selectedPaymentMethod === 'izipay') {
-                this.execIzipay();
-            } else if (this.selectedPaymentMethod === 'mp') {
-                this.execMp();
-            } else if (['cash', 'yape', 'transfer'].includes(this.selectedPaymentMethod)) {
-                this.paymentCash();
-            }
+            this.runPayment(this.selectedPaymentMethod);
         },
         async paymentCash() {
             if (!this.allowPurchase) {
@@ -858,18 +1930,6 @@ var app_cart = new Vue({
                     'info'
                 );
             }
-            if(!this.form_document.codigo_tipo_documento) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo tipo de comprobante es obligatorio', 'error')
-            }
-
-            if(!this.form_contact.address) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo dirección es obligatorio', 'error')
-            }
-
-            if(!this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'El campo teléfono es obligatorio', 'error')
-            }
-
             let product = JSON.parse(localStorage.getItem('products_cart'));
 
             if (product.length < 1){
@@ -884,7 +1944,7 @@ var app_cart = new Vue({
             // Métodos manuales: bloqueo inmediato mientras se genera el pedido
             this.showPaymentLoading();
 
-            let url_finally = window.__routes?.payment_cash || '/ecommerce/payment/cash';
+            let url_finally = window.__routes?.payment_cash || '/ecommerce/payment_cash';
             try {
                 const response = await axios.post(
                     url_finally,
@@ -988,7 +2048,10 @@ var app_cart = new Vue({
             return {
                 initialization: {
                     amount: Number(initData.amount).toFixed(2),
-                    payer: { email: initData.email || '' },
+                    payer: {
+                        email: initData.email || '',
+                        entityType: 'individual',
+                    },
                 },
                 customization: {
                     visual: {
@@ -1005,7 +2068,6 @@ var app_cart = new Vue({
                                 formBackgroundColor: '#ffffff',
                                 outlinePrimaryColor: '#b8b8b8',
                                 outlineSecondaryColor: '#9aa1a9',
-                                fontSizeExtraExtraSmall: '10px',
                                 fontSizeExtraSmall: '11px',
                                 fontSizeSmall: '12px',
                                 fontSizeMedium: '13px',
@@ -1052,7 +2114,12 @@ var app_cart = new Vue({
 
                 this.getFormPaymentCash()
                     .then(rawFormData => {
-                        const payload = { ...rawFormData, form_data: mpFormData };
+                        const payload = {
+                            ...rawFormData,
+                            form_data: mpFormData,
+                            description: rawFormData.producto || 'Compras Ecommerce',
+                            external_reference: 'ecommerce-' + Date.now(),
+                        };
                         return axios.post(
                             window.__routes?.mercadopago_payment || '/ecommerce/mercadopago/payment',
                             payload,
@@ -1077,10 +2144,12 @@ var app_cart = new Vue({
                         }
                     })
                     .catch(err => {
-                        const validationMsg = err.response?.data?.message
+                        const validationMsg = this.formatMpPaymentErrorMessage(
+                            err.response?.data?.message
                             || (err.response?.data?.errors && Object.values(err.response.data.errors).flat().join(' '))
                             || err.message
-                            || null;
+                            || null
+                        );
                         this.detachMpBrickFromModal();
                         swal(
                             err.isPaymentRejection ? "Pago Rechazado" : "Pago Fallido",
@@ -1091,6 +2160,16 @@ var app_cart = new Vue({
                         reject(err);
                     });
             });
+        },
+        formatMpPaymentErrorMessage(message) {
+            const text = message || 'Ocurrió un error con la pasarela.';
+            const publicKey = window.__ecommerce_config?.public_key_mp || '';
+
+            if (publicKey.startsWith('TEST-') && /entidad emisora|no pudo procesar/i.test(text)) {
+                return text + ' En modo prueba de Mercado Pago use tarjetas de prueba y titular "APRO".';
+            }
+
+            return text;
         },
         unmountMpBrick() {
             if (this.mpBrickController) {
@@ -1174,6 +2253,9 @@ var app_cart = new Vue({
             const host = document.getElementById(MP_BRICK_HOST_ID);
             const slot = document.getElementById('mp-swal-slot');
             if (host && slot) {
+                host.style.display = 'block';
+                host.style.visibility = 'visible';
+                host.style.width = '100%';
                 slot.appendChild(host);
             }
         },
@@ -1181,6 +2263,9 @@ var app_cart = new Vue({
             const host = document.getElementById(MP_BRICK_HOST_ID);
             const stash = document.getElementById('mp-brick-stash');
             if (host && stash) {
+                host.style.display = '';
+                host.style.visibility = '';
+                host.style.width = '';
                 stash.appendChild(host);
             }
         },
@@ -1192,32 +2277,11 @@ var app_cart = new Vue({
                     'info'
                 );
             }
-            if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
+            if (!this.validateCheckoutBeforePayment()) {
+                return;
             }
             if (this.records.length < 1){
                 return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
-            }
-
-            const initData = this.getMpBrickInitData();
-            const needsRefresh = !this.mpBrickReady
-                || this.mpPreparedAmount !== initData.amount
-                || this.mpPreparedEmail !== initData.email;
-
-            try {
-                if (this.mpPreparePromise) {
-                    await this.mpPreparePromise;
-                }
-                if (needsRefresh) {
-                    await this.prepareMpBrick(true);
-                }
-            } catch (err) {
-                console.error(err);
-                return this.showSwalMessage('Error', 'No se pudo cargar el formulario de Mercado Pago.', 'error');
-            }
-
-            if (!this.mpBrickReady) {
-                return this.showSwalMessage('Error', 'No se pudo cargar el formulario de Mercado Pago.', 'error');
             }
 
             swal({
@@ -1233,9 +2297,15 @@ var app_cart = new Vue({
                     if (title) {
                         title.innerHTML = `<img class="gateway-payment-title-logo" src="${MP_LOGO_SRC}" alt="Mercado Pago">`;
                     }
+
                     this.attachMpBrickToModal();
+                    this.prepareMpBrick(true).catch((err) => {
+                        console.error('MercadoPago brick reload failed', err);
+                        this.showSwalMessage('Error', 'No se pudo cargar el formulario de Mercado Pago.', 'error');
+                    });
                 },
                 onClose: () => {
+                    this.unmountMpBrick();
                     this.detachMpBrickFromModal();
                 }
             });
@@ -1434,8 +2504,8 @@ var app_cart = new Vue({
                     'info'
                 );
             }
-            if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
+            if (!this.validateCheckoutBeforePayment()) {
+                return;
             }
             if (this.records.length < 1){
                 return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
@@ -1555,9 +2625,44 @@ var app_cart = new Vue({
         redirectHome() {
             window.location = window.__routes?.home || "/ecommerce";
         },
+        // Arma el detalle de la compra que se mostrará en el modal de confirmación
+        buildSuccessOrder(order) {
+            const paymentLabels = {
+                cash: 'Efectivo', yape: 'Yape', transfer: 'Transferencia',
+                culqi: this.titleCulqi || 'Tarjeta (VISA)', paypal: 'PayPal',
+                izipay: this.titleIzipay || 'Izipay', mp: this.titleMp || 'Mercado Pago'
+            };
+            const deliveryLabel = (this.isPickupMode && this.selectedPickupBranch)
+                ? 'Recojo en tienda — ' + this.selectedPickupBranch.name
+                : (this.isPickupMode ? 'Recojo en tienda' : 'Envío a domicilio');
+            const number = (order && (order.id || order.external_id))
+                ? '#' + String(order.id || order.external_id).toString().padStart(6, '0')
+                : '#—';
+            return {
+                number: number,
+                items: this.records.map(r => ({
+                    description: r.description,
+                    cantidad: r.cantidad,
+                    symbol: r.currency_type_symbol || 'S/',
+                    total: (parseFloat(r.sale_unit_price) * r.cantidad).toFixed(2)
+                })),
+                total_taxed: this.summary.total_taxed || '0.00',
+                total_igv: this.summary.total_igv || '0.00',
+                total_exonerated: this.summary.total_exonerated || '0.00',
+                delivery: this.summary.delivery || '0.00',
+                total: this.summary.total || '0.00',
+                paymentLabel: paymentLabels[this.selectedPaymentMethod] || 'Efectivo',
+                deliveryLabel: deliveryLabel,
+            };
+        },
+        /**
+         * Overlay de carga para Yape, efectivo, transferencia y Culqi post-token.
+         */
         showPaymentLoading(options = {}) {
-            this.paymentLoadingTitle = options.title || 'Estamos generando tu pedido';
-            this.paymentLoadingText = options.text || 'Por favor no cierres esta ventana...';
+            const opts = options && typeof options === 'object' ? options : {};
+
+            this.paymentLoadingTitle = opts.title || 'Estamos generando tu pedido';
+            this.paymentLoadingText = opts.text || 'Por favor no cierres esta ventana hasta que el proceso termine.';
             this.processingPayment = true;
             this.paymentSuccessVisible = false;
             document.body.style.overflow = 'hidden';
@@ -1638,7 +2743,14 @@ var app_cart = new Vue({
             this.hidePaymentLoading();
             this.response_order_total = order ? order.total : 0;
             this.thankYouUrl = this.buildThankYouUrl(order, thankYouUrl);
-            this.successOrder = order || null;
+            const formatted = this.buildSuccessOrder(order);
+            if (order && order.external_id) {
+                formatted.external_id = order.external_id;
+            }
+            if (order && order.id) {
+                formatted.id = order.id;
+            }
+            this.successOrder = formatted;
             this.clearCartSilently();
             this.paymentSuccessRedirecting = false;
             this.paymentSuccessVisible = true;
@@ -1874,7 +2986,7 @@ var app_cart = new Vue({
                 total_exonerated: '0.0', total_igv: '0.0', delivery: '0.00'
             };
             this.payment_cash.amount = '0.00';
-            jQuery("#total_amount").data('total', '0.00');
+            $("#total_amount").data('total', '0.00');
         },
         goToThankYou() {
             if (this.thankYouUrl) {
@@ -2506,6 +3618,11 @@ var app_cart = new Vue({
                     this.openAddressListModal();
                 }
             }, isCreatingNew);
+
+            if (this.showGuestForm && !this.isLoggedIn) {
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+            }
         },
         syncMapToMarker() {
             if (!this.map || !this.marker) {
@@ -2551,10 +3668,10 @@ var app_cart = new Vue({
                 center: defaultLocation,
                 zoom: 16,
                 disableDefaultUI: true,
-                zoomControl: false,
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: false,
+                zoomControl: true,
+                mapTypeControl: true,
+                streetViewControl: true,
+                fullscreenControl: true,
                 clickableIcons: false,
                 gestureHandling: 'greedy',
             });
@@ -2835,8 +3952,8 @@ var app_cart = new Vue({
         initForm() {
             this.errors = {}
             this.user = window.__ecommerce_config?.user || {};
-            if(!this.user){
-                return false
+            if (!this.user || !this.user.id) {
+                return false;
             }
 
             this.form_document = {
@@ -3023,12 +4140,16 @@ var app_cart = new Vue({
             this.summary.total            = computedTotal.toFixed(2)
             this.aux_totals               = Object.assign({}, this.summary)
 
-            jQuery("#total_amount").data('total', this.summary.total);
+            $("#total_amount").data('total', this.summary.total);
 
             this.form_document.codigo_tipo_documento = null
             this.optionDocument()
-            // Re-aplicar defaults tras cada cálculo para mantener el tipo forzado
-            this.applyDocumentDefaults()
+            if (this.isGuestCheckoutActive) {
+                this.enforceGuestHighAmountIdentityRule();
+                this.applyGuestDocumentDefaults();
+            } else {
+                this.applyDocumentDefaults();
+            }
 
             this.payment_cash.amount = this.summary.total;
         },
@@ -3109,7 +4230,18 @@ var app_cart = new Vue({
                 });
         },
         clickSendWhatsapp(order_id) {
-            window.open(`https://wa.me/51${this.phone_whatsapp}?text=Se ha generado un nuevo pedido con código nro. ${order_id}`, '_blank');
+            window.open(`https://wa.me/${this.whatsappPhone}?text=${encodeURIComponent('Se ha generado un nuevo pedido con código nro. ' + order_id)}`, '_blank');
+        },
+        getWhatsappUrl(text) {
+            return `https://wa.me/${this.whatsappPhone}?text=${encodeURIComponent(text)}`;
+        },
+        clickConsultWhatsappCart() {
+            const lines = this.records.map((row) => {
+                const lineTotal = (parseFloat(row.sale_unit_price) * parseFloat(row.cantidad)).toFixed(2);
+                return `• ${row.description} x${row.cantidad} - ${row.currency_type_symbol}${lineTotal}`;
+            });
+            const text = `Buenas, deseo consultar/finalizar mi pedido:\n\n${lines.join('\n')}\n\n*Total: S/ ${this.summary.total}*\n\n¿Podrían ayudarme a completar la compra?`;
+            window.open(this.getWhatsappUrl(text), '_blank');
         },
         onAddressInput() {
             console.log('Input detectado:', this.addressModal.address);
@@ -3284,36 +4416,13 @@ var app_cart = new Vue({
             }
             this.calculateSummary();
         },
-        /**
-         * Subtotal de ítems sin cupón ni delivery.
-         * Debe coincidir con la base que usa calculateSummary al restar el descuento.
-         */
-        getTotalBeforeCoupon() {
-            let total = 0;
-            (this.records || []).forEach(function (item) {
-                total += parseFloat(item.sub_total) || 0;
-            });
-            return Math.round(total * 100) / 100;
-        },
-
         async applyCoupon() {
             if (!this.couponField || this.couponLoading) return;
-
-            // Un solo cupón por carrito: bloquear reaplicación acumulativa
-            if (this.appliedCoupon && this.appliedCoupon.code) {
-                this.couponMessage = 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.';
-                return;
-            }
-
             this.couponLoading = true;
             this.couponMessage = null;
 
             try {
-                const payload = {
-                    code: this.couponField,
-                    order_total: this.getTotalBeforeCoupon(),
-                    coupon_already_applied: !!(this.appliedCoupon && this.appliedCoupon.code)
-                };
+                const payload = { code: this.couponField, order_total: this.summary.total };
                 const res = await axios.post('/ecommerce/validate-coupon', payload, this.getHeaderConfig());
                 if (res.data && res.data.success) {
                     const d = res.data.data;
@@ -3323,9 +4432,10 @@ var app_cart = new Vue({
                         discount: parseFloat(d.discount),
                         free_shipping: d.free_shipping
                     };
-                    // Recalcular resumen una sola vez (items - descuento + delivery)
-                    this.calculateSummary();
-                    this.couponField = d.code || this.couponField;
+                    if (typeof d.new_total !== 'undefined') {
+                        this.summary.total = parseFloat(d.new_total).toFixed(2);
+                        this.payment_cash.amount = this.summary.total;
+                    }
                     this.couponMessage = null;
                 } else {
                     this.couponMessage = (res.data && res.data.message) ? res.data.message : 'cupon no valido';
