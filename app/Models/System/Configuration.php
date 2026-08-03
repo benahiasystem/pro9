@@ -189,10 +189,16 @@ class Configuration extends Model
                 }
     }
 
+    /**
+     * Credenciales de izipay, null si no hay configuración
+     */
     public function scopeAccessIzipay($query)
     {
-        return $query
-            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay')->first()->toArray();
+        $record = $query
+            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay')
+            ->first();
+
+        return optional($record)->toArray();
     }
 
     /**

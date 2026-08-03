@@ -45,6 +45,12 @@ class PaymentConfigurationController extends Controller
         $type = $request->type;
         $record = PaymentConfiguration::firstOrFail();
 
+        // Configuración general, no depende de la pestaña/pasarela activa
+        if ($request->has('default_payment_for_payment_links')) {
+            $default_payment = $request->input('default_payment_for_payment_links');
+            $record->default_payment_for_payment_links = in_array($default_payment, ['01', '02', '03', '04'], true) ? $default_payment : null;
+        }
+
         $response = match ($type) {
             '01' => $this->setDataYape($record, $request),
             '02' => $this->setDataMP($record, $request),

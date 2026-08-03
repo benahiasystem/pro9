@@ -160,7 +160,7 @@ export default {
                     this.form.email = Culqi.token.email ? Culqi.token.email : this.form.email;
 
                     const token = Culqi.token.id;
-                    this.$http.post(`${this.resource}/charge`, {
+                    this.$http.post(`${this.resource}/charge?isTenant=${this.isTenant}`, {
                         source_id: token,
                         installments: this.form.installments,
                         description : this.form.description,
@@ -169,24 +169,27 @@ export default {
                         currency_code: this.form.currency,
                     }).then(response => {
                         const data = response.data
-                        
+
+                        // outcome solo viene cuando el cargo se concretó, el backend ya resuelve paid
                         this.$emit('submit', {
-                            status : response.data.result.outcome.type,
+                            status : data.result?.outcome?.type || (data.paid ? 'venta_exitosa' : null),
                             customer: this.form._customer,
                             data: data
                         });
                         Culqi.close();
                     }).catch(error => {
                         console.log(error);
-                        
-                        const msg = error.response?.data?.user_message
+
+                        const data = error.response?.data;
+
+                        const msg = data?.user_message
+                            || data?.merchant_message
                             || 'Error al procesar el pago. Intente nuevamente.';
-                        
-                        let status = error.response?.data?.result?.type ;
+
                         this.$emit('submit', {
-                            status : status,
+                            status : data?.result?.type || null,
                             customer: this.form._customer,
-                            data: error.response.data
+                            data: data || null
                         });
                         Culqi.close();
 

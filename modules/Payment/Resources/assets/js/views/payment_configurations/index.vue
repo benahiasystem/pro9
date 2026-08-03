@@ -8,8 +8,8 @@
                 <a href="#" class="card-action card-action-toggle text-white" data-card-toggle=""></a>
             </div>
         </div>
-        <div class="card-body"> 
-            
+        <div class="card-body">
+
             <el-tabs v-model="form.type" @tab-click="handleClick">
 
                 <el-tab-pane label="Yape" name="01">
@@ -252,6 +252,12 @@
                 form: {},
                 errors: {},
                 loading_submit: false,
+                payments: [
+                    {id: '01', description: 'Yape', enabled: 'enabled_yape'},
+                    {id: '02', description: 'Mercado Pago', enabled: 'enabled_mp'},
+                    {id: '03', description: 'Culqi', enabled: 'enabled_culqi'},
+                    {id: '04', description: 'Izipay', enabled: 'enabled_izipay'},
+                ],
             }
         },
         async created() {
@@ -312,6 +318,8 @@
                     enabled_mp : false,
                     access_token_mp: null,
                     public_key_mp: null,
+
+                    default_payment_for_payment_links: null,
                 }
 
                 this.errors = {}
