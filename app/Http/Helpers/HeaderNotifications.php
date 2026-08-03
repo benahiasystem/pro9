@@ -282,18 +282,24 @@ class HeaderNotifications
 
         $latest = (clone $query)->latest('created_at')->first();
 
-        $timestamp = optional($latest)->created_at;
+        if (!$latest) {
+            return;
+        }
+
+        $orderNumber = str_pad((string) $latest->id, 6, '0', STR_PAD_LEFT);
+        $orderTotal = number_format((float) $latest->total, 2, '.', ',');
+        $timestamp = $latest->created_at;
 
         $notifications[] = [
             'id' => 'pending_orders',
             'type' => 'pedidos',
             'icon' => 'bag',
             'icon_bg' => 'green',
-            'title' => 'Pedidos pendientes',
+            'title' => 'Nuevo pedido web',
             'description_parts' => [
-                ['text' => 'Hay ', 'bold' => false],
-                ['text' => (string) $count, 'bold' => true],
-                ['text' => ' pedido' . ($count === 1 ? '' : 's') . ' pendiente' . ($count === 1 ? '' : 's') . ' por procesar.', 'bold' => false],
+                ['text' => 'Pedido ', 'bold' => false],
+                ['text' => '#' . $orderNumber, 'bold' => true],
+                ['text' => ' por S/ ' . $orderTotal . ' — listo para preparar.', 'bold' => false],
             ],
             'time_ago' => $this->timeAgo($timestamp),
             'unread' => true,

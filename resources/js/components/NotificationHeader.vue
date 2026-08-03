@@ -30,10 +30,10 @@
                             <a
                                 v-for="notification in filteredNotifications"
                                 :key="notification.id"
-                                :href="notification.url"
+                                href="#"
                                 class="ag-notification-card"
                                 :class="{ 'is-unread': notification.unread }"
-                                @click="handleNotificationClick"
+                                @click.prevent="openNotification(notification)"
                             >
                                 <div class="ag-notification-card__icon" :class="`is-${notification.icon_bg}`">
                                     <component :is="iconComponents[notification.icon]" />
@@ -198,8 +198,14 @@ export default {
                 this.fetchNotifications();
             }
         },
-        handleNotificationClick() {
-            // Permite la navegación nativa del enlace.
+        openNotification(notification) {
+            const url = notification && notification.url;
+
+            if (!url || url === '#') {
+                return;
+            }
+
+            window.location.assign(url);
         },
         async fetchNotifications() {
             if (this.loading) {
