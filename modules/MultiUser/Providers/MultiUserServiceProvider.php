@@ -3,6 +3,9 @@
 namespace Modules\MultiUser\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Auth\Events\Login;
+use Modules\MultiUser\Listeners\SyncMultiUserPermissionsOnLogin;
 // use Illuminate\Database\Eloquent\Factory;
 
 class MultiUserServiceProvider extends ServiceProvider
@@ -19,6 +22,14 @@ class MultiUserServiceProvider extends ServiceProvider
         $this->registerViews();
     // $this->registerFactories();
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+
+        Event::listen(Login::class, SyncMultiUserPermissionsOnLogin::class);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Modules\MultiUser\Console\Commands\SyncMultiUserPermissionsCommand::class,
+            ]);
+        }
     }
 
     /**

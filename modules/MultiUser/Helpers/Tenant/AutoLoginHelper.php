@@ -7,6 +7,7 @@ use Hyn\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Support\Facades\Cache;
 use Modules\MultiUser\Models\System\MultiUser;
 use App\Models\Tenant\User;
+use Modules\MultiUser\Services\MultiUserPermissionSync;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -61,6 +62,10 @@ class AutoLoginHelper
         $user = $this->findUser($user_id);
 
         $this->loginById($user);
+
+        if ($user->is_multi_user) {
+            MultiUserPermissionSync::syncFromTenantAdmin($user);
+        }
 
         // \Log::info(
         //     "status: ". Auth::check()
