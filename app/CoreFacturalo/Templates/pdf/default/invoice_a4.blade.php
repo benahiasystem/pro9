@@ -42,6 +42,7 @@ $configurationEnableGuaranteeFund = App\CoreFacturalo\Helpers\Template\TemplateH
 $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
 $total_pending_payment = $document->total_pending_payment;
 
+$exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
 @endphp
 <html>
 
@@ -83,7 +84,7 @@ $total_pending_payment = $document->total_pending_payment;
     @endif
     <table class="full-width">
         <tr>
-            @if($company->logo)
+            @if($exists_logo)
                 <td width="20%">
                     <div class="company_logo_box">
                         <img

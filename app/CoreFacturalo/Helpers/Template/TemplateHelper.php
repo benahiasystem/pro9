@@ -13,6 +13,7 @@ use App\Models\Tenant\Establishment;
 use App\Models\Tenant\PaymentCondition;
 use App\Models\Tenant\SaleNotePayment;
 use App\Models\Tenant\Zone;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 
@@ -353,5 +354,34 @@ use Illuminate\Support\Str;
         public static function sellerSupplierPresence($document)
         {
             return in_array($document['transfer_reason_type_id'], ['02', '07']);
+        }
+        
+        /**
+         * Verifica si el archivo existe dentro de storage/app/public/uploads y ademas
+         * es accesible desde public/storage (el enlace que generan las plantillas pdf
+         * con public_path). Si falta el enlace simbolico devuelve false, para que la
+         * plantilla omita la imagen en lugar de fallar al leerla.
+         *
+         * La ruta se recibe relativa a uploads, con o sin el prefijo publico:
+         * 'logos/logo.jpg', 'uploads/logos/logo.jpg' o 'storage/uploads/logos/logo.jpg'.
+         *
+         * @param string|null $path
+         *
+         * @return bool
+         * @example
+         *          @if(\App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo))
+         */
+        public static function existsFileInUploads($path): bool
+        {
+            if (empty($path)) return false;
+
+            $path = ltrim(str_replace('\\', '/', trim($path)), '/');
+            $path = ltrim(preg_replace('~^(public/)?storage/~', '', $path), '/');
+
+            if ($path === '') return false;
+
+            if ( !Str::startsWith($path, 'uploads/')) $path = 'uploads/'.$path;
+
+            return Storage::disk('public')->exists($path) && is_file(public_path('storage/'.$path));
         }
     }

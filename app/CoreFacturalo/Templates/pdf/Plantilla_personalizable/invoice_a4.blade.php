@@ -35,6 +35,8 @@ if($establishment->logo) {
 $logo = "{$establishment->logo}";
 }
 
+$exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
+
 $configuration_decimal_quantity= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
 $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
@@ -103,7 +105,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
     @endif
     <table class="full-width">
         <tr>
-            @if($company->logo)
+            @if($exists_logo)
                 <td width="20%">
                     <div class="company_logo_box">
                         <img
