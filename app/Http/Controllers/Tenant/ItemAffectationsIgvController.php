@@ -20,8 +20,9 @@ class ItemAffectationsIgvController extends Controller
     {
 
         $validate = $this->validateAffectationItem($id);
+        $affiliation = AffectationIgvType::find($id);
 
-        if ($validate) {
+        if ($validate && $active == 0 && $affiliation->active == 1) {
             return [
                 'success' => false,
                 'message' => 'No se puede desactivar esta afectación IGV porque está asociada a comprobantes/nota de venta.',
