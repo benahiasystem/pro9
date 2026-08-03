@@ -2,6 +2,12 @@
 // Main Vue instance for shopping cart detail page
 
 let izipaySdkLoadPromise = null;
+let izipayLoadedPublicKey = null;
+const IZIPAY_KR_MAIN_SRC = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js';
+const IZIPAY_KR_CSS_HREF = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css';
+const IZIPAY_KR_EXT_SRC = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js';
+const MP_BRICK_HOST_ID = 'mp-brick-container';
+const MP_LOGO_SRC = '/porto-ecommerce/assets/images/payment-gateways/mercado-pago-official.svg?v=2';
 
 var app_cart = new Vue({
     el: '#app',
@@ -143,7 +149,15 @@ var app_cart = new Vue({
         
         mpScriptLoaded: false,
         mpBrickController: null,
+        mpBrickReady: false,
+        mpPreparedAmount: null,
+        mpPreparedEmail: null,
+        mpInstance: null,
+        mpPreparePromise: null,
+        mpPrepareTimer: null,
         krScriptLoaded: false,
+        izipayPublicKey: null,
+        izipayPublicKeyPromise: null,
 
         // Guest checkout — fase 1
         guestCheckoutAccepted: false,
@@ -1723,13 +1737,25 @@ var app_cart = new Vue({
                         resolve();
                         return;
                     }
-                }).catch(error => {
-                    this.processingPayment = false
-                    swal("Pago No realizado", 'Sucedió algo inesperado.', "error");
-                    if (error.response && error.response.status === 422) {
-                        this.errors = error.response.data;
-                    } else {
-                        console.log(error);
+                    existing.addEventListener('load', () => { this.mpScriptLoaded = true; resolve(); });
+                    existing.addEventListener('error', () => {
+                        this._mpScriptLoadPromise = null;
+                        if (!silent) {
+                            this.showSwalMessage('Error', 'No se pudo cargar MercadoPago', 'error');
+                        }
+                        reject(new Error('mp_script_load_failed'));
+                    });
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = 'https://sdk.mercadopago.com/js/v2';
+                script.async = true;
+                script.onload = () => { this.mpScriptLoaded = true; resolve(); };
+                script.onerror = () => {
+                    this._mpScriptLoadPromise = null;
+                    if (!silent) {
+                        this.showSwalMessage('Error', 'No se pudo cargar MercadoPago', 'error');
                     }
                     reject(new Error('mp_script_load_failed'));
                 };
@@ -2315,311 +2341,6 @@ var app_cart = new Vue({
                 }
             }
         },
-        async loadMpScript() {
-            if (window.MercadoPago) {
-                this.mpScriptLoaded = true;
-                return;
-            }
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = 'https://sdk.mercadopago.com/js/v2';
-                script.async = true;
-                script.onload = () => { this.mpScriptLoaded = true; resolve(); };
-                script.onerror = () => { this.showSwalMessage('Error', 'No se pudo cargar MercadoPago', 'error'); reject(); };
-                document.head.appendChild(script);
-            });
-        },
-        async execMp() {
-            if (this.records.length < 1){
-                return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
-            }
-            
-            this.processingPayment = true;
-            try {
-                await this.loadMpScript();
-                const publicKey = window.__ecommerce_config?.public_key_mp || '';
-                const mp = new window.MercadoPago(publicKey, { locale: 'es-PE' });
-                const bricksBuilder = mp.bricks();
-                
-                // Limpiar container previo si existe
-                if (this.mpBrickController) {
-                    this.mpBrickController.unmount();
-                }
-
-                // Generamos los datos preliminares de formulario para luego crear la orden
-                const rawFormData = await this.getFormPaymentCash();
-
-                const settings = {
-                    initialization: {
-                        amount: Number(rawFormData.precio_culqi).toFixed(2),
-                        payer: { email: rawFormData.customer.correo_electronico || '' },
-                    },
-                    customization: {
-                        visual: { style: { theme: 'default' } },
-                        paymentMethods: { creditCard: 'all', debitCard: 'all' },
-                    },
-                    callbacks: {
-                        onReady: () => {
-                            this.processingPayment = false;
-                            $('#mp-modal').modal('show'); // asumiendo que abriremos el container en un modal o está en el DOM
-                        },
-                        onSubmit: (formDataRecv) => {
-                            return new Promise((resolve, reject) => {
-                                swal({ title: "Estamos hablando con MercadoPago", text: "Procesando pago...", onOpen: () => { Swal.showLoading() } });
-                                
-                                const payload = { ...rawFormData, form_data: formDataRecv.formData };
-                                axios.post(window.__routes?.mercadopago_payment || '/ecommerce/mercadopago/payment', payload, this.getHeaderConfig())
-                                .then(response => {
-                                    if(response.data.success) {
-                                        swal.close();
-                                        $('#mp-modal').modal('hide');
-                                        this.saveContactDataUser();
-                                        this.showPurchaseSuccess(response.data.order);
-                                        resolve();
-                                    } else {
-                                        swal("Pago Rechazado", response.data.message || 'No se pudo procesar el pago.', "error");
-                                        reject();
-                                    }
-                                }).catch(err => {
-                                    swal("Pago Fallido", 'Ocurrió un error con la pasarela.', "error");
-                                    console.log(err);
-                                    reject();
-                                });
-                            });
-                        },
-                        onError: (error) => {
-                            console.error(error);
-                            this.showSwalMessage('Error', 'Ocurrió un problema con el formulario de pago.', 'error');
-                        },
-                    },
-                };
-                
-                // Necesitamos tener un wrapper visible, abrimos un sweetalert o modal
-                swal({
-                    title: 'Pago Seguro con Mercado Pago',
-                    html: '<div id="mp-swal-container" style="min-height: 300px;"></div>',
-                    showConfirmButton: false,
-                    showCloseButton: true,
-                    onOpen: async () => {
-                        this.mpBrickController = await bricksBuilder.create('payment', 'mp-swal-container', settings);
-                    },
-                    onClose: () => {
-                        if (this.mpBrickController) this.mpBrickController.unmount();
-                    }
-                });
-
-            } catch (err) {
-                this.processingPayment = false;
-                console.error(err);
-            }
-        },
-        async loadIzipaySDK() {
-            if (typeof window.KR !== 'undefined' && window.KR) {
-                this.krScriptLoaded = true;
-                return;
-            }
-
-            if (izipaySdkLoadPromise) {
-                return izipaySdkLoadPromise;
-            }
-
-            const KR_MAIN_SRC = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js';
-            const KR_CSS_HREF = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css';
-            const KR_EXT_SRC = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js';
-
-            const isSdkPresentInDom = () =>
-                document.head.querySelector(`script[src="${KR_MAIN_SRC}"]`) ||
-                document.head.querySelector(`script[src="${KR_EXT_SRC}"]`) ||
-                document.head.querySelector(`link[href="${KR_CSS_HREF}"]`);
-
-            izipaySdkLoadPromise = new Promise((resolve, reject) => {
-                let settled = false;
-                let pollInterval = null;
-                let pollTimeout = null;
-
-                const cleanup = () => {
-                    if (pollInterval) clearInterval(pollInterval);
-                    if (pollTimeout) clearTimeout(pollTimeout);
-                };
-
-                const succeed = () => {
-                    if (settled) return;
-                    settled = true;
-                    cleanup();
-                    this.krScriptLoaded = true;
-                    resolve();
-                };
-
-                const fail = (message) => {
-                    if (settled) return;
-                    settled = true;
-                    cleanup();
-                    swal('Error', message || 'No se pudo conectar con la pasarela de pagos', 'error');
-                    const err = new Error(message || 'No se pudo conectar con la pasarela de pagos');
-                    err.izipaySdkError = true;
-                    reject(err);
-                };
-
-                const waitForKR = () => {
-                    if (typeof window.KR !== 'undefined' && window.KR) {
-                        succeed();
-                        return;
-                    }
-
-                    pollInterval = setInterval(() => {
-                        if (typeof window.KR !== 'undefined' && window.KR) {
-                            succeed();
-                        }
-                    }, 100);
-
-                    pollTimeout = setTimeout(() => {
-                        fail('No se pudo conectar con la pasarela de pagos');
-                    }, 10000);
-                };
-
-                const injectThemeAssets = () => {
-                    if (!document.head.querySelector(`link[href="${KR_CSS_HREF}"]`)) {
-                        const style = document.createElement('link');
-                        style.rel = 'stylesheet';
-                        style.href = KR_CSS_HREF;
-                        document.head.appendChild(style);
-                    }
-
-                    if (!document.head.querySelector(`script[src="${KR_EXT_SRC}"]`)) {
-                        const extScript = document.createElement('script');
-                        extScript.src = KR_EXT_SRC;
-                        extScript.onerror = () => fail('No se pudo conectar con la pasarela de pagos');
-                        document.head.appendChild(extScript);
-                    }
-                };
-
-                // SDK ya en DOM (p. ej. KryptonPopinButton) — solo esperar, sin reinyectar
-                if (isSdkPresentInDom()) {
-                    waitForKR();
-                    return;
-                }
-
-                // Respaldo: inyectar solo si no hay rastro del SDK en el DOM
-                const mainScript = document.createElement('script');
-                mainScript.src = KR_MAIN_SRC;
-                mainScript.setAttribute('kr-public-key', window.__ecommerce_config?.public_key_izipay || '');
-                mainScript.setAttribute('kr-language', 'es-Es');
-                mainScript.onerror = () => fail('No se pudo conectar con la pasarela de pagos');
-                mainScript.onload = () => {
-                    injectThemeAssets();
-                    waitForKR();
-                };
-                document.head.appendChild(mainScript);
-            }).finally(() => {
-                izipaySdkLoadPromise = null;
-            });
-
-            return izipaySdkLoadPromise;
-        },
-        async execIzipay() {
-            if (this.records.length < 1){
-                return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
-            }
-            
-            this.processingPayment = true;
-            try {
-                await this.loadIzipaySDK();
-                const rawFormData = await this.getFormPaymentCash();
-                
-                swal({ title: "Iniciando pago...", text: "Cargando conectividad con el banco", onOpen: () => { Swal.showLoading() } });
-
-                // 1. Get formToken from Backend
-                const response = await axios.post(window.__routes?.izipay_payment || '/ecommerce/izipay/payment', rawFormData, this.getHeaderConfig());
-                if(response.data.success && response.data.formToken) {
-                    swal.close();
-
-                    const formToken = response.data.formToken;
-                    const order = response.data.order;
-
-                    try {
-                        await window.KR.setFormConfig({
-                            formToken: formToken,
-                            'kr-language': 'es-Es',
-                        });
-
-                        window.KR.onSubmit(async (paymentResponse) => {
-                            const uuid = paymentResponse.clientAnswer.transactions[0].uuid;
-                            swal({ title: "Verificando...", text: "Validando la transacción...", onOpen: () => { Swal.showLoading() } });
-
-                            axios.post(window.__routes?.izipay_transaction || '/ecommerce/izipay/transaction', { uuid: uuid }, this.getHeaderConfig())
-                            .then(res => {
-                                if(res.data.success && res.data.paid) {
-                                    swal.close();
-                                    this.saveContactDataUser();
-                                    this.showPurchaseSuccess(order);
-                                } else {
-                                    swal("Pago Rechazado", "Su pago no fue aprobado o fue denegado", "error");
-                                }
-                            }).catch(err => {
-                                console.error('Izipay transaction verify failed:', err);
-                                swal("Error", "Sucedió un error al verificar la transacción", "error");
-                            });
-                        });
-
-                        // Creación dinámica
-                        let container = document.getElementById('izipay-payment-host');
-                        if (!container) {
-                            container = document.createElement('div');
-                            container.id = 'izipay-payment-host';
-                            document.body.appendChild(container);
-                        }
-
-                        // Estilos de Overlay (Visibilidad forzada)
-                        container.style.position = 'fixed';
-                        container.style.top = '50%';
-                        container.style.left = '50%';
-                        container.style.transform = 'translate(-50%, -50%)';
-                        container.style.zIndex = '9999';
-                        container.style.backgroundColor = 'white';
-                        container.style.padding = '20px';
-                        container.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
-                        container.style.display = 'block';
-
-                        // Limpieza e Inyección de estructura
-                        container.innerHTML = '';
-                        const krSmartForm = document.createElement('div');
-                        krSmartForm.className = 'kr-smart-form';
-                        container.appendChild(krSmartForm);
-
-                        // Renderizado seguro
-                        try {
-                            await window.KR.renderElements('#izipay-payment-host');
-                        } catch (renderErr) {
-                            console.error('Error capturado al renderizar KR.renderElements():', renderErr);
-                            console.log('Estado actual del contenedor:', container.outerHTML);
-                            throw renderErr; // Propagamos para el catch general
-                        }
-
-                        this.processingPayment = false;
-                    } catch (renderErr) {
-                        console.error('Izipay embedded form setup/render failed:', renderErr);
-                        swal.close();
-                        this.processingPayment = false;
-                        swal('Error', 'No se pudo mostrar el formulario de pago. Intente nuevamente.', 'error');
-                    }
-                } else {
-                    this.processingPayment = false;
-                    swal("Error", "No se pudo comunicar con Izipay", "error");
-                }
-            } catch (err) {
-                this.processingPayment = false;
-                console.error(err);
-                if (err.izipaySdkError) {
-                    return;
-                }
-                if (err.response && err.response.status === 422) {
-                    this.errors = err.response.data;
-                    swal("Error", "Revise los campos", "error");
-                } else {
-                    swal("Error", "Error al procesar", "error");
-                }
-            }
-        },
         redirectHome() {
             window.location = window.__routes?.home || "/ecommerce";
         },
@@ -2871,11 +2592,49 @@ var app_cart = new Vue({
                 total_venta:                    total_venta
             };
         },
-        openAddressModal() {
-            $('#addressModal').modal('show')
-            setTimeout(() => {
-                if (!this.map) {
-                    this.initMap()
+        openAddAddressFlow() {
+            this.openAddressMapModal('add', null, false);
+        },
+        openChangeAddressFlow() {
+            if (this.user && this.user.id) {
+                this.openAddressListModal();
+                return;
+            }
+            this.openAddressMapModal('add', null, false);
+        },
+        fetchUserAddresses() {
+            if (!this.user || !this.user.id) {
+                return Promise.resolve();
+            }
+
+            const url = window.__routes?.shipping_addresses || '/ecommerce/shipping-addresses';
+
+            return axios.get(url, this.getHeaderConfig())
+                .then(response => {
+                    if (response.data && response.data.success) {
+                        if (Array.isArray(response.data.addresses)) {
+                            this.userAddresses = this.normalizeAddressList(response.data.addresses);
+                        }
+                        if (response.data.address) {
+                            this.userDefaultAddress = this.normalizeAddressRecord(response.data.address);
+                        }
+                    }
+                    return response;
+                })
+                .catch(error => {
+                    console.error('No se pudieron cargar las direcciones', error);
+                    return Promise.reject(error);
+                });
+        },
+        openAddressListModal() {
+            this.addressListMenuOpen = null;
+
+            const showModal = () => {
+                const active = this.userDefaultAddress;
+                if (active && active.id && this.userAddresses.some(a => a.id === active.id)) {
+                    this.selectedAddressId = active.id;
+                } else if (this.userAddresses.length) {
+                    this.selectedAddressId = this.userAddresses[0].id;
                 } else {
                     this.selectedAddressId = null;
                 }
