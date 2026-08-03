@@ -554,6 +554,18 @@ export default {
         clickCancel(index) {
             this.document.payments.splice(index, 1);
         },
+        getPaymentDestinationId() {
+            if (
+                this.configuration.destination_sale &&
+                this.payment_destinations.length > 0
+            ) {
+                let cash = _.find(this.payment_destinations, { id: "cash" });
+
+                return cash ? cash.id : this.payment_destinations[0].id;
+            }
+
+            return null;
+        },
         async clickAddPayment() {
 
             let payment = this.document.payments.length == 0 ? this.form.dispatch.total : 0;
@@ -563,7 +575,7 @@ export default {
                 document_id: null,
                 date_of_payment: moment().format("YYYY-MM-DD"),
                 payment_method_type_id: "01",
-                payment_destination_id: null,
+                payment_destination_id: this.getPaymentDestinationId(),
                 reference: null,
                 payment: payment,
             });
