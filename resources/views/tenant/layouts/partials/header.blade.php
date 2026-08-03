@@ -115,34 +115,6 @@
                         </a>
                     </li>
                 @endif
-                @if(in_array('ecommerce', $vc_modules))
-                <li>
-                    <a href="{{ route('tenant_orders_index') }}"
-                        class="notification-icon text-secondary navigation-options" data-toggle="tooltip"
-                        data-placement="bottom" title="Pedidos pendientes">
-                        <span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-cart">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                <path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                <path d="M17 17h-11v-14h-2" />
-                                <path d="M6 5l14 1l-1 7h-13" />
-                            </svg>
-                            <span class="ms-2">Pedidos pendientes</span>
-                            <span class="badge badge-pill badge-info badge-up cart-item-count">{{ $vc_orders }}</span>
-                        </span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                            class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M9 6l6 6l-6 6" />
-                        </svg>
-                    </a>
-                </li>
-                @endif
                 @if(in_array('cuenta', $vc_modules))
                     @if(in_array('account_users_list', $vc_module_levels))
                         <li>
@@ -369,26 +341,6 @@
                     </g>
                 </svg>
             </a>
-            </li>
-        </ul>
-        @endif
-        @if(in_array('ecommerce', $vc_modules))
-        <span class="separator"></span>
-        <ul class="notifications">
-            <li>
-                <a href="{{ route('tenant_orders_index') }}" class="notification-icon text-secondary"
-                    data-toggle="tooltip" data-placement="bottom" title="Pedidos pendientes">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-cart">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                        <path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                        <path d="M17 17h-11v-14h-2" />
-                        <path d="M6 5l14 1l-1 7h-13" />
-                    </svg>
-                    <span class="badge badge-pill badge-info badge-up cart-item-count">{{ $vc_orders }}</span>
-                </a>
             </li>
         </ul>
         @endif

@@ -10,37 +10,78 @@
                 <li class="ag-notification-panel" @click.stop>
                     <div class="ag-notification-header">
                         <h4 class="ag-notification-title">Notificaciones</h4>
-                    </div>
-
-                    <div class="ag-notification-filters">
                         <button
-                            v-for="filter in filters"
-                            :key="filter.id"
+                            v-if="hasUnreadNotifications"
                             type="button"
-                            class="ag-filter-chip"
-                            :class="{ 'is-active': activeFilter === filter.id }"
-                            @click.stop="activeFilter = filter.id"
+                            class="text-xs text-gray-400 hover:text-gray-600 font-medium ag-mark-all-read"
+                            @click.stop="markAllAsRead"
                         >
-                            {{ filter.label }}
+                            Marcar todo como leído
                         </button>
                     </div>
 
+                    <div class="ag-notification-filters-group">
+                        <div class="ag-notification-filters ag-notification-filters--category">
+                            <button
+                                v-for="filter in filters"
+                                :key="filter.id"
+                                type="button"
+                                class="ag-filter-chip"
+                                :class="{ 'is-active': activeFilter === filter.id }"
+                                @click.stop="setActiveFilter(filter.id)"
+                            >
+                                {{ filter.label }}
+                            </button>
+                        </div>
+
+                        <div class="ag-notification-filters ag-notification-filters--read">
+                            <button
+                                v-for="readFilter in readFilters"
+                                :key="readFilter.id"
+                                type="button"
+                                class="ag-filter-chip"
+                                :class="{ 'is-active': activeFilter === readFilter.id }"
+                                @click.stop="setActiveFilter(readFilter.id)"
+                            >
+                                {{ readFilter.label }}
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="ag-notification-list">
-                        <template v-if="filteredNotifications.length">
+                        <transition-group
+                            v-if="filteredNotifications.length"
+                            name="ag-list-fade"
+                            tag="div"
+                            class="ag-notification-list-inner"
+                        >
                             <a
                                 v-for="notification in filteredNotifications"
                                 :key="notification.id"
                                 href="#"
                                 class="ag-notification-card"
-                                :class="{ 'is-unread': notification.unread }"
+                                :class="{ 'is-unread': isUnread(notification) }"
                                 @click.prevent="openNotification(notification)"
                             >
+                                <transition name="ag-dot-fade">
+                                    <span
+                                        v-if="isUnread(notification)"
+                                        class="ag-unread-dot w-2 h-2 bg-blue-600 rounded-full"
+                                    ></span>
+                                </transition>
+                                <button
+                                    v-if="isUnread(notification)"
+                                    type="button"
+                                    class="text-xs text-gray-400 hover:text-gray-600 font-medium ag-mark-read-btn"
+                                    @click.stop="markAsRead(notification)"
+                                >
+                                    Marcar como leído
+                                </button>
                                 <div class="ag-notification-card__icon" :class="`is-${notification.icon_bg}`">
                                     <component :is="iconComponents[notification.icon]" />
                                 </div>
                                 <div class="ag-notification-card__body">
                                     <div class="ag-notification-card__title-row">
-                                        <span v-if="notification.unread" class="ag-unread-dot"></span>
                                         <strong class="ag-notification-card__title">{{ notification.title }}</strong>
                                         <span v-if="notification.tag" class="ag-notification-tag">{{ notification.tag }}</span>
                                     </div>
@@ -53,14 +94,14 @@
                                     <span class="ag-notification-card__time">{{ notification.time_ago }}</span>
                                 </div>
                             </a>
-                        </template>
+                        </transition-group>
                         <div v-else class="ag-notification-empty">
                             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
                                 <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
                             </svg>
-                            <p>¡Todo al día! No hay pendientes</p>
+                            <p>{{ emptyStateMessage }}</p>
                         </div>
                     </div>
                 </li>
@@ -128,6 +169,10 @@ const IconCloudAlert = {
     `
 };
 
+const READ_STORAGE_PREFIX = 'ag_header_notifications_read';
+const POLL_INTERVAL_MS = 30000;
+const POLL_INTERVAL_OPEN_MS = 15000;
+
 export default {
     components: {
         IconSend,
@@ -145,16 +190,27 @@ export default {
     data() {
         return {
             notifications: [],
+            readSnapshots: {},
             hasLoaded: false,
             activeFilter: 'todas',
             polling: null,
             loading: false,
+            pollingInFlight: false,
+            pendingRefresh: false,
+            dropdownOpen: false,
+            requestToken: 0,
+            boundVisibilityHandler: null,
+            boundFocusHandler: null,
             filters: [
                 { id: 'todas', label: 'Todas' },
                 { id: 'comprobantes', label: 'Comprobantes' },
                 { id: 'pagos', label: 'Pagos' },
                 { id: 'inventario', label: 'Inventario' },
                 { id: 'sistema', label: 'Sistema' }
+            ],
+            readFilters: [
+                { id: 'no-leidas', label: 'No leídas' },
+                { id: 'leidas', label: 'Leídas' }
             ],
             iconComponents: {
                 send: 'IconSend',
@@ -167,15 +223,36 @@ export default {
     },
     computed: {
         badgeCount() {
+            const unread = this.unreadCount;
+
             if (this.hasLoaded) {
-                return this.notifications.length;
+                return unread;
             }
 
             return this.initialCount;
         },
+        unreadCount() {
+            return this.notifications.filter((notification) => this.isUnread(notification)).length;
+        },
+        hasUnreadNotifications() {
+            return this.unreadCount > 0;
+        },
         filteredNotifications() {
+            if (this.activeFilter === 'no-leidas') {
+                return this.notifications.filter((notification) => this.isUnread(notification));
+            }
+
+            if (this.activeFilter === 'leidas') {
+                return this.notifications.filter((notification) => !this.isUnread(notification));
+            }
+
             if (this.activeFilter === 'todas') {
-                return this.notifications;
+                return [...this.notifications].sort((first, second) => {
+                    const firstUnread = this.isUnread(first) ? 0 : 1;
+                    const secondUnread = this.isUnread(second) ? 0 : 1;
+
+                    return firstUnread - secondUnread;
+                });
             }
 
             if (this.activeFilter === 'pedidos') {
@@ -183,20 +260,207 @@ export default {
             }
 
             return this.notifications.filter((notification) => notification.type === this.activeFilter);
+        },
+        emptyStateMessage() {
+            if (this.activeFilter === 'no-leidas') {
+                return 'No hay notificaciones no leídas';
+            }
+
+            if (this.activeFilter === 'leidas') {
+                return 'Aún no hay notificaciones leídas';
+            }
+
+            if (this.activeFilter !== 'todas') {
+                return `No hay notificaciones en ${this.getCategoryLabel(this.activeFilter)}`;
+            }
+
+            return '¡Todo al día! No hay pendientes';
         }
+    },
+    created() {
+        this.readSnapshots = this.loadReadSnapshots();
     },
     mounted() {
         this.fetchNotifications();
         this.startPolling();
+        this.bindRealtimeListeners();
     },
     beforeDestroy() {
         this.stopPolling();
+        this.unbindRealtimeListeners();
     },
     methods: {
+        setActiveFilter(filterId) {
+            this.activeFilter = filterId;
+        },
+        getCategoryLabel(categoryId) {
+            const category = this.filters.find((filter) => filter.id === categoryId);
+
+            return category ? category.label.toLowerCase() : 'esta categoría';
+        },
+        readStorageKey() {
+            return `${READ_STORAGE_PREFIX}_${window.location.hostname}`;
+        },
+        loadReadSnapshots() {
+            try {
+                const stored = localStorage.getItem(this.readStorageKey());
+
+                if (!stored) {
+                    return {};
+                }
+
+                const parsed = JSON.parse(stored);
+
+                if (Array.isArray(parsed)) {
+                    return parsed.reduce((snapshots, id) => {
+                        snapshots[id] = '__legacy__';
+
+                        return snapshots;
+                    }, {});
+                }
+
+                return parsed && typeof parsed === 'object' ? parsed : {};
+            } catch (error) {
+                return {};
+            }
+        },
+        persistReadSnapshots() {
+            try {
+                localStorage.setItem(this.readStorageKey(), JSON.stringify(this.readSnapshots));
+            } catch (error) {
+                console.log('No se pudo guardar el estado de lectura de notificaciones.', error);
+            }
+        },
+        getNotificationFingerprint(notification) {
+            if (!notification) {
+                return '';
+            }
+
+            return [
+                notification.id,
+                notification.title || '',
+                notification.tag || '',
+                String(notification.count ?? ''),
+                JSON.stringify(notification.description_parts || []),
+            ].join('|');
+        },
+        reconcileLegacySnapshots(notifications) {
+            let changed = false;
+
+            notifications.forEach((notification) => {
+                if (this.readSnapshots[notification.id] !== '__legacy__') {
+                    return;
+                }
+
+                this.$set(
+                    this.readSnapshots,
+                    notification.id,
+                    this.getNotificationFingerprint(notification)
+                );
+                changed = true;
+            });
+
+            if (changed) {
+                this.persistReadSnapshots();
+            }
+        },
+        isUnread(notification) {
+            if (!notification || notification.unread === false) {
+                return false;
+            }
+
+            const fingerprint = this.getNotificationFingerprint(notification);
+            const readFingerprint = this.readSnapshots[notification.id];
+
+            if (!readFingerprint || readFingerprint === '__legacy__') {
+                return true;
+            }
+
+            return readFingerprint !== fingerprint;
+        },
+        applyReadState(notifications) {
+            this.reconcileLegacySnapshots(notifications);
+
+            return notifications.map((notification) => ({
+                ...notification,
+                unread: this.isUnread(notification),
+            }));
+        },
+        notificationsHaveChanged(currentNotifications, nextNotifications) {
+            if (currentNotifications.length !== nextNotifications.length) {
+                return true;
+            }
+
+            return nextNotifications.some((notification, index) => {
+                const current = currentNotifications[index];
+
+                if (!current || current.id !== notification.id) {
+                    return true;
+                }
+
+                return (
+                    current.title !== notification.title
+                    || String(current.count ?? '') !== String(notification.count ?? '')
+                    || JSON.stringify(current.description_parts) !== JSON.stringify(notification.description_parts)
+                );
+            });
+        },
+        syncNotificationsSilently(nextNotifications) {
+            if (!this.notificationsHaveChanged(this.notifications, nextNotifications)) {
+                return false;
+            }
+
+            this.notifications = nextNotifications;
+
+            return true;
+        },
+        markAsRead(notification) {
+            if (!notification || !this.isUnread(notification)) {
+                return;
+            }
+
+            this.$set(
+                this.readSnapshots,
+                notification.id,
+                this.getNotificationFingerprint(notification)
+            );
+            this.persistReadSnapshots();
+
+            const index = this.notifications.findIndex((item) => item.id === notification.id);
+
+            if (index !== -1) {
+                this.$set(this.notifications[index], 'unread', false);
+            }
+        },
+        markAllAsRead() {
+            let changed = false;
+
+            this.notifications.forEach((notification) => {
+                if (!this.isUnread(notification)) {
+                    return;
+                }
+
+                this.$set(
+                    this.readSnapshots,
+                    notification.id,
+                    this.getNotificationFingerprint(notification)
+                );
+                changed = true;
+                this.$set(notification, 'unread', false);
+            });
+
+            if (changed) {
+                this.persistReadSnapshots();
+            }
+        },
         onDropdownVisible(visible) {
+            this.dropdownOpen = visible;
+
             if (visible) {
                 this.fetchNotifications();
             }
+
+            this.restartPolling();
         },
         openNotification(notification) {
             const url = notification && notification.url;
@@ -207,30 +471,102 @@ export default {
 
             window.location.assign(url);
         },
-        async fetchNotifications() {
-            if (this.loading) {
+        async fetchNotifications(options = {}) {
+            const silent = options.silent === true || options.background === true;
+
+            if (silent) {
+                if (this.pollingInFlight) {
+                    this.pendingRefresh = true;
+                    return;
+                }
+
+                this.pollingInFlight = true;
+            } else if (this.loading) {
                 return;
+            } else {
+                this.loading = true;
             }
 
-            this.loading = true;
+            const requestToken = ++this.requestToken;
 
             try {
                 const response = await this.$http.get('/notifications/header');
                 const data = response.data || {};
 
-                this.notifications = Array.isArray(data.notifications) ? data.notifications : [];
-            } catch (error) {
-                console.log('No se pudieron actualizar las notificaciones.', error);
-                this.notifications = [];
-            } finally {
+                if (requestToken !== this.requestToken) {
+                    return;
+                }
+
+                const nextNotifications = this.applyReadState(
+                    Array.isArray(data.notifications) ? data.notifications : []
+                );
+
+                if (silent) {
+                    this.syncNotificationsSilently(nextNotifications);
+                } else {
+                    this.notifications = nextNotifications;
+                }
+
                 this.hasLoaded = true;
-                this.loading = false;
+            } catch (error) {
+                if (requestToken === this.requestToken) {
+                    console.log('No se pudieron actualizar las notificaciones.', error);
+
+                    if (!silent || !this.hasLoaded) {
+                        this.notifications = [];
+                    }
+                }
+            } finally {
+                if (requestToken === this.requestToken) {
+                    if (silent) {
+                        this.pollingInFlight = false;
+                    } else {
+                        this.loading = false;
+                        this.hasLoaded = true;
+                    }
+                }
+
+                if (this.pendingRefresh) {
+                    this.pendingRefresh = false;
+                    this.fetchNotifications({ silent: true });
+                }
             }
+        },
+        bindRealtimeListeners() {
+            this.boundVisibilityHandler = () => {
+                if (!document.hidden) {
+                    this.fetchNotifications({ silent: true });
+                }
+            };
+            this.boundFocusHandler = () => {
+                this.fetchNotifications({ silent: true });
+            };
+
+            document.addEventListener('visibilitychange', this.boundVisibilityHandler);
+            window.addEventListener('focus', this.boundFocusHandler);
+        },
+        unbindRealtimeListeners() {
+            if (this.boundVisibilityHandler) {
+                document.removeEventListener('visibilitychange', this.boundVisibilityHandler);
+                this.boundVisibilityHandler = null;
+            }
+
+            if (this.boundFocusHandler) {
+                window.removeEventListener('focus', this.boundFocusHandler);
+                this.boundFocusHandler = null;
+            }
+        },
+        getPollInterval() {
+            return this.dropdownOpen ? POLL_INTERVAL_OPEN_MS : POLL_INTERVAL_MS;
+        },
+        restartPolling() {
+            this.stopPolling();
+            this.startPolling();
         },
         startPolling() {
             this.polling = setInterval(() => {
-                this.fetchNotifications();
-            }, 60000);
+                this.fetchNotifications({ silent: true });
+            }, this.getPollInterval());
         },
         stopPolling() {
             if (this.polling) {
@@ -283,8 +619,58 @@ export default {
 }
 
 .ag-notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     padding: 18px 20px 12px;
     border-bottom: 1px solid #f0f2f5;
+}
+
+.text-xs {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.text-gray-400 {
+    color: #9CA3AF;
+}
+
+.hover\:text-gray-600:hover {
+    color: #4B5563;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.w-2 {
+    width: 8px;
+}
+
+.h-2 {
+    height: 8px;
+}
+
+.bg-blue-600 {
+    background-color: #2563EB;
+}
+
+.rounded-full {
+    border-radius: 9999px;
+}
+
+.ag-mark-all-read {
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+}
+
+.ag-mark-all-read:hover {
+    color: #4B5563;
 }
 
 .ag-notification-title {
@@ -295,12 +681,22 @@ export default {
     line-height: 1.2;
 }
 
+.ag-notification-filters-group {
+    border-bottom: 1px solid #f0f2f5;
+}
+
 .ag-notification-filters {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 12px 16px;
-    border-bottom: 1px solid #f0f2f5;
+}
+
+.ag-notification-filters--category {
+    padding: 12px 16px 6px;
+}
+
+.ag-notification-filters--read {
+    padding: 0 16px 12px;
 }
 
 .ag-filter-chip {
@@ -330,7 +726,33 @@ export default {
     overflow-y: auto;
 }
 
+.ag-notification-list-inner {
+    position: relative;
+}
+
+.ag-list-fade-move {
+    transition: transform 0.25s ease;
+}
+
+.ag-list-fade-enter-active,
+.ag-list-fade-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ag-list-fade-enter,
+.ag-list-fade-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+}
+
+.ag-list-fade-leave-active {
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
 .ag-notification-card {
+    position: relative;
     display: flex;
     align-items: flex-start;
     gap: 14px;
@@ -392,11 +814,39 @@ export default {
 }
 
 .ag-unread-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #2563EB;
+    position: absolute;
+    top: 14px;
+    right: 16px;
     flex-shrink: 0;
+    pointer-events: none;
+}
+
+.ag-mark-read-btn {
+    position: absolute;
+    top: 10px;
+    right: 30px;
+    border: none;
+    background: transparent;
+    padding: 2px 0;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    z-index: 1;
+}
+
+.ag-notification-card:hover .ag-mark-read-btn {
+    opacity: 1;
+}
+
+.ag-dot-fade-enter-active,
+.ag-dot-fade-leave-active {
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ag-dot-fade-enter,
+.ag-dot-fade-leave-to {
+    opacity: 0;
+    transform: scale(0.5);
 }
 
 .ag-notification-card__title {
