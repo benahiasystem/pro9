@@ -605,12 +605,12 @@ var app_cart = new Vue({
 
             const doc = this.form_document.datos_del_cliente_o_receptor;
             doc.correo_electronico = (this.guest_form.email || '').trim();
-            doc.telefono = (this.guest_form.telephone || this.form_contact.telephone || '').trim();
+            doc.telefono = (this.guest_form.telephone || this.form_contact.telephone || '').replace(/\D/g, '');
             doc.apellidos_y_nombres_o_razon_social = (this.guest_form.name || '').trim();
-            doc.numero_documento = (this.guest_form.number || '').trim();
+            doc.numero_documento = (this.guest_form.number || '').replace(/\D/g, '') || '0';
             doc.codigo_tipo_documento_identidad = this.guest_form.identity_document_type_id || '0';
             doc.identity_document_type_id = this.guest_form.identity_document_type_id || '0';
-            doc.direccion = this.form_contact.address || '';
+            doc.direccion = this.resolveCustomerAddressForPayment();
 
             this.numberDocument = doc.numero_documento;
             this.typeDocuments = doc.codigo_tipo_documento_identidad;
@@ -636,6 +636,7 @@ var app_cart = new Vue({
                 if (this.form_document.datos_del_cliente_o_receptor) {
                     this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments;
                     this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument;
+                    this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments;
                 }
                 return;
             }
@@ -1585,8 +1586,8 @@ var app_cart = new Vue({
                 return;
             }
 
-            this.form_document.datos_del_cliente_o_receptor.direccion = this.form_contact.address
-            this.form_document.datos_del_cliente_o_receptor.telefono = this.form_contact.telephone
+            this.form_document.datos_del_cliente_o_receptor.direccion = this.resolveCustomerAddressForPayment()
+            this.form_document.datos_del_cliente_o_receptor.telefono = (this.form_contact.telephone || '').replace(/\D/g, '')
             this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments
             this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument
             this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments
@@ -1624,17 +1625,63 @@ var app_cart = new Vue({
 
             return true;
         },
+        buildShippingAddress() {
+            if (this.isPickupMode && this.selectedPickupBranch) {
+                return 'Recojo en tienda: ' + this.selectedPickupBranch.name +
+                    (this.selectedPickupBranch.address ? ' — ' + this.selectedPickupBranch.address : '');
+            }
+
+            return (this.form_contact.address || '').trim();
+        },
+        resolveCustomerAddressForPayment() {
+            const shippingAddress = this.buildShippingAddress();
+            if (this.isPickupMode && shippingAddress) {
+                return shippingAddress;
+            }
+
+            return (this.form_contact.address || '').trim();
+        },
+        resolvePaymentCustomer() {
+            this.refreshSetDataCustomer();
+
+            const source = this.form_document?.datos_del_cliente_o_receptor || {};
+            const customer = Object.assign({}, source);
+            const shippingAddress = this.buildShippingAddress();
+
+            customer.telefono = String(
+                customer.telefono || this.form_contact.telephone || this.guest_form?.telephone || ''
+            ).replace(/\D/g, '');
+            customer.correo_electronico = (
+                customer.correo_electronico
+                || this.guest_form?.email
+                || (this.user && this.user.email)
+                || ''
+            ).trim();
+
+            let direccion = (customer.direccion || this.form_contact.address || '').trim();
+            if (!direccion && this.isPickupMode && shippingAddress) {
+                direccion = shippingAddress;
+            }
+            customer.direccion = direccion;
+
+            const docType = String(
+                customer.identity_document_type_id
+                || customer.codigo_tipo_documento_identidad
+                || this.typeDocuments
+                || '0'
+            );
+            customer.codigo_tipo_documento_identidad = docType;
+            customer.identity_document_type_id = docType;
+            customer.numero_documento = String(customer.numero_documento || this.numberDocument || '0')
+                .replace(/\D/g, '') || '0';
+
+            return customer;
+        },
         async getFormPaymentCash() {
             this.refreshSetDataCustomer()
 
-            // Calcular la dirección de envio según el modo seleccionado
-            let shippingAddress = '';
-            if (this.isPickupMode && this.selectedPickupBranch) {
-                shippingAddress = 'Recojo en tienda: ' + this.selectedPickupBranch.name +
-                    (this.selectedPickupBranch.address ? ' — ' + this.selectedPickupBranch.address : '');
-            } else {
-                shippingAddress = this.form_contact.address || '';
-            }
+            const shippingAddress = this.buildShippingAddress();
+            const customer = this.resolvePaymentCustomer();
 
             let precio = Math.round(Number(this.summary.total) * 100).toFixed(2);
             let precio_culqi = Number(Number(this.summary.total).toFixed(2));
@@ -1642,7 +1689,7 @@ var app_cart = new Vue({
                 producto: 'Compras Ecommerce Facturador Pro',
                 precio: precio,
                 precio_culqi: precio_culqi,
-                customer: this.form_document.datos_del_cliente_o_receptor,
+                customer: customer,
                 items: this.records,
                 purchase: await this.getDocument(),
                 discount_coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null,
@@ -1690,7 +1737,7 @@ var app_cart = new Vue({
             // Métodos manuales: bloqueo inmediato mientras se genera el pedido
             this.showPaymentLoading();
 
-            let url_finally = window.__routes?.payment_cash || '/ecommerce/payment/cash';
+            let url_finally = window.__routes?.payment_cash || '/ecommerce/payment_cash';
             try {
                 const response = await axios.post(
                     url_finally,
@@ -1794,7 +1841,10 @@ var app_cart = new Vue({
             return {
                 initialization: {
                     amount: Number(initData.amount).toFixed(2),
-                    payer: { email: initData.email || '' },
+                    payer: {
+                        email: initData.email || '',
+                        entityType: 'individual',
+                    },
                 },
                 customization: {
                     visual: {
@@ -1811,7 +1861,6 @@ var app_cart = new Vue({
                                 formBackgroundColor: '#ffffff',
                                 outlinePrimaryColor: '#b8b8b8',
                                 outlineSecondaryColor: '#9aa1a9',
-                                fontSizeExtraExtraSmall: '10px',
                                 fontSizeExtraSmall: '11px',
                                 fontSizeSmall: '12px',
                                 fontSizeMedium: '13px',
@@ -1858,7 +1907,12 @@ var app_cart = new Vue({
 
                 this.getFormPaymentCash()
                     .then(rawFormData => {
-                        const payload = { ...rawFormData, form_data: mpFormData };
+                        const payload = {
+                            ...rawFormData,
+                            form_data: mpFormData,
+                            description: rawFormData.producto || 'Compras Ecommerce',
+                            external_reference: 'ecommerce-' + Date.now(),
+                        };
                         return axios.post(
                             window.__routes?.mercadopago_payment || '/ecommerce/mercadopago/payment',
                             payload,
@@ -1883,10 +1937,12 @@ var app_cart = new Vue({
                         }
                     })
                     .catch(err => {
-                        const validationMsg = err.response?.data?.message
+                        const validationMsg = this.formatMpPaymentErrorMessage(
+                            err.response?.data?.message
                             || (err.response?.data?.errors && Object.values(err.response.data.errors).flat().join(' '))
                             || err.message
-                            || null;
+                            || null
+                        );
                         this.detachMpBrickFromModal();
                         swal(
                             err.isPaymentRejection ? "Pago Rechazado" : "Pago Fallido",
@@ -1897,6 +1953,16 @@ var app_cart = new Vue({
                         reject(err);
                     });
             });
+        },
+        formatMpPaymentErrorMessage(message) {
+            const text = message || 'Ocurrió un error con la pasarela.';
+            const publicKey = window.__ecommerce_config?.public_key_mp || '';
+
+            if (publicKey.startsWith('TEST-') && /entidad emisora|no pudo procesar/i.test(text)) {
+                return text + ' En modo prueba de Mercado Pago use tarjetas de prueba y titular "APRO".';
+            }
+
+            return text;
         },
         unmountMpBrick() {
             if (this.mpBrickController) {
@@ -1980,6 +2046,9 @@ var app_cart = new Vue({
             const host = document.getElementById(MP_BRICK_HOST_ID);
             const slot = document.getElementById('mp-swal-slot');
             if (host && slot) {
+                host.style.display = 'block';
+                host.style.visibility = 'visible';
+                host.style.width = '100%';
                 slot.appendChild(host);
             }
         },
@@ -1987,36 +2056,18 @@ var app_cart = new Vue({
             const host = document.getElementById(MP_BRICK_HOST_ID);
             const stash = document.getElementById('mp-brick-stash');
             if (host && stash) {
+                host.style.display = '';
+                host.style.visibility = '';
+                host.style.width = '';
                 stash.appendChild(host);
             }
         },
         async execMp() {
-            if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
+            if (!this.validateCheckoutBeforePayment()) {
+                return;
             }
             if (this.records.length < 1){
                 return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
-            }
-
-            const initData = this.getMpBrickInitData();
-            const needsRefresh = !this.mpBrickReady
-                || this.mpPreparedAmount !== initData.amount
-                || this.mpPreparedEmail !== initData.email;
-
-            try {
-                if (this.mpPreparePromise) {
-                    await this.mpPreparePromise;
-                }
-                if (needsRefresh) {
-                    await this.prepareMpBrick(true);
-                }
-            } catch (err) {
-                console.error(err);
-                return this.showSwalMessage('Error', 'No se pudo cargar el formulario de Mercado Pago.', 'error');
-            }
-
-            if (!this.mpBrickReady) {
-                return this.showSwalMessage('Error', 'No se pudo cargar el formulario de Mercado Pago.', 'error');
             }
 
             swal({
@@ -2032,9 +2083,15 @@ var app_cart = new Vue({
                     if (title) {
                         title.innerHTML = `<img class="gateway-payment-title-logo" src="${MP_LOGO_SRC}" alt="Mercado Pago">`;
                     }
+
                     this.attachMpBrickToModal();
+                    this.prepareMpBrick(true).catch((err) => {
+                        console.error('MercadoPago brick reload failed', err);
+                        this.showSwalMessage('Error', 'No se pudo cargar el formulario de Mercado Pago.', 'error');
+                    });
                 },
                 onClose: () => {
+                    this.unmountMpBrick();
                     this.detachMpBrickFromModal();
                 }
             });
@@ -2226,8 +2283,8 @@ var app_cart = new Vue({
             document.body.style.overflow = '';
         },
         async execIzipay() {
-            if (!this.form_document.codigo_tipo_documento || !this.form_contact.address || !this.form_contact.telephone) {
-                return this.showSwalMessage('Ocurrió un error!', 'Complete sus datos y dirección antes de pagar', 'error');
+            if (!this.validateCheckoutBeforePayment()) {
+                return;
             }
             if (this.records.length < 1){
                 return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
@@ -2375,6 +2432,18 @@ var app_cart = new Vue({
             };
         },
         /**
+         * Overlay de carga para Yape, efectivo, transferencia y Culqi post-token.
+         */
+        showPaymentLoading(options = {}) {
+            const opts = options && typeof options === 'object' ? options : {};
+
+            this.paymentLoadingTitle = opts.title || 'Estamos generando tu pedido';
+            this.paymentLoadingText = opts.text || 'Por favor no cierres esta ventana hasta que el proceso termine.';
+            this.processingPayment = true;
+            this.paymentSuccessVisible = false;
+            document.body.style.overflow = 'hidden';
+        },
+        /**
          * Overlay durante el charge Culqi (token → backend).
          * Evita el vacío visual cuando el SDK cierra y aún no llega la respuesta.
          */
@@ -2450,7 +2519,14 @@ var app_cart = new Vue({
             this.hidePaymentLoading();
             this.response_order_total = order ? order.total : 0;
             this.thankYouUrl = this.buildThankYouUrl(order, thankYouUrl);
-            this.successOrder = order || null;
+            const formatted = this.buildSuccessOrder(order);
+            if (order && order.external_id) {
+                formatted.external_id = order.external_id;
+            }
+            if (order && order.id) {
+                formatted.id = order.id;
+            }
+            this.successOrder = formatted;
             this.clearCartSilently();
             this.paymentSuccessRedirecting = false;
             this.paymentSuccessVisible = true;
@@ -3101,12 +3177,10 @@ var app_cart = new Vue({
             this.syncMapToMarker();
         },
         closeAddressModal() {
-            const modalElement = document.getElementById('addressModal');
-            if (modalElement) {
-                $(modalElement).modal('hide');
-            } else {
-                console.error('No se encontró el elemento del modal.');
-            }
+            jQuery('#addressModal').modal('hide');
+            this.destroyMap();
+            this.addressSuggestions = [];
+            this.highlightedIndex = -1;
         },
         confirmAddress() {
             const street = (this.addressModal.address || '').trim();
@@ -3117,14 +3191,43 @@ var app_cart = new Vue({
             this.closeAddressModal();
             this.checkDeliveryZone();
 
-            this.form_contact.address = fullAddress
-            this.closeAddressModal()
-            this.checkDeliveryZone()
+            this.saveShippingAddress(() => {
+                if (returnToList) {
+                    this.openAddressListModal();
+                }
+            }, isCreatingNew);
 
             if (this.showGuestForm && !this.isLoggedIn) {
                 this.syncGuestFormToDocument();
                 this.saveGuestFormDraft();
             }
+        },
+        syncMapToMarker() {
+            if (!this.map || !this.marker) {
+                return;
+            }
+            const pos = {
+                lat: Number(this.addressModal.latitude),
+                lng: Number(this.addressModal.longitude),
+            };
+            this.marker.setPosition(pos);
+            this.map.setCenter(pos);
+        },
+        destroyMap() {
+            if (this.mapListeners && this.mapListeners.length) {
+                this.mapListeners.forEach(listener => google.maps.event.removeListener(listener));
+            }
+            this.mapListeners = [];
+            if (this.marker) {
+                this.marker.setMap(null);
+            }
+            this.map = null;
+            this.marker = null;
+            this.geocoder = null;
+            this.mapGeocodeEnabled = false;
+            this.mapGeocodeRequestId = 0;
+            this.lastGeocodedLat = null;
+            this.lastGeocodedLng = null;
         },
         initMap() {
             const mapElement = document.getElementById('map');

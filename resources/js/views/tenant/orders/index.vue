@@ -272,34 +272,34 @@
                             <el-tag v-if="isVoided(row)" type="danger" size="small" effect="plain">
                                 Anulado
                             </el-tag>
-                            <el-dropdown v-else trigger="click" size="small">
-                                <el-button class="btn-dropdown" icon="el-icon-more"></el-button>
-                                <el-dropdown-menu slot="dropdown">
-                                    <el-dropdown-item
-                                        v-if="row.document_type_id == '80' && row.sale_note_id"
-                                        @click.native="clickOptions(row.sale_note_id)"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" /></svg>
-                                        Opciones
-                                    </el-dropdown-item>
-
-                                    <el-dropdown-item
-                                        v-else-if="row.document_external_id"
-                                        @click.native="clickDownload(row.document_external_id)"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2" /><path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4" /><path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z" /></svg>
-                                        Opciones
-                                    </el-dropdown-item>
-
-                                    <el-dropdown-item
-                                        v-if="canGenerateGuide(row)"
-                                        @click.native="goToGuide(row)"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg>
-                                        Generar guía
-                                    </el-dropdown-item>
-                                </el-dropdown-menu>
-                            </el-dropdown>
+                            <div v-else class="d-inline-flex align-items-center justify-content-end gap-1">
+                                <template v-if="row.document_type_id == '80'">
+                                    <el-button
+                                        type="primary"
+                                        size="mini"
+                                        icon="el-icon-tickets"
+                                        title="Opciones de nota de venta"
+                                        @click.prevent="openSaleNoteOptions(row)"
+                                    ></el-button>
+                                </template>
+                                <template v-else>
+                                    <el-button
+                                        type="primary"
+                                        size="mini"
+                                        icon="el-icon-tickets"
+                                        title="Opciones de comprobante"
+                                        @click.prevent="openDocumentOptions(row)"
+                                    ></el-button>
+                                </template>
+                                <el-button
+                                    v-if="canGenerateGuide(row)"
+                                    type="default"
+                                    size="mini"
+                                    icon="el-icon-truck"
+                                    title="Generar guía"
+                                    @click.prevent="goToGuide(row)"
+                                ></el-button>
+                            </div>
                         </td>
                     </tr>
                 </data-table>
@@ -567,6 +567,20 @@ export default {
             this.statusDocument.send = "";
             this.resource_options = "sale-notes";
             this.showDialogOptions = true;
+        },
+        openSaleNoteOptions(row) {
+            if (!row.sale_note_id) {
+                return this.$message.warning('Este pedido aún no tiene nota de venta. Cambia el estado del pedido para generarla.');
+            }
+
+            this.clickOptions(row.sale_note_id);
+        },
+        openDocumentOptions(row) {
+            if (!row.document_external_id) {
+                return this.$message.warning('Este pedido aún no tiene comprobante electrónico. Cambia el estado del pedido para generarlo.');
+            }
+
+            this.clickDownload(row.document_external_id);
         },
         // El pedido está anulado si alguno de sus estados actuales tiene "Anular pedido".
         isVoided(row) {

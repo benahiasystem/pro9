@@ -15,7 +15,6 @@ use Illuminate\Support\Str;
 use App\Models\Tenant\Order;
 use App\Models\Tenant\ItemsRating;
 use App\Models\Tenant\ConfigurationEcommerce;
-use App\Models\Tenant\BankAccount;
 use App\Models\Tenant\StatusOrder;
 use Modules\Ecommerce\Http\Resources\ItemBarCollection;
 use stdClass;
@@ -38,12 +37,9 @@ use Modules\Ecommerce\Models\Tenant\DiscountCoupon;
 use Modules\Ecommerce\Models\Tenant\DiscountCouponUsage;
 use Modules\Ecommerce\Models\Tenant\PickupBranch;
 use App\Models\Tenant\PersonAddress;
-use Modules\Payment\Models\PaymentConfiguration;
 
 use App\Models\System\Configuration as SystemConfiguration;
 use Modules\Ecommerce\Jobs\SendOrderStatusEmail;
-use Illuminate\Support\Facades\Log;
-use Exception;
 
 
 class EcommerceController extends Controller
@@ -336,30 +332,6 @@ class EcommerceController extends Controller
         $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
 
-        $payment_configuration = PaymentConfiguration::first();
-        $gateway_availability = PaymentConfiguration::getEcommerceGatewayAvailability();
-        $enable_yape = $enable_yape && $gateway_availability['yape'];
-        $preferences = $configuration->preferences
-            ? (is_string($configuration->preferences) ? json_decode($configuration->preferences, true) : $configuration->preferences)
-            : [];
-
-        $bank_account_ids = array_values(array_filter(
-            array_map('intval', (array) ($preferences['ecommerce_bank_account_ids'] ?? []))
-        ));
-        $bank_accounts = collect();
-        if ($enable_transfer && !empty($bank_account_ids)) {
-            $bank_accounts = BankAccount::with('bank', 'currency_type')
-                ->whereIn('id', $bank_account_ids)
-                ->where('status', 1)
-                ->get()
-                ->sortBy(function ($account) use ($bank_account_ids) {
-                    $pos = array_search((int) $account->id, $bank_account_ids, true);
-
-                    return $pos === false ? PHP_INT_MAX : $pos;
-                })
-                ->values();
-        }
-
         // Sucursales de recojo activas para el checkout
         $pickup_branches = $enable_store_pickup
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
@@ -390,7 +362,7 @@ class EcommerceController extends Controller
             $bank_accounts = collect(); // Por seguridad, si no selecciona ninguna, no se muestran
         }
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'bank_accounts', 'preferences'));
+        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'userAddresses', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'bank_accounts', 'preferences'));
     }
 
     public function orderList()
@@ -438,10 +410,8 @@ class EcommerceController extends Controller
                 $records = $records->whereBetween('created_at', [$date_of_start, $date_of_end]);
             }
 
-            // Mostrar primero los pedidos más recientes.
-            $records = $records
-                ->orderByDesc('id')
-                ->paginate(config('tenant.items_per_page', 10));
+            // Obtener los resultados paginados
+            $records = $records->paginate(config('tenant.items_per_page', 10));
 
             // Transformar los datos manteniendo la estructura de paginación
             $records->getCollection()->transform(function ($row) {
@@ -807,23 +777,12 @@ class EcommerceController extends Controller
 
     public function paymentCash(Request $request)
     {
-        if (
-            $request->input('reference_payment') === 'yape'
-            && ! PaymentConfiguration::isYapeConfigured()
-        ) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Yape está deshabilitado o incompleto en la configuración global de pagos.',
-            ], 422);
-        }
+        $customer = $this->extractPaymentCustomerFromRequest($request);
+        $shippingAddress = (string) $request->input('shipping_address', '');
+        $customer = $this->normalizePaymentCustomerData($customer, $shippingAddress);
+        $request->merge(['customer' => $customer]);
 
-        $validator = Validator::make($request->customer, [
-            'telefono' => 'required|numeric',
-            'direccion' => 'required',
-            'codigo_tipo_documento_identidad' => 'required|numeric',
-            'numero_documento' => 'required|numeric',
-            'identity_document_type_id' => 'required|numeric'
-        ]);
+        $validator = $this->makePaymentCustomerValidator($customer, $shippingAddress);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -958,137 +917,6 @@ class EcommerceController extends Controller
                 ];
             }
         }
-    }
-
-    public function paymentMercadoPago(Request $request)
-    {
-        if (! PaymentConfiguration::isMercadoPagoConfigured()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Mercado Pago está deshabilitado o incompleto en la configuración global de pagos.',
-            ], 422);
-        }
-
-        $paymentConfig = PaymentConfiguration::first();
-        $publicKeyIsTest = str_starts_with(trim((string) $paymentConfig->public_key_mp), 'TEST-');
-        $accessTokenIsTest = str_starts_with(trim((string) $paymentConfig->access_token_mp), 'TEST-');
-
-        if ($publicKeyIsTest !== $accessTokenIsTest) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Las credenciales de Mercado Pago pertenecen a entornos distintos. La Public Key y el Access Token deben ser ambos de prueba o ambos de producción.',
-            ], 422);
-        }
-
-        // TODO: quitar tras depurar el payload del Payment Brick
-        Log::info('MercadoPago ecommerce request payload', $request->all());
-
-        $customer = is_string($request->customer)
-            ? json_decode($request->customer, true)
-            : (array) $request->customer;
-
-        $formData = $request->input('form_data') ?? $request->input('formData');
-        if (is_string($formData)) {
-            $formData = json_decode($formData, true);
-        }
-        if (is_array($formData) && isset($formData['formData'])) {
-            $formData = $formData['formData'];
-        }
-
-        $paymentReq = new Request([
-            'isTenant' => true,
-            'form_data' => $formData,
-        ]);
-
-        $mpController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
-        $result = $mpController->mercadoPagoCreatePayment($paymentReq);
-
-        if (!empty($result['paid']) || !empty($result['pending'])) {
-            $order = Order::create([
-                'external_id' => Str::uuid()->toString(),
-                'customer' => $customer,
-                'shipping_address' => $request->input('shipping_address', ''),
-                'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
-                'total' => $request->precio_culqi,
-                'reference_payment' => $request->input('reference_payment', 'mp'),
-                'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
-            ]);
-            $result['order'] = $order;
-            $result['thank_you_url'] = route('tenant_ecommerce_thank_you', [
-                'external_id' => $order->external_id,
-            ]);
-        } elseif (!empty($result['success'])) {
-            // La petición llegó a Mercado Pago, pero el pago no fue aprobado.
-            $result['success'] = false;
-            $result['message'] = 'El pago no fue aprobado por Mercado Pago.';
-        }
-
-        return response()->json($result);
-    }
-
-    public function paymentIzipay(Request $request)
-    {
-        if (! PaymentConfiguration::isIzipayConfigured()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Izipay está deshabilitado o incompleto en la configuración global de pagos.',
-            ], 422);
-        }
-
-        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array) $request->customer;
-
-        $order = Order::create([
-            'external_id' => Str::uuid()->toString(),
-            'customer' => $customer,
-            'shipping_address' => $request->input('shipping_address', ''),
-            'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
-            'total' => $request->precio_culqi,
-            'reference_payment' => 'izipay',
-            'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
-        ]);
-
-        $paymentReq = new Request([
-            'isTenant' => true,
-            'amount' => round((float) $request->precio_culqi * 100),
-            'currency' => 'PEN',
-            'orderId' => $order->external_id,
-            'customer' => [
-                'email' => $customer['correo_electronico'] ?? null,
-                'billingDetails' => [
-                    'firstName' => $customer['apellidos_y_nombres_o_razon_social'] ?? null,
-                    'phoneNumber' => $customer['telefono'] ?? null,
-                ],
-            ],
-        ]);
-
-        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
-        $result = $izipayController->izipayCreatePayment($paymentReq);
-
-        return response()->json([
-            'success' => $result['success'],
-            'formToken' => $result['formToken'] ?? null,
-            'publickey_izipay' => \Modules\Payment\Models\PaymentConfiguration::getKryptonPublicKeyIzipay(),
-            'order' => $order,
-        ]);
-    }
-
-    public function transactionIzipay(Request $request)
-    {
-        $paymentReq = new Request([
-            'isTenant' => true,
-            'uuid' => $request->uuid,
-        ]);
-
-        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
-
-        return response()->json($izipayController->izipayTransaction($paymentReq));
-    }
-
-    public function izipayRecord()
-    {
-        return response()->json([
-            'publickey_izipay' => \Modules\Payment\Models\PaymentConfiguration::getKryptonPublicKeyIzipay(),
-        ]);
     }
 
     public function paymentCashEmail($customer_email, $document)
@@ -1226,19 +1054,26 @@ class EcommerceController extends Controller
 
         $user->save();
 
-        // Persistir dirección de entrega si viene en el payload (p. ej. desde cuenta o checkout)
-        $deliveryAddress = $request->input('delivery_address') ?: $request->input('address');
-        if ($deliveryAddress) {
-            $user->address = $deliveryAddress;
-            $user->save();
+        // Registrar la dirección de entrega en el historial de direcciones del cliente si tiene ubigeo completo
+        $deliveryAddress = $request->input('delivery_address');
+        $districtId      = $request->input('district_id');
 
-            $this->persistPersonAddressRecord($user, [
-                'address'       => $deliveryAddress,
-                'department_id' => $request->input('department_id'),
-                'province_id'   => $request->input('province_id'),
-                'district_id'   => $request->input('district_id'),
-                'phone'         => $request->input('telephone') ?: $user->telephone,
-            ]);
+        if ($deliveryAddress && $districtId) {
+            $user->addresses()->firstOrCreate(
+                [
+                    'address'     => $deliveryAddress,
+                    'district_id' => $districtId,
+                ],
+                [
+                    'country_id'    => 'PE',
+                    'department_id' => $request->input('department_id'),
+                    'province_id'   => $request->input('province_id'),
+                    'district_id'   => $districtId,
+                    'address'       => $deliveryAddress,
+                    'phone'         => $request->input('telephone'),
+                    'main'          => false,
+                ]
+            );
         }
 
         return ['success' => true, 'message' => 'Datos actualizados correctamente'];
@@ -2390,6 +2225,145 @@ class EcommerceController extends Controller
             'found' => true,
             'zones' => $zones,
         ]);
+    }
+
+    public function paymentIzipay(Request $request)
+    {
+        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array)$request->customer;
+
+        $order = Order::create([
+            'external_id' => Str::uuid()->toString(),
+            'customer' => $customer,
+            'shipping_address' => $request->input('shipping_address', ''),
+            'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
+            'total' => $request->precio_culqi,
+            'reference_payment' => 'izipay',
+            'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase
+        ]);
+
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'amount' => round((float)$request->precio_culqi * 100),
+            'currency' => 'PEN',
+            'orderId' => $order->external_id,
+            'customer' => [
+                'email' => $customer['correo_electronico'] ?? null,
+                'billingDetails' => [
+                    'firstName' => $customer['apellidos_y_nombres_o_razon_social'] ?? null,
+                    'phoneNumber' => $customer['telefono'] ?? null,
+                ]
+            ]
+        ]);
+        
+        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $izipayController->izipayCreatePayment($paymentReq);
+        
+        return [
+            'success' => $result['success'],
+            'formToken' => $result['formToken'] ?? null,
+            'order' => $order
+        ];
+    }
+
+    public function transactionIzipay(Request $request)
+    {
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'uuid' => $request->uuid
+        ]);
+        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $izipayController->izipayTransaction($paymentReq);
+        return $result;
+    }
+
+    public function paymentMercadoPago(Request $request)
+    {
+        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array)$request->customer;
+
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'form_data' => $request->form_data,
+            'description' => $request->input('description', 'Compras Ecommerce'),
+            'external_reference' => $request->input('external_reference'),
+        ]);
+        
+        $mpController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $mpController->mercadoPagoCreatePayment($paymentReq);
+        
+        if (!empty($result['paid']) || !empty($result['pending'])) {
+            $order = Order::create([
+                'external_id' => Str::uuid()->toString(),
+                'customer' => $customer,
+                'shipping_address' => $request->input('shipping_address', ''),
+                'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
+                'total' => $request->precio_culqi,
+                'reference_payment' => 'mp',
+                'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase
+            ]);
+            $result['order'] = $order;
+        }
+        
+        return $result;
+    }
+
+    /**
+     * Normaliza el payload customer del checkout (invitado o autenticado).
+     */
+    private function extractPaymentCustomerFromRequest(Request $request): array
+    {
+        $customer = $request->customer;
+
+        if (is_string($customer)) {
+            $customer = json_decode($customer, true) ?? [];
+        } elseif (is_object($customer)) {
+            $customer = (array) $customer;
+        } elseif (!is_array($customer)) {
+            $customer = [];
+        }
+
+        return $customer;
+    }
+
+    private function isPickupShippingAddress(?string $shippingAddress): bool
+    {
+        return stripos(trim((string) $shippingAddress), 'Recojo en tienda') === 0;
+    }
+
+    private function normalizePaymentCustomerData(array $customer, ?string $shippingAddress = null): array
+    {
+        $customer['telefono'] = preg_replace('/\D/', '', (string) ($customer['telefono'] ?? ''));
+
+        $docType = (string) ($customer['identity_document_type_id']
+            ?? $customer['codigo_tipo_documento_identidad']
+            ?? '0');
+        $customer['codigo_tipo_documento_identidad'] = $docType;
+        $customer['identity_document_type_id'] = $docType;
+        $customer['numero_documento'] = preg_replace('/\D/', '', (string) ($customer['numero_documento'] ?? '0')) ?: '0';
+
+        $direccion = trim((string) ($customer['direccion'] ?? ''));
+        if ($direccion === '' && $this->isPickupShippingAddress($shippingAddress)) {
+            $customer['direccion'] = trim((string) $shippingAddress) ?: 'Recojo en tienda';
+        }
+
+        return $customer;
+    }
+
+    private function makePaymentCustomerValidator(array $customer, ?string $shippingAddress = null)
+    {
+        $rules = [
+            'telefono' => 'required|numeric',
+            'codigo_tipo_documento_identidad' => 'required|numeric',
+            'numero_documento' => 'required|numeric',
+            'identity_document_type_id' => 'required|numeric',
+        ];
+
+        if (!$this->isPickupShippingAddress($shippingAddress)) {
+            $rules['direccion'] = 'required|string';
+        } else {
+            $rules['direccion'] = 'nullable|string';
+        }
+
+        return Validator::make($customer, $rules);
     }
 
     /**

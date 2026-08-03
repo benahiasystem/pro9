@@ -48,22 +48,31 @@ class CulqiController extends Controller
 
       try{
 
-        $customer = (array)json_decode($request->customer);
+        $customer = (array)json_decode($request->customer, true);
+        $shippingAddress = (string) $request->input('shipping_address', '');
+        $customer = $this->normalizePaymentCustomerData($customer, $shippingAddress);
 
-        $validator = Validator::make($customer, [
+        $rules = [
             'telefono' => 'required|numeric',
-            'direccion' => 'required',
             'codigo_tipo_documento_identidad' => 'required|numeric',
             'numero_documento' => 'required|numeric',
-            'identity_document_type_id' => 'required|numeric'
-        ]);
+            'identity_document_type_id' => 'required|numeric',
+        ];
+
+        if (stripos(trim($shippingAddress), 'Recojo en tienda') !== 0) {
+            $rules['direccion'] = 'required|string';
+        } else {
+            $rules['direccion'] = 'nullable|string';
+        }
+
+        $validator = Validator::make($customer, $rules);
 
         if ($validator->fails()) {
           return response()->json($validator->errors(), 422);
         }
 
 
-        $user = auth()->user();
+        $user = auth('ecommerce')->user();
         $configuration = ConfigurationEcommerce::first();
 
 
@@ -124,8 +133,8 @@ class CulqiController extends Controller
 
         $order = Order::create([
             'external_id' => Str::uuid()->toString(),
-            'customer' => json_decode( $request->customer ),
-            'shipping_address' => $request->input('shipping_address', ''),
+            'customer' => $customer,
+            'shipping_address' => $shippingAddress,
             'items' => json_decode( $request->items ),
             'total' => $request->precio_culqi,
             'reference_payment' => 'culqui',
@@ -136,7 +145,8 @@ class CulqiController extends Controller
 
         $customer_email = $request->email;
         $document = new stdClass;
-        $document->client = $user->name;
+        $document->client = $user?->name
+            ?? ($customer['apellidos_y_nombres_o_razon_social'] ?? 'Cliente');
         $document->product = $request->producto;
         $document->total = $request->precio_culqi;
         $document->items = json_decode($request->items, true);
@@ -181,6 +191,25 @@ class CulqiController extends Controller
           ], 400);
       }
 
+    }
+
+    private function normalizePaymentCustomerData(array $customer, ?string $shippingAddress = null): array
+    {
+        $customer['telefono'] = preg_replace('/\D/', '', (string) ($customer['telefono'] ?? ''));
+
+        $docType = (string) ($customer['identity_document_type_id']
+            ?? $customer['codigo_tipo_documento_identidad']
+            ?? '0');
+        $customer['codigo_tipo_documento_identidad'] = $docType;
+        $customer['identity_document_type_id'] = $docType;
+        $customer['numero_documento'] = preg_replace('/\D/', '', (string) ($customer['numero_documento'] ?? '0')) ?: '0';
+
+        $direccion = trim((string) ($customer['direccion'] ?? ''));
+        if ($direccion === '' && stripos(trim((string) $shippingAddress), 'Recojo en tienda') === 0) {
+            $customer['direccion'] = trim((string) $shippingAddress) ?: 'Recojo en tienda';
+        }
+
+        return $customer;
     }
 
 }

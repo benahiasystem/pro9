@@ -89,7 +89,8 @@ class OrderController extends Controller
 
     public function records(Request $request)
     {
-        $records = Order::where($request->column, 'like', "%{$request->value}%")
+        $records = Order::with('sale_note')
+            ->where($request->column, 'like', "%{$request->value}%")
             ->when($request->status_order_id, function ($q) use ($request) {
                 $q->where('status_order_id', $request->status_order_id);
             })

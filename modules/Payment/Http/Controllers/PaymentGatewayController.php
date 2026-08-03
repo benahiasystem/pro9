@@ -298,6 +298,8 @@ class PaymentGatewayController extends Controller
             $payment->transaction_amount = (float) $request->input('form_data.transaction_amount');
             $payment->installments = (int) $request->input('form_data.installments');
             $payment->payer = $request->input('form_data.payer');
+            $payment->description = $request->input('description') ?: 'Compras Ecommerce';
+            $payment->external_reference = $request->input('external_reference') ?: (string) Str::uuid();
 
             if (!$payment->save()) {
                 $error = $payment->error;
