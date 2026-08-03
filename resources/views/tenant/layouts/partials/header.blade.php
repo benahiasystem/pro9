@@ -410,8 +410,7 @@
         <ul class="notifications">
             <li>
                 <tenant-notifications-header
-                    :initial-count="{{ $vc_document }}"
-                    :redirect-url="{{ json_encode(route('tenant.documents.not_sent')) }}">
+                    :initial-count="{{ $vc_notification_cards ?? 0 }}">
                 </tenant-notifications-header>
             </li>
         </ul>

@@ -4,6 +4,7 @@ namespace App\Models\Tenant;
 
 
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Http\Helpers\HeaderNotifications;
 use App\Models\Tenant\Document;
 use Modules\Ecommerce\Models\Tenant\DiscountCoupon;
 
@@ -62,6 +63,14 @@ class Order extends ModelTenant
     public function discount_coupon()
     {
         return $this->belongsTo(DiscountCoupon::class, 'discount_coupon_id');
+    }
+
+    /**
+     * Pedidos que requieren atención del administrador (pago sin verificar u otros estados activos).
+     */
+    public function scopePendingForNotification($query)
+    {
+        return HeaderNotifications::pendingOrdersQuery($query);
     }
 
     /**

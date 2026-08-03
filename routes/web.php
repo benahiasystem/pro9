@@ -39,6 +39,7 @@ if ($hostname) {
             Route::get('keep-alive', function () {
                 return response()->noContent(); // 204
             });
+            Route::get('notifications/header', 'Tenant\NotificationController@header');
             // Route::get('catalogs', 'Tenant\CatalogController@index')->name('tenant.catalogs.index');
             Route::get('list-reports', 'Tenant\SettingController@listReports');
             Route::get('list-extras', 'Tenant\SettingController@listExtras');
