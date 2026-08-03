@@ -1054,7 +1054,6 @@ export default {
                         await this.$nextTick()
                         if (this.$refs.input_service) {
                             await this.$refs.input_service.clickSearch()
-                            await this.regenerateAddressesMain()
                         }
                     } else {
                         this.searchCustomer()
@@ -1062,22 +1061,6 @@ export default {
                 }
             }
 
-        },
-
-        async regenerateAddressesMain() {
-            this.form.addresses.push({
-                'id': null,
-                'country_id': 'PE',
-                'location_id': this.form.location_id,
-                'address': this.form.address,
-                'email': null,
-                'phone': null,
-                'main': false,
-                'establishment_code':'0000',
-                'has_consigned': false,
-                'consigned_id': null,
-            })
-            
         },
         create() {
             // console.log(this.input_person)
