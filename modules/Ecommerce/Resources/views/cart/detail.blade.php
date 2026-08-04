@@ -2257,7 +2257,7 @@
                     <span class="icon-card">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /></svg>
                     </span>
-                    <span class="ml-2 font-weight-bold title-card">Datos de contacto</span>
+                    <span class="ml-2 font-weight-bold title-card" v-text="isLoggedIn ? 'Detalles de la cotización' : 'Datos de contacto'"></span>
                     <span class="head-summary">
                         <b v-if="quotationContactSummary">@{{ quotationContactSummary }}</b>
                         <span v-else class="head-summary-warn">Completa tus datos</span>
@@ -2268,18 +2268,31 @@
             <div id="quotationContactCollapse" class="collapse show">
                 <div class="card-body card-body-h-auto card-cart-body ship-body">
                     <div class="quotation-contact-grid">
-                        <div class="qf-full">
-                            <span class="field-label">Nombre</span>
-                            <input type="text" class="input" v-model="quotationForm.contact_name" autocomplete="name" placeholder="Tu nombre completo">
+                        {{-- Contacto solo para invitados: con sesión los datos ya vienen del cliente --}}
+                        @guest('ecommerce')
+                        <template v-if="!isLoggedIn">
+                            <div class="qf-full">
+                                <span class="field-label">Nombre</span>
+                                <input type="text" class="input" v-model="quotationForm.contact_name" autocomplete="name" placeholder="Tu nombre completo">
+                            </div>
+                            <div>
+                                <span class="field-label">Correo</span>
+                                <input type="email" class="input" v-model="quotationForm.email" autocomplete="email" placeholder="correo@ejemplo.com">
+                            </div>
+                            <div>
+                                <span class="field-label">Teléfono</span>
+                                <input type="tel" class="input" v-model="quotationForm.telephone" autocomplete="tel" placeholder="Ej: 987 654 321" maxlength="15" inputmode="numeric">
+                            </div>
+                        </template>
+                        @else
+                        <div class="qf-full" v-if="isLoggedIn">
+                            <p class="hint mb-2" style="margin-top:0;">
+                                Usaremos los datos de tu cuenta
+                                <strong v-if="user && user.email">(@{{ user.email }})</strong>
+                                para registrar la cotización.
+                            </p>
                         </div>
-                        <div>
-                            <span class="field-label">Correo</span>
-                            <input type="email" class="input" v-model="quotationForm.email" autocomplete="email" placeholder="correo@ejemplo.com">
-                        </div>
-                        <div>
-                            <span class="field-label">Teléfono</span>
-                            <input type="tel" class="input" v-model="quotationForm.telephone" autocomplete="tel" placeholder="Ej: 987 654 321" maxlength="15" inputmode="numeric">
-                        </div>
+                        @endguest
                         <div class="qf-full">
                             <span class="field-label">Comentarios u observaciones</span>
                             <textarea class="input" rows="3" v-model="quotationForm.notes" placeholder="Indicaciones adicionales para tu cotización (opcional)"></textarea>
@@ -2680,7 +2693,7 @@
                     </button>
                     </template>
                     <button
-                        v-if="isQuotationCheckout && isLoggedIn"
+                        v-if="isQuotationCheckout"
                         type="button"
                         class="pay-btn pay-btn--quote"
                         :class="{ disabled: !acceptedTerms || quotationSubmitting }"
@@ -2691,14 +2704,6 @@
                         <span v-if="quotationSubmitting">Enviando…</span>
                         <span v-else>Enviar cotización</span>
                     </button>
-                    <button
-                        v-if="isQuotationCheckout && !isLoggedIn"
-                        type="button"
-                        class="pay-btn pay-btn--quote"
-                        :class="{ disabled: !acceptedTerms }"
-                        :disabled="!acceptedTerms"
-                        @click="openLoginRegisterModal"
-                    >Inicia sesión para cotizar</button>
                 </div><!-- End .checkout-methods -->
 
                 <div class="trust" v-if="!isQuotationCheckout">
@@ -2848,6 +2853,7 @@
                 >
                     <span v-if="quotationSuccessRedirecting" class="payment-success-btn-spinner" aria-hidden="true"></span>
                     <span v-if="quotationSuccessRedirecting">Redirigiendo…</span>
+                    <span v-else-if="quotationResult.is_guest">Continuar</span>
                     <span v-else>Ver mis cotizaciones</span>
                 </button>
             </div>
@@ -3141,12 +3147,25 @@
 
 @push('scripts')
 <!-- Configuration globals para cart app -->
+@php
+    $ecommerceAuthUser = Auth::guard('ecommerce')->user();
+    // Payload mínimo: evitar serializar el modelo completo (puede romper el JS del config).
+    $ecommerceUserPayload = $ecommerceAuthUser ? [
+        'id' => $ecommerceAuthUser->id,
+        'name' => $ecommerceAuthUser->name,
+        'email' => $ecommerceAuthUser->email,
+        'telephone' => $ecommerceAuthUser->telephone,
+        'address' => $ecommerceAuthUser->address,
+        'identity_document_type_id' => $ecommerceAuthUser->identity_document_type_id,
+        'number' => $ecommerceAuthUser->number,
+    ] : null;
+@endphp
 <script>
     window.__ecommerce_config = {
         phone_whatsapp: {!! json_encode($phoneWhatsapp ?? '') !!},
         enable_whatsapp: {!! json_encode($showWhatsapp ?? false) !!},
         global_discount_type: {!! json_encode($global_discount_type ?? []) !!},
-        user: {!! json_encode(optional(Auth::guard("ecommerce")->user())->makeHidden(['password', 'remember_token'])) !!},
+        user: {!! json_encode($ecommerceUserPayload) !!},
         userAddress: {!! json_encode($userAddress ?? null) !!},
         userAddresses: {!! json_encode($userAddresses ?? []) !!},
         enable_electronic_documents: {!! json_encode($enable_electronic_documents ?? false) !!},

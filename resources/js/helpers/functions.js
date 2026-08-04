@@ -140,7 +140,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
                         discount_base += discount.amount_without_rounded
                     } else {
                         discount.amount = getAmountFromInputDiscount(discount)
-                        discount_base += discount.amount_exact !== 0 ? discount.amount_exact : discount.amount
+                        discount_base += discount.amount_exact ? discount.amount_exact : discount.amount
                     }
 
                 } else {
@@ -178,7 +178,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
                         discount_base += discount.amount_without_rounded
                     } else {
                         discount.amount = _.round(discount.base * discount.factor, 2)
-                        discount_base += discount.amount_exact !== 0 ? discount.amount_exact : discount.amount
+                        discount_base += discount.amount_exact ? discount.amount_exact : discount.amount
                     }
                     // } else {
                     //     discount_no_base += discount.amount

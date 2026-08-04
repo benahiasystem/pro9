@@ -4,7 +4,7 @@
         :visible="showDialog"
         @close="close"
         @open="getData"
-        width="720px"
+        width="920px"
         :close-on-click-modal="false"
         append-to-body
     >
@@ -26,10 +26,11 @@
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th style="width:40px">#</th>
+                            <th style="width:36px">#</th>
                             <th>Producto</th>
-                            <th class="text-right" style="width:90px">Cant.</th>
-                            <th class="text-right" style="width:130px">P. unitario</th>
+                            <th class="text-right" style="width:110px">Cantidad</th>
+                            <th class="text-right" style="width:120px">P. unitario</th>
+                            <th class="text-right" style="width:100px">Desc. (%)</th>
                             <th class="text-right" style="width:120px">Total línea</th>
                         </tr>
                     </thead>
@@ -46,7 +47,16 @@
                                     </small>
                                 </div>
                             </td>
-                            <td class="text-right">{{ formatMoney(row.quantity) }}</td>
+                            <td class="text-right">
+                                <el-input-number
+                                    v-model="row.quantity"
+                                    :min="0.01"
+                                    :precision="2"
+                                    :step="1"
+                                    :controls="false"
+                                    style="width:100px"
+                                ></el-input-number>
+                            </td>
                             <td class="text-right">
                                 <el-input-number
                                     v-model="row.unit_price"
@@ -54,7 +64,18 @@
                                     :precision="2"
                                     :step="0.1"
                                     :controls="false"
-                                    style="width:120px"
+                                    style="width:110px"
+                                ></el-input-number>
+                            </td>
+                            <td class="text-right">
+                                <el-input-number
+                                    v-model="row.discount_percentage"
+                                    :min="0"
+                                    :max="100"
+                                    :precision="2"
+                                    :step="1"
+                                    :controls="false"
+                                    style="width:90px"
                                 ></el-input-number>
                             </td>
                             <td class="text-right">{{ currencySymbol }} {{ formatMoney(lineTotal(row)) }}</td>
@@ -64,6 +85,9 @@
             </div>
 
             <div class="text-right mt-3" v-if="items.length > 0">
+                <div v-if="summary.discount > 0">
+                    <strong>Descuentos:</strong> {{ currencySymbol }} {{ formatMoney(summary.discount) }}
+                </div>
                 <div><strong>Gravado:</strong> {{ currencySymbol }} {{ formatMoney(summary.taxed) }}</div>
                 <div><strong>IGV:</strong> {{ currencySymbol }} {{ formatMoney(summary.igv) }}</div>
                 <div class="h5 mb-0 mt-1"><strong>Total:</strong> {{ currencySymbol }} {{ formatMoney(summary.total) }}</div>
@@ -73,7 +97,7 @@
         <span slot="footer" class="dialog-footer">
             <el-button @click="close">Cancelar</el-button>
             <el-button type="primary" :loading="saving" :disabled="!canSave" @click="submit">
-                Confirmar precios
+                {{ saveButtonLabel }}
             </el-button>
         </span>
     </el-dialog>
@@ -103,7 +127,13 @@ export default {
             if (this.quotation && this.quotation.needs_price_confirmation) {
                 return "Definir precios";
             }
-            return "Confirmar precios";
+            return "Edición rápida";
+        },
+        saveButtonLabel() {
+            if (this.quotation && this.quotation.needs_price_confirmation) {
+                return "Confirmar precios";
+            }
+            return "Guardar cambios";
         },
         currencySymbol() {
             return this.quotation && this.quotation.currency_type_id === "USD" ? "$" : "S/";
@@ -112,16 +142,23 @@ export default {
             let taxed = 0;
             let igv = 0;
             let total = 0;
+            let discount = 0;
+
             this.items.forEach((row) => {
+                const gross = this.lineGross(row);
                 const line = this.lineTotal(row);
+                discount += Math.max(0, gross - line);
                 total += line;
+
                 if ((row.affectation_igv_type_id || "10") === "10") {
-                    const base = line / (1 + ((row.percentage_igv || 18) / 100));
+                    const base = line / (1 + (Number(row.percentage_igv || 18) / 100));
                     taxed += base;
                     igv += line - base;
                 }
             });
+
             return {
+                discount: Math.round(discount * 100) / 100,
                 taxed: Math.round(taxed * 100) / 100,
                 igv: Math.round(igv * 100) / 100,
                 total: Math.round(total * 100) / 100,
@@ -130,7 +167,12 @@ export default {
         canSave() {
             return (
                 this.items.length > 0 &&
-                this.items.every((row) => Number(row.unit_price) > 0) &&
+                this.items.every((row) => {
+                    const qty = Number(row.quantity);
+                    const price = Number(row.unit_price);
+                    const disc = Number(row.discount_percentage || 0);
+                    return qty > 0 && price > 0 && disc >= 0 && disc <= 100;
+                }) &&
                 !this.loading &&
                 !this.saving
             );
@@ -149,8 +191,13 @@ export default {
                 maximumFractionDigits: 2,
             });
         },
-        lineTotal(row) {
+        lineGross(row) {
             return Math.round(Number(row.quantity || 0) * Number(row.unit_price || 0) * 100) / 100;
+        },
+        lineTotal(row) {
+            const pct = Math.min(100, Math.max(0, Number(row.discount_percentage || 0)));
+            const factor = 1 - pct / 100;
+            return Math.round(this.lineGross(row) * factor * 100) / 100;
         },
         useSuggested(row) {
             if (Number(row.suggested_unit_price) > 0) {
@@ -172,6 +219,8 @@ export default {
                 this.quotation = data.data;
                 this.items = (data.data.items || []).map((row) => ({
                     ...row,
+                    quantity: Number(row.quantity) > 0 ? Number(row.quantity) : 1,
+                    discount_percentage: Number(row.discount_percentage || 0),
                     unit_price:
                         Number(row.unit_price) > 0
                             ? Number(row.unit_price)
@@ -188,7 +237,7 @@ export default {
         },
         async submit() {
             if (!this.canSave) {
-                this.$message.warning("Ingrese un precio mayor a cero en todos los productos.");
+                this.$message.warning("Revise cantidad, precio unitario y descuento de cada producto.");
                 return;
             }
             this.saving = true;
@@ -197,20 +246,22 @@ export default {
                     id: this.recordId,
                     items: this.items.map((row) => ({
                         id: row.id,
+                        quantity: Number(row.quantity),
                         unit_price: Number(row.unit_price),
+                        discount_percentage: Number(row.discount_percentage || 0),
                     })),
                 });
                 if (data.success) {
-                    this.$message.success(data.message || "Precios confirmados.");
+                    this.$message.success(data.message || "Cotización actualizada.");
                     this.$eventHub.$emit("reloadData");
                     this.close();
                 } else {
-                    this.$message.error(data.message || "No se pudieron guardar los precios.");
+                    this.$message.error(data.message || "No se pudieron guardar los cambios.");
                 }
             } catch (e) {
                 const msg =
                     (e.response && e.response.data && e.response.data.message) ||
-                    "Error al confirmar precios.";
+                    "Error al guardar la cotización.";
                 this.$message.error(msg);
             } finally {
                 this.saving = false;

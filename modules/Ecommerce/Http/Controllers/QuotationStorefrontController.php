@@ -14,6 +14,7 @@ use App\Models\Tenant\ConfigurationEcommerce;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\ExchangeRate;
 use App\Models\Tenant\Item;
+use App\Models\Tenant\Person;
 use App\Models\Tenant\Quotation;
 use App\Models\Tenant\User;
 use Carbon\Carbon;
@@ -227,23 +228,28 @@ class QuotationStorefrontController extends Controller
             return $this->quotationsDisabledResponse();
         }
 
-        $user = auth('ecommerce')->user();
-        if (! $user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Debes iniciar sesión para solicitar una cotización.',
-            ], 401);
-        }
+        $authUser = auth('ecommerce')->user();
+        $isGuest = ! $authUser;
 
-        $validator = Validator::make($request->all(), [
+        // Invitados: contacto obligatorio. Logueados: se completa desde la sesión.
+        $rules = [
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|integer',
             'items.*.quantity' => 'required|numeric|min:0.01',
-            'contact_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'telephone' => 'required|string|max:30',
             'notes' => 'nullable|string|max:2000',
-        ], [
+        ];
+
+        if ($isGuest) {
+            $rules['contact_name'] = 'required|string|max:255';
+            $rules['email'] = 'required|email|max:255';
+            $rules['telephone'] = 'required|string|max:30';
+        } else {
+            $rules['contact_name'] = 'nullable|string|max:255';
+            $rules['email'] = 'nullable|email|max:255';
+            $rules['telephone'] = 'nullable|string|max:30';
+        }
+
+        $validator = Validator::make($request->all(), $rules, [
             'contact_name.required' => 'El nombre de contacto es obligatorio.',
             'email.required' => 'El correo es obligatorio.',
             'email.email' => 'Ingresa un correo válido.',
@@ -264,9 +270,19 @@ class QuotationStorefrontController extends Controller
 
         try {
             $quotation = null;
+            $customer = null;
 
-            DB::connection('tenant')->transaction(function () use ($request, $user, &$quotation, $quotationSettings, $validityDays) {
-                $this->syncPersonContact($user, $request);
+            DB::connection('tenant')->transaction(function () use ($request, $authUser, $isGuest, &$quotation, &$customer, $quotationSettings, $validityDays) {
+                if ($isGuest) {
+                    $customer = $this->findOrCreateGuestQuotationCustomer(
+                        trim((string) $request->input('contact_name')),
+                        trim((string) $request->input('email')),
+                        trim((string) $request->input('telephone'))
+                    );
+                } else {
+                    $customer = $authUser;
+                    $this->syncPersonContact($customer, $request);
+                }
 
                 $establishment = Establishment::first();
                 if (! $establishment) {
@@ -284,6 +300,7 @@ class QuotationStorefrontController extends Controller
                 $dateOfIssue = Carbon::now();
                 $dateOfDue = $dateOfIssue->copy()->addDays($validityDays);
 
+                // show_prices=false → montos en 0 (definición comercial en backoffice)
                 $built = $this->buildItemsAndTotals(
                     $request->input('items'),
                     $exchangeRate,
@@ -293,10 +310,14 @@ class QuotationStorefrontController extends Controller
                     throw new Exception('No se encontraron productos válidos en el carrito.');
                 }
 
-                $contactName = trim((string) ($request->input('contact_name') ?: $user->name));
-                $telephone = trim((string) ($request->input('telephone') ?: $user->telephone));
-                $email = trim((string) ($request->input('email') ?: $user->email));
+                $contactName = trim((string) ($request->input('contact_name') ?: $customer->name));
+                $telephone = trim((string) ($request->input('telephone') ?: $customer->telephone));
+                $email = trim((string) ($request->input('email') ?: $customer->email));
                 $notes = trim((string) $request->input('notes', ''));
+
+                if ($contactName === '' || $email === '' || $telephone === '') {
+                    throw new Exception('Completa nombre, correo y teléfono para registrar la cotización.');
+                }
 
                 $descriptionParts = array_filter([
                     'Cotización solicitada desde la tienda virtual.',
@@ -325,8 +346,8 @@ class QuotationStorefrontController extends Controller
                     'time_of_issue' => $dateOfIssue->format('H:i:s'),
                     'date_of_due' => $dateOfDue->format('Y-m-d'),
                     'delivery_date' => null,
-                    'customer_id' => $user->id,
-                    'customer' => PersonInput::set($user->id),
+                    'customer_id' => $customer->id,
+                    'customer' => PersonInput::set($customer->id),
                     'currency_type_id' => 'PEN',
                     'exchange_rate_sale' => $exchangeRate,
                     'total_prepayment' => 0,
@@ -361,7 +382,7 @@ class QuotationStorefrontController extends Controller
                     'contact' => $contactName,
                     'phone' => $telephone,
                     'terms_condition' => $termsCondition,
-                    'payment_method_type_id' => '10',
+                    'payment_method_type_id' => '01',
                     'changed' => false,
                 ];
 
@@ -406,6 +427,10 @@ class QuotationStorefrontController extends Controller
 
             $quotation->load('state_type');
 
+            $listUrl = $isGuest
+                ? url('/ecommerce')
+                : route('tenant_ecommerce_quotation_list');
+
             return response()->json([
                 'success' => true,
                 'message' => 'Cotización registrada correctamente.',
@@ -423,7 +448,8 @@ class QuotationStorefrontController extends Controller
                     'print_url' => $quotationSettings['show_prices']
                         ? url("quotations/print/{$quotation->external_id}/a4")
                         : null,
-                    'list_url' => route('tenant_ecommerce_quotation_list'),
+                    'list_url' => $listUrl,
+                    'is_guest' => $isGuest,
                     'success_message' => $quotationSettings['success_message'],
                     'show_prices' => $quotationSettings['show_prices'],
                 ],
@@ -439,6 +465,71 @@ class QuotationStorefrontController extends Controller
                 'message' => $e->getMessage() ?: 'No se pudo registrar la cotización.',
             ], 422);
         }
+    }
+
+    /**
+     * Reutiliza un cliente existente por email o crea un Person temporal sin contraseña.
+     */
+    private function findOrCreateGuestQuotationCustomer(string $name, string $email, string $telephone): Person
+    {
+        $email = strtolower(trim($email));
+        $name = trim($name);
+        $telephone = trim($telephone);
+
+        $person = Person::where('type', 'customers')
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->orderBy('id')
+            ->first();
+
+        if ($person) {
+            $dirty = false;
+            if ($name !== '' && (string) $person->name !== $name) {
+                // Solo actualizar nombre si el registro parece temporal (sin password / doc genérico)
+                if (empty($person->password) || (string) $person->identity_document_type_id === '0') {
+                    $person->name = $name;
+                    $dirty = true;
+                }
+            }
+            if ($telephone !== '' && (string) $person->telephone !== $telephone) {
+                $person->telephone = $telephone;
+                $dirty = true;
+            }
+            if ($dirty) {
+                $person->save();
+            }
+
+            return $person;
+        }
+
+        $number = $this->generateGuestCustomerNumber($email);
+
+        $person = new Person();
+        $person->type = 'customers';
+        $person->identity_document_type_id = '0';
+        $person->number = $number;
+        $person->name = $name;
+        $person->country_id = 'PE';
+        $person->nationality_id = 'PE';
+        $person->establishment_code = '0000';
+        $person->email = $email;
+        $person->telephone = $telephone;
+        $person->password = null;
+        $person->save();
+
+        return $person;
+    }
+
+    private function generateGuestCustomerNumber(string $email): string
+    {
+        for ($attempt = 0; $attempt < 8; $attempt++) {
+            $candidate = 'G'.strtoupper(substr(md5($email.'|'.microtime(true).'|'.$attempt), 0, 10));
+            $exists = Person::where('type', 'customers')->where('number', $candidate)->exists();
+            if (! $exists) {
+                return $candidate;
+            }
+        }
+
+        return 'G'.strtoupper(Str::random(10));
     }
 
     private function notifyCustomerQuotationEmail(Quotation $quotation, string $email): void
@@ -582,6 +673,7 @@ class QuotationStorefrontController extends Controller
                     ],
                     'currency_type_id' => 'PEN',
                     'sale_unit_price' => $catalogUnitPrice,
+                    'unit_price' => $unitPrice,
                     'suggested_unit_price' => $catalogUnitPrice,
                     'sale_affectation_igv_type_id' => $affectation,
                     'is_set' => (int) ($item->is_set ?? 0),

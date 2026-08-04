@@ -200,12 +200,28 @@
                             <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
                             <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
                             <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">
-                                <template v-if="row.needs_price_confirmation">
-                                    <el-tag size="mini" type="warning" effect="plain">Sin precios</el-tag>
-                                </template>
-                                <template v-else>
-                                    {{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}
-                                </template>
+                                <span class="quotation-total-cell">
+                                    <template v-if="row.needs_price_confirmation">
+                                        <el-tag size="mini" type="warning" effect="plain">Sin precios</el-tag>
+                                    </template>
+                                    <template v-else>
+                                        {{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}
+                                    </template>
+                                    <button
+                                        v-if="canQuickEditPrices(row)"
+                                        type="button"
+                                        class="btn btn-link btn-sm p-0 ms-1 quotation-total-edit"
+                                        :title="row.needs_price_confirmation ? 'Definir precios' : 'Edición rápida'"
+                                        @click.prevent="clickDefinePrices(row.id)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                                            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+                                            <path d="M16 5l3 3" />
+                                        </svg>
+                                    </button>
+                                </span>
                             </td>
                             <td v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-end">
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickOptionsPdf(row.id)">PDF</button>
@@ -315,11 +331,11 @@
                                     <el-dropdown-item divided />
 
                                     <el-dropdown-item
-                                      v-if="row.source === 'ecommerce' && row.state_type_id != '11' && (!row.documents || row.documents.length === 0)"
+                                      v-if="canQuickEditPrices(row)"
                                       @click.native="clickDefinePrices(row.id)"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tag me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
-                                      {{ row.needs_price_confirmation ? 'Definir precios' : 'Confirmar precios' }}
+                                      {{ row.needs_price_confirmation ? 'Definir precios' : 'Edición rápida' }}
                                     </el-dropdown-item>
 
                                     <el-dropdown-item
@@ -583,6 +599,12 @@ export default {
             this.recordId = id;
             this.showDialogDefinePrices = true;
         },
+        canQuickEditPrices(row) {
+            return row
+                && row.source === 'ecommerce'
+                && String(row.state_type_id) !== '11'
+                && (!row.documents || row.documents.length === 0);
+        },
         clickRegeneratePdf(row) {
             if (!row || !row.external_id) {
                 return;
@@ -679,3 +701,21 @@ export default {
     }
 };
 </script>
+
+<style scoped>
+.quotation-total-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+.quotation-total-edit {
+    line-height: 1;
+    color: #409eff;
+    vertical-align: middle;
+}
+.quotation-total-edit:hover,
+.quotation-total-edit:focus {
+    color: #66b1ff;
+}
+</style>

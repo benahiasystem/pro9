@@ -335,7 +335,7 @@
                                                         </pack-item-description>
 
                                                         <template v-if="row.item.presentation">
-                                                            {{ row.item.presentation.hasOwnProperty('description') ? row.item.presentation.description : '' }}
+                                                            {{ (row.item && row.item.presentation && row.item.presentation.description) ? row.item.presentation.description : '' }}
                                                         </template>
                                                         <br/>
                                                         <small>{{ row.affectation_igv_type.description }}</small>
@@ -470,7 +470,7 @@
                                                 >
                                                 </pack-item-description>
 
-                                                {{ row.item.presentation.hasOwnProperty('description') ? row.item.presentation.description : '' }}<br/><small>{{ row.affectation_igv_type.description }}</small>
+                                                {{ (row.item && row.item.presentation && row.item.presentation.description) ? row.item.presentation.description : '' }}<br/><small>{{ row.affectation_igv_type ? row.affectation_igv_type.description : '' }}</small>
                                                 
                                                 <p class="control-label font-weight-bold text-info" v-if="configuration.show_all_item_details">
                                                     <a href="#" @click.prevent="clickShowItemDetail(row.item_id)">[Ver detalle]</a>
@@ -922,16 +922,31 @@ export default {
             // }
         },
         initRecord() {
-            this.$http.get(`/${this.resource}/record/${this.resourceId}`)
+            return this.$http.get(`/${this.resource}/record/${this.resourceId}`)
                 .then(response => {
-                    let dato = response.data.data.quotation
+                    const payload = response.data && response.data.data ? response.data.data : null
+                    if (!payload || !payload.quotation) {
+                        this.$message.error('No se pudo cargar la cotización.')
+                        return
+                    }
+
+                    let dato = payload.quotation
                     this.form.id = dato.id
                     this.form.customer_id = dato.customer_id
+
+                    if (payload.customer) {
+                        const customerId = payload.customer.id || dato.customer_id
+                        this.customers = (this.customers || []).filter(
+                            el => String(el.id) !== String(customerId)
+                        )
+                        this.customers.push(payload.customer)
+                    }
+
                     this.form.currency_type_id = dato.currency_type_id
-                    this.form.payment_method_type_id = dato.payment_method_type_id
-                    this.form.date_of_due = dato.date_of_due
-                    this.form.date_of_issue = dato.date_of_issue
-                    this.form.delivery_date = dato.delivery_date
+                    this.form.payment_method_type_id = dato.payment_method_type_id || '01'
+                    this.form.date_of_due = this.normalizeDate(dato.date_of_due)
+                    this.form.date_of_issue = this.normalizeDate(dato.date_of_issue) || moment().format('YYYY-MM-DD')
+                    this.form.delivery_date = this.normalizeDate(dato.delivery_date)
                     this.form.exchange_rate_sale = dato.exchange_rate_sale
                     this.form.description = dato.description
                     this.form.shipping_address = dato.shipping_address
@@ -939,29 +954,80 @@ export default {
                     this.form.terms_condition = dato.terms_condition
                     this.form.seller_id = dato.seller_id
                     this.form.active_terms_condition = dato.terms_condition ? true : false
-                    this.form.items = this.onPrepareItems(dato.items)
-                    // this.form.items = dato.items
-                    this.form.payments = dato.payments
+                    this.form.items = this.onPrepareItems(dato.items || [])
+                    this.form.payments = Array.isArray(dato.payments) ? dato.payments : []
                     this.form.referential_information = dato.referential_information
                     this.form.custom_fields_data = dato.custom_fields_data || {}
                     this.changeCustomer()
-                    this.form.customer_address_id = dato.customer.address_id
+                    const customerSnapshot = dato.customer || {}
+                    this.form.customer_address_id = customerSnapshot.address_id || null
 
-                    if (dato.discounts[0]) {
-                        this.recordDiscountsGlobal = dato.discounts[0];
-                        let discount_type_id = dato.discounts[0].discount_type_id
-                        this.total_global_discount = discount_type_id !== "02" ? dato.total_discount : 
+                    const discounts = Array.isArray(dato.discounts)
+                        ? dato.discounts
+                        : (dato.discounts ? Object.values(dato.discounts) : [])
+                    if (discounts[0]) {
+                        this.recordDiscountsGlobal = discounts[0];
+                        let discount_type_id = discounts[0].discount_type_id
+                        this.total_global_discount = discount_type_id !== "02" ? dato.total_discount :
                         _.round(Number(dato.total_discount * 1.18).toFixed(3), 2);
                     }
                     this.calculateTotal()
                 })
+                .catch(error => {
+                    console.error(error)
+                    const msg = (error.response && error.response.data && error.response.data.message)
+                        || 'Error al cargar la cotización para edición.'
+                    this.$message.error(msg)
+                })
 
         },
+        normalizeDate(value) {
+            if (!value) return null
+            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
+                return value.substring(0, 10)
+            }
+            const m = moment(value)
+            return m.isValid() ? m.format('YYYY-MM-DD') : null
+        },
         onPrepareItems(items) {
-            return items.map(item => {
-                item.discounts = (item.discounts) ? Object.values(item.discounts) : []
-                return item;
-            });
+            const list = Array.isArray(items)
+                ? items
+                : (items ? Object.values(items) : [])
+
+            return list.map(item => {
+                const row = Object.assign({}, item)
+                const rawItem = row.item
+                    ? (typeof row.item === 'object' ? Object.assign({}, row.item) : {})
+                    : {}
+
+                const fallbackPrice = Number(
+                    rawItem.unit_price
+                    || rawItem.sale_unit_price
+                    || rawItem.suggested_unit_price
+                    || row.unit_price
+                    || 0
+                )
+                rawItem.unit_price = fallbackPrice > 0 ? fallbackPrice : Number(rawItem.unit_price || 0)
+                if (!rawItem.currency_type_id) {
+                    rawItem.currency_type_id = this.form.currency_type_id || 'PEN'
+                }
+                if (!rawItem.id && row.item_id) {
+                    rawItem.id = row.item_id
+                }
+
+                row.item = rawItem
+                row.discounts = row.discounts
+                    ? (Array.isArray(row.discounts) ? row.discounts : Object.values(row.discounts))
+                    : []
+                row.charges = row.charges
+                    ? (Array.isArray(row.charges) ? row.charges : Object.values(row.charges))
+                    : []
+                row.attributes = row.attributes
+                    ? (Array.isArray(row.attributes) ? row.attributes : Object.values(row.attributes))
+                    : []
+
+                return row
+            })
         },
 
         searchRemoteCustomers(input) {

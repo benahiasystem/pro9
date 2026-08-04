@@ -74,7 +74,9 @@ class QuotationController extends Controller
         if ($id && is_numeric($id)) {
             if ($type === 'sale_opportunity') {
                 $saleOpportunityId = (int) $id;
-            } elseif (Quotation::find($id)) {
+            } else {
+                // Siempre asignar el id de edición; el endpoint record valida existencia.
+                // (Antes Quotation::find podía dejar resourceId null y el form abría vacío como "nueva".)
                 $resourceId = (int) $id;
             }
         }
@@ -1010,6 +1012,8 @@ class QuotationController extends Controller
                 'percentage_igv' => (float) ($row->percentage_igv ?: 18),
                 'unit_price' => (float) $row->unit_price,
                 'suggested_unit_price' => $suggested,
+                'discount_percentage' => $this->extractItemDiscountPercentage($row->discounts),
+                'total_discount' => (float) ($row->total_discount ?? 0),
                 'total' => (float) $row->total,
             ];
         })->values();
@@ -1040,7 +1044,8 @@ class QuotationController extends Controller
     }
 
     /**
-     * Actualiza precios unitarios, recalcula IGV/totales y regenera PDF.
+     * Actualiza cantidades, precios y descuentos %, recalcula IGV/totales y regenera PDF.
+     * Los ítems quedan listos para generar Factura/Boleta/NV con los mismos valores.
      */
     public function updatePrices(Request $request)
     {
@@ -1048,7 +1053,9 @@ class QuotationController extends Controller
             'id' => 'required|integer',
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|integer',
+            'items.*.quantity' => 'required|numeric|min:0.01',
             'items.*.unit_price' => 'required|numeric|min:0.01',
+            'items.*.discount_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
         try {
@@ -1076,57 +1083,69 @@ class QuotationController extends Controller
                     'total_unaffected' => 0.0,
                     'total_igv' => 0.0,
                     'total_value' => 0.0,
+                    'total_discount' => 0.0,
                     'total' => 0.0,
                 ];
 
                 foreach ($quotation->items as $row) {
                     if (! $payloadById->has($row->id)) {
-                        throw new Exception('Falta el precio de uno o más productos de la cotización.');
+                        throw new Exception('Falta información de uno o más productos de la cotización.');
                     }
 
-                    $unitPrice = round((float) $payloadById[$row->id]['unit_price'], 6);
+                    $payload = $payloadById[$row->id];
+                    $unitPrice = round((float) $payload['unit_price'], 6);
+                    $quantity = round((float) $payload['quantity'], 4);
+                    $discountPercentage = round((float) ($payload['discount_percentage'] ?? 0), 4);
+
                     if ($unitPrice <= 0) {
                         throw new Exception('Todos los precios unitarios deben ser mayores a cero.');
                     }
-
-                    $quantity = (float) $row->quantity;
-                    $affectation = $row->affectation_igv_type_id ?: '10';
-                    $percentageIgv = (float) ($row->percentage_igv ?: 18);
-
-                    if ($affectation === '10') {
-                        $unitValue = round($unitPrice / (1 + ($percentageIgv / 100)), 6);
-                        $totalValue = round($unitValue * $quantity, 2);
-                        $totalIgv = round(($unitPrice * $quantity) - $totalValue, 2);
-                        $total = round($unitPrice * $quantity, 2);
-                        $totals['total_taxed'] += $totalValue;
-                        $totals['total_igv'] += $totalIgv;
-                    } else {
-                        $unitValue = round($unitPrice, 6);
-                        $totalValue = round($unitValue * $quantity, 2);
-                        $totalIgv = 0.0;
-                        $total = $totalValue;
-                        if ($affectation === '20') {
-                            $totals['total_exonerated'] += $totalValue;
-                        } else {
-                            $totals['total_unaffected'] += $totalValue;
-                        }
+                    if ($quantity <= 0) {
+                        throw new Exception('Todas las cantidades deben ser mayores a cero.');
+                    }
+                    if ($discountPercentage < 0 || $discountPercentage > 100) {
+                        throw new Exception('El descuento porcentual debe estar entre 0 y 100.');
                     }
 
-                    $totals['total_value'] += $totalValue;
-                    $totals['total'] += $total;
+                    $calculated = $this->calculateQuotationItemTotals(
+                        $unitPrice,
+                        $quantity,
+                        $discountPercentage,
+                        $row->affectation_igv_type_id ?: '10',
+                        (float) ($row->percentage_igv ?: 18)
+                    );
+
+                    $affectation = $row->affectation_igv_type_id ?: '10';
+                    if ($affectation === '10') {
+                        $totals['total_taxed'] += $calculated['total_value'];
+                        $totals['total_igv'] += $calculated['total_igv'];
+                    } elseif ($affectation === '20') {
+                        $totals['total_exonerated'] += $calculated['total_value'];
+                    } else {
+                        $totals['total_unaffected'] += $calculated['total_value'];
+                    }
+
+                    $totals['total_value'] += $calculated['total_value'];
+                    $totals['total_discount'] += $calculated['total_discount'];
+                    $totals['total'] += $calculated['total'];
 
                     $itemJson = is_array($row->item) ? $row->item : (array) $row->item;
                     $itemJson['sale_unit_price'] = $unitPrice;
+                    $itemJson['unit_price'] = $unitPrice;
                     $itemJson['prices_pending'] = false;
 
+                    $row->quantity = $quantity;
                     $row->unit_price = $unitPrice;
-                    $row->unit_value = $unitValue;
-                    $row->total_base_igv = $totalValue;
-                    $row->percentage_igv = $percentageIgv;
-                    $row->total_igv = $totalIgv;
-                    $row->total_taxes = $totalIgv;
-                    $row->total_value = $totalValue;
-                    $row->total = $total;
+                    $row->unit_value = $calculated['unit_value'];
+                    $row->total_base_igv = $calculated['total_base_igv'];
+                    $row->percentage_igv = $calculated['percentage_igv'];
+                    $row->total_igv = $calculated['total_igv'];
+                    $row->total_taxes = $calculated['total_igv'];
+                    $row->total_value = $calculated['total_value'];
+                    $row->total_discount = $calculated['total_discount'];
+                    $row->total_charge = 0;
+                    $row->total = $calculated['total'];
+                    $row->discounts = $calculated['discounts'];
                     $row->item = $itemJson;
                     $row->save();
                 }
@@ -1141,6 +1160,7 @@ class QuotationController extends Controller
                 $quotation->total_igv = $totals['total_igv'];
                 $quotation->total_taxes = $totals['total_igv'];
                 $quotation->total_value = $totals['total_value'];
+                $quotation->total_discount = $totals['total_discount'];
                 $quotation->subtotal = $totals['total_value'];
                 $quotation->total = $totals['total'];
                 $quotation->save();
@@ -1158,10 +1178,11 @@ class QuotationController extends Controller
 
             return [
                 'success' => true,
-                'message' => 'Precios confirmados correctamente.',
+                'message' => 'Cotización actualizada correctamente.',
                 'data' => [
                     'id' => $fresh->id,
                     'total' => (float) $fresh->total,
+                    'total_discount' => (float) $fresh->total_discount,
                     'needs_price_confirmation' => $fresh->needsPriceConfirmation(),
                 ],
             ];
@@ -1171,6 +1192,107 @@ class QuotationController extends Controller
                 'message' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Extrae el % de descuento de ítem desde el JSON discounts (tipo 00).
+     *
+     * @param  mixed  $discounts
+     */
+    private function extractItemDiscountPercentage($discounts): float
+    {
+        if (empty($discounts)) {
+            return 0.0;
+        }
+
+        $list = is_object($discounts) ? (array) $discounts : $discounts;
+        if (! is_array($list)) {
+            return 0.0;
+        }
+
+        foreach ($list as $entry) {
+            $row = is_object($entry) ? (array) $entry : $entry;
+            if (! is_array($row)) {
+                continue;
+            }
+            if (isset($row['percentage'])) {
+                return round((float) $row['percentage'], 4);
+            }
+            if (isset($row['factor'])) {
+                return round(((float) $row['factor']) * 100, 4);
+            }
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * Recalcula totales de línea con descuento % que afecta la base imponible (tipo 00).
+     * Misma lógica comercial que calculateRowItem del frontend.
+     */
+    private function calculateQuotationItemTotals(
+        float $unitPrice,
+        float $quantity,
+        float $discountPercentage,
+        string $affectation,
+        float $percentageIgv
+    ): array {
+        $discountPercentage = max(0.0, min(100.0, $discountPercentage));
+        $factor = $discountPercentage / 100;
+
+        if ($affectation === '10') {
+            $unitValue = round($unitPrice / (1 + ($percentageIgv / 100)), 6);
+        } else {
+            $unitValue = round($unitPrice, 6);
+            $percentageIgv = 0.0;
+        }
+
+        $totalValuePartial = round($unitValue * $quantity, 6);
+        $totalDiscount = round($totalValuePartial * $factor, 2);
+        $totalValue = round($totalValuePartial - $totalDiscount, 2);
+
+        if ($affectation === '10') {
+            $totalBaseIgv = $totalValue;
+            $totalIgv = round($totalBaseIgv * ($percentageIgv / 100), 2);
+            $total = round($totalValue + $totalIgv, 2);
+        } else {
+            $totalBaseIgv = $totalValue;
+            $totalIgv = 0.0;
+            $total = $totalValue;
+        }
+
+        $discounts = [];
+        if ($discountPercentage > 0) {
+            $discounts[] = [
+                'discount_type_id' => '00',
+                'discount_type' => [
+                    'id' => '00',
+                    'description' => 'Descuentos que afectan la base imponible del IGV/IVAP',
+                    'active' => 1,
+                    'base' => true,
+                    'level' => 'item',
+                    'type' => 'discount',
+                ],
+                'description' => 'Descuento',
+                'factor' => round($factor, 5),
+                'amount' => $totalDiscount,
+                'base' => round($totalValuePartial, 2),
+                'percentage' => $discountPercentage,
+                'is_amount' => false,
+                'amount_exact' => 0,
+            ];
+        }
+
+        return [
+            'unit_value' => $unitValue,
+            'percentage_igv' => $percentageIgv,
+            'total_base_igv' => $totalBaseIgv,
+            'total_igv' => $totalIgv,
+            'total_value' => $totalValue,
+            'total_discount' => $totalDiscount,
+            'total' => $total,
+            'discounts' => $discounts,
+        ];
     }
 
     public function itemWarehouses($item_id)
