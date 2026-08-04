@@ -386,7 +386,7 @@
                     }
                 }
                 if(this.document.payment_condition_id === '02') {
-                    this.document.fee = this.form.sale_note.fee;
+                    this.document.fee = this.getFeesData(this.form.sale_note);
                     if(this.document.fee === undefined || this.document.fee.length < 1){
                         this.clickAddFee();
                     }
@@ -699,6 +699,25 @@
 
                 return sale_note_payments
             },
+            getFeesData(q) {
+                const fees = (q && Array.isArray(q.fee)) ? q.fee : []
+
+                return fees.map((row) => {
+
+                    const date = (row.date && moment(row.date).isValid())
+                        ? moment(row.date).format('YYYY-MM-DD')
+                        : moment().format('YYYY-MM-DD')
+
+                    return {
+                        id: null,
+                        document_id: null,
+                        payment_method_type_id: row.payment_method_type_id || null,
+                        date: date,
+                        currency_type_id: row.currency_type_id || this.document.currency_type_id,
+                        amount: _.round(parseFloat(row.amount) || 0, 2),
+                    }
+                })
+            },
             assignDocument(){
                 let q = this.form.sale_note;
                 // console.log(q);
@@ -746,7 +765,7 @@
                 this.document.payments = this.getPaymentsData(q)
                 this.document.seller_id = q.seller_id;
                 this.document.user_id = q.user_id;
-                this.document.fee = [];
+                this.document.fee = this.getFeesData(q)
                 this.document.payment_condition_id =q.payment_condition_id;
                 if(this.document.payment_condition_id === undefined || this.document.payments.length > 0) {
                     this.document.payment_condition_id = "01";

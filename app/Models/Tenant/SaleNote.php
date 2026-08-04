@@ -866,6 +866,7 @@ use Modules\Sale\Models\Agent;
             return [
                 'id' => $this->id,
                 'soap_type_id' => $this->soap_type_id,
+                'fee' => $this->fee,
                 'external_id' => $this->external_id,
                 'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
                 'time_of_issue' => $this->time_of_issue,
