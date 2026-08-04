@@ -257,8 +257,8 @@
                 <br>
                 @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                 @php
-                    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
                 @if($lot)
                     <small style="display:block; font-weight: normal; font-size: 7px;">

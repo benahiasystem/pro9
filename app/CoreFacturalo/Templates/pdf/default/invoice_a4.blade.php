@@ -800,8 +800,8 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 @endif
                 @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                 @php
-                    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
 
                 @if($showLoteColumn)

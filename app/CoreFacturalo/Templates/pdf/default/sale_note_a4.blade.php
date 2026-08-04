@@ -360,8 +360,8 @@ foreach ($document->items as $row) {
             @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
             @if ($showLoteColumn)
                 @php
-                    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
             @endif
 
