@@ -1237,6 +1237,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                         onclick="openMozoApp('{{ auth()->user()->api_token ?? '' }}')">Ver Mozo
                                     </button>
                                 </li>
+                                <li class="{{ ($secondLevel != null && $secondLevel == 'configuration' && $firstLevel === 'restaurant' && request('mozo_access') == '1') ? 'nav-active' : '' }}">
+                                    <a class="nav-link" href="{{ route('tenant.restaurant.configuration') }}?mozo_access=1">
+                                        Acceso Mozo
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                     @endif
