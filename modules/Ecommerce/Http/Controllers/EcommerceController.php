@@ -369,12 +369,17 @@ class EcommerceController extends Controller
             $payment_configuration->enabled_culqi = false;
         }
 
-        $ecommerce_bank_account_ids = $preferences['ecommerce_bank_account_ids'] ?? [];
+        $ecommerce_bank_account_ids = array_values(array_filter(array_map(
+            'intval',
+            (array) ($preferences['ecommerce_bank_account_ids'] ?? [])
+        )));
 
         if (count($ecommerce_bank_account_ids) > 0) {
-            $bank_accounts = \App\Models\Tenant\BankAccount::whereIn('id', $ecommerce_bank_account_ids)->get();
+            $bank_accounts = \App\Models\Tenant\BankAccount::with('bank', 'currency_type')
+                ->whereIn('id', $ecommerce_bank_account_ids)
+                ->get();
         } else {
-            $bank_accounts = collect(); // Por seguridad, si no selecciona ninguna, no se muestran
+            $bank_accounts = collect();
         }
 
         return view('ecommerce::cart.detail', compact(

@@ -49,7 +49,7 @@ class ConfigurationController extends Controller
     {
         $id = $request->input('id');
         $configuration = ConfigurationEcommerce::find($id);
-        $configuration->fill($request->all());
+        $configuration->fill($request->except(['preferences']));
 
         // Guardar campos de páginas personalizadas si existen en el request
         if ($request->has('terms_conditions')) {
@@ -94,6 +94,13 @@ class ConfigurationController extends Controller
             $configuration->quotation_terms = $request->input('quotation_terms');
         }
 
+        if ($request->has('preferences') && is_array($request->input('preferences'))) {
+            $configuration->preferences = $this->mergePreferences(
+                $configuration->preferences ?: [],
+                $request->input('preferences')
+            );
+        }
+
         $configuration->save();
 
         $modeLabel = $configuration->quotation_mode === 'quote_only'
@@ -127,48 +134,91 @@ class ConfigurationController extends Controller
         $configuration = ConfigurationEcommerce::findOrFail($id);
         $gateway_availability = PaymentConfiguration::getEcommerceGatewayAvailability();
 
-        $enableIzipay = $gateway_availability['izipay']
-            ? (bool) $request->input('enable_izipay', 0)
-            : false;
-        $enableCulqi = $gateway_availability['culqi']
-            ? (bool) $request->input('enable_culqi', 0)
-            : false;
-
-        PaymentConfiguration::validateEcommerceIzipayCulqiExclusivity($enableIzipay, $enableCulqi);
-
         $preferences = $configuration->preferences ?: [];
-        $preferences['ecommerce_bank_account_ids'] = $request->input('ecommerce_bank_account_ids', []);
 
-        $preferences['enable_cash'] = $request->input('enable_cash', 0);
-        $preferences['cash_title'] = $request->input('cash_title', 'Pago contra entrega');
-        $preferences['cash_description'] = $request->input('cash_description', null);
-        $preferences['cash_pickup_only'] = $request->input('cash_pickup_only', 0) ? true : false;
+        if ($request->exists('ecommerce_bank_account_ids')) {
+            $preferences['ecommerce_bank_account_ids'] = $request->input('ecommerce_bank_account_ids', []);
+        }
 
-        $preferences['enable_izipay'] = $enableIzipay ? 1 : 0;
-        $preferences['title_izipay'] = $request->input('title_izipay', 'Pago con Izipay');
-        $preferences['description_izipay'] = $request->input('description_izipay', null);
+        if ($request->exists('enable_cash')) {
+            $preferences['enable_cash'] = $request->input('enable_cash', 0);
+        }
+        if ($request->exists('cash_title')) {
+            $preferences['cash_title'] = $request->input('cash_title', 'Pago contra entrega');
+        }
+        if ($request->exists('cash_description')) {
+            $preferences['cash_description'] = $request->input('cash_description', null);
+        }
+        if ($request->exists('cash_pickup_only')) {
+            $preferences['cash_pickup_only'] = $request->input('cash_pickup_only', 0) ? true : false;
+        }
 
-        $preferences['enable_mp'] = $gateway_availability['mercadopago']
-            ? (int) $request->input('enable_mp', 0)
-            : 0;
-        $preferences['title_mp'] = $request->input('title_mp', 'Mercado Pago');
-        $preferences['description_mp'] = $request->input('description_mp', null);
+        if ($request->exists('enable_izipay')) {
+            $preferences['enable_izipay'] = ($gateway_availability['izipay'] && (bool) $request->input('enable_izipay', 0)) ? 1 : 0;
+        }
+        if ($request->exists('title_izipay')) {
+            $preferences['title_izipay'] = $request->input('title_izipay', 'Pago con Izipay');
+        }
+        if ($request->exists('description_izipay')) {
+            $preferences['description_izipay'] = $request->input('description_izipay', null);
+        }
 
-        $preferences['enable_culqi'] = $enableCulqi ? 1 : 0;
-        $preferences['title_culqi'] = $request->input('title_culqi', 'Pago con Tarjeta');
-        $preferences['description_culqi'] = $request->input('description_culqi', null);
+        if ($request->exists('enable_mp')) {
+            $preferences['enable_mp'] = $gateway_availability['mercadopago']
+                ? (int) $request->input('enable_mp', 0)
+                : 0;
+        }
+        if ($request->exists('title_mp')) {
+            $preferences['title_mp'] = $request->input('title_mp', 'Mercado Pago');
+        }
+        if ($request->exists('description_mp')) {
+            $preferences['description_mp'] = $request->input('description_mp', null);
+        }
 
-        PaymentConfiguration::enforceEcommerceIzipayCulqiExclusivity($preferences);
+        if ($request->exists('enable_culqi')) {
+            $preferences['enable_culqi'] = ($gateway_availability['culqi'] && (bool) $request->input('enable_culqi', 0)) ? 1 : 0;
+        }
+        if ($request->exists('title_culqi')) {
+            $preferences['title_culqi'] = $request->input('title_culqi', 'Pago con Tarjeta');
+        }
+        if ($request->exists('description_culqi')) {
+            $preferences['description_culqi'] = $request->input('description_culqi', null);
+        }
 
-        $configuration->fill($request->all());
-        $configuration->enable_yape = $gateway_availability['yape']
-            ? (bool) $request->input('enable_yape', 0)
-            : false;
-        $configuration->enable_transfer = (bool) $request->input('enable_transfer', 0);
+        // Misma lógica que PaymentConfigurationController: desactivar la pasarela en conflicto
+        // en lugar de rechazar el guardado con 422.
+        if ($request->exists('enable_izipay') || $request->exists('enable_culqi')) {
+            PaymentConfiguration::enforceEcommerceIzipayCulqiExclusivity($preferences);
+        }
+
+        $configuration->fill($request->only([
+            'token_private_culqui',
+            'token_public_culqui',
+            'script_paypal',
+        ]));
+
+        if ($request->exists('enable_yape')) {
+            $configuration->enable_yape = $gateway_availability['yape']
+                ? (bool) $request->input('enable_yape', 0)
+                : false;
+        }
+
+        if ($request->exists('enable_transfer')) {
+            $configuration->enable_transfer = (bool) $request->input('enable_transfer', 0);
+        }
+
         $configuration->preferences = $preferences;
         $configuration->save();
 
         return $this->buildPaymentGatewayResponse($configuration);
+    }
+
+    /**
+     * Fusiona preferencias existentes con las nuevas sin perder claves no enviadas.
+     */
+    private function mergePreferences(array $current, array $incoming): array
+    {
+        return array_merge($current, $incoming);
     }
 
     /**
@@ -290,15 +340,18 @@ class ConfigurationController extends Controller
         $configuration = ConfigurationEcommerce::find($id);
         $configuration->color_ecommerce = $color;
 
-        // Guardar preferencias (el cast a array maneja automáticamente el json_encode)
-        $configuration->preferences = [
-            'show_description' => (int) $request->input('show_description', 1),
-            'show_stock' => (int) $request->input('show_stock', 0),
-            'only_available_products' => (int) $request->input('only_available_products', 0),
-            'full_width_banner' => (int) $request->input('full_width_banner', 0),
-            'header_theme' => in_array($request->input('header_theme'), ['light', 'dark']) ? $request->input('header_theme') : 'light',
-            'products_per_page' => in_array((int) $request->input('products_per_page'), [8, 12, 16, 24, 32, 40]) ? (int) $request->input('products_per_page') : 16,
-        ];
+        // Fusionar preferencias de apariencia sin borrar pasarelas de pago u otras claves.
+        $configuration->preferences = $this->mergePreferences(
+            $configuration->preferences ?: [],
+            [
+                'show_description' => (int) $request->input('show_description', 1),
+                'show_stock' => (int) $request->input('show_stock', 0),
+                'only_available_products' => (int) $request->input('only_available_products', 0),
+                'full_width_banner' => (int) $request->input('full_width_banner', 0),
+                'header_theme' => in_array($request->input('header_theme'), ['light', 'dark']) ? $request->input('header_theme') : 'light',
+                'products_per_page' => in_array((int) $request->input('products_per_page'), [8, 12, 16, 24, 32, 40]) ? (int) $request->input('products_per_page') : 16,
+            ]
+        );
 
         $configuration->save();
 

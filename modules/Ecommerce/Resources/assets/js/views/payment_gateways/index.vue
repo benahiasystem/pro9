@@ -531,7 +531,10 @@ export default {
         const response = await this.$http.post(`/${this.resource}/configuration_culqui`, this.form);
 
         if (response.data.success) {
-          this.applyServerState(response.data);
+          this.applyServerState({
+            ...response.data,
+            bank_accounts: this.bank_accounts,
+          });
           this.$message.success('Configuración guardada correctamente');
         } else {
           this.$message.error(response.data.message || 'No se pudo guardar la configuración');

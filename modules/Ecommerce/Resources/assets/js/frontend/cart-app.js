@@ -274,6 +274,7 @@ var app_cart = new Vue({
         guestReturningAddressNotice: false,
         guestTripleLookupLoading: false,
         guestHighAmountThreshold: 700,
+        guestAddressesStorageKey: 'guest_addresses_draft',
         guest_form: {
             email: '',
             telephone: '',
@@ -717,6 +718,7 @@ var app_cart = new Vue({
             this.showGuestForm = true;
             this.initGuestFormStructure();
             this.loadGuestFormDraft();
+            this.loadGuestAddressesDraft();
             if (this.guest_form.number) {
                 this.scheduleGuestDocumentVerify(this.guest_form.number);
             }
@@ -1171,6 +1173,163 @@ var app_cart = new Vue({
             } else {
                 this.fetchLocations().then(applyUbigeo);
             }
+
+            this.syncGuestAddressesFromFormContact();
+        },
+        isGuestAddressCheckout() {
+            return !this.isLoggedIn;
+        },
+        saveGuestAddressesDraft() {
+            if (!this.isGuestAddressCheckout()) {
+                return;
+            }
+
+            try {
+                sessionStorage.setItem(
+                    this.guestAddressesStorageKey,
+                    JSON.stringify(this.userAddresses)
+                );
+            } catch (error) {
+                console.warn('No se pudo guardar el borrador de direcciones de invitado', error);
+            }
+        },
+        loadGuestAddressesDraft() {
+            if (!this.isGuestAddressCheckout()) {
+                return;
+            }
+
+            const raw = sessionStorage.getItem(this.guestAddressesStorageKey);
+            if (!raw) {
+                return;
+            }
+
+            try {
+                const addresses = JSON.parse(raw);
+                this.userAddresses = this.normalizeAddressList(addresses);
+
+                if (this.userAddresses.length === 0) {
+                    return;
+                }
+
+                const currentAddress = (this.form_contact.address || '').trim();
+                const active = currentAddress
+                    ? this.userAddresses.find(item => (item.full_address || item.address || '').trim() === currentAddress)
+                    : null;
+
+                const selected = active || this.userAddresses[0];
+                this.selectedAddressId = selected.id;
+                this.userDefaultAddress = this.normalizeAddressRecord(selected);
+
+                if (!currentAddress) {
+                    this.form_contact.address = selected.full_address || selected.address || '';
+                }
+            } catch (error) {
+                console.warn('No se pudo restaurar el borrador de direcciones de invitado', error);
+            }
+        },
+        syncGuestAddressesFromFormContact() {
+            if (!this.isGuestAddressCheckout()) {
+                return;
+            }
+
+            const fullAddress = (this.form_contact.address || '').trim();
+            if (!fullAddress) {
+                return;
+            }
+
+            const parsed = this.splitAddressReference(fullAddress);
+            const existing = this.userAddresses.find(item => {
+                const itemFull = (item.full_address || this.composeFullAddress(
+                    this.getAddressStreet(item),
+                    this.getAddressReference(item)
+                ) || item.address || '').trim();
+                return itemFull === fullAddress;
+            });
+
+            const record = this.normalizeAddressRecord({
+                id: existing ? existing.id : `guest-local-${Date.now()}`,
+                address: parsed.street,
+                reference: parsed.reference,
+                full_address: fullAddress,
+                latitude: this.addressModal.latitude,
+                longitude: this.addressModal.longitude,
+                department_id: this.selectedDepartment || null,
+                province_id: this.selectedProvince || null,
+                district_id: this.selectedDistrict || null,
+                telephone: this.form_contact.telephone || null,
+            });
+
+            if (existing) {
+                const index = this.userAddresses.findIndex(item => item.id === existing.id);
+                if (index >= 0) {
+                    this.userAddresses.splice(index, 1, record);
+                }
+            } else {
+                this.userAddresses.push(record);
+            }
+
+            this.userDefaultAddress = record;
+            this.selectedAddressId = record.id;
+            this.saveGuestAddressesDraft();
+        },
+        saveGuestShippingAddressLocally(onSuccess, forceCreate) {
+            const parsedForm = this.splitAddressReference(this.form_contact.address);
+            const street = ((this.addressModal.address || parsedForm.street || this.form_contact.address) || '').trim();
+            const reference = ((this.addressModal.reference || parsedForm.reference) || '').trim();
+
+            if (!street) {
+                if (typeof onSuccess === 'function') {
+                    onSuccess();
+                }
+                return;
+            }
+
+            const isCreatingNew = forceCreate === true || this.addressModalMode === 'add';
+            const fullAddress = this.composeFullAddress(street, reference);
+            const payload = {
+                address: street,
+                reference,
+                full_address: fullAddress,
+                latitude: this.addressModal.latitude,
+                longitude: this.addressModal.longitude,
+                department_id: this.selectedDepartment || null,
+                province_id: this.selectedProvince || null,
+                district_id: this.selectedDistrict || null,
+                telephone: this.form_contact.telephone || null,
+            };
+
+            if (isCreatingNew) {
+                const record = this.normalizeAddressRecord(Object.assign({
+                    id: `guest-local-${Date.now()}`,
+                }, payload));
+                this.userAddresses = [...this.userAddresses, record];
+                this.selectedAddressId = record.id;
+                this.userDefaultAddress = record;
+                this.editingAddressId = null;
+                this.addressModalMode = 'add';
+            } else if (this.editingAddressId) {
+                const index = this.userAddresses.findIndex(item => item.id === this.editingAddressId);
+                if (index >= 0) {
+                    const updated = this.normalizeAddressRecord(Object.assign(
+                        {},
+                        this.userAddresses[index],
+                        payload,
+                        { id: this.editingAddressId }
+                    ));
+                    this.userAddresses.splice(index, 1, updated);
+                    this.userDefaultAddress = updated;
+                    this.selectedAddressId = updated.id;
+                }
+            } else {
+                this.syncGuestAddressesFromFormContact();
+            }
+
+            this.form_contact.address = fullAddress;
+            this.saveGuestAddressesDraft();
+
+            if (typeof onSuccess === 'function') {
+                onSuccess();
+            }
         },
         saveGuestFormDraft() {
             if (!this.showGuestForm) {
@@ -1435,6 +1594,9 @@ var app_cart = new Vue({
             if (this.form_contact.telephone) {
                 this.guest_form.telephone = this.form_contact.telephone;
             }
+
+            this.loadGuestAddressesDraft();
+            this.syncGuestAddressesFromFormContact();
 
             this.ensureGuestFormDocument();
             this.saveGuestFormDraft();
@@ -3113,11 +3275,10 @@ var app_cart = new Vue({
             this.openAddressMapModal('add', null, false);
         },
         openChangeAddressFlow() {
-            if (this.user && this.user.id) {
-                this.openAddressListModal();
-                return;
+            if (this.isGuestAddressCheckout()) {
+                this.syncGuestAddressesFromFormContact();
             }
-            this.openAddressMapModal('add', null, false);
+            this.openAddressListModal();
         },
         fetchUserAddresses() {
             if (!this.user || !this.user.id) {
@@ -3166,6 +3327,14 @@ var app_cart = new Vue({
                 }
                 jQuery('#addressListModal').modal('show');
             };
+
+            if (this.isGuestAddressCheckout()) {
+                this.syncGuestAddressesFromFormContact();
+                this.ensureLocationsLoaded()
+                    .then(showModal)
+                    .catch(showModal);
+                return;
+            }
 
             this.ensureLocationsLoaded()
                 .then(() => this.fetchUserAddresses())
@@ -3444,19 +3613,31 @@ var app_cart = new Vue({
             this.applyAddressToModal(addr);
             this.addressModalMode = 'edit';
             this.editingAddressId = addr.id;
+            this.userDefaultAddress = this.normalizeAddressRecord(addr);
             this.form_contact.address = this.composeFullAddress(
                 this.getAddressStreet(addr),
                 this.getAddressReference(addr)
             );
             this.closeAddressListModal();
             this.checkDeliveryZone();
-            this.saveShippingAddress();
+
+            if (this.user && this.user.id) {
+                this.saveShippingAddress();
+                return;
+            }
+
+            this.saveGuestAddressesDraft();
+            if (this.isGuestCheckoutActive) {
+                this.syncGuestFormToDocument();
+                this.saveGuestFormDraft();
+            }
         },
         openAddressMapModal(mode = 'add', address = null, returnToList = null) {
             this.addressModalMode = mode;
             this.editingAddressId = (mode === 'edit' && address && address.id) ? address.id : null;
+            const listWasOpen = jQuery('#addressListModal').hasClass('show');
             this.addressMapReturnToList = returnToList === null
-                ? !!(this.user && this.user.id)
+                ? (listWasOpen || !!(this.user && this.user.id))
                 : !!returnToList;
             this.resetAddressModalForm(mode, address);
 
@@ -3556,7 +3737,34 @@ var app_cart = new Vue({
         },
         deleteSavedAddress(address) {
             this.closeAddressListMenu();
-            if (!address || !address.id || !this.user || !this.user.id) {
+            if (!address || !address.id) {
+                return;
+            }
+
+            if (this.isGuestAddressCheckout()) {
+                const deletedId = address.id;
+                this.userAddresses = this.userAddresses.filter(item => item.id !== deletedId);
+
+                if (this.userAddresses.length === 0) {
+                    this.selectedAddressId = null;
+                    this.editingAddressId = null;
+                    this.userDefaultAddress = null;
+                    this.form_contact.address = '';
+                    this.addressModal.address = '';
+                    this.addressModal.reference = '';
+                } else {
+                    this.selectedAddressId = this.userAddresses[0].id;
+                    const active = this.userAddresses[0];
+                    this.userDefaultAddress = active;
+                    this.form_contact.address = active.full_address || active.address || '';
+                }
+
+                this.saveGuestAddressesDraft();
+                this.checkDeliveryZone();
+                return;
+            }
+
+            if (!this.user || !this.user.id) {
                 return;
             }
 
@@ -4187,9 +4395,7 @@ var app_cart = new Vue({
         },
         saveShippingAddress(onSuccess, forceCreate) {
             if (!this.user || !this.user.id) {
-                if (typeof onSuccess === 'function') {
-                    onSuccess();
-                }
+                this.saveGuestShippingAddressLocally(onSuccess, forceCreate);
                 return;
             }
 

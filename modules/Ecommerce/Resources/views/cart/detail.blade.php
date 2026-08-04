@@ -2866,7 +2866,7 @@
                 </div>
 
                 <div class="modal-body">
-                    <button type="button" class="addr-list-add-link" @click="openAddressMapModal('add')">
+                    <button type="button" class="addr-list-add-link" @click="openAddressMapModal('add', null, true)">
                         <span>+</span> Agregar nueva dirección
                     </button>
 
