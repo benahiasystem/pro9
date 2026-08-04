@@ -242,7 +242,7 @@
 .so-subtitle {
     font-size: 12px;
     color: #909399;
-    margin: -10px 0 12px;
+    margin-bottom: 12px;
 }
 .so-groups-collapse {
     border: none;
@@ -255,6 +255,10 @@
     line-height: 1.4;
     background: #f5f7fa;
     border: 1px solid #ebeef5;
+    border-radius: 13px 13px 13px 13px;
+}
+.so-groups-collapse >>> .el-collapse-item__header.is-active{
+    border-radius: 13px 13px 0 0;
 }
 .so-groups-collapse :deep(.el-collapse-item__wrap),
 .so-groups-collapse >>> .el-collapse-item__wrap {
@@ -274,7 +278,6 @@
     padding-right: 8px;
     font-size: 13px;
     font-weight: 600;
-    color: #303133;
 }
 .so-group-title-wrap {
     display: flex;
@@ -287,7 +290,6 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: #606266;
 }
 .so-group-title {
     letter-spacing: 0.02em;
@@ -307,7 +309,6 @@
     border: 1px solid #ebeef5;
     border-top: none;
     overflow: hidden;
-    background: #fff;
     border-radius: 0 0 13px 13px;
 }
 .so-status-collapse {
@@ -319,7 +320,6 @@
     font-size: 12px;
     color: #909399;
     text-align: center;
-    background: #fafafa;
 }
 /* Forzar que el título del collapse ocupe todo el ancho */
 .so-collapse :deep(.el-collapse-item__header),
@@ -374,7 +374,6 @@
 .so-drag-wrapper--expanded {
     border-radius: 0;
     margin: 0;
-    background: #fff;
 }
 .so-dragging-ghost {
     opacity: 0.4;

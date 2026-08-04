@@ -59,6 +59,10 @@ class DocumentRequest extends FormRequest
     public function withValidator(Validator $validator)
     {
         $validator->after(function (Validator $validator) {
+            $this->validatePenaltyDebitNote($validator);
+        });
+
+        $validator->after(function (Validator $validator) {
             $items = $this->input('items', []);
 
             if (!is_array($items) || empty($items)) {
@@ -127,6 +131,43 @@ class DocumentRequest extends FormRequest
                 }
             }
         });
+    }
+
+    /**
+     * Las notas de débito por penalidad (motivo 13) son operaciones inafectas
+     * al IGV, por lo que se rechazan si llegan con IGV.
+     */
+    private function validatePenaltyDebitNote(Validator $validator): void
+    {
+        if ($this->input('document_type_id') !== '08') {
+            return;
+        }
+
+        // el formulario envía note_credit_or_debit_type_id, otros orígenes envían el nodo note
+        $noteDebitTypeId = $this->input('note.note_debit_type_id')
+            ?? $this->input('note_credit_or_debit_type_id');
+
+        if ((string) $noteDebitTypeId !== '13') {
+            return;
+        }
+
+        $hasIgv = round((float) $this->input('total_igv', 0), 2) > 0;
+
+        if (!$hasIgv) {
+            foreach ($this->input('items', []) as $row) {
+                if (is_array($row) && round((float) ($row['total_igv'] ?? 0), 2) > 0) {
+                    $hasIgv = true;
+                    break;
+                }
+            }
+        }
+
+        if ($hasIgv) {
+            $validator->errors()->add(
+                'note.note_debit_type_id',
+                'Las penalidades son operaciones inafectas del IGV'
+            );
+        }
     }
 
     /**

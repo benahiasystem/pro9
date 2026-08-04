@@ -101,6 +101,10 @@
                         <td class="text-start">{{ row.has_igv_description }}</td>
                         <td class="text-end">
                             <template v-if="typeUser === 'admin'">
+                                <button type="button" class="btn btn-xs btn-primary btn-shad me-1" title="Historial"
+                                        @click.prevent="clickHistory(row.id)">
+                                    <i class="fa fa-history"></i>
+                                </button>
                                 <button type="button" class="btn btn-xs btn-info btn-shad me-1" title="Editar"
                                         @click.prevent="clickCreate(row.id)">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
@@ -148,6 +152,11 @@
                 :warehouses="warehousesDetail">
             </warehouses-detail>
 
+            <items-history
+                :showDialog.sync="showDialogHistory"
+                :recordId="historyRecordId">
+            </items-history>
+
         </div>
     </div>
 </template>
@@ -159,6 +168,7 @@ import ItemsImport from './import.vue'
 import DataTable from '../../../components/DataTable.vue'
 import {deletable} from '../../../mixins/deletable'
 import ItemsImportSetIndividual from './partials/import_set_individual.vue'
+import ItemsHistory from "@viewsModuleItem/items/history.vue";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 export default {
@@ -172,7 +182,8 @@ export default {
         ItemsImport,
         DataTable,
         WarehousesDetail,
-        ItemsImportSetIndividual
+        ItemsImportSetIndividual,
+        ItemsHistory,
     },
     computed: {
         ...mapState([
@@ -189,6 +200,8 @@ export default {
             showImportSetDialog: false,
             showImportSetIndividualDialog: false,
             showWarehousesDetail: false,
+            showDialogHistory: false,
+            historyRecordId: null,
             resource: 'item-sets',
             recordId: null,
             warehousesDetail: [],
@@ -286,6 +299,10 @@ export default {
         clickCreate(recordId = null) {
             this.recordId = recordId
             this.showDialog = true
+        },
+        clickHistory(recordId) {
+            this.historyRecordId = recordId
+            this.showDialogHistory = true
         },
         clickImportSet() {
             this.showImportSetDialog = true

@@ -278,12 +278,16 @@
                                 <label class="control-label font-weight-bold">Dirección</label>
                                 <el-select v-model="form.customer_address_id">
                                     <el-option
-                                        v-for="option in customer_addresses"
-                                        :key="option.id"
+                                        v-for="(option, addressIndex) in customer_addresses"
+                                        :key="option.id != null ? option.id : 'principal-' + addressIndex"
                                         :label="option.address"
                                         :value="option.id"
                                     ></el-option>
                                 </el-select>
+                            </div>
+                            <div v-else-if="selectedCustomerAddressLabel" class="form-group mb-0">
+                                <label class="control-label font-weight-bold">Dirección</label>
+                                <el-input :value="selectedCustomerAddressLabel" readonly></el-input>
                             </div>
                             <div v-else class="form-group mb-0">
                                 <label class="control-label font-weight-bold label-ghost">Dirección</label>
@@ -4511,6 +4515,14 @@ export default {
             );
             return customer || {};
         },
+        selectedCustomerAddressLabel() {
+            const customer = this.getCustomer;
+            if (!customer || !customer.address) {
+                return '';
+            }
+
+            return customer.address;
+        },
         totalDiscount() {
             // Calculo por total (no por linea) para evitar diferencias de 0.01 por redondeo
             const igv_factor = 1 + this.percentage_igv;
@@ -4737,6 +4749,51 @@ export default {
         }
     },
     methods: {
+        normalizeAddressText(address) {
+            return (address || '').trim().toLowerCase();
+        },
+        buildCustomerAddresses(customer) {
+            if (!customer) {
+                return [];
+            }
+
+            const seen = new Set();
+            const result = [];
+
+            (customer.addresses || [])
+                .filter(el => !el.has_consigned)
+                .forEach(addressRow => {
+                    const normalized = this.normalizeAddressText(addressRow.address);
+                    if (!normalized || seen.has(normalized)) {
+                        return;
+                    }
+
+                    seen.add(normalized);
+                    result.push(addressRow);
+                });
+
+            if (customer.address) {
+                const normalizedPrincipal = this.normalizeAddressText(customer.address);
+                if (normalizedPrincipal && !seen.has(normalizedPrincipal)) {
+                    result.unshift({
+                        id: null,
+                        address: customer.address
+                    });
+                }
+            }
+
+            return result;
+        },
+        selectDefaultCustomerAddress() {
+            if (this.customer_addresses.length === 0) {
+                this.form.customer_address_id = null;
+                return;
+            }
+
+            const mainAddress = _.find(this.customer_addresses, { main: 1 });
+            const defaultAddress = mainAddress || this.customer_addresses[0];
+            this.form.customer_address_id = defaultAddress.id;
+        },
         // ───── Datos generales personalizables (DocumentFormLayout) ─────
         capturePinnedBar() {
             if (this.pinnedBarInstance || !this.$refs.pinnedBar) return;
@@ -5626,21 +5683,17 @@ export default {
             return discounts;
         },
         async prepareDataCustomer() {
-            this.customer_addresses = [];
-            let customer = await _.find(this.customers, {
+            const customer = _.find(this.customers, {
                 id: this.form.customer_id
             });
-            this.customer_addresses = customer.addresses;
 
+            this.customer_addresses = this.buildCustomerAddresses(customer);
             this.form.customer_address_id = this.form.customer
                 ? this.form.customer.address_id
                 : null;
 
-            if (customer.address) {
-                this.customer_addresses.unshift({
-                    id: null,
-                    address: customer.address
-                });
+            if (!this.form.customer_address_id && this.customer_addresses.length > 0) {
+                this.selectDefaultCustomerAddress();
             }
         },
         prepareDataRetention() {
@@ -8285,25 +8338,10 @@ export default {
                     }
 
                     this.form.customer_id = customer_id;
-                    let customer = _.find(this.customers, {'id': customer_id});
-                    if (!customer) {
-                        return;
-                    }
-                    this.form.has_retention = customer.is_agent_retention
-                    if (this.form.has_retention && this.amountRetentionValidate) {
-                        this.changeRetention();
-                    }
 
-                    this.setCustomerAccumulatedPoints(
-                        customer_id,
-                        this.config.enabled_point_system
-                    );
-
-                    if (customer.price_label_id) {
-                        this.selected_option_price = `price_label_${customer.price_label_id}`;
-                    } else {
-                        this.selected_option_price = 1;
-                    }
+                    this.$nextTick(() => {
+                        this.changeCustomer();
+                    });
                 });
         },
         changeCustomer() {
@@ -8319,17 +8357,16 @@ export default {
             this.customer_addresses = [];
             this.form.customer_address_id = null;
 
-            let customer = _.find(this.customers, {
+            const customer = _.find(this.customers, {
                 id: this.form.customer_id
             });
 
-            this.customer_addresses = customer.addresses.filter(el => !el.has_consigned);
-            if (customer.address) {
-                this.customer_addresses.unshift({
-                    id: null,
-                    address: customer.address
-                });
+            if (!customer) {
+                return;
             }
+
+            this.customer_addresses = this.buildCustomerAddresses(customer);
+            this.selectDefaultCustomerAddress();
 
             this.form.has_retention = customer.is_agent_retention
             this.getConsigneds()
@@ -8353,11 +8390,6 @@ export default {
             
 
             this.validateCustomerRetention(customer.identity_document_type_id);
-
-            /*if(this.customer_addresses.length > 0) {
-                let address = _.find(this.customer_addresses, {'main' : 1});
-                this.form.customer_address_id = address.id;
-            }*/
         },
         async getConsigneds() {
             this.consigneds = [];

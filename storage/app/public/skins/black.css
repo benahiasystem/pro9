@@ -4225,3 +4225,19 @@ html.dark .pos-qty-field .el-input__inner{
     border-color: transparent !important;
     background-color: transparent !important;
 }
+html.dark .so-groups-collapse :deep(.el-collapse-item__header),
+html.dark .so-groups-collapse >>> .el-collapse-item__header {
+    background-color: var(--black-bg-dark);
+}
+html.dark .so-groups-collapse .el-collapse-item__header {
+    background-color: transparent;
+}
+html.dark .so-group-body,
+html.dark .so-groups-collapse .el-collapse-item__header {
+    border-color: var(--black-border-dark);
+}
+html.dark .so-action-item,
+html.dark .so-collapse .el-collapse-item__header{
+    background: var(--black-button-second);
+    border: 1px solid var(--black-border-dark);
+}

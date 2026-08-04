@@ -16,8 +16,7 @@
         $logo = "{$establishment->logo}";
     }
 
-    $logo_path = public_path($logo);
-    $has_logo = !empty($logo) && is_file($logo_path);
+    $has_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
 
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
     

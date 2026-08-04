@@ -18,12 +18,20 @@ class InputRequest
      */
     public function handle($request, Closure $next, $type, $service)
     {
-        $inputs = $request->all();
-        if($service === 'api') {
-            $inputs = $this->transformInputs($inputs, $type);
+        try {
+            $inputs = $request->all();
+            if ($service === 'api') {
+                $inputs = $this->transformInputs($inputs, $type);
+            }
+            $inputs = $this->validationInputs($inputs, $type, $service);
+            $request->replace($this->setInputs($inputs, $type, $service));
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
         }
-        $inputs = $this->validationInputs($inputs, $type, $service);
-        $request->replace($this->setInputs($inputs, $type, $service));
+
         return $next($request);
     }
 

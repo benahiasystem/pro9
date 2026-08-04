@@ -1517,6 +1517,13 @@ export default {
                 return this.$message.warning('El sucursal no tiene series disponibles para el comprobante');
             }
 
+            this.form.created_from_pos = true;
+            this.form.show_terms_condition = true;
+            const cfg = this.config || this.configuration || {};
+            if (cfg.terms_condition_sale) {
+                this.form.terms_condition = cfg.terms_condition_sale;
+            }
+
             if (this.form.document_type_id === "80") {
                 this.form.prefix = "NV";
                 this.form.paid = 1;

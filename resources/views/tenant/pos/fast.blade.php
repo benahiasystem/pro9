@@ -6,7 +6,8 @@
 
 @section('content')
     <tenant-pos-fast
-      :configuration="{{ $configuration}}"
+      :configuration2="{{\App\Models\Tenant\Configuration::getPublicConfig()}}"
+      :configuration="{{\App\Models\Tenant\Configuration::getPublicConfig()}}"
       :soap-company="{{ json_encode($soap_company) }}"
       :business-turns="{{ $business_turns }}"
       :type-user="{{json_encode(Auth::user()->type)}}"

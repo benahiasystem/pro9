@@ -42,6 +42,7 @@ $configurationEnableGuaranteeFund = App\CoreFacturalo\Helpers\Template\TemplateH
 $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
 $total_pending_payment = $document->total_pending_payment;
 
+$exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
 @endphp
 <html>
 
@@ -83,7 +84,7 @@ $total_pending_payment = $document->total_pending_payment;
     @endif
     <table class="full-width">
         <tr>
-            @if($company->logo)
+            @if($exists_logo)
                 <td width="20%">
                     <div class="company_logo_box">
                         <img
@@ -826,7 +827,7 @@ $total_pending_payment = $document->total_pending_payment;
                     </td>
                 @endif
                 @php
-                    $unit_price_item = $row->getUnitPrice(($configuration['is_preview']) , $document);
+                    $unit_price_item = $row->getUnitPrice(( isset($configuration['is_preview']) ? $configuration['is_preview'] : false ) , $document);
                     $price_total_item = $unit_price_item * $row->quantity;
                 @endphp
                 @if ($configuration_decimal_quantity->change_decimal_quantity_unit_price_pdf)
@@ -847,7 +848,7 @@ $total_pending_payment = $document->total_pending_payment;
                     @php
                     $total_discount_line = 0;
                     foreach ($row->discounts as $disto) {
-                        if ($disto->from_global_distribution) continue;
+                        if (optional($disto)->from_global_distribution) continue;
                         $amount = $disto->discount_type_id == "00" ? $disto->amount_without_rounded * 1.18 : $disto->amount;
                         $total_discount_line = $total_discount_line + $amount;
                     }

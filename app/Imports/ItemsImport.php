@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Tenant\Item;
 use App\Models\Tenant\Warehouse;
+use App\Traits\SunatItemCodeTrait;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -22,6 +23,7 @@ use Modules\Finance\Helpers\UploadFileHelper;
 class ItemsImport implements ToCollection
 {
     use Importable;
+    use SunatItemCodeTrait;
 
     protected $data;
 
@@ -31,7 +33,7 @@ class ItemsImport implements ToCollection
             $warehouse_id_de = request('warehouse_id');
             $registered = 0;
             unset($rows[0]);
-            foreach ($rows as $row) {
+            foreach ($rows as $index => $row) {
                 $isNullAll = $row->every(function($el){
                     return is_null($el);
                 });
@@ -40,7 +42,12 @@ class ItemsImport implements ToCollection
                 $item_type_id = '01';
                 $internal_id = $this->normalizeInternalId($row[1] ?? null);
                 $model = ($row[2]) ? : null;
-                $item_code = ($row[3])?:null;
+                $item_code = self::cleanSunatItemCode($row[3] ?? null);
+
+                if ($item_code !== null && !self::isValidSunatItemCode($item_code)) {
+                    throw new Exception('Fila '.($index + 1).': '.self::getSunatItemCodeMessage(), 500);
+                }
+
                 $unit_type_id = $row[4];
                 $currency_type_id = $row[5];
                 $sale_unit_price = $row[6];

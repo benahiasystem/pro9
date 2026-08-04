@@ -21,7 +21,7 @@
                         <el-checkbox
                             v-model="various_item"
                             @change="setVariousItem"
-                            :disabled="recordItem != null"
+                            :disabled="recordItem != null || hasPresetItem"
                             >Producto manual
                         </el-checkbox>
                     </div>
@@ -105,7 +105,7 @@
                                             ref="selectSearchNormal"
                                             slot="prepend"
                                             v-model="form.item_id"
-                                            :disabled="recordItem != null"
+                                            :disabled="recordItem != null || hasPresetItem"
                                             :loading="loading_search"
                                             :remote-method="searchRemoteItems"
                                             filterable
@@ -166,7 +166,7 @@
                                             ref="selectBarcode"
                                             slot="prepend"
                                             v-model="form.item_id"
-                                            :disabled="recordItem != null"
+                                            :disabled="recordItem != null || hasPresetItem"
                                             :loading="loading_search"
                                             :remote-method="searchRemoteItems"
                                             filterable
@@ -263,7 +263,7 @@
                             </el-select>
                             <el-checkbox
                                 v-model="change_affectation_igv_type_id"
-                                :disabled="recordItem != null"
+                                :disabled="recordItem != null || hasPresetItem"
                             >
                                 Editar
                             </el-checkbox>
@@ -343,6 +343,7 @@
                                 <template v-if="form.item">
                                     <el-input
                                         v-model="form.unit_price_value"
+                                        ref="inputUnitPrice"
                                         class="currency-container input-with-select"
                                         :tabindex="'3'"
                                         :disabled="
@@ -359,6 +360,7 @@
                             <template v-else>
                                 <el-input
                                     v-model="form.unit_price_value"
+                                    ref="inputUnitPrice"
                                     class="currency-container"
                                     :tabindex="'3'"
                                     :disabled="
@@ -1017,7 +1019,8 @@ export default {
         "permissionEditItemPrices",
         "selectedOptionPrice",
         "documentId",
-        'isCreditNote'
+        'isCreditNote',
+        'presetItemId'
     ],
     components: {
         ItemForm,
@@ -1214,6 +1217,13 @@ export default {
             if (this.isCreditNoteAndType03 !== undefined)
                 return this.isCreditNoteAndType03;
             return false;
+        },
+        /**
+         * El ítem viene impuesto por el documento (ej. penalidad en la ND motivo 13),
+         * por lo que no se permite cambiarlo ni alterar su afectación.
+         */
+        hasPresetItem() {
+            return !!this.presetItemId;
         },
         isOpenFromInvoice() {
             if (this.isFromInvoice !== undefined && this.isFromInvoice)
@@ -1693,10 +1703,23 @@ export default {
             } else {
                 this.isUpdateWarehouseId = null;
 
-                if (this.various_item) {
+                if (this.hasPresetItem) {
+                    //el ítem lo impone el documento, se carga y queda bloqueado
+                    this.various_item = false;
+                    await this.reloadDataItems(this.presetItemId);
+                } else if (this.various_item) {
                     await this.setFocusSelectItem();
                 }
             }
+            if (this.hasPresetItem) {
+                //el ítem ya está definido, el foco va directo al monto
+                this.$nextTick(() => {
+                    if (this.$refs.inputUnitPrice) this.$refs.inputUnitPrice.focus();
+                });
+
+                return;
+            }
+
             this.$refs.selectSearchNormal.$el
                 .getElementsByTagName("input")[0]
                 .focus();
@@ -2191,7 +2214,8 @@ export default {
                 this.cleanItems();
             }
 
-            if (this.recordItem) {
+            //con ítem impuesto no queda nada más que elegir en el modal, se cierra
+            if (this.recordItem || this.hasPresetItem) {
                 this.close();
             } else {
                 this.setFocusSelectItem();

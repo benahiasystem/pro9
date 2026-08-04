@@ -154,7 +154,7 @@ class DocumentInput
             'send_server' => false,
             'payment_method_type_id' => Functions::valueKeyInArray($inputs, 'payment_method_type_id'),
             'reference_data' => Functions::valueKeyInArray($inputs, 'reference_data'),
-            'terms_condition' => $inputs['terms_condition'] ?? '',
+            'terms_condition' => self::termsCondition($inputs),
             'dispatches_relateds' => $inputs['dispatches_relateds'] ?? null,
             'sale_notes_relateds' => $inputs['sale_notes_relateds'] ?? null,
             'payment_condition_id' => key_exists('payment_condition_id', $inputs) ? $inputs['payment_condition_id'] : '01',
@@ -178,6 +178,24 @@ class DocumentInput
             'consigned_ubigeo' => Functions::valueKeyInArray($inputs, 'consigned_ubigeo'),
             'custom_fields_data' => Functions::valueKeyInArray($inputs, 'custom_fields_data'),
         ];
+    }
+
+    private static function termsCondition($inputs)
+    {
+        $terms = $inputs['terms_condition'] ?? '';
+
+        if (trim(strip_tags(html_entity_decode($terms))) !== '') {
+            return $terms;
+        }
+
+        if (array_key_exists('show_terms_condition', $inputs)
+            && !filter_var($inputs['show_terms_condition'], FILTER_VALIDATE_BOOLEAN)) {
+            return '';
+        }
+
+        $configuration = Configuration::select('terms_condition_sale')->first();
+
+        return $configuration->terms_condition_sale ?? '';
     }
 
 

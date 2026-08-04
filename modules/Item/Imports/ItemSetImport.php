@@ -4,6 +4,7 @@ namespace Modules\Item\Imports;
 
 use App\Models\Tenant\Item;
 use App\Models\Tenant\Warehouse;
+use App\Traits\SunatItemCodeTrait;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\Importable;
 use Maatwebsite\Excel\Concerns\ToCollection;
@@ -15,6 +16,7 @@ use Modules\Item\Models\WebPlatform;
 class ItemSetImport implements ToCollection
 {
     use Importable;
+    use SunatItemCodeTrait;
 
     protected $data;
 
@@ -26,12 +28,17 @@ class ItemSetImport implements ToCollection
             $total = count($rows);
             $registered = 0;
             unset($rows[0]);
-            foreach ($rows as $row)
+            foreach ($rows as $index => $row)
             {
                 $description = $row[0];
                 $item_type_id = '01';
                 $internal_id = $row[1] ?? null;
-                $item_code = $row[2]??null;
+                $item_code = self::cleanSunatItemCode($row[2] ?? null);
+
+                if ($item_code !== null && !self::isValidSunatItemCode($item_code)) {
+                    throw new \Exception('Fila '.($index + 1).': '.self::getSunatItemCodeMessage(), 500);
+                }
+
                 $unit_type_id = $row[3];
                 $currency_type_id = $row[4];
                 $sale_unit_price = $row[5];

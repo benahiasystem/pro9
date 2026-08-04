@@ -303,8 +303,10 @@ class DocumentController extends Controller
         $identity_document_type_id = $this->getIdentityDocumentTypeId($request->document_type_id, $request->operation_type_id);
 //        $operation_type_id_id = $this->getIdentityDocumentTypeId($request->operation_type_id);
 
-        $customers = Person::where('number', 'like', "%{$request->input}%")
-            ->orWhere('name', 'like', "%{$request->input}%")
+        $customers = Person::where(function ($query) use ($request) {
+            $query->where('number', 'like', "%{$request->input}%")
+                ->orWhere('name', 'like', "%{$request->input}%");
+        })
             ->whereType('customers')
             ->orderBy('name')
             ->whereIn('identity_document_type_id', $identity_document_type_id)
@@ -312,7 +314,7 @@ class DocumentController extends Controller
             ->whereFilterCustomerBySeller('customers')
             ->get()->transform(function ($row) {
                 /** @var  Person $row */
-                return $row->getCollectionData();
+                return $row->getCollectionData(true);
                 /* Movido al modelo */
                 return [
                     'id' => $row->id,
@@ -1281,7 +1283,7 @@ class DocumentController extends Controller
             ->where('id', $id)
             ->get()->transform(function ($row) {
                 /** @var  Person $row */
-                return $row->getCollectionData();
+                return $row->getCollectionData(true);
                 /* Movido al modelo */
                 return [
                     'id' => $row->id,

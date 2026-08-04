@@ -7,6 +7,7 @@ use App\CoreFacturalo\Facturalo;
 use App\Http\Controllers\Tenant\QuotationController;
 use App\CoreFacturalo\Template;
 use App\Models\Tenant\Company;
+use App\Models\Tenant\Configuration;
 use Mpdf\Mpdf;
 use Exception;
 use Illuminate\Support\Facades\Storage;
@@ -28,6 +29,17 @@ class DownloadController extends Controller
                 $type_pdf = 'invoice';
                 if($document->document_type_id === '07') $type_pdf = 'credit';
                 if($document->document_type_id === '08') $type_pdf = 'debit';
+            }
+
+            if ($document_type == 'document' && in_array($document->document_type_id, ['01', '03'], true)) {
+                if (trim(strip_tags(html_entity_decode($document->terms_condition ?? ''))) === '') {
+                    $configuration = Configuration::select('terms_condition_sale')->first();
+                    if ($configuration && trim(strip_tags(html_entity_decode($configuration->terms_condition_sale ?? ''))) !== '') {
+                        $document->terms_condition = $configuration->terms_condition_sale;
+                        $document->save();
+                        $this->reloadPDF($document, $type_pdf, $format ?? 'a4');
+                    }
+                }
             }
 
             if ($format != null) {

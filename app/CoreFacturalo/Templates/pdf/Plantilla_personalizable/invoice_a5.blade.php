@@ -23,6 +23,8 @@
         $logo = "{$establishment->logo}";
     }
 
+    $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
+
     $payments = $document->payments;
     $document->load('reference_guides');
 
@@ -85,7 +87,7 @@
 @endif
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @if($exists_logo)
             <td width="20%">
                 <div class="company_logo_box">
                     <img

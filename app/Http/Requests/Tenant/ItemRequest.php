@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Tenant;
 
+use App\Traits\SunatItemCodeTrait;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,9 +14,16 @@ use Illuminate\Validation\Rule;
  */
 class ItemRequest extends FormRequest
 {
+    use SunatItemCodeTrait;
+
     public function authorize()
     {
         return true;
+    }
+
+    protected function prepareForValidation()
+    {
+        $this->prepareSunatItemCode();
     }
 
     public function rules()
@@ -26,6 +34,7 @@ class ItemRequest extends FormRequest
                 'nullable',
                 Rule::unique('tenant.items')->ignore($id),
             ],
+            'item_code' => $this->getSunatItemCodeRules(),
             'description' => [
                 'required', 'max:600'
             ],
@@ -123,10 +132,10 @@ class ItemRequest extends FormRequest
 
     public function messages()
     {
-        return [
+        return array_merge([
             'description.required' => 'El campo nombre es obligatorio.',
             'name.max' => 'La descripción debe ser inferior a 1000 caracteres.',
             'sale_unit_price.gt' => 'El precio unitario de venta debe ser mayor que 0.',
-        ];
+        ], $this->getSunatItemCodeMessages());
     }
 }
