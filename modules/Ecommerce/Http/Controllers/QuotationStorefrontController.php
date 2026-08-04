@@ -284,7 +284,11 @@ class QuotationStorefrontController extends Controller
                 $dateOfIssue = Carbon::now();
                 $dateOfDue = $dateOfIssue->copy()->addDays($validityDays);
 
-                $built = $this->buildItemsAndTotals($request->input('items'), $exchangeRate);
+                $built = $this->buildItemsAndTotals(
+                    $request->input('items'),
+                    $exchangeRate,
+                    (bool) $quotationSettings['show_prices']
+                );
                 if (count($built['items']) < 1) {
                     throw new Exception('No se encontraron productos válidos en el carrito.');
                 }
@@ -493,7 +497,11 @@ class QuotationStorefrontController extends Controller
     /**
      * Construye QuotationItems y totales a partir del carrito.
      */
-    private function buildItemsAndTotals(array $cartItems, float $exchangeRate): array
+    /**
+     * @param  bool  $persistPrices  Si false (cotización sin precios en tienda), guarda montos en 0
+     *                               y deja suggested_unit_price en el JSON del ítem para el admin.
+     */
+    private function buildItemsAndTotals(array $cartItems, float $exchangeRate, bool $persistPrices = true): array
     {
         $percentageIgv = 18.0;
         $rows = [];
@@ -519,13 +527,18 @@ class QuotationStorefrontController extends Controller
             }
 
             $affectation = $item->sale_affectation_igv_type_id ?: '10';
-            $unitPrice = (float) $item->sale_unit_price;
+            $catalogUnitPrice = (float) $item->sale_unit_price;
             if ($item->currency_type_id === 'USD') {
-                $unitPrice = round($unitPrice * $exchangeRate, 2);
+                $catalogUnitPrice = round($catalogUnitPrice * $exchangeRate, 2);
             }
 
+            // Sin precios visibles: cotización entra a $0 para definición comercial en backoffice.
+            $unitPrice = $persistPrices ? $catalogUnitPrice : 0.0;
+
             if ($affectation === '10') {
-                $unitValue = round($unitPrice / (1 + ($percentageIgv / 100)), 6);
+                $unitValue = $unitPrice > 0
+                    ? round($unitPrice / (1 + ($percentageIgv / 100)), 6)
+                    : 0.0;
                 $totalValue = round($unitValue * $quantity, 2);
                 $totalIgv = round(($unitPrice * $quantity) - $totalValue, 2);
                 $total = round($unitPrice * $quantity, 2);
@@ -568,7 +581,8 @@ class QuotationStorefrontController extends Controller
                         'description' => optional($item->unit_type)->description,
                     ],
                     'currency_type_id' => 'PEN',
-                    'sale_unit_price' => $unitPrice,
+                    'sale_unit_price' => $catalogUnitPrice,
+                    'suggested_unit_price' => $catalogUnitPrice,
                     'sale_affectation_igv_type_id' => $affectation,
                     'is_set' => (int) ($item->is_set ?? 0),
                     'model' => $item->model,
@@ -577,6 +591,7 @@ class QuotationStorefrontController extends Controller
                     'extra_attr_name' => null,
                     'extra_attr_value' => null,
                     'used_points_for_exchange' => false,
+                    'prices_pending' => ! $persistPrices,
                 ],
                 'quantity' => $quantity,
                 'unit_value' => $unitValue,

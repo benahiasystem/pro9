@@ -539,9 +539,27 @@ class EcommerceController extends Controller
         return view('ecommerce::cart.pay');
     }
 
-    public function showLogin()
+    public function showLogin(Request $request)
     {
-        return view('ecommerce::user.login');
+        // Auth real = modal #login_register_modal. Evitar vista inexistente ecommerce::user.login (500).
+        $path = '/ecommerce';
+        $referer = $request->headers->get('referer');
+
+        if (is_string($referer) && $referer !== '') {
+            $parts = parse_url($referer);
+            $refPath = isset($parts['path']) ? $parts['path'] : '';
+            if (
+                is_string($refPath)
+                && strpos($refPath, '/ecommerce') !== false
+                && strpos($refPath, '/ecommerce/login') === false
+            ) {
+                $path = $refPath;
+            }
+        }
+
+        $separator = strpos($path, '?') !== false ? '&' : '?';
+
+        return redirect($path . $separator . 'open_login=1');
     }
 
     public function login(Request $request)

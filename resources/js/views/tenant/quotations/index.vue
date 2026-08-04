@@ -199,7 +199,14 @@
                             <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
                             <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
                             <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
-                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}</td>
+                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">
+                                <template v-if="row.needs_price_confirmation">
+                                    <el-tag size="mini" type="warning" effect="plain">Sin precios</el-tag>
+                                </template>
+                                <template v-else>
+                                    {{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}
+                                </template>
+                            </td>
                             <td v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-end">
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickOptionsPdf(row.id)">PDF</button>
                             </td>
@@ -308,6 +315,14 @@
                                     <el-dropdown-item divided />
 
                                     <el-dropdown-item
+                                      v-if="row.source === 'ecommerce' && row.state_type_id != '11' && (!row.documents || row.documents.length === 0)"
+                                      @click.native="clickDefinePrices(row.id)"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tag me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
+                                      {{ row.needs_price_confirmation ? 'Definir precios' : 'Confirmar precios' }}
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item
                                       v-if="row.documents.length == 0 && row.state_type_id != '11'"
                                       @click.native="goToEdit(row.id)"
                                     >
@@ -364,6 +379,11 @@
                 :recordId="recordId"
                 :resource="resource"
             ></send-email-document>
+
+            <quotation-define-prices
+                :showDialog.sync="showDialogDefinePrices"
+                :recordId="recordId"
+            ></quotation-define-prices>
         </div>
     </div>
 </template>
@@ -375,6 +395,7 @@
 <script>
 import QuotationOptions from "./partials/options.vue";
 import QuotationOptionsPdf from "./partials/options_pdf.vue";
+import QuotationDefinePrices from "./partials/define_prices.vue";
 import DataTable from "../../../components/DataTableQuotation.vue";
 import { deletable } from "../../../mixins/deletable";
 import QuotationPayments from "./partials/payments.vue";
@@ -388,6 +409,7 @@ export default {
         DataTable,
         QuotationOptions,
         QuotationOptionsPdf,
+        QuotationDefinePrices,
         QuotationPayments,
         SendEmailDocument
     },
@@ -414,6 +436,7 @@ export default {
             showDialogPayments: false,
             showDialogOptions: false,
             showDialogOptionsPdf: false,
+            showDialogDefinePrices: false,
             state_types: [],
             columns: {
                 date_of_issue:           { title: "Fecha Emisión",    visible: true,  order: 0  },
@@ -555,6 +578,10 @@ export default {
         clickSendQuotation(id) {
             this.recordId = id;
             this.showDialogSendEmailDocument = true;
+        },
+        clickDefinePrices(id) {
+            this.recordId = id;
+            this.showDialogDefinePrices = true;
         },
         clickRegeneratePdf(row) {
             if (!row || !row.external_id) {

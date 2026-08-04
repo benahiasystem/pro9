@@ -970,6 +970,208 @@ class QuotationController extends Controller
         ];
     }
 
+    /**
+     * Datos para el modal de definición/confirmación de precios (ecommerce).
+     */
+    public function pricesRecord($id)
+    {
+        $quotation = Quotation::with(['items', 'currency_type', 'person'])->findOrFail($id);
+
+        if (! $quotation->isFromEcommerce()) {
+            return [
+                'success' => false,
+                'message' => 'Solo las cotizaciones de tienda virtual usan este flujo.',
+            ];
+        }
+
+        if ((string) $quotation->state_type_id === '11') {
+            return [
+                'success' => false,
+                'message' => 'La cotización está anulada.',
+            ];
+        }
+
+        $items = $quotation->items->map(function ($row) {
+            $itemJson = is_array($row->item) ? $row->item : (array) $row->item;
+            $suggested = (float) (
+                $itemJson['suggested_unit_price']
+                ?? $itemJson['sale_unit_price']
+                ?? $row->unit_price
+                ?? 0
+            );
+
+            return [
+                'id' => $row->id,
+                'item_id' => $row->item_id,
+                'description' => $itemJson['description'] ?? $row->name_product_pdf ?? 'Producto',
+                'internal_id' => $itemJson['internal_id'] ?? null,
+                'quantity' => (float) $row->quantity,
+                'affectation_igv_type_id' => $row->affectation_igv_type_id ?: '10',
+                'percentage_igv' => (float) ($row->percentage_igv ?: 18),
+                'unit_price' => (float) $row->unit_price,
+                'suggested_unit_price' => $suggested,
+                'total' => (float) $row->total,
+            ];
+        })->values();
+
+        $customerData = is_array($quotation->customer)
+            ? $quotation->customer
+            : (array) $quotation->customer;
+        $customerName = $customerData['name']
+            ?? optional($quotation->person)->name
+            ?? '';
+
+        return [
+            'success' => true,
+            'data' => [
+                'id' => $quotation->id,
+                'number_full' => $quotation->number_full,
+                'identifier' => $quotation->identifier,
+                'customer_name' => $customerName,
+                'currency_type_id' => $quotation->currency_type_id,
+                'state_type_id' => $quotation->state_type_id,
+                'needs_price_confirmation' => $quotation->needsPriceConfirmation(),
+                'total' => (float) $quotation->total,
+                'total_taxed' => (float) $quotation->total_taxed,
+                'total_igv' => (float) $quotation->total_igv,
+                'items' => $items,
+            ],
+        ];
+    }
+
+    /**
+     * Actualiza precios unitarios, recalcula IGV/totales y regenera PDF.
+     */
+    public function updatePrices(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|integer',
+            'items.*.unit_price' => 'required|numeric|min:0.01',
+        ]);
+
+        try {
+            $quotation = null;
+
+            DB::connection('tenant')->transaction(function () use ($request, &$quotation) {
+                $quotation = Quotation::with('items')->lockForUpdate()->findOrFail($request->input('id'));
+
+                if (! $quotation->isFromEcommerce()) {
+                    throw new Exception('Solo se pueden confirmar precios en cotizaciones de tienda virtual.');
+                }
+
+                if ((string) $quotation->state_type_id === '11') {
+                    throw new Exception('No se puede modificar una cotización anulada.');
+                }
+
+                if ($quotation->documents()->exists()) {
+                    throw new Exception('La cotización ya tiene comprobantes asociados.');
+                }
+
+                $payloadById = collect($request->input('items'))->keyBy('id');
+                $totals = [
+                    'total_taxed' => 0.0,
+                    'total_exonerated' => 0.0,
+                    'total_unaffected' => 0.0,
+                    'total_igv' => 0.0,
+                    'total_value' => 0.0,
+                    'total' => 0.0,
+                ];
+
+                foreach ($quotation->items as $row) {
+                    if (! $payloadById->has($row->id)) {
+                        throw new Exception('Falta el precio de uno o más productos de la cotización.');
+                    }
+
+                    $unitPrice = round((float) $payloadById[$row->id]['unit_price'], 6);
+                    if ($unitPrice <= 0) {
+                        throw new Exception('Todos los precios unitarios deben ser mayores a cero.');
+                    }
+
+                    $quantity = (float) $row->quantity;
+                    $affectation = $row->affectation_igv_type_id ?: '10';
+                    $percentageIgv = (float) ($row->percentage_igv ?: 18);
+
+                    if ($affectation === '10') {
+                        $unitValue = round($unitPrice / (1 + ($percentageIgv / 100)), 6);
+                        $totalValue = round($unitValue * $quantity, 2);
+                        $totalIgv = round(($unitPrice * $quantity) - $totalValue, 2);
+                        $total = round($unitPrice * $quantity, 2);
+                        $totals['total_taxed'] += $totalValue;
+                        $totals['total_igv'] += $totalIgv;
+                    } else {
+                        $unitValue = round($unitPrice, 6);
+                        $totalValue = round($unitValue * $quantity, 2);
+                        $totalIgv = 0.0;
+                        $total = $totalValue;
+                        if ($affectation === '20') {
+                            $totals['total_exonerated'] += $totalValue;
+                        } else {
+                            $totals['total_unaffected'] += $totalValue;
+                        }
+                    }
+
+                    $totals['total_value'] += $totalValue;
+                    $totals['total'] += $total;
+
+                    $itemJson = is_array($row->item) ? $row->item : (array) $row->item;
+                    $itemJson['sale_unit_price'] = $unitPrice;
+                    $itemJson['prices_pending'] = false;
+
+                    $row->unit_price = $unitPrice;
+                    $row->unit_value = $unitValue;
+                    $row->total_base_igv = $totalValue;
+                    $row->percentage_igv = $percentageIgv;
+                    $row->total_igv = $totalIgv;
+                    $row->total_taxes = $totalIgv;
+                    $row->total_value = $totalValue;
+                    $row->total = $total;
+                    $row->item = $itemJson;
+                    $row->save();
+                }
+
+                foreach ($totals as $key => $value) {
+                    $totals[$key] = round($value, 2);
+                }
+
+                $quotation->total_taxed = $totals['total_taxed'];
+                $quotation->total_exonerated = $totals['total_exonerated'];
+                $quotation->total_unaffected = $totals['total_unaffected'];
+                $quotation->total_igv = $totals['total_igv'];
+                $quotation->total_taxes = $totals['total_igv'];
+                $quotation->total_value = $totals['total_value'];
+                $quotation->subtotal = $totals['total_value'];
+                $quotation->total = $totals['total'];
+                $quotation->save();
+            });
+
+            try {
+                if ($quotation && $quotation->filename) {
+                    $this->createPdf($quotation->fresh(['items', 'user', 'soap_type', 'state_type', 'currency_type']), 'a4', $quotation->filename);
+                }
+            } catch (Exception $pdfError) {
+                // Los precios ya se guardaron; el PDF puede regenerarse luego.
+            }
+
+            $fresh = $quotation->fresh();
+
+            return [
+                'success' => true,
+                'message' => 'Precios confirmados correctamente.',
+                'data' => [
+                    'id' => $fresh->id,
+                    'total' => (float) $fresh->total,
+                    'needs_price_confirmation' => $fresh->needsPriceConfirmation(),
+                ],
+            ];
+        } catch (Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
 
     public function itemWarehouses($item_id)
     {

@@ -678,6 +678,8 @@ if ($hostname) {
             Route::get('quotations/table/{table}', 'Tenant\QuotationController@table');
             Route::post('quotations', 'Tenant\QuotationController@store');
             Route::post('quotations/update', 'Tenant\QuotationController@update');
+            Route::get('quotations/prices/{id}', 'Tenant\QuotationController@pricesRecord');
+            Route::post('quotations/update-prices', 'Tenant\QuotationController@updatePrices');
             Route::get('quotations/record/{quotation}', 'Tenant\QuotationController@record');
             Route::get('quotations/anular/{id}', 'Tenant\QuotationController@anular');
             Route::get('quotations/item/tables', 'Tenant\QuotationController@item_tables');

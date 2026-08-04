@@ -604,7 +604,10 @@ var app_cart = new Vue({
         checkoutIntent(val) {
             if (val === 'quote') {
                 if (!this.user || !this.user.id) {
-                    window.location = window.__routes?.login || '/ecommerce/login';
+                    try {
+                        sessionStorage.setItem('ecommerce_checkout_intent', 'quote');
+                    } catch (e) { /* ignore */ }
+                    this.openLoginRegisterModal();
                     return;
                 }
                 this.preloadQuotationContact();
@@ -2815,6 +2818,19 @@ var app_cart = new Vue({
         },
         confirmCheckoutIntent(intent) {
             const target = intent === 'quote' ? 'quote' : 'purchase';
+            // Cotizar requiere cuenta: abrir modal (no navegar a /ecommerce/login, vista rota → 500).
+            if (target === 'quote' && (!this.user || !this.user.id)) {
+                try {
+                    sessionStorage.setItem('ecommerce_checkout_intent', 'quote');
+                } catch (e) { /* ignore */ }
+                this.checkoutIntentModalVisible = false;
+                dismissCheckoutIntentBootOverlay();
+                if (!this.quotationSuccessVisible && !this.paymentSuccessVisible && !this.processingPayment) {
+                    document.body.style.overflow = '';
+                }
+                this.openLoginRegisterModal();
+                return;
+            }
             this.checkoutIntentChosen = true;
             this.checkoutIntentModalVisible = false;
             dismissCheckoutIntentBootOverlay();
@@ -2842,7 +2858,7 @@ var app_cart = new Vue({
                     try {
                         sessionStorage.setItem('ecommerce_checkout_intent', 'quote');
                     } catch (e) { /* ignore */ }
-                    window.location = window.__routes?.login || '/ecommerce/login';
+                    this.openLoginRegisterModal();
                     return;
                 }
                 if (!this.records || this.records.length < 1) {
@@ -2894,7 +2910,10 @@ var app_cart = new Vue({
                 return this.showSwalMessage('Cotizaciones no disponibles', 'Las cotizaciones no están habilitadas en la tienda.', 'info');
             }
             if (!this.user || !this.user.id) {
-                window.location = window.__routes?.login || '/ecommerce/login';
+                try {
+                    sessionStorage.setItem('ecommerce_checkout_intent', 'quote');
+                } catch (e) { /* ignore */ }
+                this.openLoginRegisterModal();
                 return;
             }
 

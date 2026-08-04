@@ -38,7 +38,7 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
     Route::get('login', 'EcommerceController@showLogin')->name('tenant_ecommerce_login');
     Route::post('logout', 'EcommerceController@logout')->name('tenant_ecommerce_logout');
     Route::get('items_bar', 'EcommerceController@itemsBar');
-    Route::post('login', 'EcommerceController@login');
+    Route::post('login', 'EcommerceController@login')->name('tenant_ecommerce_login_post');
     Route::post('storeUser', 'EcommerceController@storeUser')->name('tenant_ecommerce_store_user');
     Route::get('search-document/{number}', 'EcommerceController@searchDocumentPublic')->name('tenant_ecommerce_search_document');
     Route::post('rating_item', 'EcommerceController@ratingItem')->name('tenant_ecommerce_rating_item');

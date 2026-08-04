@@ -1,6 +1,6 @@
-@extends('ecommerce::layouts.layout_ecommerce_cart.index')
 
-@push('styles')
+
+<?php $__env->startPush('styles'); ?>
 <style>
     /* Modal Mercado Pago (SweetAlert2 v7 + Payment Brick) */
     .swal2-popup.mp-payment-swal {
@@ -1663,11 +1663,11 @@
         }
     }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
-@php
+<?php
     $configurationModel = \App\Models\Tenant\Configuration::first();
     $ecommerceConfiguration = $configuration ?? \App\Models\Tenant\ConfigurationEcommerce::first();
     $phoneWhatsapp = $ecommerceConfiguration->phone_whatsapp ?? $configurationModel->phone_whatsapp ?? null;
@@ -1684,16 +1684,17 @@
     $quoteModeBoot = $quotation_mode ?? 'quote_and_sell';
     $quoteHybridBoot = $quoteEnabledBoot && $quoteModeBoot === 'quote_and_sell';
     $quoteOnlyBoot = $quoteEnabledBoot && $quoteModeBoot === 'quote_only';
-@endphp
+?>
 
-{{-- Config mínima + overlay inmediato (antes de Vite/Vue) para evitar flickeo --}}
+
 <script>
     window.__ecommerce_quotation_boot = {
-        enabled: {!! json_encode($quoteEnabledBoot) !!},
-        mode: {!! json_encode($quoteModeBoot) !!},
-        hybrid: {!! json_encode($quoteHybridBoot) !!},
-        quote_only: {!! json_encode($quoteOnlyBoot) !!},
-        user_id: {!! json_encode(optional(Auth::guard('ecommerce')->user())->id) !!}
+        enabled: <?php echo json_encode($quoteEnabledBoot); ?>,
+        mode: <?php echo json_encode($quoteModeBoot); ?>,
+        hybrid: <?php echo json_encode($quoteHybridBoot); ?>,
+        quote_only: <?php echo json_encode($quoteOnlyBoot); ?>,
+        user_id: <?php echo json_encode(optional(Auth::guard('ecommerce')->user())->id); ?>
+
     };
 </script>
 <div
@@ -1762,7 +1763,7 @@
 
 <div class="row" id="app">
     <div class="col-12">
-        <h2 class="my-4 mt-4" style="font-weight: 900;">@{{ isQuotationCheckout ? 'Solicitar cotización' : 'Finalizar compra' }}</h2>
+        <h2 class="my-4 mt-4" style="font-weight: 900;">{{ isQuotationCheckout ? 'Solicitar cotización' : 'Finalizar compra' }}</h2>
     </div>
     <div class="col-md-8 mb-3">
         <div class="card card-cart">
@@ -1781,9 +1782,9 @@
                     <span class="ml-2 font-weight-bold title-card">Tu carrito</span>
                     <span class="head-summary">
                         <template v-if="records.length > 0">
-                            <b>@{{ records.length }} @{{ records.length === 1 ? 'producto' : 'productos' }}</b>
+                            <b>{{ records.length }} {{ records.length === 1 ? 'producto' : 'productos' }}</b>
                             <span class="head-summary-sep" v-if="showCartPrices">·</span>
-                            <span class="head-summary-amt" v-if="showCartPrices">S/ @{{ summary.total }}</span>
+                            <span class="head-summary-amt" v-if="showCartPrices">S/ {{ summary.total }}</span>
                         </template>
                         <span v-else class="head-summary-warn">Carrito vacío</span>
                     </span>
@@ -1798,17 +1799,17 @@
                             <div class="thumb">
                                 <figure class="product-image-container m-0">
                                     <a href="#" class="product-image">
-                                        <img class="image-product w-100" :src="(row.image && row.image !== 'imagen-no-disponible.jpg') ? '{{ $itemsBasePath }}' + '/' + row.image : '{{ $defaultImagePath }}'" :alt="row.description || 'Producto sin imagen'">
+                                        <img class="image-product w-100" :src="(row.image && row.image !== 'imagen-no-disponible.jpg') ? '<?php echo e($itemsBasePath); ?>' + '/' + row.image : '<?php echo e($defaultImagePath); ?>'" :alt="row.description || 'Producto sin imagen'">
                                     </a>
                                 </figure>
                             </div>
 
                             <div class="info">
                                 <h5 class="product-title m-0">
-                                    <a href="#">@{{ row.description }}</a>
+                                    <a href="#">{{ row.description }}</a>
                                 </h5>
                                 <span class="price text-muted" v-if="showCartPrices">
-                                    @{{ row.currency_type_symbol }} @{{ row.sale_unit_price }}
+                                    {{ row.currency_type_symbol }} {{ row.sale_unit_price }}
                                 </span>
                             </div>
 
@@ -1826,8 +1827,8 @@
                                 </div>
                             </div>
 
-                            <strong class="total" v-if="showCartPrices">@{{ row.currency_type_symbol }} @{{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
-                            <strong class="total text-muted" v-else>x @{{ row.cantidad }}</strong>
+                            <strong class="total" v-if="showCartPrices">{{ row.currency_type_symbol }} {{ (row.sale_unit_price * row.cantidad).toFixed(2) }}</strong>
+                            <strong class="total text-muted" v-else>x {{ row.cantidad }}</strong>
 
                             <button type="button" @click="deleteItem(row.id, index)" class="btn btn-sm btn-link text-muted px-0 delete-item-btn">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
@@ -1840,7 +1841,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.966 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304z"/><path d="M9 11v-5a3 3 0 0 1 6 0v5"/></svg>
                         </span>
                         <p class="cart-empty-title">Tu carrito está vacío</p>
-                        <p class="cart-empty-text">@{{ isQuotationCheckout ? 'Agrega productos para solicitar tu cotización.' : 'Agrega productos para continuar con tu compra.' }}</p>
+                        <p class="cart-empty-text">{{ isQuotationCheckout ? 'Agrega productos para solicitar tu cotización.' : 'Agrega productos para continuar con tu compra.' }}</p>
                         <a href="/ecommerce" class="cart-empty-btn">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
                             Ver productos
@@ -1870,13 +1871,13 @@
             </div>
         </div>
 
-        {{-- Banner solo cotizar (sin opción de compra) --}}
+        
         <div class="quotation-mode-banner" v-if="quoteOnlyMode && records.length > 0" style="margin-top: 1rem;">
             <strong>Solo cotización</strong>
             Esta tienda no procesa compras en línea. Completa tus datos de contacto para solicitar tu cotización.
         </div>
 
-        {{-- Datos de contacto: opciones iniciales o formulario de invitado --}}
+        
         <div
             class="card card-cart contact-data-card"
             v-if="records.length > 0 && !isLoggedIn && !isQuotationCheckout && (checkoutIntentChosen || !isHybridQuotationMode)"
@@ -1892,7 +1893,7 @@
                     </span>
                     <span class="ml-2 font-weight-bold title-card">Datos de contacto</span>
                     <span class="head-summary">
-                        <b v-if="guestCheckoutAccepted && guest_form.email">@{{ guest_form.email }}</b>
+                        <b v-if="guestCheckoutAccepted && guest_form.email">{{ guest_form.email }}</b>
                         <span v-else-if="guestCheckoutAccepted" class="head-summary-warn">Completa tus datos</span>
                         <span v-else class="head-summary-warn">Elige cómo continuar</span>
                     </span>
@@ -1901,7 +1902,7 @@
             </button>
             <div id="contactDataBody" class="collapse show">
                 <div class="card-body card-body-h-auto card-cart-body">
-                    {{-- Paso 1: aviso con enlaces de acceso en línea --}}
+                    
                     <div class="contact-access-block" v-if="!guestCheckoutAccepted">
                         <div class="contact-access-notice" role="status">
                             <span class="contact-access-notice__icon" aria-hidden="true">
@@ -1920,7 +1921,7 @@
                         </div>
                     </div>
 
-                    {{-- Paso 2: formulario de contacto (solo tras elegir invitado) --}}
+                    
                     <div class="contact-guest-form" v-if="guestCheckoutAccepted">
                     <p class="hint mb-3">Estos datos se usarán solo para esta compra. No se creará una cuenta ni se solicitará contraseña.</p>
                     <div class="guest-form-grid">
@@ -1960,7 +1961,7 @@
                                     v-for="option in guestDocumentTypeOptions"
                                     :key="option.id"
                                     :value="option.id"
-                                >@{{ option.label }}</option>
+                                >{{ option.label }}</option>
                             </select>
                         </div>
                         <div>
@@ -1994,7 +1995,7 @@
                         role="status"
                     >
                         <span aria-hidden="true">&#9888;</span>
-                        <div>@{{ guestHighAmountIdentityNotice }}</div>
+                        <div>{{ guestHighAmountIdentityNotice }}</div>
                     </div>
 
                     <div
@@ -2004,8 +2005,8 @@
                     >
                         <span aria-hidden="true">&#9432;</span>
                         <div>
-                            <strong>Comprobante: @{{ guestInvoiceTypeLabel }}</strong>
-                            @{{ guestInvoiceNotice }}
+                            <strong>Comprobante: {{ guestInvoiceTypeLabel }}</strong>
+                            {{ guestInvoiceNotice }}
                         </div>
                     </div>
 
@@ -2029,7 +2030,7 @@
                         <span v-else-if="guestDocumentStatus.type === 'warning'" aria-hidden="true">&#9888;</span>
                         <div>
                             <strong v-if="guestExistingCustomer">Cliente registrado</strong>
-                            @{{ guestDocumentStatus.message }}
+                            {{ guestDocumentStatus.message }}
                             <button
                                 v-if="guestExistingCustomer"
                                 type="button"
@@ -2041,7 +2042,7 @@
                         </div>
                     </div>
 
-                    </div>{{-- /.contact-guest-form --}}
+                    </div>
                 </div>
             </div>
         </div>
@@ -2071,13 +2072,13 @@
                     <span class="ml-2 font-weight-bold title-card">Datos de envio</span>
                     <span class="head-summary">
                         <template v-if="isPickupMode">
-                            <b v-if="selectedPickupBranch">@{{ selectedPickupBranch.name }}</b>
+                            <b v-if="selectedPickupBranch">{{ selectedPickupBranch.name }}</b>
                             <span v-else class="head-summary-warn">Elige sucursal</span>
                         </template>
                         <template v-else-if="form_contact.address || form_contact.telephone">
-                            <span class="head-summary-addr" v-if="form_contact.address">@{{ form_contact.address }}</span>
+                            <span class="head-summary-addr" v-if="form_contact.address">{{ form_contact.address }}</span>
                             <span class="head-summary-sep" v-if="form_contact.address && form_contact.telephone">·</span>
-                            <b v-if="form_contact.telephone">@{{ form_contact.telephone }}</b>
+                            <b v-if="form_contact.telephone">{{ form_contact.telephone }}</b>
                         </template>
                         <span v-else class="head-summary-warn">Falta completar</span>
                     </span>
@@ -2087,15 +2088,9 @@
             <div id="deliveryCollapse" class="collapse show">
                 <div class="card-body card-body-h-auto card-cart-body ship-body">
 
-                    {{-- Switch: Recojo en tienda (solo si está habilitado en configuración) --}}
+                    
                     <div class="pickup-switch" v-if="enableStorePickup">
-                        {{-- <label class="pickup-switch-label" @click="togglePickupMode">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9 -7 9 7v11a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                            Recojo en tienda
-                        </label>
-                        <button type="button" class="switch" :class="{ 'switch--on': isPickupMode }" @click="togglePickupMode" :aria-pressed="isPickupMode ? 'true' : 'false'" aria-label="Activar recojo en tienda">
-                            <span class="switch-knob"></span>
-                        </button> --}}
+                        
                         <label
                             class="option-card send-mode"
                             :class="{ 'option-card--active': !isPickupMode }"
@@ -2137,9 +2132,9 @@
                     </div>
 
                     <div class="ship-grid">
-                        {{-- Columna izquierda: dirección de entrega o sucursal de recojo --}}
+                        
                         <div class="ship-col">
-                            {{-- Modo recojo en tienda: radio buttons de sucursales --}}
+                            
                             <template v-if="isPickupMode">
                                 <span class="field-label">Selecciona una sucursal</span>
                                 <div v-if="pickupBranches.length === 0" class="ship-alert ship-alert--info">
@@ -2159,14 +2154,14 @@
                                             @change="selectPickupBranch(branch)"
                                         >
                                         <span class="option-card-body">
-                                            <strong>@{{ branch.name }}</strong>
-                                            <span class="option-card-sub" v-if="branch.address">@{{ branch.address }}</span>
+                                            <strong>{{ branch.name }}</strong>
+                                            <span class="option-card-sub" v-if="branch.address">{{ branch.address }}</span>
                                         </span>
                                     </label>
                                 </div>
                             </template>
 
-                            {{-- Modo delivery normal --}}
+                            
                             <template v-else>
                                 <div
                                     v-if="guestReturningAddressNotice && isGuestCheckoutActive"
@@ -2188,18 +2183,18 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7 -9 13 -9 13s-9 -6 -9 -13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                                     </span>
                                     <div class="addr-card-info">
-                                        <strong>@{{ form_contact.address }}</strong>
-                                        <span class="addr-card-sub">@{{ ubigeoLabel }}</span>
+                                        <strong>{{ form_contact.address }}</strong>
+                                        <span class="addr-card-sub">{{ ubigeoLabel }}</span>
                                     </div>
                                     <button type="button" class="addr-change" @click="openChangeAddressFlow">Cambiar</button>
                                 </div>
 
-                                {{-- Mensaje sin cobertura de delivery --}}
+                                
                                 <div v-if="deliveryMessage != ''" class="ship-alert ship-alert--warn" role="alert">
-                                    <strong>&#9888; Sin cobertura:</strong> @{{ deliveryMessage }}
+                                    <strong>&#9888; Sin cobertura:</strong> {{ deliveryMessage }}
                                 </div>
 
-                                {{-- Opciones de envío: mostrar cuando hay múltiples zonas disponibles --}}
+                                
                                 <div v-if="availableDeliveryZones.length > 1" class="option-list mt-2">
                                     <span class="field-label">Opciones de envío</span>
                                     <label
@@ -2215,21 +2210,21 @@
                                                 :checked="deliveryZone && deliveryZone.id === zone.id"
                                                 @change="selectDeliveryZone(zone)"
                                             >
-                                            <span>@{{ zone.name }}</span>
+                                            <span>{{ zone.name }}</span>
                                         </span>
-                                        <strong class="option-card-price">S/ @{{ parseFloat(zone.price).toFixed(2) }}</strong>
+                                        <strong class="option-card-price">S/ {{ parseFloat(zone.price).toFixed(2) }}</strong>
                                     </label>
                                 </div>
 
-                                {{-- Una sola zona disponible: mostrar informativo --}}
+                                
                                 <div v-else-if="availableDeliveryZones.length === 1 && deliveryZone" class="ship-note ship-note--ok mt-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5 -5"/></svg>
-                                    Envío disponible: <strong>@{{ deliveryZone.name }}</strong> &mdash; S/ @{{ parseFloat(deliveryZone.price).toFixed(2) }}
+                                    Envío disponible: <strong>{{ deliveryZone.name }}</strong> &mdash; S/ {{ parseFloat(deliveryZone.price).toFixed(2) }}
                                 </div>
                             </template>
                         </div>
 
-                        {{-- Columna derecha: teléfono de contacto --}}
+                        
                         <div class="ship-col">
                             <span class="field-label">Teléfono de contacto</span>
                             <input
@@ -2249,7 +2244,7 @@
         </div>
         </transition>
 
-        {{-- Datos de contacto (modo cotización) --}}
+        
         <transition name="checkout-panel">
         <div class="card card-cart" v-if="records.length > 0 && isQuotationCheckout && (checkoutIntentChosen || quoteOnlyMode)" id="quotationContactCard" key="quote-contact-card">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#quotationContactCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
@@ -2259,7 +2254,7 @@
                     </span>
                     <span class="ml-2 font-weight-bold title-card">Datos de contacto</span>
                     <span class="head-summary">
-                        <b v-if="quotationContactSummary">@{{ quotationContactSummary }}</b>
+                        <b v-if="quotationContactSummary">{{ quotationContactSummary }}</b>
                         <span v-else class="head-summary-warn">Completa tus datos</span>
                     </span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="collapse-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
@@ -2289,8 +2284,8 @@
                     <div class="quotation-conditions">
                         <div class="quotation-conditions-title">Condiciones de la cotización</div>
                         <ul class="quotation-conditions-list">
-                            <li>Vigencia: <strong>@{{ quotationValidityLabel }}</strong> (asignada automáticamente por la tienda).</li>
-                            <li v-if="quotationTerms" style="white-space: pre-line;">@{{ quotationTerms }}</li>
+                            <li>Vigencia: <strong>{{ quotationValidityLabel }}</strong> (asignada automáticamente por la tienda).</li>
+                            <li v-if="quotationTerms" style="white-space: pre-line;">{{ quotationTerms }}</li>
                             <li v-else>Los precios y disponibilidad están referenciales hasta la confirmación comercial.</li>
                         </ul>
                     </div>
@@ -2299,8 +2294,8 @@
         </div>
         </transition>
 
-        @if($enable_electronic_documents)
-            {{-- Modo documentos electrónicos: solo lectura, tipo inferido del número del usuario --}}
+        <?php if($enable_electronic_documents): ?>
+            
             <div class="card card-cart" v-if="isLoggedIn && !isQuotationCheckout && (checkoutIntentChosen || !isHybridQuotationMode)">
                 <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#documentyCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                     <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
@@ -2314,10 +2309,10 @@
                         </span>
                         <span class="ml-2 font-weight-bold title-card">Datos del comprobante</span>
                         <span class="head-summary">
-                            <b v-if="invoiceTypeLabel">@{{ invoiceTypeLabel }}</b>
+                            <b v-if="invoiceTypeLabel">{{ invoiceTypeLabel }}</b>
                             <template v-if="user && user.number">
                                 <span class="head-summary-sep" v-if="invoiceTypeLabel">·</span>
-                                <span>@{{ user.number }}</span>
+                                <span>{{ user.number }}</span>
                             </template>
                         </span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="collapse-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2b2b2b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
@@ -2326,14 +2321,14 @@
                 <div id="documentyCollapse" class="collapse show">
                     <div class="card-body card-body-h-auto card-cart-body">
                         <ul class="doc-list">
-                            <li><span>Cliente</span> <strong>@{{ user.name }}</strong></li>
-                            <li><span>Documento</span> <strong>@{{ user.number }}</strong></li>
-                            <li><span>Tipo de doc.</span> <strong>@{{ invoiceTypeLabel }}</strong></li>
+                            <li><span>Cliente</span> <strong>{{ user.name }}</strong></li>
+                            <li><span>Documento</span> <strong>{{ user.number }}</strong></li>
+                            <li><span>Tipo de doc.</span> <strong>{{ invoiceTypeLabel }}</strong></li>
                         </ul>
                     </div>
                 </div>
             </div>
-        @endif
+        <?php endif; ?>
 
         <transition name="checkout-panel">
         <div class="card card-cart" v-if="records.length > 0 && allowPurchase && (checkoutIntentChosen || !isHybridQuotationMode) && showCheckoutSections" key="payment-card">
@@ -2360,24 +2355,24 @@
                     <span class="ml-2 font-weight-bold title-card">Método de pago</span>
                     <span class="head-summary">
                         <template v-if="!isLoggedIn">
-                            <b v-if="isGuestFormReady && selectedPaymentMethod === 'culqi'">@{{ titleCulqi }}</b>
-                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'cash'">@{{ cashPaymentTitle }}</b>
+                            <b v-if="isGuestFormReady && selectedPaymentMethod === 'culqi'">{{ titleCulqi }}</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'cash'">{{ cashPaymentTitle }}</b>
                             <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'yape'">Yape</b>
                             <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'transfer'">Transferencia</b>
                             <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'paypal'">PayPal</b>
-                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'mp'">@{{ titleMp }}</b>
-                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'izipay'">@{{ titleIzipay }}</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'mp'">{{ titleMp }}</b>
+                            <b v-else-if="isGuestFormReady && selectedPaymentMethod === 'izipay'">{{ titleIzipay }}</b>
                             <span v-else-if="guestCheckoutAccepted" class="head-summary-warn">Completa envío y contacto</span>
                             <span v-else class="head-summary-warn">Continúa como invitado</span>
                         </template>
                         <template v-else>
-                            <b v-if="selectedPaymentMethod === 'culqi'">@{{ titleCulqi }}</b>
-                            <b v-else-if="selectedPaymentMethod === 'cash'">@{{ cashPaymentTitle }}</b>
+                            <b v-if="selectedPaymentMethod === 'culqi'">{{ titleCulqi }}</b>
+                            <b v-else-if="selectedPaymentMethod === 'cash'">{{ cashPaymentTitle }}</b>
                             <b v-else-if="selectedPaymentMethod === 'yape'">Yape</b>
                             <b v-else-if="selectedPaymentMethod === 'transfer'">Transferencia</b>
                             <b v-else-if="selectedPaymentMethod === 'paypal'">PayPal</b>
-                            <b v-else-if="selectedPaymentMethod === 'mp'">@{{ titleMp }}</b>
-                            <b v-else-if="selectedPaymentMethod === 'izipay'">@{{ titleIzipay }}</b>
+                            <b v-else-if="selectedPaymentMethod === 'mp'">{{ titleMp }}</b>
+                            <b v-else-if="selectedPaymentMethod === 'izipay'">{{ titleIzipay }}</b>
                             <span v-else class="head-summary-warn">Elige un método</span>
                         </template>
                     </span>
@@ -2397,19 +2392,19 @@
                         <label v-if="enableCulqi" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="culqi" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
-                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi-checkout.svg') }}?v=1" alt="Culqi">
+                                <img src="<?php echo e(asset('porto-ecommerce/assets/images/payment-gateways/culqi-checkout.svg')); ?>?v=1" alt="Culqi">
                             </span>
-                            <span class="pay-method-label">@{{ titleCulqi }}</span>
+                            <span class="pay-method-label">{{ titleCulqi }}</span>
                         </label>
                         <div v-if="selectedPaymentMethod === 'culqi'" class="pay-method-panel">
-                            <p v-if="descriptionCulqi">@{{ descriptionCulqi }}</p>
+                            <p v-if="descriptionCulqi">{{ descriptionCulqi }}</p>
                             <button
                                 type="button"
                                 class="pay-btn pay-method-action"
                                 :disabled="processingPayment || !acceptedTerms"
                                 @click="runPayment('culqi')"
                             >
-                                Pagar con @{{ titleCulqi }}
+                                Pagar con {{ titleCulqi }}
                             </button>
                         </div>
 
@@ -2418,17 +2413,17 @@
                             <span class="pay-method-ic">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2M4 14v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
                             </span>
-                            <span class="pay-method-label">@{{ titleIzipay }}</span>
+                            <span class="pay-method-label">{{ titleIzipay }}</span>
                         </label>
                         <div v-if="selectedPaymentMethod === 'izipay'" class="pay-method-panel">
-                            <p v-if="descriptionIzipay">@{{ descriptionIzipay }}</p>
+                            <p v-if="descriptionIzipay">{{ descriptionIzipay }}</p>
                             <button
                                 type="button"
                                 class="pay-btn pay-method-action"
                                 :disabled="processingPayment || !acceptedTerms"
                                 @click="runPayment('izipay')"
                             >
-                                Pagar con @{{ titleIzipay }}
+                                Pagar con {{ titleIzipay }}
                             </button>
                         </div>
 
@@ -2437,17 +2432,17 @@
                             <span class="pay-method-ic">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                             </span>
-                            <span class="pay-method-label">@{{ titleMp }}</span>
+                            <span class="pay-method-label">{{ titleMp }}</span>
                         </label>
                         <div v-if="selectedPaymentMethod === 'mp'" class="pay-method-panel">
-                            <p v-if="descriptionMp">@{{ descriptionMp }}</p>
+                            <p v-if="descriptionMp">{{ descriptionMp }}</p>
                             <button
                                 type="button"
                                 class="pay-btn pay-method-action"
                                 :disabled="processingPayment || !acceptedTerms"
                                 @click="runPayment('mp')"
                             >
-                                Pagar con @{{ titleMp }}
+                                Pagar con {{ titleMp }}
                             </button>
                         </div>
 
@@ -2456,39 +2451,39 @@
                             <span class="pay-method-ic">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
                             </span>
-                            <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
+                            <span class="pay-method-label">{{ cashPaymentTitle }}</span>
                         </label>
                         
                         <div v-if="selectedPaymentMethod === 'cash'" class="pay-method-panel">
-                            <p v-if="cashPaymentDescription">@{{ cashPaymentDescription }}</p>
+                            <p v-if="cashPaymentDescription">{{ cashPaymentDescription }}</p>
                             <button
                                 type="button"
                                 class="pay-btn pay-method-action"
                                 :disabled="processingPayment || !acceptedTerms"
                                 @click="runPayment('cash')"
                             >
-                                Confirmar pedido — @{{ cashPaymentTitle }}
+                                Confirmar pedido — {{ cashPaymentTitle }}
                             </button>
                         </div>
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="yape" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
-                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/yape-checkout.svg') }}?v=4" alt="Yape">
+                                <img src="<?php echo e(asset('porto-ecommerce/assets/images/payment-gateways/yape-checkout.svg')); ?>?v=4" alt="Yape">
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
                         
                         <div v-if="selectedPaymentMethod === 'yape'" class="pay-method-panel">
                             <p>Escanea el código QR desde tu app de Yape.</p>
-                            @if(!empty($payment_configuration->image_url_yape))
+                            <?php if(!empty($payment_configuration->image_url_yape)): ?>
                             <div style="text-align: center; margin: 15px 0;">
-                                <img src="{{ $payment_configuration->image_url_yape }}" alt="QR Yape" style="max-width: 150px; border-radius: 8px; border: 1px solid #eee;">
+                                <img src="<?php echo e($payment_configuration->image_url_yape); ?>" alt="QR Yape" style="max-width: 150px; border-radius: 8px; border: 1px solid #eee;">
                             </div>
-                            @endif
+                            <?php endif; ?>
                             <div style="font-size: 14px; text-align: center; margin-bottom: 10px;">
-                                <strong>Titular:</strong> {{ $payment_configuration->name_yape ?? 'No registrado' }}<br>
-                                <strong>Teléfono:</strong> <span>{{ $payment_configuration->telephone_yape ?? 'No registrado' }}</span>
-                                <button type="button" @click.prevent="copyToClipboard('{{ $payment_configuration->telephone_yape ?? '' }}')" class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">
+                                <strong>Titular:</strong> <?php echo e($payment_configuration->name_yape ?? 'No registrado'); ?><br>
+                                <strong>Teléfono:</strong> <span><?php echo e($payment_configuration->telephone_yape ?? 'No registrado'); ?></span>
+                                <button type="button" @click.prevent="copyToClipboard('<?php echo e($payment_configuration->telephone_yape ?? ''); ?>')" class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">
                                     Copiar
                                 </button>
                             </div>
@@ -2512,21 +2507,22 @@
                         
                         <div v-if="selectedPaymentMethod === 'transfer'" class="pay-method-panel">
                             <p>Realiza el depósito en alguna de nuestras cuentas bancarias y envíanos el voucher por WhatsApp.</p>
-                            @if(isset($bank_accounts) && count($bank_accounts) > 0)
+                            <?php if(isset($bank_accounts) && count($bank_accounts) > 0): ?>
                                 <ul style="list-style: none; padding-left: 0; font-size: 13px; margin: 10px 0 0;">
-                                @foreach($bank_accounts as $account)
+                                <?php $__currentLoopData = $bank_accounts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $account): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <li style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
-                                        <strong>Banco:</strong> {{ $account->bank->description }} ({{ $account->currency_type->symbol }})<br>
-                                        <strong>Cuenta:</strong> {{ $account->number }}<br>
-                                        @if($account->cci)
-                                        <strong>CCI:</strong> {{ $account->cci }}
-                                        @endif
+                                        <strong>Banco:</strong> <?php echo e($account->bank->description); ?> (<?php echo e($account->currency_type->symbol); ?>)<br>
+                                        <strong>Cuenta:</strong> <?php echo e($account->number); ?><br>
+                                        <?php if($account->cci): ?>
+                                        <strong>CCI:</strong> <?php echo e($account->cci); ?>
+
+                                        <?php endif; ?>
                                     </li>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </ul>
-                            @else
+                            <?php else: ?>
                                 <p style="font-size: 13px; font-weight: bold; color: #d9534f; margin-top: 10px;">No hay cuentas bancarias configuradas.</p>
-                            @endif
+                            <?php endif; ?>
                             <button
                                 type="button"
                                 class="pay-btn pay-method-action"
@@ -2536,7 +2532,7 @@
                                 Confirmar pedido con transferencia
                             </button>
                         </div>
-                        @if($information->script_paypal)
+                        <?php if($information->script_paypal): ?>
                         <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'paypal' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="paypal" autocomplete="off">
                             <span class="pay-method-ic">
@@ -2544,7 +2540,7 @@
                             </span>
                             <span class="pay-method-label">PayPal</span>
                         </label>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -2556,10 +2552,10 @@
       <div class="summary-sticky">
         <div class="cart-summary" :class="{ 'is-quote-summary': isQuotationCheckout }">
             <div class="sum-head">
-                <h3>@{{ isQuotationCheckout ? 'Resumen de cotización' : 'Resumen' }}</h3>
+                <h3>{{ isQuotationCheckout ? 'Resumen de cotización' : 'Resumen' }}</h3>
             </div>
 
-            {{-- Solo Cotizar y vender: aviso de modo debajo del título --}}
+            
             <div
                 class="checkout-intent-summary checkout-intent-summary--in-summary"
                 v-if="isHybridQuotationMode && records.length > 0 && checkoutIntentChosen && !checkoutIntentModalVisible"
@@ -2586,40 +2582,40 @@
                     <tbody>
                         <tr v-if="summary.total_exonerated > 0">
                             <td>Op. exoneradas</td>
-                            <td>S/ @{{ summary.total_exonerated }}</td>
+                            <td>S/ {{ summary.total_exonerated }}</td>
                         </tr>
                         <tr v-if="summary.total_taxed > 0">
                             <td>Op. gravada</td>
-                            <td>S/ @{{ summary.total_taxed }}</td>
+                            <td>S/ {{ summary.total_taxed }}</td>
                         </tr>
                         <tr v-if="summary.total_igv > 0">
                             <td>IGV (18%)</td>
-                            <td>S/ @{{ summary.total_igv }}</td>
+                            <td>S/ {{ summary.total_igv }}</td>
                         </tr>
                         <tr v-if="!isQuotationCheckout && appliedCoupon && appliedCoupon.code">
                             <td>
-                                Cupón <span class="badge badge-dark">@{{ appliedCoupon.code }}</span>
+                                Cupón <span class="badge badge-dark">{{ appliedCoupon.code }}</span>
                                 <button class="coupon-remove" @click="removeCoupon">Eliminar</button>
                             </td>
                             <td>
-                                &minus; S/ @{{ appliedCoupon.discount }}
+                                &minus; S/ {{ appliedCoupon.discount }}
                             </td>
                         </tr>
                         <tr v-if="!isQuotationCheckout && deliveryZone && parseFloat(deliveryZone.price) > 0">
-                            <td>Envío <small class="text-muted">(@{{ deliveryZone.name }})</small></td>
-                            <td>S/ @{{ summary.delivery }}</td>
+                            <td>Envío <small class="text-muted">({{ deliveryZone.name }})</small></td>
+                            <td>S/ {{ summary.delivery }}</td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
                             <td>Total</td>
-                            <td>S/ @{{summary.total}}</td>
+                            <td>S/ {{summary.total}}</td>
                         </tr>
                     </tfoot>
                 </table>
 
                 <p class="quotation-summary-meta" v-if="isQuotationCheckout && !showCartPrices">
-                    @{{ records.length }} producto(s) seleccionados para cotizar.
+                    {{ records.length }} producto(s) seleccionados para cotizar.
                 </p>
 
                 <!-- Coupon input and applied coupon display -->
@@ -2628,11 +2624,11 @@
                         <input v-model="couponField" type="text" class="input" placeholder="Código de cupón">
                         <button class="coupon-btn" @click="applyCoupon" :disabled="couponLoading">Aplicar</button>
                     </div>
-                    <small class="coupon-msg text-danger" v-if="couponMessage">@{{ couponMessage }}</small>
+                    <small class="coupon-msg text-danger" v-if="couponMessage">{{ couponMessage }}</small>
                 </div>
 
                 <div class="quotation-summary-note" v-if="isQuotationCheckout">
-                    <small>Vigencia automática: <strong>@{{ quotationValidityLabel }}</strong></small>
+                    <small>Vigencia automática: <strong>{{ quotationValidityLabel }}</strong></small>
                 </div>
 
                 <label class="terms" :class="{ 'terms--checked': acceptedTerms }" id="termsLabel">
@@ -2706,7 +2702,7 @@
                     Pago 100% seguro y protegido
                 </div>
                 <div class="cards-row px-5" v-if="!isQuotationCheckout">
-                    <img src="{{ asset('porto-ecommerce/assets/images/payments-bordered.svg') }}" alt="payment methods" class="footer-payments">
+                    <img src="<?php echo e(asset('porto-ecommerce/assets/images/payments-bordered.svg')); ?>" alt="payment methods" class="footer-payments">
                 </div>
             </div>
             <div class="secure-foot">Transacción cifrada · IGV incluido según ley peruana</div>
@@ -2761,8 +2757,8 @@
     >
         <div class="payment-process-dialog">
             <div class="payment-process-spinner" aria-hidden="true"></div>
-            <h3 id="payment-loading-title">@{{ paymentLoadingTitle }}</h3>
-            <p>@{{ paymentLoadingText }}</p>
+            <h3 id="payment-loading-title">{{ paymentLoadingTitle }}</h3>
+            <p>{{ paymentLoadingText }}</p>
         </div>
     </div>
 
@@ -2785,19 +2781,19 @@
             <div class="payment-success-summary">
                 <div class="psr-row">
                     <span class="lbl">N° de pedido</span>
-                    <span class="val">@{{ successOrderNumber }}</span>
+                    <span class="val">{{ successOrderNumber }}</span>
                 </div>
                 <div class="psr-row">
                     <span class="lbl">Forma de pago</span>
-                    <span class="val">@{{ successPaymentLabel }}</span>
+                    <span class="val">{{ successPaymentLabel }}</span>
                 </div>
                 <div class="psr-row">
                     <span class="lbl">Productos</span>
-                    <span class="val">@{{ successItemsCount }}</span>
+                    <span class="val">{{ successItemsCount }}</span>
                 </div>
                 <div class="psr-row psr-row--total">
                     <span class="lbl">Total</span>
-                    <span class="val">@{{ successOrderTotal }}</span>
+                    <span class="val">{{ successOrderTotal }}</span>
                 </div>
             </div>
             <div class="payment-success-note">
@@ -2833,8 +2829,8 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
             <h3 id="quotation-success-title">¡Cotización enviada!</h3>
-            <p class="payment-success-sub">@{{ displayedQuotationSuccessMessage }}</p>
-            <div class="quotation-success-code">@{{ quotationResult.code || quotationResult.number_full }}</div>
+            <p class="payment-success-sub">{{ displayedQuotationSuccessMessage }}</p>
+            <div class="quotation-success-code">{{ quotationResult.code || quotationResult.number_full }}</div>
             <div class="quotation-success-actions">
                 <button type="button" class="pay-btn pay-btn--ghost" @click="openQuotationPdf" v-if="quotationResult.print_url && showCartPrices">
                     Ver PDF
@@ -2894,8 +2890,8 @@
                                     aria-hidden="true"
                                 >
                                 <div class="addr-list-card__body">
-                                    <strong>@{{ getAddressTitle(item, index) }}</strong>
-                                    <span>@{{ getAddressDetail(item) }}</span>
+                                    <strong>{{ getAddressTitle(item, index) }}</strong>
+                                    <span>{{ getAddressDetail(item) }}</span>
                                 </div>
                                 <div class="addr-list-card__menu-wrap" @click.stop>
                                     <button
@@ -2942,7 +2938,7 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header h-auto">
-                    <h3 class="modal-title">@{{ addressModalMode === 'edit' ? 'Editar dirección' : 'Agregar dirección' }}</h3>
+                    <h3 class="modal-title">{{ addressModalMode === 'edit' ? 'Editar dirección' : 'Agregar dirección' }}</h3>
                     <button type="button" class="close" @click="closeAddressModal()" aria-label="Close">
                         <span aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
@@ -2951,19 +2947,19 @@
                 </div>
 
                 <div class="modal-body">
-                    @if(!empty($googleMapsApiKey))
+                    <?php if(!empty($googleMapsApiKey)): ?>
                         <div id="map"></div>
-                    @endif
+                    <?php endif; ?>
 
                     <div class="addr-modal-form">
-                        @if(empty($googleMapsApiKey))
+                        <?php if(empty($googleMapsApiKey)): ?>
                             <div class="form-row mb-2">
                                 <div class="col-12 col-md-4 mb-2 mb-md-0">
                                     <label class="field-label" for="department">Departamento</label>
                                     <select v-model="selectedDepartment" @change="updateProvinces" name="department" id="department" class="input">
                                         <option value="">Seleccione departamento</option>
                                         <option v-for="department in departments" :key="department.value" :value="department.value">
-                                            @{{ department.label }}
+                                            {{ department.label }}
                                         </option>
                                     </select>
                                 </div>
@@ -2972,7 +2968,7 @@
                                     <select v-model="selectedProvince" @change="updateDistricts" name="province" id="province" class="input">
                                         <option value="">Seleccione provincia</option>
                                         <option v-for="province in provinces" :key="province.value" :value="province.value">
-                                            @{{ province.label }}
+                                            {{ province.label }}
                                         </option>
                                     </select>
                                 </div>
@@ -2981,12 +2977,12 @@
                                     <select v-model="selectedDistrict" @change="checkDeliveryZone" name="district" id="district" class="input">
                                         <option value="">Seleccione distrito</option>
                                         <option v-for="district in districts" :key="district.value" :value="district.value">
-                                            @{{ district.label }}
+                                            {{ district.label }}
                                         </option>
                                     </select>
                                 </div>
                             </div>
-                        @endif
+                        <?php endif; ?>
 
                         <div class="mb-2">
                             <label class="field-label">Dirección</label>
@@ -3010,8 +3006,8 @@
                                         @mousedown.prevent="selectSuggestionFromList(suggestion)"
                                         class="addr-suggestion"
                                         :class="{ 'addr-suggestion--active': highlightedIndex === i }">
-                                        <span class="font-weight-bold">@{{ suggestion.mainText }}</span>
-                                        <span class="d-block text-muted small">@{{ suggestion.secondaryText }}</span>
+                                        <span class="font-weight-bold">{{ suggestion.mainText }}</span>
+                                        <span class="d-block text-muted small">{{ suggestion.secondaryText }}</span>
                                     </li>
                                 </ul>
                             </div>
@@ -3026,19 +3022,19 @@
                 </div>
 
                 <div v-if="deliveryMessage" class="ship-alert ship-alert--warn mx-3 mb-2">
-                    <strong>&#9888; Sin cobertura:</strong> @{{ deliveryMessage }}
+                    <strong>&#9888; Sin cobertura:</strong> {{ deliveryMessage }}
                 </div>
 
                 <div class="modal-footer-wrap">
                     <button type="button" class="pay-btn" @click="confirmAddress()">
-                        @{{ addressModalMode === 'edit' ? 'Guardar dirección' : 'Continuar' }}
+                        {{ addressModalMode === 'edit' ? 'Guardar dirección' : 'Continuar' }}
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- ===== Modal reutilizable: Términos y Condiciones ===== --}}
+    
     <div class="app-modal" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsModalTitle" aria-hidden="true">
         <div class="app-modal__dialog">
             <div class="app-modal__header">
@@ -3051,11 +3047,11 @@
                 </button>
             </div>
             <div class="app-modal__body">
-                @if(!empty($configuration->terms_conditions))
-                    <div class="app-modal__prose">{!! $configuration->terms_conditions !!}</div>
-                @else
+                <?php if(!empty($configuration->terms_conditions)): ?>
+                    <div class="app-modal__prose"><?php echo $configuration->terms_conditions; ?></div>
+                <?php else: ?>
                     <p class="app-modal__prose text-muted">No se han definido términos y condiciones.</p>
-                @endif
+                <?php endif; ?>
             </div>
             <div class="app-modal__footer">
                 <button type="button" class="pay-btn second-btn" data-modal-close>Cerrar</button>
@@ -3068,8 +3064,8 @@
     <div class="purchase-overlay purchase-overlay--show" v-if="processingPayment">
         <div class="purchase-loading" role="status" aria-live="polite">
             <span class="purchase-spinner" aria-hidden="true"></span>
-            <h3>@{{ paymentLoadingTitle }}</h3>
-            <p>@{{ paymentLoadingText }}</p>
+            <h3>{{ paymentLoadingTitle }}</h3>
+            <p>{{ paymentLoadingText }}</p>
         </div>
     </div>
 
@@ -3082,23 +3078,23 @@
                 </span>
                 <div>
                     <h3>¡Pago realizado!</h3>
-                    <div class="ordn">Pedido @{{ successOrder.number }}</div>
+                    <div class="ordn">Pedido {{ successOrder.number }}</div>
                 </div>
             </div>
             <div class="purchase-confirm-body">
                 <div class="o-item" v-for="(it, i) in successOrder.items" :key="i">
-                    <div><span class="o-q">@{{ it.cantidad }}×</span>@{{ it.description }}</div>
-                    <span class="o-amt">@{{ it.symbol }} @{{ it.total }}</span>
+                    <div><span class="o-q">{{ it.cantidad }}×</span>{{ it.description }}</div>
+                    <span class="o-amt">{{ it.symbol }} {{ it.total }}</span>
                 </div>
                 <div class="o-sep"></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_exonerated) > 0">Op. exoneradas <span class="v">S/ @{{ successOrder.total_exonerated }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_taxed) > 0">Op. gravada <span class="v">S/ @{{ successOrder.total_taxed }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_igv) > 0">IGV (18%) <span class="v">S/ @{{ successOrder.total_igv }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.delivery) > 0">Envío <span class="v">S/ @{{ successOrder.delivery }}</span></div>
-                <div class="o-total"><span class="l">Total pagado</span><span class="a">S/ @{{ successOrder.total }}</span></div>
+                <div class="o-row" v-if="parseFloat(successOrder.total_exonerated) > 0">Op. exoneradas <span class="v">S/ {{ successOrder.total_exonerated }}</span></div>
+                <div class="o-row" v-if="parseFloat(successOrder.total_taxed) > 0">Op. gravada <span class="v">S/ {{ successOrder.total_taxed }}</span></div>
+                <div class="o-row" v-if="parseFloat(successOrder.total_igv) > 0">IGV (18%) <span class="v">S/ {{ successOrder.total_igv }}</span></div>
+                <div class="o-row" v-if="parseFloat(successOrder.delivery) > 0">Envío <span class="v">S/ {{ successOrder.delivery }}</span></div>
+                <div class="o-total"><span class="l">Total pagado</span><span class="a">S/ {{ successOrder.total }}</span></div>
                 <div class="o-pay">
                     <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    Pago: @{{ successOrder.paymentLabel }} · @{{ successOrder.deliveryLabel }}
+                    Pago: {{ successOrder.paymentLabel }} · {{ successOrder.deliveryLabel }}
                 </div>
             </div>
             <div class="purchase-confirm-foot">
@@ -3112,11 +3108,12 @@
 
 </div><!-- End #app -->
 
-@if(auth('ecommerce')->check() && $information->script_paypal)
+<?php if(auth('ecommerce')->check() && $information->script_paypal): ?>
 <div id="paypal-widget-container" style="display:none;">
-    {!!html_entity_decode($information->script_paypal)!!}
+    <?php echo html_entity_decode($information->script_paypal); ?>
+
 </div>
-@endif
+<?php endif; ?>
 
 <!-- DOM Containers for MP and Izipay (fuera de #app para evitar conflicto con Vue) -->
 <div id="mp-brick-stash" aria-hidden="true">
@@ -3125,7 +3122,7 @@
 <div id="izipay-payment-modal" class="gateway-payment-overlay" aria-hidden="true">
     <section class="gateway-payment-dialog" role="dialog" aria-modal="true" aria-label="Pago con Izipay">
         <header class="gateway-payment-header">
-            <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/izipay-official.svg') }}?v=5" alt="Izipay">
+            <img src="<?php echo e(asset('porto-ecommerce/assets/images/payment-gateways/izipay-official.svg')); ?>?v=5" alt="Izipay">
             <button type="button" id="izipay-payment-close" class="gateway-payment-close" aria-label="Cerrar">&times;</button>
         </header>
         <div class="gateway-payment-body">
@@ -3136,63 +3133,63 @@
 
 <input type="hidden" id="total_amount" data-total="0.0">
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <!-- Configuration globals para cart app -->
 <script>
     window.__ecommerce_config = {
-        phone_whatsapp: {!! json_encode($phoneWhatsapp ?? '') !!},
-        enable_whatsapp: {!! json_encode($showWhatsapp ?? false) !!},
-        global_discount_type: {!! json_encode($global_discount_type ?? []) !!},
-        user: {!! json_encode(optional(Auth::guard("ecommerce")->user())->makeHidden(['password', 'remember_token'])) !!},
-        userAddress: {!! json_encode($userAddress ?? null) !!},
-        userAddresses: {!! json_encode($userAddresses ?? []) !!},
-        enable_electronic_documents: {!! json_encode($enable_electronic_documents ?? false) !!},
-        enable_store_pickup: {!! json_encode($enable_store_pickup ?? false) !!},
-        quotation_enabled: {!! json_encode($quotation_enabled ?? false) !!},
-        quotation_mode: {!! json_encode($quotation_mode ?? 'quote_and_sell') !!},
-        quotation_show_prices: {!! json_encode($quotation_show_prices ?? true) !!},
-        quotation_success_message: {!! json_encode($quotation_success_message ?? 'Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.') !!},
-        quotation_validity_days: {!! json_encode($quotation_validity_days ?? 7) !!},
-        quotation_terms: {!! json_encode($quotation_terms ?? '') !!},
-        pickup_branches: {!! json_encode($pickup_branches ?? []) !!},
-        enable_yape: {!! json_encode($enable_yape ?? false) !!},
-        enable_transfer: {!! json_encode($enable_transfer ?? false) !!},
-        enable_cash: {!! json_encode(isset($configuration->preferences['enable_cash']) && $configuration->preferences['enable_cash'] == 1) !!},
-        cash_payment_title: {!! json_encode($configuration->preferences['cash_title'] ?? 'Pago contra entrega') !!},
-        cash_payment_description: {!! json_encode($configuration->preferences['cash_description'] ?? '') !!},
-        cash_payment_pickup_only: {!! json_encode(isset($configuration->preferences['cash_pickup_only']) && $configuration->preferences['cash_pickup_only'] == 1) !!},
-        enable_izipay: {!! json_encode($payment_configuration->enabled_izipay ?? false) !!},
-        public_key_izipay: {!! json_encode($payment_configuration->publickey_izipay ?? '') !!},
-        title_izipay: {!! json_encode($preferences['title_izipay'] ?? 'Pago con Izipay') !!},
-        description_izipay: {!! json_encode($preferences['description_izipay'] ?? '') !!},
-        enable_mp: {!! json_encode($payment_configuration->enabled_mp ?? false) !!},
-        public_key_mp: {!! json_encode($payment_configuration->public_key_mp ?? '') !!},
-        title_mp: {!! json_encode($preferences['title_mp'] ?? 'Mercado Pago') !!},
-        description_mp: {!! json_encode($preferences['description_mp'] ?? '') !!},
-        enable_culqi: {!! json_encode($payment_configuration->enabled_culqi ?? false) !!},
-        title_culqi: {!! json_encode($preferences['title_culqi'] ?? 'Pago con Tarjeta (Culqi)') !!},
-        description_culqi: {!! json_encode($preferences['description_culqi'] ?? '') !!},
+        phone_whatsapp: <?php echo json_encode($phoneWhatsapp ?? ''); ?>,
+        enable_whatsapp: <?php echo json_encode($showWhatsapp ?? false); ?>,
+        global_discount_type: <?php echo json_encode($global_discount_type ?? []); ?>,
+        user: <?php echo json_encode(optional(Auth::guard("ecommerce")->user())->makeHidden(['password', 'remember_token'])); ?>,
+        userAddress: <?php echo json_encode($userAddress ?? null); ?>,
+        userAddresses: <?php echo json_encode($userAddresses ?? []); ?>,
+        enable_electronic_documents: <?php echo json_encode($enable_electronic_documents ?? false); ?>,
+        enable_store_pickup: <?php echo json_encode($enable_store_pickup ?? false); ?>,
+        quotation_enabled: <?php echo json_encode($quotation_enabled ?? false); ?>,
+        quotation_mode: <?php echo json_encode($quotation_mode ?? 'quote_and_sell'); ?>,
+        quotation_show_prices: <?php echo json_encode($quotation_show_prices ?? true); ?>,
+        quotation_success_message: <?php echo json_encode($quotation_success_message ?? 'Registramos tu solicitud. Nuestro equipo la revisará a la brevedad.'); ?>,
+        quotation_validity_days: <?php echo json_encode($quotation_validity_days ?? 7); ?>,
+        quotation_terms: <?php echo json_encode($quotation_terms ?? ''); ?>,
+        pickup_branches: <?php echo json_encode($pickup_branches ?? []); ?>,
+        enable_yape: <?php echo json_encode($enable_yape ?? false); ?>,
+        enable_transfer: <?php echo json_encode($enable_transfer ?? false); ?>,
+        enable_cash: <?php echo json_encode(isset($configuration->preferences['enable_cash']) && $configuration->preferences['enable_cash'] == 1); ?>,
+        cash_payment_title: <?php echo json_encode($configuration->preferences['cash_title'] ?? 'Pago contra entrega'); ?>,
+        cash_payment_description: <?php echo json_encode($configuration->preferences['cash_description'] ?? ''); ?>,
+        cash_payment_pickup_only: <?php echo json_encode(isset($configuration->preferences['cash_pickup_only']) && $configuration->preferences['cash_pickup_only'] == 1); ?>,
+        enable_izipay: <?php echo json_encode($payment_configuration->enabled_izipay ?? false); ?>,
+        public_key_izipay: <?php echo json_encode($payment_configuration->publickey_izipay ?? ''); ?>,
+        title_izipay: <?php echo json_encode($preferences['title_izipay'] ?? 'Pago con Izipay'); ?>,
+        description_izipay: <?php echo json_encode($preferences['description_izipay'] ?? ''); ?>,
+        enable_mp: <?php echo json_encode($payment_configuration->enabled_mp ?? false); ?>,
+        public_key_mp: <?php echo json_encode($payment_configuration->public_key_mp ?? ''); ?>,
+        title_mp: <?php echo json_encode($preferences['title_mp'] ?? 'Mercado Pago'); ?>,
+        description_mp: <?php echo json_encode($preferences['description_mp'] ?? ''); ?>,
+        enable_culqi: <?php echo json_encode($payment_configuration->enabled_culqi ?? false); ?>,
+        title_culqi: <?php echo json_encode($preferences['title_culqi'] ?? 'Pago con Tarjeta (Culqi)'); ?>,
+        description_culqi: <?php echo json_encode($preferences['description_culqi'] ?? ''); ?>,
     };
 
     window.__routes = {
-        payment_cash: '{{ route("tenant_ecommerce_payment_cash") }}',
-        user_data: '{{ route("tenant_ecommerce_user_data") }}',
-        shipping_address: '{{ route("tenant_ecommerce_shipping_address") }}',
-        shipping_addresses: '{{ route("tenant_ecommerce_shipping_addresses") }}',
-        shipping_address_delete: '{{ route("tenant_ecommerce_shipping_address_delete") }}',
-        locations: '{{ route("get_location_cascade") }}',
-        home: '{{ route("tenant.ecommerce.index") }}',
-        culqi: '{{ route("tenant_ecommerce_culqui") }}',
-        izipay_payment: '{{ route("tenant_ecommerce_izipay") }}',
-        izipay_transaction: '{{ route("tenant_ecommerce_izipay_transaction") }}',
-        mercadopago_payment: '{{ route("tenant_ecommerce_mp") }}',
-        thank_you: '{{ route("tenant_ecommerce_thank_you", ["external_id" => "EXTERNAL_ID"]) }}',
-        quotation_store: '{{ route("tenant_ecommerce_quotation_store") }}',
-        quotation_list: '{{ route("tenant_ecommerce_quotation_list") }}',
-        login: '{{ route("tenant_ecommerce_login") }}',
-        search_document: '{{ url("ecommerce/search-document") }}',
+        payment_cash: '<?php echo e(route("tenant_ecommerce_payment_cash")); ?>',
+        user_data: '<?php echo e(route("tenant_ecommerce_user_data")); ?>',
+        shipping_address: '<?php echo e(route("tenant_ecommerce_shipping_address")); ?>',
+        shipping_addresses: '<?php echo e(route("tenant_ecommerce_shipping_addresses")); ?>',
+        shipping_address_delete: '<?php echo e(route("tenant_ecommerce_shipping_address_delete")); ?>',
+        locations: '<?php echo e(route("get_location_cascade")); ?>',
+        home: '<?php echo e(route("tenant.ecommerce.index")); ?>',
+        culqi: '<?php echo e(route("tenant_ecommerce_culqui")); ?>',
+        izipay_payment: '<?php echo e(route("tenant_ecommerce_izipay")); ?>',
+        izipay_transaction: '<?php echo e(route("tenant_ecommerce_izipay_transaction")); ?>',
+        mercadopago_payment: '<?php echo e(route("tenant_ecommerce_mp")); ?>',
+        thank_you: '<?php echo e(route("tenant_ecommerce_thank_you", ["external_id" => "EXTERNAL_ID"])); ?>',
+        quotation_store: '<?php echo e(route("tenant_ecommerce_quotation_store")); ?>',
+        quotation_list: '<?php echo e(route("tenant_ecommerce_quotation_list")); ?>',
+        login: '<?php echo e(route("tenant_ecommerce_login")); ?>',
+        search_document: '<?php echo e(url("ecommerce/search-document")); ?>',
     };
 </script>
 
@@ -3251,13 +3248,13 @@
     })();
 </script>
 
-@vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
+<?php echo app('Illuminate\Foundation\Vite')('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js'); ?>
 
 <script>
 (function () {
-    const culqiPublicKey = {!! json_encode($payment_configuration->publickey_culqi ?? '') !!};
-    const culqiRsaId = {!! json_encode($payment_configuration->idrsa_culqi ?? '') !!};
-    const culqiRsaPublicKey = {!! json_encode($payment_configuration->rsa_culqi ?? '') !!};
+    const culqiPublicKey = <?php echo json_encode($payment_configuration->publickey_culqi ?? ''); ?>;
+    const culqiRsaId = <?php echo json_encode($payment_configuration->idrsa_culqi ?? ''); ?>;
+    const culqiRsaPublicKey = <?php echo json_encode($payment_configuration->rsa_culqi ?? ''); ?>;
     let culqiReady = false;
     let culqiReadyPromise = null;
     let culqiCloseMountTimer = null;
@@ -3341,7 +3338,7 @@
                 agente: true,
             },
             style: {
-                logo: "{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi.svg') }}?v=2",
+                logo: "<?php echo e(asset('porto-ecommerce/assets/images/payment-gateways/culqi.svg')); ?>?v=2",
                 bannerColor: '#ffffff',
                 buttonBackground: ecommercePrimaryColor,
                 menuColor: ecommercePrimaryColor,
@@ -3863,7 +3860,7 @@
         };
 
         jQuery.ajax({
-            url: "{{ route('tenant_ecommerce_culqui') }}",
+            url: "<?php echo e(route('tenant_ecommerce_culqui')); ?>",
             method: 'post',
             headers: {
                 'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
@@ -3911,7 +3908,7 @@
 })();
 
     function getCustomer() {
-        let user = JSON.parse('{!! json_encode( Auth::guard("ecommerce")->user() ) !!}')
+        let user = JSON.parse('<?php echo json_encode( Auth::guard("ecommerce")->user() ); ?>')
         return {
             "codigo_tipo_documento_identidad": "0",
             "numero_documento": "0",
@@ -3938,6 +3935,8 @@
 
 </script>
 
-<script src="{{ route('google_maps_script') }}"></script>
+<script src="<?php echo e(route('google_maps_script')); ?>"></script>
 
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('ecommerce::layouts.layout_ecommerce_cart.index', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\Pro9\modules\Ecommerce\Providers/../Resources/views/cart/detail.blade.php ENDPATH**/ ?>

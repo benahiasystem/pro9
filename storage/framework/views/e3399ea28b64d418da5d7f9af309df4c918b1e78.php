@@ -169,190 +169,197 @@
     <div class="container">
         <div class="row">
 
-            {{-- Columna 1: Logo + Redes Sociales --}}
+            
             <div class="col-md-3 col-sm-6">
-                @php($footerLogo = data_get($company ?? null, 'logo_dark') ?: data_get($company ?? null, 'logo') ?: data_get($information ?? null, 'logo'))
-                <a href="{{ route('tenant.ecommerce.index') }}" class="d-inline-block mb-1">
-                    @if($footerLogo)
-                        <img src="{{ asset('storage/uploads/logos/'.$footerLogo) }}" alt="{{ $company->name ?? 'Logo' }}" style="max-height: 64px;">
-                    @else
-                        <img src="{{ asset('logo/tulogo.png') }}" alt="Logo" style="max-height: 64px;">
-                    @endif
+                <?php ($footerLogo = data_get($company ?? null, 'logo_dark') ?: data_get($company ?? null, 'logo') ?: data_get($information ?? null, 'logo')); ?>
+                <a href="<?php echo e(route('tenant.ecommerce.index')); ?>" class="d-inline-block mb-1">
+                    <?php if($footerLogo): ?>
+                        <img src="<?php echo e(asset('storage/uploads/logos/'.$footerLogo)); ?>" alt="<?php echo e($company->name ?? 'Logo'); ?>" style="max-height: 64px;">
+                    <?php else: ?>
+                        <img src="<?php echo e(asset('logo/tulogo.png')); ?>" alt="Logo" style="max-height: 64px;">
+                    <?php endif; ?>
                 </a>
-                @if(!empty($company->trade_name)  && $company->name !== $company->trade_name)
-                    <p class="footer-tagline m-0">{{ $company->trade_name }}</p>
-                @endif
-                @if(!empty($company->name))
-                    <p class="footer-tagline m-0">{{ $company->name }}</p>
-                @endif
-                @if(!empty($company->number))
-                    <p class="footer-tagline m-0 pb-4">RUC: {{ $company->number }}</p>
-                @endif
+                <?php if(!empty($company->trade_name)  && $company->name !== $company->trade_name): ?>
+                    <p class="footer-tagline m-0"><?php echo e($company->trade_name); ?></p>
+                <?php endif; ?>
+                <?php if(!empty($company->name)): ?>
+                    <p class="footer-tagline m-0"><?php echo e($company->name); ?></p>
+                <?php endif; ?>
+                <?php if(!empty($company->number)): ?>
+                    <p class="footer-tagline m-0 pb-4">RUC: <?php echo e($company->number); ?></p>
+                <?php endif; ?>
 
                 <p class="footer-col-title">Síguenos</p>
                 <div class="footer-col-divider"></div>
                 <div class="footer-socials">
-                    @if($information->link_facebook)
-                        <a href="{{ $information->link_facebook }}" class="footer-social-btn" target="_blank" title="Facebook">
+                    <?php if($information->link_facebook): ?>
+                        <a href="<?php echo e($information->link_facebook); ?>" class="footer-social-btn" target="_blank" title="Facebook">
                             <i class="ti ti-brand-facebook"></i>
                         </a>
-                    @endif
-                    @if($information->link_twitter)
-                        <a href="{{ $information->link_twitter }}" class="footer-social-btn" target="_blank" title="X / Twitter">
+                    <?php endif; ?>
+                    <?php if($information->link_twitter): ?>
+                        <a href="<?php echo e($information->link_twitter); ?>" class="footer-social-btn" target="_blank" title="X / Twitter">
                             <i class="ti ti-brand-x"></i>
                         </a>
-                    @endif
-                    @if($information->link_tiktok)
-                        <a href="{{ $information->link_tiktok }}" class="footer-social-btn" target="_blank" title="TikTok">
+                    <?php endif; ?>
+                    <?php if($information->link_tiktok): ?>
+                        <a href="<?php echo e($information->link_tiktok); ?>" class="footer-social-btn" target="_blank" title="TikTok">
                             <i class="ti ti-brand-tiktok"></i>
                         </a>
-                    @endif
-                    @if($information->link_instagram)
-                        <a href="{{ $information->link_instagram }}" class="footer-social-btn" target="_blank" title="Instagram">
+                    <?php endif; ?>
+                    <?php if($information->link_instagram): ?>
+                        <a href="<?php echo e($information->link_instagram); ?>" class="footer-social-btn" target="_blank" title="Instagram">
                             <i class="ti ti-brand-instagram"></i>
                         </a>
-                    @endif
-                    @if($information->link_youtube)
-                        <a href="{{ $information->link_youtube }}" class="footer-social-btn" target="_blank" title="YouTube">
+                    <?php endif; ?>
+                    <?php if($information->link_youtube): ?>
+                        <a href="<?php echo e($information->link_youtube); ?>" class="footer-social-btn" target="_blank" title="YouTube">
                             <i class="ti ti-brand-youtube"></i>
                         </a>
-                    @endif
+                    <?php endif; ?>
                 </div>
             </div>
 
-            {{-- Columna 2: Información --}}
+            
             <div class="col-md-3 col-sm-6">
                 <p class="footer-col-title">Información</p>
                 <div class="footer-col-divider"></div>
                 <ul class="footer-nav">
-                    @if(!empty($information->about_us))
+                    <?php if(!empty($information->about_us)): ?>
                         <li>
-                            <a href="{{ route('tenant_ecommerce_about_us') }}">
+                            <a href="<?php echo e(route('tenant_ecommerce_about_us')); ?>">
                                 <i class="ti ti-chevron-right"></i> Sobre Nosotros
                             </a>
                         </li>
-                    @endif
-                    @if(!empty($information->terms_conditions))
+                    <?php endif; ?>
+                    <?php if(!empty($information->terms_conditions)): ?>
                         <li>
-                            <a href="{{ route('tenant_ecommerce_terms_conditions') }}">
+                            <a href="<?php echo e(route('tenant_ecommerce_terms_conditions')); ?>">
                                 <i class="ti ti-chevron-right"></i> Términos y Condiciones
                             </a>
                         </li>
-                    @endif
-                    @if(!empty($information->privacy_policy))
+                    <?php endif; ?>
+                    <?php if(!empty($information->privacy_policy)): ?>
                         <li>
-                            <a href="{{ route('tenant_ecommerce_privacy_policy') }}">
+                            <a href="<?php echo e(route('tenant_ecommerce_privacy_policy')); ?>">
                                 <i class="ti ti-chevron-right"></i> Política de Privacidad
                             </a>
                         </li>
-                    @endif
+                    <?php endif; ?>
                         <li>
-                            <a href="{{ route('search.index') }}">
+                            <a href="<?php echo e(route('search.index')); ?>">
                                 <i class="ti ti-chevron-right"></i> Consulta de Comprobantes Electrónicos
                             </a>
                         </li>
 
-                    @if(!empty($information->customised_link_one) && !empty($information->title_one_customised_link))
+                    <?php if(!empty($information->customised_link_one) && !empty($information->title_one_customised_link)): ?>
                         <li>
-                            <a href="{{ $information->customised_link_one }}">
-                                <i class="ti ti-chevron-right"></i> {{ $information->title_one_customised_link }}
+                            <a href="<?php echo e($information->customised_link_one); ?>">
+                                <i class="ti ti-chevron-right"></i> <?php echo e($information->title_one_customised_link); ?>
+
                             </a>
                         </li>
-                    @endif
-                    @if(!empty($information->customised_link_two) && !empty($information->title_two_customised_link))
+                    <?php endif; ?>
+                    <?php if(!empty($information->customised_link_two) && !empty($information->title_two_customised_link)): ?>
                         <li>
-                            <a href="{{ $information->customised_link_two }}">
-                                <i class="ti ti-chevron-right"></i> {{ $information->title_two_customised_link }}
+                            <a href="<?php echo e($information->customised_link_two); ?>">
+                                <i class="ti ti-chevron-right"></i> <?php echo e($information->title_two_customised_link); ?>
+
                             </a>
                         </li>
-                    @endif
-                    @if(!empty($information->customised_link_three) && !empty($information->title_three_customised_link))
+                    <?php endif; ?>
+                    <?php if(!empty($information->customised_link_three) && !empty($information->title_three_customised_link)): ?>
                         <li>
-                            <a href="{{ $information->customised_link_three }}">
-                                <i class="ti ti-chevron-right"></i> {{ $information->title_three_customised_link }}
+                            <a href="<?php echo e($information->customised_link_three); ?>">
+                                <i class="ti ti-chevron-right"></i> <?php echo e($information->title_three_customised_link); ?>
+
                             </a>
                         </li>
-                    @endif
+                    <?php endif; ?>
                 </ul>
             </div>
 
-            {{-- Columna 3: Categorías --}}
+            
             <div class="col-md-3 col-sm-6">
                 <p class="footer-col-title">Categorías</p>
                 <div class="footer-col-divider"></div>
                 <ul class="footer-nav">
                     <li>
-                        <a href="{{ route('tenant.ecommerce.index') }}">
+                        <a href="<?php echo e(route('tenant.ecommerce.index')); ?>">
                             <i class="ti ti-chevron-right"></i> Ver todas
                         </a>
                     </li>
-                    @foreach($categories as $category)
+                    <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <li>
-                            <a href="{{ route('tenant.ecommerce.category', \Illuminate\Support\Str::slug($category->name, '-')) }}">
-                                <i class="ti ti-chevron-right"></i> {{ $category->name }}
+                            <a href="<?php echo e(route('tenant.ecommerce.category', \Illuminate\Support\Str::slug($category->name, '-'))); ?>">
+                                <i class="ti ti-chevron-right"></i> <?php echo e($category->name); ?>
+
                             </a>
                         </li>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </ul>
             </div>
 
-            {{-- Columna 4: Contacto & Ayuda --}}
+            
             <div class="col-md-3 col-sm-6">
                 <p class="footer-col-title">Contacto &amp; Ayuda</p>
                 <div class="footer-col-divider"></div>
                 <ul class="footer-contact-list">
-                    @if($information->phone_whatsapp)
+                    <?php if($information->phone_whatsapp): ?>
                         <li>
                             <div class="fci-icon"><i class="ti ti-brand-whatsapp"></i></div>
                             <div class="fci-body">
                                 <span class="fci-label">WhatsApp</span>
                                 <span class="fci-value">
-                                    <a href="https://wa.me/{{ $information->phone_whatsapp }}" target="_blank">
-                                        {{ $information->phone_whatsapp }}
+                                    <a href="https://wa.me/<?php echo e($information->phone_whatsapp); ?>" target="_blank">
+                                        <?php echo e($information->phone_whatsapp); ?>
+
                                     </a>
                                 </span>
                             </div>
                         </li>
-                    @endif
-                    @if($information->information_contact_phone)
+                    <?php endif; ?>
+                    <?php if($information->information_contact_phone): ?>
                         <li>
                             <div class="fci-icon"><i class="ti ti-phone"></i></div>
                             <div class="fci-body">
                                 <span class="fci-label">Teléfono</span>
                                 <span class="fci-value">
-                                    <a href="tel:{{ $information->information_contact_phone }}">
-                                        {{ $information->information_contact_phone }}
+                                    <a href="tel:<?php echo e($information->information_contact_phone); ?>">
+                                        <?php echo e($information->information_contact_phone); ?>
+
                                     </a>
                                 </span>
                             </div>
                         </li>
-                    @endif
-                    @if($information->information_contact_email)
+                    <?php endif; ?>
+                    <?php if($information->information_contact_email): ?>
                         <li>
                             <div class="fci-icon"><i class="ti ti-mail"></i></div>
                             <div class="fci-body">
                                 <span class="fci-label">Email</span>
                                 <span class="fci-value">
-                                    <a href="mailto:{{ $information->information_contact_email }}">
-                                        {{ $information->information_contact_email }}
+                                    <a href="mailto:<?php echo e($information->information_contact_email); ?>">
+                                        <?php echo e($information->information_contact_email); ?>
+
                                     </a>
                                 </span>
                             </div>
                         </li>
-                    @endif
-                    @if($information->information_contact_address)
+                    <?php endif; ?>
+                    <?php if($information->information_contact_address): ?>
                         <li>
                             <div class="fci-icon"><i class="ti ti-clock"></i></div>
                             <div class="fci-body">
                                 <span class="fci-label">Horario de atención</span>
-                                <span class="fci-value">{{ $information->information_contact_address }}</span>
+                                <span class="fci-value"><?php echo e($information->information_contact_address); ?></span>
                             </div>
                         </li>
-                    @endif
+                    <?php endif; ?>
                         <li>
                             <div style="text-align: center">
                                 <span class="fci-label">Libro de Reclamaciones</span>
-                                <a class="pt-4" style="display: block" href="{{ route('tenant.ecommerce.claims_book') }}"><img src="{{ asset('porto-ecommerce/assets/images/libro-de-reclamaciones.png') }}" style="margin: auto" width="96px" alt="Libro de Reclamaciones"></a>
+                                <a class="pt-4" style="display: block" href="<?php echo e(route('tenant.ecommerce.claims_book')); ?>"><img src="<?php echo e(asset('porto-ecommerce/assets/images/libro-de-reclamaciones.png')); ?>" style="margin: auto" width="96px" alt="Libro de Reclamaciones"></a>
                             </div>
                         </li>
                 </ul>
@@ -364,26 +371,26 @@
 
 <div class="container-footer ">
     <div class="container d-flex align-items-center justify-content-between">
-        <p class="text-center copy-text mt-3 mb-3">&copy; Copyright {{ date('Y') }} {{ $company->name }}. Todos los derechos reservados</p>
+        <p class="text-center copy-text mt-3 mb-3">&copy; Copyright <?php echo e(date('Y')); ?> <?php echo e($company->name); ?>. Todos los derechos reservados</p>
         <div class="footer-bottom" style="padding-bottom: 2rem;">
-            <!-- <p class="footer-copyright">Facturador Pro 4. &copy; {{ now()->year }}. Todos los Derechos Reservados</p> -->
-            <img src="{{ asset('porto-ecommerce/assets/images/payments.svg') }}" alt="payment methods"
+            <!-- <p class="footer-copyright">Facturador Pro 4. &copy; <?php echo e(now()->year); ?>. Todos los Derechos Reservados</p> -->
+            <img src="<?php echo e(asset('porto-ecommerce/assets/images/payments.svg')); ?>" alt="payment methods"
                 class="footer-payments">
         </div>
     </div>
 </div>
 
-@if($information->phone_whatsapp)
+<?php if($information->phone_whatsapp): ?>
     <div class="ws-tooltip" id="wsTooltip">
         <span id="wsTooltipText">¿En qué podemos ayudarte?</span>
     </div>
 
-    @if(strlen($information->phone_whatsapp) > 0)
-    <a class='ws-flotante-ecommerce d-flex align-items-center justify-content-center' href='https://wa.me/{{$information->phone_whatsapp}}' target="BLANK" style="color: #fff !important;">
+    <?php if(strlen($information->phone_whatsapp) > 0): ?>
+    <a class='ws-flotante-ecommerce d-flex align-items-center justify-content-center' href='https://wa.me/<?php echo e($information->phone_whatsapp); ?>' target="BLANK" style="color: #fff !important;">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-whatsapp"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
     </a>
-    @endif
-@endif
+    <?php endif; ?>
+<?php endif; ?>
 
 <div class="modal fade" id="moda-succes-add-product" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
     aria-hidden="true">
@@ -408,7 +415,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <a href="{{ route('tenant_detail_cart') }}" class="btn btn-primary text-white">Ir a Carrito</a>
+                <a href="<?php echo e(route('tenant_detail_cart')); ?>" class="btn btn-primary text-white">Ir a Carrito</a>
                 <button type="button" class="btn btn-warning" data-dismiss="modal">Seguir Comprando</button>
             </div>
         </div>
@@ -426,7 +433,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <a href="{{ route('tenant_detail_cart') }}" class="btn btn-primary text-white">Ir al Carrito</a>
+                <a href="<?php echo e(route('tenant_detail_cart')); ?>" class="btn btn-primary text-white">Ir al Carrito</a>
                 <button type="button" class="btn btn-warning" data-dismiss="modal">Seguir Comprando</button>
             </div>
         </div>
@@ -442,7 +449,7 @@
                         <!-- contenedor de login -->
                          <!-- <div class="contenedor-column-form"> -->
                         <div id="first-column" class="first-column">
-            <form action="#" id="form_login" class="iniciar-sesion" data-login-url="{{ route('tenant_ecommerce_login_post') }}">
+            <form action="#" id="form_login" class="iniciar-sesion" data-login-url="<?php echo e(route('tenant_ecommerce_login_post')); ?>">
                 <h4 class="title mb-2">Iniciar sesión</h4>
                 <div id="msg_login" class="alert alert-danger" role="alert" style="display: none;">
                                     Usuario o Contraseña Incorrectos.
@@ -470,7 +477,7 @@
                         </div>
                         <!-- contenedor de registro -->
                         <div id="second-column" class="second-column">
-            <form autocomplete="off" action="#" id="form_register" class="registrarse" data-register-url="{{ route('tenant_ecommerce_store_user') }}">
+            <form autocomplete="off" action="#" id="form_register" class="registrarse" data-register-url="<?php echo e(route('tenant_ecommerce_store_user')); ?>">
                                 <h4 class="title mb-2">Nuevo Registro</h4>
                 <div id="msg_register" class="alert alert-danger" role="alert" style="display: none;">
                                     <p id="msg_register_p"></p>
@@ -599,10 +606,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-@push('scripts')
-<!-- <script type="text/javascript" src="{{ asset('porto-ecommerce/assets/js/cart.js') }}"></script> -->
+<?php $__env->startPush('scripts'); ?>
+<!-- <script type="text/javascript" src="<?php echo e(asset('porto-ecommerce/assets/js/cart.js')); ?>"></script> -->
 <script type="text/javascript">
-    const SEARCH_DOC_URL = "{{ url('ecommerce/search-document') }}";
+    const SEARCH_DOC_URL = "<?php echo e(url('ecommerce/search-document')); ?>";
 
     matchPassword();
     submitLogin();
@@ -661,7 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                url: ($('#form_login').data('login-url') || "{{ route('tenant_ecommerce_login_post') }}"),
+                url: ($('#form_login').data('login-url') || "<?php echo e(route('tenant_ecommerce_login_post')); ?>"),
                 data: $(this).serialize(),
                 success: function (data) {
                     if (data.success) {
@@ -692,7 +699,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                url: "{{route('tenant_ecommerce_store_user')}}",
+                url: "<?php echo e(route('tenant_ecommerce_store_user')); ?>",
                 data: $(this).serialize(),
                 success: function (data) {
                     if (data.success) {
@@ -947,4 +954,5 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php /**PATH C:\laragon\www\Pro9\modules\Ecommerce\Providers/../Resources/views/layouts/partials_ecommerce/footer.blade.php ENDPATH**/ ?>

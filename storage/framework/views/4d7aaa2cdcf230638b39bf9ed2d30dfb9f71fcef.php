@@ -1,5 +1,5 @@
-@extends('ecommerce::layouts.layout_account')
-@section('account_content')
+
+<?php $__env->startSection('account_content'); ?>
 <style>
 .table-loader {
   position: absolute;
@@ -123,11 +123,11 @@
                     @click="openDetail(row)"
                 >
                     <td class="text-left">
-                        <strong>@{{ row.code || row.number_full }}</strong>
+                        <strong>{{ row.code || row.number_full }}</strong>
                     </td>
-                    <td class="text-success" v-if="showPrices">S/ @{{ formatMoney(row.total) }}</td>
-                    <td>@{{ formatDateOnly(row.date_of_issue) }}</td>
-                    <td>@{{ formatDateOnly(row.date_of_due) }}</td>
+                    <td class="text-success" v-if="showPrices">S/ {{ formatMoney(row.total) }}</td>
+                    <td>{{ formatDateOnly(row.date_of_issue) }}</td>
+                    <td>{{ formatDateOnly(row.date_of_due) }}</td>
                     <td>
                         <span
                             class="quote-state"
@@ -136,7 +136,7 @@
                                 'is-expired': row.is_expired
                             }"
                         >
-                            @{{ row.state_type_description }}
+                            {{ row.state_type_description }}
                         </span>
                     </td>
                     <td @click.stop>
@@ -169,7 +169,7 @@
                     <a class="page-link" href="#" tabindex="-1" @click.prevent="changePage(page - 1)">&laquo;</a>
                 </li>
                 <li class="page-item active" aria-current="page">
-                    <a class="page-link" href="#">@{{ page }}</a>
+                    <a class="page-link" href="#">{{ page }}</a>
                 </li>
                 <li class="page-item" :class="{ disabled: pagR }">
                     <a class="page-link" href="#" @click.prevent="changePage(page + 1)">&raquo;</a>
@@ -194,10 +194,10 @@
         :show-prices="showPrices">
     </quotation-detail>
 </div>
-@include('ecommerce::document_list.quotation_detail')
-@endsection
+<?php echo $__env->make('ecommerce::document_list.quotation_detail', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script type="text/javascript">
     Vue.use(ELEMENT, { locale: ELEMENT.lang.es });
     Vue.component('quotation-detail', {
@@ -232,7 +232,7 @@
             detailLoading: false,
             showQuotationModal: false,
             selectedQuotation: null,
-            showPrices: {!! json_encode((bool) ($quotationShowPrices ?? true)) !!},
+            showPrices: <?php echo json_encode((bool) ($quotationShowPrices ?? true)); ?>,
             filters: {
                 date_of_start: null,
                 date_of_end: null,
@@ -266,7 +266,7 @@
             openDetail(row) {
                 if (!row || !row.id) return;
                 this.detailLoading = true;
-                axios.get(`{{ url('ecommerce/quotations') }}/${row.id}`)
+                axios.get(`<?php echo e(url('ecommerce/quotations')); ?>/${row.id}`)
                     .then(response => {
                         const payload = response.data || {};
                         if (payload.success === false) {
@@ -293,7 +293,7 @@
             getRecords() {
                 this.loading = true;
                 const params = Object.assign({ page: this.page }, this.filters);
-                axios.get('{{ route("tenant_ecommerce_quotations") }}', { params })
+                axios.get('<?php echo e(route("tenant_ecommerce_quotations")); ?>', { params })
                     .then(response => {
                         const payload = response.data || {};
                         this.records = payload.data || [];
@@ -319,4 +319,6 @@
         },
     });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('ecommerce::layouts.layout_account', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\laragon\www\Pro9\modules\Ecommerce\Providers/../Resources/views/document_list/quotation.blade.php ENDPATH**/ ?>

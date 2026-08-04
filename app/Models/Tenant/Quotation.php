@@ -374,6 +374,26 @@ class Quotation extends ModelTenant
     }
 
     /**
+     * Cotización ecommerce registrada sin precios (pendiente de confirmación comercial).
+     */
+    public function needsPriceConfirmation(): bool
+    {
+        if (! $this->isFromEcommerce()) {
+            return false;
+        }
+
+        if (in_array((string) $this->state_type_id, ['11'], true)) {
+            return false;
+        }
+
+        if ($this->documents()->exists()) {
+            return false;
+        }
+
+        return (float) $this->total <= 0;
+    }
+
+    /**
      *
      * Filtrar por estado de la cotización
      *
@@ -495,6 +515,7 @@ class Quotation extends ModelTenant
             'identifier' => $row->identifier,
             'source' => $row->source ?: self::SOURCE_ADMIN,
             'source_label' => $row->source_label,
+            'needs_price_confirmation' => $row->needsPriceConfirmation(),
             'storefront_code' => $row->isFromEcommerce() ? $row->identifier : null,
             'user_name' => $row->user->name,
             'seller_name' => $seller->name,
