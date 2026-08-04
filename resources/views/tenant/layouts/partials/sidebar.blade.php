@@ -1234,7 +1234,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                         type="button"
                                         class="{{ ($firstLevel === 'quotations') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"
                                         title="Mozo"
-                                        onclick="openMozoApp('{{ auth()->user()->api_token ?? '' }}')">Ver Mozo
+                                        onclick="openMozoApp()">Ver Mozo
                                     </button>
                                 </li>
                                 <li class="nav-mozo-access" data-nav="mozo-access">

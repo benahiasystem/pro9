@@ -16,6 +16,9 @@ Route::get('/config.json', 'RestaurantController@config');
 Route::get('/mozo/runtime-config', 'RestaurantController@config');
 Route::get('/mozo/auth/login', 'RestaurantController@public');
 Route::get('/mozo/entrar/{hash}', 'RestaurantController@mozoEntrar')->name('tenant.restaurant.mozo.entrar');
+Route::get('/mozo/directo', 'RestaurantController@mozoDirecto')
+    ->middleware(['auth', 'check.email.verified'])
+    ->name('tenant.restaurant.mozo.directo');
 Route::get('/mozo/{any?}', 'RestaurantController@public')
 ->where('any', '.*')
 ->name('tenant.restaurant.mozo');
