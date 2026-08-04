@@ -2,50 +2,51 @@
     <div class="ag-notification-wrapper">
         <el-dropdown trigger="click" @visible-change="onDropdownVisible">
             <span class="el-dropdown-link notification-icon text-secondary">
-                <el-badge :value="badgeCount" :hidden="badgeCount === 0" class="ag-bell-badge">
+                <el-badge :value="badgeCount" :hidden="!hasLoaded || badgeCount === 0" class="ag-bell-badge">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-bell"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" /><path d="M9 17v1a3 3 0 0 0 6 0v-1" /></svg>
                 </el-badge>
             </span>
             <el-dropdown-menu slot="dropdown" class="ag-notification-menu">
                 <li class="ag-notification-panel" @click.stop>
                     <div class="ag-notification-header">
-                        <h4 class="ag-notification-title">Notificaciones</h4>
-                        <button
-                            v-if="hasUnreadNotifications"
-                            type="button"
-                            class="text-xs text-gray-400 hover:text-gray-600 font-medium ag-mark-all-read"
-                            @click.stop="markAllAsRead"
-                        >
-                            Marcar todo como leído
-                        </button>
-                    </div>
-
-                    <div class="ag-notification-filters-group">
-                        <div class="ag-notification-filters ag-notification-filters--category">
-                            <button
-                                v-for="filter in filters"
-                                :key="filter.id"
-                                type="button"
-                                class="ag-filter-chip"
-                                :class="{ 'is-active': activeFilter === filter.id }"
-                                @click.stop="setActiveFilter(filter.id)"
-                            >
-                                {{ filter.label }}
-                            </button>
+                        <div class="ag-notification-header__top">
+                            <h4 class="ag-notification-title">Notificaciones</h4>
+                            <div class="ag-notification-header__actions">
+                                <button
+                                    v-if="hasUnreadNotifications"
+                                    type="button"
+                                    class="text-xs text-gray-400 hover:text-gray-600 font-medium ag-mark-all-read"
+                                    @click.stop="markAllAsRead"
+                                >
+                                    Marcar todo como leído
+                                </button>
+                            </div>
                         </div>
-
-                        <div class="ag-notification-filters ag-notification-filters--read">
+                        <div class="ag-notification-header__read">
                             <button
                                 v-for="readFilter in readFilters"
                                 :key="readFilter.id"
                                 type="button"
-                                class="ag-filter-chip"
-                                :class="{ 'is-active': activeFilter === readFilter.id }"
-                                @click.stop="setActiveFilter(readFilter.id)"
+                                class="ag-read-tab"
+                                :class="{ 'is-active': activeReadFilter === readFilter.id }"
+                                @click.stop="setActiveReadFilter(readFilter.id)"
                             >
                                 {{ readFilter.label }}
                             </button>
                         </div>
+                    </div>
+
+                    <div class="ag-notification-filters ag-notification-filters--category">
+                        <button
+                            v-for="filter in filters"
+                            :key="filter.id"
+                            type="button"
+                            class="ag-filter-chip"
+                            :class="{ 'is-active': activeCategoryFilter === filter.id }"
+                            @click.stop="setActiveCategoryFilter(filter.id)"
+                        >
+                            {{ filter.label }}
+                        </button>
                     </div>
 
                     <div class="ag-notification-list">
@@ -192,7 +193,8 @@ export default {
             notifications: [],
             readSnapshots: {},
             hasLoaded: false,
-            activeFilter: 'todas',
+            activeReadFilter: 'todas',
+            activeCategoryFilter: 'todas',
             polling: null,
             loading: false,
             pollingInFlight: false,
@@ -206,6 +208,8 @@ export default {
                 { id: 'comprobantes', label: 'Comprobantes' },
                 { id: 'pagos', label: 'Pagos' },
                 { id: 'inventario', label: 'Inventario' },
+                { id: 'cotizaciones', label: 'Cotizaciones' },
+                { id: 'pedidos', label: 'Pedidos' },
                 { id: 'sistema', label: 'Sistema' }
             ],
             readFilters: [
@@ -223,13 +227,11 @@ export default {
     },
     computed: {
         badgeCount() {
-            const unread = this.unreadCount;
-
-            if (this.hasLoaded) {
-                return unread;
+            if (!this.hasLoaded) {
+                return 0;
             }
 
-            return this.initialCount;
+            return this.unreadCount;
         },
         unreadCount() {
             return this.notifications.filter((notification) => this.isUnread(notification)).length;
@@ -238,16 +240,22 @@ export default {
             return this.unreadCount > 0;
         },
         filteredNotifications() {
-            if (this.activeFilter === 'no-leidas') {
-                return this.notifications.filter((notification) => this.isUnread(notification));
+            let result = [...this.notifications];
+
+            if (this.activeReadFilter === 'no-leidas') {
+                result = result.filter((notification) => this.isUnread(notification));
+            } else if (this.activeReadFilter === 'leidas') {
+                result = result.filter((notification) => !this.isUnread(notification));
             }
 
-            if (this.activeFilter === 'leidas') {
-                return this.notifications.filter((notification) => !this.isUnread(notification));
+            if (this.activeCategoryFilter === 'pedidos') {
+                result = result.filter((notification) => notification.type === 'pedidos');
+            } else if (this.activeCategoryFilter !== 'todas') {
+                result = result.filter((notification) => notification.type === this.activeCategoryFilter);
             }
 
-            if (this.activeFilter === 'todas') {
-                return [...this.notifications].sort((first, second) => {
+            if (this.activeReadFilter === 'todas') {
+                result.sort((first, second) => {
                     const firstUnread = this.isUnread(first) ? 0 : 1;
                     const secondUnread = this.isUnread(second) ? 0 : 1;
 
@@ -255,23 +263,27 @@ export default {
                 });
             }
 
-            if (this.activeFilter === 'pedidos') {
-                return this.notifications.filter((notification) => notification.type === 'pedidos');
-            }
-
-            return this.notifications.filter((notification) => notification.type === this.activeFilter);
+            return result;
         },
         emptyStateMessage() {
-            if (this.activeFilter === 'no-leidas') {
+            if (this.activeReadFilter === 'no-leidas') {
+                if (this.activeCategoryFilter !== 'todas') {
+                    return `No hay notificaciones no leídas en ${this.getCategoryLabel(this.activeCategoryFilter)}`;
+                }
+
                 return 'No hay notificaciones no leídas';
             }
 
-            if (this.activeFilter === 'leidas') {
+            if (this.activeReadFilter === 'leidas') {
+                if (this.activeCategoryFilter !== 'todas') {
+                    return `Aún no hay notificaciones leídas en ${this.getCategoryLabel(this.activeCategoryFilter)}`;
+                }
+
                 return 'Aún no hay notificaciones leídas';
             }
 
-            if (this.activeFilter !== 'todas') {
-                return `No hay notificaciones en ${this.getCategoryLabel(this.activeFilter)}`;
+            if (this.activeCategoryFilter !== 'todas') {
+                return `No hay notificaciones en ${this.getCategoryLabel(this.activeCategoryFilter)}`;
             }
 
             return '¡Todo al día! No hay pendientes';
@@ -290,8 +302,11 @@ export default {
         this.unbindRealtimeListeners();
     },
     methods: {
-        setActiveFilter(filterId) {
-            this.activeFilter = filterId;
+        setActiveReadFilter(filterId) {
+            this.activeReadFilter = filterId;
+        },
+        setActiveCategoryFilter(filterId) {
+            this.activeCategoryFilter = filterId;
         },
         getCategoryLabel(categoryId) {
             const category = this.filters.find((filter) => filter.id === categoryId);
@@ -620,11 +635,56 @@ export default {
 
 .ag-notification-header {
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f2f5;
+}
+
+.ag-notification-header__top {
+    display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%;
     gap: 12px;
-    padding: 18px 20px 12px;
-    border-bottom: 1px solid #f0f2f5;
+}
+
+.ag-notification-header__read {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.ag-notification-header__actions {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.ag-read-tab {
+    border: none;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    padding: 5px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.ag-read-tab:hover {
+    background: #e5e7eb;
+}
+
+.ag-read-tab.is-active {
+    background: #050C26;
+    color: #ffffff;
 }
 
 .text-xs {
@@ -675,14 +735,11 @@ export default {
 
 .ag-notification-title {
     margin: 0;
+    flex-shrink: 0;
     font-size: 16px;
     font-weight: 700;
     color: #050C26;
     line-height: 1.2;
-}
-
-.ag-notification-filters-group {
-    border-bottom: 1px solid #f0f2f5;
 }
 
 .ag-notification-filters {
@@ -692,11 +749,8 @@ export default {
 }
 
 .ag-notification-filters--category {
-    padding: 12px 16px 6px;
-}
-
-.ag-notification-filters--read {
-    padding: 0 16px 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid #f0f2f5;
 }
 
 .ag-filter-chip {

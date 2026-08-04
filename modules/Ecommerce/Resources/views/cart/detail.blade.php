@@ -1193,7 +1193,8 @@
         padding-right: 4px;
     }
 
-    #addressListModal .addr-list-card__body strong {
+    #addressListModal .addr-list-card__body strong,
+    #addressListModal .addr-list-card__body .addr-list-card__primary {
         display: block;
         font-size: 15px;
         font-weight: 700;
@@ -1202,7 +1203,8 @@
         margin-bottom: 4px;
     }
 
-    #addressListModal .addr-list-card__body span {
+    #addressListModal .addr-list-card__body span,
+    #addressListModal .addr-list-card__body .addr-list-card__secondary {
         display: block;
         font-size: 13px;
         color: #6b7785;
@@ -2900,9 +2902,8 @@
                                     aria-hidden="true"
                                 >
                                 <div class="addr-list-card__body">
-                                    <strong>@{{ getAddressTitle(item, index) }}</strong>
-                                    <span v-if="getAddressLocationLabel(item)">@{{ getAddressLocationLabel(item) }}</span>
-                                    <span v-if="getAddressReference(item)">Ref: @{{ getAddressReference(item) }}</span>
+                                    <strong v-if="getAddressStreet(item)" class="addr-list-card__primary">@{{ getAddressStreet(item) }}</strong>
+                                    <span v-if="getAddressSecondaryLine(item)" class="addr-list-card__secondary">@{{ getAddressSecondaryLine(item) }}</span>
                                 </div>
                                 <div class="addr-list-card__menu-wrap" @click.stop>
                                     <button

@@ -3547,27 +3547,56 @@ var app_cart = new Vue({
                 return '';
             }
 
+            const explicitLabels = [
+                addr.department_name || addr.department_description,
+                addr.province_name || addr.province_description,
+                addr.district_name || addr.district_description,
+            ].filter(Boolean);
+
+            if (explicitLabels.length === 3) {
+                return explicitLabels.map(label => String(label).toUpperCase()).join(' / ');
+            }
+
             const ubigeo = this.resolveAddressUbigeo(addr);
-            if (!ubigeo.district_id) {
+            if (!ubigeo.department_id && !ubigeo.province_id && !ubigeo.district_id) {
                 return '';
             }
 
-            const dept = this.departments.find(d => d.value === ubigeo.department_id);
-            const prov = dept && (dept.children || []).find(p => p.value === ubigeo.province_id);
-            const dist = prov && (prov.children || []).find(d => d.value === ubigeo.district_id);
+            const matchId = (left, right) => String(left || '') === String(right || '');
+            const dept = this.departments.find(item => matchId(item.value, ubigeo.department_id));
+            const prov = dept && (dept.children || []).find(item => matchId(item.value, ubigeo.province_id));
+            const dist = prov && (prov.children || []).find(item => matchId(item.value, ubigeo.district_id));
             const parts = [];
 
-            if (dist) {
-                parts.push(dist.label);
+            if (dept && dept.label) {
+                parts.push(String(dept.label).toUpperCase());
             }
-            if (prov) {
-                parts.push(prov.label);
+            if (prov && prov.label) {
+                parts.push(String(prov.label).toUpperCase());
             }
-            if (dept) {
-                parts.push(dept.label);
+            if (dist && dist.label) {
+                parts.push(String(dist.label).toUpperCase());
             }
 
-            return parts.join(', ');
+            if (parts.length > 0) {
+                return parts.join(' / ');
+            }
+
+            if (ubigeo.district_id) {
+                return String(ubigeo.district_id);
+            }
+
+            return '';
+        },
+        getAddressSecondaryLine(addr) {
+            const reference = (this.getAddressReference(addr) || '').trim();
+            const ubigeo = (this.getAddressLocationLabel(addr) || '').trim();
+
+            if (reference && ubigeo) {
+                return `${reference} - ${ubigeo}`;
+            }
+
+            return reference || ubigeo;
         },
         getAddressTitle(addr, index) {
             if (!addr) return 'Dirección';

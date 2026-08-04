@@ -1237,6 +1237,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                         onclick="openMozoApp('{{ auth()->user()->api_token ?? '' }}')">Ver Mozo
                                     </button>
                                 </li>
+                                <li class="nav-mozo-access" data-nav="mozo-access">
+                                    <a class="nav-link" href="#" onclick="openMozoAccessModal(); return false;">
+                                        Acceso Mozo
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                     @endif

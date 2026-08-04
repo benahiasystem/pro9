@@ -848,7 +848,6 @@ export default {
       this.loadPrinterAssignment();
     },
     mounted() {
-
     },
     methods: {
       async getRecords() {
