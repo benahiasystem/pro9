@@ -3143,10 +3143,19 @@ var app_cart = new Vue({
                     return Promise.reject(error);
                 });
         },
+        ensureLocationsLoaded() {
+            if (Array.isArray(this.departments) && this.departments.length > 0) {
+                return Promise.resolve();
+            }
+
+            return this.fetchLocations();
+        },
         openAddressListModal() {
             this.addressListMenuOpen = null;
 
             const showModal = () => {
+                this.userAddresses = this.normalizeAddressList(this.userAddresses);
+
                 const active = this.userDefaultAddress;
                 if (active && active.id && this.userAddresses.some(a => a.id === active.id)) {
                     this.selectedAddressId = active.id;
@@ -3158,7 +3167,8 @@ var app_cart = new Vue({
                 jQuery('#addressListModal').modal('show');
             };
 
-            this.fetchUserAddresses()
+            this.ensureLocationsLoaded()
+                .then(() => this.fetchUserAddresses())
                 .then(showModal)
                 .catch(showModal);
         },

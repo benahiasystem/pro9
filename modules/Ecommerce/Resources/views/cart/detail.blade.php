@@ -2895,7 +2895,8 @@
                                 >
                                 <div class="addr-list-card__body">
                                     <strong>@{{ getAddressTitle(item, index) }}</strong>
-                                    <span>@{{ getAddressDetail(item) }}</span>
+                                    <span v-if="getAddressLocationLabel(item)">@{{ getAddressLocationLabel(item) }}</span>
+                                    <span v-if="getAddressReference(item)">Ref: @{{ getAddressReference(item) }}</span>
                                 </div>
                                 <div class="addr-list-card__menu-wrap" @click.stop>
                                     <button
