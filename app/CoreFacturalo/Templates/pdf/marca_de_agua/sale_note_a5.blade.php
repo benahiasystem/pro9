@@ -507,7 +507,7 @@ foreach ($document->items as $row) {
                     return isset($item->item->unit_type_id) && $item->item->unit_type_id === 'ZZ';
                 });
             @endphp
-            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="6">
+            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="7">
                 @php
                     // Solo contar productos (no servicios) para total bultos
                     $total_packages = 0;
@@ -521,6 +521,9 @@ foreach ($document->items as $row) {
                             $has_product = true;
                         }
                     }
+                    $total_products_qty = rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) {
+                        return (float) data_get($item, 'quantity', 0);
+                    }), 2, '.', ''), '0'), '.');
                 @endphp
                 @if($total_packages > 0 && $has_product)
                     <strong> Total bultos:</strong>
@@ -532,7 +535,7 @@ foreach ($document->items as $row) {
                     <br>
                 @endif
             </td>
-            <td class="p-1 text-center align-top desc cell-solid " rowspan="6"></td>
+            <td class="p-1 text-center align-top desc cell-solid " rowspan="7"></td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
                 OP. INAFECTAS {{$document->currency_type->symbol}}
             </td>
@@ -563,10 +566,10 @@ foreach ($document->items as $row) {
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
         </tr>
         <tr>
-            <td class="p-1 text-left align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}" style="white-space: nowrap;">
-                Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
+                Productos:
             </td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold"></td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ $total_products_qty }}</td>
         </tr>
         <tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
