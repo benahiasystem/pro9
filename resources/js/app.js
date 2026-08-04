@@ -44,6 +44,7 @@ Vue.use(ElementUI, { size: 'small' })
 // Interceptor global: sesión vencida por inactividad (419)
 let sessionExpiredShown = false;
 Vue.prototype.$eventHub = new Vue()
+window.$eventHub = Vue.prototype.$eventHub
 
 // Tenant app: only tenant components here
 import './tenant-components'
@@ -211,6 +212,28 @@ if (sidebarMultiUserRoots && sidebarMultiUserRoots.length) {
             store: store,
             el: el
         });
+    });
+}
+
+const mozoAccessModalRoot = document.getElementById('mozo-access-modal-root');
+if (mozoAccessModalRoot) {
+    new Vue({
+        store: store,
+        el: '#mozo-access-modal-root',
+        data() {
+            return {
+                showMozoAccessDialog: false,
+            };
+        },
+        created() {
+            this.$eventHub.$on('openMozoAccessModal', () => {
+                this.showMozoAccessDialog = true;
+            });
+            this.$eventHub.$on('closeMozoAccessModal', () => {
+                this.showMozoAccessDialog = false;
+            });
+        },
+        template: '<tenant-restaurant-mozo-access-modal :show-dialog.sync="showMozoAccessDialog" />',
     });
 }
 // Mantener viva la sesión mientras la pestaña esté abierta

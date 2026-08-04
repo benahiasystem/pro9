@@ -698,8 +698,6 @@
 
       <users-form :showDialog.sync="showDialog"
         :recordId="recordId"></users-form>
-
-      <mozo-access-modal :showDialog.sync="showMozoAccessDialog"></mozo-access-modal>
     </div>
 </template>
 
@@ -722,7 +720,6 @@ import { buhoprinter } from '@mixins/buhoprinter'
 import Notas from '../notes/index.vue'
 import UsersForm from './partials/form.vue'
 import Environments from './partials/environments.vue'
-import MozoAccessModal from './partials/mozo-access-modal.vue'
 // import qz from 'qz-tray'
 
 const url = 'https://milanmario.com'
@@ -741,12 +738,11 @@ const SOCKET = io(url, {
 
 export default {
     mixins: [deletable, buhoprinter],
-    components: {Notas,UsersForm,Environments,MozoAccessModal},
+    components: {Notas,UsersForm,Environments},
     data() {
       return {
         resource: 'restaurant',
         showDialog: false,
-        showMozoAccessDialog: false,
         recordId: null,
         errors: {},
         form: {
@@ -844,9 +840,6 @@ export default {
       this.$eventHub.$on('reloadData', () => {
           this.getUsers()
       })
-      this.$eventHub.$on('openMozoAccessModal', () => {
-          this.showMozoAccessDialog = true
-      })
       this.getRecords();
       this.getUsers();
       this.getWaiters();
@@ -855,16 +848,6 @@ export default {
       this.loadPrinterAssignment();
     },
     mounted() {
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('mozo_access') === '1') {
-        this.showMozoAccessDialog = true
-        params.delete('mozo_access')
-        const query = params.toString()
-        const nextUrl = query
-          ? `${window.location.pathname}?${query}`
-          : window.location.pathname
-        window.history.replaceState({}, '', nextUrl)
-      }
     },
     methods: {
       async getRecords() {

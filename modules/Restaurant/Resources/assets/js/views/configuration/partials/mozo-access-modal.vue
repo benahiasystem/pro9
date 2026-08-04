@@ -162,6 +162,9 @@ export default {
             },
             set(value) {
                 this.$emit('update:showDialog', value);
+                if (!value && typeof window.setMozoAccessNavActive === 'function') {
+                    window.setMozoAccessNavActive(false);
+                }
             },
         },
         restaurantUsers() {
