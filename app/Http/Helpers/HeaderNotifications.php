@@ -6,6 +6,7 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Order;
+use App\Models\Tenant\Quotation;
 use App\Models\Tenant\StatusOrder;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ class HeaderNotifications
         $this->safeAppend($notifications, 'appendPaymentDueToday');
         $this->safeAppend($notifications, 'appendLowStock');
         $this->safeAppend($notifications, 'appendPendingOrders');
+        $this->safeAppend($notifications, 'appendPendingEcommerceQuotations');
         $this->safeAppend($notifications, 'appendSystemAlerts');
 
         usort($notifications, function ($a, $b) {
@@ -41,6 +43,24 @@ class HeaderNotifications
     public static function getPendingOrdersCount(): int
     {
         return (int) self::pendingOrdersQuery()->count();
+    }
+
+    public static function getPendingEcommerceQuotationsCount(): int
+    {
+        return (int) self::pendingEcommerceQuotationsQuery()->count();
+    }
+
+    /**
+     * Cotizaciones de tienda virtual pendientes de revisión (no anuladas).
+     * Las cotizaciones del facturador (source = admin) quedan fuera a propósito.
+     */
+    public static function pendingEcommerceQuotationsQuery($query = null)
+    {
+        $query = $query ?: Quotation::query();
+
+        return $query
+            ->whereSourceEcommerce()
+            ->where('state_type_id', '01');
     }
 
     public static function pendingOrdersQuery($query = null)
@@ -298,6 +318,50 @@ class HeaderNotifications
             'time_ago' => $this->timeAgo($timestamp),
             'unread' => true,
             'url' => $this->safeRoute('tenant_orders_index', '/orders'),
+            'count' => $count,
+            'sort_at' => $timestamp ? $timestamp->timestamp : now()->timestamp,
+        ];
+    }
+
+    private function appendPendingEcommerceQuotations(array &$notifications): void
+    {
+        $query = self::pendingEcommerceQuotationsQuery();
+        $count = (int) (clone $query)->count();
+
+        if ($count <= 0) {
+            return;
+        }
+
+        $latest = (clone $query)->with('person')->latest('created_at')->first();
+        $timestamp = optional($latest)->created_at;
+
+        $customerName = optional(optional($latest)->person)->name
+            ?: (optional($latest)->customer->name ?? 'Cliente');
+
+        $code = $latest
+            ? ($latest->identifier ?? $latest->number_full ?? ('COT-' . $latest->id))
+            : '';
+
+        $notifications[] = [
+            'id' => 'pending_ecommerce_quotations',
+            'type' => 'cotizaciones',
+            'icon' => 'invoice',
+            'icon_bg' => 'yellow',
+            'title' => 'Cotización' . ($count === 1 ? '' : 'es') . ' de tienda virtual',
+            'description_parts' => $count === 1
+                ? [
+                    ['text' => 'Nueva cotización ', 'bold' => false],
+                    ['text' => $code, 'bold' => true],
+                    ['text' => ' de ' . $customerName . ' — pendiente de revisión.', 'bold' => false],
+                ]
+                : [
+                    ['text' => 'Hay ', 'bold' => false],
+                    ['text' => (string) $count, 'bold' => true],
+                    ['text' => ' cotizaciones de tienda virtual pendientes de revisión.', 'bold' => false],
+                ],
+            'time_ago' => $this->timeAgo($timestamp),
+            'unread' => true,
+            'url' => $this->safeRoute('tenant.quotations.index', '/quotations'),
             'count' => $count,
             'sort_at' => $timestamp ? $timestamp->timestamp : now()->timestamp,
         ];
