@@ -212,6 +212,7 @@ export default {
                 .then(response => {
                     if (response.data.success) {
                         this.$set(this.generatedLinks, userId, response.data.url);
+                        this.copyLink(userId);
                     }
                 })
                 .catch(error => {
