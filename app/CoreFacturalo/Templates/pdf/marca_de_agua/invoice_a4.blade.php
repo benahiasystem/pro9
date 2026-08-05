@@ -735,7 +735,8 @@
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
         </tr>
         <tr>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
+            <td class="p-1 text-left align-top desc cell-solid font-bold" colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ floor(($colspan_total + 1) / 2) }}">
                 TOTAL A PAGAR. {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>
