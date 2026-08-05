@@ -1,4 +1,4 @@
-@php
+﻿@php
     use Modules\Template\Helpers\TemplatePdf;
 
     $establishment = $document->establishment;
@@ -234,7 +234,7 @@
                 @if(!empty($row->item->esFusionado))
                     Por consumo
                 @elseif($row->name_product_pdf)
-                    {!!$row->name_product_pdf!!}
+                    {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
                     {!!$row->item->description!!}
                 @endif

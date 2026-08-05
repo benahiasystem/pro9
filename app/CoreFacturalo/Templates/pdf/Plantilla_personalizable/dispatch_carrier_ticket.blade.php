@@ -1,4 +1,4 @@
-@php
+﻿@php
     $establishment = $document->establishment;
     //$path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
 
@@ -183,7 +183,7 @@
             <td class="text-center">{{ $row->item->internal_id }}</td>
             <td class="text-left">
                 @if($row->name_product_pdf)
-                    {!!$row->name_product_pdf!!}
+                    {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
                     {!!$row->item->description!!}
                 @endif
