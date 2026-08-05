@@ -1,4 +1,4 @@
-﻿@php
+@php
     use Modules\Template\Helpers\TemplatePdf;
 
     $establishment = $document->establishment;

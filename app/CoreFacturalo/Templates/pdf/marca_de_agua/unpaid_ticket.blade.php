@@ -1,4 +1,4 @@
-﻿@php
+@php
     $establishment = $document->establishment;
     $payments = $document->payments;
     $left =  ($document->series) ? $document->series : $document->prefix;

@@ -1,4 +1,4 @@
-﻿@php
+@php
     $establishment = $document->establishment;
     $customer = $document->customer;
     $invoice = $document->invoice;

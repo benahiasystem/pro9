@@ -15,6 +15,8 @@ if ($hostname) {
 
         Route::middleware(['auth:api', 'locked.tenant'])->group(function () {
             //MOBILE
+            
+            Route::get('stats/{startDate}/{endDate}', 'Tenant\Api\MobileController@stats');
             Route::get('record/qrapi', 'Tenant\Api\MobileController@record_qrapi');
             Route::get('document/series', 'Tenant\Api\MobileController@getSeries');
             Route::get('document/series-dispatch', 'Tenant\Api\MobileController@getSeriesDispatch');

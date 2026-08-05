@@ -1,4 +1,4 @@
-﻿@php
+@php
     $customer = $document->customer;
     $document_number = $document->series.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
 @endphp

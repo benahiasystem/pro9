@@ -311,7 +311,12 @@ use Illuminate\Support\Str;
             $text = str_replace(["\r\n", "\r", "\n"], '<br/>', $text);
             $text = preg_replace('/(<br\s*\/?>\s*)+/i', '<br/>', $text);
 
-            return trim($text, " \t\n\r\0\x0B<br/>");
+            // Ojo: trim() con lista de caracteres borraría letras sueltas (b, r) del
+            // nombre del producto. Los <br/> sobrantes se quitan con una expresión.
+            $text = trim($text);
+            $text = preg_replace('/^(?:<br\s*\/?>)+|(?:<br\s*\/?>)+$/i', '', $text);
+
+            return trim($text);
         }
 
         /**
