@@ -860,7 +860,17 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                     0
                     @endif
                 </td>
-                <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
+                @php
+                    $global = collect($row->discounts)->where('from_global_distribution', true)->first();
+                @endphp
+                @if ($global)
+                    @php
+                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : $global->amount;
+                    @endphp
+                    <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
+                @else 
+                    <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
+                @endif
             </tr>
             <tr>
                 <td colspan="{{ $colspan_total+1 }}" class="border-bottom"></td>
