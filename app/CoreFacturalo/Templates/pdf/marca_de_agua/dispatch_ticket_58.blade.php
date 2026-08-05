@@ -49,7 +49,10 @@
         <td class="text-center pb-3">{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</td>
     </tr>
     <tr>
-        <td class="text-center pt-3 border-top"><h4>{{ $document->document_type->description }}</h4></td>
+        <td class="text-center pt-3 border-top"><h4 class="font-bold">{{ 'R.U.C. '.$company->number }}</h4></td>
+    </tr>
+    <tr>
+        <td class="text-center"><h4>{{ $document->document_type->description }}</h4></td>
     </tr>
     <tr>
         <td class="text-center pb-3 border-bottom"><h3>{{ $document_number }}</h3></td>

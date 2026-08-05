@@ -25,6 +25,7 @@
             </div>
         </td>
         <td width="40%" class="border-box p-4 text-center">
+            <h3 class="text-center font-bold">{{ 'R.U.C. '.$document['company_number'] }}</h3>
             <h4 class="text-center">{{ $document->document_type->description }}</h4>
             <h3 class="text-center">{{ $document_number }}</h3>
         </td>
