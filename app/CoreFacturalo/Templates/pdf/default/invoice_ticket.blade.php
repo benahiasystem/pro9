@@ -519,26 +519,44 @@
             @php
                 $item_code = $row->item->internal_id;
                 $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
-                $item_description = $row->name_product_pdf ? $row->name_product_pdf : $row->item->description;
+                $use_name_product_pdf = !empty($row->name_product_pdf);
+                $item_description_html = null;
+
+                if ($use_name_product_pdf) {
+                    $item_description_html = \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf);
+                    if (!empty($row->item->presentation)) {
+                        $item_description_html .= '<br/>'.$row->item->presentation->description;
+                    }
+                    $item_description = strip_tags($item_description_html);
+                } else {
+                    $item_description = $row->item->description;
+                    if (!empty($row->item->presentation)) {
+                        $item_description .= ' '.$row->item->presentation->description;
+                    }
+                    $item_description = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $item_description))));
+                }
 
                 $show_item_code = $item_code !== '' && $item_code !== null
                     && mb_strpos(strip_tags((string) $item_description), (string) $item_code) === false;
 
-                if (!empty($row->item->presentation)) {
-                    $item_description .= ' '.$row->item->presentation->description;
-                }
-                $item_description = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $item_description))));
-                $available_chars = $max_chars_description;
-                if ($show_item_code) {
-                    $available_chars -= (int) ceil(mb_strlen((string) $item_code) * 7 / 9) + 1;
-                }
-                if (mb_strlen($item_description) > $available_chars) {
-                    $item_description = rtrim(mb_substr($item_description, 0, max($available_chars - 1, 1))).'.';
+                if (!$use_name_product_pdf) {
+                    $available_chars = $max_chars_description;
+                    if ($show_item_code) {
+                        $available_chars -= (int) ceil(mb_strlen((string) $item_code) * 7 / 9) + 1;
+                    }
+                    if (mb_strlen($item_description) > $available_chars) {
+                        $item_description = rtrim(mb_substr($item_description, 0, max($available_chars - 1, 1))).'.';
+                    }
                 }
             @endphp
             <tr>
                 <td colspan="3" class="text-left desc-9 align-top pt-2">
-                    @if($show_item_code)<span style="font-size: 7px;">{{ $item_code }}</span> @endif{{ $item_description }}
+                    @if($show_item_code)<span style="font-size: 7px;">{{ $item_code }}</span> @endif
+                    @if($use_name_product_pdf)
+                        {!! $item_description_html !!}
+                    @else
+                        {{ $item_description }}
+                    @endif
 
                     @if($row->total_isc > 0)
                         <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)

@@ -1,4 +1,4 @@
-@php
+﻿@php
     use Modules\Template\Helpers\TemplatePdf;
 
     $establishment = $document->establishment;
@@ -521,7 +521,7 @@
                 </td>
                 <td class="text-left desc-5 align-top font-bold">
                     @if($row->name_product_pdf)
-                        {!!$row->name_product_pdf!!}
+                        {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                     @else
                         {!!$row->item->description!!}
                     @endif
