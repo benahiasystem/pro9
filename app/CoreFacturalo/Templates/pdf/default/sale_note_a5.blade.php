@@ -272,7 +272,9 @@ foreach ($document->items as $row) {
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
                 @if($row->item->is_set == 1)
@@ -301,8 +303,8 @@ foreach ($document->items as $row) {
             @endif
             @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
             @php
-                $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
             @endphp
 
             @if($showLoteColumn)

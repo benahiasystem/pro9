@@ -485,8 +485,8 @@ foreach($document->items as $row) {
         $showBrand = true;
     }
 
-    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
 
     if (!empty($lot)) {
         $showLot = true;
@@ -596,7 +596,9 @@ $showDateDue  = $showDateDue  && ($showColumns['fecha_vencimiento'] ?? false);
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
                 @if($row->relation_item->is_set == 1)
@@ -632,8 +634,8 @@ $showDateDue  = $showDateDue  && ($showColumns['fecha_vencimiento'] ?? false);
             @endif
             @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
             @php
-                $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
             @endphp
 
             @if($showLot)
@@ -700,7 +702,9 @@ $showDateDue  = $showDateDue  && ($showColumns['fecha_vencimiento'] ?? false);
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
                 @if($row->relation_item->is_set == 1)

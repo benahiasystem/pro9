@@ -293,6 +293,33 @@ use Illuminate\Support\Str;
         }
 
         /**
+         * Normaliza el nombre personalizado del producto para tickets térmicos.
+         * mPDF suele colapsar párrafos/listas HTML en una sola línea en columnas estrechas.
+         */
+        public static function formatNameProductPdfForTicket(?string $html): string
+        {
+            if ($html === null || trim($html) === '') {
+                return '';
+            }
+
+            $text = $html;
+            $text = preg_replace('/<\/p>\s*<p[^>]*>/i', '<br/>', $text);
+            $text = preg_replace('/<\/div>\s*<div[^>]*>/i', '<br/>', $text);
+            $text = preg_replace('/<li[^>]*>/i', '', $text);
+            $text = preg_replace('/<\/li>/i', '<br/>', $text);
+            $text = preg_replace('/<\/?(?:ul|ol|p|div)[^>]*>/i', '', $text);
+            $text = str_replace(["\r\n", "\r", "\n"], '<br/>', $text);
+            $text = preg_replace('/(<br\s*\/?>\s*)+/i', '<br/>', $text);
+
+            // Ojo: trim() con lista de caracteres borraría letras sueltas (b, r) del
+            // nombre del producto. Los <br/> sobrantes se quitan con una expresión.
+            $text = trim($text);
+            $text = preg_replace('/^(?:<br\s*\/?>)+|(?:<br\s*\/?>)+$/i', '', $text);
+
+            return trim($text);
+        }
+
+        /**
          * @return bool
          */
         public static function canShowNewLineOnObservation(){

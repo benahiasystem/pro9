@@ -748,7 +748,9 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
 
                     @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                    <br /><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                    @if(!($dtos->from_global_distribution ?? false))
+                        <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                    @endif
                     @endforeach
                     @endif
 
@@ -801,8 +803,8 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 @endif
                 @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                 @php
-                    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
 
                 @if($showColumns['lote'] && $showLoteColumn)
@@ -850,7 +852,19 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                     @endif
                 </td>
                 @endif
-                @if($showColumns['total']) <td class="text-right align-top">{{ number_format($row->total, 2) }}</td> @endif
+                @if($showColumns['total'])
+                @php
+                    $global = collect($row->discounts)->where('from_global_distribution', true)->first();
+                @endphp
+                @if ($global)
+                    @php
+                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : $global->amount;
+                    @endphp
+                    <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
+                @else
+                    <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
+                @endif
+                @endif
             </tr>
             <tr>
                 <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
@@ -940,10 +954,14 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             </tr>
             @endif
 
-            @if($document->total_discount_with_igv > 0 && $document->subtotal > 0)
+            @if($document->subtotal > 0)
+                @php
+                    $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
+                    $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
+                @endphp
             <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">SUBTOTAL: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->subtotal, 2) }}</td>
+                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
+                <td class="text-right font-bold">{{ number_format($subtotal, 2) }}</td>
             </tr>
             @endif
 
@@ -987,7 +1005,8 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 <td class="text-right font-bold">{{ number_format($document->perception->amount, 2) }}</td>
             </tr>
             <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ max(1, ceil($colspan_total / 2) - 1) }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+                <td colspan="{{ max(1, floor($colspan_total / 2)) }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ number_format(($document->total + $document->perception->amount), 2) }}</td>
             </tr>
             @elseif($document->retention)
@@ -1007,7 +1026,8 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             </tr>
             @else
             <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ max(1, ceil($colspan_total / 2) - 1) }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+                <td colspan="{{ max(1, floor($colspan_total / 2)) }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
             </tr>
             @endif

@@ -304,11 +304,8 @@
             return transform
         }
 
-        function openMozoApp(token) {
-            if (token && token.trim().length > 0) {
-                localStorage.setItem('token', token);
-            }
-            window.open('{{ route("tenant.restaurant.mozo", ["any" => "app"]) }}', '_blank');
+        function openMozoApp() {
+            window.open('{{ route("tenant.restaurant.mozo.directo") }}', '_blank');
         }
 
         function openVendeyaApp(token) {

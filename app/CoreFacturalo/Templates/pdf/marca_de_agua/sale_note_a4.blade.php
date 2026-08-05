@@ -487,7 +487,9 @@ foreach ($document->items as $row) {
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
 
@@ -526,8 +528,8 @@ foreach ($document->items as $row) {
             @endif
             @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
             @php
-                $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
             @endphp
 
             @if($showLoteColumn)
@@ -616,7 +618,7 @@ foreach ($document->items as $row) {
                     return isset($item->item->unit_type_id) && $item->item->unit_type_id === 'ZZ';
                 });
             @endphp
-            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="6">
+            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="7">
                 @php
                     // Solo contar productos (no servicios) para total bultos
                     $total_packages = 0;
@@ -630,6 +632,9 @@ foreach ($document->items as $row) {
                             $has_product = true;
                         }
                     }
+                    $total_products_qty = rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) {
+                        return (float) data_get($item, 'quantity', 0);
+                    }), 2, '.', ''), '0'), '.');
                 @endphp
                 @if($total_packages > 0 && $has_product)
                     <strong> Total bultos:</strong>
@@ -643,7 +648,8 @@ foreach ($document->items as $row) {
                 {{-- <strong> Total Peso:</strong>
                     {{$total_weight}} KG
                 <br> --}}
-            <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
+            </td>
+            <td class="p-1 text-center align-top desc cell-solid " rowspan="7">
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
                 OP. INAFECTAS {{$document->currency_type->symbol}}
@@ -676,13 +682,8 @@ foreach ($document->items as $row) {
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
         </tr>
         <tr>
-            <td class="p-1 text-left align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}" style="white-space: nowrap;">
-                Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}
-            </td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold"></td>
-        </tr>
-        <tr>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
+            <td class="p-1 text-left align-top desc cell-solid font-bold" colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ floor(($colspan_total + 1) / 2) }}">
                 TOTAL A PAGAR. {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>

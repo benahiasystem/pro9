@@ -49,7 +49,10 @@
         <td class="text-center pb-3">{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</td>
     </tr>
     <tr>
-        <td class="text-center pt-3 border-top"><h4>{{ $document->document_type->description }}</h4></td>
+        <td class="text-center pt-3 border-top"><h4 class="font-bold">{{ 'R.U.C. '.$company->number }}</h4></td>
+    </tr>
+    <tr>
+        <td class="text-center"><h4>{{ $document->document_type->description }}</h4></td>
     </tr>
     <tr>
         <td class="text-center pb-3 border-bottom"><h3>{{ $document_number }}</h3></td>
@@ -131,7 +134,7 @@
             <td class="text-center">{{ $row->item->internal_id }}</td>
             <td class="text-left">
                 @if($row->name_product_pdf)
-                    {!!$row->name_product_pdf!!}
+                    {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
                     {!!$row->item->description!!}
                 @endif
@@ -145,7 +148,9 @@
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
                 @if($row->relation_item->is_set == 1)

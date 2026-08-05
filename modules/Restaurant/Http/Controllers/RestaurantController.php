@@ -57,19 +57,36 @@ class RestaurantController extends Controller
             abort(401, 'Enlace inválido o expirado.');
         }
 
-        $user->load('restaurant_role');
-
         return view('restaurant::mozo.entrar', [
-            'sessionData' => [
-                'token' => $user->api_token,
-                'email' => $user->email,
-                'name' => $user->name,
-                'userRole' => optional($user->restaurant_role)->code ?? 'MOZO',
-                'establishmentId' => (string) ($user->establishment_id ?? ''),
-                'sellerId' => (string) $user->id,
-                'sellerName' => $user->name,
-            ],
+            'sessionData' => $this->buildMozoSessionData($user, 'MOZO'),
         ]);
+    }
+
+    public function mozoDirecto()
+    {
+        return view('restaurant::mozo.entrar', [
+            'sessionData' => $this->buildMozoSessionData(auth()->user(), 'ADM'),
+        ]);
+    }
+
+    private function buildMozoSessionData(User $user, string $defaultRole = 'ADM'): array
+    {
+        if (!$user->api_token) {
+            $user->api_token = Str::random(50);
+            $user->save();
+        }
+
+        $user->loadMissing('restaurant_role');
+
+        return [
+            'token' => $user->api_token,
+            'email' => $user->email,
+            'name' => $user->name,
+            'userRole' => optional($user->restaurant_role)->code ?? $defaultRole,
+            'establishmentId' => (string) ($user->establishment_id ?? ''),
+            'sellerId' => (string) $user->id,
+            'sellerName' => $user->name,
+        ];
     }
 
     public function config(MozoConfigurationService $service)

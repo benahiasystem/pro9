@@ -41,6 +41,7 @@ use App\Models\Tenant\Consigned;
 use Modules\Dispatch\Models\DispatchAddress;
 use App\Models\Tenant\PersonAddress;
 use App\Models\Tenant\PriceLabel;
+use App\Models\Tenant\SaleNote;
 use Modules\QrApi\Http\Controllers\QrApiController;
 use Modules\BusinessTurn\Models\BusinessTurn;
 
@@ -811,6 +812,51 @@ class MobileController extends Controller
         return [
             'success' => true,
             'message' => '¡Producto eliminado con éxito.!'
+        ];
+    }
+
+    public function stats($startDate = null, $endDate = null)
+    {
+        if ($startDate == null)
+        {
+            $documents = Document::whereTypeUser()
+                                ->orderBy('date_of_issue', 'desc')
+                                ->take(50);
+        
+
+            $sale_notes = SaleNote::whereTypeUser()
+                                ->orderBy('date_of_issue', 'desc')
+                                ->take(50);
+        }
+        else
+        {
+            $documents = Document::whereBetween('date_of_issue', [$startDate, $endDate])
+                ->orderBy('date_of_issue', 'desc');
+
+            $sale_notes = SaleNote::whereBetween('date_of_issue', [$startDate, $endDate])
+                ->orderBy('date_of_issue', 'desc');
+        }
+
+        $documents = $documents
+                ->selectRaw("
+                    COUNT(CASE WHEN document_type_id = '01' THEN 1 END) AS facturas, 
+                    COUNT(CASE WHEN document_type_id = '03' THEN 1 END) AS boletas, 
+                    SUM(total) AS total,
+                    COUNT(*) AS count
+                ")->first();
+        
+        $sale_notes = $sale_notes
+                ->selectRaw("
+                    COUNT(*) AS notasVenta,
+                    SUM(total) AS total
+                ")->first();
+
+        return [
+            'total' => $documents->total + $sale_notes->total,
+            'count' => $documents->count  + $sale_notes->count,
+            'facturas' => $documents->facturas ?? 0,
+            'boletas' => $documents->boletas ?? 0,
+            'notasVenta' => $sale_notes->notasVenta ?? 0,
         ];
     }
 }

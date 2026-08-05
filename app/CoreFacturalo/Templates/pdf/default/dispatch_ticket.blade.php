@@ -297,7 +297,7 @@
             <td class="text-center">{{ $row->item->internal_id }}</td>
             <td class="text-left">
                 @if($row->name_product_pdf)
-                    {!!$row->name_product_pdf!!}
+                    {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
                     {!!$row->item->description!!}
                 @endif
@@ -311,7 +311,9 @@
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
                 @if($row->relation_item->is_set == 1)
@@ -345,7 +347,7 @@
             <td class="text-center">{{ $row->item->internal_id }}</td>
             <td class="text-left">
                 @if($row->name_product_pdf)
-                    {!!$row->name_product_pdf!!}
+                    {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
                     {!!$row->item->description!!}
                 @endif
@@ -359,7 +361,9 @@
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
                 @if($row->relation_item->is_set == 1)
