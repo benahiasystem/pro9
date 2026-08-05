@@ -129,13 +129,17 @@
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">Acciones</th>
                         </template>
                     </tr>
-                    <tr slot-scope="{ index, row }" :class="{'anulate_color': row.state_type_id === '11'}">
+                    <tr
+                        slot-scope="{ index, row }"
+                        :class="['sale-note-row-clickable', { anulate_color: row.state_type_id === '11' }]"
+                        @click="clickDetail(row)"
+                    >
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'seller_name'" :key="col.key" class="text-end">{{ row.seller_name }}</td>
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-center">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
-                            <td v-if="col.visible && col.key === 'full_number'" :key="col.key">{{ row.full_number }}</td>
+                            <td v-if="col.visible && col.key === 'full_number'" :key="col.key" class="sale-note-name-link">{{ row.full_number }}</td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key">{{ row.state_type_description }}</td>
                             <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-center">{{ row.exchange_rate_sale }}</td>
                             <td v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
@@ -157,16 +161,16 @@
                                 <template v-else><span class="badge text-white" :class="{ 'bg-success': row.total_canceled, 'bg-warning': !row.total_canceled }">{{ row.total_canceled ? 'Pagado' : 'Pendiente' }}</span></template>
                             </td>
                             <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
-                            <td v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-center">
+                            <td v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-center" @click.stop>
                                 <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickPayment(row.id)"><i class="fas fa-money-bill-alt"></i></button>
                             </td>
-                            <td v-if="col.visible && col.key === 'download'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'download'" :key="col.key" class="text-end" @click.stop>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickDownload(row.external_id)"><i class="fas fa-file-pdf"></i></button>
                             </td>
                             <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
                             <template v-if="col.key === 'personalized'">
                                 <template v-for="field in customFieldColumns">
-                                    <td v-if="field.visible" :key="`cf-data-${field.id}`" class="text-start">
+                                    <td v-if="field.visible" :key="`cf-data-${field.id}`" class="text-start" @click.stop>
                                         <template v-if="isEditableCustomField(field)">
                                             <template v-if="field.type === 'text'"><el-input v-model="row.custom_fields_data[field.slug]" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
                                             <template v-else-if="field.type === 'number'"><el-input v-model.number="row.custom_fields_data[field.slug]" type="number" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
@@ -188,13 +192,13 @@
                                     </td>
                                 </template>
                             </template>
-                            <td v-if="col.visible && col.key === 'recurrence'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'recurrence'" :key="col.key" class="text-end" @click.stop>
                                 <template v-if="row.type_period && row.quantity_period > 0">
                                     <el-switch :disabled="row.apply_concurrency" v-model="row.enabled_concurrency" active-text="Si" inactive-text="No" @change="changeConcurrency(row)"></el-switch>
                                 </template>
                             </td>
                             <td v-if="col.visible && col.key === 'region'" :key="col.key" class="text-start">{{ row.customer_region }}</td>
-                            <td v-if="col.visible && col.key === 'dispatch_status'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'dispatch_status'" :key="col.key" class="text-end" @click.stop>
                                 <template v-if="row.status_dispatch === 'ENTREGADO'"><button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-success" @click.prevent="clickDispatchStatus(row.id, false)">{{ row.status_dispatch }}</button></template>
                                 <template v-if="row.status_dispatch === 'PENDIENTE'"><button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDispatchStatus(row.id, true)">{{ row.status_dispatch }}</button></template>
                                 <template v-if="row.status_dispatch === 'PARCIAL'"><button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-warning" @click.prevent="clickDispatchStatus(row.id, true)">{{ row.status_dispatch }}</button></template>
@@ -203,13 +207,20 @@
                             <td v-if="col.visible && col.key === 'quantity_period'" :key="col.key" class="text-end">{{ row.quantity_period }}</td>
                             <td v-if="col.visible && col.key === 'paid'" :key="col.key" class="text-end">{{ row.paid ? 'Pagado' : 'Pendiente' }}</td>
                             <td v-if="col.visible && col.key === 'license_plate'" :key="col.key" class="text-end">{{ row.license_plate }}</td>
-                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
                             <el-dropdown trigger="click" size="small">
                                 <el-button class="btn-dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </el-button>
                                 <el-dropdown-menu slot="dropdown">
+                                  <el-dropdown-item @click.native="clickDetail(row)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                    Ver detalle
+                                  </el-dropdown-item>
+
+                                  <el-dropdown-item divided />
+
                                   <el-dropdown-item
                                     v-if="row.btn_generate && row.state_type_id != '11' && typeUser != 'seller'"
                                     @click.native="clickCreate(row.id)"
@@ -361,8 +372,40 @@
             :statusDispatch="statusDispatch"
             :typeUser="typeUser"
         ></sale-note-dispatch-status>
+
+        <sale-note-detail-drawer
+            :showDrawer.sync="showDetailDrawer"
+            :recordId="detailRecordId"
+            :initialRow.sync="detailInitialRow"
+            :resource="resource"
+            :canEditRow="canEditSaleNote"
+            :canAnulateRow="canAnulateSaleNote"
+            :canGenerateRow="canGenerateSaleNoteDocument"
+            @edit="openEditFromDrawer"
+            @print="openPrintFromDrawer"
+            @generate-document="openGenerateFromDrawer"
+        ></sale-note-detail-drawer>
     </div>
 </template>
+
+<style scoped>
+.anulate_color {
+    color: red;
+}
+
+.sale-note-row-clickable {
+    cursor: pointer;
+}
+
+.sale-note-row-clickable:hover {
+    background-color: rgba(59, 130, 246, 0.06);
+}
+
+.sale-note-name-link {
+    color: #1f3a8a;
+    font-weight: 600;
+}
+</style>
 
 <script>
 import DataTable from "../../../components/DataTableSaleNote.vue";
@@ -370,6 +413,7 @@ import UploadToOtherServer from "./partials/upload_other_server_group.vue";
 import SaleNotePayments from "./partials/payments.vue";
 import SaleNotesOptions from "./partials/options.vue";
 import SaleNoteGenerate from "./partials/option_documents.vue";
+import SaleNoteDetailDrawer from "./partials/detail-drawer.vue";
 import { deletable } from "../../../mixins/deletable";
 import ModalGenerateCPE from "./ModalGenerateCPE.vue";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
@@ -383,6 +427,7 @@ export default {
         SaleNotePayments,
         SaleNotesOptions,
         SaleNoteGenerate,
+        SaleNoteDetailDrawer,
         ModalGenerateCPE,
         UploadToOtherServer,
         SaleNoteDispatchStatus
@@ -447,6 +492,9 @@ export default {
             customFieldColumns: [],
             savedCustomFieldVisibilities: {},
             decimal_quantity: 2,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             // showDialogDeleteRelationInvoice: false,
             // dataDeleteRelation: {
             //     documents: {},
@@ -692,6 +740,31 @@ export default {
         },
         onOpenModalMigrateNv() {
             this.showMigrateNv = true;
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickCreate(recordId);
+        },
+        openPrintFromDrawer(recordId) {
+            this.clickOptions(recordId);
+        },
+        openGenerateFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickGenerate(recordId);
+        },
+        canEditSaleNote(row) {
+            return row.btn_generate && String(row.state_type_id) !== '11' && this.typeUser !== 'seller';
+        },
+        canAnulateSaleNote(row) {
+            return String(row.state_type_id) !== '11';
+        },
+        canGenerateSaleNoteDocument(row) {
+            return !row.changed && String(row.state_type_id) !== '11' && this.soapCompany !== '03';
         },
         clickDownload(external_id) {
             window.open(

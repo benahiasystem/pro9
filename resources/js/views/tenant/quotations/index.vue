@@ -110,7 +110,8 @@
                     </tr>
                     <tr
                         slot-scope="{ index, row }"
-                        :class="{ anulate_color: row.state_type_id == '11' }"
+                        :class="['quotation-row-clickable', { anulate_color: row.state_type_id == '11' }]"
+                        @click="clickDetail(row)"
                     >
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
@@ -118,7 +119,7 @@
                             <td v-if="col.visible && col.key === 'registered_by'" :key="col.key">{{ row.user_name }}</td>
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.seller_name }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
-                            <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
+                            <td v-if="col.visible && col.key === 'state_type'" :key="col.key" @click.stop>
                                 <template v-if="row.state_type_id == '11'">{{ row.state_type_description }}</template>
                                 <template v-else>
                                     <el-select v-model="row.state_type_id" @change="changeStateType(row)" style="width:120px !important">
@@ -126,7 +127,7 @@
                                     </el-select>
                                 </template>
                             </td>
-                            <td v-if="col.visible && col.key === 'identifier'" :key="col.key">{{ row.identifier }}</td>
+                            <td v-if="col.visible && col.key === 'identifier'" :key="col.key" class="quotation-name-link">{{ row.identifier }}</td>
                             <td v-if="col.visible && col.key === 'documents'" :key="col.key">
                                 <template v-for="(document, i) in row.documents">
                                     <template v-if="document.is_voided_or_rejected">
@@ -147,7 +148,7 @@
                                     <label class="d-block">{{ row.order_note.full_number }}</label>
                                 </template>
                             </td>
-                            <td v-if="col.visible && col.key === 'sale_opportunity'" :key="col.key">
+                            <td v-if="col.visible && col.key === 'sale_opportunity'" :key="col.key" @click.stop>
                                 <el-popover placement="right" v-if="row.sale_opportunity" width="400" trigger="click">
                                     <div class="col-md-12 mt-4">
                                         <table>
@@ -173,7 +174,7 @@
                             <td v-if="col.visible && col.key === 'contract'" :key="col.key">{{ row.contract_number_full }}</td>
                             <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key">{{ row.exchange_rate_sale }}</td>
                             <td v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
-                            <td v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-end" @click.stop>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickPayment(row.id)">Pagos</button>
                             </td>
                             <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
@@ -183,7 +184,7 @@
                             <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
                             <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
                             <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}</td>
-                            <td v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-end" @click.stop>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickOptionsPdf(row.id)">PDF</button>
                             </td>
                             <!-- Campos personalizados -->
@@ -194,13 +195,20 @@
                                     </td>
                                 </template>
                             </template>
-                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
                             <el-dropdown trigger="click" placement="bottom-end">
                                 <el-button class="btn-dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </el-button>
                                 <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item @click.native="clickDetail(row)">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                      Ver detalle
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item divided />
+
                                     <el-dropdown-item
                                       v-if="row.btn_options"
                                       @click.native="clickGenerateDocument(row.id)"
@@ -339,12 +347,35 @@
                 :recordId="recordId"
                 :resource="resource"
             ></send-email-document>
+
+            <quotation-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                :canEditRow="canEditQuotation"
+                :canAnulateRow="canAnulateQuotation"
+                @edit="openEditFromDrawer"
+            ></quotation-detail-drawer>
         </div>
     </div>
 </template>
 <style scoped>
 .anulate_color {
     color: red;
+}
+
+.quotation-row-clickable {
+    cursor: pointer;
+}
+
+.quotation-row-clickable:hover {
+    background-color: rgba(59, 130, 246, 0.06);
+}
+
+.quotation-name-link {
+    color: #1f3a8a;
+    font-weight: 600;
 }
 </style>
 <script>
@@ -353,6 +384,7 @@ import QuotationOptionsPdf from "./partials/options_pdf.vue";
 import DataTable from "../../../components/DataTableQuotation.vue";
 import { deletable } from "../../../mixins/deletable";
 import QuotationPayments from "./partials/payments.vue";
+import QuotationDetailDrawer from "./partials/detail-drawer.vue";
 import { mapActions, mapState } from "vuex";
 import SendEmailDocument from "@components/secondary/SendEmailDocument.vue";
 
@@ -364,6 +396,7 @@ export default {
         QuotationOptions,
         QuotationOptionsPdf,
         QuotationPayments,
+        QuotationDetailDrawer,
         SendEmailDocument
     },
     computed: {
@@ -417,6 +450,9 @@ export default {
             customFieldColumns: [],
             savedCustomFieldVisibilities: {},
             decimal_quantity: 2,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
         };
     },
     async created() {
@@ -569,6 +605,21 @@ export default {
         clickOptionsPdf(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptionsPdf = true;
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            window.location.href = `/${this.resource}/create/${recordId}`;
+        },
+        canEditQuotation(row) {
+            return row.documents.length === 0 && String(row.state_type_id) !== '11';
+        },
+        canAnulateQuotation(row) {
+            return row.documents.length === 0 && String(row.state_type_id) !== '11';
         },
         clickAnulate(id) {
             this.anular(`/${this.resource}/anular/${id}`).then(() =>

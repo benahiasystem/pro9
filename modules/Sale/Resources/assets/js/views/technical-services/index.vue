@@ -64,7 +64,11 @@
                     </tr>
 
                     <tr></tr>
-                    <tr slot-scope="{ index, row }">
+                    <tr
+                        slot-scope="{ index, row }"
+                        class="technical-service-row-clickable"
+                        @click="clickDetail(row)"
+                    >
                         <!-- <td>{{ index }}</td> -->
                         <td>
                             {{ row.customer_name }}<br /><small
@@ -72,7 +76,7 @@
                             ></small>
                         </td>
                         <td class="text-end">{{ row.cellphone }}</td>
-                        <td class="text-end">{{ row.id }}</td>
+                        <td class="text-end technical-service-number-link">{{ row.id }}</td>
                         <td class="text-start">
                             {{ row.date_of_issue | toDate }}
                         </td>
@@ -84,7 +88,7 @@
                             {{ row.number_document_sale_note }}
                         </td>
                         <!-- <td class="text-center">{{ row.prepayment }}</td> -->
-                        <td class="text-end">
+                        <td class="text-end" @click.stop>
                             <button
                                 type="button"
                                 style="min-width: 41px"
@@ -97,7 +101,7 @@
 
                         <td class="text-center">{{ formatDecimal(row.balance) }}</td>
 
-                        <td class="text-center">
+                        <td class="text-center" @click.stop>
                             <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info"
@@ -107,7 +111,7 @@
                             </button>
                         </td>
 
-                        <td class="text-end">
+                        <td class="text-end" @click.stop>
                             <el-dropdown
                                 trigger="click"
                                 @command="(command) => handleRowAction(command, row)"
@@ -117,6 +121,13 @@
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </el-button>
                                 <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item command="detail">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                        Ver detalle
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item divided />
+
                                     <el-dropdown-item
                                         v-if="!row.has_document_sale_note"
                                         command="generate"
@@ -171,9 +182,33 @@
                 :recordId="recordId"
                 :external="true"
             ></technical-service-payments>
+
+            <technical-service-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                :canEditRow="canEditTechnicalService"
+                @edit="openEditFromDrawer"
+                @payments="openPaymentsFromDrawer"
+            ></technical-service-detail-drawer>
         </div>
     </div>
 </template>
+<style scoped>
+.technical-service-row-clickable {
+    cursor: pointer;
+}
+
+.technical-service-row-clickable:hover {
+    background-color: rgba(59, 130, 246, 0.06);
+}
+
+.technical-service-number-link {
+    color: #1f3a8a;
+    font-weight: 600;
+}
+</style>
 <style>
 @media only screen and (max-width: 485px) {
     .filter-container {
@@ -193,6 +228,7 @@ import DataTable from "@components/DataTable.vue";
 import { deletable } from "@mixins/deletable";
 import TechnicalServicePayments from "./partials/payments.vue";
 import TechnicalServiceOptions from "./partials/options.vue";
+import TechnicalServiceDetailDrawer from "./partials/detail-drawer.vue";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 
 export default {
@@ -205,7 +241,8 @@ export default {
         TechnicalServicesForm,
         DataTable,
         TechnicalServicePayments,
-        TechnicalServiceOptions
+        TechnicalServiceOptions,
+        TechnicalServiceDetailDrawer
     },
     data() {
         return {
@@ -215,6 +252,9 @@ export default {
             resource: "technical-services",
             recordId: null,
             showDialogPayments: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             decimal_quantity: 2
         };
     },
@@ -274,6 +314,11 @@ export default {
             this.showDialogOptions = true;
         },
         handleRowAction(command, row) {
+            if (command === "detail") {
+                this.clickDetail(row);
+                return;
+            }
+
             if (command === "generate") {
                 this.clickOptions(row.id);
                 return;
@@ -287,6 +332,22 @@ export default {
             if (command === "delete") {
                 this.clickDelete(row.id);
             }
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickCreate(recordId);
+        },
+        openPaymentsFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickPayment(recordId);
+        },
+        canEditTechnicalService(row) {
+            return row && !row.has_document_sale_note;
         }
     }
 };

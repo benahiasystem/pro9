@@ -111,8 +111,10 @@
                 <data-table 
                     :resource="resource + `/${this.type}`"
                     :showProductFilter="true"
-                    :filterLabel="type === 'customers' ? 'Listar clientes' : 'Listar proveedores'"
-                    :filterPlaceholder="type === 'customers' ? 'Filtrar clientes' : 'Filtrar proveedores'"
+                    :filterLabel="'Estado'"
+                    :filterPlaceholder="'Filtrar por estado'"
+                    filterEnabledLabel="Activos"
+                    filterDisabledLabel="Inactivos"
                 >
                     <tr slot="heading">
                         <!-- <th>#</th> -->
@@ -121,6 +123,7 @@
                         <th class="text-end">Cód interno</th>
                         <th class="text-start">Tipo de documento</th>
                         <th class="text-end">Número</th>
+                        <th class="text-center">Estado</th>
                         <th
                             v-if="columns.person_type.visible === true"
                             class="text-center"
@@ -198,14 +201,22 @@
                     <tr></tr>
                     <tr
                         slot-scope="{ index, row }"
-                        :class="{ disable_color: !row.enabled }"
+                        :class="['person-row-clickable', { disable_color: !row.enabled }]"
+                        @click="clickDetail(row.id)"
                     >
                         <!-- <td>{{ index }}</td> -->
                         <td>{{ row.id }}</td>
-                        <td>{{ row.name }}</td>
+                        <td class="person-name-link">{{ row.name }}</td>
                         <td class="text-end">{{ row.internal_code }}</td>
                         <td class="text-start">{{ row.document_type }}</td>
                         <td class="text-end">{{ row.number }}</td>
+                        <td class="text-center" @click.stop>
+                            <el-switch
+                                v-model="row.enabled"
+                                :disabled="typeUser !== 'admin'"
+                                @change="changeEnabled(row)"
+                            ></el-switch>
+                        </td>
                         <td
                             v-if="columns.person_type.visible === true"
                             class="text-start"
@@ -283,7 +294,7 @@
                             {{ row.accumulated_points }}
                         </td>
 
-                        <td class="text-end">
+                        <td class="text-end" @click.stop>
                             <el-dropdown
                                 trigger="click"
                                 @command="handleRowCommand"
@@ -296,6 +307,13 @@
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </button>
                                 <el-dropdown-menu slot="dropdown" class="actions-dropdown">
+                                  <el-dropdown-item
+                                    :command="{ action: 'detail', id: row.id }"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                    Ver detalle
+                                  </el-dropdown-item>
+
                                   <el-dropdown-item
                                     v-if="row.enabled"
                                     :command="{ action: 'edit', id: row.id }"
@@ -370,6 +388,14 @@
                 :showDialog.sync="showExportDialog"
                 :type="type"
             ></persons-export>
+
+            <persons-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :type="type"
+                :typeUser="typeUser"
+                @edit="openEditFromDrawer"
+            ></persons-detail-drawer>
         </div>
     </div>
 </template>
@@ -377,13 +403,14 @@
 import PersonsForm from "./form.vue";
 import PersonsImport from "./import.vue";
 import PersonsExport from "./partials/export.vue";
+import PersonsDetailDrawer from "./partials/detail-drawer.vue";
 import DataTable from "../../../components/DataTable.vue";
 import { deletable } from "../../../mixins/deletable";
 
 export default {
     mixins: [deletable],
     props: ["type", "typeUser", "api_service_token", "configuration"],
-    components: { PersonsForm, PersonsImport, PersonsExport, DataTable },
+    components: { PersonsForm, PersonsImport, PersonsExport, PersonsDetailDrawer, DataTable },
     data() {
         return {
             isClient: true,
@@ -391,6 +418,8 @@ export default {
             showDialog: false,
             showImportDialog: false,
             showExportDialog: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
             resource: "persons",
             recordId: null,
             columns: {
@@ -507,6 +536,9 @@ export default {
             const { action, id, row } = command;
 
             switch (action) {
+                case "detail":
+                    this.clickDetail(id);
+                    break;
                 case "edit":
                     this.clickCreate(id);
                     break;
@@ -534,6 +566,14 @@ export default {
             this.recordId = recordId;
             this.showDialog = true;
         },
+        clickDetail(recordId) {
+            this.detailRecordId = recordId;
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickCreate(recordId);
+        },
         clickImport() {
             this.showImportDialog = true;
         },
@@ -544,6 +584,48 @@ export default {
             this.destroy(`/${this.resource}/${id}`).then(() =>
                 this.$eventHub.$emit("reloadData")
             );
+        },
+        changeEnabled(row) {
+            const newValue = row.enabled;
+            const previousValue = !newValue;
+
+            const applyChange = () => {
+                this.$http
+                    .get(`/${this.resource}/enabled/${newValue ? 1 : 0}/${row.id}`)
+                    .then(response => {
+                        if (response.data.success) {
+                            this.$message.success(response.data.message);
+                            return;
+                        }
+
+                        row.enabled = previousValue;
+                        this.$message.error(response.data.message || 'No se pudo actualizar el estado.');
+                    })
+                    .catch(() => {
+                        row.enabled = previousValue;
+                        this.$message.error('No se pudo actualizar el estado.');
+                    });
+            };
+
+            if (!newValue) {
+                const entityLabel = this.type === 'customers' ? 'cliente' : 'proveedor';
+                this.$confirm(
+                    `¿Desea inhabilitar este ${entityLabel}?`,
+                    'Inhabilitar',
+                    {
+                        confirmButtonText: 'Inhabilitar',
+                        cancelButtonText: 'Cancelar',
+                        type: 'warning'
+                    }
+                )
+                    .then(() => applyChange())
+                    .catch(() => {
+                        row.enabled = previousValue;
+                    });
+                return;
+            }
+
+            applyChange();
         },
         clickDisable(id) {
             this.disable(`/${this.resource}/enabled/${0}/${id}`).then(() =>
@@ -580,5 +662,18 @@ export default {
 <style scoped>
 .btn-custom, .btn-primary, .btn-danger {
     color: #fff !important;
+}
+
+.person-row-clickable {
+    cursor: pointer;
+}
+
+.person-row-clickable:hover {
+    background-color: rgba(59, 130, 246, 0.06);
+}
+
+.person-name-link {
+    color: #1f3a8a;
+    font-weight: 600;
 }
 </style>
