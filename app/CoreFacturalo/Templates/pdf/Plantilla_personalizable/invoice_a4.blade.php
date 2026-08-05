@@ -852,7 +852,19 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                     @endif
                 </td>
                 @endif
-                @if($showColumns['total']) <td class="text-right align-top">{{ number_format($row->total, 2) }}</td> @endif
+                @if($showColumns['total'])
+                @php
+                    $global = collect($row->discounts)->where('from_global_distribution', true)->first();
+                @endphp
+                @if ($global)
+                    @php
+                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : $global->amount;
+                    @endphp
+                    <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
+                @else
+                    <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
+                @endif
+                @endif
             </tr>
             <tr>
                 <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
