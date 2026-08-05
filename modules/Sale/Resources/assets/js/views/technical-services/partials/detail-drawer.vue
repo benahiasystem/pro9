@@ -56,7 +56,7 @@
                             <dd>{{ customerDocument }}</dd>
 
                             <dt>Celular</dt>
-                            <dd>{{ customerCellphone }}</dd>
+                            <dd class="text-center">{{ customerCellphone }}</dd>
                         </dl>
                     </div>
 
@@ -70,22 +70,22 @@
                             <dd>{{ currencyLabel }}</dd>
 
                             <dt>Costo S.</dt>
-                            <dd>{{ formatMoney(record.cost) }}</dd>
+                            <dd class="text-end">{{ formatMoney(record.cost) }}</dd>
 
                             <dt>Costo P.</dt>
-                            <dd>{{ formatMoney(record.total) }}</dd>
+                            <dd class="text-end">{{ formatMoney(record.total) }}</dd>
 
                             <dt v-if="record.prepayment">Pago adelantado</dt>
-                            <dd v-if="record.prepayment">{{ formatMoney(record.prepayment) }}</dd>
+                            <dd v-if="record.prepayment" class="text-end">{{ formatMoney(record.prepayment) }}</dd>
 
                             <dt>Saldo</dt>
-                            <dd :class="{ 'text-danger fw-bold': balanceAmount > 0 }">{{ formatMoney(balanceAmount) }}</dd>
+                            <dd class="text-end" :class="{ 'text-danger fw-bold': balanceAmount > 0 }">{{ formatMoney(balanceAmount) }}</dd>
 
                             <dt>Total</dt>
-                            <dd class="text-primary fw-bold">{{ formatMoney(sumTotalAmount) }}</dd>
+                            <dd class="text-end text-primary fw-bold">{{ formatMoney(sumTotalAmount) }}</dd>
 
                             <dt v-if="record.number_document_sale_note">Comprobante</dt>
-                            <dd v-if="record.number_document_sale_note">{{ record.number_document_sale_note }}</dd>
+                            <dd v-if="record.number_document_sale_note" class="text-center">{{ record.number_document_sale_note }}</dd>
                         </dl>
                     </div>
 
@@ -137,7 +137,7 @@
                             <table class="table table-sm technical-service-detail-drawer__items-table mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Producto</th>
+                                        <th class="text-start">Producto</th>
                                         <th class="text-center">Cant.</th>
                                         <th class="text-end">P. unit.</th>
                                         <th class="text-end">Subtotal</th>
@@ -145,7 +145,7 @@
                                 </thead>
                                 <tbody>
                                     <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
+                                        <td class="text-start">{{ item.description }}</td>
                                         <td class="text-center">{{ item.quantity }}</td>
                                         <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
                                         <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
@@ -684,12 +684,15 @@ export default {
     letter-spacing: 0.04em;
     color: #64748b;
     border-bottom: 1px solid #e2e8f0;
+    padding: 8px 10px;
+    vertical-align: middle;
 }
 
 .technical-service-detail-drawer__items-table td {
     vertical-align: middle;
     border-top: 1px solid #eef2f7;
     font-size: 13px;
+    padding: 8px 10px;
 }
 
 .technical-service-detail-drawer__footer {

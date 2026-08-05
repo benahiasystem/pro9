@@ -47,20 +47,20 @@
                 <data-table :resource="resource">
                     <tr slot="heading">
                         <!-- <th>#</th> -->
-                        <th>Cliente</th>
-                        <th class="text-end">Celular</th>
-                        <th class="text-end">Número</th>
-                        <th>F. Emisión</th>
-                        <th>N° Serie</th>
-                        <th>Costo S.</th>
-                        <th>Costo P.</th>
-                        <th>Total</th>
+                        <th class="text-start">Cliente</th>
+                        <th class="text-center">Celular</th>
+                        <th class="text-center">Número</th>
+                        <th class="text-center">F. Emisión</th>
+                        <th class="text-center">N° Serie</th>
+                        <th class="text-end">Costo S.</th>
+                        <th class="text-end">Costo P.</th>
+                        <th class="text-end">Total</th>
                         <th class="text-center">Documento</th>
                         <!-- <th>Pago adelantado</th> -->
-                        <th></th>
-                        <th>Saldo</th>
+                        <th class="text-center"></th>
+                        <th class="text-end">Saldo</th>
                         <th class="text-center">Ver</th>
-                        <th class="text-end">Acciones</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
 
                     <tr></tr>
@@ -70,25 +70,25 @@
                         @click="clickDetail(row)"
                     >
                         <!-- <td>{{ index }}</td> -->
-                        <td>
+                        <td class="text-start">
                             {{ row.customer_name }}<br /><small
                                 v-text="row.customer_number"
                             ></small>
                         </td>
-                        <td class="text-end">{{ row.cellphone }}</td>
-                        <td class="text-end technical-service-number-link">{{ row.id }}</td>
-                        <td class="text-start">
+                        <td class="text-center">{{ row.cellphone }}</td>
+                        <td class="text-center technical-service-number-link">{{ row.id }}</td>
+                        <td class="text-center">
                             {{ row.date_of_issue | toDate }}
                         </td>
                         <td class="text-center">{{ row.serial_number }}</td>
-                        <td class="text-center">{{ formatDecimal(row.cost) }}</td>
-                        <td class="text-center">{{ formatDecimal(row.total) }}</td>
-                        <td class="text-center">{{ formatDecimal(row.sum_total) }}</td>
+                        <td class="text-end">{{ formatDecimal(row.cost) }}</td>
+                        <td class="text-end">{{ formatDecimal(row.total) }}</td>
+                        <td class="text-end">{{ formatDecimal(row.sum_total) }}</td>
                         <td class="text-center">
                             {{ row.number_document_sale_note }}
                         </td>
                         <!-- <td class="text-center">{{ row.prepayment }}</td> -->
-                        <td class="text-end" @click.stop>
+                        <td class="text-center" @click.stop>
                             <button
                                 type="button"
                                 style="min-width: 41px"
@@ -99,7 +99,7 @@
                             </button>
                         </td>
 
-                        <td class="text-center">{{ formatDecimal(row.balance) }}</td>
+                        <td class="text-end">{{ formatDecimal(row.balance) }}</td>
 
                         <td class="text-center" @click.stop>
                             <button
@@ -111,7 +111,7 @@
                             </button>
                         </td>
 
-                        <td class="text-end" @click.stop>
+                        <td class="text-center" @click.stop>
                             <el-dropdown
                                 trigger="click"
                                 @command="(command) => handleRowAction(command, row)"
