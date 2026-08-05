@@ -613,7 +613,9 @@
                     @endif
                     @if($row->discounts)
                         @foreach($row->discounts as $dtos)
-                            <br/><small>{{ $dtos->factor * 100 }}% {{$dtos->description }}</small>
+                            @if(!($dtos->from_global_distribution ?? false))
+                                <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
+                            @endif
                         @endforeach
                     @endif
 
@@ -773,10 +775,14 @@
         </tr>
     @endif
 
-    @if($document->total_discount_with_igv > 0 && $document->subtotal > 0)
+    @if($document->subtotal > 0)
+        @php
+            $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
+            $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
+        @endphp
         <tr>
-            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">SUBTOTAL: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ number_format($document->subtotal, 2) }}</td>
+            <td colspan="{{ $colspan_total > 1 ? $colspan_total - 1 : 1 }}" class="text-right font-bold desc">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
+            <td class="text-right font-bold desc">{{ number_format($subtotal, 2) }}</td>
         </tr>
     @endif
 

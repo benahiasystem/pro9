@@ -245,8 +245,8 @@
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        @if(isset($dtos->factor))
-                            <br/><small>{{ $dtos->factor * 100 }}% {{$dtos->description }}</small>
+                        @if(isset($dtos->factor) && !($dtos->from_global_distribution ?? false))
+                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
                         @endif
                     @endforeach
                 @endif
