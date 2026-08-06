@@ -683,6 +683,10 @@ use Illuminate\Support\Facades\Mail;
                     ->table('module_level_user')
                     ->insert($array_levels);
 
+                if ($selected_business === 6) {
+                    $this->applyNrusTenantConfig();
+                }
+
                 // Actualiza el modulo de farmacia.
                 $config = (array)DB::connection('tenant')
                     ->table('configurations')
@@ -873,8 +877,6 @@ use Illuminate\Support\Facades\Mail;
             $module_permissions = is_array($module_permissions) ? $module_permissions : (array) $module_permissions;
             $module_permissions['business'] = $selected_business;
             $plan_for_config['module_permissions'] = $module_permissions;
-
-            $is_nrus = (int) data_get($plan->module_permissions, 'business') === 6;
 
             $http = config('tenant.force_https') == true ? 'https://' : 'http://';
 
@@ -1091,13 +1093,8 @@ use Illuminate\Support\Facades\Mail;
                 \Log::info('Módulos básicos insertados');
             }
 
-            // Si el plan corresponde al giro de negocio NRUS, dejar activo únicamente
-            // el tipo de operación "Venta Interna - NRUS" (0113) y desactivar los demás.
             if ($is_nrus) {
-                \Log::info('Plan NRUS detectado, configurando tipos de operación...');
-                DB::connection('tenant')->table('cat_operation_types')->update(['active' => false]);
-                DB::connection('tenant')->table('cat_operation_types')->where('id', '0113')->update(['active' => true]);
-                \Log::info('Tipos de operación NRUS configurados');
+                $this->applyNrusTenantConfig();
             }
 
             \Log::info('=== CLIENTE REGISTRADO EXITOSAMENTE ===', ['timestamp' => now()]);
@@ -1118,6 +1115,19 @@ use Illuminate\Support\Facades\Mail;
             ];
         }
     }
+
+        /**
+         * Configura el tenant para régimen NRUS: plantilla ticket PDF y tipo de operación 0113.
+         */
+        private function applyNrusTenantConfig(): void
+        {
+            DB::connection('tenant')->table('establishments')->update([
+                'template_ticket_pdf' => 'nrus',
+            ]);
+
+            DB::connection('tenant')->table('cat_operation_types')->update(['active' => false]);
+            DB::connection('tenant')->table('cat_operation_types')->where('id', '0113')->update(['active' => true]);
+        }
 
         private function runGuestRegister($from_guest_register, $user_id, $email, $client_id, $payment_order = null)
         {
