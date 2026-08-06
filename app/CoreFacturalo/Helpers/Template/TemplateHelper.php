@@ -316,7 +316,71 @@ use Illuminate\Support\Str;
             $text = trim($text);
             $text = preg_replace('/^(?:<br\s*\/?>)+|(?:<br\s*\/?>)+$/i', '', $text);
 
-            return trim($text);
+            return self::expandGluedProductListLines(trim($text));
+        }
+
+        /**
+         * Separa ítems en una sola línea: "1 - A-1 - B" → líneas independientes.
+         */
+        private static function expandGluedProductListLines(string $text): string
+        {
+            $normalized = preg_replace('/<br\s*\/?>/i', "\n", $text);
+            $plain = html_entity_decode(strip_tags($normalized), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            $lines = [];
+
+            foreach (preg_split('/\r\n|\r|\n/', $plain) as $line) {
+                $line = trim($line);
+                if ($line === '') {
+                    continue;
+                }
+
+                if (preg_match_all('/\d+\s*-\s*/', $line) > 1 && preg_match('/-\d+\s*-\s*/', $line)) {
+                    foreach (preg_split('/-(?=\d+\s*-\s*)/', $line) as $part) {
+                        $part = trim($part);
+                        if ($part !== '') {
+                            $lines[] = $part;
+                        }
+                    }
+                } else {
+                    $lines[] = $line;
+                }
+            }
+
+            if (empty($lines)) {
+                return '';
+            }
+
+            return implode('<br/>', array_map(
+                fn ($line) => htmlspecialchars($line, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                $lines
+            ));
+        }
+
+        /**
+         * Porcentaje de IGV para etiqueta en totales del PDF.
+         */
+        public static function getDocumentIgvPercentage($document): int
+        {
+            $percentages = collect($document->items ?? [])
+                ->pluck('percentage_igv')
+                ->map(function ($percentage) {
+                    $p = (float) $percentage;
+                    // Algunos registros guardan 0.18 en lugar de 18
+                    if ($p > 0 && $p <= 1) {
+                        $p *= 100;
+                    }
+
+                    return (int) round($p);
+                })
+                ->filter(fn ($percentage) => $percentage > 0)
+                ->unique()
+                ->values();
+
+            if ($percentages->count() === 1) {
+                return $percentages->first();
+            }
+
+            return 18;
         }
 
         /**

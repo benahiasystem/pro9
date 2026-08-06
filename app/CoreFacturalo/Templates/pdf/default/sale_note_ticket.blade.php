@@ -16,8 +16,6 @@
     }
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
-    $max_chars_description = config('tenant.enabled_template_ticket_80') ? 46 : 47;
-
 @endphp
 <html>
 <head>
@@ -173,8 +171,11 @@
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr>
-        <th colspan="2" class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
-        <th class="border-top-bottom desc-9 text-right">IMPORTE</th>
+        <th class="border-top-bottom desc-9 text-left">CANT.</th>
+        <th class="border-top-bottom desc-9 text-left">UNIDAD</th>
+        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
+        <th class="border-top-bottom desc-9 text-left">P.UNIT</th>
+        <th class="border-top-bottom desc-9 text-left">TOTAL</th>
     </tr>
     </thead>
     <tbody>
@@ -182,7 +183,6 @@
         $fusionados = $document->items->filter(function($row) {return!empty($row->item->esFusionado);});
         $no_fusionados = $document->items->filter(function($row) {return empty($row->item->esFusionado);});
     @endphp
-    {{-- Mostrar solo un producto fusionado --}}
     @if($fusionados->count())
         @php
             $cantidad_fusionada = $fusionados->sum('quantity');
@@ -190,69 +190,40 @@
             $cantidad_fusionada_format = ((int)$cantidad_fusionada != $cantidad_fusionada) ? $cantidad_fusionada : number_format($cantidad_fusionada, 0);
         @endphp
         <tr>
-            <td colspan="3" class="text-left desc-9 align-top pt-3">
-                <span style="font-size: 7px;">001</span> Por consumo
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" class="text-left desc-9 pb-3">
-                {{ $cantidad_fusionada_format }} NIU x {{ number_format($total_fusionado, 2) }}
-            </td>
-            <td class="text-right desc-9 font-bold pb-3">{{ number_format($total_fusionado, 2) }}</td>
+            <td class="text-center desc-9 align-top">{{ $cantidad_fusionada_format }}</td>
+            <td class="text-center desc-9 align-top">NIU</td>
+            <td class="text-left desc-9 align-top">Por consumo</td>
+            <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
+            <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
         </tr>
         @if($no_fusionados->count() === 0)
-            <tr><td colspan="3" class="border-bottom"></td></tr>
+            <tr><td colspan="5" class="border-bottom"></td></tr>
         @endif
     @endif
-    {{-- Mostrar productos no fusionados --}}
     @foreach($no_fusionados as $row)
         @inject('items', 'App\Models\Tenant\Item')
         @php
             $internal_id = isset($row->item->internal_id) ? $row->item->internal_id : $items->find($row->item_id)->internal_id;
-        @endphp
-        @php
-            $item_code = !empty($row->item->esFusionado) ? '001' : $internal_id;
-            $item_unit = !empty($row->item->esFusionado) ? 'NIU' : $row->item->unit_type_id;
-            $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
-            $use_name_product_pdf = !empty($row->name_product_pdf) && empty($row->item->esFusionado);
-            $item_description_html = null;
-
-            if(!empty($row->item->esFusionado)) {
-                $item_description = 'Por consumo';
-            } elseif ($use_name_product_pdf) {
-                $item_description_html = \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf);
-                if (!empty($row->item->presentation)) {
-                    $item_description_html .= '<br/>'.$row->item->presentation->description;
-                }
-                $item_description = strip_tags($item_description_html);
-            } else {
-                $item_description = $row->item->description;
-                if (!empty($row->item->presentation)) {
-                    $item_description .= ' '.$row->item->presentation->description;
-                }
-                $item_description = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $item_description))));
-            }
-            $show_item_code = $item_code !== '' && $item_code !== null
-                && mb_strpos(strip_tags((string) $item_description), (string) $item_code) === false;
-
-            if (!$use_name_product_pdf) {
-                $available_chars = $max_chars_description;
-                if ($show_item_code) {
-                    $available_chars -= (int) ceil(mb_strlen((string) $item_code) * 7 / 9) + 1;
-                }
-                if (mb_strlen($item_description) > $available_chars) {
-                    $item_description = rtrim(mb_substr($item_description, 0, max($available_chars - 1, 1))).'.';
-                }
-            }
+            $show_item_code = !empty($internal_id)
+                && mb_strpos(strip_tags((string) ($row->name_product_pdf ?: $row->item->description)), (string) $internal_id) === false;
         @endphp
         <tr>
-            <td colspan="3" class="text-left desc-9 align-top pt-2">
-                @if($show_item_code)<span style="font-size: 7px;">{{ $item_code }}</span> @endif
-                @if($use_name_product_pdf)
-                    {!! $item_description_html !!}
+            <td class="text-center desc-9 align-top">
+                @if(((int)$row->quantity != $row->quantity))
+                    {{ $row->quantity }}
                 @else
-                    {{ $item_description }}
+                    {{ number_format($row->quantity, 0) }}
                 @endif
+            </td>
+            <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
+            <td class="text-left desc-9 align-top">
+                @if($show_item_code)<span style="font-size: 7px;">{{ $internal_id }}</span> @endif
+                @if($row->name_product_pdf)
+                    {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
+                @else
+                    {!!$row->item->description!!}
+                @endif
+                @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
                         <br/>{!! $attr->description !!} : {{ $attr->value }}
@@ -266,14 +237,12 @@
                     @endforeach
                 @endif
                 @if($row->item->is_set == 1)
-
                  <br>
                  @inject('itemSet', 'App\Services\ItemSetService')
                  @foreach ($itemSet->getItemsSet($row->item_id) as $item)
                      {{$item}}<br>
                  @endforeach
                 @endif
-
                 @if($row->item->used_points_for_exchange ?? false)
                     <br>
                     <small>*** Canjeado por {{$row->item->used_points_for_exchange}}  puntos ***</small>
@@ -285,14 +254,14 @@
                 @endphp
                 @if($lot)
                     <small style="display:block; font-weight: normal; font-size: 7px;">
-                        Lote: {{ ltrim($lot, '/') }}  
+                        Lote: {{ ltrim($lot, '/') }}
                         <br>
-                        FV: 
+                        FV:
                         @if($date_due != '')
                             {{ ltrim($date_due, '/') }}
                         @elseif($row->relation_item->date_of_due)
                             {{ $row->relation_item->date_of_due->format('y-m-d') }}
-                        @endif 
+                        @endif
                         <br>
                     </small>
                 @endif
@@ -306,70 +275,54 @@
                     @endisset
                 </small>
             </td>
+            <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td>
+            <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td>
         </tr>
         <tr>
-            <td colspan="2" class="text-left desc-9 pb-2">
-                {{ $item_quantity }} {{ $item_unit }} x {{ number_format($row->unit_price, 2) }}
-            </td>
-            <td class="text-right desc-9 font-bold pb-2">{{ number_format($row->total, 2) }}</td>
+            <td colspan="5" class="border-bottom"></td>
         </tr>
-        @if($loop->last)
-            <tr>
-                <td colspan="3" class="border-bottom"></td>
-            </tr>
-        @endif
     @endforeach
         @if($document->total_exportation > 0)
             <tr>
-                <td colspan="2" class="text-right font-bold desc">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_exportation, 2) }}</td>
             </tr>
         @endif
         @if($document->total_free > 0)
             <tr>
-                <td colspan="2" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_free, 2) }}</td>
             </tr>
         @endif
         @if($document->total_unaffected > 0)
             <tr>
-                <td colspan="2" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_unaffected, 2) }}</td>
             </tr>
         @endif
         @if($document->total_exonerated > 0)
             <tr>
-                <td colspan="2" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_exonerated, 2) }}</td>
             </tr>
         @endif
-        {{-- @if($document->total_taxed > 0)
-            <tr>
-                <td colspan="2" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold desc">{{ number_format($document->total_taxed, 2) }}</td>
-            </tr>
-        @endif --}}
          @if($document->total_discount_with_igv > 0)
             <tr>
-                <td colspan="2" class="text-right font-bold desc">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_discount_with_igv, 2) }}</td>
             </tr>
         @endif
-        {{--<tr>
-            <td colspan="5" class="text-right font-bold desc">IGV: {{ $document->currency_type->symbol }}</td>
-            <td class="text-right font-bold desc">{{ number_format($document->total_igv, 2) }}</td>
-        </tr>--}}
 
         @if($document->total_charge > 0 && $document->charges)
             <tr>
-                <td colspan="2" class="text-right font-bold desc">CARGOS ({{$document->getTotalFactor()}}%): {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">CARGOS ({{$document->getTotalFactor()}}%): {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_charge, 2) }}</td>
             </tr>
         @endif
 
         <tr>
-            <td class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-            <td class="text-right font-bold desc" style="white-space: nowrap;">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td colspan="2" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td colspan="2" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total, 2) }}</td>
         </tr>
 
@@ -379,7 +332,7 @@
 
         @if($change_payment < 0)
             <tr>
-                <td colspan="2" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
+                <td colspan="4" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format(abs($change_payment),2, ".", "") }}</td>
             </tr>
         @endif
