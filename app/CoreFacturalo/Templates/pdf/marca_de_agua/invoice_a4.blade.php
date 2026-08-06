@@ -430,7 +430,7 @@
         <tr class="">
             <th class="border-top-bottom text-center py-1 desc" class="cell-solid"  width="8%">CÓDIGO</th>
             <th class="border-top-bottom text-center py-1 desc" class="cell-solid"  width="6%">CANT.</th>
-            <th class="border-top-bottom text-center py-1 desc" class="cell-solid"  width="6%">U.M.</th>
+            <th class="border-top-bottom text-center py-1 desc" class="cell-solid"  width="9%">U.M.</th>
             <th class="border-top-bottom text-center py-1 desc" class="cell-solid">DESCRIPCIÓN</th>
             @php
                 $showSerieColumn = false;
@@ -488,10 +488,10 @@
                         {{ number_format($row->quantity, 0) }}
                     @endif
                 </td>
-                <td class="p-1 text-center align-top desc cell-solid-rl">{{ $row->item->unit_type_id }}</td>
+                <td class="p-1 text-center align-top desc cell-solid-rl" style="white-space:nowrap;">{{ $row->item->unit_type_id === 'NIU' ? 'UNIDADES' : $row->item->unit_type_id }}</td>
                 <td class="p-1 text-left align-top desc text-upp cell-solid-rl">
                     @if($row->name_product_pdf)
-                        {!!$row->name_product_pdf!!}
+                        <div style="white-space:pre-line;line-height:1.35;">{!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}</div>
                     @else
                         {!!$row->item->description!!}
                     @endif
@@ -519,7 +519,9 @@
                     @if($row->item->is_set == 1)
                      <br>
                      @inject('itemSet', 'App\Services\ItemSetService')
-                        {{join( "-", $itemSet->getItemsSet($row->item_id) )}}
+                        @foreach ($itemSet->getItemsSet($row->item_id) as $item)
+                            {{ $item }}<br>
+                        @endforeach
                     @endif
                 </td>
                 @empty($showSerieColumn) @else
@@ -629,7 +631,7 @@
         </tr>
 
         <tr>
-            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="6">
+            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="7">
                 @php
                     // Solo contar productos (no servicios) para total bultos
                     $total_packages = 0;
@@ -700,7 +702,7 @@
                     @endif
 
                 @endif
-            <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
+            <td class="p-1 text-center align-top desc cell-solid " rowspan="7">
                 <img src="data:image/png;base64, {{ $document->qr }}" class="p-0 m-0" style="width: 120px;" /><br>
                 Código Hash: {{ $document->hash }}
             </td>
@@ -730,13 +732,16 @@
         <tr>
 
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
-                IGV. {{$document->currency_type->symbol}}
+                IGV ({{ \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentIgvPercentage($document) }}%). {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
         </tr>
         <tr>
-            <td class="p-1 text-left align-top desc cell-solid font-bold" colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ floor(($colspan_total + 1) / 2) }}">
+            <td class="p-1 text-left align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">Productos:</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+        </tr>
+        <tr>
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">
                 TOTAL A PAGAR. {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>
