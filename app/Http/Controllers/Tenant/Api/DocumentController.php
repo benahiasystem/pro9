@@ -193,6 +193,30 @@ class DocumentController extends Controller
         return $records;
     }
 
+    /**
+     * Devuelve un comprobante por su id.
+     *
+     * whereTypeUser() evita que un vendedor pueda leer documentos de otro usuario
+     * pasando ids ajenos; para los demás perfiles no restringe nada.
+     */
+    public function record($id)
+    {
+        $record = Document::whereTypeUser()->find($id);
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró el comprobante solicitado.',
+            ], 404);
+        }
+
+        // Se conserva el envoltorio "data" que agregaba JsonResource para no cambiar
+        // la forma de la respuesta.
+        return response()->json([
+            'data' => $record->getApiResourceFind(),
+        ]);
+    }
+
     public function updatestatus(Request $request)
     {
         $record = Document::whereExternal_id($request->externail_id)->first();

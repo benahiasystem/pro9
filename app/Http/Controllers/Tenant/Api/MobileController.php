@@ -817,46 +817,37 @@ class MobileController extends Controller
 
     public function stats($startDate = null, $endDate = null)
     {
-        if ($startDate == null)
-        {
-            $documents = Document::whereTypeUser()
-                                ->orderBy('date_of_issue', 'desc')
-                                ->take(50);
-        
+        // Sin orderBy: la consulta solo devuelve agregados y no lleva GROUP BY, asi que
+        // ordenar por una columna normal hace que MySQL responda el error 1140.
+        $documents = Document::whereTypeUser();
+        $sale_notes = SaleNote::whereTypeUser();
 
-            $sale_notes = SaleNote::whereTypeUser()
-                                ->orderBy('date_of_issue', 'desc')
-                                ->take(50);
-        }
-        else
+        if ($startDate != null)
         {
-            $documents = Document::whereBetween('date_of_issue', [$startDate, $endDate])
-                ->orderBy('date_of_issue', 'desc');
-
-            $sale_notes = SaleNote::whereBetween('date_of_issue', [$startDate, $endDate])
-                ->orderBy('date_of_issue', 'desc');
+            $documents->whereBetween('date_of_issue', [$startDate, $endDate]);
+            $sale_notes->whereBetween('date_of_issue', [$startDate, $endDate]);
         }
 
         $documents = $documents
                 ->selectRaw("
-                    COUNT(CASE WHEN document_type_id = '01' THEN 1 END) AS facturas, 
-                    COUNT(CASE WHEN document_type_id = '03' THEN 1 END) AS boletas, 
-                    SUM(total) AS total,
+                    COUNT(CASE WHEN document_type_id = '01' THEN 1 END) AS facturas,
+                    COUNT(CASE WHEN document_type_id = '03' THEN 1 END) AS boletas,
+                    COALESCE(SUM(total), 0) AS total,
                     COUNT(*) AS count
                 ")->first();
-        
+
         $sale_notes = $sale_notes
                 ->selectRaw("
                     COUNT(*) AS notasVenta,
-                    SUM(total) AS total
+                    COALESCE(SUM(total), 0) AS total
                 ")->first();
 
         return [
-            'total' => $documents->total + $sale_notes->total,
-            'count' => $documents->count  + $sale_notes->count,
-            'facturas' => $documents->facturas ?? 0,
-            'boletas' => $documents->boletas ?? 0,
-            'notasVenta' => $sale_notes->notasVenta ?? 0,
+            'total' => round((float) $documents->total + (float) $sale_notes->total, 2),
+            'count' => (int) $documents->count + (int) $sale_notes->notasVenta,
+            'facturas' => (int) $documents->facturas,
+            'boletas' => (int) $documents->boletas,
+            'notasVenta' => (int) $sale_notes->notasVenta,
         ];
     }
 }
