@@ -27,7 +27,7 @@ if ($hostname) {
             Route::post('sale-note', 'Tenant\Api\SaleNoteController@store');
             Route::get('sale-note/series', 'Tenant\Api\SaleNoteController@series');
             Route::get('sale-note/lists', 'Tenant\Api\SaleNoteController@lists');
-            Route::get('sale-note/record/{id}', 'Tenant\Api\SaleNoteController@record');
+            Route::get('sale-note/find/{id}', 'Tenant\Api\SaleNoteController@record');
             Route::post('item', 'Tenant\Api\MobileController@item');
             Route::post('items/{id}/update', 'Tenant\Api\MobileController@updateItem');
             Route::get('item/destroy/{item}', 'Tenant\Api\MobileController@destroyItem');
@@ -45,7 +45,9 @@ if ($hostname) {
             Route::post('documents', 'Tenant\Api\DocumentController@store');
             Route::get('documents/lists', 'Tenant\Api\DocumentController@lists');
             Route::get('documents/lists/{startDate}/{endDate}', 'Tenant\Api\DocumentController@lists');
-            Route::get('documents/record/{id}', 'Tenant\Api\DocumentController@record');
+            // "documents/record/{id}" ya lo registra el modulo MobileApp, que gana por
+            // orden de registro; por eso este endpoint usa "find".
+            Route::get('documents/find/{id}', 'Tenant\Api\DocumentController@record');
             Route::post('documents/updatedocumentstatus', 'Tenant\Api\DocumentController@updatestatus');
             Route::post('summaries', 'Tenant\Api\SummaryController@store');
             Route::post('voided', 'Tenant\Api\VoidedController@store');
