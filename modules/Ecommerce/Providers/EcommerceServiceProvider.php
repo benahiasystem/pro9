@@ -23,7 +23,22 @@ class EcommerceServiceProvider extends ServiceProvider
         // $this->registerFactories();
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
 
+        View::composer('ecommerce::*', function ($view) {
+            $campaigns = \App\Models\Tenant\EcommerceCampaign::activeCampaigns();
+            $configEcommerce = \App\Models\Tenant\ConfigurationEcommerce::first();
+            $trustBadgesEnabled = true;
+            $trustBadges = \Modules\Ecommerce\Http\Controllers\SocialProofController::defaultTrustBadges();
 
+            if ($configEcommerce && is_array($configEcommerce->preferences)) {
+                $prefs = $configEcommerce->preferences;
+                $trustBadgesEnabled = (bool) ($prefs['trust_badges_enabled'] ?? true);
+                if (! empty($prefs['trust_badges']) && is_array($prefs['trust_badges'])) {
+                    $trustBadges = array_values($prefs['trust_badges']);
+                }
+            }
+
+            $view->with(compact('campaigns', 'configEcommerce', 'trustBadges', 'trustBadgesEnabled'));
+        });
     }
 
     /**

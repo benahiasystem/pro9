@@ -209,11 +209,12 @@
         padding: 24px;
     }
 
-    /* Overlay de carga: métodos manuales (Yape / efectivo / transferencia) */
+    /* Overlay de carga: Yape / efectivo / transferencia / Culqi post-token.
+       Por encima del iframe de Culqi Checkout v4 (usa z-index muy alto). */
     .payment-process-overlay {
         position: fixed;
         inset: 0;
-        z-index: 10050;
+        z-index: 2147483000;
         display: none;
         place-items: center;
         padding: 24px;
@@ -226,8 +227,8 @@
     }
 
     .payment-process-dialog {
-        width: min(420px, 92vw);
-        padding: 36px 28px 32px;
+        width: min(460px, 94vw);
+        padding: 44px 32px 36px;
         border-radius: 20px;
         background: #fff;
         text-align: center;
@@ -235,9 +236,9 @@
     }
 
     .payment-process-spinner {
-        width: 48px;
-        height: 48px;
-        margin: 0 auto 20px;
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 24px;
         border: 3px solid #e9edf1;
         border-top-color: var(--primary-color, #ff7a00);
         border-radius: 50%;
@@ -249,16 +250,17 @@
     }
 
     .payment-process-dialog h3 {
-        margin: 0 0 10px;
-        font-size: 1.15rem;
+        margin: 0 0 12px;
+        font-size: 1.55rem;
         font-weight: 700;
         color: #0f2137;
+        line-height: 1.3;
     }
 
     .payment-process-dialog p {
         margin: 0;
-        font-size: 0.95rem;
-        line-height: 1.45;
+        font-size: 1.22rem;
+        line-height: 1.5;
         color: #667085;
     }
 
@@ -266,7 +268,7 @@
     .payment-success-overlay {
         position: fixed;
         inset: 0;
-        z-index: 10060;
+        z-index: 2147483001;
         display: none;
         place-items: center;
         padding: 24px;
@@ -279,8 +281,8 @@
     }
 
     .payment-success-dialog {
-        width: min(440px, 94vw);
-        padding: 32px 28px 28px;
+        width: min(480px, 94vw);
+        padding: 36px 32px 32px;
         border-radius: 20px;
         background: #fff;
         text-align: center;
@@ -290,31 +292,32 @@
     .payment-success-badge {
         display: grid;
         place-items: center;
-        width: 64px;
-        height: 64px;
-        margin: 0 auto 18px;
+        width: 76px;
+        height: 76px;
+        margin: 0 auto 20px;
         border-radius: 50%;
         background: #fff4eb;
         color: var(--primary-color, #ff7a00);
     }
 
     .payment-success-dialog h3 {
-        margin: 0 0 8px;
-        font-size: 1.35rem;
+        margin: 0 0 12px;
+        font-size: 1.75rem;
         font-weight: 700;
         color: #0f2137;
+        line-height: 1.25;
     }
 
     .payment-success-dialog .payment-success-sub {
-        margin: 0 0 20px;
-        font-size: 0.92rem;
-        line-height: 1.45;
+        margin: 0 0 22px;
+        font-size: 1.2rem;
+        line-height: 1.5;
         color: #667085;
     }
 
     .payment-success-summary {
         margin: 0 0 18px;
-        padding: 14px 16px;
+        padding: 16px 18px;
         border: 1px solid #e9edf1;
         border-radius: 12px;
         text-align: left;
@@ -326,8 +329,8 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 6px 0;
-        font-size: 0.9rem;
+        padding: 9px 0;
+        font-size: 1.15rem;
     }
 
     .payment-success-summary .psr-row + .psr-row {
@@ -345,39 +348,65 @@
     }
 
     .payment-success-summary .psr-row--total .val {
-        font-size: 1.05rem;
+        font-size: 1.35rem;
         color: var(--primary-color, #ff7a00);
     }
 
     .payment-success-note {
         display: flex;
         align-items: flex-start;
-        gap: 8px;
+        gap: 10px;
         margin: 0 0 22px;
-        padding: 10px 12px;
+        padding: 14px 16px;
         border-radius: 10px;
         background: #f3f5f7;
-        font-size: 0.82rem;
-        line-height: 1.4;
+        font-size: 1.1rem;
+        line-height: 1.5;
         color: #52606d;
         text-align: left;
     }
 
     .payment-success-note svg {
         flex-shrink: 0;
-        margin-top: 1px;
+        margin-top: 2px;
         color: var(--primary-color, #ff7a00);
+        width: 20px;
+        height: 20px;
     }
 
     .payment-success-dialog .pay-btn {
         width: 100%;
         justify-content: center;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.12rem;
+        min-height: 52px;
     }
 
     .payment-success-dialog .pay-btn.is-loading {
         opacity: 0.92;
         pointer-events: none;
         cursor: wait;
+    }
+
+    .payment-success-dialog .pay-btn--whatsapp {
+        background: #25D366;
+        border-color: #25D366;
+        color: #fff;
+    }
+
+    .payment-success-dialog .pay-btn--whatsapp:hover:not(.disabled):not(:disabled) {
+        background: #1ebe57;
+        border-color: #1ebe57;
+        color: #fff;
+    }
+
+    .payment-success-footer-hint {
+        margin: 16px 0 0;
+        font-size: 1.05rem;
+        line-height: 1.5;
+        color: #98a2b3;
     }
 
     .payment-success-btn-spinner {
@@ -808,16 +837,18 @@
     }
 
     .quotation-success-dialog h3 {
-        margin: 0 0 8px;
-        font-size: 1.35rem;
+        margin: 0 0 12px;
+        font-size: 1.75rem;
         font-weight: 700;
         color: #0f2137;
+        line-height: 1.25;
     }
 
     .quotation-success-dialog .payment-success-sub {
         margin: 0 0 18px;
         color: #667085;
-        font-size: 0.92rem;
+        font-size: 1.2rem;
+        line-height: 1.5;
     }
 
     .quotation-success-code {
@@ -2458,6 +2489,13 @@
                             <span class="pay-method-label">@{{ titleCulqi }}</span>
                         </label>
                         <div v-if="selectedPaymentMethod === 'culqi' && (!isLoggedIn || descriptionCulqi)" class="pay-method-panel">
+                            <div v-if="!isSecurePage" class="ship-alert ship-alert--warn" role="alert">
+                                Culqi solo funciona con HTTPS. Estás en HTTP
+                                (<strong>No seguro</strong>).
+                                <a :href="httpsCheckoutUrl" style="font-weight:700; text-decoration:underline;">
+                                    Abrir carrito en HTTPS
+                                </a>
+                            </div>
                             <p v-if="descriptionCulqi">@{{ descriptionCulqi }}</p>
                             <button
                                 v-if="!isLoggedIn"
@@ -2710,7 +2748,7 @@
                 <div class="checkout-methods">
                     <template v-if="allowPurchase">
                     <p v-if="!isLoggedIn && guestCheckoutAccepted && isGuestCheckoutComplete" class="checkout-hint">
-                        Elige un método de pago y confirma desde el botón correspondiente.
+                        Elige un método de pago y confirma con el botón Pagar.
                     </p>
                     <button
                         v-if="!isLoggedIn && !guestCheckoutAccepted"
@@ -2735,7 +2773,7 @@
                         Completar datos
                     </button>
                     <button
-                        v-else-if="isLoggedIn && selectedPaymentMethod !== 'paypal'"
+                        v-else-if="(isLoggedIn || (guestCheckoutAccepted && isGuestCheckoutComplete)) && selectedPaymentMethod !== 'paypal'"
                         class="pay-btn"
                         :class="{ disabled: !acceptedTerms || processingPayment || quotationSubmitting }"
                         :disabled="!selectedPaymentMethod || !acceptedTerms || processingPayment || quotationSubmitting"
@@ -2761,9 +2799,20 @@
                 </div><!-- End .checkout-methods -->
 
                 <div class="trust" v-if="!isQuotationCheckout">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    Pago 100% seguro y protegido
+                    <trust-badges
+                        :badges="trustBadges"
+                        :enabled="trustBadgesEnabled"
+                        :compact="true"
+                    ></trust-badges>
                 </div>
+                <frequently-bought-together
+                    v-if="!isQuotationCheckout && cartFbtItemIds.length"
+                    :item-ids="cartFbtItemIds"
+                    :limit="6"
+                    title="También suelen llevarse juntos"
+                    subtitle="Según pedidos reales de la tienda"
+                    class="mt-3"
+                ></frequently-bought-together>
                 <div class="cards-row px-5" v-if="!isQuotationCheckout">
                     <img src="{{ asset('porto-ecommerce/assets/images/payments-bordered.svg') }}" alt="payment methods" class="footer-payments">
                 </div>
@@ -3325,6 +3374,12 @@
 </script>
 
 @vite('modules/Ecommerce/Resources/assets/js/frontend/cart-app.js')
+<script>
+    window.__socialProofBoot = {
+        trustBadgesEnabled: {{ ($trustBadgesEnabled ?? true) ? 'true' : 'false' }},
+        trustBadges: @json($trustBadges ?? [])
+    };
+</script>
 
 <script>
 (function () {
@@ -3900,8 +3955,13 @@
         }
     }
 
-    function closeCulqiModal() {
-        dismissCulqiCheckout({ keepBodyLocked: false });
+    function closeCulqiModal(options) {
+        const opts = options && typeof options === 'object' ? options : {};
+        dismissCulqiCheckout({ keepBodyLocked: opts.keepLoading === true });
+
+        if (opts.keepLoading) {
+            return;
+        }
 
         if (typeof app_cart !== 'undefined') {
             app_cart.hidePaymentLoading();
@@ -3972,6 +4032,7 @@
     async function culqi() {
         if (!window.Culqi || !window.Culqi.token) {
             const message = getCulqiErrorMessage(window.Culqi && window.Culqi.error) || 'Pago no realizado';
+            closeCulqiModal();
             window.mostrarMensaje('Pago no realizado', message, 'error');
             return;
         }

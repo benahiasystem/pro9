@@ -340,6 +340,17 @@
                             </div>
                         </li>
                     @endif
+                    <li>
+                        <div class="fci-icon"><i class="ti ti-package"></i></div>
+                        <div class="fci-body">
+                            <span class="fci-label">Ayuda rápida</span>
+                            <span class="fci-value">
+                                <a href="{{ route('tenant_ecommerce_order_tracking') }}">
+                                    Seguimiento de pedidos
+                                </a>
+                            </span>
+                        </div>
+                    </li>
                     @if($information->information_contact_address)
                         <li>
                             <div class="fci-icon"><i class="ti ti-clock"></i></div>

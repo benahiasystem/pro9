@@ -22,7 +22,10 @@ class SaleNoteHelper
 
         $inputs_transform = [
             
-            'establishment_id' => auth()->user()->establishment_id,
+            'establishment_id' => optional(auth()->user())->establishment_id
+                ?? Functions::valueKeyInArray($inputs, 'establishment_id')
+                ?? optional(\App\Models\Tenant\User::query()->whereNotNull('establishment_id')->orderBy('id')->first())->establishment_id
+                ?? optional(\App\Models\Tenant\Establishment::query()->orderBy('id')->first())->id,
             'series_id' => Functions::valueKeyInArray($inputs, 'series_id'),
             'date_of_issue' => Functions::valueKeyInArray($inputs, 'fecha_de_emision'),
             'time_of_issue' => Functions::valueKeyInArray($inputs, 'hora_de_emision'),

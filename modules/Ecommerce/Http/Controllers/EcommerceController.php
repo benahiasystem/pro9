@@ -451,8 +451,8 @@ class EcommerceController extends Controller
                 $records = $records->whereBetween('created_at', [$date_of_start, $date_of_end]);
             }
 
-            // Obtener los resultados paginados
-            $records = $records->paginate(config('tenant.items_per_page', 10));
+            // Obtener los resultados paginados (más recientes primero)
+            $records = $records->orderByDesc('id')->paginate(config('tenant.items_per_page', 10));
 
             // Transformar los datos manteniendo la estructura de paginación
             $records->getCollection()->transform(function ($row) {
@@ -891,6 +891,20 @@ class EcommerceController extends Controller
                     ?: StatusOrder::where('is_payment_status', true)->orderBy('sort_order')->first();
                 $initialPaymentStatusId = $initialPaymentStatus ? $initialPaymentStatus->id : null;
 
+                $purchase = is_string($request->purchase)
+                    ? (json_decode($request->purchase, true) ?: [])
+                    : (array) $request->purchase;
+
+                $isGuestOverride = $request->has('is_guest')
+                    ? filter_var($request->input('is_guest'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+                    : (isset($purchase['checkout']['is_guest'])
+                        ? (bool) $purchase['checkout']['is_guest']
+                        : null);
+                if ($isGuestOverride === true) {
+                    $user = null;
+                }
+                $purchase = Order::attachEcommerceCheckoutMeta($purchase, $user, $isGuestOverride);
+
                 $order = Order::create([
                     'external_id' => Str::uuid()->toString(),
                     'customer' =>  $request->customer,
@@ -900,7 +914,8 @@ class EcommerceController extends Controller
                     'reference_payment' => $request->input('reference_payment', 'efectivo'),
                     'status_order_id' => $initialStatusId,
                     'payment_status_order_id' => $initialPaymentStatusId,
-                    'purchase' => $request->purchase
+                    'shipping_status_order_id' => StatusOrder::resolveInitialShippingStatusId(),
+                    'purchase' => $purchase,
                 ]);
 
                 // Si se envía cupón en la petición, aplicarlo inmediatamente
@@ -971,6 +986,13 @@ class EcommerceController extends Controller
                 $document->product = $request->producto;
                 $document->total = $request->precio_culqi;
                 $document->items = $request->items;
+                $document->id = $order->id;
+                $document->order_number = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+                $document->tracking_token = (string) $order->external_id;
+                $document->tracking_url = route('tenant_ecommerce_order_tracking', [
+                    'pedido' => $document->order_number,
+                    'token' => $order->external_id,
+                ]);
 
                 if (!empty($contact['email'])) {
                     $this->paymentCashEmail($contact['email'], $document);
@@ -1044,6 +1066,21 @@ class EcommerceController extends Controller
                 ? StatusOrder::resolvePaidPaymentStatusId()
                 : StatusOrder::resolveInitialPaymentStatusId();
 
+            $purchase = is_string($request->purchase)
+                ? (json_decode($request->purchase, true) ?: [])
+                : (array) ($request->purchase ?? []);
+
+            $ecommerceUser = auth('ecommerce')->user();
+            $isGuestOverride = $request->has('is_guest')
+                ? filter_var($request->input('is_guest'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+                : (isset($purchase['checkout']['is_guest'])
+                    ? (bool) $purchase['checkout']['is_guest']
+                    : null);
+            if ($isGuestOverride === true) {
+                $ecommerceUser = null;
+            }
+            $purchase = Order::attachEcommerceCheckoutMeta($purchase, $ecommerceUser, $isGuestOverride);
+
             $order = Order::create([
                 'external_id' => Str::uuid()->toString(),
                 'customer' => $customer,
@@ -1053,7 +1090,8 @@ class EcommerceController extends Controller
                 'reference_payment' => $request->input('reference_payment', 'mp'),
                 'status_order_id' => StatusOrder::resolveInitialOrderStatusId(),
                 'payment_status_order_id' => $paymentStatusId,
-                'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
+                'shipping_status_order_id' => StatusOrder::resolveInitialShippingStatusId(),
+                'purchase' => $purchase,
             ]);
 
             if (! empty($result['paid'])) {
@@ -1088,6 +1126,21 @@ class EcommerceController extends Controller
 
         $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array) $request->customer;
 
+        $purchase = is_string($request->purchase)
+            ? (json_decode($request->purchase, true) ?: [])
+            : (array) ($request->purchase ?? []);
+
+        $ecommerceUser = auth('ecommerce')->user();
+        $isGuestOverride = $request->has('is_guest')
+            ? filter_var($request->input('is_guest'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            : (isset($purchase['checkout']['is_guest'])
+                ? (bool) $purchase['checkout']['is_guest']
+                : null);
+        if ($isGuestOverride === true) {
+            $ecommerceUser = null;
+        }
+        $purchase = Order::attachEcommerceCheckoutMeta($purchase, $ecommerceUser, $isGuestOverride);
+
         // Pedido previo al formulario: inicia en pago pendiente hasta confirmar PAID.
         $order = Order::create([
             'external_id' => Str::uuid()->toString(),
@@ -1098,7 +1151,8 @@ class EcommerceController extends Controller
             'reference_payment' => 'izipay',
             'status_order_id' => StatusOrder::resolveInitialOrderStatusId(),
             'payment_status_order_id' => StatusOrder::resolveInitialPaymentStatusId(),
-            'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase,
+            'shipping_status_order_id' => StatusOrder::resolveInitialShippingStatusId(),
+            'purchase' => $purchase,
         ]);
 
         $paymentReq = new Request([
@@ -2390,6 +2444,355 @@ class EcommerceController extends Controller
         ));
     }
 
+    /**
+     * Página pública de seguimiento del pedido (estado de envío).
+     */
+    public function orderTracking(Request $request)
+    {
+        $categories = Category::has('items')->get();
+        $initialPedido = trim((string) $request->query('pedido', ''));
+        $initialToken = trim((string) $request->query('token', ''));
+
+        $ecommerceConfiguration = ConfigurationEcommerce::first();
+        $configurationModel = Configuration::first();
+        $phoneWhatsapp = optional($ecommerceConfiguration)->phone_whatsapp
+            ?: optional($configurationModel)->phone_whatsapp;
+        $whatsappPhone = $phoneWhatsapp ? preg_replace('/\D+/', '', (string) $phoneWhatsapp) : '';
+        $showWhatsapp = $whatsappPhone !== '';
+        $storeUrl = route('tenant.ecommerce.index');
+
+        return view('ecommerce::cart.order_tracking', compact(
+            'categories',
+            'initialPedido',
+            'initialToken',
+            'showWhatsapp',
+            'whatsappPhone',
+            'storeUrl'
+        ));
+    }
+
+    /**
+     * Lookup de seguimiento: token (external_id) o N° pedido + email/DNI.
+     * No basta con adivinar o cambiar el N° en la URL.
+     * Si hay sesión ecommerce: solo pedidos cuyo correo coincide con la cuenta
+     * (no se pueden ver pedidos de otros clientes ni de invitados).
+     * Sin sesión (invitado): basta el token, o N° pedido + email/DNI.
+     */
+    public function orderTrackingLookup(Request $request)
+    {
+        $denied = [
+            'success' => false,
+            'message' => 'No encontramos ese pedido o los datos no coinciden.',
+        ];
+
+        $token = trim((string) $request->query('token', ''));
+        $raw = trim((string) $request->query('pedido', ''));
+        $digits = preg_replace('/\D+/', '', $raw);
+        $orderId = (int) $digits;
+        $email = strtolower(trim((string) $request->query('email', '')));
+        $document = preg_replace('/\D+/', '', (string) $request->query('documento', $request->query('dni', '')));
+
+        $order = null;
+
+        if ($token !== '') {
+            $order = Order::with(['shipping_status_order', 'payment_status_order'])
+                ->where('external_id', $token)
+                ->first();
+
+            if (! $order) {
+                return response()->json($denied);
+            }
+
+            // Si además envían N°, debe coincidir con el token (evita links armados a mano).
+            if ($orderId > 0 && (int) $order->id !== $orderId) {
+                return response()->json($denied);
+            }
+        } else {
+            if ($orderId <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ingresa un número de pedido válido.',
+                ]);
+            }
+
+            if ($email === '' && $document === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ingresa tu correo o DNI para verificar el pedido.',
+                ]);
+            }
+
+            $order = Order::with(['shipping_status_order', 'payment_status_order'])->find($orderId);
+            if (! $order || ! $this->orderTrackingIdentityMatches($order, $email, $document)) {
+                return response()->json($denied);
+            }
+        }
+
+        // Sesión ecommerce activa: solo pedidos de su propia cuenta (correo).
+        // Incluye bloquear pedidos de invitado aunque el token sea válido.
+        $ecommerceUser = auth('ecommerce')->user();
+        if ($ecommerceUser && ! $this->orderTrackingBelongsToUser($order, $ecommerceUser)) {
+            return response()->json($denied);
+        }
+
+        $paymentLabels = [
+            'efectivo'      => 'Efectivo',
+            'yape'          => 'Yape',
+            'transferencia' => 'Transferencia',
+            'culqi'         => 'Tarjeta (VISA)',
+            'culqui'        => 'Tarjeta (VISA)',
+            'paypal'        => 'PayPal',
+            'mp'            => 'Mercado Pago',
+            'izipay'        => 'Izipay',
+        ];
+        $refPayment = strtolower((string) ($order->reference_payment ?? 'efectivo'));
+        $paymentLabel = $paymentLabels[$refPayment] ?? ucfirst($refPayment);
+
+        $shipping = (string) ($order->shipping_address ?? '');
+        $isPickup = stripos($shipping, 'Recojo en tienda') === 0;
+        $deliveryLabel = $isPickup ? ($shipping ?: 'Recojo en tienda') : 'Envío a domicilio';
+
+        $items = [];
+        $rawItems = $order->items;
+        if (is_string($rawItems)) {
+            $rawItems = json_decode($rawItems, true);
+        }
+        if (is_object($rawItems)) {
+            $rawItems = (array) $rawItems;
+        }
+        if (is_array($rawItems)) {
+            foreach ($rawItems as $item) {
+                $row = is_object($item) ? (array) $item : $item;
+                if (! is_array($row)) {
+                    continue;
+                }
+                $qty = (float) ($row['cantidad'] ?? $row['quantity'] ?? 1);
+                $price = (float) ($row['sale_unit_price'] ?? $row['unit_price'] ?? $row['price'] ?? 0);
+                $image = $row['image'] ?? $row['image_url'] ?? null;
+                if (is_string($image) && $image !== '' && $image !== 'imagen-no-disponible.jpg' && ! preg_match('#^https?://#i', $image)) {
+                    $image = asset('storage/uploads/items/'.$image);
+                }
+                if (! is_string($image) || $image === '' || $image === 'imagen-no-disponible.jpg') {
+                    $image = asset('logo/imagen-no-disponible.jpg');
+                }
+                $items[] = [
+                    'description' => (string) ($row['description'] ?? $row['name'] ?? 'Producto'),
+                    'quantity' => $qty > 0 ? $qty : 1,
+                    'unit_price' => round($price, 2),
+                    'total' => round($qty * $price, 2),
+                    'image' => $image,
+                ];
+            }
+        }
+
+        $allShippingStatuses = StatusOrder::where('is_shipping_status', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get([
+                'id',
+                'description',
+                'color',
+                'sort_order',
+                'is_initial',
+                'is_final',
+                'action_notify_dispatch',
+            ]);
+
+        $currentShipping = $order->shipping_status_order;
+        $currentShippingId = $order->shipping_status_order_id
+            ? (int) $order->shipping_status_order_id
+            : null;
+
+        // Fin del flujo normal (p. ej. "Entregado"). Estados con sort_order mayor
+        // son excepciones (p. ej. "Entrega pendiente") y no van en el timeline
+        // salvo que el admin los haya asignado manualmente a este pedido.
+        $finalSortOrder = $allShippingStatuses
+            ->where('is_final', true)
+            ->min('sort_order');
+
+        $currentIsSideStatus = $currentShippingId
+            && $finalSortOrder !== null
+            && $allShippingStatuses->contains(function ($status) use ($currentShippingId, $finalSortOrder) {
+                return (int) $status->id === $currentShippingId
+                    && (int) $status->sort_order > (int) $finalSortOrder;
+            });
+
+        $shippingStatuses = $allShippingStatuses
+            ->filter(function ($status) use ($currentShippingId, $finalSortOrder, $currentIsSideStatus, $isPickup) {
+                $isCurrent = $currentShippingId && (int) $status->id === $currentShippingId;
+                $isSide = $finalSortOrder !== null
+                    && (int) $status->sort_order > (int) $finalSortOrder;
+
+                // Excepción (p. ej. Entrega pendiente): solo si es el estado actual
+                if ($isSide) {
+                    return $isCurrent;
+                }
+
+                // Si el pedido está en excepción, ocultar el final ("Entregado")
+                if ($currentIsSideStatus && $status->is_final) {
+                    return false;
+                }
+
+                // Timeline según modo: domicilio sin recojo; recojo sin "En camino".
+                if ($isPickup && $this->isDeliveryOnlyShippingStatus($status)) {
+                    return false;
+                }
+                if (! $isPickup && $this->isPickupOnlyShippingStatus($status)) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->map(function ($status) use ($finalSortOrder) {
+                $isSide = $finalSortOrder !== null
+                    && (int) $status->sort_order > (int) $finalSortOrder;
+
+                return [
+                    'id' => (int) $status->id,
+                    'description' => $status->description,
+                    'color' => $status->color ?: '#ff7a00',
+                    'sort_order' => (int) $status->sort_order,
+                    'is_initial' => (bool) $status->is_initial,
+                    'is_final' => (bool) $status->is_final,
+                    'is_side_status' => $isSide,
+                ];
+            })
+            ->values();
+
+        // Si aún no tiene estado, usar el inicial del catálogo como "pendiente actual"
+        if (! $currentShippingId && $shippingStatuses->isNotEmpty()) {
+            $initial = $shippingStatuses->firstWhere('is_initial', true) ?: $shippingStatuses->first();
+            $currentShippingId = $initial ? (int) $initial['id'] : null;
+        }
+
+        // Progreso visual del timeline: si el estado real no pertenece a este flujo
+        // (p. ej. "Listo para recojo" en domicilio), avanzar al siguiente paso válido.
+        $timelineShippingStatusId = $currentShippingId;
+        if (
+            $currentShippingId
+            && $shippingStatuses->isNotEmpty()
+            && ! $shippingStatuses->contains('id', $currentShippingId)
+        ) {
+            $currentSort = (int) optional(
+                $allShippingStatuses->firstWhere('id', $currentShippingId)
+            )->sort_order;
+
+            $next = $shippingStatuses->first(function ($status) use ($currentSort) {
+                return (int) $status['sort_order'] > $currentSort;
+            });
+            $prev = $shippingStatuses
+                ->filter(function ($status) use ($currentSort) {
+                    return (int) $status['sort_order'] < $currentSort;
+                })
+                ->last();
+
+            $timelineShippingStatusId = $next['id'] ?? ($prev['id'] ?? null);
+        }
+
+        $catalogCurrent = $currentShippingId
+            ? ($shippingStatuses->firstWhere('id', $currentShippingId)
+                ?: $allShippingStatuses->firstWhere('id', $currentShippingId))
+            : null;
+
+        if ($catalogCurrent && ! is_array($catalogCurrent)) {
+            $catalogCurrent = [
+                'description' => $catalogCurrent->description,
+                'color' => $catalogCurrent->color ?: '#ff7a00',
+            ];
+        }
+
+        // Timeline de tienda: Pendiente → Pago completado → estados de envío.
+        // Evita marcar "Pendiente" con check al pagar (paso aparte).
+        $paymentStatus = $order->payment_status_order;
+        $isPaymentCompleted = (bool) optional($paymentStatus)->action_mark_payment;
+        $pendingPaymentStatus = StatusOrder::where('is_payment_status', true)
+            ->where(function ($q) {
+                $q->where('action_mark_payment', false)->orWhereNull('action_mark_payment');
+            })
+            ->orderByDesc('is_initial')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->first();
+        $paidPaymentStatus = StatusOrder::where('is_payment_status', true)
+            ->where('action_mark_payment', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->first();
+
+        $timelineStatuses = collect();
+        if ($pendingPaymentStatus) {
+            $timelineStatuses->push([
+                'id' => (int) $pendingPaymentStatus->id,
+                'description' => 'Pendiente',
+                'color' => $pendingPaymentStatus->color ?: '#f59e0b',
+                'sort_order' => -2,
+                'is_initial' => true,
+                'is_final' => false,
+                'is_side_status' => false,
+                'kind' => 'payment_pending',
+            ]);
+        }
+        if ($paidPaymentStatus) {
+            $timelineStatuses->push([
+                'id' => (int) $paidPaymentStatus->id,
+                'description' => 'Pago completado',
+                'color' => $paidPaymentStatus->color ?: '#16a34a',
+                'sort_order' => -1,
+                'is_initial' => false,
+                'is_final' => false,
+                'is_side_status' => false,
+                'kind' => 'payment_completed',
+            ]);
+        }
+        $timelineStatuses = $timelineStatuses
+            ->concat($shippingStatuses->map(function (array $status) {
+                $status['kind'] = 'shipping';
+
+                return $status;
+            }))
+            ->values();
+
+        if (! $isPaymentCompleted && $pendingPaymentStatus) {
+            $timelineStatusId = (int) $pendingPaymentStatus->id;
+            $badgeDescription = 'Pendiente';
+            $badgeColor = $pendingPaymentStatus->color ?: '#f59e0b';
+        } elseif ($isPaymentCompleted && $paidPaymentStatus && ! $timelineShippingStatusId) {
+            // Pagado, pero aún sin estado de envío útil: resaltar "Pago completado".
+            $timelineStatusId = (int) $paidPaymentStatus->id;
+            $badgeDescription = 'Pago completado';
+            $badgeColor = $paidPaymentStatus->color ?: '#16a34a';
+        } else {
+            $timelineStatusId = $timelineShippingStatusId;
+            $badgeDescription = $currentShipping->description
+                ?? ($catalogCurrent['description'] ?? 'Pendiente');
+            $badgeColor = $currentShipping->color
+                ?? ($catalogCurrent['color'] ?? '#ff7a00');
+        }
+
+        return response()->json([
+            'success' => true,
+            'order' => [
+                'id' => (int) $order->id,
+                'number' => '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
+                'token' => (string) $order->external_id,
+                'total' => round((float) $order->total, 2),
+                'payment_label' => $paymentLabel,
+                'delivery_label' => $deliveryLabel,
+                'is_pickup' => $isPickup,
+                'payment_completed' => $isPaymentCompleted,
+                'items' => $items,
+                'items_count' => count($items),
+                'shipping_status_order_id' => $currentShippingId,
+                'timeline_status_order_id' => $timelineStatusId,
+                'shipping_status_description' => $badgeDescription,
+                'shipping_status_color' => $badgeColor,
+                'created_at' => optional($order->created_at)->format('d/m/Y H:i'),
+            ],
+            'shipping_statuses' => $shippingStatuses,
+            'timeline_statuses' => $timelineStatuses,
+        ]);
+    }
+
     public function privacyPolicy()
     {
         $config = \App\Models\Tenant\ConfigurationEcommerce::first();
@@ -2522,6 +2925,80 @@ class EcommerceController extends Controller
         }
 
         return $customer;
+    }
+
+    /**
+     * Valida email o DNI del comprador del pedido (seguimiento público).
+     */
+    private function orderTrackingIdentityMatches(Order $order, string $email, string $document): bool
+    {
+        $customer = $order->customer;
+        $orderEmail = strtolower(trim((string) data_get($customer, 'correo_electronico', '')));
+        if ($orderEmail === '') {
+            $orderEmail = strtolower(trim((string) data_get($customer, 'email', '')));
+        }
+        $orderDoc = preg_replace(
+            '/\D+/',
+            '',
+            (string) (data_get($customer, 'numero_documento')
+                ?? data_get($customer, 'number')
+                ?? '')
+        );
+
+        if ($email !== '' && $orderEmail !== '' && hash_equals($orderEmail, $email)) {
+            return true;
+        }
+
+        if ($document !== '' && $orderDoc !== '' && hash_equals($orderDoc, $document)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Comprueba que el pedido pertenece al cliente autenticado en la tienda.
+     */
+    private function orderTrackingBelongsToUser(Order $order, $user): bool
+    {
+        $userEmail = strtolower(trim((string) ($user->email ?? '')));
+        if ($userEmail === '') {
+            return false;
+        }
+
+        $orderEmail = strtolower(trim((string) data_get($order->customer, 'correo_electronico', '')));
+        if ($orderEmail === '') {
+            $orderEmail = strtolower(trim((string) data_get($order->customer, 'email', '')));
+        }
+
+        return $orderEmail !== '' && hash_equals($orderEmail, $userEmail);
+    }
+
+    private function isPickupOnlyShippingStatus($status): bool
+    {
+        $description = mb_strtolower(trim((string) ($status->description ?? '')), 'UTF-8');
+
+        return str_contains($description, 'recojo')
+            || str_contains($description, 'pickup')
+            || str_contains($description, 'para recoger');
+    }
+
+    /**
+     * Estado de envío propio de domicilio (p. ej. "En camino").
+     */
+    private function isDeliveryOnlyShippingStatus($status): bool
+    {
+        if (! empty($status->action_notify_dispatch)) {
+            return true;
+        }
+
+        $description = mb_strtolower(trim((string) ($status->description ?? '')), 'UTF-8');
+
+        return str_contains($description, 'en camino')
+            || str_contains($description, 'en tránsito')
+            || str_contains($description, 'en transito')
+            || str_contains($description, 'despachado')
+            || str_contains($description, 'en ruta');
     }
 
     private function isPickupShippingAddress(?string $shippingAddress): bool

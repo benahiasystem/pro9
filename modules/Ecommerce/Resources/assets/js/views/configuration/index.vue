@@ -262,6 +262,167 @@
           <banner-settings-manager></banner-settings-manager>
         </div>
       </el-tab-pane>
+      <el-tab-pane label="Social Proof">
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+          <div>
+            <h4 class="mb-0"><strong>Campañas de Social Proof</strong></h4>
+            <small class="text-muted">Cuenta regresiva, alerta de stock, estrellas y descuentos por grupo de productos.</small>
+          </div>
+          <el-button type="primary" icon="el-icon-plus" @click.prevent="openCampaignDialog(null)">Nueva Campaña</el-button>
+        </div>
+
+        <el-table :data="campaigns" border stripe v-loading="campaigns_loading" style="width: 100%">
+          <el-table-column prop="title" label="Título" min-width="150"></el-table-column>
+          <el-table-column label="Descuento" width="160">
+            <template slot-scope="scope">
+              <span v-if="scope.row.sp_discount_price">
+                <el-tag type="danger" size="mini">{{ scope.row.discount_type === 'percentage' ? scope.row.discount_value + '%' : 'S/. ' + scope.row.discount_value }}</el-tag>
+              </span>
+              <span v-else class="text-muted">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="Cronómetro" width="120">
+            <template slot-scope="scope">
+              <el-tag type="warning" size="mini" v-if="scope.row.sp_countdown">Activo</el-tag>
+              <span v-else class="text-muted">—</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="Productos" min-width="200">
+            <template slot-scope="scope">
+              <div v-if="scope.row.sp_product_ids && scope.row.sp_product_ids.length > 0">
+                <el-tag v-for="pid in scope.row.sp_product_ids.slice(0,3)" :key="pid" size="mini" class="mr-1 mb-1">{{ getProductName(pid) }}</el-tag>
+                <el-tag v-if="scope.row.sp_product_ids.length > 3" size="mini" type="info">+{{ scope.row.sp_product_ids.length - 3 }} más</el-tag>
+              </div>
+              <span v-else class="text-muted">Sin productos asignados</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="Estado" width="100">
+            <template slot-scope="scope">
+              <el-switch :value="!!scope.row.status" @change="toggleCampaignStatus(scope.row)"></el-switch>
+            </template>
+          </el-table-column>
+          <el-table-column label="Acciones" width="130" align="center">
+            <template slot-scope="scope">
+              <el-button size="mini" icon="el-icon-edit" @click.prevent="openCampaignDialog(scope.row)">Editar</el-button>
+              <el-button size="mini" type="danger" icon="el-icon-delete" @click.prevent="deleteCampaign(scope.row.id)"></el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="mt-5 pt-3 border-top">
+          <h5 class="mb-2"><strong>Sellos de autoridad (Trust Badges)</strong></h5>
+          <small class="text-muted d-block mb-3">Se muestran en la ficha del producto y en el checkout.</small>
+          <div class="form-group mb-3">
+            <el-switch v-model="trustBadgesEnabled" active-text="Mostrar sellos de confianza"></el-switch>
+          </div>
+          <div v-for="(badge, idx) in trustBadges" :key="'tb-'+idx" class="row mb-2 align-items-center">
+            <div class="col-md-3">
+              <el-select v-model="badge.icon" class="w-100" placeholder="Ícono">
+                <el-option label="Escudo" value="shield"></el-option>
+                <el-option label="Devolución" value="refresh"></el-option>
+                <el-option label="Envío" value="truck"></el-option>
+                <el-option label="Candado" value="lock"></el-option>
+                <el-option label="Check" value="check"></el-option>
+              </el-select>
+            </div>
+            <div class="col-md-7">
+              <el-input v-model="badge.text" maxlength="60" placeholder="Texto del sello"></el-input>
+            </div>
+            <div class="col-md-2">
+              <el-button type="danger" icon="el-icon-delete" circle @click.prevent="trustBadges.splice(idx, 1)"></el-button>
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <el-button size="mini" icon="el-icon-plus" @click.prevent="trustBadges.push({ icon: 'shield', text: '' })">Agregar sello</el-button>
+            <el-button type="primary" size="mini" :loading="trust_badges_saving" @click.prevent="saveTrustBadges">Guardar sellos</el-button>
+          </div>
+        </div>
+
+        <el-dialog :title="campaignForm.id ? 'Editar Campaña' : 'Nueva Campaña'" :visible.sync="campaignDialogVisible" width="780px" @close="resetCampaignForm">
+          <div class="row">
+            <div class="col-md-12 form-group">
+              <label><strong>Nombre de la Campaña</strong></label>
+              <el-input v-model="campaignForm.title" placeholder="Ej: Cyber Wow, Liquidación de Stock..."></el-input>
+            </div>
+
+            <div class="col-12 mt-3 mb-2"><h6 class="text-muted"><strong>Módulos de Social Proof a Activar</strong></h6></div>
+            <div class="col-md-4 form-group"><el-switch v-model="campaignForm.sp_countdown" active-text="Cuenta Regresiva"></el-switch></div>
+            <div class="col-md-4 form-group"><el-switch v-model="campaignForm.sp_discount_price" active-text="Precio Tachado"></el-switch></div>
+            <div class="col-md-4 form-group"><el-switch v-model="campaignForm.sp_purchase_count" active-text="Ventas Simuladas"></el-switch></div>
+            <div class="col-md-4 form-group mt-2"><el-switch v-model="campaignForm.sp_views_count" active-text="Personas Viendo"></el-switch></div>
+            <div class="col-md-4 form-group mt-2"><el-switch v-model="campaignForm.sp_stock_alert" active-text="Alerta de Stock"></el-switch></div>
+            <div class="col-md-4 form-group mt-2"><el-switch v-model="campaignForm.sp_rating" active-text="Estrellas Rating"></el-switch></div>
+
+            <template v-if="campaignForm.sp_discount_price || campaignForm.sp_countdown">
+              <div class="col-12 mt-3 mb-1"><h6 class="text-muted"><strong>Configuración de Descuento</strong></h6></div>
+              <div class="col-md-4 form-group">
+                <label>Tipo de Descuento</label>
+                <el-select v-model="campaignForm.discount_type" class="w-100">
+                  <el-option label="Porcentaje (%)" value="percentage"></el-option>
+                  <el-option label="Monto Fijo (S/.)" value="fixed"></el-option>
+                </el-select>
+              </div>
+              <div class="col-md-4 form-group">
+                <label>Valor del Descuento</label>
+                <el-input-number v-model="campaignForm.discount_value" :precision="2" :step="1" :min="0" class="w-100"></el-input-number>
+              </div>
+              <div class="col-md-4 form-group" v-if="campaignForm.sp_countdown">
+                <label>Fin de la Campaña (Cronómetro)</label>
+                <el-date-picker v-model="campaignForm.end_date" type="datetime" placeholder="Fecha y hora límite" value-format="yyyy-MM-dd HH:mm:ss" class="w-100"></el-date-picker>
+              </div>
+            </template>
+
+            <template v-if="campaignForm.sp_stock_alert">
+              <div class="col-12 mt-3 mb-1"><h6 class="text-muted"><strong>Alerta de Stock Bajo</strong></h6></div>
+              <div class="col-md-4 form-group">
+                <label>Umbral (unidades)</label>
+                <el-input-number v-model="campaignForm.sp_stock_threshold" :step="1" :min="1" class="w-100"></el-input-number>
+              </div>
+            </template>
+
+            <template v-if="campaignForm.sp_views_count">
+              <div class="col-12 mt-3 mb-1"><h6 class="text-muted"><strong>Personas Viendo (Simulado)</strong></h6></div>
+              <div class="col-md-6 form-group">
+                <label>Mínimo</label>
+                <el-input-number v-model="campaignForm.sp_views_min" :step="1" :min="1" class="w-100"></el-input-number>
+              </div>
+              <div class="col-md-6 form-group">
+                <label>Máximo</label>
+                <el-input-number v-model="campaignForm.sp_views_max" :step="1" :min="2" class="w-100"></el-input-number>
+              </div>
+            </template>
+
+            <template v-if="campaignForm.sp_purchase_count">
+              <div class="col-12 mt-3 mb-1"><h6 class="text-muted"><strong>Ventas Simuladas (últimos 7 días)</strong></h6></div>
+              <div class="col-md-6 form-group">
+                <label>Mínimo</label>
+                <el-input-number v-model="campaignForm.sp_purchase_min" :step="1" :min="1" class="w-100"></el-input-number>
+              </div>
+              <div class="col-md-6 form-group">
+                <label>Máximo</label>
+                <el-input-number v-model="campaignForm.sp_purchase_max" :step="1" :min="2" class="w-100"></el-input-number>
+              </div>
+            </template>
+
+            <div class="col-12 mt-3 mb-1"><h6 class="text-muted"><strong>Productos Asignados a esta Campaña</strong></h6></div>
+            <div class="col-12 form-group">
+              <el-select v-model="campaignForm.sp_product_ids" multiple filterable placeholder="Buscar y seleccionar productos..." style="width: 100%">
+                <el-option v-for="item in products" :key="item.id" :label="item.description" :value="item.id"></el-option>
+              </el-select>
+              <small class="text-muted">Solo los productos seleccionados aquí verán los efectos de esta campaña.</small>
+            </div>
+
+            <div class="col-md-4 form-group mt-3">
+              <el-switch v-model="campaignForm.status" active-text="Campaña Activa" inactive-text="Pausada"></el-switch>
+            </div>
+          </div>
+
+          <span slot="footer">
+            <el-button @click="campaignDialogVisible = false">Cancelar</el-button>
+            <el-button type="primary" :loading="campaigns_loading" @click.prevent="saveCampaign">Guardar Campaña</el-button>
+          </span>
+        </el-dialog>
+      </el-tab-pane>
       <el-tab-pane label="Enlaces">
         <ConfigurationLinks />
       </el-tab-pane>
@@ -508,6 +669,25 @@ export default {
       resource: "ecommerce",
       errors: {},
       form: {},
+      products: [],
+      campaigns: [],
+      campaigns_loading: false,
+      campaignDialogVisible: false,
+      campaignForm: {
+        id: null, title: '', discount_type: 'percentage', discount_value: 0,
+        start_date: null, end_date: null, sp_product_ids: [], status: true,
+        sp_countdown: false, sp_discount_price: false, sp_purchase_count: false,
+        sp_views_count: false, sp_stock_alert: false, sp_rating: false,
+        sp_stock_threshold: 10,
+        sp_views_min: 10, sp_views_max: 50, sp_purchase_min: 5, sp_purchase_max: 30
+      },
+      trustBadgesEnabled: true,
+      trustBadges: [
+        { icon: 'shield', text: 'Pago 100% Seguro' },
+        { icon: 'refresh', text: 'Devolución Garantizada' },
+        { icon: 'truck', text: 'Envío Rápido' },
+      ],
+      trust_badges_saving: false,
       soap_sends: [],
       soap_types: [],
       products_per_page_options: [8, 12, 16, 24, 32, 40],
@@ -532,6 +712,12 @@ export default {
     };
   },
   async created() {
+    await this.$http.get(`/${this.resource}/configuration/products`).then(response => {
+      this.products = response.data.products || [];
+    }).catch(() => { this.products = []; });
+
+    await this.loadCampaigns();
+
     await this.$http.get(`/${this.resource}/record`).then(response => {
       if (response.data !== "") {
         let data = response.data.data;
@@ -579,12 +765,138 @@ export default {
           quotation_validity_days: parseInt(data.quotation_validity_days) || 7,
           quotation_terms: data.quotation_terms || '',
         };
+
+        this.trustBadgesEnabled = preferences.trust_badges_enabled !== 0 && preferences.trust_badges_enabled !== false;
+        if (Array.isArray(preferences.trust_badges) && preferences.trust_badges.length) {
+          this.trustBadges = preferences.trust_badges.map(b => ({
+            icon: b.icon || 'shield',
+            text: b.text || '',
+          }));
+        }
       } else {
         this.initForm();
       }
     });
   },
   methods: {
+    getProductName(id) {
+      const found = this.products.find(p => p.id == id);
+      return found ? found.description : ('#' + id);
+    },
+    defaultCampaignForm() {
+      return {
+        id: null, title: '', discount_type: 'percentage', discount_value: 0,
+        start_date: null, end_date: null, sp_product_ids: [], status: true,
+        sp_countdown: false, sp_discount_price: false, sp_purchase_count: false,
+        sp_views_count: false, sp_stock_alert: false, sp_rating: false,
+        sp_stock_threshold: 10,
+        sp_views_min: 10, sp_views_max: 50, sp_purchase_min: 5, sp_purchase_max: 30
+      };
+    },
+    loadCampaigns() {
+      this.campaigns_loading = true;
+      return this.$http.get(`/${this.resource}/campaigns/records`)
+        .then(response => { this.campaigns = response.data.records || []; })
+        .catch(() => { this.campaigns = []; })
+        .finally(() => { this.campaigns_loading = false; });
+    },
+    openCampaignDialog(campaign) {
+      if (campaign) {
+        this.campaignForm = {
+          id: campaign.id,
+          title: campaign.title,
+          discount_type: campaign.discount_type || 'percentage',
+          discount_value: parseFloat(campaign.discount_value) || 0,
+          start_date: campaign.start_date || null,
+          end_date: campaign.end_date || null,
+          sp_product_ids: (campaign.sp_product_ids || []).map(id => parseInt(id, 10)),
+          status: !!campaign.status,
+          sp_countdown: !!campaign.sp_countdown,
+          sp_discount_price: !!campaign.sp_discount_price,
+          sp_purchase_count: !!campaign.sp_purchase_count,
+          sp_views_count: !!campaign.sp_views_count,
+          sp_stock_alert: !!campaign.sp_stock_alert,
+          sp_rating: !!campaign.sp_rating,
+          sp_stock_threshold: parseInt(campaign.sp_stock_threshold, 10) || 10,
+          sp_views_min: parseInt(campaign.sp_views_min) || 10,
+          sp_views_max: parseInt(campaign.sp_views_max) || 50,
+          sp_purchase_min: parseInt(campaign.sp_purchase_min) || 5,
+          sp_purchase_max: parseInt(campaign.sp_purchase_max) || 30,
+        };
+      } else {
+        this.resetCampaignForm();
+      }
+      this.campaignDialogVisible = true;
+    },
+    resetCampaignForm() {
+      this.campaignForm = this.defaultCampaignForm();
+    },
+    saveCampaign() {
+      if (!this.campaignForm.title) {
+        this.$message.warning('Ingresa un nombre para la campaña');
+        return;
+      }
+      this.campaigns_loading = true;
+      this.$http.post(`/${this.resource}/campaigns`, this.campaignForm)
+        .then(response => {
+          if (response.data.success) {
+            this.$message.success(response.data.message);
+            this.campaignDialogVisible = false;
+            this.loadCampaigns();
+          } else {
+            this.$message.error(response.data.message || 'No se pudo guardar');
+          }
+        })
+        .catch(() => this.$message.error('Error al guardar la campaña'))
+        .finally(() => { this.campaigns_loading = false; });
+    },
+    deleteCampaign(id) {
+      this.$confirm('¿Eliminar esta campaña?', 'Confirmar', { type: 'warning' })
+        .then(() => this.$http.delete(`/${this.resource}/campaigns/${id}`))
+        .then(response => {
+          if (response && response.data && response.data.success) {
+            this.$message.success(response.data.message);
+            this.loadCampaigns();
+          }
+        })
+        .catch(() => {});
+    },
+    toggleCampaignStatus(campaign) {
+      this.$http.get(`/${this.resource}/campaigns/${campaign.id}/status`)
+        .then(response => {
+          if (response.data.success) {
+            campaign.status = !campaign.status;
+            this.$message.success(response.data.message);
+          }
+        })
+        .catch(() => this.$message.error('No se pudo actualizar el estado'));
+    },
+    saveTrustBadges() {
+      this.trust_badges_saving = true;
+      const payload = {
+        id: this.form.id,
+        preferences: {
+          show_description: this.form.show_description,
+          show_stock: this.form.show_stock,
+          only_available_products: this.form.only_available_products,
+          full_width_banner: this.form.full_width_banner,
+          header_theme: this.form.header_theme,
+          products_per_page: this.form.products_per_page,
+          trust_badges_enabled: this.trustBadgesEnabled ? 1 : 0,
+          trust_badges: this.trustBadges.filter(b => (b.text || '').trim() !== ''),
+        }
+      };
+      this.$http.post(`/${this.resource}/configuration_color`, payload)
+        .then(response => {
+          if (response.data.success) {
+            this.$message.success('Sellos de confianza guardados');
+          } else {
+            this.$message.error(response.data.message || 'No se pudo guardar');
+          }
+        })
+        .catch(() => this.$message.error('Error al guardar sellos'))
+        .finally(() => { this.trust_badges_saving = false; });
+    },
     onQuotationModeChange(mode) {
       if (mode === 'quote_and_sell') {
         this.form.quotation_show_prices = 1;

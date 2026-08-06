@@ -9,6 +9,30 @@
         $imagePath = $item->image !== 'imagen-no-disponible.jpg'
             ? asset('storage/uploads/items/' . $item->image)
             : $defaultImagePath;
+
+        $activeCampaign = null;
+        $hasActiveOffer = false;
+        $activeOfferPrice = (float) $item->sale_unit_price;
+        if (isset($campaigns) && count($campaigns) > 0) {
+            foreach ($campaigns as $camp) {
+                $ids = array_map('intval', is_array($camp->sp_product_ids) ? $camp->sp_product_ids : []);
+                if (in_array((int) $item->id, $ids, true)) {
+                    $activeCampaign = $camp;
+                    break;
+                }
+            }
+        }
+        if ($activeCampaign && $activeCampaign->sp_discount_price) {
+            $hasActiveOffer = true;
+            if ($activeCampaign->discount_type === 'percentage') {
+                $activeOfferPrice = $item->sale_unit_price - ($item->sale_unit_price * ((float) $activeCampaign->discount_value / 100));
+            } else {
+                $activeOfferPrice = $item->sale_unit_price - (float) $activeCampaign->discount_value;
+            }
+            if ($activeOfferPrice < 0) {
+                $activeOfferPrice = 0;
+            }
+        }
     @endphp
     <div class="col-6 mb-2 {{ \Route::currentRouteName() == 'tenant.ecommerce.index' ? 'col-md-3' : 'col-md-4' }}">
         <div class="product product-style h-100 m-0 d-flex flex-column {{ stock($item, $configuration) ? 'productdisabled' : '' }}">
@@ -28,6 +52,13 @@
                     <h2 class="product-title-ecommerce">
                         <a href="/ecommerce/item/{{ $item->id }}/{{ \Illuminate\Support\Str::slug($item->description) }}">{{ $item->description }}</a>
                     </h2>
+
+                    @if($activeCampaign && $activeCampaign->sp_rating)
+                        <div class="sp-list-rating mb-1" style="font-size:13px; line-height:1.2;">
+                            <span style="color:#f5b301; letter-spacing:1px;">★★★★★</span>
+                            <span class="text-muted" style="font-size:11px; margin-left:4px;">5.0</span>
+                        </div>
+                    @endif
 
                     @if(isset($preferences['show_description']) && $preferences['show_description'] == 1)
                         @if ($item->name)
@@ -56,10 +87,13 @@
                 <div class="product-price-ecommerce mt-auto">
                     @if($storefront_show_prices ?? true)
                     <div class="price-box-ecommerce">
-                        <span class="old-price">S/ {{ number_format(round($item->sale_unit_price * 1.25), 2) }}</span>
-
-
-                        <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($item->sale_unit_price, 2) }}</span>
+                        @if($hasActiveOffer)
+                            <span class="old-price">{{ $item->currency_type['symbol'] }} {{ number_format($item->sale_unit_price, 2) }}</span>
+                            <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($activeOfferPrice, 2) }}</span>
+                        @else
+                            <span class="old-price">S/ {{ number_format(round($item->sale_unit_price * 1.25), 2) }}</span>
+                            <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($item->sale_unit_price, 2) }}</span>
+                        @endif
                     </div>
                     @endif
                     <div class="product-action">

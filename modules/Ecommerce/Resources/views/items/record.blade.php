@@ -89,50 +89,92 @@
                 <h1 class="product-title mb-0">{{$record->description}}</h1>
 
                 @php
-                    // Genera rating random entre 4.1 y 4.9
-                    $rating = ($record->id % 9 + 41) / 10;
-                
-                    // Convierte a porcentaje para pintar estrellas
-                    $percentage = ($rating / 5) * 100;
+                    $activeCampaign = null;
+                    $hasActiveOffer = false;
+                    $activeOfferPrice = (float) $record->sale_unit_price;
+                    $offerExpiresAt = null;
+                    $stockThreshold = 10;
+
+                    if (isset($campaigns) && count($campaigns) > 0) {
+                        foreach ($campaigns as $camp) {
+                            $productIds = is_array($camp->sp_product_ids) ? $camp->sp_product_ids : [];
+                            $productIds = array_map('intval', $productIds);
+                            if (in_array((int) $record->id, $productIds, true)) {
+                                $activeCampaign = $camp;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($activeCampaign) {
+                        $stockThreshold = method_exists($activeCampaign, 'stockThreshold')
+                            ? $activeCampaign->stockThreshold()
+                            : (int) ($activeCampaign->sp_stock_threshold ?: 10);
+
+                        if ($activeCampaign->sp_discount_price) {
+                            $hasActiveOffer = true;
+                            if ($activeCampaign->discount_type === 'percentage') {
+                                $activeOfferPrice = $record->sale_unit_price - ($record->sale_unit_price * ((float) $activeCampaign->discount_value / 100));
+                            } else {
+                                $activeOfferPrice = $record->sale_unit_price - (float) $activeCampaign->discount_value;
+                            }
+                            if ($activeOfferPrice < 0) {
+                                $activeOfferPrice = 0;
+                            }
+                        }
+
+                        if ($activeCampaign->sp_countdown && $activeCampaign->end_date && $activeCampaign->end_date > now()) {
+                            $hasActiveOffer = true;
+                            $offerExpiresAt = $activeCampaign->end_date;
+                        }
+                    }
                 @endphp
 
-                <div class="ratings-container d-flex align-items-center gap-2">
-
-                    <!-- Estrellas -->
-                    <div class="product-ratings position-relative" style="display:inline-block; line-height:1;">
-
-                        <!-- Fondo gris -->
-                        <div style="color:#ddd; font-size:22px;">
-                            ★★★★★
-                        </div>
-
-                        <!-- Relleno amarillo -->
-                        <div style="
-                            position:absolute;
-                            top:0;
-                            left:0;
-                            width:{{ $percentage }}%;
-                            overflow:hidden;
-                            white-space:nowrap;
-                            color:#f4b400;
-                            font-size:22px;">
-                            ★★★★★
+                <style>[v-cloak]{display:none}@keyframes sp-pulse{0%{opacity:1}50%{opacity:.75}100%{opacity:1}}</style>
+                <div class="social-proof-container" v-cloak>
+                    <div class="ratings-container mb-2 d-flex align-items-center gap-2" v-if="socialProofConfig.sp_rating">
+                        <div class="card-rating-social-proof" style="margin: 4px 0; font-size: 16px;">
+                            <span style="color: #333; font-weight: bold; margin-right: 4px;">5.0</span>
+                            <span style="color: #ffc107;">★★★★★</span>
+                            <span style="color: #777; margin-left: 4px; font-size: 13px;">(@{{ sp_rating_count }} opiniones)</span>
                         </div>
                     </div>
 
-                    <!-- Puntaje -->
-                    <span style="font-size:16px; font-weight:500;" class="mt-1 ml-3">
-                        {{ number_format($rating, 1) }}/5
-                    </span>
+                    @if($storefront_show_prices ?? true)
+                    <div class="price-box my-2">
+                        <template v-if="hasActiveOffer">
+                            <span class="old-price text-muted text-decoration-line-through mr-2">
+                                @{{ product.currency_type_symbol }} @{{ Number(product.sale_unit_price).toFixed(2) }}
+                            </span>
+                            <span class="product-price text-danger font-weight-bold" style="font-size: 1.5rem;">
+                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
+                            </span>
+                        </template>
+                        <template v-else>
+                            <span class="product-price font-weight-bold" style="font-size: 1.5rem;">
+                                @{{ product.currency_type_symbol }} @{{ Number(product.sale_unit_price).toFixed(2) }}
+                            </span>
+                        </template>
+                    </div>
+                    @endif
 
+                    <div v-if="offerExpiresAt && !sp_countdown_ended" class="countdown-badge alert alert-warning p-2 mb-2 d-inline-block shadow-sm" style="border-radius: 8px; font-size: 0.9rem; border-left: 4px solid #dc3545;">
+                        <i class="far fa-clock text-danger"></i> ¡Termina en:
+                        <strong class="time-left">@{{ sp_countdown_text }}</strong>!
+                    </div>
+
+                    <div v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" class="text-danger font-weight-bold small mt-1" style="animation: sp-pulse 2s infinite;">
+                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan @{{ Math.round(stock) }} unidades.
+                    </div>
+
+                    <div v-if="socialProofConfig.sp_views_count" class="text-muted small mt-2">
+                        <i class="far fa-eye text-info"></i> <strong v-text="sp_viewers"></strong> personas están viendo este producto.
+                    </div>
+
+                    <div v-if="socialProofConfig.sp_purchase_count" class="text-success small mt-1 font-weight-bold">
+                        <i class="fas fa-shopping-cart"></i> <span v-text="sp_purchases"></span> personas lo compraron en los últimos 7 días.
+                    </div>
                 </div>
-
-                @if($storefront_show_prices ?? true)
-                <div class="price-box">
-                    <span class="old-price">{{ $record->currency_type['symbol'] }} {{ number_format( ($record->sale_unit_price * 1.2 ) , 2 ) }}</span>
-                    <span class="product-price">{{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}</span>
-                </div><!-- End .price-box -->
-                @endif
 
                 <div class="product-desc pb-0">
                     @if ($record->category && $record->category->name)
@@ -233,6 +275,8 @@
                     <div class="addthis_inline_share_toolbox"></div>
                 </div><!-- End .product single-share -->
             </div><!-- End .product-single-details -->
+
+            <div id="product-trust-badges" class="mt-2"></div>
         </div><!-- End .col-lg-5 -->
     </div><!-- End .row -->
 </div><!-- End .product-single-container -->
@@ -328,11 +372,32 @@
     </div>
 </div>
 
+<div id="product-frequently-bought" class="mt-4 mb-2"
+     data-item-id="{{ $record->id }}"></div>
+
 @endsection
 
+@push('scripts')
+<script>
+window.__socialProofBoot = {
+    itemId: {{ (int) $record->id }},
+    trustBadgesEnabled: {{ ($trustBadgesEnabled ?? true) ? 'true' : 'false' }},
+    trustBadges: @json($trustBadges ?? []),
+    fbtLimit: 8,
+    showFbtCount: false
+};
+</script>
+@vite('modules/Ecommerce/Resources/assets/js/frontend/product-social-app.js')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('product-detail-vue')) {
+        const viewsMin = {{ $activeCampaign ? (int) $activeCampaign->sp_views_min : 0 }};
+        const viewsMax = {{ $activeCampaign ? (int) $activeCampaign->sp_views_max : 0 }};
+        const purchaseMin = {{ $activeCampaign ? (int) $activeCampaign->sp_purchase_min : 0 }};
+        const purchaseMax = {{ $activeCampaign ? (int) $activeCampaign->sp_purchase_max : 0 }};
+        const viewsSpan = Math.max(1, viewsMax - viewsMin + 1);
+        const purchaseSpan = Math.max(1, purchaseMax - purchaseMin + 1);
+
         new Vue({
             el: '#product-detail-vue',
             data: {
@@ -351,10 +416,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 cartQuantities: {},
                 quantity: 1,
+                stock: {{ (float) $record->stock }},
+                stockThreshold: {{ (int) $stockThreshold }},
+                hasActiveOffer: {{ $hasActiveOffer ? 'true' : 'false' }},
+                activeOfferPrice: {{ number_format((float) $activeOfferPrice, 2, '.', '') }},
+                offerExpiresAt: @json($offerExpiresAt ? \Carbon\Carbon::parse($offerExpiresAt)->toIso8601String() : null),
+                socialProofConfig: {
+                    sp_countdown: {{ ($activeCampaign && $activeCampaign->sp_countdown) ? 'true' : 'false' }},
+                    sp_discount_price: {{ ($activeCampaign && $activeCampaign->sp_discount_price) ? 'true' : 'false' }},
+                    sp_purchase_count: {{ ($activeCampaign && $activeCampaign->sp_purchase_count) ? 'true' : 'false' }},
+                    sp_views_count: {{ ($activeCampaign && $activeCampaign->sp_views_count) ? 'true' : 'false' }},
+                    sp_stock_alert: {{ ($activeCampaign && $activeCampaign->sp_stock_alert) ? 'true' : 'false' }},
+                    sp_rating: {{ ($activeCampaign && $activeCampaign->sp_rating) ? 'true' : 'false' }}
+                },
+                sp_viewers: Math.floor(Math.random() * viewsSpan) + viewsMin,
+                sp_purchases: Math.floor(Math.random() * purchaseSpan) + purchaseMin,
+                sp_rating_count: Math.floor(Math.random() * (120 - 45 + 1)) + 45,
+                sp_countdown_text: 'Cargando...',
+                sp_countdown_ended: false,
+                _countdownTimer: null,
+                _viewersTimer: null,
             },
             created() {
                 this.loadCartQuantities();
                 window.addEventListener('productAddedToCart', this.loadCartQuantities);
+                this.startCountdown();
+                this.startViewersDrift();
+            },
+            beforeDestroy() {
+                if (this._countdownTimer) clearInterval(this._countdownTimer);
+                if (this._viewersTimer) clearInterval(this._viewersTimer);
+                window.removeEventListener('productAddedToCart', this.loadCartQuantities);
             },
             watch: {
                 cartQuantities: {
@@ -369,15 +461,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             methods: {
+                startCountdown() {
+                    if (!this.offerExpiresAt) {
+                        return;
+                    }
+                    const tick = () => {
+                        const end = new Date(this.offerExpiresAt).getTime();
+                        const now = Date.now();
+                        const distance = end - now;
+                        if (distance <= 0) {
+                            this.sp_countdown_ended = true;
+                            this.sp_countdown_text = 'Oferta finalizada';
+                            if (this._countdownTimer) clearInterval(this._countdownTimer);
+                            return;
+                        }
+                        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                        this.sp_countdown_text = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+                    };
+                    tick();
+                    this._countdownTimer = setInterval(tick, 1000);
+                },
+                startViewersDrift() {
+                    if (!this.socialProofConfig.sp_views_count) {
+                        return;
+                    }
+                    this._viewersTimer = setInterval(() => {
+                        const delta = Math.random() > 0.5 ? 1 : -1;
+                        this.sp_viewers = Math.max(viewsMin, this.sp_viewers + delta);
+                        if (this.sp_viewers > viewsMax) this.sp_viewers = viewsMax;
+                    }, 8000);
+                },
                 addOrUpdateCart(item) {
                     let array = localStorage.getItem('products_cart');
                     array = array ? JSON.parse(array) : [];
                     let found = array.find(x => x.id == item.id);
+                    const price = this.hasActiveOffer
+                        ? this.activeOfferPrice
+                        : item.sale_unit_price;
                     if (found) {
                         found.quantity = this.quantity;
+                        found.sale_unit_price = price;
                     } else {
                         array.push({
                             ...item,
+                            sale_unit_price: price,
                             quantity: this.quantity
                         });
                     }
@@ -440,3 +570,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+@endpush

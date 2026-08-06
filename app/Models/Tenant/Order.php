@@ -89,9 +89,12 @@ class Order extends ModelTenant
             'customer_email' => $this->customer->correo_electronico,
             'customer_telefono' => $this->customer->telefono,
             'customer_direccion' => $this->customer->direccion,
+            'is_guest' => $this->isGuestCheckout(),
             'items' => $this->items,
             'total' => $this->total,
             'reference_payment' => strtoupper($this->reference_payment),
+            'payment_transaction_id' => data_get($this->purchase, 'gateway_payment.charge_id'),
+            'payment_gateway_status' => data_get($this->purchase, 'gateway_payment.panel_status'),
             'document_external_id' => $this->document_external_id,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'status_order_id' => $this->status_order_id,
@@ -109,6 +112,87 @@ class Order extends ModelTenant
         ];
 
         return $data;
+    }
+
+    /**
+     * Indica si el pedido se realizó como invitado en la tienda virtual.
+     *
+     * Prioridad:
+     * 1) Marca explícita purchase.checkout.is_guest (pedidos nuevos)
+     * 2) ecommerce_customer_id guardado al comprar con sesión
+     * 3) Pedidos antiguos: si el correo/documento del pedido coincide con
+     *    una cuenta ecommerce (Person con password), se considera autenticado
+     */
+    public function isGuestCheckout(): bool
+    {
+        $flag = data_get($this->purchase, 'checkout.is_guest');
+        if ($flag !== null) {
+            return (bool) $flag;
+        }
+
+        if (data_get($this->purchase, 'checkout.ecommerce_customer_id')) {
+            return false;
+        }
+
+        return ! $this->matchesEcommerceAccount();
+    }
+
+    /**
+     * ¿El comprador del pedido corresponde a una cuenta ecommerce registrada?
+     */
+    protected function matchesEcommerceAccount(): bool
+    {
+        $email = strtolower(trim((string) (
+            data_get($this->customer, 'correo_electronico')
+            ?: data_get($this->customer, 'email')
+            ?: ''
+        )));
+        $document = preg_replace(
+            '/\D+/',
+            '',
+            (string) (
+                data_get($this->customer, 'numero_documento')
+                ?? data_get($this->customer, 'number')
+                ?? ''
+            )
+        );
+
+        if ($email === '' && ($document === '' || $document === '0')) {
+            return false;
+        }
+
+        return Person::query()
+            ->whereNotNull('password')
+            ->where('password', '!=', '')
+            ->where(function ($query) use ($email, $document) {
+                if ($email !== '') {
+                    $query->whereRaw('LOWER(email) = ?', [$email]);
+                }
+                if ($document !== '' && $document !== '0') {
+                    $method = $email !== '' ? 'orWhere' : 'where';
+                    $query->{$method}('number', $document);
+                }
+            })
+            ->exists();
+    }
+
+    /**
+     * Adjunta metadatos de checkout ecommerce al payload purchase.
+     *
+     * @param  mixed  $ecommerceUser  Cliente autenticado del guard ecommerce (Person) o null
+     * @param  bool|null  $isGuestOverride  Si viene del front, manda sobre la sesión
+     */
+    public static function attachEcommerceCheckoutMeta(array $purchase, $ecommerceUser = null, ?bool $isGuestOverride = null): array
+    {
+        $isGuest = $isGuestOverride ?? ($ecommerceUser === null);
+
+        $purchase['checkout'] = array_merge((array) ($purchase['checkout'] ?? []), [
+            'channel' => 'ecommerce',
+            'is_guest' => $isGuest,
+            'ecommerce_customer_id' => $isGuest ? null : ($ecommerceUser->id ?? null),
+        ]);
+
+        return $purchase;
     }
 
     /**

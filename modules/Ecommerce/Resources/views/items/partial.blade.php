@@ -1,5 +1,6 @@
 @php
     $configurationModel = \App\Models\Tenant\Configuration::first();
+    $ecommerceConfiguration = $ecommerceConfiguration ?? ($configEcommerce ?? \App\Models\Tenant\ConfigurationEcommerce::first());
     $phoneWhatsapp = $ecommerceConfiguration->phone_whatsapp ?? $configurationModel->phone_whatsapp ?? null;
     $defaultImage = $configurationModel->product_default_image ?? 'imagen-no-disponible.jpg';
     $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
@@ -87,24 +88,126 @@
                 <h1 class="product-title tony mt-1">{{$record->description}}</h1>
 
                 @php
-                    $oldPrice = $record->sale_unit_price * 1.2;
-                    $savings = $oldPrice - $record->sale_unit_price;
+                    $activeCampaign = null;
+                    $hasActiveOffer = false;
+                    $activeOfferPrice = (float) $record->sale_unit_price;
+                    $offerExpiresAt = null;
+                    $stock = (float) $record->getStockByWarehouseMain();
+                    $stockThreshold = 10;
+
+                    if (isset($campaigns) && count($campaigns) > 0) {
+                        foreach ($campaigns as $camp) {
+                            $productIds = array_map('intval', is_array($camp->sp_product_ids) ? $camp->sp_product_ids : []);
+                            if (in_array((int) $record->id, $productIds, true)) {
+                                $activeCampaign = $camp;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ($activeCampaign) {
+                        $stockThreshold = method_exists($activeCampaign, 'stockThreshold')
+                            ? $activeCampaign->stockThreshold()
+                            : (int) ($activeCampaign->sp_stock_threshold ?: 10);
+
+                        if ($activeCampaign->sp_discount_price) {
+                            $hasActiveOffer = true;
+                            if ($activeCampaign->discount_type === 'percentage') {
+                                $activeOfferPrice = $record->sale_unit_price - ($record->sale_unit_price * ((float) $activeCampaign->discount_value / 100));
+                            } else {
+                                $activeOfferPrice = $record->sale_unit_price - (float) $activeCampaign->discount_value;
+                            }
+                            if ($activeOfferPrice < 0) {
+                                $activeOfferPrice = 0;
+                            }
+                        }
+
+                        if ($activeCampaign->sp_countdown && $activeCampaign->end_date && $activeCampaign->end_date > now()) {
+                            $offerExpiresAt = $activeCampaign->end_date;
+                        }
+                    }
+
+                    $displayPrice = $hasActiveOffer ? $activeOfferPrice : (float) $record->sale_unit_price;
+                    $oldPrice = $hasActiveOffer ? (float) $record->sale_unit_price : ((float) $record->sale_unit_price * 1.2);
+                    $savings = max(0, $oldPrice - $displayPrice);
                     $showPrices = $storefront_show_prices ?? true;
+                    $ratingCount = rand(45, 120);
+                    $purchaseCount = $activeCampaign
+                        ? rand((int) $activeCampaign->sp_purchase_min, max((int) $activeCampaign->sp_purchase_min, (int) $activeCampaign->sp_purchase_max))
+                        : 0;
+                    $viewersCount = $activeCampaign
+                        ? rand((int) $activeCampaign->sp_views_min, max((int) $activeCampaign->sp_views_min, (int) $activeCampaign->sp_views_max))
+                        : 0;
+
+                    $qvProduct = [
+                        'id' => $record->id,
+                        'description' => $record->description,
+                        'sale_unit_price' => $displayPrice,
+                        'image' => $record->image,
+                        'image_small' => $record->image_small ?? $record->image,
+                        'currency_type_id' => $record->currency_type_id ?? 'PEN',
+                        'currency_type_symbol' => optional($record->currency_type)->symbol ?? 'S/',
+                        'sale_affectation_igv_type_id' => $record->sale_affectation_igv_type_id ?? '10',
+                        'unit_type_id' => $record->unit_type_id ?? 'NIU',
+                        'internal_id' => $record->internal_id,
+                    ];
                 @endphp
-                @if($showPrices)
-                <div class="price-box preview d-flex align-items-end justify-content-start w-100 mb-1" style="gap: 10px">
-                    <span class="product-price">{{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}</span>
-                    <span class="old-price">{{ $record->currency_type['symbol'] }} {{ number_format($oldPrice, 2) }}</span>
-                    <span class="tag-ecommerce warning">
-                        Ahorras {{ $record->currency_type['symbol'] }} {{ number_format($savings, 2) }}
-                    </span>
-                </div><!-- End .price-box -->
-                @endif
+
+                <div class="social-proof-container mb-2">
+                    @if($activeCampaign && $activeCampaign->sp_rating)
+                    <div class="card-rating-social-proof mb-1" style="font-size: 14px;">
+                        <span style="color: #333; font-weight: bold; margin-right: 4px;">5.0</span>
+                        <span style="color: #ffc107;">★★★★★</span>
+                        <span style="color: #777; margin-left: 4px; font-size: 12px;">({{ $ratingCount }} opiniones)</span>
+                    </div>
+                    @endif
+
+                    @if($showPrices)
+                    <div class="price-box preview d-flex align-items-end justify-content-start w-100 mb-1" style="gap: 10px">
+                        <span class="product-price">{{ optional($record->currency_type)->symbol ?? 'S/' }} {{ number_format($displayPrice, 2) }}</span>
+                        @if($hasActiveOffer)
+                            <span class="old-price">{{ optional($record->currency_type)->symbol ?? 'S/' }} {{ number_format($oldPrice, 2) }}</span>
+                            @if($savings > 0)
+                            <span class="tag-ecommerce warning">
+                                Ahorras {{ optional($record->currency_type)->symbol ?? 'S/' }} {{ number_format($savings, 2) }}
+                            </span>
+                            @endif
+                        @endif
+                    </div>
+                    @endif
+
+                    @if($offerExpiresAt)
+                    <div id="sp-countdown-qv-{{ $record->id }}" class="countdown-badge alert alert-warning p-2 mb-2 d-inline-block shadow-sm" style="border-radius: 8px; font-size: 0.85rem; border-left: 4px solid #dc3545;">
+                        <i class="far fa-clock text-danger"></i> ¡Termina en:
+                        <strong class="time-left">Cargando...</strong>!
+                    </div>
+                    @endif
+
+                    @if($activeCampaign && $activeCampaign->sp_stock_alert && $stock > 0 && $stock <= $stockThreshold)
+                    <div class="text-danger font-weight-bold small mb-1" style="animation: sp-qv-pulse 2s infinite;">
+                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan {{ number_format($stock, 0) }} unidades.
+                    </div>
+                    @endif
+
+                    @if($activeCampaign && $activeCampaign->sp_views_count)
+                    <div class="text-muted small mb-1">
+                        <i class="far fa-eye text-info"></i> <strong id="sp-viewers-qv-{{ $record->id }}">{{ $viewersCount }}</strong> personas están viendo este producto.
+                    </div>
+                    @endif
+
+                    @if($activeCampaign && $activeCampaign->sp_purchase_count)
+                    <div class="text-success small mb-1 font-weight-bold">
+                        <i class="fas fa-shopping-cart"></i> {{ $purchaseCount }} personas lo compraron en los últimos 7 días.
+                    </div>
+                    @endif
+                </div>
+                <style>@keyframes sp-qv-pulse{0%{opacity:1}50%{opacity:.75}100%{opacity:1}}</style>
+
                 <div class="stock-row mb-1">
                     <?php
-                    if($record->getStockByWarehouseMain() > 0){?>
+                    if($stock > 0){?>
                         <span class="stock-dot success"></span>
-                        <span><b>En stock</b> · {{number_format(($record->getStockByWarehouseMain()), 0)}} unidades disponibles</span>
+                        <span><b>En stock</b> · {{number_format($stock, 0)}} unidades disponibles</span>
                     <?php
                     }else{?>
                         <span class="stock-dot danger"></span>
@@ -121,18 +224,19 @@
 
                 <div class="product-action w-100 d-flex align-items-center justify-content-between" style="gap: 10px"
                     data-qv-scope
-                    data-unit-price="{{ $record->sale_unit_price }}"
-                    data-symbol="{{ $record->currency_type['symbol'] }}"
-                    data-qv-product="{{ json_encode( $record ) }}">
+                    data-unit-price="{{ $displayPrice }}"
+                    data-symbol="{{ optional($record->currency_type)->symbol ?? 'S/' }}"
+                    data-qv-product="{{ e(json_encode($qvProduct)) }}">
                     @php
-                        $stockQv = $record->getStockByWarehouseMain();
+                        $stockQv = $stock;
                         $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
                         if ($showWhatsapp) {
                             $waPhoneRaw = preg_replace('/\D+/', '', $phoneWhatsapp);
                             $waPhone = (strlen($waPhoneRaw) == 9 && str_starts_with($waPhoneRaw, '9')) ? '51'.$waPhoneRaw : $waPhoneRaw;
+                            $symbol = optional($record->currency_type)->symbol ?? 'S/';
                             $waText = rawurlencode(
                                 ($storefront_show_prices ?? true)
-                                    ? "Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?"
+                                    ? "Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$symbol}{$displayPrice}. ¿Podrían brindarme más información?"
                                     : "Buenas, deseo consultar acerca del producto *{$record->description}*. ¿Podrían brindarme más información?"
                             );
                             $waLink = "https://wa.me/{$waPhone}?text={$waText}";
@@ -159,7 +263,7 @@
                         <svg clip-rule="evenodd" fill-rule="evenodd" height="24" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 512 512" width="24" xmlns="http://www.w3.org/2000/svg" id="fi_4893746"><path d="m211.892 383.468c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm176.22 0c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm-288.464-273.226s63.534 222.705 63.534 222.705c6.591 23.103 27.703 39.034 51.727 39.034h157.478c33.502 0 61.98-24.47 67.023-57.59 4.821-31.664 11.838-77.75 17.065-112.081 2.869-18.84-2.626-37.994-15.046-52.449-12.42-14.454-30.529-22.769-49.586-22.769h-235.394l-8.72-30.567c-7.633-26.757-32.085-45.209-59.91-45.209-23.033 0-51.825 0-51.825 0-13.798 0-25 11.202-25 25s11.202 25 25 25h51.825c5.494 0 10.321 3.643 11.829 8.926zm71.066 66.85h221.129c4.482 0 8.741 1.956 11.663 5.355 2.921 3.4 4.213 7.905 3.539 12.337 0 0-17.066 112.081-17.066 112.081-1.323 8.693-8.798 15.116-17.592 15.116h-157.478c-1.693 0-3.181-1.122-3.645-2.751 0 0-40.55-142.138-40.55-142.138z"></path></svg>
                         <span class="font-weight-bold qv-add-label" style="white-space: nowrap;">
                             @if($showPrices ?? ($storefront_show_prices ?? true))
-                                Agregar a Carrito · {{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}
+                                Agregar a Carrito · {{ optional($record->currency_type)->symbol ?? 'S/' }} {{ number_format($displayPrice, 2) }}
                             @else
                                 Agregar a Carrito
                             @endif
@@ -192,6 +296,32 @@
         </div><!-- End .col-lg-5 -->
     </div><!-- End .row -->
 </div><!-- End .product-single-container -->
+
+@if($offerExpiresAt)
+<script>
+(function () {
+    var targetDate = new Date(@json(\Carbon\Carbon::parse($offerExpiresAt)->toIso8601String())).getTime();
+    var root = document.getElementById('sp-countdown-qv-{{ $record->id }}');
+    if (!root) return;
+    var countdownEl = root.querySelector('.time-left');
+    var timer = setInterval(function () {
+        var difference = targetDate - Date.now();
+        if (difference <= 0) {
+            clearInterval(timer);
+            root.style.display = 'none';
+            return;
+        }
+        var days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        var hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        var seconds = Math.floor((difference % (1000 * 60)) / 1000);
+        if (countdownEl) {
+            countdownEl.innerHTML = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+        }
+    }, 1000);
+})();
+</script>
+@endif
 
 <style>
 .price-box.preview{

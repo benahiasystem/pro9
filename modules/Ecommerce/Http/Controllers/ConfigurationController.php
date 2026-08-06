@@ -336,21 +336,58 @@ class ConfigurationController extends Controller
     {
 
         $id = $request->input('id');
-        $color = $request->input('color_ecommerce');
         $configuration = ConfigurationEcommerce::find($id);
-        $configuration->color_ecommerce = $color;
+        if ($request->exists('color_ecommerce')) {
+            $configuration->color_ecommerce = $request->input('color_ecommerce');
+        }
 
         // Fusionar preferencias de apariencia sin borrar pasarelas de pago u otras claves.
+        $incomingPreferences = [
+            'show_description' => (int) $request->input('show_description', data_get($configuration->preferences, 'show_description', 1)),
+            'show_stock' => (int) $request->input('show_stock', data_get($configuration->preferences, 'show_stock', 0)),
+            'only_available_products' => (int) $request->input('only_available_products', data_get($configuration->preferences, 'only_available_products', 0)),
+            'full_width_banner' => (int) $request->input('full_width_banner', data_get($configuration->preferences, 'full_width_banner', 0)),
+            'header_theme' => in_array($request->input('header_theme'), ['light', 'dark'], true)
+                ? $request->input('header_theme')
+                : (data_get($configuration->preferences, 'header_theme', 'light')),
+            'products_per_page' => in_array((int) $request->input('products_per_page'), [8, 12, 16, 24, 32, 40], true)
+                ? (int) $request->input('products_per_page')
+                : (int) data_get($configuration->preferences, 'products_per_page', 16),
+        ];
+
+        if ($request->has('preferences') && is_array($request->input('preferences'))) {
+            $prefs = $request->input('preferences');
+            foreach (['show_description', 'show_stock', 'only_available_products', 'full_width_banner', 'header_theme', 'products_per_page'] as $key) {
+                if (array_key_exists($key, $prefs)) {
+                    $incomingPreferences[$key] = $prefs[$key];
+                }
+            }
+            if (array_key_exists('trust_badges_enabled', $prefs)) {
+                $incomingPreferences['trust_badges_enabled'] = (int) ((bool) $prefs['trust_badges_enabled']);
+            }
+            if (array_key_exists('trust_badges', $prefs) && is_array($prefs['trust_badges'])) {
+                $incomingPreferences['trust_badges'] = array_values(array_filter(array_map(function ($badge) {
+                    if (! is_array($badge)) {
+                        return null;
+                    }
+                    $text = trim((string) ($badge['text'] ?? ''));
+                    if ($text === '') {
+                        return null;
+                    }
+
+                    return [
+                        'icon' => in_array(($badge['icon'] ?? ''), ['shield', 'refresh', 'truck', 'lock', 'check'], true)
+                            ? $badge['icon']
+                            : 'shield',
+                        'text' => mb_substr($text, 0, 80),
+                    ];
+                }, $prefs['trust_badges'])));
+            }
+        }
+
         $configuration->preferences = $this->mergePreferences(
             $configuration->preferences ?: [],
-            [
-                'show_description' => (int) $request->input('show_description', 1),
-                'show_stock' => (int) $request->input('show_stock', 0),
-                'only_available_products' => (int) $request->input('only_available_products', 0),
-                'full_width_banner' => (int) $request->input('full_width_banner', 0),
-                'header_theme' => in_array($request->input('header_theme'), ['light', 'dark']) ? $request->input('header_theme') : 'light',
-                'products_per_page' => in_array((int) $request->input('products_per_page'), [8, 12, 16, 24, 32, 40]) ? (int) $request->input('products_per_page') : 16,
-            ]
+            $incomingPreferences
         );
 
         $configuration->save();
@@ -368,5 +405,22 @@ class ConfigurationController extends Controller
             $color = $config ? $config->color_ecommerce : null;
             return response()->json(['color' => $color]);
         }
+
+    public function getProducts()
+    {
+        $products = \App\Models\Tenant\Item::where('apply_store', 1)
+            ->orderBy('description')
+            ->get()
+            ->transform(function ($row) {
+                return [
+                    'id' => $row->id,
+                    'description' => $row->internal_id
+                        ? $row->internal_id.' - '.$row->description
+                        : $row->description,
+                ];
+            });
+
+        return compact('products');
+    }
 
 }

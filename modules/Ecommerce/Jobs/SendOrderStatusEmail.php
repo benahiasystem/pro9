@@ -51,15 +51,25 @@ class SendOrderStatusEmail implements ShouldQueue
             return;
         }
 
+        $orderNumber = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+        $trackingToken = (string) ($order->external_id ?? '');
+        $trackingUrl = $trackingToken !== ''
+            ? route('tenant_ecommerce_order_tracking', [
+                'pedido' => $orderNumber,
+                'token' => $trackingToken,
+            ])
+            : null;
+
         $data = [
             'order' => [
                 'id'               => $order->id,
                 'number_document'  => $order->number_document,
-                'order_id'         => str_pad($order->id, 6, '0', STR_PAD_LEFT),
+                'order_id'         => $orderNumber,
                 'total'            => $order->total,
                 'reference_payment'=> strtoupper($order->reference_payment ?? ''),
                 'created_at'       => $order->created_at->format('Y-m-d H:i'),
                 'updated_at'       => $order->updated_at->format('Y-m-d H:i'),
+                'tracking_token'   => $trackingToken,
             ],
             'status' => [
                 'id'    => $status ? $status->id    : $this->statusOrderId,
@@ -77,6 +87,7 @@ class SendOrderStatusEmail implements ShouldQueue
                 'currency_type_symbol'=> $item->currency_type_symbol ?? 'S/',
             ])->toArray(),
             'route_list' => $this->routeList,
+            'tracking_url' => $trackingUrl,
         ];
 
         Mail::to($customerEmail)->send(new OrderStatusChanged($data));

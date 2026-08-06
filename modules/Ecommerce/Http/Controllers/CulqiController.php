@@ -19,6 +19,7 @@ use App\Models\Tenant\Person;
 use Exception;
 use App\Models\Tenant\ConfigurationEcommerce;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use App\Models\Tenant\StatusOrder;
 use App\Services\Tenant\OrderDocumentFromStatusService;
 use Modules\Payment\Models\PaymentConfiguration;
@@ -113,10 +114,6 @@ class CulqiController extends Controller
                 "email" => $chargeEmail,
                 "description" =>  $request->producto,
                 "source_id" => $request->token,
-               //  "metadata" => array (
-               //      "ruc" => $_POST['ruc'],
-               //      "contacto" => $_POST['contacto'],
-               //      "telefono" => $_POST['telefono']),
                 "installments" => (int) ($request->installments ?? 0)
               )
         );
@@ -128,30 +125,51 @@ class CulqiController extends Controller
             $chargeObj = json_decode(json_encode($charge));
         }
 
-        // Validar si Culqi devuelve explícitamente un objeto de error (tarjeta rechazada)
-        if (isset($chargeObj->object) && $chargeObj->object === 'error') {
-            return response()->json([
-                'success' => false,
-                'message' => $chargeObj->user_message ?? 'Su tarjeta fue rechazada. Por favor, intente con otra.'
-            ], 422);
-        }
+        // Fuente de verdad: respuesta de Culqi (equivalente al estado del panel: Aprobada / Rechazada).
+        $culqiStatus = $this->interpretCulqiCharge($chargeObj);
+        if (! $culqiStatus['approved']) {
+            Log::warning('Culqi: cobro no aprobado', $culqiStatus);
 
-        // Validar si Culqi responde con éxito a nivel de conexión pero el estado no es exitoso
-        if (isset($chargeObj->outcome) && $chargeObj->outcome->type !== 'venta_exitosa') {
             return response()->json([
                 'success' => false,
-                'message' => $chargeObj->outcome->user_message ?? 'Su tarjeta fue rechazada. Por favor, intente con otra.'
+                'message' => $culqiStatus['message'],
+                'culqi_status' => $culqiStatus,
             ], 422);
         }
 
         // Estado inicial de la orden
         $initialStatusId = StatusOrder::resolveInitialOrderStatusId();
 
-        // Estado de pago "Pagado" (action_mark_payment = true)
+        // Estado de pago "Pagado" solo si Culqi confirma venta_exitosa (panel: Aprobada)
         $paidPaymentStatusId = StatusOrder::resolvePaidPaymentStatusId();
 
         $orderItems = $this->decodeRequestJsonField($request->items);
         $orderPurchase = $this->decodeRequestJsonField($request->purchase);
+        if (! is_array($orderPurchase)) {
+            $orderPurchase = [];
+        }
+        $orderPurchase['gateway_payment'] = [
+            'provider' => 'culqi',
+            'status' => 'approved',
+            'panel_status' => 'Aprobada',
+            'outcome' => $culqiStatus['outcome'],
+            'charge_id' => $culqiStatus['charge_id'],
+            'reference_code' => $culqiStatus['reference_code'],
+            'amount' => $culqiStatus['amount'],
+            'currency' => $culqiStatus['currency'],
+            'email' => $request->email,
+        ];
+
+        // El front manda is_guest (flujo invitado). No inferir solo por sesión.
+        $isGuestOverride = $request->has('is_guest')
+            ? filter_var($request->input('is_guest'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            : (isset($orderPurchase['checkout']['is_guest'])
+                ? (bool) $orderPurchase['checkout']['is_guest']
+                : null);
+        if ($isGuestOverride === true) {
+            $user = null;
+        }
+        $orderPurchase = Order::attachEcommerceCheckoutMeta($orderPurchase, $user, $isGuestOverride);
 
         $order = Order::create([
             'external_id' => Str::uuid()->toString(),
@@ -162,30 +180,43 @@ class CulqiController extends Controller
             'reference_payment' => 'culqui',
             'status_order_id' => $initialStatusId,
             'payment_status_order_id' => $paidPaymentStatusId,
-            'purchase' => $orderPurchase
+            'shipping_status_order_id' => StatusOrder::resolveInitialShippingStatusId(),
+            'purchase' => $orderPurchase,
         ]);
 
         // Misma generación de comprobante que al marcar "Pago completado" en admin
         app(OrderDocumentFromStatusService::class)->afterGatewayPaymentCompleted($order);
         $order->refresh();
 
-        $customer_email = $chargeEmail;
-        $document = new stdClass;
-        $document->client = $user?->name
-            ?? ($customer['apellidos_y_nombres_o_razon_social'] ?? 'Cliente');
-        $document->product = $request->producto;
-        $document->total = $request->precio_culqi;
-        $document->items = is_array($orderItems) ? $orderItems : [];
+        try {
+            $customer_email = $chargeEmail;
+            $document = new stdClass;
+            $document->client = $user?->name
+                ?? ($customer['apellidos_y_nombres_o_razon_social'] ?? 'Cliente');
+            $document->product = $request->producto;
+            $document->total = $request->precio_culqi;
+            $document->items = is_array($orderItems) ? $orderItems : [];
+            $document->id = $order->id;
+            $document->order_number = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+            $document->tracking_token = (string) $order->external_id;
+            $document->tracking_url = route('tenant_ecommerce_order_tracking', [
+                'pedido' => $document->order_number,
+                'token' => $order->external_id,
+            ]);
 
-        $email = $customer_email;
-        $mailable = new CulqiEmail($document);
-        $id = (int) $request->id;
-        $model = __FILE__.";;".__LINE__;
-        $sendIt = EmailController::SendMail($email, $mailable, $id, $model);
+            $email = $customer_email;
+            $mailable = new CulqiEmail($document);
+            $id = (int) $order->id;
+            $model = __FILE__.";;".__LINE__;
+            EmailController::SendMail($email, $mailable, $id, $model);
+        } catch (\Throwable $e) {
+            Log::warning('Culqi: pedido '.$order->id.' creado; fallo al enviar email: '.$e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
             'culqui' => $charge,
+            'culqi_status' => $culqiStatus,
             'order' => $order,
         ]);
       }
@@ -356,6 +387,80 @@ class CulqiController extends Controller
         $fillIfEmpty($customer, 'direccion', $request->input('shipping_address'));
 
         return $customer;
+    }
+
+    /**
+     * Interpreta la respuesta de Charges->create según criterios del panel Culqi.
+     * Solo "venta_exitosa" cuenta como Aprobada → pedido pagado en admin.
+     *
+     * @param  object|null  $chargeObj
+     * @return array{
+     *     approved: bool,
+     *     message: string,
+     *     outcome: string|null,
+     *     charge_id: string|null,
+     *     reference_code: string|null,
+     *     amount: int|null,
+     *     currency: string|null,
+     *     panel_status: string
+     * }
+     */
+    private function interpretCulqiCharge($chargeObj): array
+    {
+        $base = [
+            'approved' => false,
+            'message' => 'Su tarjeta fue rechazada. Por favor, intente con otra.',
+            'outcome' => null,
+            'charge_id' => null,
+            'reference_code' => null,
+            'amount' => null,
+            'currency' => null,
+            'panel_status' => 'Rechazada',
+        ];
+
+        if (! is_object($chargeObj)) {
+            $base['message'] = 'Culqi no devolvió una respuesta válida del cobro.';
+
+            return $base;
+        }
+
+        $base['charge_id'] = isset($chargeObj->id) ? (string) $chargeObj->id : null;
+        $base['reference_code'] = isset($chargeObj->reference_code) ? (string) $chargeObj->reference_code : null;
+        $base['amount'] = isset($chargeObj->amount) ? (int) $chargeObj->amount : null;
+        $base['currency'] = isset($chargeObj->currency_code) ? (string) $chargeObj->currency_code : null;
+
+        if (isset($chargeObj->object) && $chargeObj->object === 'error') {
+            $base['message'] = $chargeObj->user_message
+                ?? $chargeObj->merchant_message
+                ?? $base['message'];
+            $base['outcome'] = $chargeObj->type ?? 'error';
+
+            return $base;
+        }
+
+        $outcomeType = data_get($chargeObj, 'outcome.type');
+        $base['outcome'] = $outcomeType ? (string) $outcomeType : null;
+
+        if ($outcomeType === 'venta_exitosa') {
+            return array_merge($base, [
+                'approved' => true,
+                'message' => data_get($chargeObj, 'outcome.user_message') ?: 'Pago aprobado por Culqi.',
+                'panel_status' => 'Aprobada',
+            ]);
+        }
+
+        if ($outcomeType) {
+            $base['message'] = data_get($chargeObj, 'outcome.user_message')
+                ?: data_get($chargeObj, 'outcome.merchant_message')
+                ?: $base['message'];
+
+            return $base;
+        }
+
+        // Sin outcome no asumimos aprobación (evita marcar pagado sin confirmación del panel).
+        $base['message'] = 'Culqi no confirmó la venta como exitosa. Intente nuevamente o use otra tarjeta.';
+
+        return $base;
     }
 
     private function normalizePaymentCustomerData(array $customer, ?string $shippingAddress = null): array

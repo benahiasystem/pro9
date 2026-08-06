@@ -1,6 +1,9 @@
 // Cart Application - Ecommerce Module
 // Main Vue instance for shopping cart detail page
 
+import TrustBadges from './components/TrustBadges.vue';
+import FrequentlyBoughtTogether from './components/FrequentlyBoughtTogether.vue';
+
 let izipaySdkLoadPromise = null;
 let izipayLoadedPublicKey = null;
 const IZIPAY_KR_MAIN_SRC = 'https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js';
@@ -86,6 +89,10 @@ const __checkoutIntentBoot = resolveCheckoutIntentBootState();
 
 var app_cart = new Vue({
     el: '#app',
+    components: {
+        TrustBadges,
+        FrequentlyBoughtTogether,
+    },
     data: {
         form_contact: {
             address:   '',
@@ -225,6 +232,12 @@ var app_cart = new Vue({
         enableCulqi: window.__ecommerce_config?.enable_culqi || false,
         titleCulqi: window.__ecommerce_config?.title_culqi || 'Tarjeta (VISA)',
         descriptionCulqi: window.__ecommerce_config?.description_culqi || '',
+        isSecurePage: typeof window !== 'undefined' && (
+            window.isSecureContext === true
+            || window.location.protocol === 'https:'
+            || ['localhost', '127.0.0.1'].includes(window.location.hostname)
+            || String(window.location.hostname || '').endsWith('.localhost')
+        ),
 
         acceptedTerms: false,
         processingPayment: false,
@@ -233,6 +246,7 @@ var app_cart = new Vue({
         paymentSuccessVisible: false,
         paymentSuccessRedirecting: false,
         successOrder: null,
+        successIsYape: false,
         successOrderNumber: '',
         successPaymentLabel: '',
         successItemsCount: 0,
@@ -295,6 +309,23 @@ var app_cart = new Vue({
             // Fallback: id inyectado por Blade aunque el objeto user aún no esté hidratado
             const bootId = window.__ecommerce_quotation_boot && window.__ecommerce_quotation_boot.user_id;
             return !!bootId;
+        },
+        trustBadgesEnabled() {
+            const boot = window.__socialProofBoot || {};
+            if (typeof boot.trustBadgesEnabled === 'boolean') {
+                return boot.trustBadgesEnabled;
+            }
+            return true;
+        },
+        trustBadges() {
+            const boot = window.__socialProofBoot || {};
+            return Array.isArray(boot.trustBadges) ? boot.trustBadges : null;
+        },
+        cartFbtItemIds() {
+            return (this.records || [])
+                .map((row) => parseInt(row.id, 10))
+                .filter((id) => id > 0)
+                .slice(0, 8);
         },
         isGuestCheckoutActive() {
             return !this.isLoggedIn && this.guestCheckoutAccepted && this.showGuestForm;
@@ -386,12 +417,37 @@ var app_cart = new Vue({
         showWhatsapp: function () {
             return this.enable_whatsapp && !!this.phone_whatsapp;
         },
+        httpsCheckoutUrl: function () {
+            if (typeof window === 'undefined' || !window.location) {
+                return '#';
+            }
+            return 'https://' + window.location.host + window.location.pathname + window.location.search;
+        },
         whatsappPhone: function () {
             const raw = String(this.phone_whatsapp || '').replace(/\D+/g, '');
             if (raw.length === 9 && raw.startsWith('9')) {
                 return '51' + raw;
             }
             return raw;
+        },
+        isYapePaymentSuccess() {
+            if (this.successIsYape) {
+                return true;
+            }
+            if (!this.successOrder) return false;
+            const candidates = [
+                this.successOrder.referencePayment,
+                this.successOrder.reference_payment,
+                this.selectedPaymentMethod,
+                this.successOrder.paymentLabel,
+            ];
+            return candidates.some((value) => {
+                const normalized = String(value || '').trim().toLowerCase();
+                return normalized === 'yape' || normalized.includes('yape');
+            });
+        },
+        canSendYapeVoucherWhatsapp() {
+            return this.isYapePaymentSuccess && !!this.whatsappPhone;
         },
         showCheckoutSections() {
             return this.isLoggedIn || this.guestCheckoutAccepted;
@@ -2103,6 +2159,12 @@ var app_cart = new Vue({
 
             let precio = Math.round(Number(this.summary.total) * 100).toFixed(2);
             let precio_culqi = Number(Number(this.summary.total).toFixed(2));
+            const isGuest = !this.isLoggedIn;
+            purchase.checkout = Object.assign({}, purchase.checkout || {}, {
+                channel: 'ecommerce',
+                is_guest: isGuest,
+            });
+
             return {
                 producto: 'Compras Ecommerce Facturador Pro',
                 precio: precio,
@@ -2110,6 +2172,7 @@ var app_cart = new Vue({
                 customer: customer,
                 items: this.records,
                 purchase: purchase,
+                is_guest: isGuest,
                 discount_coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null,
                 discount_coupon_id: this.appliedCoupon ? this.appliedCoupon.id : null,
                 total_discount: this.appliedCoupon ? this.appliedCoupon.discount : 0,
@@ -2880,6 +2943,21 @@ var app_cart = new Vue({
                 deliveryLabel: deliveryLabel,
             };
         },
+        isYapeOrderPayload(order, formatted = null) {
+            const candidates = [
+                formatted && formatted.isYape,
+                formatted && formatted.referencePayment,
+                formatted && formatted.paymentLabel,
+                order && order.reference_payment,
+                this.selectedPaymentMethod,
+                this.getSelectedReferencePayment ? this.getSelectedReferencePayment() : null,
+            ];
+            return candidates.some((value) => {
+                if (value === true) return true;
+                const normalized = String(value || '').trim().toLowerCase();
+                return normalized === 'yape' || normalized.includes('yape');
+            });
+        },
         /**
          * Overlay de carga para Yape, efectivo, transferencia y Culqi post-token.
          */
@@ -2890,6 +2968,7 @@ var app_cart = new Vue({
             this.paymentLoadingText = opts.text || 'Por favor no cierres esta ventana hasta que el proceso termine.';
             this.processingPayment = true;
             this.paymentSuccessVisible = false;
+            this.successIsYape = false;
             this.resetSuccessModalSummary();
             document.body.style.overflow = 'hidden';
         },
@@ -3007,6 +3086,8 @@ var app_cart = new Vue({
             if (order && order.id) {
                 formatted.id = order.id;
             }
+            this.successIsYape = this.isYapeOrderPayload(order, formatted);
+            formatted.isYape = this.successIsYape;
             this.successOrder = formatted;
             this.syncSuccessModalSummary(order, formatted);
             this.clearCartSilently();
@@ -3024,11 +3105,22 @@ var app_cart = new Vue({
             this.paymentSuccessRedirecting = true;
             document.body.style.overflow = 'hidden';
 
-            const targetUrl = this.thankYouUrl
-                || (this.successOrder && this.successOrder.external_id
-                    ? this.buildThankYouUrl(this.successOrder)
-                    : null)
-                || (window.__routes?.home || '/ecommerce');
+            let targetUrl = null;
+            if (this.isYapePaymentSuccess && this.successOrder && this.successOrder.id) {
+                const padded = String(this.successOrder.id).padStart(6, '0');
+                const base = window.__routes?.order_tracking || '/ecommerce/seguimiento';
+                const sep = base.indexOf('?') >= 0 ? '&' : '?';
+                const token = this.successOrder.external_id
+                    ? `&token=${encodeURIComponent(this.successOrder.external_id)}`
+                    : '';
+                targetUrl = `${base}${sep}pedido=${encodeURIComponent(padded)}${token}`;
+            } else {
+                targetUrl = this.thankYouUrl
+                    || (this.successOrder && this.successOrder.external_id
+                        ? this.buildThankYouUrl(this.successOrder)
+                        : null)
+                    || (window.__routes?.home || '/ecommerce');
+            }
 
             // Deja un frame para pintar el estado de carga del botón antes de navegar
             window.requestAnimationFrame(() => {

@@ -54,7 +54,27 @@ class OrderDocumentFromStatusService
         }
 
         try {
-            $establishmentId = $purchase['establishment_id'] ?? optional(Establishment::first())->id;
+            $emitterUser = User::query()
+                ->whereNotNull('establishment_id')
+                ->orderBy('id')
+                ->first()
+                ?: User::query()->orderBy('id')->first();
+
+            $establishmentId = $purchase['establishment_id']
+                ?? optional($emitterUser)->establishment_id
+                ?? optional(Establishment::query()->orderBy('id')->first())->id;
+
+            if (! $establishmentId) {
+                Log::error('No hay establecimiento disponible para generar el comprobante del pedido '.$order->id);
+
+                return array_merge($empty, [
+                    'message' => 'No hay establecimiento disponible para generar el comprobante',
+                    'type' => 'warning',
+                ]);
+            }
+
+            $purchase['establishment_id'] = $establishmentId;
+
             $series = Series::where('establishment_id', $establishmentId)
                 ->where('document_type_id', $tipoDoc)
                 ->first();
@@ -76,6 +96,9 @@ class OrderDocumentFromStatusService
                 $saleNoteData['series_id'] = $series->id;
                 $saleNoteData['prefix'] = 'NV';
                 $saleNoteData['order_id'] = $order->id;
+                if (empty($saleNoteData['establishment_id'])) {
+                    $saleNoteData['establishment_id'] = $establishmentId;
+                }
 
                 $response = app(SaleNoteController::class)->storeWithData($saleNoteData);
 

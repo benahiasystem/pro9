@@ -25,6 +25,7 @@ class OrderCollection extends ResourceCollection
                 'customer_email' => $row->customer->correo_electronico,
                 'customer_telefono' => $row->customer->telefono,
                 'customer_direccion' => $row->customer->direccion,
+                'is_guest' => $row->isGuestCheckout(),
                 'items' => $row->items,
                 'total' => $row->total,
                 'total_discount' => $row->total_discount,

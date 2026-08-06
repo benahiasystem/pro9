@@ -86,6 +86,21 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
     Route::post('configuration_links', 'ConfigurationController@store_configuration_links');
 
     Route::get('record', 'ConfigurationController@record');
+    Route::get('configuration/products', 'ConfigurationController@getProducts');
+
+    Route::prefix('campaigns')->group(function () {
+        Route::get('records', 'EcommerceCampaignController@records');
+        Route::get('record/{id}', 'EcommerceCampaignController@record');
+        Route::post('', 'EcommerceCampaignController@store');
+        Route::delete('{id}', 'EcommerceCampaignController@destroy');
+        Route::get('{id}/status', 'EcommerceCampaignController@status');
+    });
+
+    Route::prefix('social-proof')->group(function () {
+        Route::get('trust-badges', 'SocialProofController@trustBadges');
+        Route::get('frequently-bought-together/{itemId?}', 'SocialProofController@frequentlyBoughtTogether')
+            ->name('tenant.ecommerce.social_proof.fbt');
+    });
 
     Route::post('uploads', 'ConfigurationController@uploadFile');
 
