@@ -365,6 +365,7 @@ import TenantRestaurantOrdersIndex from '../../modules/Restaurant/Resources/asse
 import TenantRestaurantCashIndex from '../../modules/Restaurant/Resources/assets/js/views/cash/index.vue'
 import TenantRestaurantCashFilterPos from '../../modules/Restaurant/Resources/assets/js/views/cash/filter-pos.vue'
 import TenantRestaurantConfiguration from '../../modules/Restaurant/Resources/assets/js/views/configuration/index.vue'
+import TenantRestaurantMozoAccessModal from '../../modules/Restaurant/Resources/assets/js/views/configuration/partials/mozo-access-modal.vue'
 import TenantRestaurantSuppliesIndex from '../../modules/Restaurant/Resources/assets/js/views/supplies/index.vue'
 import TenantRestaurantModifierGroupsIndex from '../../modules/Restaurant/Resources/assets/js/views/modifier-groups/index.vue'
 import TenantRestaurantModifierGroupsForm from '../../modules/Restaurant/Resources/assets/js/views/modifier-groups/form.vue'
@@ -776,6 +777,7 @@ Vue.component('tenant-restaurant-orders-index', TenantRestaurantOrdersIndex)
 Vue.component('tenant-restaurant-cash-index', TenantRestaurantCashIndex)
 Vue.component('tenant-restaurant-cash-filter-pos', TenantRestaurantCashFilterPos)
 Vue.component('tenant-restaurant-configuration', TenantRestaurantConfiguration)
+Vue.component('tenant-restaurant-mozo-access-modal', TenantRestaurantMozoAccessModal)
 Vue.component('tenant-restaurant-supplies-index', TenantRestaurantSuppliesIndex)
 Vue.component('tenant-restaurant-modifier-groups-index', TenantRestaurantModifierGroupsIndex)
 Vue.component('tenant-restaurant-modifier-groups-form', TenantRestaurantModifierGroupsForm)

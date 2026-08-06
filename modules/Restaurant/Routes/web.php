@@ -15,6 +15,10 @@
 Route::get('/config.json', 'RestaurantController@config');
 Route::get('/mozo/runtime-config', 'RestaurantController@config');
 Route::get('/mozo/auth/login', 'RestaurantController@public');
+Route::get('/mozo/entrar/{hash}', 'RestaurantController@mozoEntrar')->name('tenant.restaurant.mozo.entrar');
+Route::get('/mozo/directo', 'RestaurantController@mozoDirecto')
+    ->middleware(['auth', 'check.email.verified'])
+    ->name('tenant.restaurant.mozo.directo');
 Route::get('/mozo/{any?}', 'RestaurantController@public')
 ->where('any', '.*')
 ->name('tenant.restaurant.mozo');
@@ -44,6 +48,7 @@ Route::prefix('restaurant')->middleware(['auth','check.email.verified'])->group(
     Route::get('configuration/record', 'RestaurantConfigurationController@record')->name('tenant.restaurant.configuration.record');
     Route::post('configuration', 'RestaurantConfigurationController@setConfiguration')->name('tenant.restaurant.configuration.set');
     Route::get('get-users', 'RestaurantConfigurationController@getUsers')->name('tenant.restaurant.users.get');
+    Route::post('mozo-access/generate-link', 'RestaurantConfigurationController@generateMozoAccessLink')->name('tenant.restaurant.mozo_access.generate');
     Route::get('get-roles', 'RestaurantConfigurationController@getRoles')->name('tenant.restaurant.roles.get');
     Route::post('user/set-role', 'RestaurantConfigurationController@setRole')->name('tenant.restaurant.role.set');
     Route::post('user/delete-role', 'RestaurantConfigurationController@deleteRole')->name('tenant.restaurant.role.delete');

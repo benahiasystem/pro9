@@ -555,7 +555,9 @@ foreach ($document->items as $row) {
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
 
@@ -604,8 +606,8 @@ foreach ($document->items as $row) {
             @endif
             @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
             @php
-                $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
             @endphp
 
             @if($showLoteColumn)
@@ -780,10 +782,14 @@ foreach ($document->items as $row) {
         </tr>
     @endif
 
-    @if($document->total_discount_with_igv > 0 && $document->subtotal > 0)
+    @if($document->subtotal > 0)
+        @php
+            $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
+            $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
+        @endphp
         <tr>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">SUBTOTAL: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->subtotal, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($subtotal, 2) }}</td>
         </tr>
     @endif
 

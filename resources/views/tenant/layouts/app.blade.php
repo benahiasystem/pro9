@@ -231,6 +231,7 @@
         @endif
     @endif
 
+    <div id="mozo-access-modal-root"></div>
 
     <!-- Vendor -->
     <script src="{{ asset('porto-light/vendor/jquery/jquery.js')}}"></script>
@@ -303,11 +304,8 @@
             return transform
         }
 
-        function openMozoApp(token) {
-            if (token && token.trim().length > 0) {
-                localStorage.setItem('token', token);
-            }
-            window.open('{{ route("tenant.restaurant.mozo", ["any" => "app"]) }}', '_blank');
+        function openMozoApp() {
+            window.open('{{ route("tenant.restaurant.mozo.directo") }}', '_blank');
         }
 
         function openVendeyaApp(token) {
@@ -315,6 +313,27 @@
                 localStorage.setItem('token', token);
             }
             window.open('{{ route("tenant.restaurant.vendeya", ["any" => "app"]) }}', '_blank');
+        }
+
+        function setMozoAccessNavActive(active) {
+            const item = document.querySelector('[data-nav="mozo-access"]');
+            if (!item) {
+                return;
+            }
+
+            if (active) {
+                item.classList.add('nav-active');
+            } else {
+                item.classList.remove('nav-active');
+            }
+        }
+        window.setMozoAccessNavActive = setMozoAccessNavActive;
+
+        function openMozoAccessModal() {
+            if (window.$eventHub) {
+                window.$eventHub.$emit('openMozoAccessModal');
+            }
+            setMozoAccessNavActive(true);
         }
 
         $(document).ready(function () {

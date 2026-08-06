@@ -21,9 +21,12 @@
     } elseif (!empty($company->logo)) {
         $logo = "storage/uploads/logos/{$company->logo}";
     }
+
+    $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
+    $exists_company_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads(!empty($company->logo) ? "storage/uploads/logos/{$company->logo}" : null);
 @endphp
 
-@if($logo)
+@if($exists_logo)
     <div class="item_watermark" style="
         position: absolute;
         top: 35%;
@@ -41,7 +44,7 @@
 @endif
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @if($exists_company_logo)
             <td width="10%">
                 <img
                     src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}"
@@ -62,6 +65,7 @@
                 </div>
             </td>
             <td width="40%" class="border-box p-4 text-center">
+                <h3 class="text-center font-bold">{{ 'R.U.C. '.$company->number }}</h3>
                 <h4 class="text-center">{{ $document->document_type->description }}</h4>
                 <h3 class="text-center">{{ $document_number }}</h3>
             </td>
@@ -81,6 +85,7 @@
                 </div>
             </td>
             <td width="40%" class="border-box p-4 text-center">
+                <h3 class="text-center font-bold">{{ 'R.U.C. '.$company->number }}</h3>
                 <h4 class="text-center">{{ $document->document_type->description }}</h4>
                 <h3 class="text-center">{{ $document_number }}</h3>
             </td>
@@ -406,8 +411,8 @@ foreach($document->items as $row) {
         $showBrand = true;
     }
 
-    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
 
     if (!empty($lot)) {
         $showLot = true;
@@ -469,7 +474,9 @@ foreach($document->items as $row) {
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
                 @if($row->relation_item->is_set == 1)
@@ -504,8 +511,8 @@ foreach($document->items as $row) {
             @endif
             @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
             @php
-                $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
             @endphp
 
             @if($showLot)

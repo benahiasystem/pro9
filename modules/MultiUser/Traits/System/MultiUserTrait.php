@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\MultiUser\Models\System\MultiUser;
 use App\Models\Tenant\User;
 use App\Models\Tenant\ColumnsToReport;
+use Modules\MultiUser\Services\MultiUserPermissionSync;
 use Exception;
 
 
@@ -242,6 +243,7 @@ trait MultiUserTrait
     private function saveClientData($origin_user, $origin_client_id, $params)
     {
         $destination_user = $this->createUserToClient($origin_user);
+        MultiUserPermissionSync::syncFromTenantAdmin($destination_user);
         $multi_user = $this->createMultiUser($origin_client_id, $origin_user->id, $destination_user->id, $params);
 
         $destination_user->multi_user_id = $multi_user->id;

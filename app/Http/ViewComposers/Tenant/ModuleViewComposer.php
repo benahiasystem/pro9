@@ -23,13 +23,16 @@ class ModuleViewComposer
         */
         $systemConfig = Configuration::getDataModuleViewComposer();
 
-        if(count($modules) > 0 && count($module_levels)) {
+        /*if(count($modules) > 0 && count($module_levels)) {
             $view->vc_modules = $modules;
             $view->vc_modules_levels = $module_levels;
         } else {
             $view->vc_modules = Module::all()->pluck('value')->toArray();
             $view->vc_modules_levels = ModuleLevel::all()->pluck('value')->toArray();
-        }
+        }*/
+        // Sin permisos asignados: no mostrar todos los módulos (evita menús de más en multi-usuario).
+        $view->vc_modules = $modules;
+        $view->vc_modules_levels = $module_levels;
         $view->vc_configuration = TenantConfiguration::first();
 
         $view->useLoginGlobal = $systemConfig->use_login_global;

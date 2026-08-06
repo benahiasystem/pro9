@@ -34,6 +34,8 @@ use Modules\BusinessTurn\Models\BusinessTurn;
 use Modules\MobileApp\Models\AppConfiguration;
 use App\Services\System\MozoConfigurationService;
 use App\Services\System\VendeyaConfigurationService;
+use App\Helpers\MozoAccessHelper;
+use App\Models\Tenant\User;
 
 
 class RestaurantController extends Controller
@@ -44,6 +46,47 @@ class RestaurantController extends Controller
     public function public()
     {
         return view('restaurant::mozo.index');
+    }
+
+    public function mozoEntrar(string $hash)
+    {
+        $helper = new MozoAccessHelper();
+        $user = $helper->findUserByHash($hash);
+
+        if (!$user) {
+            abort(401, 'Enlace inválido o expirado.');
+        }
+
+        return view('restaurant::mozo.entrar', [
+            'sessionData' => $this->buildMozoSessionData($user, 'MOZO'),
+        ]);
+    }
+
+    public function mozoDirecto()
+    {
+        return view('restaurant::mozo.entrar', [
+            'sessionData' => $this->buildMozoSessionData(auth()->user(), 'ADM'),
+        ]);
+    }
+
+    private function buildMozoSessionData(User $user, string $defaultRole = 'ADM'): array
+    {
+        if (!$user->api_token) {
+            $user->api_token = Str::random(50);
+            $user->save();
+        }
+
+        $user->loadMissing('restaurant_role');
+
+        return [
+            'token' => $user->api_token,
+            'email' => $user->email,
+            'name' => $user->name,
+            'userRole' => optional($user->restaurant_role)->code ?? $defaultRole,
+            'establishmentId' => (string) ($user->establishment_id ?? ''),
+            'sellerId' => (string) $user->id,
+            'sellerName' => $user->name,
+        ];
     }
 
     public function config(MozoConfigurationService $service)

@@ -214,30 +214,45 @@
             $item_code = !empty($row->item->esFusionado) ? '001' : $internal_id;
             $item_unit = !empty($row->item->esFusionado) ? 'NIU' : $row->item->unit_type_id;
             $item_quantity = ((int)$row->quantity != $row->quantity) ? $row->quantity : number_format($row->quantity, 0);
+            $use_name_product_pdf = !empty($row->name_product_pdf) && empty($row->item->esFusionado);
+            $item_description_html = null;
 
             if(!empty($row->item->esFusionado)) {
                 $item_description = 'Por consumo';
+            } elseif ($use_name_product_pdf) {
+                $item_description_html = \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf);
+                if (!empty($row->item->presentation)) {
+                    $item_description_html .= '<br/>'.$row->item->presentation->description;
+                }
+                $item_description = strip_tags($item_description_html);
             } else {
-                $item_description = $row->name_product_pdf ? $row->name_product_pdf : $row->item->description;
+                $item_description = $row->item->description;
+                if (!empty($row->item->presentation)) {
+                    $item_description .= ' '.$row->item->presentation->description;
+                }
+                $item_description = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $item_description))));
             }
             $show_item_code = $item_code !== '' && $item_code !== null
                 && mb_strpos(strip_tags((string) $item_description), (string) $item_code) === false;
 
-            if (!empty($row->item->presentation)) {
-                $item_description .= ' '.$row->item->presentation->description;
-            }
-            $item_description = trim(preg_replace('/\s+/', ' ', html_entity_decode(strip_tags((string) $item_description))));
-            $available_chars = $max_chars_description;
-            if ($show_item_code) {
-                $available_chars -= (int) ceil(mb_strlen((string) $item_code) * 7 / 9) + 1;
-            }
-            if (mb_strlen($item_description) > $available_chars) {
-                $item_description = rtrim(mb_substr($item_description, 0, max($available_chars - 1, 1))).'.';
+            if (!$use_name_product_pdf) {
+                $available_chars = $max_chars_description;
+                if ($show_item_code) {
+                    $available_chars -= (int) ceil(mb_strlen((string) $item_code) * 7 / 9) + 1;
+                }
+                if (mb_strlen($item_description) > $available_chars) {
+                    $item_description = rtrim(mb_substr($item_description, 0, max($available_chars - 1, 1))).'.';
+                }
             }
         @endphp
         <tr>
             <td colspan="3" class="text-left desc-9 align-top pt-2">
-                @if($show_item_code)<span style="font-size: 7px;">{{ $item_code }}</span> @endif{{ $item_description }}
+                @if($show_item_code)<span style="font-size: 7px;">{{ $item_code }}</span> @endif
+                @if($use_name_product_pdf)
+                    {!! $item_description_html !!}
+                @else
+                    {{ $item_description }}
+                @endif
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
                         <br/>{!! $attr->description !!} : {{ $attr->value }}
@@ -245,8 +260,8 @@
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        @if(isset($dtos->factor))
-                            <br/><small>{{ $dtos->factor * 100 }}% {{$dtos->description }}</small>
+                        @if(isset($dtos->factor) && !($dtos->from_global_distribution ?? false))
+                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
                         @endif
                     @endforeach
                 @endif
@@ -265,8 +280,8 @@
                 @endif
                 @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                 @php
-                    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
                 @if($lot)
                     <small style="display:block; font-weight: normal; font-size: 7px;">

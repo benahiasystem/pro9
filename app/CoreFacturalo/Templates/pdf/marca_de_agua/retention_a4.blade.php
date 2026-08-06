@@ -28,9 +28,11 @@
     } elseif (!empty($company->logo)) {
         $logo = "storage/uploads/logos/{$company->logo}";
     }
+
+    $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
 @endphp
 
-@if($logo)
+@if($exists_logo)
     <div class="item_watermark" style="
         position: absolute;
         top: 35%;
@@ -48,7 +50,7 @@
 @endif
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @if($exists_logo)
             <td width="20%">
                 <div class="company_logo_box">
                     <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">

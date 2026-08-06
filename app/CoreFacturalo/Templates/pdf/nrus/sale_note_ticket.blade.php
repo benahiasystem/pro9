@@ -216,7 +216,7 @@
                 @if(!empty($row->item->esFusionado))
                     Por consumo
                 @elseif($row->name_product_pdf)
-                    {!!$row->name_product_pdf!!}
+                    {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
                 @else
                     {!!$row->item->description!!}
                 @endif
@@ -236,8 +236,8 @@
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        @if(isset($dtos->factor))
-                            <br/><small>{{ $dtos->factor * 100 }}% {{$dtos->description }}</small>
+                        @if(isset($dtos->factor) && !($dtos->from_global_distribution ?? false))
+                            <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
                         @endif
                     @endforeach
                 @endif
@@ -257,8 +257,8 @@
                 <br>
                 @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                 @php
-                    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
                 @if($lot)
                     <small style="display:block; font-weight: normal; font-size: 7px;">

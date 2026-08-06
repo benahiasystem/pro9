@@ -19,9 +19,12 @@
     } elseif (!empty($company->logo)) {
         $logo = "storage/uploads/logos/{$company->logo}";
     }
+
+    $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
+    $exists_company_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads(!empty($company->logo) ? "storage/uploads/logos/{$company->logo}" : null);
 @endphp
 
-@if($logo)
+@if($exists_logo)
     <div class="item_watermark" style="
         position: absolute;
         top: 35%;
@@ -39,7 +42,7 @@
 @endif
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @if($exists_company_logo)
             <td width="20%">
                 <div class="company_logo_box">
                     <img src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
@@ -339,7 +342,9 @@
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
             </td>

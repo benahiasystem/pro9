@@ -42,6 +42,7 @@ $configurationEnableGuaranteeFund = App\CoreFacturalo\Helpers\Template\TemplateH
 $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
 $total_pending_payment = $document->total_pending_payment;
 
+$exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
 @endphp
 <html>
 
@@ -83,7 +84,7 @@ $total_pending_payment = $document->total_pending_payment;
     @endif
     <table class="full-width">
         <tr>
-            @if($company->logo)
+            @if($exists_logo)
                 <td width="20%">
                     <div class="company_logo_box">
                         <img
@@ -747,7 +748,9 @@ $total_pending_payment = $document->total_pending_payment;
 
                     @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                    <br /><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                     @endif
 
@@ -799,8 +802,8 @@ $total_pending_payment = $document->total_pending_payment;
                 @endif
                 @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
                 @php
-                    $lot = $itemLotGroup->getLote($row->item->IdLoteSelected);
-                    $date_due = $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected);
+                    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
+                    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
 
                 @if($showLoteColumn)
@@ -826,7 +829,7 @@ $total_pending_payment = $document->total_pending_payment;
                     </td>
                 @endif
                 @php
-                    $unit_price_item = $row->getUnitPrice(($configuration['is_preview']) , $document);
+                    $unit_price_item = $row->getUnitPrice(( isset($configuration['is_preview']) ? $configuration['is_preview'] : false ) , $document);
                     $price_total_item = $unit_price_item * $row->quantity;
                 @endphp
                 @if ($configuration_decimal_quantity->change_decimal_quantity_unit_price_pdf)
@@ -847,7 +850,7 @@ $total_pending_payment = $document->total_pending_payment;
                     @php
                     $total_discount_line = 0;
                     foreach ($row->discounts as $disto) {
-                        if ($disto->from_global_distribution) continue;
+                        if (optional($disto)->from_global_distribution) continue;
                         $amount = $disto->discount_type_id == "00" ? $disto->amount_without_rounded * 1.18 : $disto->amount;
                         $total_discount_line = $total_discount_line + $amount;
                     }
@@ -857,7 +860,17 @@ $total_pending_payment = $document->total_pending_payment;
                     0
                     @endif
                 </td>
-                <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
+                @php
+                    $global = collect($row->discounts)->where('from_global_distribution', true)->first();
+                @endphp
+                @if ($global)
+                    @php
+                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : $global->amount;
+                    @endphp
+                    <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
+                @else 
+                    <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
+                @endif
             </tr>
             <tr>
                 <td colspan="{{ $colspan_total+1 }}" class="border-bottom"></td>
@@ -940,10 +953,14 @@ $total_pending_payment = $document->total_pending_payment;
             </tr>
             @endif
 
-            @if($document->total_discount_with_igv > 0 && $document->subtotal > 0)
+            @if($document->subtotal > 0)
+                @php
+                    $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
+                    $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
+                @endphp
             <tr>
-                <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">SUBTOTAL: {{ $document->currency_type->symbol }}</td>
-                <td class="text-right font-bold">{{ number_format($document->subtotal, 2) }}</td>
+                <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>
+                <td class="text-right font-bold">{{ number_format($subtotal, 2) }}</td>
             </tr>
             @endif
 
@@ -987,8 +1004,8 @@ $total_pending_payment = $document->total_pending_payment;
                 <td class="text-right font-bold">{{ number_format($document->perception->amount, 2) }}</td>
             </tr>
             <tr>
-                <td colspan="{{ ceil(($colspan_total + 1) / 2) }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-                <td colspan="{{ floor(($colspan_total + 1) / 2) - 1 }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+                <td colspan="{{ floor(($colspan_total + 1) / 2) }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ number_format(($document->total + $document->perception->amount), 2) }}</td>
             </tr>
             @elseif($document->retention)
@@ -1008,8 +1025,8 @@ $total_pending_payment = $document->total_pending_payment;
             </tr>
             @else
             <tr>
-                <td colspan="{{ ceil(($colspan_total + 1) / 2) }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-                <td colspan="{{ floor(($colspan_total + 1) / 2) - 1 }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" class="text-left font-bold" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+                <td colspan="{{ floor(($colspan_total + 1) / 2)  }}" class="text-right font-bold pr-2">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
             </tr>
             @endif

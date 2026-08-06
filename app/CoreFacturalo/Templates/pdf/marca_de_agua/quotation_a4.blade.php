@@ -31,9 +31,11 @@
     } elseif (!empty($company->logo)) {
         $logo = "storage/uploads/logos/{$company->logo}";
     }
+
+    $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
 @endphp
 
-@if($logo)
+@if($exists_logo)
     <div class="item_watermark" style="
         position: absolute;
         top: 35%;
@@ -52,7 +54,7 @@
 
 <table class="full-width">
     <tr>
-        @if($company->logo)
+        @if($exists_logo)
             <td width="20%">
                 <div class="company_logo_box">
                     <img src="data:{{mime_content_type(public_path("{$logo}"))}};base64, {{base64_encode(file_get_contents(public_path("{$logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
@@ -269,7 +271,15 @@
                     </td>
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">
-                        {{ $document->date_of_due->format('d-m-Y') }}
+                        @php
+                            $validity = $document->date_of_due;
+                            if ($validity instanceof \DateTimeInterface) {
+                                $validity = $validity->format('d-m-Y');
+                            } elseif (is_string($validity) && preg_match('/^\d{4}-\d{2}-\d{2}/', $validity)) {
+                                $validity = \Carbon\Carbon::parse($validity)->format('d-m-Y');
+                            }
+                        @endphp
+                        {{ $validity }}
                     </td>
                 </tr>
                 @endif
@@ -439,7 +449,9 @@
                 @endif
                 @if($row->discounts)
                     @foreach($row->discounts as $dtos)
-                        <br/><span style="font-size: 9px">{{ $dtos->factor * 100 }}% {{$dtos->description }}</span>
+                        @if(!($dtos->from_global_distribution ?? false))
+                            <br/><span style="font-size: 9px">{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</span>
+                        @endif
                     @endforeach
                 @endif
 
@@ -570,7 +582,8 @@
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
         </tr>
         <tr>
-            <td colspan="{{ $colspan_total }}" class="p-1 text-right align-top desc cell-solid font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td class="p-1 text-left align-top desc cell-solid font-bold" colspan="{{ ceil(($colspan_total + 1) / 2) - 1 }}" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td colspan="{{ floor(($colspan_total + 1) / 2) }}" class="p-1 text-right align-top desc cell-solid font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>
         </tr>
     </tbody>
