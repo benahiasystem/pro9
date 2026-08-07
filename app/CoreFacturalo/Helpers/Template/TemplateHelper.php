@@ -475,4 +475,50 @@ use Illuminate\Support\Str;
 
             return Storage::disk('public')->exists($path) && is_file(public_path('storage/'.$path));
         }
+
+        /**
+         * Columnas visibles del ticket Plantilla_personalizable (config por sucursal).
+         *
+         * @param  int|string $establishmentId
+         * @return array{showColumns: array, colspan_total: int}
+         */
+        public static function getPersonalizableTicketShowColumns($establishmentId): array
+        {
+            $columnsConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $establishmentId)
+                ->where('template_name', 'Plantilla_personalizable_ticket')
+                ->first();
+
+            $showColumns = $columnsConfig ? $columnsConfig->columns_config : null;
+            if (!$showColumns) {
+                $showColumns = [
+                    'codigo' => true,
+                    'cantidad' => true,
+                    'unidad' => true,
+                    'descripcion' => true,
+                    'serie' => false,
+                    'modelo' => false,
+                    'marca' => false,
+                    'lote' => false,
+                    'fecha_vencimiento' => false,
+                    'precio_unitario' => true,
+                    'descuento' => false,
+                    'total' => true,
+                    'tipo_persona' => false,
+                    'peso_total' => false,
+                    'nro_producto' => true,
+                ];
+            }
+
+            $colspan_total = 0;
+            foreach (['codigo', 'cantidad', 'unidad', 'descripcion', 'precio_unitario', 'descuento', 'total'] as $column) {
+                if (!empty($showColumns[$column])) {
+                    $colspan_total++;
+                }
+            }
+
+            return [
+                'showColumns' => $showColumns,
+                'colspan_total' => $colspan_total,
+            ];
+        }
     }

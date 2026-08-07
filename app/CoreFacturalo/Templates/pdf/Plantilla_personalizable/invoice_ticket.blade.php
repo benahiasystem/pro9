@@ -32,41 +32,8 @@
 
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
-    // Obtener configuración de columnas para Plantilla_personalizable_ticket
-    $columnsConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $document->establishment_id)
-        ->where('template_name', 'Plantilla_personalizable_ticket')
-        ->first();
+    extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns($document->establishment_id));
 
-    $showColumns = $columnsConfig ? $columnsConfig->columns_config : null;
-    if(!$showColumns) {
-        $showColumns = [
-            'codigo' => true,
-            'cantidad' => true,
-            'unidad' => true,
-            'descripcion' => true,
-            'serie' => false,
-            'modelo' => false,
-            'marca' => false,
-            'lote' => false,
-            'fecha_vencimiento' => false,
-            'precio_unitario' => true,
-            'descuento' => false,
-            'total' => true,
-            'tipo_persona' => false,
-            'peso_total' => false,
-            'nro_producto' => true,
-        ];
-    }
-    
-    $colspan_total = 0;
-    if($showColumns['codigo']) $colspan_total++;
-    if($showColumns['cantidad']) $colspan_total++;
-    if($showColumns['unidad']) $colspan_total++;
-    if($showColumns['descripcion']) $colspan_total++;
-    if($showColumns['precio_unitario']) $colspan_total++;
-    if($showColumns['descuento']) $colspan_total++;
-    if($showColumns['total']) $colspan_total++;
-    
 @endphp
 <html>
 <head>

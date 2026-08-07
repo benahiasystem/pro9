@@ -16,6 +16,9 @@
     }
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
+    extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns($document->establishment_id));
+    $colspan_label = max($colspan_total - 1, 1);
+
 @endphp
 <html>
 <head>
@@ -171,12 +174,12 @@
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr>
-        <th class="border-top-bottom desc-9 text-left">COD.</th>
-        <th class="border-top-bottom desc-9 text-left">CANT.</th>
-        <th class="border-top-bottom desc-9 text-left">UNIDAD</th>
-        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
-        <th class="border-top-bottom desc-9 text-left">P.UNIT</th>
-        <th class="border-top-bottom desc-9 text-left">TOTAL</th>
+        @if($showColumns['codigo']) <th class="border-top-bottom desc-9 text-left">COD.</th> @endif
+        @if($showColumns['cantidad']) <th class="border-top-bottom desc-9 text-left">CANT.</th> @endif
+        @if($showColumns['unidad']) <th class="border-top-bottom desc-9 text-left">UNIDAD</th> @endif
+        @if($showColumns['descripcion']) <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th> @endif
+        @if($showColumns['precio_unitario']) <th class="border-top-bottom desc-9 text-left">P.UNIT</th> @endif
+        @if($showColumns['total']) <th class="border-top-bottom desc-9 text-left">TOTAL</th> @endif
     </tr>
     </thead>
     <tbody>
@@ -191,16 +194,18 @@
             $total_fusionado = $fusionados->sum('total');
         @endphp
         <tr>
-            <td class="text-center align-top">001</td>
+            @if($showColumns['codigo']) <td class="text-center align-top">001</td> @endif
+            @if($showColumns['cantidad'])
             <td class="text-center desc-9 align-top">
                 {{ ((int)$cantidad_fusionada != $cantidad_fusionada) ? $cantidad_fusionada : number_format($cantidad_fusionada, 0) }}
             </td>
-            <td class="text-center desc-9 align-top">NIU</td>
-            <td class="text-left desc-9 align-top">Por consumo</td>
-            <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
-            <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
+            @endif
+            @if($showColumns['unidad']) <td class="text-center desc-9 align-top">NIU</td> @endif
+            @if($showColumns['descripcion']) <td class="text-left desc-9 align-top">Por consumo</td> @endif
+            @if($showColumns['precio_unitario']) <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td> @endif
+            @if($showColumns['total']) <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td> @endif
         </tr>
-        <tr><td colspan="6" class="border-bottom"></td></tr>
+        <tr><td colspan="{{ $colspan_total }}" class="border-bottom"></td></tr>
     @endif
     {{-- Mostrar productos no fusionados --}}
     @foreach($no_fusionados as $row)
@@ -209,6 +214,7 @@
             $internal_id = isset($row->item->internal_id) ? $row->item->internal_id : $items->find($row->item_id)->internal_id;
         @endphp
         <tr>
+            @if($showColumns['codigo'])
             <td class="text-center align-top">
                 @if(!empty($row->item->esFusionado))
                     001
@@ -216,6 +222,8 @@
                     {{ $internal_id }}
                 @endif
             </td>
+            @endif
+            @if($showColumns['cantidad'])
             <td class="text-center desc-9 align-top">
                 @if(((int)$row->quantity != $row->quantity))
                     {{ $row->quantity }}
@@ -223,6 +231,8 @@
                     {{ number_format($row->quantity, 0) }}
                 @endif
             </td>
+            @endif
+            @if($showColumns['unidad'])
             <td class="text-center desc-9 align-top">
                 @if(!empty($row->item->esFusionado))
                     NIU
@@ -230,6 +240,8 @@
                     {{ $row->item->unit_type_id }}
                 @endif
             </td>
+            @endif
+            @if($showColumns['descripcion'])
             <td class="text-left desc-9 align-top">
                 @if(!empty($row->item->esFusionado))
                     Por consumo
@@ -293,67 +305,68 @@
                     @endisset
                 </small>
             </td>
-            <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td>
-            <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td>
+            @endif
+            @if($showColumns['precio_unitario']) <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td> @endif
+            @if($showColumns['total']) <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td> @endif
         </tr>
         <tr>
-            <td colspan="6" class="border-bottom"></td>
+            <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
         </tr>
     @endforeach
         @if($document->total_exportation > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_exportation, 2) }}</td>
             </tr>
         @endif
         @if($document->total_free > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_free, 2) }}</td>
             </tr>
         @endif
         @if($document->total_unaffected > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_unaffected, 2) }}</td>
             </tr>
         @endif
         @if($document->total_exonerated > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_exonerated, 2) }}</td>
             </tr>
         @endif
         {{-- @if($document->total_taxed > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_taxed, 2) }}</td>
             </tr>
         @endif --}}
          @if($document->total_discount_with_igv > 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_discount_with_igv, 2) }}</td>
             </tr>
         @endif
         {{--<tr>
-            <td colspan="5" class="text-right font-bold desc">IGV: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">IGV: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total_igv, 2) }}</td>
         </tr>--}}
 
         @if($document->total_charge > 0 && $document->charges)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">CARGOS ({{$document->getTotalFactor()}}%): {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">CARGOS ({{$document->getTotalFactor()}}%): {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format($document->total_charge, 2) }}</td>
             </tr>
         @endif
 
         <tr>
-            <td colspan="5" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
+            <td colspan="{{ $colspan_label }}" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
             <td class="text-right font-bold desc"></td>
         </tr>
         <tr>
-            <td colspan="5" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
+            <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total, 2) }}</td>
         </tr>
 
@@ -363,7 +376,7 @@
 
         @if($change_payment < 0)
             <tr>
-                <td colspan="5" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
+                <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format(abs($change_payment),2, ".", "") }}</td>
             </tr>
         @endif
