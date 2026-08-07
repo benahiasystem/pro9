@@ -65,6 +65,30 @@ class SaleNoteController extends Controller
         return $records;
     }
 
+    /**
+     * Devuelve una nota de venta por su id.
+     *
+     * whereTypeUser() evita que un vendedor pueda leer notas de otro usuario
+     * pasando ids ajenos; para los demás perfiles no restringe nada.
+     */
+    public function record($id)
+    {
+        $record = SaleNote::whereTypeUser()->find($id);
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró la nota de venta solicitada.',
+            ], 404);
+        }
+
+        // Se conserva el envoltorio "data" que agregaba JsonResource para no cambiar
+        // la forma de la respuesta.
+        return response()->json([
+            'data' => $record->getApiResourceFind(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request['establishment_id'] = $request['establishment_id'] ? $request['establishment_id'] : auth()->user()->establishment_id;

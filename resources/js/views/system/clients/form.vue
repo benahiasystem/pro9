@@ -1204,6 +1204,10 @@ export default {
                 return this.$message.error('Debe seleccionar al menos un módulo')
             }
 
+            if (this.business === 6 && this.selectedPlan && !this.planMeetsNrusLimits(this.selectedPlan)) {
+                return this.$message.error('El plan seleccionado no cumple los límites NRUS (ventas máx. S/ 8000 y 1 sucursal).')
+            }
+
             if (!this.form.is_update) {
                 if (this.form.certificate && !this.form.password_certificate) {
                     return this.$message.error('Si carga un certificado, es necesario ingresar el password del certificado')
