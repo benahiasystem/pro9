@@ -457,6 +457,14 @@ export default {
         this.title = this.type === "customers" ? "Clientes" : "Proveedores";
         this.getColumnsToShow();
     },
+    mounted() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("create")) {
+            this.$nextTick(() => {
+                this.clickCreate();
+            });
+        }
+    },
     computed: {
         personUrl() {
             return this.type === "customers"
