@@ -63,25 +63,9 @@
                                      class="form-group">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
 
-                                    <div v-if="api_service_token != false">
-                                        <x-input-service v-model="form.number"
-                                                         :identity_document_type_id="form.identity_document_type_id"
-                                                         @search="searchNumber"></x-input-service>
-                                    </div>
-                                    <div v-else class="sunat-row">
-                                        <el-input class="sunat-input" v-model="form.number"
-                                                  :maxlength="maxLength"
-                                                  dusk="number"></el-input>
-
-                                        <el-button v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'"
-                                                   class="sunat-service-button"
-                                                   :loading="loading_search"
-                                                   icon="el-icon-search"
-                                                   type="primary"
-                                                   @click.prevent="searchCustomer">
-                                            {{ form.identity_document_type_id === '6' ? 'SUNAT' : 'RENIEC' }}
-                                        </el-button>
-                                    </div>
+                                    <x-input-service v-model="form.number"
+                                                     :identity_document_type_id="form.identity_document_type_id"
+                                                     @search="searchNumber"></x-input-service>
 
                                     <small v-if="errors.number"
                                            class="form-control-feedback"
@@ -921,14 +905,6 @@ export default {
             'person',
             'parentPerson',
         ]),
-        maxLength: function () {
-            if (this.form.identity_document_type_id === '6') {
-                return 11
-            }
-            if (this.form.identity_document_type_id === '1') {
-                return 8
-            }
-        },
         canQueryEstablishments() {
             return this.api_service_token != false
                 && this.form.identity_document_type_id === '6'
@@ -1049,11 +1025,7 @@ export default {
 
             if (this.external && this.input_person) {
                 if (this.form.number.length === 8 || this.form.number.length === 11) {
-                    if (this.api_service_token != false) {
-                        await this.$eventHub.$emit('enableClickSearch')
-                    } else {
-                        this.searchCustomer()
-                    }
+                    await this.$eventHub.$emit('enableClickSearch')
                 }
             }
 
@@ -1359,9 +1331,6 @@ export default {
             this.$emit('update:showDialog', false)
             this.initForm()
         },
-        searchCustomer() {
-            this.searchServiceNumberByType()
-        },
         searchNumber(data) {
             //cambios apiperu
             this.resetEstablishments()
@@ -1572,34 +1541,6 @@ export default {
 </script>
 
 <style scoped>
-.sunat-row {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-}
-
-.sunat-input {
-  flex: 1;
-  width: 100%;
-}
-
-.sunat-service-button {
-  min-width: 95px !important;
-  border-top-left-radius: 0 !important;
-  border-bottom-left-radius: 0 !important;
-  border-top-right-radius: 6px !important;
-  border-bottom-right-radius: 6px !important;
-  margin-left: -1px !important;
-  white-space: nowrap !important;
-}
-
-.sunat-input .el-input__suffix,
-.sunat-input .el-input__append {
-  display: none !important;
-}
-
-
-
 .section-title {
   font-size: 1.05rem;
   font-weight: 700;

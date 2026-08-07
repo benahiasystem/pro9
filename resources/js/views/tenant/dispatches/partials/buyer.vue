@@ -24,26 +24,8 @@
                             <!-- <el-input v-model="form.number" :maxlength="maxLength" dusk="number">
                             </el-input> -->
 
-                            <div v-if="api_service_token != false">
-                                <x-input-service :identity_document_type_id="form.identity_document_type_id"
-                                                 v-model="form.number" @search="searchNumber"></x-input-service>
-                            </div>
-                            <div v-else>
-                                <el-input v-model="form.number" :maxlength="maxLength" dusk="number">
-                                    <template
-                                        v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'">
-                                        <el-button type="primary" slot="append" :loading="loading_search"
-                                                   icon="el-icon-search" @click.prevent="searchCustomer">
-                                            <template v-if="form.identity_document_type_id === '6'">
-                                                SUNAT
-                                            </template>
-                                            <template v-if="form.identity_document_type_id === '1'">
-                                                RENIEC
-                                            </template>
-                                        </el-button>
-                                    </template>
-                                </el-input>
-                            </div>
+                            <x-input-service :identity_document_type_id="form.identity_document_type_id"
+                                             v-model="form.number" @search="searchNumber"></x-input-service>
 
                             <small class="form-control-feedback" v-if="errors.number" v-text="errors.number[0]"></small>
                         </div>
@@ -94,23 +76,10 @@ export default {
             resource: 'dispatch_persons',
         }
     },
-    computed: {
-        maxLength: function () {
-            if (this.form.identity_document_type_id === '6') {
-                return 11
-            }
-            if (this.form.identity_document_type_id === '1') {
-                return 8
-            }
-        }
-    },
     methods:{
         close() {
             this.$emit('update:showDialog', false)
             this.initForm()
-        },
-        searchCustomer() {
-            this.searchServiceNumberByType()
         },
         searchNumber(data) {
             this.form.name = (this.form.identity_document_type_id === '1') ? data.nombre_completo : data.nombre_o_razon_social;

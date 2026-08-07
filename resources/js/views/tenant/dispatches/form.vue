@@ -300,9 +300,9 @@
                         <div class="col-lg-4">
                             <div :class="{'has-danger': errors['dispatcher.number']}" class="form-group">
                                 <label class="control-label">Número<span class="text-danger"> *</span></label>
-                                <el-input v-model="form.dispatcher.number" :maxlength="11"
-
-                                          placeholder="Número..."></el-input>
+                                <x-input-service v-model="form.dispatcher.number"
+                                                 :identity_document_type_id="form.dispatcher.identity_document_type_id"
+                                                 @search="searchDispatcher"></x-input-service>
                                 <small v-if="errors['dispatcher.number']" class="form-control-feedback"
                                        v-text="errors['dispatcher.number'][0]"></small>
                             </div>
@@ -352,8 +352,9 @@
                         <div class="col-lg-4">
                             <div :class="{'has-danger': errors['driver.number']}" class="form-group">
                                 <label class="control-label">Número</label>
-                                <el-input v-model="form.driver.number" :maxlength="11"
-                                          placeholder="Número..."></el-input>
+                                <x-input-service v-model="form.driver.number"
+                                                 :identity_document_type_id="form.driver.identity_document_type_id"
+                                                 @search="searchDriver"></x-input-service>
                                 <small v-if="errors['driver.number']" class="form-control-feedback"
                                        v-text="errors['driver.number'][0]"></small>
                             </div>
@@ -724,6 +725,12 @@ export default {
                 this.form.dispatcher.name = v.name;
                 this.form.dispatcher.identity_document_type_id = v.identity_document_type_id;
             }
+        },
+        searchDispatcher(data) {
+            this.form.dispatcher.name = (this.form.dispatcher.identity_document_type_id === '1') ? data.nombre_completo : data.nombre_o_razon_social
+        },
+        searchDriver(data) {
+            this.form.driver.name = (this.form.driver.identity_document_type_id === '1') ? data.nombre_completo : data.nombre_o_razon_social
         },
         changeDriver() {
             let v = _.find(this.drivers, {'id': this.driver})

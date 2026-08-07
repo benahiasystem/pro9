@@ -55,29 +55,9 @@
                                      class="form-group">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
 
-                                    <div v-if="api_service_token != false">
-                                        <x-input-service v-model="form.number"
-                                                         :identity_document_type_id="form.identity_document_type_id"
-                                                         @search="searchNumber"></x-input-service>
-                                    </div>
-                                    <div v-else style="display: flex;">
-                                        <el-input v-model="form.number"
-                                                :maxlength="maxLength"
-                                                dusk="number"
-                                                style="flex: 1;">
-                                        </el-input>
-                                        
-                                        <el-button v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'"
-                                                class="sunat-button"
-                                                :loading="loading_search"
-                                                icon="el-icon-search"
-                                                type="primary"
-                                                style="border-radius: 0 4px 4px 0; margin-left: -1px; height: 40px;"
-                                                @click.prevent="searchCustomer">
-                                            <template v-if="form.identity_document_type_id === '6'">SUNAT</template>
-                                            <template v-if="form.identity_document_type_id === '1'">RENIEC</template>
-                                        </el-button>
-                                    </div>
+                                    <x-input-service v-model="form.number"
+                                                     :identity_document_type_id="form.identity_document_type_id"
+                                                     @search="searchNumber"></x-input-service>
 
                                     <small v-if="errors.number"
                                            class="form-control-feedback"
@@ -795,11 +775,7 @@ export default {
 
             if (this.external && this.input_person) {
                 if (this.form.number.length === 8 || this.form.number.length === 11) {
-                    if (this.api_service_token != false) {
-                        await this.$eventHub.$emit('enableClickSearch')
-                    } else {
-                        this.searchCustomer()
-                    }
+                    await this.$eventHub.$emit('enableClickSearch')
                 }
             }
 
