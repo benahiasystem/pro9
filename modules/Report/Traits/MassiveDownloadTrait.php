@@ -364,7 +364,9 @@ use Illuminate\Support\Str;
             } else if (isset($array['user_id'])) {
                 $user = Auth::loginUsingId($array['user_id']);
                 $base_pdf_template = $user->establishment->template_pdf;
-            } 
+            } else {
+                $base_pdf_template = $configuration->formats ?? 'default';
+            }
             if (($format_pdf === 'ticket') or ($format_pdf === 'ticket_58')) {
                 // Buscar el primer documento para obtener el establecimiento
                 $first_document = null;
