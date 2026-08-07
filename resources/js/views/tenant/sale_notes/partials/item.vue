@@ -782,8 +782,9 @@
                     class="add"
                     native-type="submit"
                     type="primary"
+                    :loading="loading_tables"
                 >
-                    {{ titleAction }}
+                    {{ loading_tables ? " Cargando..." : titleAction }}
                     <!-- Agregar -->
                 </el-button>
             </div>
@@ -889,6 +890,7 @@ export default {
             extra_temp: undefined,
             can_add_new_product: false,
             loading_search: false,
+            loading_tables: false,
             titleAction: "",
             is_client: false,
             titleDialog: "Agregar Producto o Servicio",
@@ -1071,20 +1073,27 @@ export default {
             return ItemOptionDescription(item);
         },
         getTables() {
-            this.$http.get(`/${this.resource}/item/tables`).then(response => {
-                let data = response.data;
-                this.all_items = data.items;
-                // this.items =data.items
-                this.operation_types = data.operation_types;
-                this.all_affectation_igv_types = data.affectation_igv_types;
-                this.affectation_igv_types = data.affectation_igv_types;
-                this.system_isc_types = data.system_isc_types;
-                this.discount_types = data.discount_types;
-                this.charge_types = data.charge_types;
-                this.attribute_types = data.attribute_types;
-                this.is_client = data.is_client;
-                this.filterItems();
-            });
+            this.loading_tables = true;
+
+            return this.$http
+                .get(`/${this.resource}/item/tables`)
+                .then(response => {
+                    let data = response.data;
+                    this.all_items = data.items;
+                    // this.items =data.items
+                    this.operation_types = data.operation_types;
+                    this.all_affectation_igv_types = data.affectation_igv_types;
+                    this.affectation_igv_types = data.affectation_igv_types;
+                    this.system_isc_types = data.system_isc_types;
+                    this.discount_types = data.discount_types;
+                    this.charge_types = data.charge_types;
+                    this.attribute_types = data.attribute_types;
+                    this.is_client = data.is_client;
+                    this.filterItems();
+                })
+                .finally(() => {
+                    this.loading_tables = false;
+                });
         },
 
         canCreateProduct() {
