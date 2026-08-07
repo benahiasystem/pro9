@@ -478,47 +478,55 @@ use Illuminate\Support\Str;
 
         /**
          * Columnas visibles del ticket Plantilla_personalizable (config por sucursal).
+         * Usa la config de Plantilla_personalizable (PDF) como fuente principal, ya que
+         * el usuario la define desde Configuración > Plantilla PDF. Si no existe, usa
+         * Plantilla_personalizable_ticket.
          *
          * @param  int|string $establishmentId
          * @return array{showColumns: array, colspan_total: int}
          */
         public static function getPersonalizableTicketShowColumns($establishmentId): array
         {
-            $columnsConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $establishmentId)
+            $defaults = [
+                'codigo' => true,
+                'cantidad' => true,
+                'unidad' => true,
+                'descripcion' => true,
+                'serie' => false,
+                'modelo' => false,
+                'marca' => false,
+                'lote' => false,
+                'fecha_vencimiento' => false,
+                'precio_unitario' => true,
+                'descuento' => false,
+                'total' => true,
+                'tipo_persona' => false,
+                'peso_total' => false,
+                'nro_producto' => true,
+            ];
+
+            $pdfConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $establishmentId)
+                ->where('template_name', 'Plantilla_personalizable')
+                ->first();
+
+            $ticketConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $establishmentId)
                 ->where('template_name', 'Plantilla_personalizable_ticket')
                 ->first();
 
-            $showColumns = $columnsConfig ? $columnsConfig->columns_config : null;
-            if (!$showColumns) {
-                $showColumns = [
-                    'codigo' => true,
-                    'cantidad' => true,
-                    'unidad' => true,
-                    'descripcion' => true,
-                    'serie' => false,
-                    'modelo' => false,
-                    'marca' => false,
-                    'lote' => false,
-                    'fecha_vencimiento' => false,
-                    'precio_unitario' => true,
-                    'descuento' => false,
-                    'total' => true,
-                    'tipo_persona' => false,
-                    'peso_total' => false,
-                    'nro_producto' => true,
-                ];
-            }
+            $pdfColumns = $pdfConfig ? ($pdfConfig->columns_config ?? []) : [];
+            $ticketColumns = $ticketConfig ? ($ticketConfig->columns_config ?? []) : [];
 
-            $colspan_total = 0;
-            foreach (['codigo', 'cantidad', 'unidad', 'descripcion', 'precio_unitario', 'descuento', 'total'] as $column) {
-                if (!empty($showColumns[$column])) {
-                    $colspan_total++;
-                }
+            if (!empty($pdfColumns)) {
+                $showColumns = array_merge($defaults, $pdfColumns);
+            } elseif (!empty($ticketColumns)) {
+                $showColumns = array_merge($defaults, $ticketColumns);
+            } else {
+                $showColumns = $defaults;
             }
 
             return [
                 'showColumns' => $showColumns,
-                'colspan_total' => $colspan_total,
+                'show_codigo' => !empty($showColumns['codigo']),
             ];
         }
     }

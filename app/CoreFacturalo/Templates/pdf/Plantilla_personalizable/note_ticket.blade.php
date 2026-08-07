@@ -30,7 +30,8 @@
     $accounts = \App\Models\Tenant\BankAccount::all();
 
     extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns($document->establishment_id));
-    $colspan_label = max($colspan_total - 1, 1);
+    $colspan_total = $show_codigo ? 6 : 5;
+    $colspan_label = $colspan_total - 1;
 @endphp
 <html>
 <head>
@@ -171,19 +172,18 @@
 <table class="full-width mt-10 mb-10">
     <thead class="">
     <tr>
-        @if($showColumns['codigo']) <th class="border-top-bottom desc-9 text-left">COD.</th> @endif
-        @if($showColumns['cantidad']) <th class="border-top-bottom desc-9 text-left">CANT.</th> @endif
-        @if($showColumns['unidad']) <th class="border-top-bottom desc-9 text-left">UNIDAD</th> @endif
-        @if($showColumns['descripcion']) <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th> @endif
-        @if($showColumns['precio_unitario']) <th class="border-top-bottom desc-9 text-left">P.UNIT</th> @endif
-        @if($showColumns['total']) <th class="border-top-bottom desc-9 text-left">TOTAL</th> @endif
+        @if($show_codigo) <th class="border-top-bottom desc-9 text-left">COD.</th> @endif
+        <th class="border-top-bottom desc-9 text-left">CANT.</th>
+        <th class="border-top-bottom desc-9 text-left">UNIDAD</th>
+        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
+        <th class="border-top-bottom desc-9 text-left">P.UNIT</th>
+        <th class="border-top-bottom desc-9 text-left">TOTAL</th>
     </tr>
     </thead>
     <tbody>
     @foreach($document->items as $row)
         <tr>
-            @if($showColumns['codigo']) <td class="text-center desc-9 align-top font-bold">{{ $row->item->internal_id }}</td> @endif
-            @if($showColumns['cantidad'])
+            @if($show_codigo) <td class="text-center desc-9 align-top font-bold">{{ $row->item->internal_id }}</td> @endif
             <td class="text-center desc-9 align-top">
                 @if(((int)$row->quantity != $row->quantity))
                     {{ $row->quantity }}
@@ -191,9 +191,7 @@
                     {{ number_format($row->quantity, 0) }}
                 @endif
             </td>
-            @endif
-            @if($showColumns['unidad']) <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td> @endif
-            @if($showColumns['descripcion'])
+            <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
             <td class="text-left desc-9 align-top">
                 {!! $row->item->description !!}
                 @if($row->attributes)
@@ -209,9 +207,8 @@
                     @endforeach
                 @endif
             </td>
-            @endif
-            @if($showColumns['precio_unitario']) <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td> @endif
-            @if($showColumns['total']) <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td> @endif
+            <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td>
+            <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td>
         </tr>
         <tr>
             <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
