@@ -165,7 +165,13 @@
             <!-- <div class="card-header bg-info">
                 <h3 class="my-0">{{ title }}</h3>
             </div> -->
-            <div class="data-table-visible-columns">                
+            <div class="data-table-visible-columns">
+                <el-radio-group v-model="variations_view"
+                                class="me-2"
+                                @change="changeVariationsView">
+                    <el-radio-button label="grouped">Agrupado</el-radio-button>
+                    <el-radio-button label="flat">Separado</el-radio-button>
+                </el-radio-group>
                 <el-dropdown v-if="selected.length > 0">
                   <el-button aria-expanded="false"
                     class="dropdown-toggle me-2"
@@ -219,7 +225,7 @@
                 </el-dropdown>
             </div>
             <div class="card-body">
-                <data-table ref="DataTable" :productType="type" :resource="resource" :sort-field="sortField" :sort-direction="sortDirection" :showProductFilter="type !== 'ZZ'" @sort-change="handleSortChange" @records-changed="handleRecordsChanged">
+                <data-table ref="DataTable" :productType="type" :resource="resource" :sort-field="sortField" :sort-direction="sortDirection" :showProductFilter="type !== 'ZZ'" :extra-filters="{ variations_view }" @sort-change="handleSortChange" @records-changed="handleRecordsChanged">
                     <tr slot="heading" width="100%" slot-scope="{ sort }">
                         <th class="text-center" style="width: 34px;">
                             <el-checkbox :value="allSelectedInView" @change="toggleSelectAll"></el-checkbox>
@@ -254,8 +260,8 @@
                     </tr>
 
                     <tr></tr>
+                    <template slot-scope="{ index, row }">
                     <tr valign="middle"
-                        slot-scope="{ index, row }"
                         :class="{ disable_color: !row.active, 'text-warning': row.hidden_search }"
                     >
                         <td>
@@ -266,7 +272,22 @@
                             <!-- <td v-if="col.visible && col.key === 'internal_id'" :key="col.key" class="text-end">{{ row.internal_id }}</td> -->
                             <td v-if="col.visible && col.key === 'unit_type'" :key="col.key">{{ row.unit_type_id }}</td>
                             <td v-if="col.visible && col.key === 'image'" :key="col.key"><img :src="row.image_url_small" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
-                            <td class="fw-semibold" v-if="col.visible && col.key === 'name'" :key="col.key">{{ row.description }} <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template></td>
+                            <td class="fw-semibold" v-if="col.visible && col.key === 'name'" :key="col.key">
+                                {{ row.description }}
+                                <el-tag v-if="variations_view === 'grouped' && row.variations_count > 0"
+                                        size="mini"
+                                        type="primary"
+                                        effect="plain"
+                                        style="cursor: pointer"
+                                        @click.native.stop="toggleVariationsRow(row)">
+                                    {{ row.variations_count }} variaciones <i :class="isExpanded(row.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+                                </el-tag>
+                                <el-tag v-else-if="variations_view === 'flat' && row.parent_item_id"
+                                        size="mini"
+                                        type="info"
+                                        effect="plain">Variación</el-tag>
+                                <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template>
+                            </td>
                             <td v-if="col.visible && col.key === 'description'" :key="col.key"><div class="limit-4-lines">{{ stripHtml(row.name) }}</div></td>
                             <td v-if="col.visible && col.key === 'model'" :key="col.key">{{ row.model }}</td>
                             <td v-if="col.visible && col.key === 'brand'" :key="col.key">{{ row.brand }}</td>
@@ -277,7 +298,10 @@
                                 <button class="btn waves-effect waves-light btn-xs btn-primary" type="button" @click.prevent="clickHistory(row.id)"><i class="fa fa-history"></i></button>
                             </td>
                             <td v-if="col.visible && col.key === 'stock'" :key="col.key">
-                                <div class="fw-semibold" v-if="config.product_only_location == true" :class="{ 'text-danger': row.stock < row.stock_min }">
+                                <div class="fw-semibold" v-if="variations_view === 'grouped' && row.variations_count > 0">
+                                    {{ formatStock(row.variations_stock || 0, row.unit_type_id) }}
+                                </div>
+                                <div class="fw-semibold" v-else-if="config.product_only_location == true" :class="{ 'text-danger': row.stock < row.stock_min }">
                                     {{ formatStock(row.stock, row.unit_type_id) }} <!-- <small class="text-muted ms-1">{{ unitSymbol(row.unit_type_id) }}</small> -->
                                 </div>
                                 <div v-else>
@@ -411,6 +435,50 @@
                         </td>
                         </template>
                     </tr>
+                    <template v-if="variations_view === 'grouped' && isExpanded(row.id)">
+                        <tr v-if="!expanded_variations[row.id]" :key="'variations-loading-' + row.id" class="variations-subrow-tr">
+                            <td colspan="30" class="text-muted">Cargando variaciones...</td>
+                        </tr>
+                        <tr v-else-if="expanded_variations[row.id].length === 0" :key="'variations-empty-' + row.id" class="variations-subrow-tr">
+                            <td colspan="30" class="text-muted">Sin variaciones activas</td>
+                        </tr>
+                        <tr v-for="variation in (expanded_variations[row.id] || [])" :key="'variation-' + variation.id" class="variations-subrow-tr">
+                            <td></td>
+                            <template v-for="col in orderedColumns">
+                                <td v-if="col.visible && col.key === 'id'" :key="col.key" class="text-end text-muted">{{ variation.id }}</td>
+                                <td v-if="col.visible && col.key === 'unit_type'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'image'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'name'" :key="col.key">
+                                    <span class="text-muted me-1">└</span>{{ variation.description }}
+                                    <template v-if="columns.internal_id && columns.internal_id.visible">
+                                        <br><small class="text-muted uppercase ms-3">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
+                                    </template>
+                                </td>
+                                <td v-if="col.visible && col.key === 'description'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'model'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'brand'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'item_code'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'sanitary'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'cod_digemid'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'history' && typeUser == 'admin'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'stock'" :key="col.key" class="fw-semibold">{{ formatStock(variation.stock, row.unit_type_id) }}</td>
+                                <td v-if="col.visible && col.key === 'extra_data'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'sale_unit_price'" :key="col.key" class="text-end text-primary fw-semibold">{{ row.currency_type_symbol }} {{ variation.sale_unit_price }}</td>
+                                <td v-if="col.visible && col.key === 'purchase_unit_price' && typeUser != 'seller'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'real_unit_price'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'has_igv'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
+                                    <el-button v-if="typeUser === 'admin'"
+                                               size="mini"
+                                               icon="el-icon-edit"
+                                               title="Editar variación"
+                                               @click.prevent="clickCreate(variation.id)"></el-button>
+                                </td>
+                            </template>
+                        </tr>
+                    </template>
+                    </template>
                 </data-table>
             </div>
 
@@ -486,6 +554,12 @@
     border-radius: 8px;
     padding: 3px !important;
     line-height: normal;
+}
+.variations-subrow-tr td {
+    background: #f8f9fb;
+    border-top: none;
+    padding-top: 6px;
+    padding-bottom: 6px;
 }
 </style>
 <script>
@@ -578,6 +652,9 @@ export default {
             showDialogItemStock: false,
             sortField: localStorage.getItem('itemSortField') || 'id',
             sortDirection: localStorage.getItem('itemSortDirection') || 'desc',
+            variations_view: localStorage.getItem('items_variations_view') || 'grouped',
+            expanded_ids: [],
+            expanded_variations: {},
         };
     },
     created() {
@@ -727,6 +804,28 @@ export default {
     methods: {
         handleRecordsChanged(records) {
             this.visibleRows = Array.isArray(records) ? records : [];
+        },
+        changeVariationsView(value) {
+            localStorage.setItem('items_variations_view', value)
+            this.expanded_ids = []
+            this.expanded_variations = {}
+            this.$refs.DataTable.getRecords()
+        },
+        isExpanded(id) {
+            return this.expanded_ids.includes(id)
+        },
+        toggleVariationsRow(row) {
+            const index = this.expanded_ids.indexOf(row.id)
+            if (index !== -1) {
+                this.expanded_ids.splice(index, 1)
+                return
+            }
+            this.expanded_ids.push(row.id)
+            if (!this.expanded_variations[row.id]) {
+                this.$http.get(`/items/${row.id}/variations`).then(response => {
+                    this.$set(this.expanded_variations, row.id, response.data.data || [])
+                })
+            }
         },
         stripHtml(html) {
             if (!html) return html

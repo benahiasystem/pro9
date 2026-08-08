@@ -117,28 +117,67 @@
                                             @focus="focusSelectItem"
                                             @visible-change="focusTotalItem"
                                         >
-                                            <el-tooltip
-                                                v-for="option in items"
-                                                :key="option.id"
-                                                placement="left"
-                                            >
-                                                <div
-                                                    slot="content"
-                                                    v-html="
-                                                        ItemSlotTooltipView(
-                                                            option
-                                                        )
-                                                    "
-                                                ></div>
-                                                <el-option
-                                                    :label="
-                                                        ItemOptionDescriptionView(
-                                                            option
-                                                        )
-                                                    "
-                                                    :value="option.id"
-                                                ></el-option>
-                                            </el-tooltip>
+                                            <template v-for="option in items">
+                                                <el-tooltip
+                                                    :key="option.id"
+                                                    :disabled="option.variations_count > 0"
+                                                    placement="left"
+                                                >
+                                                    <div
+                                                        slot="content"
+                                                        v-html="
+                                                            ItemSlotTooltipView(
+                                                                option
+                                                            )
+                                                        "
+                                                    ></div>
+                                                    <el-option
+                                                        :label="
+                                                            ItemOptionDescriptionView(
+                                                                option
+                                                            )
+                                                        "
+                                                        :value="option.id"
+                                                    >
+                                                        <div v-if="option.variations_count > 0"
+                                                             class="d-flex align-items-center justify-content-between"
+                                                             @click.stop="toggleExpandVariations(option)">
+                                                            <span>
+                                                                {{ ItemOptionDescriptionView(option) }}
+                                                                <span class="variation-badge">{{ option.variations_count }} variaciones</span>
+                                                            </span>
+                                                            <span class="d-flex align-items-center">
+                                                                <small class="me-2"
+                                                                       :class="variationsTotalStock(option) > 0 ? 'text-success' : 'text-danger'">
+                                                                    Stock en variaciones: {{ variationsTotalStock(option) }}
+                                                                </small>
+                                                                <i :class="expanded_parent_ids.includes(option.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+                                                            </span>
+                                                        </div>
+                                                    </el-option>
+                                                </el-tooltip>
+                                                <template v-if="option.variations_count > 0 && expanded_parent_ids.includes(option.id)">
+                                                    <el-option
+                                                        v-for="variation in option.variations"
+                                                        :key="'variation-' + variation.id"
+                                                        :label="variation.description"
+                                                        :value="variation.id"
+                                                        class="variation-child-option"
+                                                    >
+                                                        <div class="d-flex align-items-center justify-content-between"
+                                                             @click.stop="selectVariation(variation)">
+                                                            <span>
+                                                                <span class="text-muted me-1">└</span>{{ variation.variation_label || variation.description }}
+                                                                <small class="text-muted d-block ms-3">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
+                                                            </span>
+                                                            <span class="text-end" style="line-height: 1.3;">
+                                                                {{ variation.sale_unit_price }}
+                                                                <small class="d-block" :class="variation.stock > 0 ? 'text-success' : 'text-danger'">Stock: {{ variation.stock }}</small>
+                                                            </span>
+                                                        </div>
+                                                    </el-option>
+                                                </template>
+                                            </template>
                                             <template slot="empty">
                                                 <p v-if="loading_search" class="el-select-dropdown__empty">
                                                     Cargando...
@@ -968,6 +1007,25 @@
     margin-right: 5% !important;
     max-width: 80% !important;
 }
+.el-select-items .variation-child-option {
+    padding-left: 34px;
+    background: #faf9ff;
+    height: auto;
+    line-height: 1.4;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+.el-select-items .variation-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b3fd4;
+    background: #eceafd;
+    border-radius: 99px;
+    padding: 1px 8px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
 .el-button + .el-button {
     margin-left: 0;
 }
@@ -1068,6 +1126,7 @@ export default {
             warehousesDetail: [],
             showListStock: false,
             search_item_by_barcode: false,
+            expanded_parent_ids: [],
             isUpdateWarehouseId: null,
             showDialogLots: false,
             showDialogSelectLots: false,
@@ -1458,13 +1517,19 @@ export default {
                     .get(`/${this.resource}/search-items/`, { params })
                     .then(response => {
                         this.items = response.data.items;
-                        this.loading_search = false;
                         this.enabledSearchItemsBarcode(input);
                         this.enabledSearchItemBySeries(input);
                         if (this.items.length == 0) {
                             this.filterItems();
                             this.items = [];
                         }
+                    })
+                    .catch(() => {
+                        this.$message.error('No se pudo completar la búsqueda de productos');
+                    })
+                    .then(() => {
+                        // se ejecuta siempre: evita que el "Cargando..." quede colgado si la petición falla
+                        this.loading_search = false;
                     });
             } else {
                 await this.filterItems();
@@ -1841,7 +1906,61 @@ export default {
             this.initForm();
             this.$emit("update:showDialog", false);
         },
+        toggleExpandVariations(option) {
+            const index = this.expanded_parent_ids.indexOf(option.id)
+            if (index === -1) {
+                this.expanded_parent_ids.push(option.id)
+            } else {
+                this.expanded_parent_ids.splice(index, 1)
+            }
+        },
+        variationsTotalStock(option) {
+            return (option.variations || []).reduce((total, variation) => total + parseFloat(variation.stock || 0), 0)
+        },
+        async selectVariation(variation) {
+            this.loading_search = true
+            try {
+                const response = await this.$http.get(`/${this.resource}/search/item/${variation.id}`)
+                const full_item = (response.data.items || [])[0]
+                if (!full_item) {
+                    return this.$message.error('No se pudo cargar la variación seleccionada')
+                }
+                if (!this.items.find(row => row.id === full_item.id)) {
+                    this.items.push(full_item)
+                }
+                this.form.item_id = full_item.id
+                if (this.$refs.selectSearchNormal) {
+                    this.$refs.selectSearchNormal.blur()
+                }
+                await this.changeItem()
+            } finally {
+                this.loading_search = false
+            }
+        },
         async changeItem() {
+            const selected_item = _.find(this.items, {'id': this.form.item_id});
+            if (!selected_item) {
+                return;
+            }
+
+            // El padre con variaciones no es vendible: se expande para elegir una variación
+            if (selected_item.variations_count > 0) {
+                this.form.item_id = null;
+                if (this.showDialog && !this.search_item_by_barcode) {
+                    if (!this.expanded_parent_ids.includes(selected_item.id)) {
+                        this.expanded_parent_ids.push(selected_item.id);
+                    }
+                    this.$nextTick(() => {
+                        if (this.$refs.selectSearchNormal) {
+                            this.$refs.selectSearchNormal.visible = true;
+                        }
+                    });
+                } else {
+                    this.$message.warning('Este producto tiene variaciones: selecciona una variación específica');
+                }
+                return;
+            }
+
             this.clearExtraInfoItem();
 
             this.clearExtraInfoItem()

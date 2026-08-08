@@ -61,6 +61,7 @@ use Modules\Item\Models\Brand;
 use Modules\Item\Models\Category;
 use Modules\Item\Models\ItemLot;
 use Modules\Item\Models\ItemLotsGroup;
+use Modules\Item\Models\ProductVariable;
 use Mpdf\HTMLParserMode;
 use Mpdf\Mpdf;
 use setasign\Fpdi\Fpdi;
@@ -166,6 +167,7 @@ class ItemController extends Controller
             'show_disabled' => $request->show_disabled,
             'sort_field' => $request->get('sort_field', 'id'),
             'sort_direction' => $request->get('sort_direction', 'desc'),
+            'variations_view' => $request->variations_view,
             'page' => $request->get('page', 1),
         ];
 
@@ -201,6 +203,13 @@ class ItemController extends Controller
         // $records = Item::whereTypeUser()->whereNotIsSet();
         $records = $this->getInitialQueryRecords($isEcommerce, $request->isRestaurant ?? false);
 
+        // Vista agrupada: las variaciones se ocultan y el padre expone contador y stock total
+        if ($request->variations_view === 'grouped') {
+            $records->whereNull('parent_item_id')
+                ->withCount('variations')
+                ->withSum('variations as variations_stock', 'stock');
+        }
+
         $sortField = $request->get('sort_field', 'id');
         $sortDirection = $request->get('sort_direction', 'desc');
 
@@ -227,7 +236,8 @@ class ItemController extends Controller
                 break;
 
             default:
-                if($request->has('column'))
+                // column puede llegar vacío (race del DataTable antes de cargar /columns): sin filtro
+                if($request->has('column') && $request->column)
                 {
                     if($this->applyAdvancedRecordsSearch() && $request->column === 'description')
                     {
@@ -376,6 +386,12 @@ class ItemController extends Controller
         $configuration = $configuration->getCollectionData();
         $inventory_configuration = InventoryConfiguration::firstOrFail();
         $next_internal_id = str_pad((Item::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+        $product_variables = ProductVariable::whereActive()
+            ->with(['values' => function ($query) {
+                $query->whereActive()->orderBy('position');
+            }])
+            ->orderBy('name')
+            ->get(['id', 'name', 'value_type']);
         /*
         $configuration = Configuration::select(
             'affectation_igv_type_id',
@@ -405,7 +421,8 @@ class ItemController extends Controller
             'CatItemProductFamily',
             'CatItemUnitsPerPackage',
             'inventory_configuration',
-            'next_internal_id'
+            'next_internal_id',
+            'product_variables'
         );
     }
 
@@ -934,6 +951,14 @@ class ItemController extends Controller
         try {
 
             $item = Item::findOrFail($id);
+
+            if ($item->variations()->exists()) {
+                return [
+                    'success' => false,
+                    'message' => 'El producto tiene variaciones registradas. Elimine primero sus variaciones.'
+                ];
+            }
+
             // Evita violaciones de FK en items cuando quedan lotes de cabecera huérfanos.
             ItemLotsGroup::where('item_id', $item->id)->delete();
             $this->deleteRecordInitialKardex($item);
@@ -1186,6 +1211,8 @@ class ItemController extends Controller
         }
 
         $new = $obj->setDescription($obj->getDescription().' (Duplicado)')->replicate();
+        // el duplicado nace independiente, sin vínculo con variaciones
+        $new->parent_item_id = null;
         $new->save();
 
         return [

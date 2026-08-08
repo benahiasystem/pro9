@@ -172,6 +172,7 @@
                 }),
                 'commission_type' => $this->commission_type ?? 'amount',
                 'attributes' => $this->attributes ? $this->attributes : [],
+                'parent_item_id' => $this->parent_item_id,
                 'series_enabled' => (bool)$this->series_enabled,
                 'lots_enabled' => (bool)$this->lots_enabled,
                 'individual_items' => $this->sets->transform(function ($row, $key) {

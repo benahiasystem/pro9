@@ -33,6 +33,21 @@ class ItemObserver
         if(!is_null($item->brand_id)) {
             $text[] = $item->brand->name;
         }
+        // Las variaciones incluyen sus valores (Talla M, Rojo...) para ser buscables
+        if(!is_null($item->parent_item_id) && $item->exists) {
+            $variation_values = $item->variationValues()
+                ->with('value')
+                ->get()
+                ->map(function ($row) {
+                    return $row->value ? $row->value->value : null;
+                })
+                ->filter()
+                ->all();
+
+            if(count($variation_values) > 0) {
+                $text = array_merge($text, $variation_values);
+            }
+        }
 
         $item->text_filter = join(' ', $text);
     }

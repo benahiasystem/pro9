@@ -23,6 +23,17 @@ if($hostname) {
             Route::get('brands/columns', 'BrandController@columns');
             Route::delete('brands/{brand}', 'BrandController@destroy');
 
+            Route::prefix('product-variables')->group(function () {
+                Route::get('records', 'ProductVariableController@records');
+                Route::get('record/{id}', 'ProductVariableController@record');
+                Route::post('', 'ProductVariableController@store');
+                Route::post('toggle/{id}', 'ProductVariableController@toggle');
+                Route::delete('{id}', 'ProductVariableController@destroy');
+            });
+
+            Route::get('items/{item}/variations', 'ItemVariationController@records')->where('item', '[0-9]+');
+            Route::post('items/{item}/variations/bulk', 'ItemVariationController@bulk')->where('item', '[0-9]+');
+
 
 
             Route::prefix('zones')->group(function () {

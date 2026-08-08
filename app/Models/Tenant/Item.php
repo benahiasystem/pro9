@@ -684,6 +684,52 @@ class Item extends ModelTenant
     }
 
     /**
+     * Producto principal del cual deriva esta variación
+     *
+     * @return BelongsTo
+     */
+    public function parent()
+    {
+        return $this->belongsTo(Item::class, 'parent_item_id');
+    }
+
+    /**
+     * Variaciones (items derivados) de este producto
+     *
+     * @return HasMany
+     */
+    public function variations()
+    {
+        return $this->hasMany(Item::class, 'parent_item_id');
+    }
+
+    /**
+     * Valores de variable que representa esta variación (Talla=M, Color=Rojo...)
+     *
+     * @return HasMany
+     */
+    public function variationValues()
+    {
+        return $this->hasMany(\Modules\Item\Models\ItemVariationValue::class, 'item_id');
+    }
+
+    /**
+     * Etiqueta legible de la variación, ej: "M / Rojo".
+     * No se agrega a $appends para evitar queries en cada serialización.
+     *
+     * @return string
+     */
+    public function getVariationLabelAttribute()
+    {
+        return $this->variationValues
+            ->map(function ($row) {
+                return $row->value ? $row->value->value : null;
+            })
+            ->filter()
+            ->implode(' / ');
+    }
+
+    /**
      * @return HasMany
      */
     public function item_lots()
@@ -1268,7 +1314,29 @@ class Item extends ModelTenant
             'image_url' => $this->getImageUrl(),
             'name' => $this->name,
             'preparation_area_id' => $this->preparation_area_id,
-            'preparation_area' => $this->preparationArea
+            'preparation_area' => $this->preparationArea,
+            'parent_item_id' => $this->parent_item_id,
+            'variations_count' => (int) ($this->variations_count ?? 0),
+            'variations' => ((int) ($this->variations_count ?? 0)) > 0
+                ? $this->variations()
+                    ->whereIsActive()
+                    ->with('variationValues.value')
+                    ->orderBy('id')
+                    ->get()
+                    ->map(function ($variation) {
+                        return [
+                            'id' => $variation->id,
+                            'description' => $variation->description,
+                            'variation_label' => $variation->variation_label,
+                            'internal_id' => $variation->internal_id,
+                            'barcode' => $variation->barcode,
+                            'stock' => $variation->getStockByWarehouse(),
+                            'sale_unit_price' => (float) $variation->sale_unit_price,
+                            'unit_type_id' => $variation->unit_type_id,
+                        ];
+                    })
+                    ->values()
+                : [],
         ];
 
         // El nombre de producto, por defecto, sera la misma descripcion.
@@ -1531,6 +1599,9 @@ class Item extends ModelTenant
             'item_code_gs1' => $this->item_code_gs1,
             'stock' => $this->getStockByWarehouse(),
             'stock_min' => $this->stock_min,
+            'parent_item_id' => $this->parent_item_id,
+            'variations_count' => (int) ($this->variations_count ?? 0),
+            'variations_stock' => !is_null($this->variations_stock) ? (float) $this->variations_stock : null,
             'currency_type_id' => $this->currency_type_id,
             'currency_type_symbol' => $currency->symbol,
             'sale_affectation_igv_type_id' => $this->sale_affectation_igv_type_id,
