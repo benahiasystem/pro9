@@ -22,6 +22,23 @@ class DocumentObserver
      */
     public function creating(Document $document)
     {
+        // Con una conexión offline activa (máquina VendeYa enrolada), la
+        // emisión online del establecimiento se bloquea para impedir
+        // correlativos en conflicto. Los lotes de sincronización entran
+        // con el bypass registrado por el propio canal.
+        if (!app()->bound('sync.batch.bypass')
+            && class_exists(\Modules\Sync\Models\OfflineMachine::class)
+            && \Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('offline_machines')
+            && \Modules\Sync\Models\OfflineMachine::where('status', 'active')
+                ->where('establishment_id', $document->establishment_id)
+                ->exists()
+        ) {
+            throw new \Exception(
+                'Este establecimiento tiene una conexión offline activa (VendeYa): ' .
+                'la emisión online está bloqueada para evitar conflictos de numeración.'
+            );
+        }
+
         $company = Company::active();
         $number = Functions::newNumber($document->soap_type_id,
                                        $document->document_type_id,
@@ -92,7 +109,17 @@ class DocumentObserver
         $cash = Cash::where([
             ['user_id', auth()->id()],
             ['state', true],
-        ])->firstOrFail();
+        ])->first();
+
+        // Reintentos del canal offline (bandeja): la caja del turno original ya
+        // cerró — el documento se asocia a la última caja del usuario.
+        if (!$cash && app()->bound('sync.batch.bypass')) {
+            $cash = Cash::where('user_id', auth()->id())->latest('id')->first();
+        }
+
+        if (!$cash) {
+            throw (new \Illuminate\Database\Eloquent\ModelNotFoundException())->setModel(Cash::class);
+        }
 
         $cash_document = CashDocument::where('cash_id', $cash->id)
                     ->where('document_id', $document->id)->first();

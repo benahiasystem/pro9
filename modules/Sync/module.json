@@ -1,0 +1,14 @@
+{
+    "name": "Sync",
+    "alias": "sync",
+    "description": "Conexión Offline VendeYa: enrolamiento de máquinas, series dedicadas, snapshot y sincronización (plan offline §4)",
+    "keywords": [],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\Sync\\Providers\\SyncServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

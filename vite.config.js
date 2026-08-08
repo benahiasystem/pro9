@@ -66,6 +66,7 @@ export default defineConfig({
       '@viewsModuleCustomField' : path.resolve(__dirname, 'modules/CustomField/Resources/assets/js'),
       '@viewsModuleClaimsBook' : path.resolve(__dirname, 'modules/ClaimsBook/Resources/assets/js'),
       '@viewsModuleWebhook' : path.resolve(__dirname, 'modules/Webhook/Resources/assets/js'),
+      '@viewsModuleSync' : path.resolve(__dirname, 'modules/Sync/Resources/assets/js'),
       '@viewsModuleMarketplace' : path.resolve(__dirname, 'modules/Marketplace/Resources/assets/js'),
       'vue': path.resolve(__dirname, 'node_modules/vue/dist/vue.esm.js'),
       '@ckeditor/ckeditor5-build-classic': path.resolve(__dirname, 'resources/js/ckeditor-shim.js'),
