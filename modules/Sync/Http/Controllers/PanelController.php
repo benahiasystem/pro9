@@ -24,20 +24,38 @@ class PanelController extends Controller
     public function machines()
     {
         $machines = OfflineMachine::orderBy('id', 'desc')->get()->map(function ($m) {
-            // Cada serie con su rango emitido: "FV01 de 1 a 3".
-            $series = Series::where('series_device_group_id', $m->series_device_group_id)
-                ->get()
-                ->map(function ($s) {
-                    $base = Document::where('document_type_id', $s->document_type_id)
-                        ->where('series', $s->number);
-                    $first = (clone $base)->min('number');
-                    $last = (clone $base)->max('number');
+            // Activa: sus series vigentes con rango emitido ("FV01 de 1 a 3").
+            // Revocada: el HISTÓRICO real desde sus eventos (las series ya se
+            // liberaron o liberarán, pero lo emitido por esta máquina queda).
+            if ($m->status === 'active') {
+                $series = Series::where('series_device_group_id', $m->series_device_group_id)
+                    ->get()
+                    ->map(function ($s) {
+                        $base = Document::where('document_type_id', $s->document_type_id)
+                            ->where('series', $s->number);
+                        $first = (clone $base)->min('number');
+                        $last = (clone $base)->max('number');
 
-                    return $first
-                        ? "{$s->number} de {$first} a {$last}"
-                        : "{$s->number} sin emisiones";
-                })
-                ->values();
+                        return $first
+                            ? "{$s->number} de {$first} a {$last}"
+                            : "{$s->number} sin emisiones";
+                    })
+                    ->values();
+            } else {
+                $series = SyncEvent::where('machine_id', $m->id)
+                    ->whereIn('type', ['sale', 'sale_note'])
+                    ->selectRaw(
+                        "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$.serie_documento')), JSON_UNQUOTE(JSON_EXTRACT(payload, '$.series'))) AS serie,
+                         MIN(CAST(COALESCE(JSON_EXTRACT(payload, '$.numero_documento'), JSON_EXTRACT(payload, '$.number')) AS UNSIGNED)) AS first_n,
+                         MAX(CAST(COALESCE(JSON_EXTRACT(payload, '$.numero_documento'), JSON_EXTRACT(payload, '$.number')) AS UNSIGNED)) AS last_n"
+                    )
+                    ->groupBy('serie')
+                    ->orderBy('serie')
+                    ->get()
+                    ->filter(fn ($r) => $r->serie)
+                    ->map(fn ($r) => "{$r->serie} de {$r->first_n} a {$r->last_n}")
+                    ->values();
+            }
 
             $counters = SyncEvent::where('machine_id', $m->id)
                 ->selectRaw('status, COUNT(*) as n')
@@ -51,6 +69,8 @@ class PanelController extends Controller
                 'establishment_id' => $m->establishment_id,
                 'status' => $m->status,
                 'series' => $series,
+                // Aún tiene series amarradas a su grupo (habilita "Liberar")
+                'has_group' => Series::where('series_device_group_id', $m->series_device_group_id)->exists(),
                 'created_at' => optional($m->created_at)->format('Y-m-d H:i'),
                 'accepted' => (int) ($counters['accepted'] ?? 0),
                 'pending' => (int) ($counters['pending'] ?? 0),
@@ -69,7 +89,7 @@ class PanelController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Máquina {$machine->name} revocada: su token ya no autoriza y la emisión online del establecimiento queda liberada si no hay otras máquinas activas",
+            'message' => "Máquina {$machine->name} revocada: su acceso quedó deshabilitado. Lo que tuviera sin sincronizar podrá enviarse al reconectarla.",
         ]);
     }
 
@@ -121,6 +141,10 @@ class PanelController extends Controller
                 if (in_array($e->type, ['sale', 'void'])) {
                     $p = $e->payload;
                     $detail = ($p['serie_documento'] ?? '') . '-' . ($p['numero_documento'] ?? '');
+                } elseif ($e->type === 'sale_note') {
+                    // Visualmente es un comprobante de venta más.
+                    $p = $e->payload;
+                    $detail = ($p['series'] ?? 'NV') . '-' . ($p['number'] ?? '');
                 }
 
                 return [
@@ -143,6 +167,28 @@ class PanelController extends Controller
                 'total' => $page->total(),
                 'current_page' => $page->currentPage(),
                 'per_page' => $page->perPage(),
+            ],
+        ]);
+    }
+
+    /**
+     * KPIs de la bandeja: los pendientes dependen de las tareas programadas
+     * (anulaciones esperando aceptación, boletas de resumen) o del reintento
+     * manual — este número es el "trabajo por continuar".
+     */
+    public function eventStats()
+    {
+        $byStatus = SyncEvent::selectRaw('status, COUNT(*) AS n')
+            ->groupBy('status')
+            ->pluck('n', 'status');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'pending' => (int) ($byStatus['pending'] ?? 0),
+                'error' => (int) ($byStatus['error'] ?? 0),
+                'accepted' => (int) ($byStatus['accepted'] ?? 0),
+                'discarded' => (int) ($byStatus['discarded'] ?? 0),
             ],
         ]);
     }

@@ -296,7 +296,12 @@ class SaleNoteController extends Controller
     {
         $series = Series::find($series_id)->number;
 
-        if (!$id) {
+        // Canal offline (VendeYa): la serie es dedicada de la máquina y el
+        // número ya se imprimió en el ticket — se respeta tal cual. El flujo
+        // online mantiene su asignación automática (último + 1).
+        $forced_offline_number = !$id && $number && app()->bound('sync.batch.bypass');
+
+        if (!$id && !$forced_offline_number) {
             $sale_note = SaleNote::select('number')->where('soap_type_id', $this->company->soap_type_id)
                 ->where('series', $series)
                 ->orderBy('number', 'desc')

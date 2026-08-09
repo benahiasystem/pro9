@@ -54,9 +54,10 @@ class SyncController extends Controller
             ->orderBy('id')
             ->get();
 
+        // 01/03: comprobantes SUNAT; 80: nota de venta (interna, sin SUNAT)
         $series = Series::where('dedicated', true)
             ->whereNull('series_device_group_id')
-            ->whereIn('document_type_id', ['01', '03', '07', '08'])
+            ->whereIn('document_type_id', ['01', '03', '07', '08', '80'])
             ->orderBy('document_type_id')
             ->orderBy('number')
             ->get()
@@ -365,7 +366,7 @@ class SyncController extends Controller
         $validator = Validator::make($request->all(), [
             'events' => ['required', 'array', 'min:1'],
             'events.*.seq' => ['required', 'integer'],
-            'events.*.type' => ['required', 'in:cash_open,sale,void,cash_close'],
+            'events.*.type' => ['required', 'in:cash_open,sale,sale_note,void,cash_close'],
             'events.*.external_id' => ['required', 'uuid'],
             'events.*.occurred_at' => ['required', 'date'],
             'events.*.user_id' => ['required', 'integer'],

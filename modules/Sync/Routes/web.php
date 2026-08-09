@@ -13,6 +13,7 @@ if ($current_hostname) {
                 Route::post('machines/{id}/revoke', 'PanelController@revoke');
                 Route::post('machines/{id}/release-series', 'PanelController@releaseSeries');
                 Route::post('events/records', 'PanelController@events');
+                Route::post('events/stats', 'PanelController@eventStats');
                 Route::post('events/{id}/retry', 'PanelController@retryEvent');
                 Route::post('events/{id}/discard', 'PanelController@discardEvent');
             });

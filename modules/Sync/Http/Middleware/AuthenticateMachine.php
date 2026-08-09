@@ -15,14 +15,30 @@ class AuthenticateMachine
 {
     public function handle(Request $request, Closure $next)
     {
-        $machine = OfflineMachine::findByPlainToken($request->header('X-Machine-Token'));
+        $token = (string) $request->header('X-Machine-Token');
+        $known = $token !== ''
+            ? OfflineMachine::where('token_hash', OfflineMachine::hashToken($token))->first()
+            : null;
 
-        if (!$machine) {
+        // Código distinguible: la app bloquea la emisión y ofrece el
+        // re-enrolamiento cuando la revocación es explícita.
+        if ($known && $known->status !== 'active') {
             return response()->json([
                 'success' => false,
-                'message' => 'Máquina no autorizada o revocada',
+                'code' => 'machine_revoked',
+                'message' => 'Esta máquina fue revocada por el administrador',
             ], 401);
         }
+
+        if (!$known) {
+            return response()->json([
+                'success' => false,
+                'code' => 'machine_unknown',
+                'message' => 'Máquina no autorizada',
+            ], 401);
+        }
+
+        $machine = $known;
 
         $machine->touchSeen();
         $request->attributes->set('offline_machine', $machine);

@@ -63,6 +63,13 @@ class BatchProcessor
                     $saved->save();
                     break;
 
+                case 'sale_note':
+                    $saleNote = $this->processSaleNote($machine, $event);
+                    $saved = SyncEvent::create($record + ['status' => 'accepted']);
+                    $saved->message = $saleNote['number_full'];
+                    $saved->save();
+                    break;
+
                 case 'void':
                     // Si la venta ya está aceptada, la baja/resumen de
                     // anulación se genera aquí mismo; si no, queda pending y
@@ -121,6 +128,12 @@ class BatchProcessor
                     $stored->status = 'accepted';
                     $stored->document_id = $document->id;
                     $stored->message = "{$document->series}-{$document->number}";
+                    break;
+
+                case 'sale_note':
+                    $saleNote = $this->processSaleNote($machine, ['payload' => $stored->payload]);
+                    $stored->status = 'accepted';
+                    $stored->message = $saleNote['number_full'];
                     break;
 
                 case 'void':
@@ -250,11 +263,76 @@ class BatchProcessor
     }
 
     /**
+     * Nota de venta offline: invoca la MISMA cadena del API público
+     * (Tenant\Api\SaleNoteController@store — kardex, caja y PDF incluidos).
+     * La serie 80 es dedicada de la máquina y el número viene pre-tomado del
+     * ticket impreso: getDataSeries lo respeta bajo sync.batch.bypass.
+     */
+    public function processSaleNote(OfflineMachine $machine, array $event): array
+    {
+        $payload = $event['payload'];
+
+        $serie = Series::find($payload['series_id'] ?? null);
+        if (
+            !$serie
+            || $serie->document_type_id !== '80'
+            || (int) $serie->series_device_group_id !== (int) $machine->series_device_group_id
+        ) {
+            throw new \Exception('La serie de nota de venta no pertenece a esta máquina');
+        }
+        if (empty($payload['number'])) {
+            throw new \Exception('La nota de venta debe incluir su número local');
+        }
+
+        $request = new \Illuminate\Http\Request();
+        $request->replace($payload);
+
+        $controller = app(\App\Http\Controllers\Tenant\Api\SaleNoteController::class);
+        $response = $controller->store($request);
+        $result = is_array($response) ? $response : $response->getData(true);
+
+        if (empty($result['success'])) {
+            throw new \Exception('Nota de venta rechazada: ' . ($result['message'] ?? 'error desconocido'));
+        }
+
+        $numberFull = $result['data']['number'] ?? '';
+        $expected = "{$serie->number}-{$payload['number']}";
+        if ($numberFull !== $expected) {
+            throw new \Exception("La nota se registró como {$numberFull} pero el ticket dice {$expected}: revisar en el facturador");
+        }
+
+        // Mismo paso que el POS online tras crear la nota: vincularla a la
+        // caja del usuario (cash_open del lote garantiza una abierta).
+        $saleNoteId = $result['data']['id'] ?? null;
+        $cash = Cash::where([['user_id', Auth::id()], ['state', true]])->first()
+            ?? Cash::where('user_id', Auth::id())->latest('id')->first();
+        if ($cash && $saleNoteId) {
+            \App\Models\Tenant\CashDocument::firstOrCreate([
+                'cash_id' => $cash->id,
+                'sale_note_id' => $saleNoteId,
+            ]);
+        }
+
+        return ['number_full' => $numberFull, 'id' => $saleNoteId];
+    }
+
+    /**
      * Réplica exacta de Functions::newNumber (caso '#') para informar el
      * contador inicial de una serie al enrolar.
      */
     public static function nextNumberFor(string $document_type_id, string $serie): int
     {
+        // Notas de venta: el correlativo vive en sale_notes (misma regla que
+        // getDataSeries del API: último de la serie + 1).
+        if ($document_type_id === '80') {
+            $last = \App\Models\Tenant\SaleNote::select('number')
+                ->where('series', $serie)
+                ->orderBy('number', 'desc')
+                ->first();
+
+            return $last ? (int) $last->number + 1 : 1;
+        }
+
         $document = Document::select('number')
             ->where('document_type_id', $document_type_id)
             ->where('series', $serie)
