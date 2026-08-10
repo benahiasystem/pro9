@@ -3228,9 +3228,61 @@
 
 <script>
 (function () {
-    const culqiPublicKey = {!! json_encode($payment_configuration->publickey_culqi ?? '') !!};
-    const culqiRsaId = {!! json_encode($payment_configuration->idrsa_culqi ?? '') !!};
-    const culqiRsaPublicKey = {!! json_encode($payment_configuration->rsa_culqi ?? '') !!};
+    /**
+     * Credenciales desde PaymentConfiguration (string plano vía json_encode).
+     * Culqi Checkout v4 cifra el payload con RSA-OAEP (window.crypto.subtle).
+     * En http://*.test no hay Secure Context → subtle es undefined → ENCRYPT ERROR
+     * si se envían xculqirsaid/rsapublickey. Solo activamos RSA con subtle + PEM válidos.
+     */
+    function normalizeCulqiPublicKey(raw) {
+        return String(raw || '')
+            .trim()
+            .replace(/^["']+|["']+$/g, '');
+    }
+
+    function normalizeCulqiRsaPublicKey(raw) {
+        let key = String(raw || '').trim();
+        if (!key) {
+            return '';
+        }
+
+        key = key
+            .replace(/\\r\\n/g, '\n')
+            .replace(/\\n/g, '\n')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n');
+
+        if (!/BEGIN PUBLIC KEY/i.test(key)) {
+            return '';
+        }
+
+        if (!key.includes('\n')) {
+            key = key
+                .replace(/-----BEGIN PUBLIC KEY-----\s*/i, '-----BEGIN PUBLIC KEY-----\n')
+                .replace(/\s*-----END PUBLIC KEY-----/i, '\n-----END PUBLIC KEY-----');
+        }
+
+        const match = key.match(/-----BEGIN PUBLIC KEY-----\n([\s\S]+?)\n-----END PUBLIC KEY-----/i);
+        if (!match) {
+            return key;
+        }
+
+        const body = match[1].replace(/\s+/g, '');
+        if (!body) {
+            return '';
+        }
+
+        const wrapped = body.match(/.{1,64}/g).join('\n');
+        return '-----BEGIN PUBLIC KEY-----\n' + wrapped + '\n-----END PUBLIC KEY-----';
+    }
+
+    function canUseCulqiRsaEncryption() {
+        return !!(window.isSecureContext && window.crypto && window.crypto.subtle);
+    }
+
+    const culqiPublicKey = normalizeCulqiPublicKey({!! json_encode($payment_configuration->publickey_culqi ?? '') !!});
+    const culqiRsaId = String({!! json_encode($payment_configuration->idrsa_culqi ?? '') !!} || '').trim();
+    const culqiRsaPublicKey = normalizeCulqiRsaPublicKey({!! json_encode($payment_configuration->rsa_culqi ?? '') !!});
     let culqiReady = false;
     let culqiReadyPromise = null;
     let culqiCloseMountTimer = null;
@@ -3238,13 +3290,11 @@
     let culqiCloseResizeHandler = null;
     let culqiEscapeHandler = null;
 
-    Culqi.publicKey = culqiPublicKey;
-    if (!Culqi.publicKey) {
-        jQuery('.culqi').hide();
-    }
-
     function getCulqiErrorMessage(error) {
         if (!error) return '';
+        if (error.type === 'error_encrypt') {
+            return 'No se pudo encriptar la tarjeta. En entorno local use HTTPS (p. ej. https://tienda.pro9.test) o verifique RSA Key / ID RSA en Configuración de pagos.';
+        }
         return error.user_message || error.merchant_message || '';
     }
 
@@ -3285,12 +3335,13 @@
     }
 
     function initCulqi(Culqi) {
-        Culqi.publicKey = culqiPublicKey;
-
-        if (!Culqi.publicKey) {
+        if (!culqiPublicKey) {
             jQuery('.culqi').hide();
             return;
         }
+
+        // Asignación explícita como string plano (pk_test_... / pk_live_...).
+        Culqi.publicKey = culqiPublicKey;
 
         const ecommercePrimaryCssColor = getComputedStyle(document.documentElement)
             .getPropertyValue('--primary-color').trim() || '#ff7a00';
@@ -3314,7 +3365,6 @@
                 agente: true,
             },
             style: {
-                logo: "{{ asset('porto-ecommerce/assets/images/payment-gateways/culqi.svg') }}?v=2",
                 bannerColor: '#ffffff',
                 buttonBackground: ecommercePrimaryColor,
                 menuColor: ecommercePrimaryColor,
@@ -3781,6 +3831,9 @@
             return;
         }
 
+        // Reaplicar publicKey justo antes de abrir el checkout (evita pérdida de contexto).
+        Culqi.publicKey = culqiPublicKey;
+
         const settings = {
             title: 'Productos Ecommerce',
             currency: 'PEN',
@@ -3788,9 +3841,16 @@
             amount: precio,
         };
 
-        if (culqiRsaId && culqiRsaPublicKey) {
+        // RSA solo si hay Web Crypto (HTTPS / localhost). En http://*.test se omite a propósito
+        // para tokenizar sin ENCRYPT ERROR; el canal a secure.culqi.com sigue siendo HTTPS.
+        if (canUseCulqiRsaEncryption() && culqiRsaId && culqiRsaPublicKey) {
             settings.xculqirsaid = culqiRsaId;
             settings.rsapublickey = culqiRsaPublicKey;
+        } else if (culqiRsaId || culqiRsaPublicKey) {
+            console.warn(
+                '[Culqi] RSA omitido: se requiere Secure Context (HTTPS) y PEM válido. ' +
+                'Tokenización continúa sin cifrado RSA local.'
+            );
         }
 
         Culqi.settings(settings);
