@@ -233,6 +233,10 @@ var app_cart = new Vue({
         paymentSuccessVisible: false,
         paymentSuccessRedirecting: false,
         successOrder: null,
+        successOrderNumber: '',
+        successPaymentLabel: '',
+        successItemsCount: 0,
+        successOrderTotal: 0,
         thankYouUrl: null,
 
         // Cotización desde carrito
@@ -773,7 +777,7 @@ var app_cart = new Vue({
             }
         },
         ensureGuestFormDocument() {
-            if (!this.guestCheckoutAccepted || !this.showGuestForm || this.isLoggedIn) {
+            if (!this.guestCheckoutAccepted || this.isLoggedIn) {
                 return;
             }
 
@@ -786,7 +790,7 @@ var app_cart = new Vue({
         },
         syncGuestFormToDocument() {
             if (!this.form_document || !this.form_document.datos_del_cliente_o_receptor) {
-                if (this.showGuestForm && !this.isLoggedIn) {
+                if (!this.isLoggedIn && this.guestCheckoutAccepted) {
                     this.initGuestFormStructure();
                 } else {
                     return;
@@ -814,7 +818,11 @@ var app_cart = new Vue({
             this.applyGuestDocumentDefaults();
         },
         applyGuestDocumentDefaults() {
-            if (!this.showGuestForm || this.isLoggedIn || !this.form_document) {
+            if (this.isLoggedIn || !this.form_document) {
+                return;
+            }
+
+            if (!this.guestCheckoutAccepted && !this.showGuestForm) {
                 return;
             }
 
@@ -1937,7 +1945,7 @@ var app_cart = new Vue({
             })
         },
         refreshSetDataCustomer() {
-            if (this.isGuestCheckoutActive) {
+            if (!this.isLoggedIn && this.guestCheckoutAccepted) {
                 this.ensureGuestFormDocument();
                 return;
             }
@@ -2004,13 +2012,17 @@ var app_cart = new Vue({
         resolvePaymentCustomer() {
             this.refreshSetDataCustomer();
 
+            const shippingAddress = this.buildShippingAddress();
             const source = this.form_document?.datos_del_cliente_o_receptor || {};
             const customer = Object.assign({}, source);
-            const shippingAddress = this.buildShippingAddress();
 
             customer.telefono = String(
-                customer.telefono || this.form_contact.telephone || this.guest_form?.telephone || ''
+                customer.telefono
+                || this.form_contact.telephone
+                || this.guest_form?.telephone
+                || ''
             ).replace(/\D/g, '');
+
             customer.correo_electronico = (
                 customer.correo_electronico
                 || this.guest_form?.email
@@ -2018,8 +2030,15 @@ var app_cart = new Vue({
                 || ''
             ).trim();
 
+            customer.apellidos_y_nombres_o_razon_social = (
+                customer.apellidos_y_nombres_o_razon_social
+                || this.guest_form?.name
+                || (this.user && this.user.name)
+                || ''
+            ).trim();
+
             let direccion = (customer.direccion || this.form_contact.address || '').trim();
-            if (!direccion && this.isPickupMode && shippingAddress) {
+            if (!direccion && shippingAddress) {
                 direccion = shippingAddress;
             }
             customer.direccion = direccion;
@@ -2027,21 +2046,60 @@ var app_cart = new Vue({
             const docType = String(
                 customer.identity_document_type_id
                 || customer.codigo_tipo_documento_identidad
+                || this.guest_form?.identity_document_type_id
                 || this.typeDocuments
                 || '0'
             );
             customer.codigo_tipo_documento_identidad = docType;
             customer.identity_document_type_id = docType;
-            customer.numero_documento = String(customer.numero_documento || this.numberDocument || '0')
-                .replace(/\D/g, '') || '0';
+            customer.numero_documento = String(
+                customer.numero_documento
+                || this.guest_form?.number
+                || this.numberDocument
+                || '0'
+            ).replace(/\D/g, '') || '0';
+
+            customer.codigo_pais = customer.codigo_pais || 'PE';
+            customer.ubigeo = customer.ubigeo || '150101';
 
             return customer;
         },
+        /**
+         * Payload customer con las llaves exactas que espera CulqiController / paymentCash.
+         */
+        buildBackendPaymentCustomer() {
+            if (!this.isLoggedIn && this.guestCheckoutAccepted) {
+                this.ensureGuestFormDocument();
+            }
+
+            return this.resolvePaymentCustomer();
+        },
+        syncPurchaseCustomerData(purchase, customer) {
+            const doc = purchase && typeof purchase === 'object' ? purchase : {};
+            if (!doc.datos_del_cliente_o_receptor || typeof doc.datos_del_cliente_o_receptor !== 'object') {
+                doc.datos_del_cliente_o_receptor = {};
+            }
+
+            doc.datos_del_cliente_o_receptor = Object.assign(
+                {},
+                doc.datos_del_cliente_o_receptor,
+                customer
+            );
+
+            return doc;
+        },
         async getFormPaymentCash() {
-            this.refreshSetDataCustomer()
+            this.refreshSetDataCustomer();
 
             const shippingAddress = this.buildShippingAddress();
-            const customer = this.resolvePaymentCustomer();
+            const customer = this.buildBackendPaymentCustomer();
+
+            if (this.form_document?.datos_del_cliente_o_receptor) {
+                Object.assign(this.form_document.datos_del_cliente_o_receptor, customer);
+            }
+
+            let purchase = await this.getDocument();
+            purchase = this.syncPurchaseCustomerData(purchase, customer);
 
             let precio = Math.round(Number(this.summary.total) * 100).toFixed(2);
             let precio_culqi = Number(Number(this.summary.total).toFixed(2));
@@ -2051,7 +2109,7 @@ var app_cart = new Vue({
                 precio_culqi: precio_culqi,
                 customer: customer,
                 items: this.records,
-                purchase: await this.getDocument(),
+                purchase: purchase,
                 discount_coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null,
                 discount_coupon_id: this.appliedCoupon ? this.appliedCoupon.id : null,
                 total_discount: this.appliedCoupon ? this.appliedCoupon.discount : 0,
@@ -2832,6 +2890,7 @@ var app_cart = new Vue({
             this.paymentLoadingText = opts.text || 'Por favor no cierres esta ventana hasta que el proceso termine.';
             this.processingPayment = true;
             this.paymentSuccessVisible = false;
+            this.resetSuccessModalSummary();
             document.body.style.overflow = 'hidden';
         },
         /**
@@ -2901,6 +2960,37 @@ var app_cart = new Vue({
             }
             return 0;
         },
+        resetSuccessModalSummary() {
+            this.successOrderNumber = '';
+            this.successPaymentLabel = '';
+            this.successItemsCount = 0;
+            this.successOrderTotal = 0;
+        },
+        syncSuccessModalSummary(order, formatted) {
+            const summary = formatted || this.successOrder || {};
+            const backendOrder = order || {};
+
+            if (summary.number) {
+                this.successOrderNumber = summary.number;
+            } else if (backendOrder.id) {
+                this.successOrderNumber = this.formatOrderNumber(backendOrder.id);
+            } else if (backendOrder.external_id) {
+                this.successOrderNumber = '#' + String(backendOrder.external_id).padStart(6, '0');
+            } else {
+                this.successOrderNumber = '#—';
+            }
+
+            const referencePayment = backendOrder.reference_payment || this.getSelectedReferencePayment();
+            this.successPaymentLabel = summary.paymentLabel
+                || this.getPaymentMethodLabel(referencePayment);
+
+            const itemsFromBackend = this.getSuccessOrderItemsCount(backendOrder);
+            const itemsFromSummary = Array.isArray(summary.items) ? summary.items.length : 0;
+            this.successItemsCount = itemsFromBackend || itemsFromSummary;
+
+            const total = summary.total ?? backendOrder.total ?? this.response_order_total ?? 0;
+            this.successOrderTotal = this.formatMoney(total);
+        },
         /**
          * Modal de éxito unificado para todos los métodos de pago.
          * Culqi / Izipay / MP llegan aquí sin overlay de carga previo.
@@ -2918,6 +3008,7 @@ var app_cart = new Vue({
                 formatted.id = order.id;
             }
             this.successOrder = formatted;
+            this.syncSuccessModalSummary(order, formatted);
             this.clearCartSilently();
             this.paymentSuccessRedirecting = false;
             this.paymentSuccessVisible = true;
@@ -3173,6 +3264,10 @@ var app_cart = new Vue({
             const headers = {
                 "Content-Type": "application/json",
             };
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrf) {
+                headers['X-CSRF-TOKEN'] = csrf;
+            }
             const token = this.user && this.user.api_token;
             if (token) {
                 headers.Authorization = `Bearer ${token}`;

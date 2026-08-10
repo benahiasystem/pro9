@@ -3525,6 +3525,7 @@ textarea.input {
     width: 34px;
     height: 34px;
     flex: none;
+    margin-left: auto;
     border-radius: 9px;
     display: grid;
     place-items: center;

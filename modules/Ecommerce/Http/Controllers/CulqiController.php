@@ -59,12 +59,14 @@ class CulqiController extends Controller
         $user = auth('ecommerce')->user();
         $shippingAddress = (string) $request->input('shipping_address', '');
         $customer = $this->extractPaymentCustomerFromRequest($request);
+        $purchaseCustomer = $this->extractPurchaseCustomerFromRequest($request);
         $customer = $this->enrichPaymentCustomerData(
             $customer,
-            $this->extractPurchaseCustomerFromRequest($request),
+            $purchaseCustomer,
             $user,
             $shippingAddress
         );
+        $customer = $this->enrichPaymentCustomerFromRequest($request, $customer);
         $customer = $this->normalizePaymentCustomerData($customer, $shippingAddress);
 
         $rules = [
@@ -148,16 +150,19 @@ class CulqiController extends Controller
         // Estado de pago "Pagado" (action_mark_payment = true)
         $paidPaymentStatusId = StatusOrder::resolvePaidPaymentStatusId();
 
+        $orderItems = $this->decodeRequestJsonField($request->items);
+        $orderPurchase = $this->decodeRequestJsonField($request->purchase);
+
         $order = Order::create([
             'external_id' => Str::uuid()->toString(),
             'customer' => $customer,
             'shipping_address' => $shippingAddress,
-            'items' => json_decode( $request->items ),
+            'items' => $orderItems,
             'total' => $request->precio_culqi,
             'reference_payment' => 'culqui',
             'status_order_id' => $initialStatusId,
             'payment_status_order_id' => $paidPaymentStatusId,
-            'purchase' => json_decode($request->purchase)
+            'purchase' => $orderPurchase
         ]);
 
         // Misma generación de comprobante que al marcar "Pago completado" en admin
@@ -170,7 +175,7 @@ class CulqiController extends Controller
             ?? ($customer['apellidos_y_nombres_o_razon_social'] ?? 'Cliente');
         $document->product = $request->producto;
         $document->total = $request->precio_culqi;
-        $document->items = json_decode($request->items, true);
+        $document->items = is_array($orderItems) ? $orderItems : [];
 
         $email = $customer_email;
         $mailable = new CulqiEmail($document);
@@ -178,11 +183,11 @@ class CulqiController extends Controller
         $model = __FILE__.";;".__LINE__;
         $sendIt = EmailController::SendMail($email, $mailable, $id, $model);
 
-        return [
+        return response()->json([
             'success' => true,
             'culqui' => $charge,
             'order' => $order,
-        ];
+        ]);
       }
       catch (CulqiException $e)
       {
@@ -227,6 +232,23 @@ class CulqiController extends Controller
         }
 
         return $customer;
+    }
+
+    private function decodeRequestJsonField($value)
+    {
+        if (is_string($value)) {
+            return json_decode($value, true) ?? [];
+        }
+
+        if (is_object($value)) {
+            return json_decode(json_encode($value), true) ?? [];
+        }
+
+        if (is_array($value)) {
+            return $value;
+        }
+
+        return [];
     }
 
     private function extractPurchaseCustomerFromRequest(Request $request): array
@@ -299,6 +321,39 @@ class CulqiController extends Controller
         }
 
         $fillIfEmpty($customer, 'direccion', $shippingAddress);
+
+        return $customer;
+    }
+
+    /**
+     * Respaldo adicional para checkout invitado (email Culqi, shipping, purchase).
+     */
+    private function enrichPaymentCustomerFromRequest(Request $request, array $customer): array
+    {
+        $fillIfEmpty = function (array &$target, string $key, $value): void {
+            $current = trim((string) ($target[$key] ?? ''));
+            $value = is_string($value) ? trim($value) : $value;
+            if ($current === '' && $value !== null && $value !== '') {
+                $target[$key] = $value;
+            }
+        };
+
+        $purchaseCustomer = $this->extractPurchaseCustomerFromRequest($request);
+
+        foreach ([
+            'telefono',
+            'direccion',
+            'correo_electronico',
+            'numero_documento',
+            'codigo_tipo_documento_identidad',
+            'identity_document_type_id',
+            'apellidos_y_nombres_o_razon_social',
+        ] as $key) {
+            $fillIfEmpty($customer, $key, $purchaseCustomer[$key] ?? null);
+        }
+
+        $fillIfEmpty($customer, 'correo_electronico', $request->input('email'));
+        $fillIfEmpty($customer, 'direccion', $request->input('shipping_address'));
 
         return $customer;
     }

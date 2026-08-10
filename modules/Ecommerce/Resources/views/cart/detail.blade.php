@@ -1498,6 +1498,47 @@
         }
     }
 
+    /* Iconos brand al extremo derecho de cada tarjeta (diseño Fabrizio) */
+    .pay-methods .pay-method {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .pay-methods .pay-method input[type="radio"] {
+        order: 1;
+    }
+
+    .pay-methods .pay-method-label {
+        order: 2;
+        flex: 1;
+    }
+
+    .pay-methods .pay-method-ic {
+        order: 3;
+        flex: none;
+        margin-left: auto;
+    }
+
+    .pay-methods .pay-method-ic--brand {
+        width: 48px;
+        height: 48px;
+        border-radius: 11px;
+        border: 1px solid #e4e8ed;
+        background: #fff;
+        padding: 0;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+    }
+
+    .pay-methods .pay-method-ic--brand img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
     .pay-method-panel {
         padding: 15px;
         border: 1px solid #e0e0e0;
@@ -2408,7 +2449,7 @@
                         <p>Completa tus datos de contacto y la información de envío para habilitar los métodos de pago.</p>
                     </div>
                     <div class="pay-methods" v-if="isLoggedIn || isGuestCheckoutComplete" role="radiogroup">
-                        
+
                         <label v-if="enableCulqi" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="culqi" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
@@ -2416,8 +2457,18 @@
                             </span>
                             <span class="pay-method-label">@{{ titleCulqi }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'culqi' && descriptionCulqi" class="pay-method-panel">
-                            <p>@{{ descriptionCulqi }}</p>
+                        <div v-if="selectedPaymentMethod === 'culqi' && (!isLoggedIn || descriptionCulqi)" class="pay-method-panel">
+                            <p v-if="descriptionCulqi">@{{ descriptionCulqi }}</p>
+                            <button
+                                v-if="!isLoggedIn"
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('culqi')"
+                            >
+                                <span v-if="processingPayment">Procesando…</span>
+                                <span v-else>Pagar con @{{ titleCulqi }}</span>
+                            </button>
                         </div>
 
                         <label v-if="enableIzipay" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'izipay' }">
@@ -2427,8 +2478,18 @@
                             </span>
                             <span class="pay-method-label">@{{ titleIzipay }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'izipay' && descriptionIzipay" class="pay-method-panel">
-                            <p>@{{ descriptionIzipay }}</p>
+                        <div v-if="selectedPaymentMethod === 'izipay' && (!isLoggedIn || descriptionIzipay)" class="pay-method-panel">
+                            <p v-if="descriptionIzipay">@{{ descriptionIzipay }}</p>
+                            <button
+                                v-if="!isLoggedIn"
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('izipay')"
+                            >
+                                <span v-if="processingPayment">Procesando…</span>
+                                <span v-else>Pagar con @{{ titleIzipay }}</span>
+                            </button>
                         </div>
 
                         <label v-if="enableMp" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'mp' }">
@@ -2438,21 +2499,41 @@
                             </span>
                             <span class="pay-method-label">@{{ titleMp }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'mp' && descriptionMp" class="pay-method-panel">
-                            <p>@{{ descriptionMp }}</p>
+                        <div v-if="selectedPaymentMethod === 'mp' && (!isLoggedIn || descriptionMp)" class="pay-method-panel">
+                            <p v-if="descriptionMp">@{{ descriptionMp }}</p>
+                            <button
+                                v-if="!isLoggedIn"
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('mp')"
+                            >
+                                <span v-if="processingPayment">Procesando…</span>
+                                <span v-else>Pagar con @{{ titleMp }}</span>
+                            </button>
                         </div>
 
                         <label v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="cash" autocomplete="off">
-                            <span class="pay-method-ic">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/></svg>
+                            <span class="pay-method-ic pay-method-ic--brand">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/cash-delivery.svg') }}?v=1" alt="Pago contra entrega">
                             </span>
                             <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
-                        
-                        <div v-if="selectedPaymentMethod === 'cash' && cashPaymentDescription" class="pay-method-panel">
-                            <p>@{{ cashPaymentDescription }}</p>
+                        <div v-if="selectedPaymentMethod === 'cash' && (!isLoggedIn || cashPaymentDescription)" class="pay-method-panel">
+                            <p v-if="cashPaymentDescription">@{{ cashPaymentDescription }}</p>
+                            <button
+                                v-if="!isLoggedIn"
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('cash')"
+                            >
+                                <span v-if="processingPayment">Procesando…</span>
+                                <span v-else>Confirmar pedido — @{{ cashPaymentTitle }}</span>
+                            </button>
                         </div>
+
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="yape" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
@@ -2460,7 +2541,6 @@
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
-                        
                         <div v-if="selectedPaymentMethod === 'yape'" class="pay-method-panel">
                             <p>Escanea el código QR desde tu app de Yape.</p>
                             @if(!empty($payment_configuration->image_url_yape))
@@ -2475,6 +2555,16 @@
                                     Copiar
                                 </button>
                             </div>
+                            <button
+                                v-if="!isLoggedIn"
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('yape')"
+                            >
+                                <span v-if="processingPayment">Procesando…</span>
+                                <span v-else>Confirmar pedido con Yape</span>
+                            </button>
                         </div>
 
                         <label v-if="enableTransfer" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'transfer' }">
@@ -2484,7 +2574,6 @@
                             </span>
                             <span class="pay-method-label">Transferencia bancaria</span>
                         </label>
-                        
                         <div v-if="selectedPaymentMethod === 'transfer'" class="pay-method-panel">
                             <p>Realiza el depósito en alguna de nuestras cuentas bancarias y envíanos el voucher por WhatsApp.</p>
                             @if(isset($bank_accounts) && count($bank_accounts) > 0)
@@ -2502,7 +2591,18 @@
                             @else
                                 <p style="font-size: 13px; font-weight: bold; color: #d9534f; margin-top: 10px;">No hay cuentas bancarias configuradas.</p>
                             @endif
+                            <button
+                                v-if="!isLoggedIn"
+                                type="button"
+                                class="pay-btn pay-method-action"
+                                :disabled="processingPayment || !acceptedTerms"
+                                @click="runPayment('transfer')"
+                            >
+                                <span v-if="processingPayment">Procesando…</span>
+                                <span v-else>Confirmar pedido con transferencia</span>
+                            </button>
                         </div>
+
                         @if($information->script_paypal)
                         <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'paypal' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="paypal" autocomplete="off">
@@ -3783,7 +3883,8 @@
         });
     }
 
-    function closeCulqiModal() {
+    function dismissCulqiCheckout(options) {
+        const opts = options && typeof options === 'object' ? options : {};
         hideCulqiCloseButton();
 
         try {
@@ -3794,6 +3895,14 @@
 
         cleanupCulqiDomFallback();
 
+        if (!opts.keepBodyLocked) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function closeCulqiModal() {
+        dismissCulqiCheckout({ keepBodyLocked: false });
+
         if (typeof app_cart !== 'undefined') {
             app_cart.hidePaymentLoading();
         } else {
@@ -3802,6 +3911,7 @@
     }
 
     window.closeCulqiModal = closeCulqiModal;
+    window.dismissCulqiCheckout = dismissCulqiCheckout;
 
     async function askedDocument(order) {
         app_cart.order_generated = order
@@ -3866,69 +3976,86 @@
             return;
         }
 
-        hideCulqiCloseButton();
+        // Token generado: cerrar checkout Culqi de inmediato y pasar al overlay de carga del banco.
+        dismissCulqiCheckout({ keepBodyLocked: true });
 
-        if (typeof app_cart !== 'undefined') {
-            app_cart.showCulqiBankLoading();
+        if (typeof app_cart === 'undefined') {
+            window.mostrarMensaje('Pago no realizado', 'No se pudo preparar el pedido. Recargue la página e intente de nuevo.', 'error');
+            return;
         }
 
-        const precio = Math.round(Number(jQuery('#total_amount').data('total')) * 100);
-        const precio_culqi = Number(jQuery('#total_amount').data('total')).toFixed(2);
-        const token = window.Culqi.token.id;
-        const email = window.Culqi.token.email;
-        const installments = window.Culqi.token.metadata.installments;
-        const formpayment = await app_cart.getFormPaymentCash();
+        app_cart.showCulqiBankLoading();
 
-        const data = {
-            producto: 'Compras Ecommerce Facturador Pro',
-            precio: precio,
-            precio_culqi: precio_culqi,
-            token: token,
-            email: email,
-            installments: installments,
-            customer: JSON.stringify(formpayment.customer),
-            items: JSON.stringify(getItems()),
-            purchase: JSON.stringify(formpayment.purchase),
-            discount_coupon_code: formpayment.discount_coupon_code,
-            discount_coupon_id: formpayment.discount_coupon_id,
-            total_discount: formpayment.total_discount,
-            shipping_address: formpayment.shipping_address || '',
-        };
-
-        jQuery.ajax({
-            url: "{{ route('tenant_ecommerce_culqui') }}",
-            method: 'post',
-            headers: {
-                'X-CSRF-TOKEN': jQuery('meta[name="csrf-token"]').attr('content')
-            },
-            data: data,
-            dataType: 'JSON',
-            success: function (data) {
-                if (data.success == true) {
-                    app_cart.saveContactDataUser();
-                    app_cart.showPurchaseSuccess(data.order);
-                } else {
-                    app_cart.hidePaymentLoading();
-                    window.mostrarMensaje('Pago no realizado', data.message || 'Sucedió algo inesperado.', 'error');
-                }
-            },
-            error: function (error_data) {
-                console.log(error_data);
-                app_cart.hidePaymentLoading();
-                let message = 'Ocurrió un error al procesar el pago.';
-                if (error_data.responseJSON && error_data.responseJSON.message) {
-                    message = error_data.responseJSON.message;
-                } else if (error_data.status === 422 && error_data.responseText) {
-                    try {
-                        const parsed = JSON.parse(error_data.responseText);
-                        message = parsed.message || 'Faltan completar campos';
-                    } catch (e) {
-                        message = 'Faltan completar campos';
-                    }
-                }
-                window.mostrarMensaje('Pago no realizado', message, 'error');
+        try {
+            if (typeof app_cart.ensureGuestFormDocument === 'function') {
+                app_cart.ensureGuestFormDocument();
             }
-        });
+
+            const formpayment = await app_cart.getFormPaymentCash();
+            const customer = typeof app_cart.buildBackendPaymentCustomer === 'function'
+                ? app_cart.buildBackendPaymentCustomer()
+                : (formpayment.customer || {});
+
+            if (formpayment.purchase) {
+                formpayment.purchase = typeof app_cart.syncPurchaseCustomerData === 'function'
+                    ? app_cart.syncPurchaseCustomerData(formpayment.purchase, customer)
+                    : formpayment.purchase;
+            }
+
+            const totalAmount = Number(app_cart.summary?.total ?? jQuery('#total_amount').data('total') ?? 0);
+            const precio = Math.round(totalAmount * 100);
+            const precio_culqi = Number(totalAmount.toFixed(2));
+            const culqiToken = window.Culqi.token;
+            const culqiMetadata = culqiToken.metadata || {};
+
+            const payload = Object.assign({}, formpayment, {
+                producto: formpayment.producto || 'Compras Ecommerce Facturador Pro',
+                precio: precio,
+                precio_culqi: precio_culqi,
+                customer: customer,
+                token: culqiToken.id,
+                email: culqiToken.email || customer.correo_electronico || app_cart.guest_form?.email || '',
+                installments: culqiMetadata.installments ?? 0,
+                reference_payment: 'culqi',
+                shipping_address: formpayment.shipping_address || app_cart.buildShippingAddress?.() || '',
+            });
+
+            const response = await axios.post(
+                window.__routes?.culqi || "{{ route('tenant_ecommerce_culqui') }}",
+                payload,
+                app_cart.getHeaderConfig()
+            );
+
+            if (response.data && response.data.success === true) {
+                dismissCulqiCheckout({ keepBodyLocked: true });
+                app_cart.saveContactDataUser();
+                app_cart.showPurchaseSuccess(response.data.order);
+                return;
+            }
+
+            dismissCulqiCheckout({ keepBodyLocked: true });
+            app_cart.hidePaymentLoading();
+            window.mostrarMensaje(
+                'Pago no realizado',
+                (response.data && response.data.message) || 'Sucedió algo inesperado.',
+                'error'
+            );
+        } catch (error) {
+            console.log(error);
+            dismissCulqiCheckout({ keepBodyLocked: true });
+            app_cart.hidePaymentLoading();
+
+            let message = 'Ocurrió un error al procesar el pago.';
+            const responseData = error.response && error.response.data;
+
+            if (responseData && responseData.message) {
+                message = responseData.message;
+            } else if (responseData && responseData.errors) {
+                message = Object.values(responseData.errors).flat().join(' ');
+            }
+
+            window.mostrarMensaje('Pago no realizado', message, 'error');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
