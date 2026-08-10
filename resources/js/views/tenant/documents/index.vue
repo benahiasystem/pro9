@@ -228,7 +228,7 @@
                             </td>
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small></td>
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key" @click="clickDetail(row)">{{ row.customer_name }}<br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small></td>
                             <td v-if="col.visible && col.key === 'number'" :key="col.key">
                                 <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px;">{{ row.number }}</span>
                             </td>
@@ -271,7 +271,7 @@
                             <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
                             <template v-if="col.key === 'personalized'">
                                 <template v-for="field in customFieldColumns">
-                                    <td v-if="field.visible" :key="`cf-data-${field.id}`" class="text-start">
+                                    <td v-if="field.visible" :key="`cf-data-${field.id}`" class="text-start" @click.stop>
                                         <template v-if="isEditableCustomField(field)">
                                             <template v-if="field.type === 'text'"><el-input v-model="row.custom_fields_data[field.slug]" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
                                             <template v-else-if="field.type === 'number'"><el-input v-model.number="row.custom_fields_data[field.slug]" type="number" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
@@ -312,18 +312,25 @@
                             <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IGV {{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</small></template></td>
                             <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.balance) }}</td>
                             <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
-                            <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center">
+                            <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center" @click.stop>
                                 <button v-if="row.has_xml" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_xml)">XML</button>
                                 <button v-if="row.has_pdf" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_pdf)">PDF</button>
                                 <button v-if="row.has_cdr" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_cdr)">CDR</button>
                             </td>
-                            <td v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end" @click.stop>
                             <el-dropdown trigger="click" size="small">
                                 <el-button class="btn-dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </el-button>
                                 <el-dropdown-menu slot="dropdown">
+                                  <el-dropdown-item @click.native="clickDetail(row)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                    Ver detalle
+                                  </el-dropdown-item>
+
+                                  <el-dropdown-item divided />
+
                                   <el-dropdown-item
                                     v-if="configuration.permission_to_edit_cpe && row.state_type_id === '01' && userPermissionEditCpe && row.is_editable"
                                   >
@@ -629,6 +636,16 @@
                 :showDialog.sync="showDialogRetention"
                 :documentId="recordId"
             ></document-retention>
+
+            <document-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                @voided="openVoidedFromDrawer"
+                @payments="openPaymentsFromDrawer"
+                @options="openOptionsFromDrawer"
+            ></document-detail-drawer>
         </div>
     </div>
 </template>
@@ -698,6 +715,7 @@ import DocumentValidate from "./partials/validate.vue";
 import MassiveValidateCpe from "../../../../../modules/ApiPeruDev/Resources/assets/js/components/MassiveValidateCPE.vue";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import DocumentRetention from "./partials/retention.vue";
+import DocumentDetailDrawer from "./partials/detail-drawer.vue";
 import moment from "moment";
 
 export default {
@@ -738,7 +756,8 @@ export default {
         DocumentValidate,
         MassiveValidateCpe,
         DocumentImportExcel,
-        DocumentRetention
+        DocumentRetention,
+        DocumentDetailDrawer
     },
     data() {
         return {
@@ -752,6 +771,9 @@ export default {
             showImportSecondDialog: false,
             showImportExcelDialog: false,
             showDialogRetention: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             resource: "documents",
             recordId: null,
             showDialogOptions: false,
@@ -1059,6 +1081,23 @@ export default {
         clickRetention(recordId) {
             this.recordId = recordId;
             this.showDialogRetention = true;
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openVoidedFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickVoided(recordId);
+        },
+        openPaymentsFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickPayment(recordId);
+        },
+        openOptionsFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickOptions(recordId);
         },
         isDateWarning(date_due) {
             let today = Date.now();

@@ -51,7 +51,6 @@
                         <!-- <th>#</th> -->
                         <th># Pedido</th>
                         <th>Cliente</th>
-                        <th class="text-center">Detalle Productos</th>
                         <th class="text-end">Total</th>
                         <th>Fecha Emision</th>
                         <th>Medio Pago</th>
@@ -64,109 +63,8 @@
                     <tr></tr>
                     <tr slot-scope="{ index, row }" :class="{ 'order-voided-row': isVoided(row) }">
                         <!-- <td>{{ index }}</td> -->
-                        <td>
-                            <a href="#" @click.prevent="openDetail(row)" class="text-primary">
-                                {{ row.order_id }}
-                            </a>
-                        </td>
-                        <td>{{ row.customer }}</td>
-                        <td class="text-center">
-                            <template>
-                                <el-popover
-                                    placement="right"
-                                    width="540"
-                                    trigger="click"
-                                >
-                                    <el-table
-                                        style="width: 100%"
-                                        :data="row.items"
-                                    >
-                                        <!--
-                      En la edicion del item, el nombre es descripcion, por ello, aqui tambien debe ser descripcion
-  <el-table-column width="150" property="name" label="Nombre"></el-table-column>
-  @todo homologar campos en editar/crear item.
-  -->
-                                        <el-table-column
-                                            width="150"
-                                            property="description"
-                                            label="Nombre"
-                                        ></el-table-column>
-                                        <el-table-column
-                                            width="90"
-                                            property="cantidad"
-                                            label="Cant."
-                                        ></el-table-column>
-                                        <el-table-column
-                                            width="90"
-                                            label="Precio"
-                                        >
-                                            <template slot-scope="scope">
-                                                <span
-                                                    >{{
-                                                        scope.row
-                                                            .currency_type_id ===
-                                                        "USD"
-                                                            ? "$"
-                                                            : "S/"
-                                                    }}
-                                                    {{
-                                                        Number(
-                                                            scope.row
-                                                                .sale_unit_price
-                                                        ).toFixed(2)
-                                                    }}</span
-                                                >
-                                            </template>
-                                        </el-table-column>
-                                        <el-table-column
-                                            width="90"
-                                            property="exchange_rate_sale"
-                                            label="T/C"
-                                        ></el-table-column>
-                                        <el-table-column
-                                            width="90"
-                                            label="Subtotal"
-                                        >
-                                            <template slot-scope="scope">
-                                                <span
-                                                    >S/
-                                                    {{
-                                                        subtotal(scope.row)
-                                                    }}</span
-                                                >
-                                            </template>
-                                        </el-table-column>
-                                    </el-table>
-                                    <table
-                                        class="el-table--small el-table--fit el-table"
-                                    >
-                                        <thead class="has-gutter">
-                                            <th colspan="2" class="text-center">
-                                                Contacto
-                                            </th>
-                                        </thead>
-                                        <tbody>
-                                            <tr class="el-table tr">
-                                                <td class="el-table--small td">
-                                                    TELÉFONO:
-                                                    {{ row.customer_telefono }}
-                                                </td>
-                                            </tr>
-                                            <tr class="el-table tr">
-                                                <td class="el-table--small td">
-                                                    DIRECCIÓN:
-                                                    {{ row.customer_direccion }}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <el-button
-                                        slot="reference"
-                                        icon="el-icon-zoom-in"
-                                    ></el-button>
-                                </el-popover>
-                            </template>
-                        </td>
+                        <td>{{ row.order_id }}</td>
+                        <td @click="openDetail(row)">{{ row.customer }}</td>
                         <td class="text-end">S/ {{ row.total }}</td>
                         <td>{{ formatDate(row.created_at) }}</td>
                         <td>{{ row.reference_payment }}</td>
@@ -403,10 +301,11 @@
             :showDialog.sync="showStatusModal"
             :options="options"
         ></status-order-modal>
-        <order-detail
-            :visible.sync="showOrderModal"
-            :record="selectedOrder">
-        </order-detail>
+        <order-detail-drawer
+            :showDrawer.sync="showOrderDrawer"
+            :record="selectedOrder"
+            :statusOptions="options"
+        ></order-detail-drawer>
     </div>
 </template>
 <style>
@@ -475,12 +374,12 @@ import OptionsForm from "../pos/partials/options.vue";
 import DocumentForm from "./partials/document_form.vue";
 import SaleNoteForm from "./partials/sale_note_form.vue";
 import StatusOrderModal from "./partials/status_order_modal.vue";
-import OrderDetail from "./partials/OrderDetail.vue";
+import OrderDetailDrawer from "./partials/detail-drawer.vue";
 
 export default {
     props: ["user"],
 
-    components: { DataTable, OptionsForm, DocumentForm, SaleNoteForm, StatusOrderModal, OrderDetail },
+    components: { DataTable, OptionsForm, DocumentForm, SaleNoteForm, StatusOrderModal, OrderDetailDrawer },
     data() {
         return {
             showStatusModal: false,
@@ -508,7 +407,7 @@ export default {
             showDialogSaleNote: false,
             statusFilter: null,
             statusField: 'status_order_id',
-            showOrderModal: false,
+            showOrderDrawer: false,
             selectedOrder: null,
         };
     },
@@ -534,10 +433,8 @@ export default {
     },
     methods: {
         openDetail(row) {
-            console.log(row)
-            console.log(row.purchase)
-            this.selectedOrder = row
-            this.showOrderModal = true
+            this.selectedOrder = row;
+            this.showOrderDrawer = true;
         },
         loadStatuses() {
             this.$http.get(`/statusOrder/records`).then(response => {

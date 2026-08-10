@@ -25,6 +25,7 @@ class ExpenseCollection extends ResourceCollection
                 'supplier_number' => $row->supplier->number,
                 'currency_type_id' => $row->currency_type_id,
                 'state_type_id' => $row->state_type_id,
+                'state_type_description' => $row->state_type->description,
                 'total' => $row->total,
                 'external_id' => $row->external_id,
                 'expense_type_description' => $row->expense_type->description,

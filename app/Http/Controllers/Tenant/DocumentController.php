@@ -752,19 +752,31 @@ class DocumentController extends Controller
 
     public function record($id)
     {
+        $loadDocument = fn () => Document::with([
+            'items',
+            'payments.payment_method_type',
+            'payments.global_payment',
+            'payments.payment_file',
+            'state_type',
+            'document_type',
+            'user',
+            'seller',
+            'person.identity_document_type',
+            'retention',
+            'detraction',
+        ])->findOrFail($id);
+
         if ($this->pingCache()) {
             return $this->cacheWithTagKey(
-                "document_detail_{$id}", // Clave de caché específica para el detalle del item
-                ['document_detail'], // Etiqueta para el detalle del item
-                3600, // 1 hora (el detalle cambia menos frecuentemente que las listas)
-                fn() => new DocumentResource(Document::findOrFail($id)) ,
-                [ 'section' => 'Document Detail', 'item_id' => $id ] // Contexto adicional para logging
+                "document_detail_{$id}",
+                ['document_detail'],
+                3600,
+                fn () => new DocumentResource($loadDocument()),
+                ['section' => 'Document Detail', 'item_id' => $id]
             );
-
-        } else {
-            $record = new DocumentResource(Document::findOrFail($id));
-            return $record;
         }
+
+        return new DocumentResource($loadDocument());
     }
 
 

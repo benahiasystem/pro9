@@ -28,7 +28,17 @@
                     <tr slot-scope="{ index, row }" :class="{'text-danger': (row.state_type_id === '11'), 'text-warning': (row.state_type_id === '13'), 'border-light': (row.state_type_id === '01'), 'border-left border-info': (row.state_type_id === '03'), 'border-left border-success': (row.state_type_id === '05'), 'border-left border-secondary': (row.state_type_id === '07'), 'border-left border-dark': (row.state_type_id === '09'), 'border-left border-danger': (row.state_type_id === '11'), 'border-left border-warning': (row.state_type_id === '13')}">
                         <!-- <td>{{ index }}</td> -->
                         <td class="text-start">{{ row.date_of_issue }}</td>
-                        <td>{{ row.customer_name }}</td>
+                        <td>
+                            <span
+                                class="income-customer-link"
+                                role="button"
+                                tabindex="0"
+                                @click="clickDetail(row)"
+                                @keyup.enter.prevent="clickDetail(row)"
+                            >
+                                {{ row.customer_name }}
+                            </span>
+                        </td>
                         <td >{{ row.number }}<br/>
                             <small v-text="row.income_type_description"></small><br/>
                         </td>
@@ -44,7 +54,7 @@
                         <td class="text-center">{{ row.currency_type_id }}</td>
                         <td class="text-end">{{ row.total }}</td>
 
-                        <td class="text-end">
+                        <td class="text-end" @click.stop>
                             
                             <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-primary m-1__2 me-1"
                                     @click.prevent="clickPrint(row.external_id)">
@@ -52,7 +62,8 @@
                             </button>
 
                             <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-1"
-                                    @click.prevent="clickPayment(row.id)">
+                                    title="Ver detalle"
+                                    @click.prevent="clickDetail(row)">
                                     <i class="fa fa-search"></i>
                             </button>
                             <button type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-danger m-1__2 me-1"
@@ -69,12 +80,34 @@
 
             <income-payments :showDialog.sync="showDialogPayments"
                                :recordId="recordId"></income-payments>
+
+            <income-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                @payments="openPaymentsFromDrawer"
+            ></income-detail-drawer>
   
  
         </div>
     </div>
 
 </template>
+<style scoped>
+.income-customer-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.income-customer-link:hover,
+.income-customer-link:focus {
+    color: inherit;
+    text-decoration: none;
+    outline: none;
+}
+</style>
 <style>
 @media only screen and (max-width: 485px){
     .filter-container{
@@ -92,17 +125,21 @@
     import DataTable from '@components/DataTableResource.vue'
     import {deletable} from '@mixins/deletable'
     import IncomePayments from './partials/payments.vue'
+    import IncomeDetailDrawer from './partials/detail-drawer.vue'
 
     export default {
         mixins: [deletable],
-        components: {DataTable, IncomePayments},
+        components: {DataTable, IncomePayments, IncomeDetailDrawer},
         data() {
             return {
                 showDialogVoided: false,
                 resource: 'finances/income',
                 showDialogPayments: false,
                 recordId: null,
-                showDialogOptions: false
+                showDialogOptions: false,
+                showDetailDrawer: false,
+                detailRecordId: null,
+                detailInitialRow: null
             }
         },
         created() {
@@ -132,6 +169,15 @@
             clickPayment(recordId) {
                 this.recordId = recordId;
                 this.showDialogPayments = true;
+            },
+            clickDetail(row) {
+                this.detailRecordId = row.id;
+                this.detailInitialRow = { ...row };
+                this.showDetailDrawer = true;
+            },
+            openPaymentsFromDrawer(recordId) {
+                this.showDetailDrawer = false;
+                this.clickPayment(recordId);
             },
         }
     }

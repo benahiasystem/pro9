@@ -42,11 +42,14 @@
             <th class="text-end">Acciones</th>
           </tr>
           <tr></tr>
-          <tr slot-scope="{ index, row }" :class="{'anulate_color': row.state_type_id === '11'}">
+          <tr
+            slot-scope="{ index, row }"
+            :class="{ anulate_color: row.state_type_id === '11' }"
+          >
             <!-- <td>{{ index }}</td> -->
             <td class="text-start">{{ row.date_of_issue }}</td>
             <td class="text-start">{{ row.date_of_due }}</td>
-            <td>
+            <td @click="clickDetail(row)">
               {{ row.supplier_name }}
               <br />
               <small v-text="row.supplier_number"></small>
@@ -79,13 +82,13 @@
             <!-- <td class="text-right">{{ row.total_perception ? row.total_perception : 0 }}</td> -->
             <td class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total) }}</td>
 
-                        <td class="text-center">
+                        <td class="text-center" @click.stop>
 
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
                                     @click.prevent="clickDownload(row.external_id)">PDF</button>
                         </td>
 
-            <td class="text-end">
+            <td class="text-end" @click.stop>
               <!-- <el-button
                 @click.prevent="clickOptions(row.id)"
                 size="mini"
@@ -110,7 +113,14 @@
               
                 <template #dropdown>
                   <el-dropdown-menu>
-                  
+
+                    <el-dropdown-item command="detail">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                      Ver detalle
+                    </el-dropdown-item>
+
+                    <el-dropdown-item divided />
+
                     <el-dropdown-item
                       v-if="row.show_actions_row"
                       command="edit"
@@ -166,9 +176,23 @@
         <purchase-options :showDialog.sync="showDialogOptions"
                           :recordId="recordId"
                           :showClose="true"></purchase-options>
+
+        <purchase-order-detail-drawer
+            :showDrawer.sync="showDetailDrawer"
+            :recordId="detailRecordId"
+            :initialRow.sync="detailInitialRow"
+            :resource="resource"
+            @edit="openEditFromDrawer"
+            @generate="openGenerateFromDrawer"
+        ></purchase-order-detail-drawer>
     </div>
   </div>
 </template>
+<style scoped>
+.anulate_color {
+  color: red;
+}
+</style>
 <style>
 @media only screen and (max-width: 485px){
   .filter-container{
@@ -186,6 +210,7 @@
     // import DocumentOptions from './partials/document_options.vue'
     import DataTable from "@components/DataTable.vue";
     import PurchaseOptions from './partials/options.vue'
+    import PurchaseOrderDetailDrawer from './partials/detail-drawer.vue'
 
     import {deletable} from '@mixins/deletable'
 
@@ -193,7 +218,7 @@
 export default {
       mixins: [deletable],
       // components: {DocumentsVoided, DocumentOptions, DataTable},
-      components: { DataTable , PurchaseOptions}, //DocumentOptions
+      components: { DataTable , PurchaseOptions, PurchaseOrderDetailDrawer }, //DocumentOptions
       data() {
         return {
           showDialogVoided: false,
@@ -201,6 +226,9 @@ export default {
           recordId: null,
           showDialogOptions: false,
           showDialogGenerateDocument: false,
+          showDetailDrawer: false,
+          detailRecordId: null,
+          detailInitialRow: null,
           decimal_quantity: 2,
         };
       },
@@ -252,6 +280,10 @@ export default {
           },
           handleCommand(command, row) {
             switch (command) {
+              case 'detail':
+                this.clickDetail(row)
+                break
+
               case 'edit':
                 this.clickCreate(row.id)
                 break
@@ -268,6 +300,19 @@ export default {
                 this.clickOptions(row.id)
                 break
             }
+          },
+          clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+          },
+          openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickCreate(recordId);
+          },
+          openGenerateFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            location.href = `/purchases/create/${recordId}`;
           }
     }
 };

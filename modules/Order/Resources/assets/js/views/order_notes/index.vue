@@ -155,8 +155,8 @@
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'delivery_date'" :key="col.key" class="text-center">{{ row.delivery_date | toDate }}</td>
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.user_name }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
-                            <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key" @click="clickDetail(row)">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
+                            <td v-if="col.visible && col.key === 'state_type'" :key="col.key" @click.stop>
                                 <template v-if="row.state_type_id == '11'">{{ row.state_type_description }}</template>
                                 <template v-else>
                                     <el-select v-model="row.state_type_id" @change="changeStateType(row)" style="width:120px !important">
@@ -167,7 +167,7 @@
                             <!-- Campos personalizados: posición configurable vía columna virtual `personalized` (visibilidad la dicta cada field) -->
                             <template v-if="col.key === 'personalized'">
                                 <template v-for="field in customFieldColumns">
-                                    <td v-if="field.visible" :key="`cf-data-${field.id}`" class="text-start">
+                                    <td v-if="field.visible" :key="`cf-data-${field.id}`" class="text-start" @click.stop>
                                         <template v-if="isEditableCustomField(field)">
                                             <template v-if="field.type === 'text'"><el-input v-model="row.custom_fields_data[field.slug]" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
                                             <template v-else-if="field.type === 'number'"><el-input v-model.number="row.custom_fields_data[field.slug]" type="number" @blur="saveCustomFieldValue(row, field)" size="small" :placeholder="field.name"></el-input></template>
@@ -224,16 +224,21 @@
                                 <label v-if="row.sale_notes.length > 0" :key="'sale_note_payment_' + index" v-text="calculatePayments(row.sale_notes)"></label>
                             </td>
                             <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}</td>
-                            <td v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-end" @click.stop>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickOptionsPdf(row.id)">PDF</button>
                             </td>
-                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
                                 <el-dropdown trigger="click" @command="handleCommand">
                                     <el-button class="btn-dropdown">
                                         <i class="fas fa-ellipsis-v"></i>
                                         <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                     </el-button>
                                     <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item :command="{ action: 'detail', row }">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                            Ver detalle
+                                        </el-dropdown-item>
+
                                         <el-dropdown-item v-if="row.state_type_id != '11' && row.btn_generate && seller_can_generate_cpe === true && soapCompany != '03'" :command="{action: 'generateDocument', id: row.id}">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M19 12v7a1.78 1.78 0 0 1 -3.1 1.4a1.65 1.65 0 0 0 -2.6 0a1.65 1.65 0 0 1 -2.6 0a1.65 1.65 0 0 0 -2.6 0a1.78 1.78 0 0 1 -3.1 -1.4v-14a2 2 0 0 1 2 -2h7l5 5v4.25"></path></svg>
                                             Generar comprobante
@@ -283,6 +288,16 @@
             <mi-tienda-pe
                 :showDialog.sync="showMiTiendaPeDialog"
             ></mi-tienda-pe>
+
+            <order-note-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                :canEditRow="cantEdited"
+                :canAnulateRow="canAnulate"
+                @edit="openEditFromDrawer"
+            ></order-note-detail-drawer>
         </div>
     </div>
 </template>
@@ -301,6 +316,7 @@ import { mapActions, mapState } from "vuex";
 
 import StateType from "../../../../../../OrderNote/Resources/assets/js/components/StateType.vue";
 import ChangeStateType from "../../../../../../OrderNote/Resources/assets/js/components/ChangeStateType.vue";
+import OrderNoteDetailDrawer from "./partials/detail-drawer.vue";
 
 export default {
     props: ["typeUser", "soapCompany", "configuration"],
@@ -311,7 +327,8 @@ export default {
         MiTiendaPe,
         QuotationOptionsPdf,
         StateType,
-        ChangeStateType
+        ChangeStateType,
+        OrderNoteDetailDrawer
     },
     async created() {
         this.$store.commit("setConfiguration", this.configuration);
@@ -331,6 +348,9 @@ export default {
             showMiTiendaPeDialog: false,
             showDialogOptions: false,
             showDialogOptionsPdf: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             state_types: [],
             columns: {
                 date_of_issue:     { title: "Fecha Emisión",      visible: true,  order: 0  },
@@ -461,14 +481,29 @@ export default {
             this.showMiTiendaPeDialog = true;
         },
         cantEdited(row) {
-            if (
-                row &&
-                row.documents &&
-                row.documents.length == 0 &&
-                row.state_type_id != "11"
-            )
-                return true;
-            return false;
+            if (!row) {
+                return false;
+            }
+
+            if (String(row.state_type_id) === '11') {
+                return false;
+            }
+
+            const editableByState = String(row.state_type_id) === '01'
+                || ['registrado', 'pendiente'].some(label =>
+                    String(row.state_type_description || '').toLowerCase().includes(label)
+                );
+
+            if (!editableByState) {
+                return false;
+            }
+
+            if (row.btn_generate === false) {
+                return false;
+            }
+
+            return (!row.documents || row.documents.length === 0)
+                && (!row.sale_notes || row.sale_notes.length === 0);
         },
         showAnulateDoc(document) {
             if (document.state_type_id == "11")
@@ -532,6 +567,15 @@ export default {
             this.recordId = recordId;
             this.showDialogOptionsPdf = true;
         },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            window.location.href = `/${this.resource}/edit/${recordId}`;
+        },
         clickAnulate(id) {
             this.voided(`/${this.resource}/voided/${id}`).then(() =>
                 this.$eventHub.$emit("reloadData")
@@ -569,6 +613,9 @@ export default {
         },
         handleCommand(command) {
             switch(command.action) {
+                case 'detail':
+                    this.clickDetail(command.row);
+                    break;
                 case 'generateDocument':
                     this.clickOptions(command.id);
                     break;

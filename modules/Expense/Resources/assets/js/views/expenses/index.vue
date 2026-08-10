@@ -26,15 +26,18 @@
                         <th class="text-end">Total</th>
                         <th class="text-end">Dist. Gasto</th>
                     </tr>
-                    <tr slot-scope="{ index, row }" :class="{'text-danger': (row.state_type_id === '11'), 'text-warning': (row.state_type_id === '13'), 'border-light': (row.state_type_id === '01'), 'border-left border-info': (row.state_type_id === '03'), 'border-left border-success': (row.state_type_id === '05'), 'border-left border-secondary': (row.state_type_id === '07'), 'border-left border-dark': (row.state_type_id === '09'), 'border-left border-danger': (row.state_type_id === '11'), 'border-left border-warning': (row.state_type_id === '13')}">
+                    <tr
+                        slot-scope="{ index, row }"
+                        :class="{'text-danger': (row.state_type_id === '11'), 'text-warning': (row.state_type_id === '13'), 'border-light': (row.state_type_id === '01'), 'border-left border-info': (row.state_type_id === '03'), 'border-left border-success': (row.state_type_id === '05'), 'border-left border-secondary': (row.state_type_id === '07'), 'border-left border-dark': (row.state_type_id === '09'), 'border-left border-danger': (row.state_type_id === '11'), 'border-left border-warning': (row.state_type_id === '13')}"
+                    >
                         <!-- <td>{{ index }}</td> -->
                         <td class="text-start">{{ row.date_of_issue }}</td>
-                        <td>{{ row.supplier_name }}<br/><small v-text="row.supplier_number"></small></td>
+                        <td @click="clickDetail(row)">{{ row.supplier_name }}<br/><small v-text="row.supplier_number"></small></td>
                         <td>{{ row.number }}<br/>
                             <small v-text="row.expense_type_description"></small><br/>
                         </td>
                         <td class="">{{ row.expense_reason_description }}</td>
-                        <td class="text-center">
+                        <td class="text-center" @click.stop>
                             <button
                                 type="button"
                                 style="min-width: 41px"
@@ -45,7 +48,7 @@
                         <td class="text-center">{{ row.currency_type_id }}</td>
                         <td class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total) }}</td>
 
-                        <td class="text-end">
+                        <td class="text-end" @click.stop>
 
                             <button type="button" class="btn btn-xs btn-success btn-shad me-1"
                                     @click.prevent="clickPrint(row.external_id)">
@@ -58,7 +61,7 @@
                             </button>
 
                             <button type="button" class="btn btn-xs btn-info btn-shad me-1"
-                                    @click.prevent="clickPayment(row.id)">
+                                    @click.prevent="clickDetail(row)">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
                             </button>
                             <button type="button" class="btn btn-xs btn-danger btn-shad me-1"
@@ -83,6 +86,15 @@
                 :expenseId="recordId"
                 :external="true"
                 ></expense-payments>
+
+            <expense-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                @edit="openEditFromDrawer"
+                @payments="openPaymentsFromDrawer"
+            ></expense-detail-drawer>
         </div>
     </div>
 
@@ -94,10 +106,11 @@
     import DocumentPayments from './partials/payments.vue'
     import ExpenseVoided from './partials/voided.vue'
     import ExpensePayments from '@viewsModuleExpense/expense_payments/payments.vue'
+    import ExpenseDetailDrawer from './partials/detail-drawer.vue'
     import queryString from 'query-string'
 
     export default {
-        components: {DataTable, DocumentPayments, ExpenseVoided, ExpensePayments},
+        components: {DataTable, DocumentPayments, ExpenseVoided, ExpensePayments, ExpenseDetailDrawer},
         data() {
             return {
                 showDialogVoided: false,
@@ -106,6 +119,9 @@
                 showDialogExpensePayments: false,
                 recordId: null,
                 showDialogOptions: false,
+                showDetailDrawer: false,
+                detailRecordId: null,
+                detailInitialRow: null,
                 decimal_quantity: 2
             }
         },
@@ -162,6 +178,19 @@
             clickPayment(recordId) {
                 this.recordId = recordId;
                 this.showDialogPayments = true;
+            },
+            clickDetail(row) {
+                this.detailRecordId = row.id;
+                this.detailInitialRow = { ...row };
+                this.showDetailDrawer = true;
+            },
+            openEditFromDrawer(recordId) {
+                this.showDetailDrawer = false;
+                this.clickCreate(recordId);
+            },
+            openPaymentsFromDrawer(recordId) {
+                this.showDetailDrawer = false;
+                this.clickExpensePayment(recordId);
             },
         }
     }

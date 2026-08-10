@@ -436,7 +436,9 @@
 
         public function record($id)
         {
-            $record = new OrderNoteResource(OrderNote::findOrFail($id));
+            $record = new OrderNoteResource(
+                OrderNote::with(['payment_method_type'])->findOrFail($id)
+            );
 
             return $record;
         }
