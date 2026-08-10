@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Config;
 use GuzzleHttp\Client as HttpClient;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Modules\WhatsAppBot\Services\Evolution\EvolutionClient;
 
 /**
  * App\Models\System\Client
@@ -435,21 +436,7 @@ class Client extends Model
                     $msg = str_replace($key, $value, $msg);
                 }
 
-                $client = new HttpClient();
-                    $response = $client->post(
-                        $confg->qr_api_url . '/api/message/send-text',
-                        [
-                            'headers' => [
-                                'Authorization' => 'Bearer '. $confg->qr_api_token,
-                                'Accept'        => 'application/json',  
-                            ],
-                            'json' => [
-                                "number" => "51".$this->phone_ws,
-                                "message" => $msg 
-                            ],
-                            'verify' => false, 
-                        ]
-                    );
+                $this->sendWhatsappNotification($confg, $msg);
             }
 
             if (is_null($validate['email'])) {
@@ -472,11 +459,48 @@ class Client extends Model
                 'message' => 'Error al enviar notificación de orden de pago: ' . $th->getMessage()];
         }
 
-        return 
+        return
             ['success' => true,
                 'message' => 'Notificaciones de email y WhatsApp enviada con éxito'];
 
 
+    }
+
+    /**
+     * Envia el mensaje de WhatsApp usando, en orden de preferencia:
+     * 1) el numero conectado por QR al superadmin (Evolution).
+     * 2) el metodo legacy (qr_api_url/qr_api_token, endpoint manual), que se
+     *    mantiene funcionando pero ya no tiene UI propia — solo como
+     *    respaldo para instalaciones que ya lo tenían configurado en BD.
+     */
+    private function sendWhatsappNotification(Configuration $confg, string $msg): void
+    {
+        $number = '51' . $this->phone_ws;
+
+        if ($confg->notify_wa_enabled && !empty($confg->notify_wa_instance) && $confg->notify_wa_connection_state === 'open') {
+            (new EvolutionClient())->sendText($confg->notify_wa_instance, $number, $msg);
+            return;
+        }
+
+        if (empty($confg->qr_api_url) || empty($confg->qr_api_token)) {
+            return;
+        }
+
+        $client = new HttpClient();
+        $client->post(
+            $confg->qr_api_url . '/api/message/send-text',
+            [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $confg->qr_api_token,
+                    'Accept'        => 'application/json',
+                ],
+                'json' => [
+                    'number'  => $number,
+                    'message' => $msg,
+                ],
+                'verify' => false,
+            ]
+        );
     }
 
     public function activeService()

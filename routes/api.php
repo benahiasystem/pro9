@@ -7,6 +7,15 @@ Route::post('consultas/search', 'System\PublicDocumentSearchController@searchApi
     ->middleware('throttle:30,1')
     ->name('api.public_search.search');
 
+// Envío de WhatsApp desde el número conectado al superadmin, para servicios
+// externos. Auth propia por token (Authorization: Bearer), ver
+// System\Api\WhatsAppNotifyApiController.
+Route::prefix('whatsapp-notify')->middleware('throttle:30,1')->group(function () {
+    Route::post('text', 'System\Api\WhatsAppNotifyApiController@text')->name('api.whatsapp_notify.text');
+    Route::post('media', 'System\Api\WhatsAppNotifyApiController@media')->name('api.whatsapp_notify.media');
+    Route::post('pdf', 'System\Api\WhatsAppNotifyApiController@pdf')->name('api.whatsapp_notify.pdf');
+});
+
 $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
