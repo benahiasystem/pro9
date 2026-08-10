@@ -28,13 +28,12 @@
                     </tr>
                     <tr
                         slot-scope="{ index, row }"
-                        :class="['expense-row-clickable', {'text-danger': (row.state_type_id === '11'), 'text-warning': (row.state_type_id === '13'), 'border-light': (row.state_type_id === '01'), 'border-left border-info': (row.state_type_id === '03'), 'border-left border-success': (row.state_type_id === '05'), 'border-left border-secondary': (row.state_type_id === '07'), 'border-left border-dark': (row.state_type_id === '09'), 'border-left border-danger': (row.state_type_id === '11'), 'border-left border-warning': (row.state_type_id === '13')}]"
-                        @click="clickDetail(row)"
+                        :class="{'text-danger': (row.state_type_id === '11'), 'text-warning': (row.state_type_id === '13'), 'border-light': (row.state_type_id === '01'), 'border-left border-info': (row.state_type_id === '03'), 'border-left border-success': (row.state_type_id === '05'), 'border-left border-secondary': (row.state_type_id === '07'), 'border-left border-dark': (row.state_type_id === '09'), 'border-left border-danger': (row.state_type_id === '11'), 'border-left border-warning': (row.state_type_id === '13')}"
                     >
                         <!-- <td>{{ index }}</td> -->
                         <td class="text-start">{{ row.date_of_issue }}</td>
-                        <td>{{ row.supplier_name }}<br/><small v-text="row.supplier_number"></small></td>
-                        <td class="expense-number-link">{{ row.number }}<br/>
+                        <td @click="clickDetail(row)">{{ row.supplier_name }}<br/><small v-text="row.supplier_number"></small></td>
+                        <td>{{ row.number }}<br/>
                             <small v-text="row.expense_type_description"></small><br/>
                         </td>
                         <td class="">{{ row.expense_reason_description }}</td>
@@ -100,21 +99,6 @@
     </div>
 
 </template>
-
-<style scoped>
-.expense-row-clickable {
-    cursor: pointer;
-}
-
-.expense-row-clickable:hover {
-    background-color: rgba(59, 130, 246, 0.06);
-}
-
-.expense-number-link {
-    color: #1f3a8a;
-    font-weight: 600;
-}
-</style>
 
 <script>
 

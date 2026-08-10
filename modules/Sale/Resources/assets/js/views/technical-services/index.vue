@@ -66,17 +66,15 @@
                     <tr></tr>
                     <tr
                         slot-scope="{ index, row }"
-                        class="technical-service-row-clickable"
-                        @click="clickDetail(row)"
                     >
                         <!-- <td>{{ index }}</td> -->
-                        <td class="text-start">
+                        <td class="text-start" @click="clickDetail(row)">
                             {{ row.customer_name }}<br /><small
                                 v-text="row.customer_number"
                             ></small>
                         </td>
                         <td class="text-center">{{ row.cellphone }}</td>
-                        <td class="text-center technical-service-number-link">{{ row.id }}</td>
+                        <td class="text-center">{{ row.id }}</td>
                         <td class="text-center">
                             {{ row.date_of_issue | toDate }}
                         </td>
@@ -195,20 +193,6 @@
         </div>
     </div>
 </template>
-<style scoped>
-.technical-service-row-clickable {
-    cursor: pointer;
-}
-
-.technical-service-row-clickable:hover {
-    background-color: rgba(59, 130, 246, 0.06);
-}
-
-.technical-service-number-link {
-    color: #1f3a8a;
-    font-weight: 600;
-}
-</style>
 <style>
 @media only screen and (max-width: 485px) {
     .filter-container {

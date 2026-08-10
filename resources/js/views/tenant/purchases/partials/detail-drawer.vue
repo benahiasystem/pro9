@@ -51,6 +51,34 @@
                 <div class="purchase-detail-drawer__body">
                     <div class="purchase-detail-drawer__section-card">
                         <div class="purchase-detail-drawer__section-card-header">
+                            <h5 class="section-title">Productos</h5>
+                            <p class="section-subtitle">Detalle de ítems incluidos en la compra</p>
+                        </div>
+                        <div v-if="lineItems.length" class="table-responsive">
+                            <table class="table table-sm purchase-detail-drawer__items-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cant.</th>
+                                        <th class="text-end">P. unit.</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                        <td>{{ item.description }}</td>
+                                        <td class="text-center">{{ item.quantity }}</td>
+                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
+                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
+                    </div>
+
+                    <div class="purchase-detail-drawer__section-card">
+                        <div class="purchase-detail-drawer__section-card-header">
                             <h5 class="section-title">Proveedor</h5>
                             <p class="section-subtitle">Datos del proveedor asociado a la compra</p>
                         </div>
@@ -145,34 +173,6 @@
                             </table>
                         </div>
                         <p v-else class="text-muted small mb-0">Sin pagos registrados.</p>
-                    </div>
-
-                    <div class="purchase-detail-drawer__section-card">
-                        <div class="purchase-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos</h5>
-                            <p class="section-subtitle">Detalle de ítems incluidos en la compra</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm purchase-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
-                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
                     </div>
                 </div>
 
@@ -318,10 +318,15 @@ export default {
         },
         supplierDocument() {
             const supplier = this.parseSupplier(this.record?.supplier);
-            const number = supplier?.number || this.record?.supplier_number;
+            const number = supplier?.number || this.record?.supplier_number || null;
+            const type =
+                supplier?.identity_document_type?.description
+                || supplier?.document_type
+                || this.record?.supplier_identity_document_type_description
+                || null;
 
-            if (supplier?.identity_document_type?.description && number) {
-                return `${supplier.identity_document_type.description} ${number}`;
+            if (number && type) {
+                return `${number} (${type})`;
             }
 
             return number || '—';

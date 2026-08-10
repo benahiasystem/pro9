@@ -44,6 +44,34 @@
                 <div class="document-detail-drawer__body">
                     <div class="document-detail-drawer__section-card">
                         <div class="document-detail-drawer__section-card-header">
+                            <h5 class="section-title">Productos / Servicios</h5>
+                            <p class="section-subtitle">Detalle de ítems incluidos en el comprobante</p>
+                        </div>
+                        <div v-if="lineItems.length" class="table-responsive">
+                            <table class="table table-sm document-detail-drawer__items-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Descripción</th>
+                                        <th class="text-center">Cant.</th>
+                                        <th class="text-end">P. unit.</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                        <td>{{ item.description }}</td>
+                                        <td class="text-center">{{ item.quantity }}</td>
+                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
+                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p v-else class="text-muted small mb-0">Sin ítems registrados.</p>
+                    </div>
+
+                    <div class="document-detail-drawer__section-card">
+                        <div class="document-detail-drawer__section-card-header">
                             <h5 class="section-title">Cliente</h5>
                             <p class="section-subtitle">Datos del receptor del comprobante fiscal</p>
                         </div>
@@ -124,34 +152,6 @@
                             </table>
                         </div>
                         <p v-else class="text-muted small mb-0">Sin pagos registrados.</p>
-                    </div>
-
-                    <div class="document-detail-drawer__section-card">
-                        <div class="document-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos / Servicios</h5>
-                            <p class="section-subtitle">Detalle de ítems incluidos en el comprobante</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm document-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Descripción</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
-                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin ítems registrados.</p>
                     </div>
                 </div>
 
@@ -307,7 +307,7 @@ export default {
             const number = this.record?.customer_number;
 
             if (docType && number) {
-                return `${docType}: ${number}`;
+                return `${number} (${docType})`;
             }
 
             return number || '—';

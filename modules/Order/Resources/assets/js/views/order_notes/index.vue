@@ -149,14 +149,13 @@
                     <tr></tr>
                     <tr
                         slot-scope="{ index, row }"
-                        :class="['order-row-clickable', { anulate_color: row.state_type_id == '11' }]"
-                        @click="clickDetail(row)"
+                        :class="{ anulate_color: row.state_type_id == '11' }"
                     >
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'delivery_date'" :key="col.key" class="text-center">{{ row.delivery_date | toDate }}</td>
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.user_name }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key" @click="clickDetail(row)">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key" @click.stop>
                                 <template v-if="row.state_type_id == '11'">{{ row.state_type_description }}</template>
                                 <template v-else>
@@ -190,7 +189,7 @@
                                     </td>
                                 </template>
                             </template>
-                            <td v-if="col.visible && col.key === 'identifier'" :key="col.key" class="order-name-link">{{ row.identifier }}</td>
+                            <td v-if="col.visible && col.key === 'identifier'" :key="col.key">{{ row.identifier }}</td>
                             <td v-if="col.visible && col.key === 'documents'" :key="col.key">
                                 <template v-for="(document, i) in row.documents">
                                     <label :key="i" v-text="showAnulateDoc(document)" class="d-block"></label>
@@ -305,19 +304,6 @@
 <style scoped>
 .anulate_color {
     color: red;
-}
-
-.order-row-clickable {
-    cursor: pointer;
-}
-
-.order-row-clickable:hover {
-    background-color: rgba(59, 130, 246, 0.06);
-}
-
-.order-name-link {
-    color: #1f3a8a;
-    font-weight: 600;
 }
 </style>
 <script>

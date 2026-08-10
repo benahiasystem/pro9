@@ -45,12 +45,12 @@
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">Acciones</th>
                         </template>
                     </tr>
-                    <tr slot-scope="{ index, row }" :class="['contract-row-clickable', { anulate_color : row.state_type_id == '11' }]" @click="clickDetail(row)">
+                    <tr slot-scope="{ index, row }" :class="{ anulate_color : row.state_type_id == '11' }">
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'delivery_date'" :key="col.key" class="text-center">{{ row.delivery_date | toDate }}</td>
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.user_name }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key" @click="clickDetail(row)">{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key" @click.stop>
                                 <template v-if="row.state_type_id == '11'">{{ row.state_type_description }}</template>
                                 <template v-else>
@@ -59,7 +59,7 @@
                                     </el-select>
                                 </template>
                             </td>
-                            <td v-if="col.visible && col.key === 'number'" :key="col.key" class="contract-name-link">{{ row.number_full }}</td>
+                            <td v-if="col.visible && col.key === 'number'" :key="col.key">{{ row.number_full }}</td>
                             <td v-if="col.visible && col.key === 'quotation'" :key="col.key">{{ row.quotation_number_full }}</td>
                             <td v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
                             <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
@@ -124,19 +124,6 @@
 <style scoped>
     .anulate_color{
         color:red;
-    }
-
-    .contract-row-clickable {
-        cursor: pointer;
-    }
-
-    .contract-row-clickable:hover {
-        background-color: rgba(59, 130, 246, 0.06);
-    }
-
-    .contract-name-link {
-        color: #1f3a8a;
-        font-weight: 600;
     }
 </style>
 <script>

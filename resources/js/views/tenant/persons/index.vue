@@ -123,7 +123,6 @@
                         <th class="text-end">Cód interno</th>
                         <th class="text-start">Tipo de documento</th>
                         <th class="text-end">Número</th>
-                        <th class="text-center">Estado</th>
                         <th
                             v-if="columns.person_type.visible === true"
                             class="text-center"
@@ -201,22 +200,14 @@
                     <tr></tr>
                     <tr
                         slot-scope="{ index, row }"
-                        :class="['person-row-clickable', { disable_color: !row.enabled }]"
-                        @click="clickDetail(row.id)"
+                        :class="{ disable_color: !row.enabled }"
                     >
                         <!-- <td>{{ index }}</td> -->
                         <td>{{ row.id }}</td>
-                        <td class="person-name-link">{{ row.name }}</td>
+                        <td @click="clickDetail(row.id)">{{ row.name }}</td>
                         <td class="text-end">{{ row.internal_code }}</td>
                         <td class="text-start">{{ row.document_type }}</td>
                         <td class="text-end">{{ row.number }}</td>
-                        <td class="text-center" @click.stop>
-                            <el-switch
-                                v-model="row.enabled"
-                                :disabled="typeUser !== 'admin'"
-                                @change="changeEnabled(row)"
-                            ></el-switch>
-                        </td>
                         <td
                             v-if="columns.person_type.visible === true"
                             class="text-start"
@@ -662,18 +653,5 @@ export default {
 <style scoped>
 .btn-custom, .btn-primary, .btn-danger {
     color: #fff !important;
-}
-
-.person-row-clickable {
-    cursor: pointer;
-}
-
-.person-row-clickable:hover {
-    background-color: rgba(59, 130, 246, 0.06);
-}
-
-.person-name-link {
-    color: #1f3a8a;
-    font-weight: 600;
 }
 </style>

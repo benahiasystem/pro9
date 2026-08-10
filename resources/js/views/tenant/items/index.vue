@@ -249,7 +249,6 @@
                             <th v-if="col.visible && col.key === 'real_unit_price'" :key="col.key" class="text-end">P. venta</th>
                             <th v-if="col.visible && col.key === 'has_igv'" :key="col.key" class="text-start">Tiene Igv (Venta)</th>
                             <th v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key" class="text-start">Tiene Igv (Compra)</th>
-                            <th v-if="col.visible && col.key === 'status'" :key="col.key" class="text-center">Estado</th>
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end"></th>
                         </template>
                     </tr>
@@ -257,18 +256,17 @@
                     <tr></tr>
                     <tr valign="middle"
                         slot-scope="{ index, row }"
-                        :class="['item-row-clickable', { disable_color: !row.active, 'text-warning': row.hidden_search }]"
-                        @click="clickDetail(row)"
+                        :class="{ disable_color: !row.active, 'text-warning': row.hidden_search }"
                     >
                         <td @click.stop>
                             <el-checkbox :value="selected.includes(row.id)" @change="handleSelectionChange(row)"></el-checkbox>
                         </td>
                         <template v-for="col in orderedColumns">
-                            <td v-if="col.visible && col.key === 'id'" :key="col.key" class="text-end item-name-link">{{ row.id }}</td>
+                            <td v-if="col.visible && col.key === 'id'" :key="col.key" class="text-end">{{ row.id }}</td>
                             <!-- <td v-if="col.visible && col.key === 'internal_id'" :key="col.key" class="text-end">{{ row.internal_id }}</td> -->
                             <td v-if="col.visible && col.key === 'unit_type'" :key="col.key">{{ row.unit_type_id }}</td>
                             <td v-if="col.visible && col.key === 'image'" :key="col.key"><img :src="row.image_url_small" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
-                            <td class="fw-semibold item-name-link" v-if="col.visible && col.key === 'name'" :key="col.key">{{ row.description }} <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template></td>
+                            <td v-if="col.visible && col.key === 'name'" :key="col.key" @click="clickDetail(row)">{{ row.description }} <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template></td>
                             <td v-if="col.visible && col.key === 'description'" :key="col.key"><div class="limit-4-lines">{{ stripHtml(row.name) }}</div></td>
                             <td v-if="col.visible && col.key === 'model'" :key="col.key">{{ row.model }}</td>
                             <td v-if="col.visible && col.key === 'brand'" :key="col.key">{{ row.brand }}</td>
@@ -303,13 +301,6 @@
                             <td v-if="col.visible && col.key === 'real_unit_price'" :key="col.key" class="text-end">{{ row.sale_unit_price_with_igv }}</td>
                             <td v-if="col.visible && col.key === 'has_igv'" :key="col.key" class="text-start">{{ row.has_igv_description }}</td>
                             <td v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key" class="text-start">{{ row.purchase_has_igv_description }}</td>
-                            <td v-if="col.visible && col.key === 'status'" :key="col.key" class="text-center" @click.stop>
-                                <el-switch
-                                    v-model="row.active"
-                                    :disabled="typeUser !== 'admin'"
-                                    @change="changeActive(row)"
-                                ></el-switch>
-                            </td>
                             <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
                             <el-dropdown trigger="click" @command="handleRowCommand">
                                 <button
@@ -504,20 +495,6 @@
         </div>
     </div>
 </template>
-<style scoped>
-.item-row-clickable {
-    cursor: pointer;
-}
-
-.item-row-clickable:hover {
-    background-color: rgba(59, 130, 246, 0.06);
-}
-
-.item-name-link {
-    color: #1f3a8a;
-}
-</style>
-
 <style>
 .dropdown-menu.show {
     max-height: 130px;
@@ -611,7 +588,6 @@ export default {
                 real_unit_price:             { title: "Mostrar el precio de venta total (con el cálculo IGV)", visible: false, order: 16 },
                 has_igv:                     { title: "Tiene Igv (Venta)",                                   visible: true,  order: 17 },
                 purchase_has_igv_description:{ title: "Tiene Igv (Compra)",                                  visible: false, order: 18 },
-                status:                      { title: "Estado",                                              visible: true,  order: 19 },
                 actions:                     { title: "Acciones",                                            visible: true,  order: 20 },
             },
             item_unit_types: [],

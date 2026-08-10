@@ -44,19 +44,18 @@
           <tr></tr>
           <tr
             slot-scope="{ index, row }"
-            :class="['purchase-order-row-clickable', { anulate_color: row.state_type_id === '11' }]"
-            @click="clickDetail(row)"
+            :class="{ anulate_color: row.state_type_id === '11' }"
           >
             <!-- <td>{{ index }}</td> -->
             <td class="text-start">{{ row.date_of_issue }}</td>
             <td class="text-start">{{ row.date_of_due }}</td>
-            <td>
+            <td @click="clickDetail(row)">
               {{ row.supplier_name }}
               <br />
               <small v-text="row.supplier_number"></small>
             </td>
             <!-- <td>{{row.state_type_description}}</td> -->
-            <td class="purchase-order-number-link">
+            <td>
               {{ row.number }}
               <br />
               <small v-text="row.document_type_description"></small>
@@ -192,19 +191,6 @@
 <style scoped>
 .anulate_color {
   color: red;
-}
-
-.purchase-order-row-clickable {
-  cursor: pointer;
-}
-
-.purchase-order-row-clickable:hover {
-  background-color: rgba(59, 130, 246, 0.06);
-}
-
-.purchase-order-number-link {
-  color: #1f3a8a;
-  font-weight: 600;
 }
 </style>
 <style>

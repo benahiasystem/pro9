@@ -210,7 +210,6 @@
                     <tr
                         slot-scope="{ index, row }"
                         :class="{
-                            'document-row-clickable': true,
                             'anulate_color': row.state_type_id === '11',
                             'text-warning': row.state_type_id === '13',
                             'border-light': row.state_type_id === '01',
@@ -221,7 +220,6 @@
                             'border-left border-danger': row.state_type_id === '11',
                             'border-left border-warning': row.state_type_id === '13'
                         }"
-                        @click="clickDetail(row)"
                     >
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'soap_type'" :key="col.key">{{ row.soap_type_description }}</td>
@@ -230,8 +228,8 @@
                             </td>
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small></td>
-                            <td v-if="col.visible && col.key === 'number'" :key="col.key" class="document-number-link">
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key" @click="clickDetail(row)">{{ row.customer_name }}<br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small></td>
+                            <td v-if="col.visible && col.key === 'number'" :key="col.key">
                                 <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px;">{{ row.number }}</span>
                             </td>
                             <td v-if="col.visible && col.key === 'notes'" :key="col.key">
@@ -652,19 +650,6 @@
     </div>
 </template>
 <style>
-.document-row-clickable {
-    cursor: pointer;
-}
-
-.document-row-clickable:hover {
-    background-color: rgba(59, 130, 246, 0.06);
-}
-
-.document-number-link {
-    color: #1f3a8a;
-    font-weight: 600;
-}
-
 .dropdown-menu.show {
     display: block;
     max-height: 140px;

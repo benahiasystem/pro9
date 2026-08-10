@@ -25,24 +25,6 @@
             </div>
 
             <template v-if="record">
-                <div class="item-detail-drawer__status-bar">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="text-muted small">Estado</span>
-                        <el-switch
-                            v-model="record.active"
-                            :disabled="typeUser !== 'admin' || toggling"
-                            @change="toggleActive"
-                        ></el-switch>
-                        <span
-                            class="badge ms-1"
-                            :class="record.active ? 'badge-success' : 'badge-secondary'"
-                        >
-                            {{ record.active ? 'Activo' : 'Inactivo' }}
-                        </span>
-                    </div>
-                    <small class="text-muted">#{{ record.id }}</small>
-                </div>
-
                 <div class="item-detail-drawer__body">
                     <div class="item-detail-drawer__section-card">
                         <div class="item-detail-drawer__section-card-header">

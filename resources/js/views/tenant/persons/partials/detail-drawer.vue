@@ -2,7 +2,7 @@
     <el-drawer
         :visible.sync="visibleDrawer"
         :with-header="false"
-        size="480px"
+        size="560px"
         direction="rtl"
         custom-class="person-detail-drawer"
         append-to-body
@@ -25,24 +25,6 @@
             </div>
 
             <template v-if="record">
-                <div class="person-detail-drawer__status-bar">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="text-muted small">Estado</span>
-                        <el-switch
-                            v-model="record.enabled"
-                            :disabled="typeUser !== 'admin' || toggling"
-                            @change="toggleEnabled"
-                        ></el-switch>
-                        <span
-                            class="badge ms-1"
-                            :class="record.enabled ? 'badge-success' : 'badge-secondary'"
-                        >
-                            {{ record.enabled ? 'Activo' : 'Inactivo' }}
-                        </span>
-                    </div>
-                    <small class="text-muted">#{{ record.id }}</small>
-                </div>
-
                 <div v-if="type === 'customers'" class="person-detail-drawer__metrics">
                     <div class="row g-2">
                         <div class="col-6">
@@ -100,11 +82,8 @@
                                     <dt v-if="record.trade_name">Nombre comercial</dt>
                                     <dd v-if="record.trade_name">{{ record.trade_name }}</dd>
 
-                                    <dt>Tipo de documento</dt>
-                                    <dd>{{ record.document_type || '—' }}</dd>
-
-                                    <dt>Número</dt>
-                                    <dd>{{ record.number || '—' }}</dd>
+                                    <dt>Documento</dt>
+                                    <dd>{{ personDocument }}</dd>
 
                                     <dt>Cód. interno</dt>
                                     <dd>{{ record.internal_code || '—' }}</dd>
@@ -374,6 +353,20 @@ export default {
         },
         entityShortLabel() {
             return this.type === 'customers' ? 'cliente' : 'proveedor';
+        },
+        personDocument() {
+            const number = this.record?.number || null;
+            const type = this.record?.document_type || null;
+
+            if (number && type) {
+                return `${number} (${type})`;
+            }
+
+            if (number) {
+                return number;
+            }
+
+            return '—';
         },
         locationDepartment() {
             return this.record?.department?.description || '—';

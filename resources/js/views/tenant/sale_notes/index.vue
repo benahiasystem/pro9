@@ -131,15 +131,14 @@
                     </tr>
                     <tr
                         slot-scope="{ index, row }"
-                        :class="['sale-note-row-clickable', { anulate_color: row.state_type_id === '11' }]"
-                        @click="clickDetail(row)"
+                        :class="{ anulate_color: row.state_type_id === '11' }"
                     >
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'seller_name'" :key="col.key" class="text-end">{{ row.seller_name }}</td>
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-center">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
-                            <td v-if="col.visible && col.key === 'full_number'" :key="col.key" class="sale-note-name-link">{{ row.full_number }}</td>
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key" @click="clickDetail(row)">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
+                            <td v-if="col.visible && col.key === 'full_number'" :key="col.key">{{ row.full_number }}</td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key">{{ row.state_type_description }}</td>
                             <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-center">{{ row.exchange_rate_sale }}</td>
                             <td v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
@@ -391,19 +390,6 @@
 <style scoped>
 .anulate_color {
     color: red;
-}
-
-.sale-note-row-clickable {
-    cursor: pointer;
-}
-
-.sale-note-row-clickable:hover {
-    background-color: rgba(59, 130, 246, 0.06);
-}
-
-.sale-note-name-link {
-    color: #1f3a8a;
-    font-weight: 600;
 }
 </style>
 

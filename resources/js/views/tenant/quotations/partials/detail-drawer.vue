@@ -2,7 +2,7 @@
     <el-drawer
         :visible.sync="visibleDrawer"
         :with-header="false"
-        size="520px"
+        size="560px"
         direction="rtl"
         custom-class="quotation-detail-drawer"
         append-to-body
@@ -40,6 +40,34 @@
                 </div>
 
                 <div class="quotation-detail-drawer__body">
+                    <div class="quotation-detail-drawer__section-card">
+                        <div class="quotation-detail-drawer__section-card-header">
+                            <h5 class="section-title">Productos</h5>
+                            <p class="section-subtitle">Detalle de ítems incluidos en la cotización</p>
+                        </div>
+                        <div v-if="lineItems.length" class="table-responsive">
+                            <table class="table table-sm quotation-detail-drawer__items-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center">Cant.</th>
+                                        <th class="text-end">P. unit.</th>
+                                        <th class="text-end">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                        <td>{{ item.description }}</td>
+                                        <td class="text-center">{{ item.quantity }}</td>
+                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
+                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
+                    </div>
+
                     <div class="quotation-detail-drawer__section-card">
                         <div class="quotation-detail-drawer__section-card-header">
                             <h5 class="section-title">Cliente</h5>
@@ -107,34 +135,6 @@
                             <dt>Total</dt>
                             <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
                         </dl>
-                    </div>
-
-                    <div class="quotation-detail-drawer__section-card">
-                        <div class="quotation-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos</h5>
-                            <p class="section-subtitle">Detalle de ítems incluidos en la cotización</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm quotation-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
-                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
                     </div>
                 </div>
 
@@ -276,19 +276,22 @@ export default {
         },
         customerDocument() {
             const customer = this.record?.customer;
-            if (customer?.identity_document_type?.description && customer?.number) {
-                return `${customer.identity_document_type.description} ${customer.number}`;
+            const number = customer?.number || this.record?.customer_number || null;
+            const type =
+                customer?.identity_document_type?.description
+                || customer?.document_type
+                || this.record?.customer_identity_document_type_description
+                || null;
+
+            if (number && type) {
+                return `${number} (${type})`;
             }
 
-            if (customer?.document_type && customer?.number) {
-                return `${customer.document_type} ${customer.number}`;
+            if (number) {
+                return number;
             }
 
-            if (customer?.number) {
-                return customer.number;
-            }
-
-            return this.record?.customer_number || '—';
+            return '—';
         },
         contactLabel() {
             const parts = [this.record?.contact, this.record?.phone].filter(Boolean);

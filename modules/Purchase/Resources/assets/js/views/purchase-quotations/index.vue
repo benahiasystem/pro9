@@ -51,8 +51,18 @@
                         <!-- <td>{{ index }}</td> -->
                         <td class="text-start">{{ row.date_of_issue }}</td>
                         <td>{{ row.state_type_description }}</td>
-                        <td>{{ row.identifier }}</td>
-                        <td class="text-center">
+                        <td>
+                            <span
+                                class="purchase-quotation-document-link"
+                                role="button"
+                                tabindex="0"
+                                @click="clickDetail(row)"
+                                @keyup.enter.prevent="clickDetail(row)"
+                            >
+                                {{ row.identifier }}
+                            </span>
+                        </td>
+                        <td class="text-center" @click.stop>
                             <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info"
@@ -62,7 +72,7 @@
                             </button>
                         </td>
 
-                        <td class="text-end">
+                        <td class="text-end" @click.stop>
                             <el-dropdown trigger="click" @command="handleCommand($event, row)">
                                 <el-button class="btn-dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
@@ -71,6 +81,13 @@
 
                                 <template #dropdown>
                                     <el-dropdown-menu>
+                                        <el-dropdown-item command="detail">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                            Ver detalle
+                                        </el-dropdown-item>
+
+                                        <el-dropdown-item divided />
+
                                         <el-dropdown-item
                                             v-if="!row.has_purchase_orders"
                                             command="generate"
@@ -104,12 +121,35 @@
                 :showGenerate="true"
                 :showClose="true"
             ></purchase-quotation-options>
+
+            <purchase-quotation-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                @edit="openEditFromDrawer"
+                @generate="openGenerateFromDrawer"
+                @options="openOptionsFromDrawer"
+            ></purchase-quotation-detail-drawer>
         </div>
     </div>
 </template>
 <style scoped>
 .anulate_color {
     color: red;
+}
+
+.purchase-quotation-document-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.purchase-quotation-document-link:hover,
+.purchase-quotation-document-link:focus {
+    color: inherit;
+    text-decoration: none;
+    outline: none;
 }
 </style>
 <style>
@@ -127,17 +167,21 @@
 </style>
 <script>
 import PurchaseQuotationOptions from "./partials/options.vue";
+import PurchaseQuotationDetailDrawer from "./partials/detail-drawer.vue";
 import DataTable from "@components/DataTable.vue";
 // import {deletable} from '../../../mixins/deletable'
 
 export default {
     // mixins: [deletable],
-    components: { DataTable, PurchaseQuotationOptions },
+    components: { DataTable, PurchaseQuotationOptions, PurchaseQuotationDetailDrawer },
     data() {
         return {
             resource: "purchase-quotations",
             recordId: null,
-            showDialogOptions: false
+            showDialogOptions: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null
         };
     },
     created() {},
@@ -154,21 +198,40 @@ export default {
         clickOptions(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptions = true;
-        }
-            ,
-            handleCommand(command, row) {
-                switch (command) {
-                    case 'generate':
-                        this.clickGenerateOc(row.id);
-                        break;
-                    case 'edit':
-                        if (row && row.id) window.location.href = `/${this.resource}/create/${row.id}`;
-                        break;
-                    case 'options':
-                        this.clickOptions(row.id);
-                        break;
-                }
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickCreate(recordId);
+        },
+        openGenerateFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickGenerateOc(recordId);
+        },
+        openOptionsFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickOptions(recordId);
+        },
+        handleCommand(command, row) {
+            switch (command) {
+                case 'detail':
+                    this.clickDetail(row);
+                    break;
+                case 'generate':
+                    this.clickGenerateOc(row.id);
+                    break;
+                case 'edit':
+                    if (row && row.id) window.location.href = `/${this.resource}/create/${row.id}`;
+                    break;
+                case 'options':
+                    this.clickOptions(row.id);
+                    break;
             }
+        }
     }
 };
 </script>

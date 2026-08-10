@@ -85,16 +85,15 @@
                     </tr>
                     <tr
                         slot-scope="{ index, row }"
-                        :class="['purchase-row-clickable', { anulate_color: row.state_type_id === '11' }]"
-                        @click="clickDetail(row)"
+                        :class="{ anulate_color: row.state_type_id === '11' }"
                     >
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.state_type_payment_description != 'Pagado' && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'supplier'" :key="col.key">{{ row.supplier_name }}<br /><small v-text="row.supplier_number"></small></td>
+                            <td v-if="col.visible && col.key === 'supplier'" :key="col.key" @click="clickDetail(row)">{{ row.supplier_name }}<br /><small v-text="row.supplier_number"></small></td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key">{{ row.state_type_description }}</td>
                             <td v-if="col.visible && col.key === 'payment_state'" :key="col.key" :class="row.state_type_payment_description == 'Pagado' ? 'text-success' : 'text-warning'">{{ row.state_type_payment_description }}</td>
-                            <td v-if="col.visible && col.key === 'number'" :key="col.key" class="purchase-number-link">{{ row.number }}<br /><small v-text="row.document_type_description"></small><br /></td>
+                            <td v-if="col.visible && col.key === 'number'" :key="col.key">{{ row.number }}<br /><small v-text="row.document_type_description"></small><br /></td>
                             <td v-if="col.visible && col.key === 'products'" :key="col.key" @click.stop>
                                 <el-popover placement="right" width="400" trigger="click">
                                     <el-table :data="row.items">
@@ -224,19 +223,6 @@
 <style scoped>
 .anulate_color {
     color: red;
-}
-
-.purchase-row-clickable {
-    cursor: pointer;
-}
-
-.purchase-row-clickable:hover {
-    background-color: rgba(59, 130, 246, 0.06);
-}
-
-.purchase-number-link {
-    color: #1f3a8a;
-    font-weight: 600;
 }
 </style>
 
