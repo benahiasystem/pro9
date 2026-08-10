@@ -27,6 +27,7 @@
             <system-support-configuration></system-support-configuration>
             <system-terms-configuration></system-terms-configuration>
             <system-email-configuration :configuration='@json($configuration)'></system-email-configuration>
+            <system-whatsapp-notify-configuration :configuration='@json($configuration)'></system-whatsapp-notify-configuration>
         </div>
     </div>
 
