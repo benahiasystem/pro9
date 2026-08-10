@@ -2416,54 +2416,30 @@
                             </span>
                             <span class="pay-method-label">@{{ titleCulqi }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'culqi'" class="pay-method-panel">
-                            <p v-if="descriptionCulqi">@{{ descriptionCulqi }}</p>
-                            <button
-                                type="button"
-                                class="pay-btn pay-method-action"
-                                :disabled="processingPayment || !acceptedTerms"
-                                @click="runPayment('culqi')"
-                            >
-                                Pagar con @{{ titleCulqi }}
-                            </button>
+                        <div v-if="selectedPaymentMethod === 'culqi' && descriptionCulqi" class="pay-method-panel">
+                            <p>@{{ descriptionCulqi }}</p>
                         </div>
 
                         <label v-if="enableIzipay" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'izipay' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="izipay" autocomplete="off">
-                            <span class="pay-method-ic">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2M4 14v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+                            <span class="pay-method-ic pay-method-ic--brand">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/izipay-checkout.svg') }}?v=2" alt="Izipay">
                             </span>
                             <span class="pay-method-label">@{{ titleIzipay }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'izipay'" class="pay-method-panel">
-                            <p v-if="descriptionIzipay">@{{ descriptionIzipay }}</p>
-                            <button
-                                type="button"
-                                class="pay-btn pay-method-action"
-                                :disabled="processingPayment || !acceptedTerms"
-                                @click="runPayment('izipay')"
-                            >
-                                Pagar con @{{ titleIzipay }}
-                            </button>
+                        <div v-if="selectedPaymentMethod === 'izipay' && descriptionIzipay" class="pay-method-panel">
+                            <p>@{{ descriptionIzipay }}</p>
                         </div>
 
                         <label v-if="enableMp" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'mp' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="mp" autocomplete="off">
-                            <span class="pay-method-ic">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                            <span class="pay-method-ic pay-method-ic--brand">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/mercado-pago-checkout.svg') }}?v=4" alt="Mercado Pago">
                             </span>
                             <span class="pay-method-label">@{{ titleMp }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'mp'" class="pay-method-panel">
-                            <p v-if="descriptionMp">@{{ descriptionMp }}</p>
-                            <button
-                                type="button"
-                                class="pay-btn pay-method-action"
-                                :disabled="processingPayment || !acceptedTerms"
-                                @click="runPayment('mp')"
-                            >
-                                Pagar con @{{ titleMp }}
-                            </button>
+                        <div v-if="selectedPaymentMethod === 'mp' && descriptionMp" class="pay-method-panel">
+                            <p>@{{ descriptionMp }}</p>
                         </div>
 
                         <label v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
@@ -2474,16 +2450,8 @@
                             <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
                         
-                        <div v-if="selectedPaymentMethod === 'cash'" class="pay-method-panel">
-                            <p v-if="cashPaymentDescription">@{{ cashPaymentDescription }}</p>
-                            <button
-                                type="button"
-                                class="pay-btn pay-method-action"
-                                :disabled="processingPayment || !acceptedTerms"
-                                @click="runPayment('cash')"
-                            >
-                                Confirmar pedido — @{{ cashPaymentTitle }}
-                            </button>
+                        <div v-if="selectedPaymentMethod === 'cash' && cashPaymentDescription" class="pay-method-panel">
+                            <p>@{{ cashPaymentDescription }}</p>
                         </div>
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="yape" autocomplete="off">
@@ -2507,20 +2475,12 @@
                                     Copiar
                                 </button>
                             </div>
-                            <button
-                                type="button"
-                                class="pay-btn pay-method-action"
-                                :disabled="processingPayment || !acceptedTerms"
-                                @click="runPayment('yape')"
-                            >
-                                Confirmar pedido con Yape
-                            </button>
                         </div>
 
                         <label v-if="enableTransfer" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'transfer' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="transfer" autocomplete="off">
-                            <span class="pay-method-ic">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V10l7 -5l7 5v11"/><path d="M9 21v-6h6v6"/></svg>
+                            <span class="pay-method-ic pay-method-ic--brand">
+                                <img src="{{ asset('porto-ecommerce/assets/images/payment-gateways/bank-transfer.svg') }}?v=1" alt="Transferencia">
                             </span>
                             <span class="pay-method-label">Transferencia bancaria</span>
                         </label>
@@ -2542,14 +2502,6 @@
                             @else
                                 <p style="font-size: 13px; font-weight: bold; color: #d9534f; margin-top: 10px;">No hay cuentas bancarias configuradas.</p>
                             @endif
-                            <button
-                                type="button"
-                                class="pay-btn pay-method-action"
-                                :disabled="processingPayment || !acceptedTerms"
-                                @click="runPayment('transfer')"
-                            >
-                                Confirmar pedido con transferencia
-                            </button>
                         </div>
                         @if($information->script_paypal)
                         <label class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'paypal' }">
