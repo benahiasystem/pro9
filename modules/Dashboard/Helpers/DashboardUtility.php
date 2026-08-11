@@ -2,147 +2,57 @@
 
 namespace Modules\Dashboard\Helpers;
 
-use App\Models\Tenant\Document;
 use App\Models\Tenant\DocumentItem;
 use App\Models\Tenant\PurchaseItem;
 use App\Models\Tenant\SaleNoteItem;
-use Carbon\Carbon;
 use Modules\Expense\Models\Expense;
-use App\Models\Tenant\SaleNote;
-
 
 class DashboardUtility
 {
     public function data($request)
     {
-
-        $establishment_id = $request['establishment_id'];
-        $period = $request['period'];
-        $date_start = $request['date_start'];
-        $date_end = $request['date_end'];
-        $month_start = $request['month_start'];
-        $month_end = $request['month_end'];
-        $enabled_expense = $request['enabled_expense'];
-        $item_id = $request['item_id'];
-
-        $d_start = null;
-        $d_end = null;
-
-        switch ($period) {
-            case 'month':
-                $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
-                $d_end = Carbon::parse($month_start.'-01')->endOfMonth()->format('Y-m-d');
-                break;
-            case 'between_months':
-                $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
-                $d_end = Carbon::parse($month_end.'-01')->endOfMonth()->format('Y-m-d');
-                break;
-            case 'date':
-                $d_start = $date_start;
-                $d_end = $date_start;
-                break;
-            case 'between_dates':
-                $d_start = $date_start;
-                $d_end = $date_end;
-                break;
-            case 'last_week':
-                $d_start = $date_start;
-                $d_end = $date_end;
-                break;
-        }
+        $filters = DashboardFilterHelper::resolve($request);
 
         return [
-            'utilities' => $this->utilities_totals($establishment_id, $d_start, $d_end, $enabled_expense, $item_id),
+            'utilities' => $this->calculateUtilityTotals(
+                $filters['establishment_id'],
+                $filters['date_start'],
+                $filters['date_end'],
+                filter_var($request['enabled_expense'] ?? true, FILTER_VALIDATE_BOOLEAN),
+                $request['item_id'] ?? null
+            ),
         ];
-
     }
 
+    public function calculateUtilityTotals($establishment_id, $d_start, $d_end, $enabled_expense = true, $item_id = null)
+    {
+        $document_items = $this->getDocumentItems($establishment_id, $d_start, $d_end, $item_id);
+        $sale_note_items = $this->getSaleNoteItems($establishment_id, $d_start, $d_end, $item_id);
 
+        $document_totals = $this->getTotalDocumentItems($document_items);
+        $sale_note_totals = $this->getTotalSaleNoteItems($sale_note_items);
+        $expenses_total = $this->getTotalExpenses(
+            $this->getExpenses($establishment_id, $d_start, $d_end, $enabled_expense)
+        );
 
-    private function utilities_totals($establishment_id, $d_start, $d_end, $enabled_expense, $item_id){
-
-
-        if($d_start && $d_end){
-
-            $document_items = DocumentItem::without(['affectation_igv_type', 'system_isc_type', 'price_type'])
-                                            ->whereHas('document',function($query) use($establishment_id, $d_start, $d_end){
-                                                $query->where('establishment_id', $establishment_id)
-                                                        ->whereIn('state_type_id', ['01','03','05','07','13'])
-                                                        ->whereBetween('date_of_issue', [$d_start, $d_end])
-                                                        ->whereIn('document_type_id', ['01','03','08']);
-                                            })
-                                            ->get();
-
-
-            $sale_note_items = SaleNoteItem::without(['affectation_igv_type', 'system_isc_type', 'price_type'])
-                                            ->whereHas('sale_note', function($query) use($establishment_id, $d_start, $d_end){
-
-                                                $query->where([['establishment_id', $establishment_id],['changed',false]])
-                                                        ->whereIn('state_type_id', ['01','03','05','07','13'])
-                                                        ->whereBetween('date_of_issue', [$d_start, $d_end]);
-                                            })
-                                            ->get();
-
-            $expenses = ($enabled_expense) ? Expense::where('establishment_id', $establishment_id)
-                                            ->whereBetween('date_of_issue', [$d_start, $d_end])
-                                            ->where('state_type_id', '!=', '11')  
-                                            ->get() : null;
-
-
-        }else{
-            $document_items = DocumentItem::without(['affectation_igv_type', 'system_isc_type', 'price_type'])
-                                            ->whereHas('document', function($query) use($establishment_id) {
-                                                $query->where('establishment_id', $establishment_id)
-                                                        ->whereIn('state_type_id', ['01','03','05','07','13']);
-                                            })
-                                            ->get();
-
-
-            $sale_note_items = SaleNoteItem::without(['affectation_igv_type', 'system_isc_type', 'price_type'])
-                                            ->whereHas('sale_note', function($query) use($establishment_id){
-
-                                                $query->where([['establishment_id', $establishment_id],['changed',false]])
-                                                        ->whereIn('state_type_id', ['01','03','05','07','13']);
-                                            })
-                                            ->get();
-
-
-            $expenses = ($enabled_expense) ? Expense::where('establishment_id', $establishment_id)
-                                            ->where('state_type_id', '!=', '11')  
-                                            ->get() : null;
-
-        }
-
-        if($item_id){
-            $document_items = $document_items->where('item_id', $item_id);
-            $sale_note_items = $sale_note_items->where('item_id', $item_id);
-        }
-
-        // dd($document_items);
-        $getTotalDocumentItems = $this->getTotalDocumentItems($document_items);
-        $getTotalSaleNoteItems = $this->getTotalSaleNoteItems($sale_note_items);
-        $getTotalExpenses = $this->getTotalExpenses($expenses);
-
-        // $total_global_discount_sale_note = $this->getTotalGlobalDiscountSaleNote($establishment_id, $d_start, $d_end, $item_id);
-
-        $total_income = $getTotalDocumentItems['document_sale_total'] + $getTotalSaleNoteItems['sale_note_sale_total'];
-
-        $total_egress = $getTotalDocumentItems['document_purchase_total'] + $getTotalSaleNoteItems['sale_note_purchase_total'] + $getTotalExpenses;
+        $total_income = $document_totals['document_sale_total'] + $sale_note_totals['sale_note_sale_total'];
+        $total_egress = $document_totals['document_purchase_total']
+            + $sale_note_totals['sale_note_purchase_total']
+            + $expenses_total;
         $utility = $total_income - $total_egress;
-
 
         return [
             'totals' => [
-                'total_income' => number_format($total_income,2, ".", ""),
-                'total_egress' => number_format($total_egress,2, ".", ""),
-                'utility' => number_format($utility,2, ".", ""),
+                'total_income' => number_format($total_income, 2, '.', ''),
+                'total_egress' => number_format($total_egress, 2, '.', ''),
+                'utility' => number_format($utility, 2, '.', ''),
             ],
             'graph' => [
                 'labels' => ['Ingreso', 'Egreso'],
                 'datasets' => [
                     [
                         'label' => 'Utilidades',
-                        'data' => [round($total_income,2), round($total_egress,2)],
+                        'data' => [round($total_income, 2), round($total_egress, 2)],
                         'backgroundColor' => [
                             'rgb(36, 71, 232, .1)',
                             'rgb(254, 0, 108, .1)',
@@ -150,242 +60,192 @@ class DashboardUtility
                         'borderColor' => [
                             'rgb(36, 71, 232)',
                             'rgb(254, 0, 108)',
-                        ]
-                    ]
+                        ],
+                    ],
                 ],
-            ]
+            ],
         ];
-
     }
 
-
-    private function getTotalExpenses($expenses){
-
-        if($expenses){
-
-            $total = 0;
-            foreach ($expenses as $ex) {
-                $total += ($ex->currency_type_id == 'USD') ? $ex->total * $ex->exchange_rate_sale: $ex->total;
-            }
-
-            return number_format($total, 2, ".", "");
-        }
-
-        return 0;
-    }
-
-
-    private function getPurchaseUnitPrice($record){
-
-        $purchase_unit_price = 0;
-
-        if($record->item->unit_type_id != 'ZZ'){
-
-            if(isset($record->item->purchase_unit_price)) {
-                $purchase_unit_price = (float)$record->item->purchase_unit_price;
-            }
-            else if($record->relation_item->purchase_unit_price > 0){ //cambiar por ->item
-
-                $purchase_unit_price = $record->relation_item->purchase_unit_price;
-            }else{
-
-                $purchase_item = PurchaseItem::select('unit_price')->where('item_id', $record->item_id)->latest('id')->first();
-                $purchase_unit_price = ($purchase_item) ? $purchase_item->unit_price : $record->unit_price;
-            }
-
-        }
-
-        return $purchase_unit_price;
-    }
-
-
-    /**
-     * 
-     * Obtener total de descuentos globales de nota de venta
-     * @TODO revisar total descuento cuando afecta a la BI
-     * 
-     * @param $establishment_id
-     * @param $d_start
-     * @param $d_end
-     * @param $item_id
-     * @return float
-     */
-    // private function getTotalGlobalDiscountSaleNote($establishment_id, $d_start, $d_end, $item_id)
-    // {
-    //     return SaleNote::whereFilterDashboardUtility($establishment_id, $d_start, $d_end, $item_id)->sum('total_discount');
-    // }
-
-
-    
-    /**
-     * 
-     * Obtener totales de nota de venta basado en los items filtrados
-     *
-     * @param  $sale_note_items
-     * @return float
-     */
-    private function getTotalSaleNotesByItems($sale_note_items)
+    private function getDocumentItems($establishment_id, $d_start, $d_end, $item_id)
     {
-        return SaleNote::whereRecordsByItems($sale_note_items->pluck('sale_note_id')->toArray())
-                                ->get()
-                                ->sum(function($sale_note){
-                                    return $sale_note->getTransformTotal();
-                                });
+        $query = DocumentItem::without(['affectation_igv_type', 'system_isc_type', 'price_type'])
+            ->with([
+                'document:id,currency_type_id,exchange_rate_sale,document_type_id',
+                'relation_item:id,purchase_unit_price,unit_type_id',
+            ])
+            ->whereHas('document', function ($query) use ($establishment_id, $d_start, $d_end) {
+                $query->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
+                    ->whereIn('document_type_id', ['01', '03', '07', '08']);
+
+                if ($establishment_id) {
+                    $query->where('establishment_id', $establishment_id);
+                }
+
+                if ($d_start && $d_end) {
+                    $query->whereBetween('date_of_issue', [$d_start, $d_end]);
+                }
+            });
+
+        if ($item_id) {
+            $query->where('item_id', $item_id);
+        }
+
+        return $query->get();
     }
-    
+
+    private function getSaleNoteItems($establishment_id, $d_start, $d_end, $item_id)
+    {
+        $query = SaleNoteItem::without(['affectation_igv_type', 'system_isc_type', 'price_type'])
+            ->with([
+                'sale_note:id,currency_type_id,exchange_rate_sale',
+                'relation_item:id,purchase_unit_price,unit_type_id',
+            ])
+            ->whereHas('sale_note', function ($query) use ($establishment_id, $d_start, $d_end) {
+                $query->where('changed', false)
+                    ->whereIn('state_type_id', ['01', '03', '05', '07', '13']);
+
+                if ($establishment_id) {
+                    $query->where('establishment_id', $establishment_id);
+                }
+
+                if ($d_start && $d_end) {
+                    $query->whereBetween('date_of_issue', [$d_start, $d_end]);
+                }
+            });
+
+        if ($item_id) {
+            $query->where('item_id', $item_id);
+        }
+
+        return $query->get();
+    }
+
+    private function getExpenses($establishment_id, $d_start, $d_end, $enabled_expense)
+    {
+        if (!$enabled_expense || !$establishment_id) {
+            return null;
+        }
+
+        $query = Expense::query()
+            ->where('establishment_id', $establishment_id)
+            ->where('state_type_id', '!=', '11');
+
+        if ($d_start && $d_end) {
+            $query->whereBetween('date_of_issue', [$d_start, $d_end]);
+        }
+
+        return $query->get();
+    }
+
+    private function getTotalExpenses($expenses)
+    {
+        if (!$expenses) {
+            return 0.0;
+        }
+
+        $total = 0.0;
+
+        foreach ($expenses as $expense) {
+            $total += ($expense->currency_type_id == 'USD')
+                ? $expense->total * $expense->exchange_rate_sale
+                : $expense->total;
+        }
+
+        return round($total, 2);
+    }
+
+    private function getPurchaseUnitPrice($record)
+    {
+        $unit_type_id = optional($record->relation_item)->unit_type_id
+            ?? ($record->item->unit_type_id ?? null);
+
+        if ($unit_type_id === 'ZZ') {
+            return 0.0;
+        }
+
+        $relation_item = $record->relation_item;
+
+        if ($relation_item && (float) $relation_item->purchase_unit_price > 0) {
+            return (float) $relation_item->purchase_unit_price;
+        }
+
+        $purchase_item = PurchaseItem::select('unit_price')
+            ->where('item_id', $record->item_id)
+            ->latest('id')
+            ->first();
+
+        if ($purchase_item && (float) $purchase_item->unit_price > 0) {
+            return (float) $purchase_item->unit_price;
+        }
+
+        return 0.0;
+    }
 
     private function getTotalSaleNoteItems($sale_note_items)
     {
+        $sale_note_sale_total = 0.0;
+        $sale_note_purchase_total = 0.0;
 
-        $purchase_unit_price = 0;
+        foreach ($sale_note_items as $sale_note_item) {
+            $factor = ($sale_note_item->sale_note->currency_type_id === 'USD')
+                ? (float) $sale_note_item->sale_note->exchange_rate_sale
+                : 1.0;
 
-        //PEN
-        $sale_note_sale_total_pen = 0;
-        $sale_note_purchase_total_pen = 0;
-        $sale_note_utility_total_pen = 0;
+            $sale_note_sale_total += (float) $sale_note_item->total * $factor;
 
-        //USD
-        $sale_note_sale_total_usd = 0;
-        $sale_note_purchase_total_usd = 0;
-        $sale_note_utility_total_usd = 0;
-
-        //obtener total globales de nv
-        $total_global_sale_notes = $this->getTotalSaleNotesByItems($sale_note_items);
-
-        foreach ($sale_note_items as $sln) 
-        {
-
-            $purchase_unit_price = $this->getPurchaseUnitPrice($sln);
-
-            $presentation_quantity = $this->getQuantityUnitPresentation($sln);
-
-            $sln_total_purchase = $purchase_unit_price * ($sln->quantity * $presentation_quantity);
-            // $sln_total_purchase = $purchase_unit_price * $sln->quantity;
-
-            if($sln->sale_note->currency_type_id === 'PEN'){
-
-                $sale_note_purchase_total_pen += $sln_total_purchase;
-                // $sale_note_sale_total_pen += $sln->total;
-
-            }else{
-
-                $sale_note_purchase_total_usd += $sln_total_purchase;
-                // $sale_note_sale_total_usd += $sln->total * $sln->sale_note->exchange_rate_sale;
-
-            }
-
+            $purchase_unit_price = $this->getPurchaseUnitPrice($sale_note_item);
+            $presentation_quantity = $this->getQuantityUnitPresentation($sale_note_item);
+            $sale_note_purchase_total += $purchase_unit_price * ((float) $sale_note_item->quantity * $presentation_quantity);
         }
 
         return [
-            'sale_note_sale_total' => $total_global_sale_notes,
-            // 'sale_note_sale_total' => $sale_note_sale_total_usd + $sale_note_sale_total_pen,
-            'sale_note_purchase_total' => $sale_note_purchase_total_usd + $sale_note_purchase_total_pen,
+            'sale_note_sale_total' => round($sale_note_sale_total, 2),
+            'sale_note_purchase_total' => round($sale_note_purchase_total, 2),
         ];
-
     }
 
+    private function getTotalDocumentItems($document_items)
+    {
+        $document_sale_total = 0.0;
+        $document_purchase_total = 0.0;
 
-    private function getTotalDocumentItems($document_items) {
-        $purchase_unit_price = 0;
-        $purchase_currency_type = null;
+        foreach ($document_items as $document_item) {
+            $factor = ($document_item->document->currency_type_id === 'USD')
+                ? (float) $document_item->document->exchange_rate_sale
+                : 1.0;
 
-        //PEN
-        $document_total_note_credit_pen = 0;
+            $is_sale = in_array($document_item->document->document_type_id, ['01', '03', '08'], true);
+            $sign = $is_sale ? 1 : -1;
 
-        $document_sale_total_pen = 0;
-        $document_purchase_total_pen = 0;
-        $document_utility_total_pen = 0;
+            $document_sale_total += (float) $document_item->total * $factor * $sign;
 
-        //USD
-        $document_total_note_credit_usd = 0;
-        $document_sale_total_usd = 0;
-        $document_purchase_total_usd = 0;
-        $document_utility_total_usd = 0;
-
-        $documentsIds = $document_items->pluck('document_id')->all();
-        // Obteniendo todos los documentos de los items q recibe la función
-        $documents = Document::without(['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'invoice', 'note', 'payments'])
-            ->whereIn('id', $documentsIds)
-            ->select('id', 'total', 'document_type_id', 'currency_type_id')
-            ->get();
-
-        foreach ($documents as $doc) {
-            if($doc->currency_type_id === 'PEN'){
-                if(in_array($doc->document_type_id,['01','03','08'])){
-                    $document_sale_total_pen += $doc->total;
-                }else{
-                    $document_sale_total_pen -= $doc->total;
-                }
-            } else {
-                if(in_array($doc->document_type_id,['01','03','08'])){
-                    $document_sale_total_usd += $doc->total * $doc->exchange_rate_sale;
-                }else{
-                    $document_sale_total_usd -= $doc->total * $doc->exchange_rate_sale;
-                }
-            }
+            $purchase_unit_price = $this->getPurchaseUnitPrice($document_item);
+            $presentation_quantity = $this->getQuantityUnitPresentation($document_item);
+            $document_purchase_total += $purchase_unit_price * ((float) $document_item->quantity * $presentation_quantity) * $sign;
         }
-
-        foreach ($document_items as $doc_it) 
-        {
-            $purchase_unit_price = $this->getPurchaseUnitPrice($doc_it);
-
-            $presentation_quantity = $this->getQuantityUnitPresentation($doc_it);
-
-            $doc_total_purchase = $purchase_unit_price * ($doc_it->quantity * $presentation_quantity);
-            
-            // $doc_total_purchase = $purchase_unit_price * $doc_it->quantity;
-
-            if($doc_it->document->currency_type_id === 'PEN'){
-                if(in_array($doc_it->document->document_type_id,['01','03','08'])){
-                    $document_purchase_total_pen += $doc_total_purchase;
-                    // $document_sale_total_pen += $doc_it->total;
-                }else{
-                    $document_purchase_total_pen -= $doc_total_purchase;
-                    // $document_sale_total_pen -= $doc_it->total;
-                }
-            } else {
-                if(in_array($doc_it->document->document_type_id,['01','03','08'])){
-                    $document_purchase_total_usd += $doc_total_purchase;
-                    // $document_sale_total_usd += $doc_it->total * $doc_it->document->exchange_rate_sale;
-                }else{
-
-                    $document_purchase_total_usd -= $doc_total_purchase;
-                    // $document_sale_total_usd -= $doc_it->total * $doc_it->document->exchange_rate_sale;
-                }
-            }
-        }
-
-        $document_utility_total_pen = $document_sale_total_pen - $document_purchase_total_pen;
-        $document_utility_total_usd = $document_sale_total_usd - $document_purchase_total_usd;
 
         return [
-
-            'document_sale_total_pen' => round($document_sale_total_pen, 2),
-            'document_purchase_total_pen' => round($document_purchase_total_pen, 2),
-
-            'document_purchase_total_usd' => round($document_purchase_total_usd, 2),
-            'document_sale_total_usd' => round($document_sale_total_usd, 2),
-
-            'document_utility_total_pen' => round($document_utility_total_pen, 2),
-            'document_utility_total_usd' => round($document_utility_total_usd, 2),
-
-            'document_sale_total' => $document_sale_total_usd + $document_sale_total_pen,
-            'document_purchase_total' => $document_purchase_total_usd + $document_purchase_total_pen,
-
+            'document_sale_total' => round($document_sale_total, 2),
+            'document_purchase_total' => round($document_purchase_total, 2),
         ];
     }
 
-
-    /**
-     *
-     * Obtener factor de presentación
-     *
-     * @param  Document|SaleNote $model_item
-     * @return float
-     */
     public function getQuantityUnitPresentation($model_item)
     {
-        return isset($model_item->item->presentation->quantity_unit) ? (float) $model_item->item->presentation->quantity_unit : 1;
-    }
+        $item = $model_item->item;
 
+        if ($item && !empty($item->presentation)) {
+            $presentation = $item->presentation;
+            $quantity_unit = is_object($presentation)
+                ? ($presentation->quantity_unit ?? null)
+                : ($presentation['quantity_unit'] ?? null);
+
+            if ($quantity_unit) {
+                return (float) $quantity_unit;
+            }
+        }
+
+        return 1.0;
+    }
 }

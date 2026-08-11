@@ -1277,7 +1277,7 @@ export default {
       this.form = {
         item_id: null,
         establishment_id: null,
-        enabled_expense: null,
+        enabled_expense: true,
         enabled_move_item: false,
         enabled_transaction_customer: false,
         period: "last_week",
