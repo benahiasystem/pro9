@@ -1787,10 +1787,17 @@ class DocumentController extends Controller
             $temp_path = $request->input('temp_path');
 
             if($temp_path) {
-                $file_name_old_array = explode('.', $voucher_filename);
+                $allowed_mimes = 'jpg,jpeg,png,gif,svg,webp,pdf';
+                $extension = UploadFileHelper::resolveExtensionFromFile($voucher_filename, $temp_path, $allowed_mimes);
+                $base_name = pathinfo($voucher_filename, PATHINFO_FILENAME);
                 $file_content = file_get_contents($temp_path);
-                $extension = $file_name_old_array[1];
-                $voucher_filename = Str::slug('r_'.$file_name_old_array[0]).'_'.date('YmdHis').'.'.$extension;
+                $voucher_filename = Str::slug('r_'.$base_name).'_'.date('YmdHis').'.'.$extension;
+
+                $allowed_file_types_images = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/svg', 'image/webp'];
+                $is_image = UploadFileHelper::getIsImage($temp_path, $allowed_file_types_images);
+                $allowed_file_types = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/svg', 'image/webp', 'application/pdf'];
+                UploadFileHelper::checkIfValidFile($voucher_filename, $temp_path, $is_image, $allowed_mimes, $allowed_file_types);
+
                 Storage::disk('tenant')->put('document_payment'.DIRECTORY_SEPARATOR.$voucher_filename, $file_content);
             }
 

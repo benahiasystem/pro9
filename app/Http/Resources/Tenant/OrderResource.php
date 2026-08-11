@@ -23,7 +23,7 @@ class OrderResource extends JsonResource
             'print_a4' => url('')."/orders/print/{$this->external_id}/a4",
             'print_a5' => url('')."/orders/print/{$this->external_id}/a5",
             'customer_telephone' => $this->customer->telefono,
-            'message_text' => "Su comprobante de pago electrónico {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$this->external_id}/".(Configuration::first()->qr_api_pdf_format ?? 'ticket')."",
+            'message_text' => "Su comprobante de pago electrónico {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$this->external_id}/".(optional(Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket')."",
             'address' => $this->customer->direccion,
 
             

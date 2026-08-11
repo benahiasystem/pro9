@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\System;
 
+use App\Exports\MassiveInvoiceExport;
 use App\Http\Controllers\Controller;
 use App\Models\System\MassiveInvoice;
 use App\Services\MassiveInvoiceService;
@@ -231,41 +232,53 @@ class MassiveInvoiceController extends Controller
 
     public function records(Request $request)
     {
-        $query = MassiveInvoice::query();
-        
-        // Filtrar por mes
-        if ($request->month) {
-            $query->whereRaw('DATE_FORMAT(fecha_emision, "%Y-%m") = ?', [$request->month]);
-        }
-        
-        // Filtrar por fecha específica
-        if ($request->date) {
-            $query->whereDate('fecha_emision', $request->date);
-        }
-        
-        // Filtrar por número de factura
-        if ($request->serie_numero) {
-            $query->where('serie_comprobante', 'like', "%{$request->serie_numero}%");
-        }
-        
-        // Filtrar por RUC/DNI receptor
-        if ($request->receptor) {
-            $query->where('ruc', 'like', "%{$request->receptor}%");
-        }
-
-        // Filtrar por emisor - Mejorado para búsqueda más precisa
-        if ($request->emisor) {
-            $searchTerm = '%' . str_replace(' ', '%', trim($request->emisor)) . '%';
-            $query->where('ruc_emisor', 'like', $searchTerm);
-        }
-        
-        $records = $query->orderBy('id', 'desc')
-                ->paginate($request->input('per_page', 10));
+        $records = $this->filteredQuery($request)
+            ->orderBy('id', 'desc')
+            ->paginate($request->input('per_page', 10));
 
         return [
             'success' => true,
             'data' => $records
         ];
+    }
+
+    public function export(Request $request)
+    {
+        $records = $this->filteredQuery($request)
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return (new MassiveInvoiceExport)
+            ->records($records)
+            ->download('Facturacion_Masiva_' . now()->format('YmdHis') . '.xlsx');
+    }
+
+    protected function filteredQuery(Request $request)
+    {
+        $query = MassiveInvoice::query();
+
+        if ($request->month) {
+            $query->whereRaw('DATE_FORMAT(fecha_emision, "%Y-%m") = ?', [$request->month]);
+        }
+
+        if ($request->date) {
+            $query->whereDate('fecha_emision', $request->date);
+        }
+
+        if ($request->serie_numero) {
+            $query->where('serie_comprobante', 'like', "%{$request->serie_numero}%");
+        }
+
+        if ($request->receptor) {
+            $query->where('ruc', 'like', "%{$request->receptor}%");
+        }
+
+        if ($request->emisor) {
+            $searchTerm = '%' . str_replace(' ', '%', trim($request->emisor)) . '%';
+            $query->where('ruc_emisor', 'like', $searchTerm);
+        }
+
+        return $query;
     }
 
     public function downloadFile($id, $type)

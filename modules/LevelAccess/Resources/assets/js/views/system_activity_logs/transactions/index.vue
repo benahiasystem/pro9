@@ -71,10 +71,14 @@ export default {
     },
     async created() {},
     methods: {
-        formatDateTime(date, time = "00:00:00") {
+        formatDateTime(date, time = null) {
             if (!date) return null;
+            if (!time) {
+                const parsed = moment(date, ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD"]);
+                return parsed.isValid() ? parsed.format("DD-MM-YYYY h:mmA") : null;
+            }
             const dateTimeString = `${date} ${time}`;
-            const parsedDate = moment(dateTimeString, "YYYY-MM-DD HH:mm:ss");
+            const parsedDate = moment(dateTimeString, ["YYYY-MM-DD HH:mm:ss", "YYYY-MM-DD HH:mm:ss.SSSSSS"]);
             return parsedDate.isValid()
                 ? parsedDate.format("DD-MM-YYYY h:mmA")
                 : null;

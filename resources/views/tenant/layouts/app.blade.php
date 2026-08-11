@@ -197,6 +197,7 @@
 <body class="pr-0"
     data-tenant="true"
     data-company-title="{{ $vc_company->title_web ?: $vc_company->trade_name }}">
+    @include('tenant.layouts.partials.outdoor_mode')
     <section class="body">
         <!-- start: header -->
         {{-- @include('tenant.layouts.partials.header') --}}

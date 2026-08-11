@@ -40,7 +40,7 @@ class QuotationResource extends JsonResource
             'quotation' => $quotation,
             'customer' => $customer,
             'message_text' => "Su cotización {$this->number_full} ha sido generado correctamente, " .
-                "puede revisarlo en el siguiente enlace: " . url('') . "/print/quotation/{$this->external_id}/".(Configuration::first()->qr_api_pdf_format ?? 'ticket'),
+                "puede revisarlo en el siguiente enlace: " . url('') . "/print/quotation/{$this->external_id}/".(optional(Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket'),
             'number_full' => $this->number_full,
             'customer_email' => $quotation->person->email ?? null,
             'customer_telephone' => $quotation->person->telephone ?? null,
