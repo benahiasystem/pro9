@@ -23,6 +23,8 @@ class ItemVariationBulkRequest extends FormRequest
             'variations.*.barcode' => ['nullable', 'string', 'max:150'],
             'variations.*.sale_unit_price' => ['required', 'numeric', 'gt:0'],
             'variations.*.stock' => ['nullable', 'numeric', 'min:0'],
+            'variations.*.image' => ['nullable', 'string', 'max:255'],
+            'variations.*.temp_path' => ['nullable', 'string', 'max:255'],
             'variations.*.variable_value_ids' => ['required', 'array', 'min:1'],
             'variations.*.variable_value_ids.*' => ['integer', Rule::exists('tenant.product_variable_values', 'id')],
         ];

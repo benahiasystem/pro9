@@ -3,13 +3,7 @@
         <div class="page-header pe-0">
             <h2>
                 <a href="/list-settings">
-                    <svg xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;" width="24" height="24" viewBox="0 0 24 24"
-                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M9 15h-4.5a4.5 4.5 0 1 1 .81 -8.92a4 4 0 0 1 7.66 -.83a4.5 4.5 0 0 1 4.85 6.27" />
-                        <path d="M12 19a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
-                        <path d="M15 16v-6a2 2 0 0 1 2 -2h1" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-clipboard-list"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2" /><path d="M9 12l.01 0" /><path d="M13 12l2 0" /><path d="M9 16l.01 0" /><path d="M13 16l2 0" /></svg>
                 </a>
             </h2>
             <ol class="breadcrumbs">
@@ -24,10 +18,6 @@
 
         <div class="card mb-0 tab-content-default row-new">
             <div class="card-body">
-                <p class="text-muted">
-                    Crea variables (Talla, Color, Material...) y sus valores. Se usan en la pestaña Atributos
-                    del formulario de productos para generar variaciones.
-                </p>
                 <div v-loading="loading" class="table-responsive">
                     <table class="table">
                         <thead>
@@ -68,17 +58,12 @@
                                 </el-tag>
                             </td>
                             <td class="align-middle text-end text-nowrap">
-                                <el-button size="mini"
-                                           plain
-                                           icon="el-icon-edit"
-                                           title="Editar"
-                                           @click.prevent="clickEdit(row)"></el-button>
-                                <el-button size="mini"
-                                           type="danger"
-                                           plain
-                                           icon="el-icon-delete"
-                                           title="Eliminar"
-                                           @click.prevent="clickDelete(row)"></el-button>
+                                <button type="button" plain title="Editar" class="btn btn-xs btn-info btn-shad me-1" @click.prevent="clickEdit(row)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415"></path><path d="M16 5l3 3"></path></svg>
+                                </button>
+                                <button type="button" plain title="Eliminar" class="btn btn-xs btn-danger btn-shad" @click.prevent="clickDelete(row)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 7l16 0"></path><path d="M10 11l0 6"></path><path d="M14 11l0 6"></path><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path></svg>
+                                </button>
                             </td>
                         </tr>
                         <tr v-if="!loading && records.length === 0">
@@ -129,10 +114,12 @@
                         <el-input v-model="new_value.value"
                                   placeholder="Ej: S, M, L (separa con comas para agregar varios)"
                                   @keyup.enter.native.prevent="addValue"></el-input>
-                        <el-color-picker v-if="form.value_type === 'color'"
-                                         v-model="new_value.color"
-                                         title="Color del valor"></el-color-picker>
-                        <el-button plain size="small" @click.prevent="addValue">+ Agregar</el-button>
+                        <label v-if="form.value_type === 'color'"
+                               class="pv-color-input"
+                               title="Color del valor">
+                            <input v-model="new_value.color" type="color" @input="color_touched = true">
+                        </label>
+                        <el-button plain @click.prevent="addValue">+ Agregar</el-button>
                     </div>
                     <div>
                         <el-tag v-for="(value, index) in form.values"
@@ -169,6 +156,73 @@
 </template>
 
 <script>
+const DEFAULT_COLOR = '#409EFF'
+
+const COLOR_NAMES = {
+    'rojo': '#E53935',
+    'rojo oscuro': '#8E1414',
+    'vino': '#6D1B2E',
+    'guinda': '#6D1B2E',
+    'granate': '#7B1E1E',
+    'coral': '#FF7F50',
+    'salmon': '#FA8072',
+    'naranja': '#FB8C00',
+    'anaranjado': '#FB8C00',
+    'mandarina': '#F4711F',
+    'durazno': '#FFCBA4',
+    'amarillo': '#FDD835',
+    'mostaza': '#D4A017',
+    'dorado': '#D4AF37',
+    'oro': '#D4AF37',
+    'ocre': '#CC7722',
+    'verde': '#43A047',
+    'verde claro': '#81C784',
+    'verde oscuro': '#1B5E20',
+    'verde limon': '#B2D732',
+    'limon': '#B2D732',
+    'menta': '#98E2C6',
+    'oliva': '#808000',
+    'esmeralda': '#0F9D58',
+    'turquesa': '#1ABC9C',
+    'aqua': '#00FFFF',
+    'cian': '#00BCD4',
+    'celeste': '#4FC3F7',
+    'azul': '#1E88E5',
+    'azul claro': '#64B5F6',
+    'azul oscuro': '#0D47A1',
+    'azul marino': '#1A237E',
+    'marino': '#1A237E',
+    'indigo': '#3F51B5',
+    'morado': '#8E24AA',
+    'purpura': '#6A1B9A',
+    'violeta': '#7B1FA2',
+    'lila': '#B39DDB',
+    'lavanda': '#B57EDC',
+    'magenta': '#D81B60',
+    'fucsia': '#E91E8C',
+    'rosado': '#F06292',
+    'rosa': '#F06292',
+    'palo rosa': '#E8B4B8',
+    'marron': '#795548',
+    'cafe': '#795548',
+    'chocolate': '#5D4037',
+    'terracota': '#C56E4E',
+    'camel': '#C19A6B',
+    'beige': '#E8DCC4',
+    'crema': '#F3E9D2',
+    'arena': '#D9CBA3',
+    'khaki': '#C3B091',
+    'caqui': '#C3B091',
+    'hueso': '#F2EDE4',
+    'blanco': '#FFFFFF',
+    'gris': '#9E9E9E',
+    'gris claro': '#D5D8DC',
+    'gris oscuro': '#4F4F4F',
+    'plateado': '#C0C0C0',
+    'plata': '#C0C0C0',
+    'negro': '#111111',
+}
+
 export default {
     name: 'TenantProductVariablesIndex',
     data() {
@@ -180,8 +234,21 @@ export default {
             showDialogForm: false,
             errors: {},
             form: {},
-            new_value: {value: '', color: '#409EFF'},
+            new_value: {value: '', color: DEFAULT_COLOR},
+            color_touched: false,
         }
+    },
+    watch: {
+        'new_value.value'(value) {
+            if (this.form.value_type !== 'color' || this.color_touched) {
+                return
+            }
+            const last = (value || '').split(',').pop()
+            const color = this.colorFromName(last)
+            if (color) {
+                this.new_value.color = color
+            }
+        },
     },
     computed: {
         titleForm() {
@@ -210,7 +277,22 @@ export default {
                 value_type: 'list',
                 values: [],
             }
-            this.new_value = {value: '', color: '#409EFF'}
+            this.new_value = {value: '', color: DEFAULT_COLOR}
+            this.color_touched = false
+        },
+        colorFromName(name) {
+            const key = (name || '')
+                .toString()
+                .normalize('NFD')
+                .toLowerCase()
+                .replace(/[^a-z0-9 #]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+
+            if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/.test(key)) {
+                return key.toUpperCase()
+            }
+            return COLOR_NAMES[key] || COLOR_NAMES[key.replace(/s$/, '')] || null
         },
         load() {
             this.loading = true
@@ -234,7 +316,8 @@ export default {
                 value_type: row.value_type,
                 values: row.values.map(value => ({...value})),
             }
-            this.new_value = {value: '', color: '#409EFF'}
+            this.new_value = {value: '', color: DEFAULT_COLOR}
+            this.color_touched = false
             this.showDialogForm = true
         },
         cancelEdit() {
@@ -260,7 +343,7 @@ export default {
                 }
                 const row = {id: null, value: value, active: true}
                 if (this.form.value_type === 'color') {
-                    row.color = this.new_value.color
+                    row.color = (!this.color_touched && this.colorFromName(value)) || this.new_value.color
                 }
                 this.form.values.push(row)
             })
@@ -269,6 +352,7 @@ export default {
                 this.$message.warning(`Ya existe${skipped.length !== 1 ? 'n' : ''}: ${skipped.join(', ')}`)
             }
             this.new_value.value = ''
+            this.color_touched = false
         },
         removeValue(index) {
             this.form.values.splice(index, 1)
@@ -350,23 +434,50 @@ export default {
 }
 .pv-add-row {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
 }
 .pv-add-row .el-input {
-    flex: 1;
-}
-.pv-add-row ::v-deep .el-color-picker {
-    flex: 0 0 auto;
-    height: auto;
-}
-.pv-add-row ::v-deep .el-color-picker__trigger {
-    width: 40px;
-    height: 40px;
-    padding: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 .pv-add-row .el-button {
     flex: 0 0 auto;
     white-space: nowrap;
+}
+.pv-color-input {
+    flex: 0 0 auto;
+    display: block;
+    width: 40px;
+    margin-bottom: 0;
+    padding: 4px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+}
+.pv-color-input:hover {
+    border-color: #c0c4cc;
+}
+.pv-color-input input[type="color"] {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 22px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+}
+.pv-color-input input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+.pv-color-input input[type="color"]::-webkit-color-swatch {
+    border: 0;
+    border-radius: 2px;
+}
+.pv-color-input input[type="color"]::-moz-color-swatch {
+    border: 0;
+    border-radius: 2px;
 }
 </style>

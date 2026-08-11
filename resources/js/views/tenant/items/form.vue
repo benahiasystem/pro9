@@ -1239,20 +1239,32 @@
                                 </div>
                                 <div v-for="variable in selectedVariables"
                                      :key="'variable-values-' + variable.id"
-                                     class="col-12">
+                                     class="col-md-6">
                                     <div class="pv-variable-card">
-                                        <label class="control-label font-weight-bold d-block mb-2">{{ variable.name }}</label>
-                                        <div class="pv-chip-group">
-                                            <span v-for="value in variable.values"
-                                                  :key="'value-chip-' + value.id"
-                                                  class="pv-chip"
-                                                  :class="{active: (selected_values[variable.id] || []).includes(value.id)}"
-                                                  @click="toggleValue(variable.id, value.id)">
+                                        <label class="control-label font-weight-bold d-block mb-2">
+                                            {{ variable.name }}
+                                            <small class="text-muted fw-normal">
+                                                ({{ (selected_values[variable.id] || []).length }}/{{ variable.values.length }})
+                                            </small>
+                                        </label>
+                                        <el-select :value="selected_values[variable.id] || []"
+                                                   multiple
+                                                   filterable
+                                                   clearable
+                                                   class="w-100"
+                                                   :class="{'pv-color-select': variable.value_type === 'color'}"
+                                                   :style="selectedColorVars(variable)"
+                                                   placeholder="Selecciona uno o varios valores"
+                                                   @input="setVariableValues(variable.id, $event)">
+                                            <el-option v-for="value in variable.values"
+                                                       :key="'value-option-' + value.id"
+                                                       :label="value.value"
+                                                       :value="value.id">
                                                 <span v-if="variable.value_type === 'color'"
                                                       class="pv-color-dot"
                                                       :style="{background: value.color}"></span>{{ value.value }}
-                                            </span>
-                                        </div>
+                                            </el-option>
+                                        </el-select>
                                     </div>
                                 </div>
 
@@ -1277,6 +1289,16 @@
                                         <thead>
                                         <tr>
                                             <th style="width: 18%">Combinación</th>
+                                            <th style="width: 70px">
+                                                Imagen
+                                                <el-tooltip placement="top">
+                                                    <div slot="content">
+                                                        Imagen propia de cada combinación.<br>
+                                                        Si no subes una, la variación usará la imagen del producto principal.
+                                                    </div>
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </th>
                                             <th style="width: 22%">Código interno</th>
                                             <th style="width: 24%">Código de barras</th>
                                             <th style="width: 16%">Precio</th>
@@ -1295,6 +1317,21 @@
                                                 <small v-if="variationError(index, 'variable_value_ids')"
                                                        class="form-control-feedback text-danger d-block"
                                                        v-text="variationError(index, 'variable_value_ids')"></small>
+                                            </td>
+                                            <td class="align-middle">
+                                                <el-upload :action="`/${resource}/upload`"
+                                                           :data="{'type': 'items'}"
+                                                           :headers="headers"
+                                                           :on-success="(response) => onVariationImageSuccess(response, row)"
+                                                           :show-file-list="false"
+                                                           class="avatar-uploader item-img"
+                                                           style="width: 48px !important;"
+                                                           :title="row.image_url ? 'Cambiar imagen' : 'Subir imagen para esta combinación'">
+                                                    <img v-if="row.image_url"
+                                                         :src="row.image_url"
+                                                         class="avatar">
+                                                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                                                </el-upload>
                                             </td>
                                             <td>
                                                 <el-input v-model="row.internal_id" size="small"></el-input>
@@ -2137,17 +2174,21 @@ export default {
                 }
             })
         },
-        toggleValue(variableId, valueId) {
-            if (!this.selected_values[variableId]) {
-                this.$set(this.selected_values, variableId, [])
+        setVariableValues(variableId, valueIds) {
+            this.$set(this.selected_values, variableId, valueIds || [])
+        },
+        // Element no expone slot para los tags del select: los colores viajan como
+        // variables CSS (--pv-dot-N) y el estilo los pinta por posición del tag
+        selectedColorVars(variable) {
+            if (variable.value_type !== 'color') {
+                return {}
             }
-            const values = this.selected_values[variableId]
-            const index = values.indexOf(valueId)
-            if (index === -1) {
-                values.push(valueId)
-            } else {
-                values.splice(index, 1)
-            }
+            const vars = {}
+            ;(this.selected_values[variable.id] || []).forEach((valueId, index) => {
+                const value = variable.values.find(v => v.id === valueId)
+                vars[`--pv-dot-${index + 1}`] = (value && value.color) || 'transparent'
+            })
+            return vars
         },
         abbreviateVariationValue(text) {
             const clean = String(text).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]/g, '')
@@ -2186,11 +2227,28 @@ export default {
                 barcode: '',
                 sale_unit_price: this.form.sale_unit_price,
                 stock: 0,
+                // sin imagen propia, la variación hereda la del producto principal
+                image: null,
+                image_url: null,
+                temp_path: null,
             }))
             this.variation_errors = {}
         },
         removeVariationRow(index) {
             this.variation_rows.splice(index, 1)
+        },
+        onVariationImageSuccess(response, row) {
+            if (!response.success) {
+                return this.$message.error(response.message)
+            }
+            row.image = response.data.filename
+            row.image_url = response.data.temp_image
+            row.temp_path = response.data.temp_path
+        },
+        removeVariationImage(row) {
+            row.image = null
+            row.image_url = null
+            row.temp_path = null
         },
         variationError(index, field) {
             const messages = this.variation_errors[`variations.${index}.${field}`]
@@ -2204,6 +2262,8 @@ export default {
                     sale_unit_price: row.sale_unit_price,
                     stock: row.stock || 0,
                     variable_value_ids: row.variable_value_ids,
+                    image: row.image || null,
+                    temp_path: row.temp_path || null,
                 })),
             }
 
@@ -3089,44 +3149,50 @@ this.activeName = null
     margin-right: 6px;
     vertical-align: middle;
 }
-.pv-chip-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-.pv-chip {
-    display: inline-flex;
-    align-items: center;
-    border: 1px solid #dcdfe6;
-    border-radius: 999px;
-    padding: 5px 14px;
-    font-size: 13px;
-    background: #fff;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.12s;
-}
-.pv-chip:hover {
-    border-color: #409EFF;
-    color: #409EFF;
-}
-.pv-chip.active {
-    background: #409EFF;
-    border-color: #409EFF;
-    color: #fff;
-    font-weight: 600;
-}
-.pv-chip.active:hover {
-    color: #fff;
-}
 .pv-variable-card {
     border: 1px dashed #dcdfe6;
     border-radius: 8px;
     padding: 12px 14px;
     margin-bottom: 12px;
 }
+.pv-variable-card ::v-deep .el-select__tags {
+    max-width: 100% !important;
+}
+.pv-variable-card ::v-deep .el-select__tags .el-tag {
+    margin: 2px 0 2px 6px;
+}
+.pv-color-select ::v-deep .el-select__tags .el-tag::before {
+    content: '';
+    display: none;
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    vertical-align: middle;
+}
+.pv-color-select ::v-deep .el-tag:nth-child(1)::before { display: inline-block; background: var(--pv-dot-1); }
+.pv-color-select ::v-deep .el-tag:nth-child(2)::before { display: inline-block; background: var(--pv-dot-2); }
+.pv-color-select ::v-deep .el-tag:nth-child(3)::before { display: inline-block; background: var(--pv-dot-3); }
+.pv-color-select ::v-deep .el-tag:nth-child(4)::before { display: inline-block; background: var(--pv-dot-4); }
+.pv-color-select ::v-deep .el-tag:nth-child(5)::before { display: inline-block; background: var(--pv-dot-5); }
+.pv-color-select ::v-deep .el-tag:nth-child(6)::before { display: inline-block; background: var(--pv-dot-6); }
+.pv-color-select ::v-deep .el-tag:nth-child(7)::before { display: inline-block; background: var(--pv-dot-7); }
+.pv-color-select ::v-deep .el-tag:nth-child(8)::before { display: inline-block; background: var(--pv-dot-8); }
+.pv-color-select ::v-deep .el-tag:nth-child(9)::before { display: inline-block; background: var(--pv-dot-9); }
+.pv-color-select ::v-deep .el-tag:nth-child(10)::before { display: inline-block; background: var(--pv-dot-10); }
+.pv-color-select ::v-deep .el-tag:nth-child(11)::before { display: inline-block; background: var(--pv-dot-11); }
+.pv-color-select ::v-deep .el-tag:nth-child(12)::before { display: inline-block; background: var(--pv-dot-12); }
+.pv-color-select ::v-deep .el-tag:nth-child(13)::before { display: inline-block; background: var(--pv-dot-13); }
+.pv-color-select ::v-deep .el-tag:nth-child(14)::before { display: inline-block; background: var(--pv-dot-14); }
+.pv-color-select ::v-deep .el-tag:nth-child(15)::before { display: inline-block; background: var(--pv-dot-15); }
+.pv-color-select ::v-deep .el-tag:nth-child(16)::before { display: inline-block; background: var(--pv-dot-16); }
+.pv-color-select ::v-deep .el-tag:nth-child(17)::before { display: inline-block; background: var(--pv-dot-17); }
+.pv-color-select ::v-deep .el-tag:nth-child(18)::before { display: inline-block; background: var(--pv-dot-18); }
+.pv-color-select ::v-deep .el-tag:nth-child(19)::before { display: inline-block; background: var(--pv-dot-19); }
+.pv-color-select ::v-deep .el-tag:nth-child(20)::before { display: inline-block; background: var(--pv-dot-20); }
 .attr-gen-bar {
-    background: #ecf5ff;
+    background: color-mix(in srgb, var(--primary) 10%, #fefefe00);
     border-radius: 8px;
     padding: 10px 14px;
     margin-bottom: 14px;

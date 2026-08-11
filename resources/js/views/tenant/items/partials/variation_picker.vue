@@ -30,7 +30,7 @@
             <a href="/configurations/product-variables" target="_blank">
                 <i class="fa fa-cog"></i> Gestionar atributos
             </a>
-            <span>
+            <span class="d-flex justify-content-end">
                 <el-button size="small" class="second-buton me-2" @click.prevent="cancel">Cancelar</el-button>
                 <el-button size="small" type="primary" @click.prevent="apply">Aplicar</el-button>
             </span>
@@ -95,12 +95,12 @@ export default {
     transition: all 0.12s;
 }
 .pv-chip:hover {
-    border-color: #409EFF;
-    color: #409EFF;
+    border-color: var(--primary);
+    color: var(--primary);
 }
 .pv-chip.active {
-    background: #409EFF;
-    border-color: #409EFF;
+    background: var(--primary);
+    border-color: var(--primary);
     color: #fff;
     font-weight: 600;
 }
