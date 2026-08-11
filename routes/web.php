@@ -1078,6 +1078,7 @@ if ($hostname) {
             Route::post('massive-invoice/process', 'System\MassiveInvoiceController@process')->name('system.massive-invoice.process');
             Route::get('massive-invoice/config', 'System\MassiveInvoiceController@config');
             Route::get('massive-invoice/records', 'System\MassiveInvoiceController@records');
+            Route::get('massive-invoice/export', 'System\MassiveInvoiceController@export');
             Route::get('massive-invoice/download/{id}/{type}', 'System\MassiveInvoiceController@downloadFile');
 
             //Users
