@@ -93,6 +93,7 @@
                 this.initForm()
             },
             successUpload(response, file, fileList) {
+                this.loading_submit = false
                 if (response.success) {
                     this.$message.success(response.message)
                     this.$eventHub.$emit('reloadData')
@@ -100,11 +101,25 @@
                     this.$refs.upload.clearFiles()
                     this.close()
                 } else {
-                    this.$message({message:response.message, type: 'error'})
+                    this.$message({message: response.message, type: 'error', duration: 8000, showClose: true})
                 }
             },
             errorUpload(error) {
-                console.log(error)
+                this.loading_submit = false
+                let message = 'No se pudo importar el archivo. Verifique el formato e intente nuevamente.'
+
+                if (error && error.message) {
+                    try {
+                        const body = JSON.parse(error.message)
+                        if (body.message) {
+                            message = body.message
+                        }
+                    } catch (e) {
+                        message = error.message
+                    }
+                }
+
+                this.$message({message, type: 'error', duration: 8000, showClose: true})
             }
         }
     }

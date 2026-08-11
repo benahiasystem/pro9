@@ -50,7 +50,14 @@ class ItemsImport implements ToCollection
 
                 $unit_type_id = $row[4];
                 $currency_type_id = $row[5];
-                $sale_unit_price = $row[6];
+                $sale_unit_price = $this->validateImportRow(
+                    (int) $index + 1,
+                    $description,
+                    $unit_type_id,
+                    $currency_type_id,
+                    $row[6],
+                    $row[7]
+                );
                 $sale_affectation_igv_type_id = $row[7];
                 // $has_igv = (strtoupper($row[7]) === 'SI')?true:false;
 
@@ -337,5 +344,59 @@ class ItemsImport implements ToCollection
                 [$internal_id]
             )
             ->first();
+    }
+
+    private function validateImportRow(
+        int $rowNumber,
+        $description,
+        $unit_type_id,
+        $currency_type_id,
+        $sale_unit_price,
+        $sale_affectation_igv_type_id
+    ): float {
+        if ($this->isBlank($description)) {
+            throw new Exception("Fila {$rowNumber}: la descripción del producto es obligatoria (columna A).");
+        }
+
+        if ($this->isBlank($unit_type_id)) {
+            throw new Exception("Fila {$rowNumber}: la unidad de medida es obligatoria (columna E). Ejemplo: NIU, KG, UND.");
+        }
+
+        if ($this->isBlank($currency_type_id)) {
+            throw new Exception("Fila {$rowNumber}: la moneda es obligatoria (columna F). Use PEN o USD.");
+        }
+
+        if ($this->isBlank($sale_unit_price)) {
+            throw new Exception("Fila {$rowNumber}: el precio de venta unitario es obligatorio (columna G). Revise que la celda no esté vacía.");
+        }
+
+        if (!is_numeric($sale_unit_price)) {
+            throw new Exception("Fila {$rowNumber}: el precio de venta unitario debe ser un número válido (columna G). Valor recibido: \"{$sale_unit_price}\".");
+        }
+
+        $sale_unit_price = (float) $sale_unit_price;
+
+        if ($sale_unit_price < 0) {
+            throw new Exception("Fila {$rowNumber}: el precio de venta unitario no puede ser negativo (columna G).");
+        }
+
+        if ($this->isBlank($sale_affectation_igv_type_id)) {
+            throw new Exception("Fila {$rowNumber}: el tipo de afectación IGV es obligatorio (columna H). Ejemplo: 10.");
+        }
+
+        return $sale_unit_price;
+    }
+
+    private function isBlank($value): bool
+    {
+        if (is_null($value)) {
+            return true;
+        }
+
+        if (is_string($value)) {
+            return trim($value) === '';
+        }
+
+        return false;
     }
 }
