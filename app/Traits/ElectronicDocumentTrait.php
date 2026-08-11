@@ -104,6 +104,21 @@ trait ElectronicDocumentTrait
      */
     public function getBaseQuerySummaryVoided($table, $document_type_id, $request, $document_type_description)
     {
+        // Relacionar RA/RC con los CPE afectados (ej. RA-20260810-2 → FF01-28)
+        if ($table === 'voided') {
+            $relatedCpes = "(SELECT GROUP_CONCAT(CONCAT(d.series, '-', d.number) ORDER BY d.id SEPARATOR ', ') "
+                . "FROM voided_documents vd "
+                . "INNER JOIN documents d ON d.id = vd.document_id "
+                . "WHERE vd.voided_id = {$table}.id)";
+        } else {
+            $relatedCpes = "(SELECT GROUP_CONCAT(CONCAT(d.series, '-', d.number) ORDER BY d.id SEPARATOR ', ') "
+                . "FROM summary_documents sd "
+                . "INNER JOIN documents d ON d.id = sd.document_id "
+                . "WHERE sd.summary_id = {$table}.id)";
+        }
+
+        $numberFull = "CONCAT({$table}.identifier, IFNULL(CONCAT(' → ', {$relatedCpes}), ''))";
+
         $query = DB::connection('tenant')
                     ->table($table)
                     ->join('users', 'users.id', '=', "{$table}.user_id")
@@ -112,12 +127,13 @@ trait ElectronicDocumentTrait
                         "users.id as user_id, ".
                         "users.name as user_name, ".
                         "{$table}.date_of_issue as date_of_issue, ".
-                        "null as time_of_issue,".
+                        // Las RA/RC no tienen time_of_issue; usar hora de registro
+                        "TIME({$table}.created_at) as time_of_issue,".
                         "'{$document_type_id}' AS 'document_type_id',". 
                         "'{$document_type_description}' AS 'document_type_description',". 
                         "null as series,".
                         "null as number,".
-                        "{$table}.identifier as number_full,".
+                        "{$numberFull} as number_full,".
                         "{$table}.created_at as created_at, ".
                         "{$table}.updated_at as updated_at "
                     ));
