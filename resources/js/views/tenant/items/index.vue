@@ -266,7 +266,16 @@
                             <!-- <td v-if="col.visible && col.key === 'internal_id'" :key="col.key" class="text-end">{{ row.internal_id }}</td> -->
                             <td v-if="col.visible && col.key === 'unit_type'" :key="col.key">{{ row.unit_type_id }}</td>
                             <td v-if="col.visible && col.key === 'image'" :key="col.key"><img :src="row.image_url_small" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
-                            <td v-if="col.visible && col.key === 'name'" :key="col.key" @click="clickDetail(row)">{{ row.description }} <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template></td>
+                            <td v-if="col.visible && col.key === 'name'" :key="col.key">
+                                <span
+                                    class="item-name-link"
+                                    role="button"
+                                    tabindex="0"
+                                    @click="clickDetail(row)"
+                                    @keyup.enter.prevent="clickDetail(row)"
+                                >{{ row.description }}</span>
+                                <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template>
+                            </td>
                             <td v-if="col.visible && col.key === 'description'" :key="col.key"><div class="limit-4-lines">{{ stripHtml(row.name) }}</div></td>
                             <td v-if="col.visible && col.key === 'model'" :key="col.key">{{ row.model }}</td>
                             <td v-if="col.visible && col.key === 'brand'" :key="col.key">{{ row.brand }}</td>
@@ -503,6 +512,21 @@
     border-radius: 8px;
     padding: 3px !important;
     line-height: normal;
+}
+</style>
+<style scoped>
+.item-name-link {
+    color: inherit;
+    cursor: pointer;
+    font-weight: inherit;
+    text-decoration: underline;
+}
+.item-name-link:hover,
+.item-name-link:focus {
+    color: inherit;
+    font-weight: inherit;
+    text-decoration: underline;
+    outline: none;
 }
 </style>
 <script>

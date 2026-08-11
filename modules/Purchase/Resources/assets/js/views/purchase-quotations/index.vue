@@ -142,13 +142,15 @@
 .purchase-quotation-document-link {
     color: inherit;
     cursor: pointer;
-    text-decoration: none;
+    font-weight: inherit;
+    text-decoration: underline;
 }
 
 .purchase-quotation-document-link:hover,
 .purchase-quotation-document-link:focus {
     color: inherit;
-    text-decoration: none;
+    font-weight: inherit;
+    text-decoration: underline;
     outline: none;
 }
 </style>

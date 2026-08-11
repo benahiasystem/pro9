@@ -51,7 +51,6 @@
                         <!-- <th>#</th> -->
                         <th># Pedido</th>
                         <th>Cliente</th>
-                        <th class="text-center">Detalle Productos</th>
                         <th class="text-end">Total</th>
                         <th>Fecha Emision</th>
                         <th>Medio Pago</th>
@@ -81,105 +80,14 @@
                                         aria-hidden="true"
                                     ></i>
                                 </el-tooltip>
-                                <span @click="openDetail(row)" style="cursor: pointer;">{{ row.customer }}</span>
+                                <span
+                                    class="order-customer-link"
+                                    role="button"
+                                    tabindex="0"
+                                    @click="openDetail(row)"
+                                    @keyup.enter.prevent="openDetail(row)"
+                                >{{ row.customer }}</span>
                             </span>
-                        </td>
-                        <td class="text-center">
-                            <template>
-                                <el-popover
-                                    placement="right"
-                                    width="540"
-                                    trigger="click"
-                                >
-                                    <el-table
-                                        style="width: 100%"
-                                        :data="row.items"
-                                    >
-                                        <!--
-                      En la edicion del item, el nombre es descripcion, por ello, aqui tambien debe ser descripcion
-  <el-table-column width="150" property="name" label="Nombre"></el-table-column>
-  @todo homologar campos en editar/crear item.
-  -->
-                                        <el-table-column
-                                            width="150"
-                                            property="description"
-                                            label="Nombre"
-                                        ></el-table-column>
-                                        <el-table-column
-                                            width="90"
-                                            property="cantidad"
-                                            label="Cant."
-                                        ></el-table-column>
-                                        <el-table-column
-                                            width="90"
-                                            label="Precio"
-                                        >
-                                            <template slot-scope="scope">
-                                                <span
-                                                    >{{
-                                                        scope.row
-                                                            .currency_type_id ===
-                                                        "USD"
-                                                            ? "$"
-                                                            : "S/"
-                                                    }}
-                                                    {{
-                                                        Number(
-                                                            scope.row
-                                                                .sale_unit_price
-                                                        ).toFixed(2)
-                                                    }}</span
-                                                >
-                                            </template>
-                                        </el-table-column>
-                                        <el-table-column
-                                            width="90"
-                                            property="exchange_rate_sale"
-                                            label="T/C"
-                                        ></el-table-column>
-                                        <el-table-column
-                                            width="90"
-                                            label="Subtotal"
-                                        >
-                                            <template slot-scope="scope">
-                                                <span
-                                                    >S/
-                                                    {{
-                                                        subtotal(scope.row)
-                                                    }}</span
-                                                >
-                                            </template>
-                                        </el-table-column>
-                                    </el-table>
-                                    <table
-                                        class="el-table--small el-table--fit el-table"
-                                    >
-                                        <thead class="has-gutter">
-                                            <th colspan="2" class="text-center">
-                                                Contacto
-                                            </th>
-                                        </thead>
-                                        <tbody>
-                                            <tr class="el-table tr">
-                                                <td class="el-table--small td">
-                                                    TELÉFONO:
-                                                    {{ row.customer_telefono }}
-                                                </td>
-                                            </tr>
-                                            <tr class="el-table tr">
-                                                <td class="el-table--small td">
-                                                    DIRECCIÓN:
-                                                    {{ row.customer_direccion }}
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <el-button
-                                        slot="reference"
-                                        icon="el-icon-zoom-in"
-                                    ></el-button>
-                                </el-popover>
-                            </template>
                         </td>
                         <td class="text-end">S/ {{ row.total }}</td>
                         <td>{{ formatDate(row.created_at) }}</td>
@@ -483,10 +391,27 @@
         ></order-detail-drawer>
     </div>
 </template>
+<style scoped>
+.order-customer-link {
+    color: inherit;
+    cursor: pointer;
+    font-weight: inherit;
+    text-decoration: underline;
+}
+
+.order-customer-link:hover,
+.order-customer-link:focus {
+    color: inherit;
+    font-weight: inherit;
+    text-decoration: underline;
+    outline: none;
+}
+</style>
 <style>
 /* Pedido anulado: texto en rojo en toda la fila (patrón consistente con anulaciones) */
 .order-voided-row td,
-.order-voided-row td a {
+.order-voided-row td a,
+.order-voided-row td .order-customer-link {
     color: #c0392b !important;
 }
 .shipping-tracking-cell {

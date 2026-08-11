@@ -40,93 +40,103 @@
                 </div>
 
                 <div class="purchase-order-detail-drawer__body">
-                    <div class="purchase-order-detail-drawer__section-card">
-                        <div class="purchase-order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos</h5>
-                            <p class="section-subtitle">Detalle de ítems solicitados en la orden</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm purchase-order-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
-                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
-                    </div>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Productos" name="products">
+                            <div class="purchase-order-detail-drawer__section-card">
+                                <div class="purchase-order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Productos</h5>
+                                    <p class="section-subtitle">Detalle de ítems solicitados en la orden</p>
+                                </div>
+                                <div v-if="lineItems.length" class="table-responsive">
+                                    <table class="table table-sm purchase-order-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">P. unit.</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                                <td>{{ item.description }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
+                                                <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="purchase-order-detail-drawer__section-card">
-                        <div class="purchase-order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Proveedor</h5>
-                            <p class="section-subtitle">Datos del proveedor asociado a la orden</p>
-                        </div>
-                        <dl class="purchase-order-detail-drawer__list">
-                            <dt>Nombre / Razón social</dt>
-                            <dd>{{ supplierName }}</dd>
+                        <el-tab-pane label="Proveedor" name="supplier">
+                            <div class="purchase-order-detail-drawer__section-card">
+                                <div class="purchase-order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Proveedor</h5>
+                                    <p class="section-subtitle">Datos del proveedor asociado a la orden</p>
+                                </div>
+                                <dl class="purchase-order-detail-drawer__list">
+                                    <dt>Nombre / Razón social</dt>
+                                    <dd>{{ supplierName }}</dd>
 
-                            <dt>Documento</dt>
-                            <dd>{{ supplierDocument }}</dd>
+                                    <dt>Documento</dt>
+                                    <dd>{{ supplierDocument }}</dd>
 
-                            <dt v-if="supplierTelephone">Teléfono</dt>
-                            <dd v-if="supplierTelephone">{{ supplierTelephone }}</dd>
+                                    <dt v-if="supplierTelephone">Teléfono</dt>
+                                    <dd v-if="supplierTelephone">{{ supplierTelephone }}</dd>
 
-                            <dt v-if="supplierEmail">Correo</dt>
-                            <dd v-if="supplierEmail">{{ supplierEmail }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="supplierEmail">Correo</dt>
+                                    <dd v-if="supplierEmail">{{ supplierEmail }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="purchase-order-detail-drawer__section-card">
-                        <div class="purchase-order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Información operativa</h5>
-                            <p class="section-subtitle">Vigencia, moneda y tipo de cambio</p>
-                        </div>
-                        <dl class="purchase-order-detail-drawer__list">
-                            <dt>Fecha de vencimiento</dt>
-                            <dd>{{ dueDateLabel }}</dd>
+                        <el-tab-pane label="Información operativa" name="operational">
+                            <div class="purchase-order-detail-drawer__section-card">
+                                <div class="purchase-order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Información operativa</h5>
+                                    <p class="section-subtitle">Vigencia, moneda y tipo de cambio</p>
+                                </div>
+                                <dl class="purchase-order-detail-drawer__list">
+                                    <dt>Fecha de vencimiento</dt>
+                                    <dd>{{ dueDateLabel }}</dd>
 
-                            <dt>Moneda</dt>
-                            <dd>{{ currencyLabel }}</dd>
+                                    <dt>Moneda</dt>
+                                    <dd>{{ currencyLabel }}</dd>
 
-                            <dt>Tipo de cambio</dt>
-                            <dd>{{ exchangeRateLabel }}</dd>
+                                    <dt>Tipo de cambio</dt>
+                                    <dd>{{ exchangeRateLabel }}</dd>
 
-                            <dt v-if="record.sale_opportunity_number_full">O. Venta</dt>
-                            <dd v-if="record.sale_opportunity_number_full">{{ record.sale_opportunity_number_full }}</dd>
+                                    <dt v-if="record.sale_opportunity_number_full">O. Venta</dt>
+                                    <dd v-if="record.sale_opportunity_number_full">{{ record.sale_opportunity_number_full }}</dd>
 
-                            <dt v-if="record.observation">Observaciones</dt>
-                            <dd v-if="record.observation" class="text-pre-wrap">{{ record.observation }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="record.observation">Observaciones</dt>
+                                    <dd v-if="record.observation" class="text-pre-wrap">{{ record.observation }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="purchase-order-detail-drawer__section-card">
-                        <div class="purchase-order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Totales</h5>
-                            <p class="section-subtitle">Importes gravados, IGV y total de la orden</p>
-                        </div>
-                        <dl class="purchase-order-detail-drawer__list">
-                            <dt>Gravado</dt>
-                            <dd>{{ formatMoney(record.total_taxed) }}</dd>
+                        <el-tab-pane label="Totales" name="totals">
+                            <div class="purchase-order-detail-drawer__section-card">
+                                <div class="purchase-order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Totales</h5>
+                                    <p class="section-subtitle">Importes gravados, IGV y total de la orden</p>
+                                </div>
+                                <dl class="purchase-order-detail-drawer__list">
+                                    <dt>Gravado</dt>
+                                    <dd>{{ formatMoney(record.total_taxed) }}</dd>
 
-                            <dt>IGV</dt>
-                            <dd>{{ formatMoney(record.total_igv) }}</dd>
+                                    <dt>IGV</dt>
+                                    <dd>{{ formatMoney(record.total_igv) }}</dd>
 
-                            <dt>Total</dt>
-                            <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>Total</dt>
+                                    <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="purchase-order-detail-drawer__footer">
@@ -232,7 +242,8 @@ export default {
             voiding: false,
             sendingEmail: false,
             emailToSend: '',
-            record: null
+            record: null,
+            activeTab: 'products'
         };
     },
     computed: {
@@ -392,6 +403,7 @@ export default {
     },
     methods: {
         openDrawer() {
+            this.activeTab = 'products';
             this.applyInitialSnapshot();
             this.loadRecord();
         },
@@ -623,6 +635,7 @@ export default {
             this.voiding = false;
             this.sendingEmail = false;
             this.emailToSend = '';
+            this.activeTab = 'products';
             this.$emit('update:initialRow', null);
         }
     }
@@ -756,6 +769,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.purchase-order-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.purchase-order-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.purchase-order-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.purchase-order-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.purchase-order-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .purchase-order-detail-drawer__list {

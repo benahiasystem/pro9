@@ -68,8 +68,15 @@
                         slot-scope="{ index, row }"
                     >
                         <!-- <td>{{ index }}</td> -->
-                        <td class="text-start" @click="clickDetail(row)">
-                            {{ row.customer_name }}<br /><small
+                        <td class="text-start">
+                            <span
+                                class="technical-service-customer-link"
+                                role="button"
+                                tabindex="0"
+                                @click="clickDetail(row)"
+                                @keyup.enter.prevent="clickDetail(row)"
+                            >{{ row.customer_name }}</span>
+                            <br /><small
                                 v-text="row.customer_number"
                             ></small>
                         </td>
@@ -204,6 +211,19 @@
             justify-content: start;
         }
     }
+}
+</style>
+<style scoped>
+.technical-service-customer-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.technical-service-customer-link:hover,
+.technical-service-customer-link:focus {
+    color: inherit;
+    text-decoration: underline;
+    outline: none;
 }
 </style>
 <script>

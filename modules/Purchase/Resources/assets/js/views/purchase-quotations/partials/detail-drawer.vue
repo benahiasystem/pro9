@@ -36,84 +36,95 @@
                 </div>
 
                 <div class="purchase-quotation-detail-drawer__body">
-                    <div class="purchase-quotation-detail-drawer__section-card">
-                        <div class="purchase-quotation-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos</h5>
-                            <p class="section-subtitle">Detalle de ítems solicitados en la cotización</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm purchase-quotation-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-center">Unidad</th>
-                                        <th class="text-end">Cant.</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.unit }}</td>
-                                        <td class="text-end">{{ item.quantity }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
-                    </div>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Productos" name="products">
+                            <div class="purchase-quotation-detail-drawer__section-card">
+                                <div class="purchase-quotation-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Productos</h5>
+                                    <p class="section-subtitle">Detalle de ítems solicitados en la cotización</p>
+                                </div>
+                                <div v-if="lineItems.length" class="table-responsive">
+                                    <table class="table table-sm purchase-quotation-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Unidad</th>
+                                                <th class="text-end">Cant.</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                                <td>{{ item.description }}</td>
+                                                <td class="text-center">{{ item.unit }}</td>
+                                                <td class="text-end">{{ item.quantity }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="purchase-quotation-detail-drawer__section-card">
-                        <div class="purchase-quotation-detail-drawer__section-card-header">
-                            <h5 class="section-title">Proveedor{{ supplierRows.length > 1 ? 'es' : '' }}</h5>
-                            <p class="section-subtitle">
-                                Datos del{{ supplierRows.length > 1 ? 's' : '' }} proveedor{{ supplierRows.length > 1 ? 'es' : '' }} asociado{{ supplierRows.length > 1 ? 's' : '' }} a la solicitud
-                            </p>
-                        </div>
+                        <el-tab-pane
+                            :label="supplierRows.length > 1 ? 'Proveedores' : 'Proveedor'"
+                            name="supplier"
+                        >
+                            <div class="purchase-quotation-detail-drawer__section-card">
+                                <div class="purchase-quotation-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Proveedor{{ supplierRows.length > 1 ? 'es' : '' }}</h5>
+                                    <p class="section-subtitle">
+                                        Datos del{{ supplierRows.length > 1 ? 's' : '' }} proveedor{{ supplierRows.length > 1 ? 'es' : '' }} asociado{{ supplierRows.length > 1 ? 's' : '' }} a la solicitud
+                                    </p>
+                                </div>
 
-                        <template v-if="supplierRows.length">
-                            <div
-                                v-for="(supplier, index) in supplierRows"
-                                :key="supplier.key || index"
-                                class="purchase-quotation-detail-drawer__supplier"
-                                :class="{ 'purchase-quotation-detail-drawer__supplier--bordered': index > 0 }"
-                            >
-                                <dl class="purchase-quotation-detail-drawer__list mb-0">
-                                    <dt>Nombre / Razón social</dt>
-                                    <dd>{{ supplier.name }}</dd>
+                                <template v-if="supplierRows.length">
+                                    <div
+                                        v-for="(supplier, index) in supplierRows"
+                                        :key="supplier.key || index"
+                                        class="purchase-quotation-detail-drawer__supplier"
+                                        :class="{ 'purchase-quotation-detail-drawer__supplier--bordered': index > 0 }"
+                                    >
+                                        <dl class="purchase-quotation-detail-drawer__list mb-0">
+                                            <dt>Nombre / Razón social</dt>
+                                            <dd>{{ supplier.name }}</dd>
 
-                                    <dt>Documento</dt>
-                                    <dd>{{ supplier.document }}</dd>
+                                            <dt>Documento</dt>
+                                            <dd>{{ supplier.document }}</dd>
 
-                                    <dt v-if="supplier.email">Correo</dt>
-                                    <dd v-if="supplier.email">{{ supplier.email }}</dd>
+                                            <dt v-if="supplier.email">Correo</dt>
+                                            <dd v-if="supplier.email">{{ supplier.email }}</dd>
 
-                                    <dt v-if="supplier.telephone">Teléfono</dt>
-                                    <dd v-if="supplier.telephone">{{ supplier.telephone }}</dd>
+                                            <dt v-if="supplier.telephone">Teléfono</dt>
+                                            <dd v-if="supplier.telephone">{{ supplier.telephone }}</dd>
+                                        </dl>
+                                    </div>
+                                </template>
+                                <p v-else class="text-muted small mb-0">Sin proveedores registrados.</p>
+                            </div>
+                        </el-tab-pane>
+
+                        <el-tab-pane label="Información operativa" name="operational">
+                            <div class="purchase-quotation-detail-drawer__section-card">
+                                <div class="purchase-quotation-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Información operativa</h5>
+                                    <p class="section-subtitle">Establecimiento, estado y origen de la solicitud</p>
+                                </div>
+                                <dl class="purchase-quotation-detail-drawer__list">
+                                    <dt>Establecimiento</dt>
+                                    <dd>{{ establishmentLabel }}</dd>
+
+                                    <dt>Registrado por</dt>
+                                    <dd>{{ userLabel }}</dd>
+
+                                    <dt>Estado</dt>
+                                    <dd>{{ stateLabel }}</dd>
+
+                                    <dt v-if="hasPurchaseOrdersLabel">Órdenes de compra</dt>
+                                    <dd v-if="hasPurchaseOrdersLabel">{{ hasPurchaseOrdersLabel }}</dd>
                                 </dl>
                             </div>
-                        </template>
-                        <p v-else class="text-muted small mb-0">Sin proveedores registrados.</p>
-                    </div>
-
-                    <div class="purchase-quotation-detail-drawer__section-card">
-                        <div class="purchase-quotation-detail-drawer__section-card-header">
-                            <h5 class="section-title">Información operativa</h5>
-                            <p class="section-subtitle">Establecimiento, estado y origen de la solicitud</p>
-                        </div>
-                        <dl class="purchase-quotation-detail-drawer__list">
-                            <dt>Establecimiento</dt>
-                            <dd>{{ establishmentLabel }}</dd>
-
-                            <dt>Registrado por</dt>
-                            <dd>{{ userLabel }}</dd>
-
-                            <dt>Estado</dt>
-                            <dd>{{ stateLabel }}</dd>
-
-                            <dt v-if="hasPurchaseOrdersLabel">Órdenes de compra</dt>
-                            <dd v-if="hasPurchaseOrdersLabel">{{ hasPurchaseOrdersLabel }}</dd>
-                        </dl>
-                    </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="purchase-quotation-detail-drawer__footer">
@@ -176,7 +187,8 @@ export default {
     data() {
         return {
             loading: false,
-            record: null
+            record: null,
+            activeTab: 'products'
         };
     },
     computed: {
@@ -331,6 +343,7 @@ export default {
     },
     methods: {
         openDrawer() {
+            this.activeTab = 'products';
             this.applyInitialSnapshot();
             this.loadRecord();
         },
@@ -493,6 +506,7 @@ export default {
         handleClosed() {
             this.record = null;
             this.loading = false;
+            this.activeTab = 'products';
             this.$emit('update:initialRow', null);
         }
     }
@@ -600,6 +614,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.purchase-quotation-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.purchase-quotation-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.purchase-quotation-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.purchase-quotation-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.purchase-quotation-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .purchase-quotation-detail-drawer__list {

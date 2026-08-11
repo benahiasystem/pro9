@@ -32,7 +32,16 @@
                     >
                         <!-- <td>{{ index }}</td> -->
                         <td class="text-start">{{ row.date_of_issue }}</td>
-                        <td @click="clickDetail(row)">{{ row.supplier_name }}<br/><small v-text="row.supplier_number"></small></td>
+                        <td>
+                            <span
+                                class="expense-supplier-link"
+                                role="button"
+                                tabindex="0"
+                                @click="clickDetail(row)"
+                                @keyup.enter.prevent="clickDetail(row)"
+                            >{{ row.supplier_name }}</span>
+                            <br/><small v-text="row.supplier_number"></small>
+                        </td>
                         <td>{{ row.number }}<br/>
                             <small v-text="row.expense_type_description"></small><br/>
                         </td>
@@ -99,6 +108,20 @@
     </div>
 
 </template>
+
+<style scoped>
+.expense-supplier-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.expense-supplier-link:hover,
+.expense-supplier-link:focus {
+    color: inherit;
+    text-decoration: underline;
+    outline: none;
+}
+</style>
 
 <script>
 

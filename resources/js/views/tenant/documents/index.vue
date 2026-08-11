@@ -228,7 +228,16 @@
                             </td>
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key" @click="clickDetail(row)">{{ row.customer_name }}<br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small></td>
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">
+                                <span
+                                    class="document-customer-link"
+                                    role="button"
+                                    tabindex="0"
+                                    @click="clickDetail(row)"
+                                    @keyup.enter.prevent="clickDetail(row)"
+                                >{{ row.customer_name }}</span>
+                                <br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small>
+                            </td>
                             <td v-if="col.visible && col.key === 'number'" :key="col.key">
                                 <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px;">{{ row.number }}</span>
                             </td>
@@ -697,6 +706,19 @@
 }
 .icon-date-issue.bg-tickets {
     color: var(--success);
+}
+</style>
+<style scoped>
+.document-customer-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.document-customer-link:hover,
+.document-customer-link:focus {
+    color: inherit;
+    text-decoration: underline;
+    outline: none;
 }
 </style>
 <script>

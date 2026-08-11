@@ -40,102 +40,112 @@
                 </div>
 
                 <div class="quotation-detail-drawer__body">
-                    <div class="quotation-detail-drawer__section-card">
-                        <div class="quotation-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos</h5>
-                            <p class="section-subtitle">Detalle de ítems incluidos en la cotización</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm quotation-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
-                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
-                    </div>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Productos" name="products">
+                            <div class="quotation-detail-drawer__section-card">
+                                <div class="quotation-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Productos</h5>
+                                    <p class="section-subtitle">Detalle de ítems incluidos en la cotización</p>
+                                </div>
+                                <div v-if="lineItems.length" class="table-responsive">
+                                    <table class="table table-sm quotation-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">P. unit.</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                                <td>{{ item.description }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
+                                                <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="quotation-detail-drawer__section-card">
-                        <div class="quotation-detail-drawer__section-card-header">
-                            <h5 class="section-title">Cliente</h5>
-                            <p class="section-subtitle">Datos del cliente asociado a la cotización</p>
-                        </div>
-                        <dl class="quotation-detail-drawer__list">
-                            <dt>Nombre / Razón social</dt>
-                            <dd>{{ customerName }}</dd>
+                        <el-tab-pane label="Cliente" name="customer">
+                            <div class="quotation-detail-drawer__section-card">
+                                <div class="quotation-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Cliente</h5>
+                                    <p class="section-subtitle">Datos del cliente asociado a la cotización</p>
+                                </div>
+                                <dl class="quotation-detail-drawer__list">
+                                    <dt>Nombre / Razón social</dt>
+                                    <dd>{{ customerName }}</dd>
 
-                            <dt>Documento</dt>
-                            <dd>{{ customerDocument }}</dd>
+                                    <dt>Documento</dt>
+                                    <dd>{{ customerDocument }}</dd>
 
-                            <dt v-if="contactLabel">Contacto</dt>
-                            <dd v-if="contactLabel">{{ contactLabel }}</dd>
+                                    <dt v-if="contactLabel">Contacto</dt>
+                                    <dd v-if="contactLabel">{{ contactLabel }}</dd>
 
-                            <dt v-if="customerTelephone">Teléfono</dt>
-                            <dd v-if="customerTelephone">{{ customerTelephone }}</dd>
+                                    <dt v-if="customerTelephone">Teléfono</dt>
+                                    <dd v-if="customerTelephone">{{ customerTelephone }}</dd>
 
-                            <dt v-if="customerEmail">Correo</dt>
-                            <dd v-if="customerEmail">{{ customerEmail }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="customerEmail">Correo</dt>
+                                    <dd v-if="customerEmail">{{ customerEmail }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="quotation-detail-drawer__section-card">
-                        <div class="quotation-detail-drawer__section-card-header">
-                            <h5 class="section-title">Información operativa</h5>
-                            <p class="section-subtitle">Asignación comercial y origen del inventario</p>
-                        </div>
-                        <dl class="quotation-detail-drawer__list">
-                            <dt>Vendedor</dt>
-                            <dd>{{ sellerLabel }}</dd>
+                        <el-tab-pane label="Información operativa" name="operational">
+                            <div class="quotation-detail-drawer__section-card">
+                                <div class="quotation-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Información operativa</h5>
+                                    <p class="section-subtitle">Asignación comercial y origen del inventario</p>
+                                </div>
+                                <dl class="quotation-detail-drawer__list">
+                                    <dt>Vendedor</dt>
+                                    <dd>{{ sellerLabel }}</dd>
 
-                            <dt>Establecimiento</dt>
-                            <dd>{{ establishmentLabel }}</dd>
+                                    <dt>Establecimiento</dt>
+                                    <dd>{{ establishmentLabel }}</dd>
 
-                            <dt>Almacén / origen</dt>
-                            <dd>{{ warehouseLabel }}</dd>
+                                    <dt>Almacén / origen</dt>
+                                    <dd>{{ warehouseLabel }}</dd>
 
-                            <dt v-if="record.delivery_date">Fecha de entrega</dt>
-                            <dd v-if="record.delivery_date">{{ formatDisplayDate(record.delivery_date) }}</dd>
+                                    <dt v-if="record.delivery_date">Fecha de entrega</dt>
+                                    <dd v-if="record.delivery_date">{{ formatDisplayDate(record.delivery_date) }}</dd>
 
-                            <dt v-if="record.referential_information">Inf. referencial</dt>
-                            <dd v-if="record.referential_information">{{ record.referential_information }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="record.referential_information">Inf. referencial</dt>
+                                    <dd v-if="record.referential_information">{{ record.referential_information }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="quotation-detail-drawer__section-card">
-                        <div class="quotation-detail-drawer__section-card-header">
-                            <h5 class="section-title">Vigencia y totales</h5>
-                            <p class="section-subtitle">Validez, moneda e importes de la cotización</p>
-                        </div>
-                        <dl class="quotation-detail-drawer__list">
-                            <dt>Días de validez</dt>
-                            <dd>{{ validityDaysLabel }}</dd>
+                        <el-tab-pane label="Vigencia y totales" name="totals">
+                            <div class="quotation-detail-drawer__section-card">
+                                <div class="quotation-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Vigencia y totales</h5>
+                                    <p class="section-subtitle">Validez, moneda e importes de la cotización</p>
+                                </div>
+                                <dl class="quotation-detail-drawer__list">
+                                    <dt>Días de validez</dt>
+                                    <dd>{{ validityDaysLabel }}</dd>
 
-                            <dt>Moneda</dt>
-                            <dd>{{ currencyLabel }}</dd>
+                                    <dt>Moneda</dt>
+                                    <dd>{{ currencyLabel }}</dd>
 
-                            <dt>Gravado</dt>
-                            <dd>{{ formatMoney(record.total_taxed) }}</dd>
+                                    <dt>Gravado</dt>
+                                    <dd>{{ formatMoney(record.total_taxed) }}</dd>
 
-                            <dt>IGV</dt>
-                            <dd>{{ formatMoney(record.total_igv) }}</dd>
+                                    <dt>IGV</dt>
+                                    <dd>{{ formatMoney(record.total_igv) }}</dd>
 
-                            <dt>Total</dt>
-                            <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>Total</dt>
+                                    <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="quotation-detail-drawer__footer">
@@ -197,7 +207,8 @@ export default {
         return {
             loading: false,
             voiding: false,
-            record: null
+            record: null,
+            activeTab: 'products'
         };
     },
     computed: {
@@ -420,6 +431,7 @@ export default {
     },
     methods: {
         openDrawer() {
+            this.activeTab = 'products';
             this.applyInitialSnapshot();
             this.loadRecord();
         },
@@ -578,6 +590,7 @@ export default {
             this.record = null;
             this.loading = false;
             this.voiding = false;
+            this.activeTab = 'products';
             this.$emit('update:initialRow', null);
         }
     }
@@ -685,6 +698,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.quotation-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.quotation-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.quotation-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.quotation-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.quotation-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .quotation-detail-drawer__list {

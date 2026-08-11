@@ -204,7 +204,15 @@
                     >
                         <!-- <td>{{ index }}</td> -->
                         <td>{{ row.id }}</td>
-                        <td @click="clickDetail(row.id)">{{ row.name }}</td>
+                        <td>
+                            <span
+                                class="person-name-link"
+                                role="button"
+                                tabindex="0"
+                                @click="clickDetail(row.id)"
+                                @keyup.enter.prevent="clickDetail(row.id)"
+                            >{{ row.name }}</span>
+                        </td>
                         <td class="text-end">{{ row.internal_code }}</td>
                         <td class="text-start">{{ row.document_type }}</td>
                         <td class="text-end">{{ row.number }}</td>
@@ -661,5 +669,16 @@ export default {
 <style scoped>
 .btn-custom, .btn-primary, .btn-danger {
     color: #fff !important;
+}
+.person-name-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.person-name-link:hover,
+.person-name-link:focus {
+    color: inherit;
+    text-decoration: underline;
+    outline: none;
 }
 </style>

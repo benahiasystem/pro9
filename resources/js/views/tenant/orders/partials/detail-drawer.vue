@@ -36,96 +36,106 @@
                 </div>
 
                 <div class="store-order-detail-drawer__body">
-                    <div class="store-order-detail-drawer__section-card">
-                        <div class="store-order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Cliente</h5>
-                            <p class="section-subtitle">Datos del cliente asociado al pedido</p>
-                        </div>
-                        <dl class="store-order-detail-drawer__list">
-                            <dt>Nombre / Razón social</dt>
-                            <dd>{{ record.customer || '—' }}</dd>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Productos" name="products">
+                            <div class="store-order-detail-drawer__section-card">
+                                <div class="store-order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Productos</h5>
+                                    <p class="section-subtitle">Detalle de ítems incluidos en el pedido</p>
+                                </div>
+                                <div v-if="lineItems.length" class="table-responsive">
+                                    <table class="table table-sm store-order-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">P. unit.</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                                <td>{{ item.description }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-end">{{ item.priceLabel }}</td>
+                                                <td class="text-end">{{ item.subtotalLabel }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
+                            </div>
+                        </el-tab-pane>
 
-                            <dt v-if="record.customer_telefono">Teléfono</dt>
-                            <dd v-if="record.customer_telefono">{{ record.customer_telefono }}</dd>
+                        <el-tab-pane label="Cliente" name="customer">
+                            <div class="store-order-detail-drawer__section-card">
+                                <div class="store-order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Cliente</h5>
+                                    <p class="section-subtitle">Datos del cliente asociado al pedido</p>
+                                </div>
+                                <dl class="store-order-detail-drawer__list">
+                                    <dt>Nombre / Razón social</dt>
+                                    <dd>{{ record.customer || '—' }}</dd>
 
-                            <dt v-if="record.customer_email">Correo</dt>
-                            <dd v-if="record.customer_email">{{ record.customer_email }}</dd>
+                                    <dt v-if="record.customer_telefono">Teléfono</dt>
+                                    <dd v-if="record.customer_telefono">{{ record.customer_telefono }}</dd>
 
-                            <dt v-if="record.customer_direccion">Dirección</dt>
-                            <dd v-if="record.customer_direccion">{{ record.customer_direccion }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="record.customer_email">Correo</dt>
+                                    <dd v-if="record.customer_email">{{ record.customer_email }}</dd>
 
-                    <div class="store-order-detail-drawer__section-card">
-                        <div class="store-order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Resumen</h5>
-                            <p class="section-subtitle">Información operativa y estados del pedido</p>
-                        </div>
-                        <dl class="store-order-detail-drawer__list">
-                            <dt>N° Pedido</dt>
-                            <dd>{{ orderIdentifier }}</dd>
+                                    <dt v-if="record.customer_direccion">Dirección</dt>
+                                    <dd v-if="record.customer_direccion">{{ record.customer_direccion }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                            <dt>Fecha de emisión</dt>
-                            <dd>{{ issueDateLabel }}</dd>
+                        <el-tab-pane label="Resumen" name="summary">
+                            <div class="store-order-detail-drawer__section-card">
+                                <div class="store-order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Resumen</h5>
+                                    <p class="section-subtitle">Información operativa y estados del pedido</p>
+                                </div>
+                                <dl class="store-order-detail-drawer__list">
+                                    <dt>N° Pedido</dt>
+                                    <dd>{{ orderIdentifier }}</dd>
 
-                            <dt>Medio de pago</dt>
-                            <dd>{{ record.reference_payment || '—' }}</dd>
+                                    <dt>Fecha de emisión</dt>
+                                    <dd>{{ issueDateLabel }}</dd>
 
-                            <dt>Estado de pago</dt>
-                            <dd>{{ paymentStatusLabel }}</dd>
+                                    <dt>Medio de pago</dt>
+                                    <dd>{{ record.reference_payment || '—' }}</dd>
 
-                            <dt>Estado de envío</dt>
-                            <dd>{{ shippingStatusLabel }}</dd>
+                                    <dt>Estado de pago</dt>
+                                    <dd>{{ paymentStatusLabel }}</dd>
 
-                            <dt>Estado de pedido</dt>
-                            <dd>{{ orderStatusLabel }}</dd>
+                                    <dt>Estado de envío</dt>
+                                    <dd>{{ shippingStatusLabel }}</dd>
 
-                            <dt v-if="documentLabel">Documento</dt>
-                            <dd v-if="documentLabel">{{ documentLabel }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>Estado de pedido</dt>
+                                    <dd>{{ orderStatusLabel }}</dd>
 
-                    <div class="store-order-detail-drawer__section-card">
-                        <div class="store-order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos</h5>
-                            <p class="section-subtitle">Detalle de ítems incluidos en el pedido</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm store-order-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ item.priceLabel }}</td>
-                                        <td class="text-end">{{ item.subtotalLabel }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
-                    </div>
+                                    <dt v-if="documentLabel">Documento</dt>
+                                    <dd v-if="documentLabel">{{ documentLabel }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="store-order-detail-drawer__section-card">
-                        <div class="store-order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Totales</h5>
-                            <p class="section-subtitle">Importes del pedido</p>
-                        </div>
-                        <dl class="store-order-detail-drawer__list">
-                            <dt v-if="hasDiscount">Descuento</dt>
-                            <dd v-if="hasDiscount">{{ discountLabel }}</dd>
+                        <el-tab-pane label="Totales" name="totals">
+                            <div class="store-order-detail-drawer__section-card">
+                                <div class="store-order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Totales</h5>
+                                    <p class="section-subtitle">Importes del pedido</p>
+                                </div>
+                                <dl class="store-order-detail-drawer__list">
+                                    <dt v-if="hasDiscount">Descuento</dt>
+                                    <dd v-if="hasDiscount">{{ discountLabel }}</dd>
 
-                            <dt>Total</dt>
-                            <dd class="text-primary fw-bold">{{ totalLabel }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>Total</dt>
+                                    <dd class="text-primary fw-bold">{{ totalLabel }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="store-order-detail-drawer__footer">
@@ -157,6 +167,11 @@ export default {
             type: Array,
             default: () => []
         }
+    },
+    data() {
+        return {
+            activeTab: 'products'
+        };
     },
     computed: {
         visibleDrawer: {
@@ -293,6 +308,7 @@ export default {
             return item && item.currency_type_id === 'USD' ? '$' : 'S/';
         },
         handleClosed() {
+            this.activeTab = 'products';
             this.$emit('update:showDrawer', false);
         }
     }
@@ -400,6 +416,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.store-order-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.store-order-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.store-order-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.store-order-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.store-order-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .store-order-detail-drawer__list {

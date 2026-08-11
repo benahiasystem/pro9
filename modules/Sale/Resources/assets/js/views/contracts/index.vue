@@ -50,7 +50,16 @@
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'delivery_date'" :key="col.key" class="text-center">{{ row.delivery_date | toDate }}</td>
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.user_name }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key" @click="clickDetail(row)">{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">
+                                <span
+                                    class="contract-customer-link"
+                                    role="button"
+                                    tabindex="0"
+                                    @click="clickDetail(row)"
+                                    @keyup.enter.prevent="clickDetail(row)"
+                                >{{ row.customer_name }}</span>
+                                <br/><small v-text="row.customer_number"></small>
+                            </td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key" @click.stop>
                                 <template v-if="row.state_type_id == '11'">{{ row.state_type_description }}</template>
                                 <template v-else>
@@ -124,6 +133,17 @@
 <style scoped>
     .anulate_color{
         color:red;
+    }
+    .contract-customer-link {
+        color: inherit;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+    .contract-customer-link:hover,
+    .contract-customer-link:focus {
+        color: inherit;
+        text-decoration: underline;
+        outline: none;
     }
 </style>
 <script>

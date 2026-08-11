@@ -39,65 +39,71 @@
                 </div>
 
                 <div class="item-set-detail-drawer__body">
-                    <div class="item-set-detail-drawer__section-card">
-                        <div class="item-set-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos del conjunto</h5>
-                            <p class="section-subtitle">Ítems que componen el pack o conjunto</p>
-                        </div>
-                        <div v-if="componentItems.length" class="table-responsive">
-                            <table class="table table-sm item-set-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in componentItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-end">{{ formatMoney(item.sale_unit_price, false) }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.total, false) }}</td>
-                                    </tr>
-                                </tbody>
-                                <tfoot v-if="componentItems.length">
-                                    <tr>
-                                        <td colspan="3" class="text-end fw-bold">Total componentes</td>
-                                        <td class="text-end fw-bold text-primary">{{ formatMoney(componentsTotal) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin productos registrados en el conjunto.</p>
-                    </div>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Productos del conjunto" name="products">
+                            <div class="item-set-detail-drawer__section-card">
+                                <div class="item-set-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Productos del conjunto</h5>
+                                    <p class="section-subtitle">Ítems que componen el pack o conjunto</p>
+                                </div>
+                                <div v-if="componentItems.length" class="table-responsive">
+                                    <table class="table table-sm item-set-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-end">P. unit.</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in componentItems" :key="item.key || index">
+                                                <td>{{ item.description }}</td>
+                                                <td class="text-end">{{ formatMoney(item.sale_unit_price, false) }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-end">{{ formatMoney(item.total, false) }}</td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot v-if="componentItems.length">
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">Total componentes</td>
+                                                <td class="text-end fw-bold text-primary">{{ formatMoney(componentsTotal) }}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin productos registrados en el conjunto.</p>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="item-set-detail-drawer__section-card">
-                        <div class="item-set-detail-drawer__section-card-header">
-                            <h5 class="section-title">Información general</h5>
-                            <p class="section-subtitle">Datos principales del pack o conjunto</p>
-                        </div>
-                        <dl class="item-set-detail-drawer__list">
-                            <dt>Cód. Interno</dt>
-                            <dd>{{ record.internal_id || '—' }}</dd>
+                        <el-tab-pane label="Información general" name="general">
+                            <div class="item-set-detail-drawer__section-card">
+                                <div class="item-set-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Información general</h5>
+                                    <p class="section-subtitle">Datos principales del pack o conjunto</p>
+                                </div>
+                                <dl class="item-set-detail-drawer__list">
+                                    <dt>Cód. Interno</dt>
+                                    <dd>{{ record.internal_id || '—' }}</dd>
 
-                            <dt>Unidad</dt>
-                            <dd>{{ unitLabel }}</dd>
+                                    <dt>Unidad</dt>
+                                    <dd>{{ unitLabel }}</dd>
 
-                            <dt>Nombre</dt>
-                            <dd>{{ packName }}</dd>
+                                    <dt>Nombre</dt>
+                                    <dd>{{ packName }}</dd>
 
-                            <dt>Descripción</dt>
-                            <dd>{{ descriptionText || '—' }}</dd>
+                                    <dt>Descripción</dt>
+                                    <dd>{{ descriptionText || '—' }}</dd>
 
-                            <dt>Precio Unitario de Venta</dt>
-                            <dd class="text-primary fw-bold">{{ salePriceLabel }}</dd>
+                                    <dt>Precio Unitario de Venta</dt>
+                                    <dd class="text-primary fw-bold">{{ salePriceLabel }}</dd>
 
-                            <dt>IGV</dt>
-                            <dd>{{ igvLabel }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>IGV</dt>
+                                    <dd>{{ igvLabel }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="item-set-detail-drawer__footer">
@@ -152,7 +158,8 @@ export default {
         return {
             loading: false,
             deleting: false,
-            record: null
+            record: null,
+            activeTab: 'products'
         };
     },
     computed: {
@@ -373,6 +380,7 @@ export default {
             this.record = null;
             this.loading = false;
             this.deleting = false;
+            this.activeTab = 'products';
             this.$emit('update:initialRow', null);
         }
     }
@@ -453,6 +461,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.item-set-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.item-set-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.item-set-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.item-set-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.item-set-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .item-set-detail-drawer__section-card {

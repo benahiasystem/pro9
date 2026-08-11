@@ -42,117 +42,127 @@
                 </div>
 
                 <div class="document-detail-drawer__body">
-                    <div class="document-detail-drawer__section-card">
-                        <div class="document-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos / Servicios</h5>
-                            <p class="section-subtitle">Detalle de ítems incluidos en el comprobante</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm document-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Descripción</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
-                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin ítems registrados.</p>
-                    </div>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Productos / Servicios" name="products">
+                            <div class="document-detail-drawer__section-card">
+                                <div class="document-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Productos / Servicios</h5>
+                                    <p class="section-subtitle">Detalle de ítems incluidos en el comprobante</p>
+                                </div>
+                                <div v-if="lineItems.length" class="table-responsive">
+                                    <table class="table table-sm document-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Descripción</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">P. unit.</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                                <td>{{ item.description }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
+                                                <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin ítems registrados.</p>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="document-detail-drawer__section-card">
-                        <div class="document-detail-drawer__section-card-header">
-                            <h5 class="section-title">Cliente</h5>
-                            <p class="section-subtitle">Datos del receptor del comprobante fiscal</p>
-                        </div>
-                        <dl class="document-detail-drawer__list">
-                            <dt>Nombre / Razón social</dt>
-                            <dd>{{ customerName }}</dd>
+                        <el-tab-pane label="Cliente" name="customer">
+                            <div class="document-detail-drawer__section-card">
+                                <div class="document-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Cliente</h5>
+                                    <p class="section-subtitle">Datos del receptor del comprobante fiscal</p>
+                                </div>
+                                <dl class="document-detail-drawer__list">
+                                    <dt>Nombre / Razón social</dt>
+                                    <dd>{{ customerName }}</dd>
 
-                            <dt>Documento</dt>
-                            <dd>{{ customerDocument }}</dd>
+                                    <dt>Documento</dt>
+                                    <dd>{{ customerDocument }}</dd>
 
-                            <dt v-if="customerAddress">Dirección fiscal</dt>
-                            <dd v-if="customerAddress">{{ customerAddress }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="customerAddress">Dirección fiscal</dt>
+                                    <dd v-if="customerAddress">{{ customerAddress }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="document-detail-drawer__section-card">
-                        <div class="document-detail-drawer__section-card-header">
-                            <h5 class="section-title">Información operativa</h5>
-                            <p class="section-subtitle">Asignación comercial y condiciones de emisión</p>
-                        </div>
-                        <dl class="document-detail-drawer__list">
-                            <dt>Vendedor</dt>
-                            <dd>{{ sellerLabel }}</dd>
+                        <el-tab-pane label="Información operativa" name="operational">
+                            <div class="document-detail-drawer__section-card">
+                                <div class="document-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Información operativa</h5>
+                                    <p class="section-subtitle">Asignación comercial y condiciones de emisión</p>
+                                </div>
+                                <dl class="document-detail-drawer__list">
+                                    <dt>Vendedor</dt>
+                                    <dd>{{ sellerLabel }}</dd>
 
-                            <dt>Establecimiento</dt>
-                            <dd>{{ establishmentLabel }}</dd>
+                                    <dt>Establecimiento</dt>
+                                    <dd>{{ establishmentLabel }}</dd>
 
-                            <dt>Moneda</dt>
-                            <dd>{{ currencyLabel }}</dd>
+                                    <dt>Moneda</dt>
+                                    <dd>{{ currencyLabel }}</dd>
 
-                            <dt>Tipo de cambio</dt>
-                            <dd>{{ exchangeRateLabel }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>Tipo de cambio</dt>
+                                    <dd>{{ exchangeRateLabel }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="document-detail-drawer__section-card">
-                        <div class="document-detail-drawer__section-card-header">
-                            <h5 class="section-title">Totales y pagos</h5>
-                            <p class="section-subtitle">Importes gravados, IGV, saldo y pagos registrados</p>
-                        </div>
-                        <dl class="document-detail-drawer__list">
-                            <dt>Gravado</dt>
-                            <dd>{{ formatMoney(record.total_taxed) }}</dd>
+                        <el-tab-pane label="Totales y pagos" name="totals">
+                            <div class="document-detail-drawer__section-card">
+                                <div class="document-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Totales y pagos</h5>
+                                    <p class="section-subtitle">Importes gravados, IGV, saldo y pagos registrados</p>
+                                </div>
+                                <dl class="document-detail-drawer__list">
+                                    <dt>Gravado</dt>
+                                    <dd>{{ formatMoney(record.total_taxed) }}</dd>
 
-                            <dt>IGV</dt>
-                            <dd>{{ formatMoney(record.total_igv) }}</dd>
+                                    <dt>IGV</dt>
+                                    <dd>{{ formatMoney(record.total_igv) }}</dd>
 
-                            <dt>Total</dt>
-                            <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
+                                    <dt>Total</dt>
+                                    <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
 
-                            <dt>Saldo</dt>
-                            <dd :class="{ 'text-warning fw-bold': balanceAmount > 0, 'text-success': balanceAmount === 0 }">
-                                {{ formatMoney(balanceAmount) }}
-                            </dd>
-                        </dl>
+                                    <dt>Saldo</dt>
+                                    <dd :class="{ 'text-warning fw-bold': balanceAmount > 0, 'text-success': balanceAmount === 0 }">
+                                        {{ formatMoney(balanceAmount) }}
+                                    </dd>
+                                </dl>
 
-                        <div v-if="paymentRows.length" class="table-responsive mt-2">
-                            <table class="table table-sm document-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Método</th>
-                                        <th class="text-end">Monto</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="payment in paymentRows" :key="payment.id">
-                                        <td>{{ payment.date_of_payment }}</td>
-                                        <td>
-                                            {{ payment.payment_method_type_description || '—' }}
-                                            <small v-if="payment.destination_description" class="d-block text-muted">
-                                                {{ payment.destination_description }}
-                                            </small>
-                                        </td>
-                                        <td class="text-end">{{ formatMoney(payment.payment, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin pagos registrados.</p>
-                    </div>
+                                <div v-if="paymentRows.length" class="table-responsive mt-2">
+                                    <table class="table table-sm document-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Método</th>
+                                                <th class="text-end">Monto</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="payment in paymentRows" :key="payment.id">
+                                                <td>{{ payment.date_of_payment }}</td>
+                                                <td>
+                                                    {{ payment.payment_method_type_description || '—' }}
+                                                    <small v-if="payment.destination_description" class="d-block text-muted">
+                                                        {{ payment.destination_description }}
+                                                    </small>
+                                                </td>
+                                                <td class="text-end">{{ formatMoney(payment.payment, false) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin pagos registrados.</p>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="document-detail-drawer__footer">
@@ -231,7 +241,8 @@ export default {
     data() {
         return {
             loading: false,
-            record: null
+            record: null,
+            activeTab: 'products'
         };
     },
     computed: {
@@ -408,6 +419,7 @@ export default {
     },
     methods: {
         openDrawer() {
+            this.activeTab = 'products';
             this.applyInitialSnapshot();
             this.loadRecord();
         },
@@ -528,6 +540,7 @@ export default {
         handleClosed() {
             this.record = null;
             this.loading = false;
+            this.activeTab = 'products';
             this.$emit('update:initialRow', null);
         }
     }
@@ -664,6 +677,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.document-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.document-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.document-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.document-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.document-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .document-detail-drawer__list {

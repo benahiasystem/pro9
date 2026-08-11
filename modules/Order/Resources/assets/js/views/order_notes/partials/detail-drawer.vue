@@ -40,102 +40,112 @@
                 </div>
 
                 <div class="order-detail-drawer__body">
-                    <div class="order-detail-drawer__section-card">
-                        <div class="order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Productos</h5>
-                            <p class="section-subtitle">Detalle de ítems incluidos en el pedido</p>
-                        </div>
-                        <div v-if="lineItems.length" class="table-responsive">
-                            <table class="table table-sm order-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td>{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
-                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
-                    </div>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Productos" name="products">
+                            <div class="order-detail-drawer__section-card">
+                                <div class="order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Productos</h5>
+                                    <p class="section-subtitle">Detalle de ítems incluidos en el pedido</p>
+                                </div>
+                                <div v-if="lineItems.length" class="table-responsive">
+                                    <table class="table table-sm order-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">P. unit.</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                                <td>{{ item.description }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
+                                                <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin productos registrados.</p>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="order-detail-drawer__section-card">
-                        <div class="order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Cliente</h5>
-                            <p class="section-subtitle">Datos del cliente asociado al pedido</p>
-                        </div>
-                        <dl class="order-detail-drawer__list">
-                            <dt>Nombre / Razón social</dt>
-                            <dd>{{ customerName }}</dd>
+                        <el-tab-pane label="Cliente" name="customer">
+                            <div class="order-detail-drawer__section-card">
+                                <div class="order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Cliente</h5>
+                                    <p class="section-subtitle">Datos del cliente asociado al pedido</p>
+                                </div>
+                                <dl class="order-detail-drawer__list">
+                                    <dt>Nombre / Razón social</dt>
+                                    <dd>{{ customerName }}</dd>
 
-                            <dt>Documento</dt>
-                            <dd>{{ customerDocument }}</dd>
+                                    <dt>Documento</dt>
+                                    <dd>{{ customerDocument }}</dd>
 
-                            <dt v-if="customerTelephone">Teléfono</dt>
-                            <dd v-if="customerTelephone">{{ customerTelephone }}</dd>
+                                    <dt v-if="customerTelephone">Teléfono</dt>
+                                    <dd v-if="customerTelephone">{{ customerTelephone }}</dd>
 
-                            <dt v-if="customerEmail">Correo</dt>
-                            <dd v-if="customerEmail">{{ customerEmail }}</dd>
+                                    <dt v-if="customerEmail">Correo</dt>
+                                    <dd v-if="customerEmail">{{ customerEmail }}</dd>
 
-                            <dt v-if="shippingAddress">Dirección de envío</dt>
-                            <dd v-if="shippingAddress">{{ shippingAddress }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="shippingAddress">Dirección de envío</dt>
+                                    <dd v-if="shippingAddress">{{ shippingAddress }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="order-detail-drawer__section-card">
-                        <div class="order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Información operativa</h5>
-                            <p class="section-subtitle">Asignación comercial y origen del inventario</p>
-                        </div>
-                        <dl class="order-detail-drawer__list">
-                            <dt>Vendedor</dt>
-                            <dd>{{ sellerLabel }}</dd>
+                        <el-tab-pane label="Información operativa" name="operational">
+                            <div class="order-detail-drawer__section-card">
+                                <div class="order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Información operativa</h5>
+                                    <p class="section-subtitle">Asignación comercial y origen del inventario</p>
+                                </div>
+                                <dl class="order-detail-drawer__list">
+                                    <dt>Vendedor</dt>
+                                    <dd>{{ sellerLabel }}</dd>
 
-                            <dt>Establecimiento</dt>
-                            <dd>{{ establishmentLabel }}</dd>
+                                    <dt>Establecimiento</dt>
+                                    <dd>{{ establishmentLabel }}</dd>
 
-                            <dt>Almacén / origen</dt>
-                            <dd>{{ warehouseLabel }}</dd>
+                                    <dt>Almacén / origen</dt>
+                                    <dd>{{ warehouseLabel }}</dd>
 
-                            <dt v-if="record.observation">Observaciones</dt>
-                            <dd v-if="record.observation">{{ record.observation }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="record.observation">Observaciones</dt>
+                                    <dd v-if="record.observation">{{ record.observation }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="order-detail-drawer__section-card">
-                        <div class="order-detail-drawer__section-card-header">
-                            <h5 class="section-title">Pagos y totales</h5>
-                            <p class="section-subtitle">Condiciones de pago e importes del pedido</p>
-                        </div>
-                        <dl class="order-detail-drawer__list">
-                            <dt>Moneda</dt>
-                            <dd>{{ currencyLabel }}</dd>
+                        <el-tab-pane label="Pagos y totales" name="totals">
+                            <div class="order-detail-drawer__section-card">
+                                <div class="order-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Pagos y totales</h5>
+                                    <p class="section-subtitle">Condiciones de pago e importes del pedido</p>
+                                </div>
+                                <dl class="order-detail-drawer__list">
+                                    <dt>Moneda</dt>
+                                    <dd>{{ currencyLabel }}</dd>
 
-                            <dt>Condición de pago</dt>
-                            <dd>{{ paymentConditionLabel }}</dd>
+                                    <dt>Condición de pago</dt>
+                                    <dd>{{ paymentConditionLabel }}</dd>
 
-                            <dt>Gravado</dt>
-                            <dd>{{ formatMoney(record.total_taxed) }}</dd>
+                                    <dt>Gravado</dt>
+                                    <dd>{{ formatMoney(record.total_taxed) }}</dd>
 
-                            <dt>IGV</dt>
-                            <dd>{{ formatMoney(record.total_igv) }}</dd>
+                                    <dt>IGV</dt>
+                                    <dd>{{ formatMoney(record.total_igv) }}</dd>
 
-                            <dt>Saldo</dt>
-                            <dd :class="{ 'text-danger fw-bold': balanceAmount > 0 }">{{ formatMoney(balanceAmount) }}</dd>
+                                    <dt>Saldo</dt>
+                                    <dd :class="{ 'text-danger fw-bold': balanceAmount > 0 }">{{ formatMoney(balanceAmount) }}</dd>
 
-                            <dt>Total</dt>
-                            <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>Total</dt>
+                                    <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="order-detail-drawer__footer">
@@ -201,7 +211,8 @@ export default {
             voiding: false,
             record: null,
             paymentMethodTypes: [],
-            tablesLoaded: false
+            tablesLoaded: false,
+            activeTab: 'products'
         };
     },
     computed: {
@@ -412,6 +423,7 @@ export default {
     },
     methods: {
         openDrawer() {
+            this.activeTab = 'products';
             this.applyInitialSnapshot();
             this.loadRecord();
         },
@@ -617,6 +629,7 @@ export default {
             this.record = null;
             this.loading = false;
             this.voiding = false;
+            this.activeTab = 'products';
             this.$emit('update:initialRow', null);
         }
     }
@@ -724,6 +737,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.order-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.order-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.order-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.order-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.order-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .order-detail-drawer__list {

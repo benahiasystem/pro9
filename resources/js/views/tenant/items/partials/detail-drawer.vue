@@ -26,75 +26,83 @@
 
             <template v-if="record">
                 <div class="item-detail-drawer__body">
-                    <div class="item-detail-drawer__section-card">
-                        <div class="item-detail-drawer__section-card-header">
-                            <h5 class="section-title">Información básica</h5>
-                            <p class="section-subtitle">Datos principales del {{ entityShortLabel }}</p>
-                        </div>
-                        <div v-if="record.image_url" class="item-detail-drawer__image-wrap mb-3">
-                            <img
-                                :src="record.image_url"
-                                :alt="record.description"
-                                class="item-detail-drawer__image"
-                            />
-                        </div>
-                        <dl class="item-detail-drawer__list">
-                            <dt>Nombre</dt>
-                            <dd>{{ record.description || '—' }}</dd>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Información básica" name="basic">
+                            <div class="item-detail-drawer__section-card">
+                                <div class="item-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Información básica</h5>
+                                    <p class="section-subtitle">Datos principales del {{ entityShortLabel }}</p>
+                                </div>
+                                <div v-if="record.image_url" class="item-detail-drawer__image-wrap mb-3">
+                                    <img
+                                        :src="record.image_url"
+                                        :alt="record.description"
+                                        class="item-detail-drawer__image"
+                                    />
+                                </div>
+                                <dl class="item-detail-drawer__list">
+                                    <dt>Nombre</dt>
+                                    <dd>{{ record.description || '—' }}</dd>
 
-                            <dt>Cód. interno</dt>
-                            <dd>{{ record.internal_id || '—' }}</dd>
+                                    <dt>Cód. interno</dt>
+                                    <dd>{{ record.internal_id || '—' }}</dd>
 
-                            <dt>Descripción</dt>
-                            <dd>{{ descriptionText || '—' }}</dd>
+                                    <dt>Descripción</dt>
+                                    <dd>{{ descriptionText || '—' }}</dd>
 
-                            <dt>Tipo de unidad</dt>
-                            <dd>{{ unitTypeLabel }}</dd>
+                                    <dt>Tipo de unidad</dt>
+                                    <dd>{{ unitTypeLabel }}</dd>
 
-                            <dt v-if="record.model">Modelo</dt>
-                            <dd v-if="record.model">{{ record.model }}</dd>
+                                    <dt v-if="record.model">Modelo</dt>
+                                    <dd v-if="record.model">{{ record.model }}</dd>
 
-                            <dt v-if="record.barcode">Código de barras</dt>
-                            <dd v-if="record.barcode">{{ record.barcode }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="record.barcode">Código de barras</dt>
+                                    <dd v-if="record.barcode">{{ record.barcode }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="item-detail-drawer__section-card">
-                        <div class="item-detail-drawer__section-card-header">
-                            <h5 class="section-title">Categorías / Marcas</h5>
-                            <p class="section-subtitle">Clasificación comercial del {{ entityShortLabel }}</p>
-                        </div>
-                        <dl class="item-detail-drawer__list">
-                            <dt>Categoría</dt>
-                            <dd>{{ categoryLabel }}</dd>
+                        <el-tab-pane label="Categorías / Marcas" name="classification">
+                            <div class="item-detail-drawer__section-card">
+                                <div class="item-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Categorías / Marcas</h5>
+                                    <p class="section-subtitle">Clasificación comercial del {{ entityShortLabel }}</p>
+                                </div>
+                                <dl class="item-detail-drawer__list">
+                                    <dt>Categoría</dt>
+                                    <dd>{{ categoryLabel }}</dd>
 
-                            <dt>Marca</dt>
-                            <dd>{{ brandLabel }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>Marca</dt>
+                                    <dd>{{ brandLabel }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="item-detail-drawer__section-card">
-                        <div class="item-detail-drawer__section-card-header">
-                            <h5 class="section-title">Precios y costos</h5>
-                            <p class="section-subtitle">Valores de venta y adquisición</p>
-                        </div>
-                        <dl class="item-detail-drawer__list">
-                            <dt>Precio unitario (venta)</dt>
-                            <dd class="text-primary">{{ salePriceLabel }}</dd>
+                        <el-tab-pane label="Precios y costos" name="prices">
+                            <div class="item-detail-drawer__section-card">
+                                <div class="item-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Precios y costos</h5>
+                                    <p class="section-subtitle">Valores de venta y adquisición</p>
+                                </div>
+                                <dl class="item-detail-drawer__list">
+                                    <dt>Precio unitario (venta)</dt>
+                                    <dd class="text-primary">{{ salePriceLabel }}</dd>
 
-                            <dt>Incluye IGV (venta)</dt>
-                            <dd>{{ hasIgvLabel }}</dd>
+                                    <dt>Incluye IGV (venta)</dt>
+                                    <dd>{{ hasIgvLabel }}</dd>
 
-                            <dt v-if="showPurchasePrices">Precio unitario (compra)</dt>
-                            <dd v-if="showPurchasePrices">{{ purchasePriceLabel }}</dd>
+                                    <dt v-if="showPurchasePrices">Precio unitario (compra)</dt>
+                                    <dd v-if="showPurchasePrices">{{ purchasePriceLabel }}</dd>
 
-                            <dt v-if="showPurchasePrices">Incluye IGV (compra)</dt>
-                            <dd v-if="showPurchasePrices">{{ purchaseHasIgvLabel }}</dd>
+                                    <dt v-if="showPurchasePrices">Incluye IGV (compra)</dt>
+                                    <dd v-if="showPurchasePrices">{{ purchaseHasIgvLabel }}</dd>
 
-                            <dt v-if="salePriceWithIgvLabel">Precio venta con IGV</dt>
-                            <dd v-if="salePriceWithIgvLabel">{{ salePriceWithIgvLabel }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="salePriceWithIgvLabel">Precio venta con IGV</dt>
+                                    <dd v-if="salePriceWithIgvLabel">{{ salePriceWithIgvLabel }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="item-detail-drawer__footer">
@@ -161,7 +169,8 @@ export default {
             brands: [],
             currencyTypes: [],
             tablesLoaded: false,
-            tablesLoading: false
+            tablesLoading: false,
+            activeTab: 'basic'
         };
     },
     computed: {
@@ -299,6 +308,7 @@ export default {
     },
     methods: {
         openDrawer() {
+            this.activeTab = 'basic';
             this.applyInitialSnapshot();
             this.loadRecord();
         },
@@ -509,6 +519,7 @@ export default {
             this.loading = false;
             this.toggling = false;
             this.deleting = false;
+            this.activeTab = 'basic';
             this.$emit('update:initialRow', null);
         }
     }
@@ -619,6 +630,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.item-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.item-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.item-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.item-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.item-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .item-detail-drawer__list {

@@ -49,8 +49,14 @@
             <!-- <td>{{ index }}</td> -->
             <td class="text-start">{{ row.date_of_issue }}</td>
             <td class="text-start">{{ row.date_of_due }}</td>
-            <td @click="clickDetail(row)">
-              {{ row.supplier_name }}
+            <td>
+              <span
+                class="purchase-order-supplier-link"
+                role="button"
+                tabindex="0"
+                @click="clickDetail(row)"
+                @keyup.enter.prevent="clickDetail(row)"
+              >{{ row.supplier_name }}</span>
               <br />
               <small v-text="row.supplier_number"></small>
             </td>
@@ -191,6 +197,17 @@
 <style scoped>
 .anulate_color {
   color: red;
+}
+.purchase-order-supplier-link {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.purchase-order-supplier-link:hover,
+.purchase-order-supplier-link:focus {
+  color: inherit;
+  text-decoration: underline;
+  outline: none;
 }
 </style>
 <style>

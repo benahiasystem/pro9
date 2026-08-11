@@ -43,117 +43,123 @@
                 </div>
 
                 <div class="technical-service-detail-drawer__body">
-                    <div
-                        v-if="lineItems.length"
-                        class="technical-service-detail-drawer__section-card"
-                    >
-                        <div class="technical-service-detail-drawer__section-card-header">
-                            <h5 class="section-title">Piezas</h5>
-                            <p class="section-subtitle">Repuestos e ítems asociados al servicio</p>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-sm technical-service-detail-drawer__items-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th class="text-start">Producto</th>
-                                        <th class="text-center">Cant.</th>
-                                        <th class="text-end">P. unit.</th>
-                                        <th class="text-end">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="(item, index) in lineItems" :key="item.key || index">
-                                        <td class="text-start">{{ item.description }}</td>
-                                        <td class="text-center">{{ item.quantity }}</td>
-                                        <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
-                                        <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <el-tabs v-model="activeTab">
+                        <el-tab-pane label="Piezas" name="pieces">
+                            <div class="technical-service-detail-drawer__section-card">
+                                <div class="technical-service-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Piezas</h5>
+                                    <p class="section-subtitle">Repuestos e ítems asociados al servicio</p>
+                                </div>
+                                <div v-if="lineItems.length" class="table-responsive">
+                                    <table class="table table-sm technical-service-detail-drawer__items-table mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-start">Producto</th>
+                                                <th class="text-center">Cant.</th>
+                                                <th class="text-end">P. unit.</th>
+                                                <th class="text-end">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="(item, index) in lineItems" :key="item.key || index">
+                                                <td class="text-start">{{ item.description }}</td>
+                                                <td class="text-center">{{ item.quantity }}</td>
+                                                <td class="text-end">{{ formatMoney(item.unit_price, false) }}</td>
+                                                <td class="text-end">{{ formatMoney(item.subtotal, false) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p v-else class="text-muted small mb-0">Sin piezas registradas.</p>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="technical-service-detail-drawer__section-card">
-                        <div class="technical-service-detail-drawer__section-card-header">
-                            <h5 class="section-title">Cliente</h5>
-                            <p class="section-subtitle">Datos del cliente asociado al servicio</p>
-                        </div>
-                        <dl class="technical-service-detail-drawer__list">
-                            <dt>Nombre / Razón social</dt>
-                            <dd>{{ customerName }}</dd>
+                        <el-tab-pane label="Cliente" name="customer">
+                            <div class="technical-service-detail-drawer__section-card">
+                                <div class="technical-service-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Cliente</h5>
+                                    <p class="section-subtitle">Datos del cliente asociado al servicio</p>
+                                </div>
+                                <dl class="technical-service-detail-drawer__list">
+                                    <dt>Nombre / Razón social</dt>
+                                    <dd>{{ customerName }}</dd>
 
-                            <dt>Documento</dt>
-                            <dd>{{ customerDocument }}</dd>
+                                    <dt>Documento</dt>
+                                    <dd>{{ customerDocument }}</dd>
 
-                            <dt>Celular</dt>
-                            <dd>{{ customerCellphone }}</dd>
-                        </dl>
-                    </div>
+                                    <dt>Celular</dt>
+                                    <dd>{{ customerCellphone }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div class="technical-service-detail-drawer__section-card">
-                        <div class="technical-service-detail-drawer__section-card-header">
-                            <h5 class="section-title">Costos y totales</h5>
-                            <p class="section-subtitle">Importes del servicio técnico</p>
-                        </div>
-                        <dl class="technical-service-detail-drawer__list">
-                            <dt>Moneda</dt>
-                            <dd>{{ currencyLabel }}</dd>
+                        <el-tab-pane label="Costos y totales" name="totals">
+                            <div class="technical-service-detail-drawer__section-card">
+                                <div class="technical-service-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Costos y totales</h5>
+                                    <p class="section-subtitle">Importes del servicio técnico</p>
+                                </div>
+                                <dl class="technical-service-detail-drawer__list">
+                                    <dt>Moneda</dt>
+                                    <dd>{{ currencyLabel }}</dd>
 
-                            <dt>Costo S.</dt>
-                            <dd>{{ formatMoney(record.cost) }}</dd>
+                                    <dt>Costo S.</dt>
+                                    <dd>{{ formatMoney(record.cost) }}</dd>
 
-                            <dt>Costo P.</dt>
-                            <dd>{{ formatMoney(record.total) }}</dd>
+                                    <dt>Costo P.</dt>
+                                    <dd>{{ formatMoney(record.total) }}</dd>
 
-                            <dt v-if="record.prepayment">Pago adelantado</dt>
-                            <dd v-if="record.prepayment">{{ formatMoney(record.prepayment) }}</dd>
+                                    <dt v-if="record.prepayment">Pago adelantado</dt>
+                                    <dd v-if="record.prepayment">{{ formatMoney(record.prepayment) }}</dd>
 
-                            <dt>Saldo</dt>
-                            <dd :class="{ 'text-danger fw-bold': balanceAmount > 0 }">{{ formatMoney(balanceAmount) }}</dd>
+                                    <dt>Saldo</dt>
+                                    <dd :class="{ 'text-danger fw-bold': balanceAmount > 0 }">{{ formatMoney(balanceAmount) }}</dd>
 
-                            <dt>Total</dt>
-                            <dd class="text-primary fw-bold">{{ formatMoney(sumTotalAmount) }}</dd>
+                                    <dt>Total</dt>
+                                    <dd class="text-primary fw-bold">{{ formatMoney(sumTotalAmount) }}</dd>
 
-                            <dt v-if="record.number_document_sale_note">Comprobante</dt>
-                            <dd v-if="record.number_document_sale_note">{{ record.number_document_sale_note }}</dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="record.number_document_sale_note">Comprobante</dt>
+                                    <dd v-if="record.number_document_sale_note">{{ record.number_document_sale_note }}</dd>
+                                </dl>
+                            </div>
+                        </el-tab-pane>
 
-                    <div
-                        v-if="hasAdditionalDetails"
-                        class="technical-service-detail-drawer__section-card"
-                    >
-                        <div class="technical-service-detail-drawer__section-card-header">
-                            <h5 class="section-title">Detalles adicionales</h5>
-                            <p class="section-subtitle">Descripción, fallas reportadas y diagnóstico</p>
-                        </div>
-                        <dl class="technical-service-detail-drawer__list">
-                            <dt v-if="record.description">Descripción</dt>
-                            <dd v-if="record.description" class="text-pre-wrap">{{ record.description }}</dd>
+                        <el-tab-pane label="Detalles adicionales" name="additional">
+                            <div class="technical-service-detail-drawer__section-card">
+                                <div class="technical-service-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Detalles adicionales</h5>
+                                    <p class="section-subtitle">Descripción, fallas reportadas y diagnóstico</p>
+                                </div>
+                                <dl v-if="hasAdditionalDetails" class="technical-service-detail-drawer__list">
+                                    <dt v-if="record.description">Descripción</dt>
+                                    <dd v-if="record.description" class="text-pre-wrap">{{ record.description }}</dd>
 
-                            <dt v-if="record.reason">Motivo de ingreso</dt>
-                            <dd v-if="record.reason" class="text-pre-wrap">{{ record.reason }}</dd>
+                                    <dt v-if="record.reason">Motivo de ingreso</dt>
+                                    <dd v-if="record.reason" class="text-pre-wrap">{{ record.reason }}</dd>
 
-                            <dt v-if="record.state">Estado del equipo</dt>
-                            <dd v-if="record.state" class="text-pre-wrap">{{ record.state }}</dd>
+                                    <dt v-if="record.state">Estado del equipo</dt>
+                                    <dd v-if="record.state" class="text-pre-wrap">{{ record.state }}</dd>
 
-                            <dt v-if="record.brand">Marca</dt>
-                            <dd v-if="record.brand">{{ record.brand }}</dd>
+                                    <dt v-if="record.brand">Marca</dt>
+                                    <dd v-if="record.brand">{{ record.brand }}</dd>
 
-                            <dt v-if="record.equipment">Equipo</dt>
-                            <dd v-if="record.equipment">{{ record.equipment }}</dd>
+                                    <dt v-if="record.equipment">Equipo</dt>
+                                    <dd v-if="record.equipment">{{ record.equipment }}</dd>
 
-                            <dt v-if="record.activities">Actividades realizadas</dt>
-                            <dd v-if="record.activities" class="text-pre-wrap">{{ record.activities }}</dd>
+                                    <dt v-if="record.activities">Actividades realizadas</dt>
+                                    <dd v-if="record.activities" class="text-pre-wrap">{{ record.activities }}</dd>
 
-                            <dt v-if="importantNotes.length">Notas importantes</dt>
-                            <dd v-if="importantNotes.length">
-                                <ul class="technical-service-detail-drawer__notes mb-0 ps-3">
-                                    <li v-for="(note, index) in importantNotes" :key="index">{{ note }}</li>
-                                </ul>
-                            </dd>
-                        </dl>
-                    </div>
+                                    <dt v-if="importantNotes.length">Notas importantes</dt>
+                                    <dd v-if="importantNotes.length">
+                                        <ul class="technical-service-detail-drawer__notes mb-0 ps-3">
+                                            <li v-for="(note, index) in importantNotes" :key="index">{{ note }}</li>
+                                        </ul>
+                                    </dd>
+                                </dl>
+                                <p v-else class="text-muted small mb-0">Sin detalles adicionales.</p>
+                            </div>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <div class="technical-service-detail-drawer__footer">
@@ -212,7 +218,8 @@ export default {
     data() {
         return {
             loading: false,
-            record: null
+            record: null,
+            activeTab: 'pieces'
         };
     },
     computed: {
@@ -397,6 +404,7 @@ export default {
     },
     methods: {
         openDrawer() {
+            this.activeTab = 'pieces';
             this.applyInitialSnapshot();
             this.loadRecord();
         },
@@ -548,6 +556,7 @@ export default {
         handleClosed() {
             this.record = null;
             this.loading = false;
+            this.activeTab = 'pieces';
             this.$emit('update:initialRow', null);
         }
     }
@@ -655,6 +664,29 @@ export default {
     flex: 1;
     overflow-y: auto;
     padding: 12px 16px 16px;
+}
+
+.technical-service-detail-drawer__body >>> .el-tabs__header {
+    margin-bottom: 12px;
+}
+
+.technical-service-detail-drawer__body >>> .el-tabs__nav-wrap::after {
+    height: 1px;
+    background-color: #ebeef5;
+}
+
+.technical-service-detail-drawer__body >>> .el-tabs__item {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.technical-service-detail-drawer__body >>> .el-tabs__item.is-active {
+    color: #1f3a8a;
+}
+
+.technical-service-detail-drawer__body >>> .el-tabs__active-bar {
+    background-color: #1f3a8a;
 }
 
 .technical-service-detail-drawer__list {

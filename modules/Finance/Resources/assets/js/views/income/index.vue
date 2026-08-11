@@ -98,13 +98,15 @@
 .income-customer-link {
     color: inherit;
     cursor: pointer;
-    text-decoration: none;
+    font-weight: inherit;
+    text-decoration: underline;
 }
 
 .income-customer-link:hover,
 .income-customer-link:focus {
     color: inherit;
-    text-decoration: none;
+    font-weight: inherit;
+    text-decoration: underline;
     outline: none;
 }
 </style>

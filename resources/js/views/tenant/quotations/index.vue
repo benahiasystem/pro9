@@ -118,7 +118,16 @@
                             <td v-if="col.visible && col.key === 'delivery_date'" :key="col.key" class="text-center">{{ row.delivery_date }}</td>
                             <td v-if="col.visible && col.key === 'registered_by'" :key="col.key">{{ row.user_name }}</td>
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.seller_name }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">
+                                <span
+                                    class="quotation-customer-link"
+                                    role="button"
+                                    tabindex="0"
+                                    @click="clickDetail(row)"
+                                    @keyup.enter.prevent="clickDetail(row)"
+                                >{{ row.customer_name }}</span>
+                                <br /><small v-text="row.customer_number"></small>
+                            </td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
                                 <template v-if="row.state_type_id == '11'">
                                     <el-tag size="mini" type="info" effect="plain">{{ row.state_type_description }}</el-tag>
@@ -740,6 +749,17 @@ export default {
 </script>
 
 <style scoped>
+.quotation-customer-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.quotation-customer-link:hover,
+.quotation-customer-link:focus {
+    color: inherit;
+    text-decoration: underline;
+    outline: none;
+}
 .quotation-total-cell {
     display: inline-flex;
     align-items: center;

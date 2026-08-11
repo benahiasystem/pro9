@@ -71,6 +71,10 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
     // Página de gracias tras completar el pago
     Route::get('thanks/{external_id}', 'EcommerceController@thankYou')->name('tenant_ecommerce_thank_you');
 
+    // Seguimiento público de pedidos (antes del catch-all de categoría)
+    Route::get('seguimiento', 'EcommerceController@orderTracking')->name('tenant_ecommerce_order_tracking');
+    Route::get('seguimiento/lookup', 'EcommerceController@orderTrackingLookup')->name('tenant_ecommerce_order_tracking_lookup');
+
     Route::get('configuration', 'ConfigurationController@index')->middleware(['auth', 'redirect.module'])->name('tenant_ecommerce_configuration');
     Route::post('configuration', 'ConfigurationController@store_configuration');
     Route::post('configuration_delivery', 'ConfigurationController@store_configuration_delivery');

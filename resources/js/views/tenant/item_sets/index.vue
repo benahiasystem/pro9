@@ -191,13 +191,15 @@
 .item-set-name-link {
     color: inherit;
     cursor: pointer;
-    text-decoration: none;
+    font-weight: inherit;
+    text-decoration: underline;
 }
 
 .item-set-name-link:hover,
 .item-set-name-link:focus {
     color: inherit;
-    text-decoration: none;
+    font-weight: inherit;
+    text-decoration: underline;
     outline: none;
 }
 </style>
