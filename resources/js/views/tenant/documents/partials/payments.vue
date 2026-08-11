@@ -148,6 +148,7 @@
                                                         :show-file-list="true"
                                                         :file-list="fileList"
                                                         :on-success="onSuccess"
+                                                        :on-error="onUploadError"
                                                         :limit="1"
                                                         :disabled="row.payment_received == '0'"
                                                         class="pb-1"
@@ -360,11 +361,32 @@
                 } else {
 
                     this.cleanFileList()
-                    this.$message.error(response.message)
+                    this.$message.error(response.message || 'No se pudo cargar el archivo.')
                 }
 
                 // console.log(this.records)
 
+            },
+            onUploadError(error, file, fileList) {
+                this.cleanFileList()
+                this.$message.error(this.getRequestErrorMessage(error))
+            },
+            getRequestErrorMessage(error) {
+                const data = error && error.response ? error.response.data : null
+
+                if (typeof data === 'string' && data.trim()) {
+                    return data
+                }
+
+                if (data && data.message) {
+                    return data.message
+                }
+
+                if (error && error.message) {
+                    return error.message
+                }
+
+                return 'Ocurrió un error al procesar la solicitud.'
             },
             cleanFileList(){
                 this.fileList = []
@@ -461,11 +483,10 @@
                         }
                     })
                     .catch(error => {
-                        if (error.response.status === 422) {
+                        if (error.response && error.response.status === 422 && error.response.data && !error.response.data.message) {
                             this.records[index].errors = error.response.data;
                         } else {
-                            console.log(error);
-                            this.$message.error(error.response.data.message)
+                            this.$message.error(this.getRequestErrorMessage(error))
                         }
                     })
             },

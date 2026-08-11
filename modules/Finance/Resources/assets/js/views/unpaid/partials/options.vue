@@ -81,7 +81,7 @@ export default {
         return {
             titleDialog: null,
             loading: false,
-            resource: 'unpaid',
+            resource: 'finances/unpaid',
             errors: {},
             form: {},
             company: {},
@@ -184,7 +184,12 @@ export default {
             });
         },
         clickPrint(format) {
-            window.open(`${this.resource}/print/${this.form.external_id}/${this.type}/${format}`, '_blank');
+            if (!this.form.external_id) {
+                this.$message.error('No se encontró el identificador del comprobante.');
+                return;
+            }
+
+            window.open(`/${this.resource}/print/${this.form.external_id}/${this.type}/${format}`, '_blank');
         },
         clickCloseUnpaid() {
             this.$emit('update:showDialogOptions', false)

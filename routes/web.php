@@ -1168,6 +1168,17 @@ if ($hostname) {
             Route::post('configurations/evolution-server', 'System\ConfigurationController@evolutionServer');
             Route::post('configurations/google-maps', 'System\ConfigurationController@googleMaps');
 
+            // Número de WhatsApp conectado al superadmin (envío de notificaciones)
+            Route::post('configurations/whatsapp-notify/connect', 'System\WhatsAppNotifyController@connect');
+            Route::get('configurations/whatsapp-notify/qr', 'System\WhatsAppNotifyController@qr');
+            Route::get('configurations/whatsapp-notify/state', 'System\WhatsAppNotifyController@state');
+            Route::post('configurations/whatsapp-notify/send', 'System\WhatsAppNotifyController@send');
+            Route::post('configurations/whatsapp-notify/disconnect', 'System\WhatsAppNotifyController@disconnect');
+            Route::post('configurations/whatsapp-notify/restart', 'System\WhatsAppNotifyController@restart');
+            Route::post('configurations/whatsapp-notify/renew', 'System\WhatsAppNotifyController@renew');
+            Route::post('configurations/whatsapp-notify/toggle-enabled', 'System\WhatsAppNotifyController@toggleEnabled');
+            Route::post('configurations/whatsapp-notify/regenerate-token', 'System\WhatsAppNotifyController@regenerateToken');
+
             // Términos y Condiciones
             Route::get('configurations/terms', 'System\ConfigurationController@getTerms');
             Route::post('configurations/terms', 'System\ConfigurationController@storeTerms');
