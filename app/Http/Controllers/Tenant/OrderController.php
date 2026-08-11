@@ -252,6 +252,48 @@ class OrderController extends Controller
     }
 
     /**
+     * Guarda el código de guía/tracking de agencia externa (Olva, Shalom, etc.).
+     */
+    public function updateTrackingCode(Request $request)
+    {
+        $id = (int) $request->input('id');
+        $code = trim((string) $request->input('tracking_code', ''));
+
+        if ($id <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Pedido no válido',
+            ];
+        }
+
+        if (mb_strlen($code) > 120) {
+            return [
+                'success' => false,
+                'message' => 'El código de seguimiento no puede superar 120 caracteres',
+            ];
+        }
+
+        $order = Order::find($id);
+        if (! $order) {
+            return [
+                'success' => false,
+                'message' => 'Pedido no encontrado',
+            ];
+        }
+
+        $order->tracking_code = $code !== '' ? $code : null;
+        $order->save();
+
+        return [
+            'success' => true,
+            'message' => $code !== ''
+                ? 'Código de seguimiento guardado'
+                : 'Código de seguimiento eliminado',
+            'tracking_code' => $order->tracking_code,
+        ];
+    }
+
+    /**
      * Anula un pedido en cualquier punto del flujo.
      * - Si el pedido tiene nota de venta vigente: la anula (revierte stock + kardex + lotes).
      * - Si no tiene NV pero ya descontó stock: revierte el stock al almacén del establecimiento.

@@ -10,14 +10,25 @@ class EcommerceCampaignController extends Controller
 {
     public function records()
     {
-        $records = EcommerceCampaign::orderBy('id', 'desc')->get();
+        // Solo puede existir una campaña: conservar la más reciente.
+        $all = EcommerceCampaign::orderByDesc('id')->get();
+        if ($all->count() > 1) {
+            $keepId = (int) $all->first()->id;
+            EcommerceCampaign::where('id', '!=', $keepId)->delete();
+            EcommerceCampaign::forgetActiveCache();
+            $all = EcommerceCampaign::orderByDesc('id')->get();
+        }
+
+        $records = $all
+            ->map(fn (EcommerceCampaign $campaign) => $campaign->toAdminArray())
+            ->values();
 
         return compact('records');
     }
 
     public function record($id)
     {
-        $record = EcommerceCampaign::findOrFail($id);
+        $record = EcommerceCampaign::findOrFail($id)->toAdminArray();
 
         return compact('record');
     }
@@ -25,6 +36,14 @@ class EcommerceCampaignController extends Controller
     public function store(Request $request)
     {
         $id = $request->input('id');
+
+        if (! $id && EcommerceCampaign::query()->exists()) {
+            return [
+                'success' => false,
+                'message' => 'Solo puedes tener una campaña. Edita la existente.',
+            ];
+        }
+
         $campaign = EcommerceCampaign::firstOrNew(['id' => $id]);
         $campaign->fill($request->only($campaign->getFillable()));
 
@@ -35,8 +54,13 @@ class EcommerceCampaignController extends Controller
         $campaign->sp_views_count = (bool) $request->input('sp_views_count', false);
         $campaign->sp_stock_alert = (bool) $request->input('sp_stock_alert', false);
         $campaign->sp_rating = (bool) $request->input('sp_rating', false);
-        $campaign->sp_product_ids = array_values(array_map('intval', (array) $request->input('sp_product_ids', [])));
+        // Campaña global: aplica a todos los productos.
+        $campaign->sp_product_ids = [];
         $campaign->sp_stock_threshold = max(1, (int) $request->input('sp_stock_threshold', 10));
+
+        // Guardar fechas en hora local exacta.
+        $campaign->start_date = EcommerceCampaign::normalizeDateTime($request->input('start_date'));
+        $campaign->end_date = EcommerceCampaign::normalizeDateTime($request->input('end_date'));
 
         $campaign->save();
         EcommerceCampaign::forgetActiveCache();

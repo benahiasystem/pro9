@@ -52,13 +52,10 @@ class SendOrderStatusEmail implements ShouldQueue
         }
 
         $orderNumber = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
-        $trackingToken = (string) ($order->external_id ?? '');
-        $trackingUrl = $trackingToken !== ''
-            ? route('tenant_ecommerce_order_tracking', [
-                'pedido' => $orderNumber,
-                'token' => $trackingToken,
-            ])
-            : null;
+        $trackingUrl = route('tenant_ecommerce_order_tracking', [
+            'pedido' => $orderNumber,
+        ]);
+        $courierTracking = trim((string) ($order->tracking_code ?? ''));
 
         $data = [
             'order' => [
@@ -69,7 +66,7 @@ class SendOrderStatusEmail implements ShouldQueue
                 'reference_payment'=> strtoupper($order->reference_payment ?? ''),
                 'created_at'       => $order->created_at->format('Y-m-d H:i'),
                 'updated_at'       => $order->updated_at->format('Y-m-d H:i'),
-                'tracking_token'   => $trackingToken,
+                'tracking_code'    => $courierTracking !== '' ? $courierTracking : null,
             ],
             'status' => [
                 'id'    => $status ? $status->id    : $this->statusOrderId,

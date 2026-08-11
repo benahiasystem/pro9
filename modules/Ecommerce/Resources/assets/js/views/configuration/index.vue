@@ -265,10 +265,15 @@
       <el-tab-pane label="Social Proof">
         <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
           <div>
-            <h4 class="mb-0"><strong>Campañas de Social Proof</strong></h4>
-            <small class="text-muted">Cuenta regresiva, alerta de stock, estrellas y descuentos por grupo de productos.</small>
+            <h4 class="mb-0"><strong>Campaña de Social Proof</strong></h4>
+            <small class="text-muted">Una sola campaña global: afecta a todos los productos de la tienda.</small>
           </div>
-          <el-button type="primary" icon="el-icon-plus" @click.prevent="openCampaignDialog(null)">Nueva Campaña</el-button>
+          <el-button
+            v-if="campaigns.length === 0"
+            type="primary"
+            icon="el-icon-plus"
+            @click.prevent="openCampaignDialog(null)"
+          >Crear Campaña</el-button>
         </div>
 
         <el-table :data="campaigns" border stripe v-loading="campaigns_loading" style="width: 100%">
@@ -287,13 +292,9 @@
               <span v-else class="text-muted">—</span>
             </template>
           </el-table-column>
-          <el-table-column label="Productos" min-width="200">
-            <template slot-scope="scope">
-              <div v-if="scope.row.sp_product_ids && scope.row.sp_product_ids.length > 0">
-                <el-tag v-for="pid in scope.row.sp_product_ids.slice(0,3)" :key="pid" size="mini" class="mr-1 mb-1">{{ getProductName(pid) }}</el-tag>
-                <el-tag v-if="scope.row.sp_product_ids.length > 3" size="mini" type="info">+{{ scope.row.sp_product_ids.length - 3 }} más</el-tag>
-              </div>
-              <span v-else class="text-muted">Sin productos asignados</span>
+          <el-table-column label="Alcance" min-width="160">
+            <template>
+              <el-tag type="success" size="mini">Todos los productos</el-tag>
             </template>
           </el-table-column>
           <el-table-column label="Estado" width="100">
@@ -368,7 +369,16 @@
               </div>
               <div class="col-md-4 form-group" v-if="campaignForm.sp_countdown">
                 <label>Fin de la Campaña (Cronómetro)</label>
-                <el-date-picker v-model="campaignForm.end_date" type="datetime" placeholder="Fecha y hora límite" value-format="yyyy-MM-dd HH:mm:ss" class="w-100"></el-date-picker>
+                <el-date-picker
+                  v-model="campaignForm.end_date"
+                  type="datetime"
+                  placeholder="Fecha y hora límite"
+                  value-format="yyyy-MM-dd HH:mm:ss"
+                  format="dd/MM/yyyy HH:mm"
+                  default-time="23:59:00"
+                  class="w-100"
+                ></el-date-picker>
+                <small class="text-muted">Al llegar a esta hora, la campaña suma +1 día sola (misma hora) y el contador sigue.</small>
               </div>
             </template>
 
@@ -404,16 +414,11 @@
               </div>
             </template>
 
-            <div class="col-12 mt-3 mb-1"><h6 class="text-muted"><strong>Productos Asignados a esta Campaña</strong></h6></div>
-            <div class="col-12 form-group">
-              <el-select v-model="campaignForm.sp_product_ids" multiple filterable placeholder="Buscar y seleccionar productos..." style="width: 100%">
-                <el-option v-for="item in products" :key="item.id" :label="item.description" :value="item.id"></el-option>
-              </el-select>
-              <small class="text-muted">Solo los productos seleccionados aquí verán los efectos de esta campaña.</small>
-            </div>
-
             <div class="col-md-4 form-group mt-3">
               <el-switch v-model="campaignForm.status" active-text="Campaña Activa" inactive-text="Pausada"></el-switch>
+            </div>
+            <div class="col-12">
+              <small class="text-muted">Esta campaña es global: se aplica a todos los productos de la tienda.</small>
             </div>
           </div>
 
@@ -800,16 +805,31 @@ export default {
         .catch(() => { this.campaigns = []; })
         .finally(() => { this.campaigns_loading = false; });
     },
+    formatCampaignDate(value) {
+      if (!value) return null;
+      // Ya viene como yyyy-MM-dd HH:mm:ss desde la API (hora local).
+      if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+        return value;
+      }
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return null;
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    },
     openCampaignDialog(campaign) {
+      if (!campaign && this.campaigns.length > 0) {
+        this.$message.warning('Solo puedes tener una campaña. Edita la existente.');
+        return;
+      }
       if (campaign) {
         this.campaignForm = {
           id: campaign.id,
           title: campaign.title,
           discount_type: campaign.discount_type || 'percentage',
           discount_value: parseFloat(campaign.discount_value) || 0,
-          start_date: campaign.start_date || null,
-          end_date: campaign.end_date || null,
-          sp_product_ids: (campaign.sp_product_ids || []).map(id => parseInt(id, 10)),
+          start_date: this.formatCampaignDate(campaign.start_date),
+          end_date: this.formatCampaignDate(campaign.end_date),
+          sp_product_ids: [],
           status: !!campaign.status,
           sp_countdown: !!campaign.sp_countdown,
           sp_discount_price: !!campaign.sp_discount_price,

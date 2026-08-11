@@ -112,10 +112,10 @@
                                                                 <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#232e3c;padding:8px 0;text-align:right;">{{ $order['number_document'] ?? ($order['order_id'] ?? '') }}</td>
                                                             </tr>
 
-                                                            @if(!empty($order['tracking_token']))
+                                                            @if(!empty($order['tracking_code']))
                                                             <tr style="border-bottom:1px solid #f0f2f5;">
                                                                 <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6c7a8a;padding:8px 12px 8px 0;white-space:nowrap;width:1%;vertical-align:top;">Código de seguimiento</td>
-                                                                <td style="font-family:Consolas,Monaco,monospace;font-size:12px;color:#232e3c;padding:8px 0;text-align:right;word-break:break-all;">{{ $order['tracking_token'] }}</td>
+                                                                <td style="font-family:Consolas,Monaco,monospace;font-size:12px;color:#232e3c;padding:8px 0;text-align:right;word-break:break-all;">{{ $order['tracking_code'] }}</td>
                                                             </tr>
                                                             @endif
 
@@ -191,9 +191,13 @@
                                                             </tr>
                                                         </table>
                                                         <!--<![endif]-->
-                                                        @if(!empty($order['tracking_token']))
+                                                        @if(!empty($order['tracking_code']))
                                                         <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6c7a8a;text-align:center;margin:14px 0 0 0;line-height:18px;">
-                                                            Si compraste como invitado, usa tu código de seguimiento para consultar el pedido sin iniciar sesión.
+                                                            Guarda tu código de seguimiento de la agencia para rastrear el envío. Para ver el estado en la tienda usa tu N° de pedido y DNI.
+                                                        </p>
+                                                        @else
+                                                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6c7a8a;text-align:center;margin:14px 0 0 0;line-height:18px;">
+                                                            Para consultar el estado de tu pedido en la tienda usa tu N° de pedido y DNI.
                                                         </p>
                                                         @endif
                                                     </td>

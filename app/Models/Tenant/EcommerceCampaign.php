@@ -2,6 +2,7 @@
 
 namespace App\Models\Tenant;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
@@ -72,15 +73,32 @@ class EcommerceCampaign extends ModelTenant
         }
 
         try {
-            return Cache::remember('ecommerce_campaigns_active', 120, function () {
+            $campaigns = Cache::remember('ecommerce_campaigns_active', 60, function () {
+                // Solo una campaña global.
                 return static::query()
                     ->where('status', true)
                     ->orderByDesc('id')
+                    ->limit(1)
                     ->get();
             });
+
+            // Evergreen: si el fin ya pasó, sumar +1 día (misma hora) hasta quedar en el futuro.
+            foreach ($campaigns as $campaign) {
+                $campaign->rollForwardCountdownIfNeeded();
+            }
+
+            return $campaigns;
         } catch (\Throwable $e) {
             return collect();
         }
+    }
+
+    /**
+     * La única campaña activa (global, aplica a todos los productos).
+     */
+    public static function current(): ?self
+    {
+        return static::activeCampaigns()->first();
     }
 
     public static function forgetActiveCache(): void
@@ -89,40 +107,139 @@ class EcommerceCampaign extends ModelTenant
     }
 
     /**
-     * Primera campaña activa que incluye el producto.
+     * Normaliza fecha/hora del date-picker a string local (sin shift UTC).
      */
-    public static function forProduct(int $itemId): ?self
+    public static function normalizeDateTime($value): ?string
     {
-        $itemId = (int) $itemId;
-        if ($itemId <= 0) {
+        if ($value === null || $value === '') {
             return null;
         }
 
-        foreach (static::activeCampaigns() as $campaign) {
-            $ids = collect($campaign->sp_product_ids ?? [])
-                ->map(fn ($id) => (int) $id)
-                ->all();
-
-            if (in_array($itemId, $ids, true)) {
-                return $campaign;
-            }
+        if ($value instanceof Carbon) {
+            return $value->timezone(config('app.timezone'))->format('Y-m-d H:i:s');
         }
 
-        return null;
+        $value = trim((string) $value);
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $value)) {
+            return $value;
+        }
+
+        return Carbon::parse($value)
+            ->timezone(config('app.timezone'))
+            ->format('Y-m-d H:i:s');
+    }
+
+    /**
+     * Payload admin: fechas en formato local para el date-picker.
+     */
+    public function toAdminArray(): array
+    {
+        $this->rollForwardCountdownIfNeeded();
+
+        $data = $this->toArray();
+        $data['start_date'] = $this->start_date
+            ? $this->start_date->timezone(config('app.timezone'))->format('Y-m-d H:i:s')
+            : null;
+        $data['end_date'] = $this->end_date
+            ? $this->end_date->timezone(config('app.timezone'))->format('Y-m-d H:i:s')
+            : null;
+
+        return $data;
+    }
+
+    /**
+     * Cuenta regresiva evergreen: al vencer la hora, suma un día más (misma hora)
+     * y así sucesivamente. Persiste en BD para todos los visitantes.
+     */
+    public function rollForwardCountdownIfNeeded(?Carbon $at = null): bool
+    {
+        if (! $this->sp_countdown || ! $this->end_date) {
+            return false;
+        }
+
+        $at = $at ?: now();
+        if ($this->end_date->gt($at)) {
+            return false;
+        }
+
+        $end = $this->end_date->copy();
+        // Por si la pestaña/servidor estuvo offline varios días.
+        while ($end->lte($at)) {
+            $end->addDay();
+        }
+
+        $this->end_date = $end;
+        $this->save();
+        static::forgetActiveCache();
+
+        return true;
+    }
+
+    /**
+     * Vigencia por calendario (tras aplicar roll evergreen si corresponde).
+     */
+    public function isWithinSchedule(?Carbon $at = null): bool
+    {
+        $at = $at ?: now();
+        $this->rollForwardCountdownIfNeeded($at);
+
+        if ($this->start_date && $this->start_date->gt($at)) {
+            return false;
+        }
+
+        // Con countdown evergreen el end_date ya se adelantó; sin countdown sí corta.
+        if (! $this->sp_countdown && $this->end_date && $this->end_date->lte($at)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function hasActiveDiscount(?Carbon $at = null): bool
+    {
+        return $this->sp_discount_price && $this->isWithinSchedule($at);
+    }
+
+    public function hasActiveCountdown(?Carbon $at = null): bool
+    {
+        $at = $at ?: now();
+        $this->rollForwardCountdownIfNeeded($at);
+
+        return $this->sp_countdown
+            && $this->end_date
+            && $this->end_date->gt($at)
+            && (! $this->start_date || $this->start_date->lte($at));
+    }
+
+    /**
+     * Unix timestamp del fin (estable para JS). Null si no hay countdown vigente.
+     */
+    public function countdownEndsAtTimestamp(?Carbon $at = null): ?int
+    {
+        if (! $this->hasActiveCountdown($at)) {
+            return null;
+        }
+
+        return $this->end_date->getTimestamp();
+    }
+
+    /**
+     * Campaña global activa (aplica a cualquier producto).
+     */
+    public static function forProduct(int $itemId): ?self
+    {
+        return static::current();
     }
 
     public function appliesToProduct(int $itemId): bool
     {
-        $ids = collect($this->sp_product_ids ?? [])
-            ->map(fn ($id) => (int) $id)
-            ->all();
-
-        return in_array((int) $itemId, $ids, true);
+        return true;
     }
 
     public function discountedPrice(float $basePrice): float
     {
-        if (! $this->sp_discount_price) {
+        if (! $this->hasActiveDiscount()) {
             return $basePrice;
         }
 

@@ -988,10 +988,8 @@ class EcommerceController extends Controller
                 $document->items = $request->items;
                 $document->id = $order->id;
                 $document->order_number = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
-                $document->tracking_token = (string) $order->external_id;
                 $document->tracking_url = route('tenant_ecommerce_order_tracking', [
                     'pedido' => $document->order_number,
-                    'token' => $order->external_id,
                 ]);
 
                 if (!empty($contact['email'])) {
@@ -2451,7 +2449,6 @@ class EcommerceController extends Controller
     {
         $categories = Category::has('items')->get();
         $initialPedido = trim((string) $request->query('pedido', ''));
-        $initialToken = trim((string) $request->query('token', ''));
 
         $ecommerceConfiguration = ConfigurationEcommerce::first();
         $configurationModel = Configuration::first();
@@ -2464,7 +2461,6 @@ class EcommerceController extends Controller
         return view('ecommerce::cart.order_tracking', compact(
             'categories',
             'initialPedido',
-            'initialToken',
             'showWhatsapp',
             'whatsappPhone',
             'storeUrl'
@@ -2472,11 +2468,7 @@ class EcommerceController extends Controller
     }
 
     /**
-     * Lookup de seguimiento: token (external_id) o N° pedido + email/DNI.
-     * No basta con adivinar o cambiar el N° en la URL.
-     * Si hay sesión ecommerce: solo pedidos cuyo correo coincide con la cuenta
-     * (no se pueden ver pedidos de otros clientes ni de invitados).
-     * Sin sesión (invitado): basta el token, o N° pedido + email/DNI.
+     * Lookup de seguimiento: N° de pedido + DNI/documento del comprador.
      */
     public function orderTrackingLookup(Request $request)
     {
@@ -2485,51 +2477,31 @@ class EcommerceController extends Controller
             'message' => 'No encontramos ese pedido o los datos no coinciden.',
         ];
 
-        $token = trim((string) $request->query('token', ''));
         $raw = trim((string) $request->query('pedido', ''));
         $digits = preg_replace('/\D+/', '', $raw);
         $orderId = (int) $digits;
-        $email = strtolower(trim((string) $request->query('email', '')));
         $document = preg_replace('/\D+/', '', (string) $request->query('documento', $request->query('dni', '')));
 
-        $order = null;
-
-        if ($token !== '') {
-            $order = Order::with(['shipping_status_order', 'payment_status_order'])
-                ->where('external_id', $token)
-                ->first();
-
-            if (! $order) {
-                return response()->json($denied);
-            }
-
-            // Si además envían N°, debe coincidir con el token (evita links armados a mano).
-            if ($orderId > 0 && (int) $order->id !== $orderId) {
-                return response()->json($denied);
-            }
-        } else {
-            if ($orderId <= 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ingresa un número de pedido válido.',
-                ]);
-            }
-
-            if ($email === '' && $document === '') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ingresa tu correo o DNI para verificar el pedido.',
-                ]);
-            }
-
-            $order = Order::with(['shipping_status_order', 'payment_status_order'])->find($orderId);
-            if (! $order || ! $this->orderTrackingIdentityMatches($order, $email, $document)) {
-                return response()->json($denied);
-            }
+        if ($orderId <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ingresa un número de pedido válido.',
+            ]);
         }
 
-        // Sesión ecommerce activa: solo pedidos de su propia cuenta (correo).
-        // Incluye bloquear pedidos de invitado aunque el token sea válido.
+        if ($document === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ingresa tu DNI / documento para verificar el pedido.',
+            ]);
+        }
+
+        $order = Order::with(['shipping_status_order', 'payment_status_order'])->find($orderId);
+        if (! $order || ! $this->orderTrackingDocumentMatches($order, $document)) {
+            return response()->json($denied);
+        }
+
+        // Sesión ecommerce: solo pedidos de la misma cuenta (correo).
         $ecommerceUser = auth('ecommerce')->user();
         if ($ecommerceUser && ! $this->orderTrackingBelongsToUser($order, $ecommerceUser)) {
             return response()->json($denied);
@@ -2774,7 +2746,6 @@ class EcommerceController extends Controller
             'order' => [
                 'id' => (int) $order->id,
                 'number' => '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
-                'token' => (string) $order->external_id,
                 'total' => round((float) $order->total, 2),
                 'payment_label' => $paymentLabel,
                 'delivery_label' => $deliveryLabel,
@@ -2786,6 +2757,9 @@ class EcommerceController extends Controller
                 'timeline_status_order_id' => $timelineStatusId,
                 'shipping_status_description' => $badgeDescription,
                 'shipping_status_color' => $badgeColor,
+                'tracking_code' => $order->tracking_code
+                    ? (string) $order->tracking_code
+                    : null,
                 'created_at' => optional($order->created_at)->format('d/m/Y H:i'),
             ],
             'shipping_statuses' => $shippingStatuses,
@@ -2928,32 +2902,43 @@ class EcommerceController extends Controller
     }
 
     /**
-     * Valida email o DNI del comprador del pedido (seguimiento público).
+     * Valida DNI/documento del comprador del pedido (seguimiento público).
      */
-    private function orderTrackingIdentityMatches(Order $order, string $email, string $document): bool
+    private function orderTrackingDocumentMatches(Order $order, string $document): bool
     {
-        $customer = $order->customer;
-        $orderEmail = strtolower(trim((string) data_get($customer, 'correo_electronico', '')));
-        if ($orderEmail === '') {
-            $orderEmail = strtolower(trim((string) data_get($customer, 'email', '')));
+        if ($document === '') {
+            return false;
         }
+
+        $customer = $order->customer;
         $orderDoc = preg_replace(
             '/\D+/',
             '',
             (string) (data_get($customer, 'numero_documento')
                 ?? data_get($customer, 'number')
+                ?? data_get($customer, 'identity_document_number')
                 ?? '')
         );
 
-        if ($email !== '' && $orderEmail !== '' && hash_equals($orderEmail, $email)) {
-            return true;
+        return $orderDoc !== '' && hash_equals($orderDoc, $document);
+    }
+
+    /**
+     * @deprecated Usar orderTrackingDocumentMatches (pedido + DNI).
+     */
+    private function orderTrackingIdentityMatches(Order $order, string $email, string $document): bool
+    {
+        if ($document !== '') {
+            return $this->orderTrackingDocumentMatches($order, $document);
         }
 
-        if ($document !== '' && $orderDoc !== '' && hash_equals($orderDoc, $document)) {
-            return true;
+        $customer = $order->customer;
+        $orderEmail = strtolower(trim((string) data_get($customer, 'correo_electronico', '')));
+        if ($orderEmail === '') {
+            $orderEmail = strtolower(trim((string) data_get($customer, 'email', '')));
         }
 
-        return false;
+        return $email !== '' && $orderEmail !== '' && hash_equals($orderEmail, $email);
     }
 
     /**

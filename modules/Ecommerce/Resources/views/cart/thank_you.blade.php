@@ -68,18 +68,18 @@
             <div class="ty-order"><span>N° de pedido:</span> <b>#{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</b></div>
 
             <div class="ty-token-box">
-                <span class="ty-token-label">Código de seguimiento</span>
+                <span class="ty-token-label">Número de pedido</span>
                 <div class="ty-token-row">
                     <input
                         id="ty-token-input"
                         type="text"
                         readonly
-                        value="{{ $order->external_id }}"
-                        aria-label="Código de seguimiento"
+                        value="{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}"
+                        aria-label="Número de pedido"
                     >
                     <button type="button" class="ty-token-copy" id="ty-token-copy">Copiar</button>
                 </div>
-                <p class="ty-token-hint">Guárdalo o cópialo: con este código puedes consultar el estado de tu pedido más rápido en Seguimiento.</p>
+                <p class="ty-token-hint">Guárdalo: para consultar el estado en Seguimiento necesitas este N° de pedido y tu DNI.</p>
             </div>
 
             <div class="ty-info">
@@ -93,7 +93,7 @@
                 <span>@if($isPickup)Acércate a la sucursal elegida para recoger tu pedido. Te avisaremos cuando esté listo.@else Coordinaremos la entrega contigo. Te contactaremos por el teléfono registrado para concretar tu pedido.@endif</span>
             </div>
             <div class="ty-btns">
-                <a href="{{ route('tenant_ecommerce_order_tracking', ['pedido' => str_pad($order->id, 6, '0', STR_PAD_LEFT), 'token' => $order->external_id]) }}" class="pay-btn second-btn">Ver estado del pedido</a>
+                <a href="{{ route('tenant_ecommerce_order_tracking', ['pedido' => str_pad($order->id, 6, '0', STR_PAD_LEFT)]) }}" class="pay-btn second-btn">Ver estado del pedido</a>
                 <a href="{{ route('tenant_order_list') }}" class="pay-btn second-btn">Ver mis pedidos</a>
                 <a href="{{ route('tenant.ecommerce.index') }}" class="pay-btn">Seguir comprando</a>
             </div>

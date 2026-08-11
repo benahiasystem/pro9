@@ -96,13 +96,9 @@
                     $stockThreshold = 10;
 
                     if (isset($campaigns) && count($campaigns) > 0) {
-                        foreach ($campaigns as $camp) {
-                            $productIds = array_map('intval', is_array($camp->sp_product_ids) ? $camp->sp_product_ids : []);
-                            if (in_array((int) $record->id, $productIds, true)) {
-                                $activeCampaign = $camp;
-                                break;
-                            }
-                        }
+                        $activeCampaign = $campaigns instanceof \Illuminate\Support\Collection
+                            ? $campaigns->first()
+                            : (is_array($campaigns) ? ($campaigns[0] ?? null) : $campaigns);
                     }
 
                     if ($activeCampaign) {
@@ -110,7 +106,10 @@
                             ? $activeCampaign->stockThreshold()
                             : (int) ($activeCampaign->sp_stock_threshold ?: 10);
 
-                        if ($activeCampaign->sp_discount_price) {
+                        if (method_exists($activeCampaign, 'hasActiveDiscount')
+                            ? $activeCampaign->hasActiveDiscount()
+                            : ($activeCampaign->sp_discount_price && (! $activeCampaign->end_date || $activeCampaign->end_date > now()))
+                        ) {
                             $hasActiveOffer = true;
                             if ($activeCampaign->discount_type === 'percentage') {
                                 $activeOfferPrice = $record->sale_unit_price - ($record->sale_unit_price * ((float) $activeCampaign->discount_value / 100));
@@ -122,7 +121,11 @@
                             }
                         }
 
-                        if ($activeCampaign->sp_countdown && $activeCampaign->end_date && $activeCampaign->end_date > now()) {
+                        // Evergreen: si venció, rollForwardCountdownIfNeeded ya sumó +1 día en el modelo.
+                        if (method_exists($activeCampaign, 'hasActiveCountdown')
+                            ? $activeCampaign->hasActiveCountdown()
+                            : ($activeCampaign->sp_countdown && $activeCampaign->end_date && $activeCampaign->end_date > now())
+                        ) {
                             $offerExpiresAt = $activeCampaign->end_date;
                         }
                     }
@@ -300,19 +303,19 @@
 @if($offerExpiresAt)
 <script>
 (function () {
-    var targetDate = new Date(@json(\Carbon\Carbon::parse($offerExpiresAt)->toIso8601String())).getTime();
+    var targetDate = {{ (int) \Carbon\Carbon::parse($offerExpiresAt)->getTimestamp() }} * 1000;
+    var dayMs = 24 * 60 * 60 * 1000;
     var root = document.getElementById('sp-countdown-qv-{{ $record->id }}');
     if (!root) return;
     var countdownEl = root.querySelector('.time-left');
     var timer = setInterval(function () {
-        var difference = targetDate - Date.now();
-        if (difference <= 0) {
-            clearInterval(timer);
-            root.style.display = 'none';
-            return;
+        // Evergreen: al vencer, +1 día a la misma hora y el contador sigue.
+        while (targetDate <= Date.now()) {
+            targetDate += dayMs;
         }
-        var days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        var hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        var difference = targetDate - Date.now();
+        var days = Math.floor(difference / dayMs);
+        var hours = Math.floor((difference % dayMs) / (1000 * 60 * 60));
         var minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
         var seconds = Math.floor((difference % (1000 * 60)) / 1000);
         if (countdownEl) {

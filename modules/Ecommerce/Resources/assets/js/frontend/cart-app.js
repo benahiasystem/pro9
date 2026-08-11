@@ -3110,10 +3110,7 @@ var app_cart = new Vue({
                 const padded = String(this.successOrder.id).padStart(6, '0');
                 const base = window.__routes?.order_tracking || '/ecommerce/seguimiento';
                 const sep = base.indexOf('?') >= 0 ? '&' : '?';
-                const token = this.successOrder.external_id
-                    ? `&token=${encodeURIComponent(this.successOrder.external_id)}`
-                    : '';
-                targetUrl = `${base}${sep}pedido=${encodeURIComponent(padded)}${token}`;
+                targetUrl = `${base}${sep}pedido=${encodeURIComponent(padded)}`;
             } else {
                 targetUrl = this.thankYouUrl
                     || (this.successOrder && this.successOrder.external_id

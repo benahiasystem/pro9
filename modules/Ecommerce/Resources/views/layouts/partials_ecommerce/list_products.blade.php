@@ -14,15 +14,15 @@
         $hasActiveOffer = false;
         $activeOfferPrice = (float) $item->sale_unit_price;
         if (isset($campaigns) && count($campaigns) > 0) {
-            foreach ($campaigns as $camp) {
-                $ids = array_map('intval', is_array($camp->sp_product_ids) ? $camp->sp_product_ids : []);
-                if (in_array((int) $item->id, $ids, true)) {
-                    $activeCampaign = $camp;
-                    break;
-                }
-            }
+            $activeCampaign = $campaigns instanceof \Illuminate\Support\Collection
+                ? $campaigns->first()
+                : (is_array($campaigns) ? ($campaigns[0] ?? null) : $campaigns);
         }
-        if ($activeCampaign && $activeCampaign->sp_discount_price) {
+        if ($activeCampaign && (
+            method_exists($activeCampaign, 'hasActiveDiscount')
+                ? $activeCampaign->hasActiveDiscount()
+                : ($activeCampaign->sp_discount_price && (! $activeCampaign->end_date || $activeCampaign->end_date > now()))
+        )) {
             $hasActiveOffer = true;
             if ($activeCampaign->discount_type === 'percentage') {
                 $activeOfferPrice = $item->sale_unit_price - ($item->sale_unit_price * ((float) $activeCampaign->discount_value / 100));

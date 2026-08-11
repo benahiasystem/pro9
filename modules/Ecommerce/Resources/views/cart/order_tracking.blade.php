@@ -56,30 +56,6 @@
         font-size: .82rem;
         color: #667085;
     }
-    .ot-mode-tabs {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-        margin-bottom: 14px;
-    }
-    .ot-mode-tab {
-        border: 1px solid #e5e7eb;
-        background: #fff;
-        color: #344054;
-        border-radius: 10px;
-        padding: 10px 12px;
-        font-size: .86rem;
-        font-weight: 700;
-        cursor: pointer;
-    }
-    .ot-mode-tab.is-active {
-        border-color: var(--primary-color, #ff7a00);
-        background: rgba(255, 122, 0, .08);
-        color: var(--primary-color, #ff7a00);
-    }
-    .ot-search-panel[hidden] {
-        display: none !important;
-    }
     .ot-search button {
         border: 0;
         border-radius: 10px;
@@ -133,6 +109,33 @@
         font-weight: 700;
         color: #fff;
         background: #f59e0b;
+    }
+    .ot-courier-box {
+        display: none;
+        margin: 0 0 18px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+    .ot-courier-box.is-visible {
+        display: block;
+    }
+    .ot-courier-label {
+        display: block;
+        font-size: .75rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        margin-bottom: 4px;
+    }
+    .ot-courier-code {
+        font-family: Consolas, Monaco, monospace;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f2137;
+        word-break: break-all;
     }
     .ot-section-title {
         margin: 0 0 14px;
@@ -360,30 +363,9 @@
 <div class="ot-page">
     <div class="ot-card">
         <h1 class="ot-title">Estado de tu pedido</h1>
-        <p class="ot-sub">Elige cómo buscar: con tu código de seguimiento o con el N° de pedido.</p>
+        <p class="ot-sub">Consulta con tu número de pedido y DNI.</p>
 
-        <div class="ot-mode-tabs" role="tablist">
-            <button type="button" class="ot-mode-tab is-active" data-ot-mode="token" id="ot-tab-token">Código de seguimiento</button>
-            <button type="button" class="ot-mode-tab" data-ot-mode="datos" id="ot-tab-datos">N° + correo o DNI</button>
-        </div>
-
-        <form class="ot-search ot-search-panel" id="ot-search-token-form" autocomplete="off" data-ot-panel="token">
-            <div class="ot-search-row">
-                <input
-                    id="ot-token-input"
-                    type="text"
-                    name="token"
-                    placeholder="Pega tu código de seguimiento"
-                    value="{{ $initialToken ?? '' }}"
-                    autocomplete="off"
-                    spellcheck="false"
-                >
-                <button type="submit" id="ot-search-token-btn">Buscar</button>
-            </div>
-            <p class="ot-search-hint">Es el código que aparece al finalizar tu compra y también te llega por correo (también está en el link de gracias).</p>
-        </form>
-
-        <form class="ot-search ot-search-panel" id="ot-search-datos-form" autocomplete="off" data-ot-panel="datos" hidden>
+        <form class="ot-search" id="ot-search-form" autocomplete="off">
             <div class="ot-search-row">
                 <input
                     id="ot-pedido-input"
@@ -393,16 +375,6 @@
                     value="{{ $initialPedido }}"
                     inputmode="numeric"
                 >
-                <button type="submit" id="ot-search-datos-btn">Buscar</button>
-            </div>
-            <div class="ot-search-row">
-                <input
-                    id="ot-email-input"
-                    type="email"
-                    name="email"
-                    placeholder="Correo del comprador"
-                    autocomplete="email"
-                >
                 <input
                     id="ot-documento-input"
                     type="text"
@@ -411,8 +383,9 @@
                     inputmode="numeric"
                     autocomplete="off"
                 >
+                <button type="submit" id="ot-search-btn">Buscar</button>
             </div>
-            <p class="ot-search-hint">Basta con correo o DNI (uno de los dos), además del N° de pedido.</p>
+            <p class="ot-search-hint">Usa el mismo documento con el que realizaste la compra.</p>
         </form>
 
         <div id="ot-feedback" class="ot-msg" style="display:none;"></div>
@@ -421,6 +394,11 @@
             <div class="ot-head">
                 <div class="ot-number" id="ot-order-number"></div>
                 <span class="ot-badge" id="ot-status-badge"></span>
+            </div>
+
+            <div class="ot-courier-box" id="ot-courier-box">
+                <span class="ot-courier-label">Código de seguimiento (agencia)</span>
+                <div class="ot-courier-code" id="ot-courier-code"></div>
             </div>
 
             <h2 class="ot-section-title">Seguimiento del pedido</h2>
@@ -469,36 +447,17 @@
     const lookupUrl = @json(route('tenant_ecommerce_order_tracking_lookup'));
     const whatsappPhone = @json($whatsappPhone ?? '');
     const showWhatsapp = @json(!empty($showWhatsapp) && !empty($whatsappPhone));
-    const tokenForm = document.getElementById('ot-search-token-form');
-    const datosForm = document.getElementById('ot-search-datos-form');
+    const form = document.getElementById('ot-search-form');
     const input = document.getElementById('ot-pedido-input');
-    const tokenInput = document.getElementById('ot-token-input');
-    const emailInput = document.getElementById('ot-email-input');
     const documentoInput = document.getElementById('ot-documento-input');
-    const tokenBtn = document.getElementById('ot-search-token-btn');
-    const datosBtn = document.getElementById('ot-search-datos-btn');
+    const searchBtn = document.getElementById('ot-search-btn');
     const feedback = document.getElementById('ot-feedback');
     const result = document.getElementById('ot-result');
     const timeline = document.getElementById('ot-timeline');
     const timelineEmpty = document.getElementById('ot-timeline-empty');
     const whatsappBtn = document.getElementById('ot-btn-whatsapp');
-    const initialToken = String(@json($initialToken ?? '') || '').trim();
-    const tabs = document.querySelectorAll('.ot-mode-tab');
-
-    function setMode(mode) {
-        const isToken = mode === 'token';
-        tabs.forEach(function (tab) {
-            tab.classList.toggle('is-active', tab.getAttribute('data-ot-mode') === mode);
-        });
-        if (tokenForm) tokenForm.hidden = !isToken;
-        if (datosForm) datosForm.hidden = isToken;
-    }
-
-    tabs.forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            setMode(tab.getAttribute('data-ot-mode') || 'token');
-        });
-    });
+    const courierBox = document.getElementById('ot-courier-box');
+    const courierCode = document.getElementById('ot-courier-code');
 
     function money(amount) {
         const value = Number(amount) || 0;
@@ -519,10 +478,10 @@
         feedback.textContent = '';
     }
 
-    function setBusy(btn, busy, idleLabel) {
-        if (!btn) return;
-        btn.disabled = !!busy;
-        btn.textContent = busy ? 'Buscando…' : idleLabel;
+    function setBusy(busy) {
+        if (!searchBtn) return;
+        searchBtn.disabled = !!busy;
+        searchBtn.textContent = busy ? 'Buscando…' : 'Buscar';
     }
 
     function renderTimeline(statuses, currentId) {
@@ -599,6 +558,14 @@
         badge.textContent = order.shipping_status_description || 'Pendiente';
         badge.style.background = order.shipping_status_color || '#f59e0b';
 
+        if (order.tracking_code) {
+            courierCode.textContent = order.tracking_code;
+            courierBox.classList.add('is-visible');
+        } else {
+            courierCode.textContent = '';
+            courierBox.classList.remove('is-visible');
+        }
+
         renderTimeline(
             statuses,
             order.timeline_status_order_id || order.shipping_status_order_id
@@ -646,37 +613,29 @@
         result.style.display = 'block';
     }
 
-    async function searchPedido(options) {
-        options = options || {};
-        const value = String(options.pedido != null ? options.pedido : '').trim();
-        const token = String(options.token != null ? options.token : '').trim();
-        const email = String(options.email != null ? options.email : '').trim();
-        const documento = String(options.documento != null ? options.documento : '').trim();
-        const activeBtn = options.mode === 'token' ? tokenBtn : datosBtn;
+    async function searchPedido() {
+        const value = String(input.value || '').trim();
+        const documento = String(documentoInput.value || '').trim();
 
-        if (!token && !value) {
+        if (!value) {
             result.style.display = 'none';
-            showFeedback(options.mode === 'token'
-                ? 'Pega tu código de seguimiento.'
-                : 'Ingresa un número de pedido.', true);
+            showFeedback('Ingresa un número de pedido.', true);
             return;
         }
 
-        if (!token && !email && !documento) {
+        if (!documento) {
             result.style.display = 'none';
-            showFeedback('Ingresa tu correo o DNI para verificar el pedido.', true);
+            showFeedback('Ingresa tu DNI / documento para verificar el pedido.', true);
             return;
         }
 
         hideFeedback();
-        setBusy(activeBtn, true, 'Buscar');
+        setBusy(true);
 
         try {
             const params = new URLSearchParams();
-            if (value) params.set('pedido', value);
-            if (token) params.set('token', token);
-            if (email) params.set('email', email);
-            if (documento) params.set('documento', documento);
+            params.set('pedido', value);
+            params.set('documento', documento);
 
             const url = lookupUrl + (lookupUrl.indexOf('?') >= 0 ? '&' : '?') + params.toString();
             const response = await fetch(url, {
@@ -693,67 +652,24 @@
             renderOrder(data);
 
             const padded = String(data.order.id).padStart(6, '0');
-            const nextToken = String(data.order.token || token || '').trim();
-            if (tokenInput && nextToken) {
-                tokenInput.value = nextToken;
-            }
-            if (input) {
-                input.value = padded;
-            }
+            input.value = padded;
             const nextUrl = new URL(window.location.href);
             nextUrl.searchParams.set('pedido', padded);
-            if (nextToken) {
-                nextUrl.searchParams.set('token', nextToken);
-            } else {
-                nextUrl.searchParams.delete('token');
-            }
+            nextUrl.searchParams.delete('token');
             window.history.replaceState({}, '', nextUrl.toString());
         } catch (err) {
             result.style.display = 'none';
             showFeedback('No se pudo consultar el pedido. Intenta nuevamente.', true);
         } finally {
-            setBusy(activeBtn, false, 'Buscar');
+            setBusy(false);
         }
     }
 
-    if (tokenForm) {
-        tokenForm.addEventListener('submit', function (e) {
+    if (form) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
-            searchPedido({
-                mode: 'token',
-                token: tokenInput.value,
-                pedido: '',
-                email: '',
-                documento: '',
-            });
+            searchPedido();
         });
-    }
-
-    if (datosForm) {
-        datosForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            searchPedido({
-                mode: 'datos',
-                pedido: input.value,
-                token: '',
-                email: emailInput.value,
-                documento: documentoInput.value,
-            });
-        });
-    }
-
-    // Autoload solo con token (link thank you). Con solo ?pedido= esperar verificación.
-    if (initialToken) {
-        setMode('token');
-        searchPedido({
-            mode: 'token',
-            pedido: input ? input.value : '',
-            token: initialToken,
-        });
-    } else if (input && String(input.value || '').trim()) {
-        setMode('datos');
-    } else {
-        setMode('token');
     }
 })();
 </script>

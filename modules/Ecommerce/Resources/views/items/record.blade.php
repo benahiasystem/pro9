@@ -96,14 +96,9 @@
                     $stockThreshold = 10;
 
                     if (isset($campaigns) && count($campaigns) > 0) {
-                        foreach ($campaigns as $camp) {
-                            $productIds = is_array($camp->sp_product_ids) ? $camp->sp_product_ids : [];
-                            $productIds = array_map('intval', $productIds);
-                            if (in_array((int) $record->id, $productIds, true)) {
-                                $activeCampaign = $camp;
-                                break;
-                            }
-                        }
+                        $activeCampaign = $campaigns instanceof \Illuminate\Support\Collection
+                            ? $campaigns->first()
+                            : (is_array($campaigns) ? ($campaigns[0] ?? null) : $campaigns);
                     }
 
                     if ($activeCampaign) {
@@ -111,7 +106,10 @@
                             ? $activeCampaign->stockThreshold()
                             : (int) ($activeCampaign->sp_stock_threshold ?: 10);
 
-                        if ($activeCampaign->sp_discount_price) {
+                        if (method_exists($activeCampaign, 'hasActiveDiscount')
+                            ? $activeCampaign->hasActiveDiscount()
+                            : ($activeCampaign->sp_discount_price && (! $activeCampaign->end_date || $activeCampaign->end_date > now()))
+                        ) {
                             $hasActiveOffer = true;
                             if ($activeCampaign->discount_type === 'percentage') {
                                 $activeOfferPrice = $record->sale_unit_price - ($record->sale_unit_price * ((float) $activeCampaign->discount_value / 100));
@@ -123,8 +121,11 @@
                             }
                         }
 
-                        if ($activeCampaign->sp_countdown && $activeCampaign->end_date && $activeCampaign->end_date > now()) {
-                            $hasActiveOffer = true;
+                        // Evergreen: si venció, rollForwardCountdownIfNeeded ya sumó +1 día en el modelo.
+                        if (method_exists($activeCampaign, 'hasActiveCountdown')
+                            ? $activeCampaign->hasActiveCountdown()
+                            : ($activeCampaign->sp_countdown && $activeCampaign->end_date && $activeCampaign->end_date > now())
+                        ) {
                             $offerExpiresAt = $activeCampaign->end_date;
                         }
                     }
@@ -420,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 stockThreshold: {{ (int) $stockThreshold }},
                 hasActiveOffer: {{ $hasActiveOffer ? 'true' : 'false' }},
                 activeOfferPrice: {{ number_format((float) $activeOfferPrice, 2, '.', '') }},
-                offerExpiresAt: @json($offerExpiresAt ? \Carbon\Carbon::parse($offerExpiresAt)->toIso8601String() : null),
+                offerExpiresAt: {{ $offerExpiresAt ? (int) \Carbon\Carbon::parse($offerExpiresAt)->getTimestamp() : 'null' }},
                 socialProofConfig: {
                     sp_countdown: {{ ($activeCampaign && $activeCampaign->sp_countdown) ? 'true' : 'false' }},
                     sp_discount_price: {{ ($activeCampaign && $activeCampaign->sp_discount_price) ? 'true' : 'false' }},
@@ -465,20 +466,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!this.offerExpiresAt) {
                         return;
                     }
+                    let endMs = Number(this.offerExpiresAt) * 1000;
+                    const dayMs = 24 * 60 * 60 * 1000;
                     const tick = () => {
-                        const end = new Date(this.offerExpiresAt).getTime();
-                        const now = Date.now();
-                        const distance = end - now;
-                        if (distance <= 0) {
-                            this.sp_countdown_ended = true;
-                            this.sp_countdown_text = 'Oferta finalizada';
-                            if (this._countdownTimer) clearInterval(this._countdownTimer);
-                            return;
+                        // Evergreen: si ya pasó la hora, suma +1 día (misma hora) y sigue.
+                        while (endMs <= Date.now()) {
+                            endMs += dayMs;
                         }
-                        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const distance = endMs - Date.now();
+                        const days = Math.floor(distance / dayMs);
+                        const hours = Math.floor((distance % dayMs) / (1000 * 60 * 60));
                         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                        this.sp_countdown_ended = false;
                         this.sp_countdown_text = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
                     };
                     tick();

@@ -183,12 +183,12 @@
                         </td>
                         <td @click.stop>
                             <span
-                                v-if="row.external_id"
+                                v-if="row.tracking_code"
                                 class="tracking-code"
                                 :class="{ 'is-copied': copiedTrackingId === row.id }"
                                 :title="copiedTrackingId === row.id ? '¡Copiado!' : 'Clic para copiar'"
                                 @click="copyTrackingCode(row)">
-                                <span class="tracking-code-text">@{{ copiedTrackingId === row.id ? '¡Copiado!' : row.external_id }}</span>
+                                <span class="tracking-code-text">@{{ copiedTrackingId === row.id ? '¡Copiado!' : row.tracking_code }}</span>
                             </span>
                             <span v-else>-</span>
                         </td>
@@ -315,7 +315,7 @@
                 this.showOrderModal = true;
             },
             copyTrackingCode(row) {
-                const value = String((row && row.external_id) || '').trim();
+                const value = String((row && row.tracking_code) || '').trim();
                 if (!value) return;
 
                 const markCopied = () => {

@@ -215,33 +215,51 @@
                             </div>
                         </td>
                         <td>
-                            <div
-                                class="status-select-wrap"
-                                :class="{ 'has-color': statusColor(row.shipping_status_order_id) }"
-                                :style="selectVars(row.shipping_status_order_id)"
-                            >
-                                <span
-                                    v-if="statusColor(row.shipping_status_order_id)"
-                                    class="status-dot status-dot--inside"
-                                    :style="{ background: statusColor(row.shipping_status_order_id) }"
-                                ></span>
-                                <el-select
-                                    v-model="row.shipping_status_order_id"
-                                    placeholder="Estado de envío"
-                                    :value="row.shipping_status_order_id"
-                                    :disabled="isVoided(row)"
-                                    @change="updateStatus(row, 'shipping_status_order_id')"
+                            <div class="shipping-tracking-cell">
+                                <div
+                                    class="status-select-wrap"
+                                    :class="{ 'has-color': statusColor(row.shipping_status_order_id) }"
+                                    :style="selectVars(row.shipping_status_order_id)"
                                 >
-                                    <el-option
-                                        v-for="item in shippingOptions"
-                                        :key="item.id"
-                                        :label="item.description"
-                                        :value="item.id"
+                                    <span
+                                        v-if="statusColor(row.shipping_status_order_id)"
+                                        class="status-dot status-dot--inside"
+                                        :style="{ background: statusColor(row.shipping_status_order_id) }"
+                                    ></span>
+                                    <el-select
+                                        v-model="row.shipping_status_order_id"
+                                        placeholder="Estado de envío"
+                                        :value="row.shipping_status_order_id"
+                                        :disabled="isVoided(row)"
+                                        @change="updateStatus(row, 'shipping_status_order_id')"
                                     >
-                                        <span class="status-dot" :style="{ background: item.color || '#909399' }"></span>
-                                        <span>{{ item.description }}</span>
-                                    </el-option>
-                                </el-select>
+                                        <el-option
+                                            v-for="item in shippingOptions"
+                                            :key="item.id"
+                                            :label="item.description"
+                                            :value="item.id"
+                                        >
+                                            <span class="status-dot" :style="{ background: item.color || '#909399' }"></span>
+                                            <span>{{ item.description }}</span>
+                                        </el-option>
+                                    </el-select>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="tracking-code-trigger"
+                                    :class="{
+                                        'has-code': !!row.tracking_code,
+                                        'is-disabled': isVoided(row),
+                                    }"
+                                    :disabled="isVoided(row)"
+                                    :title="row.tracking_code || 'Agregar código de seguimiento'"
+                                    @click.prevent="openTrackingModal(row)"
+                                >
+                                    <i class="el-icon-truck tracking-code-trigger__icon"></i>
+                                    <span class="tracking-code-trigger__text">
+                                        {{ row.tracking_code || 'Código de seguimiento' }}
+                                    </span>
+                                </button>
                             </div>
                         </td>
                         <td>
@@ -390,6 +408,47 @@
             </div>
         </el-dialog>
 
+        <el-dialog
+            title="Código de Seguimiento de Courier"
+            width="460px"
+            :visible.sync="showTrackingModal"
+            :close-on-click-modal="false"
+            append-to-body
+            @close="closeTrackingModal"
+        >
+            <div class="tracking-modal-body">
+                <label class="tracking-modal-label">Código de guía / tracking</label>
+                <div class="tracking-modal-input-row">
+                    <el-input
+                        v-model="trackingForm.code"
+                        placeholder="Ej: OLVA-123456 / SHALOM-ABC"
+                        maxlength="120"
+                        clearable
+                        @keyup.enter.native="saveTrackingFromModal"
+                    ></el-input>
+                    <el-button
+                        type="danger"
+                        plain
+                        icon="el-icon-delete"
+                        title="Limpiar código"
+                        :disabled="!String(trackingForm.code || '').trim()"
+                        @click.prevent="clearTrackingDraft"
+                    ></el-button>
+                </div>
+                <p class="tracking-modal-hint">
+                    Úsalo para registrar el código de agencias externas (Olva, Shalom, Marvisur, etc.).
+                </p>
+            </div>
+            <div slot="footer" class="form-actions text-end">
+                <el-button class="second-buton" @click="closeTrackingModal">Cancelar</el-button>
+                <el-button
+                    type="primary"
+                    :loading="trackingForm.saving"
+                    @click="saveTrackingFromModal"
+                >Guardar</el-button>
+            </div>
+        </el-dialog>
+
         <options-form
             :showDialog.sync="showDialogOptions"
             :recordId="documentNewId"
@@ -429,6 +488,86 @@
 .order-voided-row td,
 .order-voided-row td a {
     color: #c0392b !important;
+}
+.shipping-tracking-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 260px;
+}
+.shipping-tracking-cell .status-select-wrap {
+    flex: 1 1 55%;
+    min-width: 0;
+}
+.tracking-code-trigger {
+    flex: 1 1 45%;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 10px;
+    border: 1px solid #dcdfe6;
+    border-radius: 4px;
+    background: #fff;
+    color: #909399;
+    font-size: 12px;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+.tracking-code-trigger:hover:not(.is-disabled) {
+    border-color: #409eff;
+    color: #409eff;
+}
+.tracking-code-trigger.has-code {
+    color: #303133;
+    border-color: #c0c4cc;
+    background: #f5f7fa;
+}
+.tracking-code-trigger.has-code:hover:not(.is-disabled) {
+    border-color: #409eff;
+    color: #303133;
+    background: #ecf5ff;
+}
+.tracking-code-trigger.is-disabled,
+.tracking-code-trigger:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+.tracking-code-trigger__icon {
+    flex-shrink: 0;
+    font-size: 14px;
+}
+.tracking-code-trigger__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tracking-modal-body {
+    padding-top: 4px;
+}
+.tracking-modal-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #606266;
+}
+.tracking-modal-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tracking-modal-input-row .el-input {
+    flex: 1;
+}
+.tracking-modal-hint {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: #909399;
+    line-height: 1.4;
 }
 /* Estado con color: se pinta el propio select (borde, fondo, texto) con el punto dentro */
 .status-select-wrap {
@@ -525,6 +664,13 @@ export default {
             statusField: 'status_order_id',
             showOrderDrawer: false,
             selectedOrder: null,
+            showTrackingModal: false,
+            trackingForm: {
+                orderId: null,
+                code: '',
+                saving: false,
+            },
+            trackingTargetRow: null,
         };
     },
     async created() {
@@ -650,6 +796,57 @@ export default {
         openDialogSaleNote(sale_note) {
             this.dataSaleNote = sale_note;
             this.showDialogSaleNote = true;
+        },
+        openTrackingModal(row) {
+            if (!row || !row.id || this.isVoided(row)) {
+                return;
+            }
+            this.trackingTargetRow = row;
+            this.trackingForm = {
+                orderId: row.id,
+                code: String(row.tracking_code || ''),
+                saving: false,
+            };
+            this.showTrackingModal = true;
+        },
+        closeTrackingModal() {
+            this.showTrackingModal = false;
+            this.trackingTargetRow = null;
+            this.trackingForm = {
+                orderId: null,
+                code: '',
+                saving: false,
+            };
+        },
+        clearTrackingDraft() {
+            this.trackingForm.code = '';
+        },
+        async saveTrackingFromModal() {
+            if (!this.trackingForm.orderId) {
+                return;
+            }
+            const next = String(this.trackingForm.code || '').trim();
+            this.trackingForm.saving = true;
+            try {
+                const response = await this.$http.post(`/orders/tracking-code`, {
+                    id: this.trackingForm.orderId,
+                    tracking_code: next,
+                });
+                if (response.data && response.data.success === false) {
+                    this.$message.error(response.data.message || 'No se pudo guardar el código');
+                    return;
+                }
+                const saved = response.data.tracking_code || null;
+                if (this.trackingTargetRow) {
+                    this.$set(this.trackingTargetRow, 'tracking_code', saved);
+                }
+                this.$message.success(response.data.message || 'Código de seguimiento guardado');
+                this.closeTrackingModal();
+            } catch (e) {
+                this.$message.error('Error al guardar el código de seguimiento');
+            } finally {
+                this.trackingForm.saving = false;
+            }
         },
         async updateStatus(record, field = 'status_order_id') {
             this.record = record;

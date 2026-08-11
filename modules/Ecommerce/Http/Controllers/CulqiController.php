@@ -198,10 +198,8 @@ class CulqiController extends Controller
             $document->items = is_array($orderItems) ? $orderItems : [];
             $document->id = $order->id;
             $document->order_number = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
-            $document->tracking_token = (string) $order->external_id;
             $document->tracking_url = route('tenant_ecommerce_order_tracking', [
                 'pedido' => $document->order_number,
-                'token' => $order->external_id,
             ]);
 
             $email = $customer_email;
