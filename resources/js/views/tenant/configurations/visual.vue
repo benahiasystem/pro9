@@ -55,6 +55,39 @@
                         </a>
                     </div>
                 </div>
+
+                <div class="mt-3 outdoor-wrap">
+                    <div class="outdoor-head">
+                        <h5 class="mb-0">
+                            Modo exterior
+                            <el-tooltip
+                                class="item"
+                                content="Sube el contraste y la saturación de la pantalla para que siga siendo legible con luz del sol. Se activa solo en este equipo."
+                                effect="dark"
+                                placement="top-start"
+                            >
+                                <i class="fas fa-info-circle"></i>
+                            </el-tooltip>
+                        </h5>
+                        <el-switch
+                            v-model="outdoorMode"
+                            @change="onToggleOutdoorMode"
+                        >
+                        </el-switch>
+                    </div>
+                    <div v-if="outdoorMode" class="outdoor-levels">
+                        <button
+                            v-for="level in outdoorLevels"
+                            :key="level.key"
+                            type="button"
+                            class="outdoor-level"
+                            :class="{ 'is-active': outdoorLevel === level.key }"
+                            @click="setOutdoorLevel(level.key)"
+                        >
+                            {{ level.label }}
+                        </button>
+                    </div>
+                </div>
                 <!-- <div class="pt-3">
                     <h5>Color de fondo del sidebar</h5>
                     <div class="form-group el-custom-control">
@@ -417,6 +450,13 @@ export default {
             ],
             themes: {},
             blackThemes: {},
+            outdoorMode: false,
+            outdoorLevel: 'medium',
+            outdoorLevels: [
+                { key: 'soft',   label: 'Suave' },
+                { key: 'medium', label: 'Medio' },
+                { key: 'strong', label: 'Fuerte' },
+            ],
             showWelcome: false,
             branchSelectorInSidebar: false,
             loading_submit: false,
@@ -431,6 +471,7 @@ export default {
         };
     },
     async created() {
+        this.readOutdoorPreference();
         await this.loadThemes();
         await this.loadBlackThemes();
         await this.initForm();
@@ -633,6 +674,74 @@ export default {
                 htmlElement.classList.remove('sidebar-left-floating');
             }
         },
+        readOutdoorPreference() {
+            const defaults = (window.vc_outdoor && window.vc_outdoor.defaults) || {};
+            let mode = !!defaults.mode;
+            let level = defaults.level || 'medium';
+
+            try {
+                const storedMode = localStorage.getItem('outdoor_mode');
+                const storedLevel = localStorage.getItem('outdoor_level');
+
+                if (storedMode !== null) {
+                    mode = storedMode === 'true';
+                }
+                if (this.outdoorLevels.some(l => l.key === storedLevel)) {
+                    level = storedLevel;
+                }
+            } catch (e) {
+                
+            }
+
+            const htmlElement = document.documentElement;
+            if (htmlElement.classList.contains('outdoor-mode')) {
+                mode = true;
+                const active = this.outdoorLevels.find(l => htmlElement.classList.contains(`outdoor-${l.key}`));
+                if (active) level = active.key;
+            }
+
+            this.outdoorMode = mode;
+            this.outdoorLevel = level;
+        },
+        applyOutdoor() {
+            if (window.vc_outdoor && typeof window.vc_outdoor.apply === 'function') {
+                window.vc_outdoor.apply(this.outdoorMode, this.outdoorLevel);
+                return;
+            }
+
+            const htmlElement = document.documentElement;
+            this.outdoorLevels.forEach(l => htmlElement.classList.remove(`outdoor-${l.key}`));
+
+            if (this.outdoorMode) {
+                htmlElement.classList.add('outdoor-mode', `outdoor-${this.outdoorLevel}`);
+            } else {
+                htmlElement.classList.remove('outdoor-mode');
+            }
+        },
+        persistOutdoor() {
+            try {
+                localStorage.setItem('outdoor_mode', this.outdoorMode ? 'true' : 'false');
+                localStorage.setItem('outdoor_level', this.outdoorLevel);
+            } catch (e) {
+
+            }
+
+            if (!this.visuals || !Object.keys(this.visuals).length) return;
+
+            this.$set(this.visuals, 'outdoor_mode', this.outdoorMode);
+            this.$set(this.visuals, 'outdoor_level', this.outdoorLevel);
+            this.submit();
+        },
+        onToggleOutdoorMode() {
+            this.applyOutdoor();
+            this.persistOutdoor();
+        },
+        setOutdoorLevel(level) {
+            if (this.outdoorLevel === level) return;
+            this.outdoorLevel = level;
+            this.applyOutdoor();
+            this.persistOutdoor();
+        },
         submitSidebarMode(mode) {
             if (mode) {
                 this.form.sidebar_mode = mode;
@@ -697,6 +806,15 @@ export default {
                     if (!this.visuals.black_theme) {
                         this.$set(this.visuals, 'black_theme', 'default');
                     }
+
+                    if (typeof this.visuals.outdoor_mode === 'undefined') {
+                        this.$set(this.visuals, 'outdoor_mode', false);
+                    }
+
+                    if (!this.visuals.outdoor_level) {
+                        this.$set(this.visuals, 'outdoor_level', 'medium');
+                    }
+
 
                     if (typeof this.visuals.show_welcome_panel === 'undefined') {
                         this.$set(this.visuals, 'show_welcome_panel', false);
@@ -912,6 +1030,64 @@ export default {
     width: 17px;
     height: 17px;
     flex-shrink: 0;
+}
+
+/* ===== Modo exterior (contraste/saturación para pantallas al sol) ===== */
+.outdoor-wrap h5 {
+    font-size: 14px;
+    font-weight: 600;
+    color: inherit;
+}
+.outdoor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.outdoor-head i {
+    font-size: 12px;
+    opacity: .55;
+    margin-left: 3px;
+    cursor: help;
+}
+.outdoor-levels {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    margin-top: 10px;
+    background: rgba(130, 130, 130, .14);
+    border-radius: 12px;
+}
+.outdoor-level {
+    flex: 1 1 0;
+    padding: 8px 6px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: inherit;
+    opacity: .6;
+    cursor: pointer;
+    user-select: none;
+    transition: background .18s ease, opacity .18s ease, box-shadow .18s ease, color .18s ease;
+}
+.outdoor-level:hover {
+    opacity: 1;
+}
+.outdoor-level.is-active {
+    background: var(--black-vivid, var(--primary-color));
+    color: #fff !important;
+    opacity: 1;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .2);
+    cursor: default;
+}
+.outdoor-hint {
+    display: block;
+    margin-top: 8px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    opacity: .6;
 }
 
 /* ===== Selector de temas tipo campo desplegable (adaptativo) ===== */
