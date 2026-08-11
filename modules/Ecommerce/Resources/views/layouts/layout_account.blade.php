@@ -117,6 +117,44 @@
     .account-sidebar-menu li {
         margin-bottom: 3px;
     }
+    .account-sidebar-menu .menu-group-label {
+        display: flex;
+        align-items: center;
+        padding: 12px 13px 6px;
+        color: var(--dark-color);
+        font-weight: 600;
+        font-size: 14.5px;
+        line-height: 1.6;
+        cursor: default;
+    }
+    .account-sidebar-menu .menu-group-label svg {
+        margin-right: 15px;
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        color: var(--subtitle-color);
+        fill: currentColor;
+    }
+    .account-sidebar-menu .menu-group-label.is-active {
+        color: var(--primary-color);
+    }
+    .account-sidebar-menu .menu-group-label.is-active svg {
+        color: var(--primary-color);
+    }
+    .account-submenu {
+        list-style: none;
+        padding: 0 0 4px 0;
+        margin: 0 0 4px;
+    }
+    .account-submenu a {
+        padding: 9px 13px 9px 46px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--subtitle-color);
+    }
+    .account-submenu a .arrow {
+        display: none;
+    }
 </style>
 
 <div class="row mt-5 mb-5 pt-4">
@@ -148,16 +186,28 @@
                         </span>
                     </a>
                 </li>
+                @php
+                    $ordersMenuActive = request()->routeIs('tenant_order_list', 'tenant_ecommerce_order_tracking');
+                @endphp
                 <li>
-                    <a href="{{ route('tenant_order_list') }}" class="{{ request()->routeIs('tenant_order_list') ? 'active' : '' }}">
-                        <svg clip-rule="evenodd" fill="currentcolor" fill-rule="evenodd" height="20" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 512 512" width="20" xmlns="http://www.w3.org/2000/svg" id="fi_4893746">
+                    <div class="menu-group-label {{ $ordersMenuActive ? 'is-active' : '' }}">
+                        <svg clip-rule="evenodd" fill="currentcolor" fill-rule="evenodd" height="20" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 512 512" width="20" xmlns="http://www.w3.org/2000/svg">
                             <path d="m211.892 383.468c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm176.22 0c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm-288.464-273.226s63.534 222.705 63.534 222.705c6.591 23.103 27.703 39.034 51.727 39.034h157.478c33.502 0 61.98-24.47 67.023-57.59 4.821-31.664 11.838-77.75 17.065-112.081 2.869-18.84-2.626-37.994-15.046-52.449-12.42-14.454-30.529-22.769-49.586-22.769h-235.394l-8.72-30.567c-7.633-26.757-32.085-45.209-59.91-45.209-23.033 0-51.825 0-51.825 0-13.798 0-25 11.202-25 25s11.202 25 25 25h51.825c5.494 0 10.321 3.643 11.829 8.926zm71.066 66.85h221.129c4.482 0 8.741 1.956 11.663 5.355 2.921 3.4 4.213 7.905 3.539 12.337 0 0-17.066 112.081-17.066 112.081-1.323 8.693-8.798 15.116-17.592 15.116h-157.478c-1.693 0-3.181-1.122-3.645-2.751 0 0-40.55-142.138-40.55-142.138z"></path>
                         </svg>
                         Mis pedidos
-                        <span class="arrow">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 6l6 6l-6 6" /></svg>
-                        </span>
-                    </a>
+                    </div>
+                    <ul class="account-submenu">
+                        <li>
+                            <a href="{{ route('tenant_order_list') }}" class="{{ request()->routeIs('tenant_order_list') ? 'active' : '' }}">
+                                Revisa tus pedidos
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('tenant_ecommerce_order_tracking') }}" class="{{ request()->routeIs('tenant_ecommerce_order_tracking') ? 'active' : '' }}">
+                                Estado de pedidos
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 @php
                     $quotationEnabledAccount = (bool) optional($information ?? $configuration ?? \App\Models\Tenant\ConfigurationEcommerce::first())->quotation_enabled;

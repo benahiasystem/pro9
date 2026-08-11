@@ -374,6 +374,33 @@
         height: 20px;
     }
 
+    .payment-success-badge.is-confirm {
+        background: #e8f8ef;
+        color: #16a34a;
+    }
+
+    .payment-success-note.is-info {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a5f;
+    }
+
+    .payment-success-note.is-info svg {
+        color: #2563eb;
+    }
+
+    .payment-success-note.is-warn {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        color: #9a3412;
+    }
+
+    .payment-success-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
     .payment-success-dialog .pay-btn {
         width: 100%;
         justify-content: center;
@@ -2885,44 +2912,80 @@
         :aria-hidden="paymentSuccessVisible ? 'false' : 'true'"
     >
         <div class="payment-success-dialog" v-if="successOrder">
-            <div class="payment-success-badge" aria-hidden="true">
+            <div class="payment-success-badge" :class="{ 'is-confirm': isYapePaymentSuccess }" aria-hidden="true">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
-            <h3 id="payment-success-title">¡Pago realizado!</h3>
-            <p class="payment-success-sub">Tu pedido fue registrado con éxito.</p>
+
+            <template v-if="isYapePaymentSuccess">
+                <h3 id="payment-success-title">¡Confirma tu Pago!</h3>
+                <p class="payment-success-sub">Usa los datos a continuación para realizar tu pago.</p>
+            </template>
+            <template v-else>
+                <h3 id="payment-success-title">¡Pago realizado!</h3>
+                <p class="payment-success-sub">Tu pedido fue registrado con éxito.</p>
+            </template>
+
             <div class="payment-success-summary">
                 <div class="psr-row">
-                    <span class="lbl">N° de pedido</span>
+                    <span class="lbl">Pedido</span>
                     <span class="val">@{{ successOrderNumber }}</span>
                 </div>
-                <div class="psr-row">
+                <div class="psr-row" v-if="!isYapePaymentSuccess">
                     <span class="lbl">Forma de pago</span>
                     <span class="val">@{{ successPaymentLabel }}</span>
                 </div>
-                <div class="psr-row">
+                <div class="psr-row" v-if="!isYapePaymentSuccess">
                     <span class="lbl">Productos</span>
                     <span class="val">@{{ successItemsCount }}</span>
                 </div>
                 <div class="psr-row psr-row--total">
-                    <span class="lbl">Total</span>
+                    <span class="lbl">@{{ isYapePaymentSuccess ? 'Total a Pagar' : 'Total' }}</span>
                     <span class="val">@{{ successOrderTotal }}</span>
                 </div>
             </div>
-            <div class="payment-success-note">
+
+            <div class="payment-success-note" :class="{ 'is-info': isYapePaymentSuccess }" v-if="isYapePaymentSuccess">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span><strong>Importante:</strong> Por favor incluye el número de pedido <strong>@{{ successOrderNumber }}</strong> en el mensaje o nota de tu pago.</span>
+            </div>
+            <div class="payment-success-note" v-else>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                 <span>En breve te enviaremos un correo electrónico con los detalles de tu compra.</span>
             </div>
-            <button
-                type="button"
-                class="pay-btn"
-                :class="{ 'is-loading': paymentSuccessRedirecting, disabled: paymentSuccessRedirecting }"
-                :disabled="paymentSuccessRedirecting"
-                @click="confirmPurchaseSuccess"
-            >
-                <span v-if="paymentSuccessRedirecting" class="payment-success-btn-spinner" aria-hidden="true"></span>
-                <span v-if="paymentSuccessRedirecting">Redirigiendo…</span>
-                <span v-else>Continuar</span>
-            </button>
+
+            <div class="payment-success-note is-warn" v-if="isYapePaymentSuccess && !canSendYapeVoucherWhatsapp">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <span>La tienda aún no configuró un WhatsApp. Contacta a la empresa para enviar tu comprobante de Yape.</span>
+            </div>
+
+            <div class="payment-success-actions">
+                <button
+                    type="button"
+                    class="pay-btn pay-btn--whatsapp"
+                    v-if="canSendYapeVoucherWhatsapp"
+                    @click="openYapeVoucherWhatsapp"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.5 0-9.96 4.43-9.96 9.9 0 1.75.46 3.45 1.34 4.95L2 22l5.3-1.38c1.44.78 3.06 1.19 4.74 1.19h.01c5.5 0 9.96-4.43 9.96-9.9C22.01 6.43 17.54 2 12.04 2zm5.79 14.16c-.24.68-1.41 1.25-1.95 1.33-.5.07-1.13.1-1.83-.11-.42-.13-.97-.32-1.67-.63-2.94-1.27-4.86-4.22-5.01-4.42-.15-.2-1.24-1.65-1.24-3.14 0-1.49.78-2.22 1.06-2.52.28-.3.6-.37.8-.37.2 0 .4 0 .58.01.18.01.43-.07.68.52.24.58.83 2.03.9 2.18.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.38-.44.51-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.02 1.12 1 2.07 1.31 2.37 1.46.3.15.47.12.65-.07.18-.2.75-.87.95-1.17.2-.3.4-.25.68-.15.28.1 1.78.84 2.08.99.3.15.5.22.57.35.08.12.08.71-.16 1.39z"/></svg>
+                    <span>Enviar Comprobante al WhatsApp de la empresa</span>
+                </button>
+
+                <button
+                    type="button"
+                    class="pay-btn"
+                    :class="{ 'pay-btn--ghost': isYapePaymentSuccess, 'is-loading': paymentSuccessRedirecting, disabled: paymentSuccessRedirecting }"
+                    :disabled="paymentSuccessRedirecting"
+                    @click="confirmPurchaseSuccess"
+                >
+                    <span v-if="paymentSuccessRedirecting" class="payment-success-btn-spinner" aria-hidden="true"></span>
+                    <span v-if="paymentSuccessRedirecting">Redirigiendo…</span>
+                    <span v-else-if="isYapePaymentSuccess">Ver Estado del Pedido</span>
+                    <span v-else>Continuar</span>
+                </button>
+            </div>
+
+            <p class="payment-success-footer-hint" v-if="isYapePaymentSuccess">
+                Al enviar el comprobante, procesaremos tu pedido lo antes posible.
+            </p>
         </div>
     </div>
 
@@ -3183,41 +3246,8 @@
     </div>
 
     <!-- ===== Confirmación de compra (post-pago) ===== -->
-    <div class="purchase-overlay" :class="{ 'purchase-overlay--show': paymentSuccessVisible }" v-if="successOrder">
-        <div class="purchase-confirm" role="dialog" aria-modal="true" aria-label="Detalle de tu compra">
-            <div class="purchase-confirm-head">
-                <span class="ic">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1 -2 2H5a2 2 0 0 1 -2 -2V5a2 2 0 0 1 2 -2h11"/></svg>
-                </span>
-                <div>
-                    <h3>¡Pago realizado!</h3>
-                    <div class="ordn">Pedido @{{ successOrder.number }}</div>
-                </div>
-            </div>
-            <div class="purchase-confirm-body">
-                <div class="o-item" v-for="(it, i) in successOrder.items" :key="i">
-                    <div><span class="o-q">@{{ it.cantidad }}×</span>@{{ it.description }}</div>
-                    <span class="o-amt">@{{ it.symbol }} @{{ it.total }}</span>
-                </div>
-                <div class="o-sep"></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_exonerated) > 0">Op. exoneradas <span class="v">S/ @{{ successOrder.total_exonerated }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_taxed) > 0">Op. gravada <span class="v">S/ @{{ successOrder.total_taxed }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_igv) > 0">IGV (18%) <span class="v">S/ @{{ successOrder.total_igv }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.delivery) > 0">Envío <span class="v">S/ @{{ successOrder.delivery }}</span></div>
-                <div class="o-total"><span class="l">Total pagado</span><span class="a">S/ @{{ successOrder.total }}</span></div>
-                <div class="o-pay">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    Pago: @{{ successOrder.paymentLabel }} · @{{ successOrder.deliveryLabel }}
-                </div>
-            </div>
-            <div class="purchase-confirm-foot">
-                <button type="button" class="pay-btn" @click="goToThankYou">
-                    Continuar
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </button>
-            </div>
-        </div>
-    </div>
+    {{-- Modal unificado: payment-success-overlay. Este bloque legacy se desactiva para no duplicar. --}}
+    <div class="purchase-overlay" v-if="false"></div>
 
 </div><!-- End #app -->
 
@@ -3311,6 +3341,7 @@
         izipay_transaction: '{{ route("tenant_ecommerce_izipay_transaction") }}',
         mercadopago_payment: '{{ route("tenant_ecommerce_mp") }}',
         thank_you: '{{ route("tenant_ecommerce_thank_you", ["external_id" => "EXTERNAL_ID"]) }}',
+        order_tracking: '{{ route("tenant_ecommerce_order_tracking") }}',
         quotation_store: '{{ route("tenant_ecommerce_quotation_store") }}',
         quotation_list: '{{ route("tenant_ecommerce_quotation_list") }}',
         login: '{{ route("tenant_ecommerce_login") }}',

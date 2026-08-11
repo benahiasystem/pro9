@@ -136,19 +136,30 @@ class OrderController extends Controller
                 ];
             }
 
-            if (! empty($docResult['sale_note_id'])) {
-                return [
-                    'message' => 'Estatus actualizado y nota de venta generada exitosamente',
-                    'type' => 'success',
-                    'sale_note_id' => $docResult['sale_note_id'],
-                ];
+            $payload = [
+                'type' => 'success',
+                'sale_note_id' => $docResult['sale_note_id'] ?? null,
+                'sale_note_number_full' => $docResult['sale_note_number_full'] ?? null,
+                'document_id' => $docResult['document_id'] ?? null,
+                'document_external_id' => $docResult['document_external_id'] ?? null,
+                'number_document' => $docResult['number_document'] ?? null,
+            ];
+
+            if (! empty($docResult['sale_note_id']) && ! empty($docResult['generated'])) {
+                $payload['message'] = 'Estatus actualizado y nota de venta generada exitosamente';
+
+                return $payload;
             }
 
             if (! empty($docResult['generated'])) {
-                return ['message' => 'Estatus actualizado y comprobante generado exitosamente', 'type' => 'success'];
+                $payload['message'] = 'Estatus actualizado y comprobante generado exitosamente';
+
+                return $payload;
             }
 
-            return ['message' => 'Estatus actualizado correctamente', 'type' => 'success'];
+            $payload['message'] = 'Estatus actualizado correctamente';
+
+            return $payload;
         }
 
         // Anulación del pedido: revierte stock (vía NV si existe, o directo) y marca el estado

@@ -1093,7 +1093,17 @@ class EcommerceController extends Controller
             ]);
 
             if (! empty($result['paid'])) {
-                app(OrderDocumentFromStatusService::class)->afterGatewayPaymentCompleted($order);
+                try {
+                    $result['document'] = app(OrderDocumentFromStatusService::class)
+                        ->afterGatewayPaymentCompleted($order);
+                } catch (\Throwable $e) {
+                    Log::error('MercadoPago: cobro OK pero falló emitir comprobante del pedido '.$order->id.': '.$e->getMessage());
+                    $result['document'] = [
+                        'generated' => false,
+                        'message' => $e->getMessage(),
+                        'type' => 'warning',
+                    ];
+                }
                 $order->refresh();
             }
 
@@ -1216,7 +1226,17 @@ class EcommerceController extends Controller
                     $order->save();
                 }
 
-                app(OrderDocumentFromStatusService::class)->afterGatewayPaymentCompleted($order);
+                try {
+                    $result['document'] = app(OrderDocumentFromStatusService::class)
+                        ->afterGatewayPaymentCompleted($order);
+                } catch (\Throwable $e) {
+                    Log::error('Izipay: cobro OK pero falló emitir comprobante del pedido '.$order->id.': '.$e->getMessage());
+                    $result['document'] = [
+                        'generated' => false,
+                        'message' => $e->getMessage(),
+                        'type' => 'warning',
+                    ];
+                }
                 $result['order'] = $order->fresh(['sale_note', 'payment_status_order']);
             }
         }

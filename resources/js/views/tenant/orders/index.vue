@@ -794,22 +794,11 @@ export default {
                 });
                 return;
             } else if (selectedStatus && selectedStatus.action_generate_document) {
+                // Antes se abría document_form sin persistir el estado → el comprobante
+                // podía crearse y el pago quedaba en "Pendiente". El backend ya actualiza
+                // el estado y genera el comprobante (OrderDocumentFromStatusService).
                 this.order_id = record.id;
-
-                if (record.purchase.codigo_tipo_documento == "80") {
-                    if (record.has_sale_note)
-                        return this.$message.success(
-                            "Ya existe una nota de venta"
-                        );
-                    this.openDialogSaleNote(record.purchase);
-                } else {
-                    if (record.document_external_id) {
-                        return this.$message.success(
-                            "Ya existe un comprobante."
-                        );
-                    }
-                    this.$refs.document_form.sendPreview(record.purchase);
-                }
+                this.saveUpdateStatus();
             } else if (selectedStatus && selectedStatus.action_discount_stock) {
                 // Si la orden ya tiene el flag de stock descontado, no continuar
                 if (record.stock_discounted) {
@@ -828,41 +817,70 @@ export default {
                 this.saveUpdateStatus();
             }
         },
-        saveUpdateStatus() {
+        async saveUpdateStatus() {
             // Capturar el estado seleccionado ANTES de hacer la petición,
             // para saber si tiene action_generate_document activo.
             const selectedStatus = this.options.find(o => o.id === this.record[this.statusField]);
 
-            this.$http
-                .post(`/statusOrder/update`, { record: this.record, field: this.statusField })
-                .then(response => {
-                    if (response.data.type === 'error') {
-                        this.$message.error(response.data.message);
-                    } else if (response.data.type === 'warning') {
-                        this.$message.warning(response.data.message);
-                        this.$eventHub.$emit('reloadData');
-                    } else {
-                        this.$message.success(response.data.message);
-                        this.$eventHub.$emit('reloadData');
+            this.loading_submit = true;
 
-                        // Si el estado tiene la acción de generar comprobante y el backend
-                        // devolvió el ID de la nota de venta, abrir el modal de opciones.
-                        if (
-                            selectedStatus &&
-                            selectedStatus.action_generate_document &&
-                            response.data.sale_note_id
-                        ) {
-                            this.documentNewId = response.data.sale_note_id;
-                            this.statusDocument.send = '';
-                            this.resource_options = 'sale-notes';
-                            this.showDialogOptions = true;
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error(error);
-                    this.$message.error('Ocurrió un error al actualizar el estado.');
+            try {
+                const response = await this.$http.post(`/statusOrder/update`, {
+                    record: this.record,
+                    field: this.statusField
                 });
+
+                if (response.data.type === 'error') {
+                    this.$message.error(response.data.message);
+                    return;
+                }
+
+                if (response.data.type === 'warning') {
+                    this.$message.warning(response.data.message);
+                    this.$eventHub.$emit('reloadData');
+                    return;
+                }
+
+                this.$message.success(response.data.message);
+
+                // Actualizar la fila al instante (sin esperar el reload de la tabla).
+                if (response.data.number_document) {
+                    this.record.number_document = response.data.number_document;
+                }
+                if (response.data.document_external_id) {
+                    this.record.document_external_id = response.data.document_external_id;
+                }
+                if (response.data.sale_note_id) {
+                    this.record.sale_note_id = response.data.sale_note_id;
+                }
+                if (response.data.sale_note_number_full) {
+                    this.record.sale_note_number_full = response.data.sale_note_number_full;
+                }
+
+                this.$eventHub.$emit('reloadData');
+
+                // Abrir la vista del comprobante recién generado (NV o CPE).
+                if (selectedStatus && selectedStatus.action_generate_document) {
+                    if (response.data.sale_note_id) {
+                        this.documentNewId = response.data.sale_note_id;
+                        this.statusDocument.send = '';
+                        this.resource_options = 'sale-notes';
+                        this.showDialogOptions = true;
+                    } else if (response.data.document_id) {
+                        this.documentNewId = response.data.document_id;
+                        this.statusDocument.send = '';
+                        this.resource_options = 'documents';
+                        this.showDialogOptions = true;
+                    } else if (response.data.document_external_id) {
+                        await this.clickDownload(response.data.document_external_id);
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                this.$message.error('Ocurrió un error al actualizar el estado.');
+            } finally {
+                this.loading_submit = false;
+            }
         },
         async save() {
             var save = [];

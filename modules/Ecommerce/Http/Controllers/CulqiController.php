@@ -100,21 +100,40 @@ class CulqiController extends Controller
         // Preferir llave secreta global de pagos; fallback al campo legacy de ecommerce.
         $SECRET_API_KEY = $paymentConfiguration->privatekey_culqi
             ?: $configuration->token_private_culqui;
+        $PUBLIC_API_KEY = $paymentConfiguration->publickey_culqi
+            ?: $configuration->token_public_culqui;
 
-        $culqi = new Culqi(array('api_key' => $SECRET_API_KEY));
-
+        $chargeAmount = (int) round((float) $request->precio);
         $chargeEmail = $request->email
             ?: ($customer['correo_electronico'] ?? null)
             ?: ($user?->email ?? null);
+        $chargeToken = (string) $request->token;
+        $chargeInstallments = (int) ($request->installments ?? 0);
+
+        Log::info('Culqi: intentando cobro', [
+            'amount' => $chargeAmount,
+            'amount_raw' => $request->precio,
+            'currency' => 'PEN',
+            'has_email' => ! empty($chargeEmail),
+            'email_domain' => $this->maskEmailDomain($chargeEmail),
+            'token_fingerprint' => $this->fingerprintCredential($chargeToken),
+            'installments' => $chargeInstallments,
+            'public_key' => $this->fingerprintCredential($PUBLIC_API_KEY),
+            'secret_key' => $this->fingerprintCredential($SECRET_API_KEY),
+            'keys_same_env' => $this->culqiKeysSameEnvironment($PUBLIC_API_KEY, $SECRET_API_KEY),
+            'enabled_culqi' => (bool) ($paymentConfiguration->enabled_culqi ?? false),
+        ]);
+
+        $culqi = new Culqi(array('api_key' => $SECRET_API_KEY));
 
         $charge = $culqi->Charges->create(
             array(
-                "amount" => $request->precio,
+                "amount" => $chargeAmount,
                 "currency_code" => "PEN",
                 "email" => $chargeEmail,
                 "description" =>  $request->producto,
-                "source_id" => $request->token,
-                "installments" => (int) ($request->installments ?? 0)
+                "source_id" => $chargeToken,
+                "installments" => $chargeInstallments
               )
         );
 
@@ -128,7 +147,15 @@ class CulqiController extends Controller
         // Fuente de verdad: respuesta de Culqi (equivalente al estado del panel: Aprobada / Rechazada).
         $culqiStatus = $this->interpretCulqiCharge($chargeObj);
         if (! $culqiStatus['approved']) {
-            Log::warning('Culqi: cobro no aprobado', $culqiStatus);
+            Log::warning('Culqi: cobro no aprobado', array_merge($culqiStatus, [
+                'culqi_raw' => $this->summarizeCulqiError($chargeObj),
+                'public_key' => $this->fingerprintCredential($PUBLIC_API_KEY),
+                'secret_key' => $this->fingerprintCredential($SECRET_API_KEY),
+                'keys_same_env' => $this->culqiKeysSameEnvironment($PUBLIC_API_KEY, $SECRET_API_KEY),
+                'amount' => $chargeAmount,
+                'has_email' => ! empty($chargeEmail),
+                'token_fingerprint' => $this->fingerprintCredential($chargeToken),
+            ]));
 
             return response()->json([
                 'success' => false,
@@ -185,7 +212,11 @@ class CulqiController extends Controller
         ]);
 
         // Misma generación de comprobante que al marcar "Pago completado" en admin
-        app(OrderDocumentFromStatusService::class)->afterGatewayPaymentCompleted($order);
+        try {
+            app(OrderDocumentFromStatusService::class)->afterGatewayPaymentCompleted($order);
+        } catch (\Throwable $e) {
+            Log::error('Culqi: cobro OK pero falló emitir comprobante del pedido '.$order->id.': '.$e->getMessage());
+        }
         $order->refresh();
 
         try {
@@ -220,10 +251,14 @@ class CulqiController extends Controller
       }
       catch (CulqiException $e)
       {
+          $decoded = json_decode($e->getMessage());
+          Log::warning('Culqi: excepción de cobro', [
+              'exception_message' => $e->getMessage(),
+              'culqi_raw' => $this->summarizeCulqiError($decoded),
+          ]);
           $message = 'Su tarjeta fue rechazada. Por favor, intente con otra.';
-          $error = json_decode($e->getMessage());
-          if ($error && isset($error->user_message)) {
-              $message = $error->user_message;
+          if ($decoded && isset($decoded->user_message)) {
+              $message = $decoded->user_message;
           }
           return response()->json([
               'success' => false,
@@ -232,6 +267,10 @@ class CulqiController extends Controller
       }
       catch (\Exception $e)
       {
+          Log::error('Culqi: error inesperado al procesar pago', [
+              'message' => $e->getMessage(),
+              'exception' => get_class($e),
+          ]);
           $message = 'Ocurrió un error al procesar el pago: ' . $e->getMessage();
           $error = json_decode($e->getMessage());
           if ($error && isset($error->user_message)) {
@@ -486,6 +525,81 @@ class CulqiController extends Controller
         }
 
         return $customer;
+    }
+
+    /**
+     * Huella segura de credencial Culqi (prefijo + últimos 4), sin exponer el secreto completo.
+     */
+    private function fingerprintCredential(?string $value): ?string
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $prefix = substr($value, 0, 8);
+        $suffix = substr($value, -4);
+
+        return $prefix.'…'.$suffix.' (len='.strlen($value).')';
+    }
+
+    private function maskEmailDomain(?string $email): ?string
+    {
+        $email = trim((string) $email);
+        if ($email === '' || ! str_contains($email, '@')) {
+            return null;
+        }
+
+        $parts = explode('@', $email, 2);
+
+        return '*@'.$parts[1];
+    }
+
+    private function culqiKeysSameEnvironment(?string $publicKey, ?string $secretKey): ?bool
+    {
+        $publicKey = trim((string) $publicKey);
+        $secretKey = trim((string) $secretKey);
+        if ($publicKey === '' || $secretKey === '') {
+            return null;
+        }
+
+        $publicIsTest = str_contains($publicKey, '_test_');
+        $publicIsLive = str_contains($publicKey, '_live_');
+        $secretIsTest = str_contains($secretKey, '_test_');
+        $secretIsLive = str_contains($secretKey, '_live_');
+
+        if (($publicIsTest || $publicIsLive) && ($secretIsTest || $secretIsLive)) {
+            return ($publicIsTest && $secretIsTest) || ($publicIsLive && $secretIsLive);
+        }
+
+        return null;
+    }
+
+    /**
+     * Resume el objeto error/respuesta Culqi para diagnóstico.
+     *
+     * @param  mixed  $chargeObj
+     */
+    private function summarizeCulqiError($chargeObj): array
+    {
+        if (! is_object($chargeObj)) {
+            return [
+                'valid_object' => false,
+                'type' => gettype($chargeObj),
+            ];
+        }
+
+        return [
+            'valid_object' => true,
+            'object' => $chargeObj->object ?? null,
+            'type' => $chargeObj->type ?? data_get($chargeObj, 'outcome.type'),
+            'code' => $chargeObj->code ?? null,
+            'decline_code' => $chargeObj->decline_code ?? data_get($chargeObj, 'outcome.decline_code'),
+            'param' => $chargeObj->param ?? null,
+            'user_message' => $chargeObj->user_message ?? data_get($chargeObj, 'outcome.user_message'),
+            'merchant_message' => $chargeObj->merchant_message ?? data_get($chargeObj, 'outcome.merchant_message'),
+            'charge_id' => isset($chargeObj->id) ? (string) $chargeObj->id : null,
+        ];
     }
 
 }

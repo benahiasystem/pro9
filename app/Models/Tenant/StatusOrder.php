@@ -101,5 +101,19 @@ class StatusOrder extends ModelTenant
 
         return $status ? (int) $status->id : null;
     }
+
+    /**
+     * Estado inicial del flujo de envío.
+     */
+    public static function resolveInitialShippingStatusId(): ?int
+    {
+        $status = self::where('is_shipping_status', true)
+            ->where('is_initial', true)
+            ->orderBy('sort_order')
+            ->first()
+            ?: self::where('is_shipping_status', true)->orderBy('sort_order')->first();
+
+        return $status ? (int) $status->id : null;
+    }
 }
 

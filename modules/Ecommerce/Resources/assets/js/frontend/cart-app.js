@@ -3124,6 +3124,22 @@ var app_cart = new Vue({
                 window.location.href = targetUrl;
             });
         },
+        getYapeVoucherWhatsappText() {
+            const orderNumber = this.successOrderNumber || '#—';
+            const total = this.successOrderTotal || this.formatMoney(0);
+            return [
+                `Hola, realicé el pago de mi pedido ${orderNumber} por Yape.`,
+                `Total: ${total}.`,
+                `Adjunto el comprobante de pago.`,
+                `Por favor confirmen la recepción.`,
+            ].join('\n');
+        },
+        openYapeVoucherWhatsapp() {
+            if (!this.canSendYapeVoucherWhatsapp) {
+                return;
+            }
+            window.open(this.getWhatsappUrl(this.getYapeVoucherWhatsappText()), '_blank');
+        },
         openQuotationModal() {
             this.setCheckoutIntent('quote');
         },
