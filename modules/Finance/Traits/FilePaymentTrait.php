@@ -21,10 +21,10 @@ trait FilePaymentTrait
         if($temp_path) {
 
             $file_name_old = $request->filename;
-            $file_name_old_array = explode('.', $file_name_old);
             $file_content = file_get_contents($temp_path);
-            $extension = $file_name_old_array[1];
-            $file_name = Str::slug($file_name_old_array[0])."-{$type}-".$record->id.'.'.$extension;
+            $extension = UploadFileHelper::getFileExtension($file_name_old);
+            $base_name = pathinfo($file_name_old, PATHINFO_FILENAME);
+            $file_name = Str::slug($base_name)."-{$type}-".$record->id.'.'.$extension;
 
             // validaciones archivos
             $allowed_file_types_images = ['image/jpg', 'image/jpeg', 'image/png', 'image/gif', 'image/svg', 'image/webp'];

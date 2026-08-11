@@ -83,8 +83,8 @@ class SystemActivityLogTransactionController extends Controller
                             ->union($retentions)->union($summaries)
                             ->union($summary_voided)->union($voided);
 
-
-        return $records->orderBy('date_of_issue', 'desc')->orderBy('time_of_issue', 'desc');
+        // Orden por registro real (created_at), no por date_of_issue + time nulo de RA/RC
+        return $records->orderBy('created_at', 'desc');
     }
 
     

@@ -6,6 +6,7 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class SystemActivityTransactionCollection extends ResourceCollection
 {
+    public $collects = SystemActivityTransactionResource::class;
 
     /**
      * Transform the resource collection into an array.
@@ -15,9 +16,6 @@ class SystemActivityTransactionCollection extends ResourceCollection
      */
     public function toArray($request)
     {
-        return $this->collection->transform(function($row, $key) {
-            return $row;
-        });
+        return $this->collection->map->toArray($request)->all();
     }
-    
 }

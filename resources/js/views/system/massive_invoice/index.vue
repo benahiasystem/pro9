@@ -16,6 +16,10 @@
                         <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-upload" style="margin-top: -3px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg> 
                         Subir Facturas
                     </button>
+                    <button @click="exportExcel" class="btn btn-success me-2 float-right">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-spreadsheet" style="margin-top: -3px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M8 11h8v7h-8z" /><path d="M8 15h8" /><path d="M11 11v7" /></svg>
+                        Exportar Excel
+                    </button>
                     <button @click="showFilterModal = true" class="btn btn-info me-2 float-right">
                         <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-filter" style="margin-top: -3px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227z" /></svg> 
                         Filtros
@@ -310,6 +314,16 @@ export default {
         },
         downloadFormat() {
             window.open(`/${this.resource}/download-format`, '_blank')
+        },
+        exportExcel() {
+            const params = new URLSearchParams()
+            if (this.filters.month) params.append('month', this.filters.month)
+            if (this.filters.date) params.append('date', this.filters.date)
+            if (this.filters.serie_numero) params.append('serie_numero', this.filters.serie_numero)
+            if (this.filters.receptor) params.append('receptor', this.filters.receptor)
+            if (this.filters.emisor) params.append('emisor', this.filters.emisor)
+            const query = params.toString()
+            window.open(`/${this.resource}/export${query ? '?' + query : ''}`, '_blank')
         },
         handleFileUpload(event) {
             const file = event.target.files[0]
