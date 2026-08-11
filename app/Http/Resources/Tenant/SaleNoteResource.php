@@ -4,6 +4,7 @@ namespace App\Http\Resources\Tenant;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Models\Tenant\SaleNote;
+use App\Models\Tenant\Configuration;
 
 class SaleNoteResource extends JsonResource
 {
@@ -36,7 +37,7 @@ class SaleNoteResource extends JsonResource
             'serie' => $this->series,
             'number' => $this->number,
             'seller_id' => $this->seller_id,
-            'message_text' => "Su comprobante de nota de venta {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/sale-notes/print/{$this->external_id}/ticket".''
+            'message_text' => "Su comprobante de nota de venta {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/sale-notes/print/{$this->external_id}/".(Configuration::first()->qr_api_pdf_format ?? 'ticket')
 
         ];
     }
