@@ -67,7 +67,7 @@ class DocumentController extends Controller
             // descarga+base64+POST a /print-orders (evita doble impresión).
             'print' => $print_result,
             'data_ws' => [
-                'message_text' => "Su comprobante de pago electrónico {$document->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$document->external_id}/ticket"."",
+                'message_text' => "Su comprobante de pago electrónico {$document->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$document->external_id}/".(optional(\App\Models\Tenant\Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket')."",
                 "pdf_a4_filename" => url('')."/api/document-file/document/{$document->external_id}/a4",
                 "pdf_ticket_filename" => url('')."/api/document-file/document/{$document->external_id}/ticket",
                 "full_filename" => $document->filename.".pdf",
