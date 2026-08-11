@@ -385,7 +385,44 @@ class UploadFileHelper
     public static function getFileExtension($filename)
     {
         $data = explode('.', $filename);
-        return end($data);
+
+        return strtolower((string) end($data));
+    }
+
+
+    /**
+     * Resuelve la extensión permitida usando el nombre y, si hace falta, el MIME del archivo.
+     *
+     * @param  string $filename
+     * @param  string $temp_path
+     * @param  string $mimes
+     * @return string
+     */
+    public static function resolveExtensionFromFile($filename, $temp_path, $mimes = 'jpg,jpeg,png,gif,svg,webp,pdf')
+    {
+        $allowed_extensions = explode(',', $mimes);
+        $extension = self::getFileExtension($filename);
+
+        if (in_array($extension, $allowed_extensions, true)) {
+            return $extension;
+        }
+
+        $mime = @mime_content_type($temp_path) ?: '';
+        $mime_map = [
+            'image/jpeg' => 'jpg',
+            'image/jpg' => 'jpg',
+            'image/png' => 'png',
+            'image/gif' => 'gif',
+            'image/svg+xml' => 'svg',
+            'image/webp' => 'webp',
+            'application/pdf' => 'pdf',
+        ];
+
+        if (isset($mime_map[$mime]) && in_array($mime_map[$mime], $allowed_extensions, true)) {
+            return $mime_map[$mime];
+        }
+
+        return $extension;
     }
 
 

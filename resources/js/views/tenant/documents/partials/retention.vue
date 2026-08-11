@@ -58,6 +58,7 @@
                             :show-file-list="true"
                             :file-list="fileList"
                             :on-success="onSuccess"
+                            :on-error="onUploadError"
                             :limit="1"
                             style="width: 100%;"
                             v-else>
@@ -183,8 +184,29 @@ export default {
                 this.form.temp_path = response.data.temp_path
             } else {
                 this.cleanFileList()
-                this.$message.error(response.message)
+                this.$message.error(response.message || 'No se pudo cargar el archivo.')
             }
+        },
+        onUploadError(error, file, fileList) {
+            this.cleanFileList()
+            this.$message.error(this.getRequestErrorMessage(error))
+        },
+        getRequestErrorMessage(error) {
+            const data = error && error.response ? error.response.data : null
+
+            if (typeof data === 'string' && data.trim()) {
+                return data
+            }
+
+            if (data && data.message) {
+                return data.message
+            }
+
+            if (error && error.message) {
+                return error.message
+            }
+
+            return 'Ocurrió un error al procesar la solicitud.'
         },
         cleanFileList() {
             this.fileList = []
@@ -222,7 +244,7 @@ export default {
                     }
                 })
                 .catch(error => {
-                    console.log(error);
+                    this.$message.error(this.getRequestErrorMessage(error))
                 })
             this.loadingSubmit = false;
         },

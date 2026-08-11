@@ -22,7 +22,8 @@ trait FilePaymentTrait
 
             $file_name_old = $request->filename;
             $file_content = file_get_contents($temp_path);
-            $extension = UploadFileHelper::getFileExtension($file_name_old);
+            $allowed_mimes = 'jpg,jpeg,png,gif,svg,webp,pdf';
+            $extension = UploadFileHelper::resolveExtensionFromFile($file_name_old, $temp_path, $allowed_mimes);
             $base_name = pathinfo($file_name_old, PATHINFO_FILENAME);
             $file_name = Str::slug($base_name)."-{$type}-".$record->id.'.'.$extension;
 
