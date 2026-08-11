@@ -1192,15 +1192,6 @@
                             </div>
                         </template>
                         <template v-else>
-                            <div class="col-12 d-flex align-items-center justify-content-between mb-3">
-                                <h5 class="separator-title mb-0">Variaciones del producto</h5>
-                                <button type="button"
-                                        class="btn btn-sm second-buton"
-                                        @click.prevent="showDialogManageVariables = true">
-                                    <i class="fa fa-cog"></i> Gestionar atributos
-                                </button>
-                            </div>
-
                             <div v-if="existing_variations.length > 0" class="col-12 mb-3">
                                 <label class="control-label">Variaciones registradas</label>
                                 <div class="table-responsive">
@@ -1230,38 +1221,27 @@
                             <template v-if="product_variables.length === 0">
                                 <div class="col-12">
                                     <p class="text-muted mb-0">
-                                        Aún no hay variables de atributos. Créalas desde "Gestionar atributos" para generar variaciones.
+                                        Aún no hay variables de atributos.
+                                        <a href="/configurations/product-variables" target="_blank">Créalas desde "Gestionar atributos"</a>
+                                        para generar variaciones.
                                     </p>
                                 </div>
                             </template>
                             <template v-else>
-                                <div class="col-12 mb-2">
-                                    <p class="text-muted mb-0">
-                                        Selecciona los valores de las <b>variables creadas previamente</b> para generar
-                                        combinaciones automáticas bajo este producto principal.
-                                    </p>
-                                </div>
-                                <div class="col-12 mb-2">
-                                    <div class="form-group">
-                                        <label class="control-label font-weight-bold">Variables a combinar</label>
-                                        <div class="pv-chip-group">
-                                            <span v-for="variable in product_variables"
-                                                  :key="'variable-chip-' + variable.id"
-                                                  class="pv-chip"
-                                                  :class="{active: selected_variable_ids.includes(variable.id)}"
-                                                  @click="toggleVariable(variable.id)">
-                                                {{ variable.name }}
-                                            </span>
-                                        </div>
-                                    </div>
+                                <div class="col-12 mb-2 d-flex align-items-center">
+                                    <el-button size="mini"
+                                               plain
+                                               icon="el-icon-plus"
+                                               @click.prevent="openVariationPicker">Seleccionar atributos</el-button>
+                                    <small class="text-muted ms-2">
+                                        Activa los valores de cada atributo para generar variaciones bajo este producto principal.
+                                    </small>
                                 </div>
                                 <div v-for="variable in selectedVariables"
                                      :key="'variable-values-' + variable.id"
                                      class="col-12">
                                     <div class="pv-variable-card">
-                                        <label class="control-label font-weight-bold d-block mb-2">
-                                            {{ variable.name }}
-                                        </label>
+                                        <label class="control-label font-weight-bold d-block mb-2">{{ variable.name }}</label>
                                         <div class="pv-chip-group">
                                             <span v-for="value in variable.values"
                                                   :key="'value-chip-' + value.id"
@@ -1283,7 +1263,7 @@
                                             <span v-if="combinationsDetail" class="text-muted">({{ combinationsDetail }})</span>
                                         </span>
                                         <el-button type="primary"
-                                                   size="small"
+                                                   size="mini"
                                                    icon="el-icon-setting"
                                                    :disabled="combinationsCount === 0"
                                                    @click.prevent="generateCombinations">Generar combinaciones</el-button>
@@ -1679,10 +1659,12 @@
             @addRowLot="addRowLot">
         </lots-form>
 
-        <product-variables-manager
-            :showDialog.sync="showDialogManageVariables"
-            @updated="reloadProductVariables">
-        </product-variables-manager>
+        <variation-picker
+            :showDialog.sync="showDialogVariationPicker"
+            :product-variables="product_variables"
+            :selected-variable-ids="selected_variable_ids"
+            @apply="applyVariationSelection">
+        </variation-picker>
 
     </el-dialog>
 </template>
@@ -1694,7 +1676,7 @@ import ItemFormPinnedBar from './_pinned_bar.vue'
 import { getDefaultLayout, getAvailableFields } from './_form_fields_catalog'
 import SuppliesTab from "@viewsModuleRestaurant/items/supplies-tab.vue";
 import ModifiersTab from "@viewsModuleRestaurant/items/modifiers-tab.vue";
-import ProductVariablesManager from "@viewsModuleItem/product-variables/manager-modal.vue";
+import VariationPicker from "./partials/variation_picker.vue";
 import {mapActions, mapState} from "vuex";
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../helpers/modal_item";
 import ItemPricesTable from "@components/items/partials/ItemPricesTable.vue";
@@ -1730,7 +1712,7 @@ export default {
         ItemFormPinnedBar,
         SuppliesTab,
         ModifiersTab,
-        ProductVariablesManager,
+        VariationPicker,
     },
     computed: {
         resolvedVariant() {
@@ -1940,7 +1922,7 @@ export default {
             variation_rows: [],
             existing_variations: [],
             variation_errors: {},
-            showDialogManageVariables: false,
+            showDialogVariationPicker: false,
             activeName: null,
             lastClickedTab: null,
             fromPharmacy: false,
@@ -2143,16 +2125,17 @@ export default {
             // }
 
         },
-        toggleVariable(variableId) {
-            const index = this.selected_variable_ids.indexOf(variableId)
-            if (index === -1) {
-                this.selected_variable_ids.push(variableId)
+        openVariationPicker() {
+            this.reloadProductVariables()
+            this.showDialogVariationPicker = true
+        },
+        applyVariationSelection(selection) {
+            this.selected_variable_ids = selection.selected_variable_ids
+            this.selected_variable_ids.forEach(variableId => {
                 if (!this.selected_values[variableId]) {
                     this.$set(this.selected_values, variableId, [])
                 }
-            } else {
-                this.selected_variable_ids.splice(index, 1)
-            }
+            })
         },
         toggleValue(variableId, valueId) {
             if (!this.selected_values[variableId]) {

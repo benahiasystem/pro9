@@ -118,14 +118,14 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-176a8e32.css",
+    "file": "assets/app-ad2afe10.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
-      "assets/app-176a8e32.css"
+      "assets/app-ad2afe10.css"
     ],
-    "file": "assets/app-c11076fa.js",
+    "file": "assets/app-bf25fb9b.js",
     "imports": [
       "_vue-clipboard-86b8737a.js",
       "__plugin-vue2_normalizer-839f22b6.js",

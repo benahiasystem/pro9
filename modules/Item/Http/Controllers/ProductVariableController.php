@@ -13,6 +13,11 @@ use Modules\Item\Models\ProductVariableValue;
 
 class ProductVariableController extends Controller
 {
+    public function index()
+    {
+        return view('item::product-variables.index');
+    }
+
     public function records(Request $request)
     {
         $records = ProductVariable::query()->orderBy('name');

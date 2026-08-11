@@ -421,7 +421,12 @@ class PosController extends Controller
      */
     public function item(Request $request)
     {
-        $items = Item::whereWarehouse()
+        // whereWarehouse termina en un orWhere sin agrupar; se envuelve para que
+        // los filtros posteriores (activo, agrupado de variaciones) apliquen a todas las ramas
+        $items = Item::query()
+            ->where(function ($query) {
+                $query->whereWarehouse();
+            })
             ->whereIsActive()
             //->where('series_enabled', 0)
             ->orderBy('description');
@@ -434,12 +439,58 @@ class PosController extends Controller
             $items->where('calculate_quantity', 1);
         }
 
+        self::applyVariationsGrouping($items, $request);
+
         self::FilterItem($items, $request);
 
         $items_collection = $items->paginate(50);
 
         return new PosCollection($items_collection);
 
+    }
+
+    /**
+     * Agrupa variaciones bajo su producto principal en la grilla del POS.
+     * Solo actúa con group_variations=1 (lo envían los modos normal y fast);
+     * garage y otros consumidores mantienen el listado plano.
+     *
+     * @param Item $items
+     * @param Request $request
+     */
+    public static function applyVariationsGrouping(&$items, Request $request)
+    {
+        if ($request->group_variations != 1) {
+            return;
+        }
+
+        $input = trim((string) $request->input_item);
+
+        $items->where(function ($query) use ($input) {
+            $query->whereNull('parent_item_id');
+            // el código exacto de una variación la muestra directo (escáner / búsqueda por código)
+            if ($input !== '') {
+                $query->orWhere('internal_id', $input)
+                    ->orWhere('barcode', $input);
+            }
+        })
+            ->withCount('variations')
+            ->withSum('variations as variations_stock', 'stock')
+            ->with(['variations' => function ($query) {
+                $query->whereIsActive()->with('variationValues.value');
+            }]);
+    }
+
+    /**
+     * Fila completa de un item individual con la misma forma que la grilla,
+     * usada al seleccionar una variación desde el modal.
+     *
+     * @param int $id
+     *
+     * @return PosCollection
+     */
+    public function singleItem($id)
+    {
+        return new PosCollection(Item::where('id', $id)->paginate(1));
     }
 
     /**
@@ -487,14 +538,18 @@ class PosController extends Controller
      */
     public function search_items_cat(Request $request)
     {
-        $item = Item::whereWarehouse();
+        $item = Item::query()->where(function ($query) {
+            $query->whereWarehouse();
+        });
             // ->whereIsActive()
             //->where('series_enabled', 0);
-            
+
         $config = Configuration::first();
         if ($config->isShowServiceOnPos() !== true) {
             $item->where('unit_type_id', '!=', 'ZZ');
         }
+
+        self::applyVariationsGrouping($item, $request);
 
         self::FilterItem($item, $request);
         return new PosCollection($item->paginate(50));

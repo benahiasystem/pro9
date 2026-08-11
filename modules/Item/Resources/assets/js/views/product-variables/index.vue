@@ -1,84 +1,101 @@
 <template>
-    <el-dialog :title="editing ? titleForm : 'Gestionar atributos'"
-               :visible="showDialog"
-               :close-on-click-modal="false"
-               append-to-body
-               top="7vh"
-               :width="editing ? '540px' : '760px'"
-               @close="handleCloseDialog"
-               @open="open">
-
-        <template v-if="!editing">
-            <div class="d-flex align-items-center justify-content-between mb-3">
-                <span class="text-muted">
-                    Crea variables (Talla, Color, Material...) y sus valores para generar variaciones de productos.
-                </span>
-                <el-button type="primary" size="small" @click.prevent="clickCreate">+ Nueva variable</el-button>
+    <div>
+        <div class="page-header pe-0">
+            <h2>
+                <a href="/list-settings">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;" width="24" height="24" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M9 15h-4.5a4.5 4.5 0 1 1 .81 -8.92a4 4 0 0 1 7.66 -.83a4.5 4.5 0 0 1 4.85 6.27" />
+                        <path d="M12 19a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+                        <path d="M15 16v-6a2 2 0 0 1 2 -2h1" />
+                    </svg>
+                </a>
+            </h2>
+            <ol class="breadcrumbs">
+                <li class="active"><span>Atributos de productos</span></li>
+            </ol>
+            <div class="right-wrapper pull-right">
+                <button class="btn btn-custom btn-sm mt-2 me-2" type="button" @click.prevent="clickCreate()">
+                    <i class="fa fa-plus-circle"></i> Nueva variable
+                </button>
             </div>
+        </div>
 
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead>
-                    <tr>
-                        <th style="width: 70px">Activo</th>
-                        <th style="width: 22%">Nombre</th>
-                        <th style="width: 110px">Tipo</th>
-                        <th>Valores</th>
-                        <th style="width: 100px">Acciones</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr v-for="row in records" :key="row.id">
-                        <td class="align-middle">
-                            <el-switch :value="row.active" @change="toggleActive(row)"></el-switch>
-                        </td>
-                        <td class="align-middle">
-                            <span class="font-weight-bold">{{ row.name }}</span>
-                            <small v-if="row.items_count > 0" class="text-muted d-block">
-                                Usada en {{ row.items_count }} producto{{ row.items_count !== 1 ? 's' : '' }}
-                            </small>
-                        </td>
-                        <td class="align-middle">
-                            <el-tag size="mini" effect="plain" :type="row.value_type === 'color' ? 'warning' : 'primary'">
-                                {{ row.value_type === 'color' ? 'Con color' : 'Lista' }}
-                            </el-tag>
-                        </td>
-                        <td class="align-middle">
-                            <el-tag v-for="value in row.values"
-                                    :key="value.id"
-                                    size="mini"
-                                    effect="plain"
-                                    type="info"
-                                    class="me-1 mb-1">
-                                <span v-if="row.value_type === 'color'"
-                                      class="pv-color-dot"
-                                      :style="{background: value.color}"></span>{{ value.value }}
-                            </el-tag>
-                        </td>
-                        <td class="align-middle text-nowrap">
-                            <el-button size="mini"
-                                       plain
-                                       icon="el-icon-edit"
-                                       title="Editar"
-                                       class="me-1"
-                                       @click.prevent="clickEdit(row)"></el-button>
-                            <el-button size="mini"
-                                       type="danger"
-                                       plain
-                                       icon="el-icon-delete"
-                                       title="Eliminar"
-                                       @click.prevent="clickDelete(row)"></el-button>
-                        </td>
-                    </tr>
-                    <tr v-if="!loading && records.length === 0">
-                        <td colspan="5" class="text-center text-muted py-3">Aún no hay variables registradas</td>
-                    </tr>
-                    </tbody>
-                </table>
+        <div class="card mb-0 tab-content-default row-new">
+            <div class="card-body">
+                <p class="text-muted">
+                    Crea variables (Talla, Color, Material...) y sus valores. Se usan en la pestaña Atributos
+                    del formulario de productos para generar variaciones.
+                </p>
+                <div v-loading="loading" class="table-responsive">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th style="width: 70px">Activo</th>
+                            <th style="width: 22%">Nombre</th>
+                            <th style="width: 110px">Tipo</th>
+                            <th>Valores</th>
+                            <th style="width: 100px" class="text-end">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="row in records" :key="row.id">
+                            <td class="align-middle">
+                                <el-switch :value="row.active" @change="toggleActive(row)"></el-switch>
+                            </td>
+                            <td class="align-middle">
+                                <span class="fw-semibold">{{ row.name }}</span>
+                                <small v-if="row.items_count > 0" class="text-muted d-block">
+                                    Usada en {{ row.items_count }} producto{{ row.items_count !== 1 ? 's' : '' }}
+                                </small>
+                            </td>
+                            <td class="align-middle">
+                                <el-tag size="mini" effect="plain" :type="row.value_type === 'color' ? 'warning' : 'primary'">
+                                    {{ row.value_type === 'color' ? 'Con color' : 'Lista' }}
+                                </el-tag>
+                            </td>
+                            <td class="align-middle">
+                                <el-tag v-for="value in row.values"
+                                        :key="value.id"
+                                        size="mini"
+                                        effect="plain"
+                                        type="info"
+                                        class="me-1 mb-1">
+                                    <span v-if="row.value_type === 'color'"
+                                          class="pv-color-dot"
+                                          :style="{background: value.color}"></span>{{ value.value }}
+                                </el-tag>
+                            </td>
+                            <td class="align-middle text-end text-nowrap">
+                                <el-button size="mini"
+                                           plain
+                                           icon="el-icon-edit"
+                                           title="Editar"
+                                           @click.prevent="clickEdit(row)"></el-button>
+                                <el-button size="mini"
+                                           type="danger"
+                                           plain
+                                           icon="el-icon-delete"
+                                           title="Eliminar"
+                                           @click.prevent="clickDelete(row)"></el-button>
+                            </td>
+                        </tr>
+                        <tr v-if="!loading && records.length === 0">
+                            <td colspan="5" class="text-center text-muted py-3">Aún no hay variables registradas</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </template>
+        </div>
 
-        <template v-else>
+        <el-dialog :title="titleForm"
+                   :visible="showDialogForm"
+                   :close-on-click-modal="false"
+                   width="540px"
+                   top="7vh"
+                   @close="cancelEdit">
             <form autocomplete="off" @submit.prevent="submit">
                 <div class="row">
                     <div class="col-md-7">
@@ -104,6 +121,8 @@
                     </div>
                 </div>
 
+                <div class="row">
+                    <div class="col-12">
                 <div class="form-group">
                     <label class="control-label">Valores de la variable</label>
                     <div class="pv-add-row mb-2">
@@ -113,7 +132,7 @@
                         <el-color-picker v-if="form.value_type === 'color'"
                                          v-model="new_value.color"
                                          title="Color del valor"></el-color-picker>
-                        <el-button plain @click.prevent="addValue">+ Agregar</el-button>
+                        <el-button plain size="small" @click.prevent="addValue">+ Agregar</el-button>
                     </div>
                     <div>
                         <el-tag v-for="(value, index) in form.values"
@@ -137,28 +156,28 @@
                         <small>Escribe un valor y presiona Enter o el botón Agregar. Quita valores con la ✕ de cada uno.</small>
                     </p>
                 </div>
+                    </div>
+                </div>
 
                 <div class="form-actions text-end pt-2">
-                    <el-button class="second-buton me-2" @click.prevent="cancelEdit">Volver</el-button>
+                    <el-button class="second-buton me-2" @click.prevent="cancelEdit">Cancelar</el-button>
                     <el-button type="primary" native-type="submit" :loading="loading_submit">Guardar variable</el-button>
                 </div>
             </form>
-        </template>
-    </el-dialog>
+        </el-dialog>
+    </div>
 </template>
 
 <script>
 export default {
-    name: 'ProductVariablesManagerModal',
-    props: ['showDialog'],
+    name: 'TenantProductVariablesIndex',
     data() {
         return {
             resource: 'product-variables',
             records: [],
             loading: false,
             loading_submit: false,
-            editing: false,
-            changed: false,
+            showDialogForm: false,
             errors: {},
             form: {},
             new_value: {value: '', color: '#409EFF'},
@@ -180,6 +199,7 @@ export default {
     },
     created() {
         this.initForm()
+        this.load()
     },
     methods: {
         initForm() {
@@ -191,11 +211,6 @@ export default {
                 values: [],
             }
             this.new_value = {value: '', color: '#409EFF'}
-        },
-        open() {
-            this.editing = false
-            this.changed = false
-            this.load()
         },
         load() {
             this.loading = true
@@ -209,7 +224,7 @@ export default {
         },
         clickCreate() {
             this.initForm()
-            this.editing = true
+            this.showDialogForm = true
         },
         clickEdit(row) {
             this.errors = {}
@@ -220,10 +235,10 @@ export default {
                 values: row.values.map(value => ({...value})),
             }
             this.new_value = {value: '', color: '#409EFF'}
-            this.editing = true
+            this.showDialogForm = true
         },
         cancelEdit() {
-            this.editing = false
+            this.showDialogForm = false
             this.initForm()
         },
         addValue() {
@@ -271,8 +286,7 @@ export default {
                         (response.data.warnings || []).forEach(warning => {
                             this.$message.warning(warning)
                         })
-                        this.changed = true
-                        this.editing = false
+                        this.showDialogForm = false
                         this.initForm()
                         this.load()
                     } else {
@@ -295,7 +309,6 @@ export default {
                 .then(response => {
                     if (response.data.success) {
                         row.active = !row.active
-                        this.changed = true
                         this.$message.success(response.data.message)
                     }
                 })
@@ -313,7 +326,6 @@ export default {
                     .then(response => {
                         if (response.data.success) {
                             this.$message.success(response.data.message)
-                            this.changed = true
                             this.load()
                         } else {
                             this.$message.error(response.data.message)
@@ -321,29 +333,6 @@ export default {
                     })
             }).catch(() => {
             })
-        },
-        handleCloseDialog() {
-            if (this.editing) {
-                this.$confirm('¿Cerrar sin guardar la variable en edición?', 'Confirmar', {
-                    confirmButtonText: 'Cerrar sin guardar',
-                    cancelButtonText: 'Cancelar',
-                    type: 'warning'
-                }).then(() => {
-                    this.forceClose()
-                }).catch(() => {
-                })
-            } else {
-                this.forceClose()
-            }
-        },
-        forceClose() {
-            this.editing = false
-            this.initForm()
-            this.$emit('update:showDialog', false)
-            if (this.changed) {
-                this.$emit('updated')
-                this.changed = false
-            }
         },
     }
 }

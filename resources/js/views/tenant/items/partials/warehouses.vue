@@ -35,6 +35,36 @@
                             </tbody>
                         </table>
 
+                        <template v-if="variations && variations.length > 0">
+                            <h5>Stock por variación</h5>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Variación</th>
+                                        <th>Código interno</th>
+                                        <th class="text-right">Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="variation in variations"
+                                        :key="'variation-stock-' + variation.id"
+                                    >
+                                        <th>{{ variation.variation_label || variation.description }}</th>
+                                        <th>{{ variation.internal_id }}</th>
+                                        <th
+                                            class="text-right"
+                                            :class="{
+                                                'text-danger': Number(variation.stock) <= 0
+                                            }"
+                                        >
+                                            {{ (variation.stock == null) ? '-' : Number(variation.stock).toFixed(2) }}
+                                        </th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </template>
+
                         <template v-if="item_unit_types.length > 0">
                             <h5>Lista de Precios Creados</h5>
                             <div class="table-responsive">
@@ -82,7 +112,14 @@
 
 <script>
 export default {
-    props: ["showDialog", "warehouses", "item_unit_types", 'config', 'price_labels'],
+    props: {
+        showDialog: {default: false},
+        warehouses: {default: () => []},
+        item_unit_types: {default: () => []},
+        config: {default: null},
+        price_labels: {default: () => []},
+        variations: {type: Array, default: () => []},
+    },
     data() {
         return {
             showImportDialog: false,

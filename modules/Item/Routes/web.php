@@ -23,6 +23,8 @@ if($hostname) {
             Route::get('brands/columns', 'BrandController@columns');
             Route::delete('brands/{brand}', 'BrandController@destroy');
 
+            Route::get('configurations/product-variables', 'ProductVariableController@index')->name('tenant.product-variables.index');
+
             Route::prefix('product-variables')->group(function () {
                 Route::get('records', 'ProductVariableController@records');
                 Route::get('record/{id}', 'ProductVariableController@record');

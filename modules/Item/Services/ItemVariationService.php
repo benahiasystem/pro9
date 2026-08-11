@@ -38,6 +38,7 @@ class ItemVariationService
         'system_isc_type_id',
         'percentage_isc',
         'subject_to_detraction',
+        'apply_store',
     ];
 
     /**
