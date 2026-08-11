@@ -218,9 +218,15 @@
 
                     } else {
                         self::setFilter($item, $request);
-                        // Las variaciones no aparecen como resultado raíz: se anidan bajo su padre.
-                        // La búsqueda por barcode (rama anterior) sí las encuentra directo.
-                        $item->whereNull('parent_item_id');
+                        // Las variaciones no aparecen como resultado raíz (se anidan bajo su padre),
+                        // salvo que el texto sea exactamente su código interno o barcode.
+                        $item->where(function ($query) use ($input) {
+                            $query->whereNull('parent_item_id');
+                            if (!empty($input)) {
+                                $query->orWhere('internal_id', $input)
+                                    ->orWhere('barcode', $input);
+                            }
+                        });
                     }
 
                     $item->whereNotHiddenSearch();

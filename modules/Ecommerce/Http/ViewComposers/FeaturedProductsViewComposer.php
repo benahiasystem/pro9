@@ -15,7 +15,7 @@ class FeaturedProductsViewComposer
 
         $exchange_rate_sale = $this->getExchangeRateSale();
 
-        $view->items = Item::where([['apply_store', 1], ['internal_id','!=', null]])->get()->transform(function($row, $key) use($exchange_rate_sale){
+        $view->items = Item::where([['apply_store', 1], ['internal_id','!=', null]])->whereDoesntHave('variations')->get()->transform(function($row, $key) use($exchange_rate_sale){
 
             $sale_unit_price = ($row->has_igv)? $row->sale_unit_price:$row->sale_unit_price*1.18;
 

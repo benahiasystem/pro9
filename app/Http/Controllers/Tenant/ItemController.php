@@ -203,10 +203,13 @@ class ItemController extends Controller
         // $records = Item::whereTypeUser()->whereNotIsSet();
         $records = $this->getInitialQueryRecords($isEcommerce, $request->isRestaurant ?? false);
 
-        // Vista agrupada: las variaciones se ocultan y el padre expone contador y stock total
+        // El contador de variaciones se expone siempre (subselect indexado barato);
+        // lo usan la vista agrupada y la cascada de visibilidad en tienda
+        $records->withCount('variations');
+
+        // Vista agrupada: las variaciones se ocultan y el padre expone el stock total
         if ($request->variations_view === 'grouped') {
             $records->whereNull('parent_item_id')
-                ->withCount('variations')
                 ->withSum('variations as variations_stock', 'stock');
         }
 
@@ -1191,9 +1194,27 @@ class ItemController extends Controller
         $item->apply_store = $visible;
         $item->save();
 
+        // Cascada hacia las variaciones: activar el padre publica el set completo;
+        // desactivar solo cascadea cuando el frontend lo confirmó (cascade=1)
+        $affected_variations = 0;
+        if ($item->variations()->exists()) {
+            if ($visible) {
+                $affected_variations = $item->variations()->update(['apply_store' => 1]);
+            } elseif ($request->cascade) {
+                $affected_variations = $item->variations()->update(['apply_store' => 0]);
+            }
+        }
+
+        CacheHelper::flush(['items_list']);
+
+        $message = ($visible > 0) ? 'El Producto ya es visible en tienda virtual' : 'El Producto ya no es visible en tienda virtual';
+        if ($affected_variations > 0) {
+            $message .= " junto a sus {$affected_variations} variaciones";
+        }
+
         return [
             'success' => true,
-            'message' => ($visible > 0 )?'El Producto ya es visible en tienda virtual' : 'El Producto ya no es visible en tienda virtual',
+            'message' => $message,
             'id' => $request->id
         ];
 
