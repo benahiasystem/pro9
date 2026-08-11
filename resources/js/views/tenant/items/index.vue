@@ -148,6 +148,12 @@
                                 @click.prevent="clickImportUpdatePrice()"
                                 >Actualizar precios</a
                             >
+                            <a
+                                class="dropdown-item text-1"
+                                href="#"
+                                @click.prevent="clickImportVariations()"
+                                >Variaciones</a
+                            >
                         </div>
                     </div>
                 </template>
@@ -521,6 +527,9 @@
             <items-import-update-price
                 :showDialog.sync="showImporUpdatePrice"
             ></items-import-update-price>
+            <items-import-variations
+                :showDialog.sync="showImportVariationsDialog"
+            ></items-import-variations>
 
             <items-import-tags
                 :showDialog.sync="showDialogTagsExports"
@@ -578,6 +587,7 @@ import { deletable } from "../../../mixins/deletable";
 import ItemsHistory from "@viewsModuleItem/items/history.vue";
 import { mapActions, mapState } from "vuex";
 import ItemsImportUpdatePrice from "./partials/update_prices.vue";
+import ItemsImportVariations from "./partials/import_variations.vue";
 import ItemsImportTags from "./partials/export_tag.vue";
 import ItemsExportBartender from "./partials/export_bartender.vue";
 
@@ -598,6 +608,7 @@ export default {
         ItemsHistory,
         ItemsImportTags,
         ItemsImportUpdatePrice,
+        ItemsImportVariations,
         ItemsExportBartender
     },
     data() {
@@ -617,6 +628,7 @@ export default {
             showImportListPriceDialog: false,
             showImportExtraWithExtraInfo: false,
             showImporUpdatePrice: false,
+            showImportVariationsDialog: false,
             showWarehousesDetail: false,
             resource: "items",
             recordId: null,
@@ -1169,6 +1181,9 @@ export default {
         },
         clickImportUpdatePrice() {
             this.showImporUpdatePrice = true;
+        },
+        clickImportVariations() {
+            this.showImportVariationsDialog = true;
         },
         clickDelete(id) {
             this.destroy(`/${this.resource}/${id}`).then(() =>

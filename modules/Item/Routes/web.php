@@ -105,6 +105,7 @@ if($hostname) {
 
             Route::post('items/import/items-update-prices', 'ItemController@importItemUpdatePrices');
             Route::post('items/import/items-update-prices-establishment', 'ItemController@importItemUpdatePricesEstablishment');
+            Route::post('items/import/variations', 'ItemController@importItemVariations');
             Route::get('items/prices-establishment-format/export', 'ItemController@pricesEstablishmentExport');
 
             Route::prefix('item-lots-group')->group(function () {
