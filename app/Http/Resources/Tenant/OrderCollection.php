@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Tenant;
 
+use App\Models\Tenant\Catalogs\IdentityDocumentType;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class OrderCollection extends ResourceCollection
@@ -14,8 +15,31 @@ class OrderCollection extends ResourceCollection
      */
     public function toArray($request)
     {
+        $documentTypeDescriptions = IdentityDocumentType::query()->pluck('description', 'id');
 
-        return $this->collection->transform(function($row, $key) {
+        return $this->collection->transform(function($row, $key) use ($documentTypeDescriptions) {
+            $customer = $row->customer;
+            $purchaseCustomer = optional($row->purchase)->datos_del_cliente_o_receptor;
+
+            $documentNumber = data_get($customer, 'numero_documento')
+                ?? data_get($customer, 'number')
+                ?? data_get($purchaseCustomer, 'numero_documento');
+            $documentNumber = preg_replace('/\D/', '', (string) $documentNumber);
+            if ($documentNumber === '0') {
+                $documentNumber = '';
+            }
+
+            $documentTypeId = (string) (
+                data_get($customer, 'codigo_tipo_documento_identidad')
+                ?? data_get($customer, 'identity_document_type_id')
+                ?? data_get($purchaseCustomer, 'codigo_tipo_documento_identidad')
+                ?? data_get($purchaseCustomer, 'identity_document_type_id')
+                ?? ''
+            );
+            $documentType = $documentTypeId !== ''
+                ? ($documentTypeDescriptions->get($documentTypeId) ?? null)
+                : null;
+
             return [
                 'id' => $row->id,
                 'external_id' => $row->external_id,
@@ -25,6 +49,8 @@ class OrderCollection extends ResourceCollection
                 'customer_email' => $row->customer->correo_electronico,
                 'customer_telefono' => $row->customer->telefono,
                 'customer_direccion' => $row->customer->direccion,
+                'customer_document_number' => $documentNumber !== '' ? $documentNumber : null,
+                'customer_document_type' => $documentType,
                 'is_guest' => $row->isGuestCheckout(),
                 'items' => $row->items,
                 'total' => $row->total,

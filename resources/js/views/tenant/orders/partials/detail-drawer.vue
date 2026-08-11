@@ -77,6 +77,9 @@
                                     <dt>Nombre / Razón social</dt>
                                     <dd>{{ record.customer || '—' }}</dd>
 
+                                    <dt v-if="customerDocumentLabel">Documento</dt>
+                                    <dd v-if="customerDocumentLabel">{{ customerDocumentLabel }}</dd>
+
                                     <dt v-if="record.customer_telefono">Teléfono</dt>
                                     <dd v-if="record.customer_telefono">{{ record.customer_telefono }}</dd>
 
@@ -238,6 +241,19 @@ export default {
                 return this.record.sale_note_number_full || null;
             }
             return this.record.number_document || null;
+        },
+        customerDocumentLabel() {
+            if (!this.record) {
+                return null;
+            }
+
+            const number = String(this.record.customer_document_number || '').trim();
+            if (!number || number === '0') {
+                return null;
+            }
+
+            const type = String(this.record.customer_document_type || '').trim();
+            return type ? `${number} (${type})` : number;
         },
         currencySymbol() {
             const first = this.record && Array.isArray(this.record.items)

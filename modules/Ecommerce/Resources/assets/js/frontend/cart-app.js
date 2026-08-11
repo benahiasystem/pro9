@@ -452,6 +452,32 @@ var app_cart = new Vue({
         showCheckoutSections() {
             return this.isLoggedIn || this.guestCheckoutAccepted;
         },
+        /**
+         * Texto del CTA del resumen.
+         * Solo el flujo invitado cambia según el método; usuarios logueados siguen viendo "Pagar".
+         */
+        primaryPayButtonLabel() {
+            if (this.isLoggedIn || !this.selectedPaymentMethod) {
+                return 'Pagar';
+            }
+
+            switch (this.selectedPaymentMethod) {
+                case 'culqi':
+                    return 'Pagar con ' + (this.titleCulqi || 'Tarjeta (Culqi)');
+                case 'izipay':
+                    return 'Pagar con ' + (this.titleIzipay || 'Izipay');
+                case 'mp':
+                    return 'Pagar con ' + (this.titleMp || 'Mercado Pago');
+                case 'cash':
+                    return 'Confirmar pedido — ' + (this.cashPaymentTitle || 'Pago contra entrega');
+                case 'yape':
+                    return 'Confirmar pedido con Yape';
+                case 'transfer':
+                    return 'Confirmar pedido con transferencia';
+                default:
+                    return 'Pagar';
+            }
+        },
         guestCheckoutTotal() {
             return parseFloat(this.summary.total || 0);
         },
