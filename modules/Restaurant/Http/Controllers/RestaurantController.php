@@ -32,10 +32,6 @@ use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Company;
 use Modules\BusinessTurn\Models\BusinessTurn;
 use Modules\MobileApp\Models\AppConfiguration;
-use App\Services\System\MozoConfigurationService;
-use App\Services\System\VendeyaConfigurationService;
-use App\Helpers\MozoAccessHelper;
-use App\Models\Tenant\User;
 
 
 class RestaurantController extends Controller
@@ -48,50 +44,22 @@ class RestaurantController extends Controller
         return view('restaurant::mozo.index');
     }
 
-    public function mozoEntrar(string $hash)
+    public function config()
     {
-        $helper = new MozoAccessHelper();
-        $user = $helper->findUserByHash($hash);
-
-        if (!$user) {
-            abort(401, 'Enlace inválido o expirado.');
-        }
-
-        return view('restaurant::mozo.entrar', [
-            'sessionData' => $this->buildMozoSessionData($user, 'MOZO'),
+        return $this->buildConfigResponse([
+            'brandName' => 'Mozo.pe',
+            'Primary' => '#32a56a',
+            'Secondary' => '#f58f00',
+            'Accent' => '#115733',
+            'Background' => '#f4f5f6',
+            'Text' => '#1d3a3a',
+            'lightText' => '#a2a5b9',
+            'darkPrimary' => '#222225',
+            'darkSecondary' => '#27272a',
+            'darkAccent' => '#313135',
+            'darkBackground' => '#3b3b40',
+            'darkLightText' => '#d0d2dc'
         ]);
-    }
-
-    public function mozoDirecto()
-    {
-        return view('restaurant::mozo.entrar', [
-            'sessionData' => $this->buildMozoSessionData(auth()->user(), 'ADM'),
-        ]);
-    }
-
-    private function buildMozoSessionData(User $user, string $defaultRole = 'ADM'): array
-    {
-        if (!$user->api_token) {
-            $user->api_token = Str::random(50);
-            $user->save();
-        }
-
-        $user->loadMissing('restaurant_role');
-
-        return [
-            'token' => $user->api_token,
-            'email' => $user->email,
-            'name' => $user->name,
-            'userRole' => optional($user->restaurant_role)->code ?? $defaultRole,
-            'establishmentId' => (string) ($user->establishment_id ?? ''),
-            'sellerId' => (string) $user->id,
-            'sellerName' => $user->name,
-        ];
-    }
-
-    public function config(MozoConfigurationService $service)
-    {
-        return $this->buildConfigResponse($service->get());
     }
 
     /**
@@ -102,9 +70,22 @@ class RestaurantController extends Controller
         return view('restaurant::vendeya.index');
     }
 
-    public function configVendeya(VendeyaConfigurationService $service)
+    public function configVendeya()
     {
-        return $this->buildConfigResponse($service->get());
+        return $this->buildConfigResponse([
+            'brandName' => 'Vendeya.pe',
+            'Primary' => '#ff7d00',
+            'Secondary' => '#d5e8e8',
+            'Background' => '#eef5f5',
+            'White' => '#ffffff',
+            'Text' => '#004850',
+            'lightText' => '#a2a5b9',
+            'darkPrimary' => '#121c22',
+            'darkSecondary' => '#1c2a32',
+            'darkrAccent' => '#253945',
+            'darkBackground' => '#1b262c',
+            'darkText' => '#a9a9b2'
+        ]);
     }
 
     /**
@@ -118,11 +99,25 @@ class RestaurantController extends Controller
             $fqdn = $currentHostname ?: request()->getHost();
             $protocol = config('tenant.force_https') ? 'https://' : 'http://';
 
+            // WebSocket público (Centrifugo) para las apps mozo/vendeya.
+            // Es un ÚNICO subdominio ws.{dominio-base} por instalación, compartido
+            // por todos los tenants (el canal restaurant:{fqdn} diferencia a cada uno).
+            // Se deriva del fqdn del tenant quitando el label del subdominio:
+            //   1.facturaloperu-pro8.oo  ->  wss://ws.facturaloperu-pro8.oo
+            // OJO: esto NO es CENTRIFUGO_URL del .env (esa es la ruta INTERNA
+            // Laravel->Centrifugo para publicar vía HTTP API dentro de docker).
+            $firstDot = strpos($fqdn, '.');
+            $baseDomain = $firstDot !== false ? substr($fqdn, $firstDot + 1) : $fqdn;
+            $wsScheme = config('tenant.force_https') ? 'wss' : 'ws';
+            $wsUrl = "{$wsScheme}://ws.{$baseDomain}";
+            // $wsUrl = "ws://localhost:8000"; // temporal para desarrollo local, reemplazar por la línea anterior en producción
+
             return response()->json(array_merge([
                 'apiSsl' => $protocol,
                 'apiUrl' => $fqdn,
+                'wsUrl' => $wsUrl,
                 'isStoreEnabled' => 'false',
-            ], $branding))->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+            ], $branding));
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -148,7 +143,7 @@ class RestaurantController extends Controller
             'restaurant_role_id' => $user->restaurant_role_id,
             'restaurant_role_code' => $user->restaurant_role_id ? $user->restaurant_role->code : null,
             'ruc' => $company->number,
-            'app_logo' => $company->logo,
+            'app_logo' => $company->app_logo,
             'app_logo_base64' => '',
             'company' => [
                 'name' => $company->name,

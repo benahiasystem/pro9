@@ -169,9 +169,6 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 {
                     if ($document_item->item->IdLoteSelected != null)
                     {
-                        $productName = $document_item->item->description
-                            ?? ($document_item->item->name ?? 'sin nombre');
-
                         if(is_array($document_item->item->IdLoteSelected))
                         {
                             // presentacion - factor de lista de precios
@@ -182,21 +179,8 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
                             foreach ($lotesSelecteds as $item)
                             {
-                                $lotId = is_array($item) ? ($item['id'] ?? null) : ($item->id ?? null);
-                                $compromiseQuantity = is_array($item)
-                                    ? ($item['compromise_quantity'] ?? 0)
-                                    : ($item->compromise_quantity ?? 0);
-
-                                if ($lotId === null || $lotId === '') {
-                                    throw new Exception("Lote vacío o sin identificador para el producto [{$productName}]");
-                                }
-
-                                $lot = ItemLotsGroup::query()->find($lotId);
-                                if (!$lot) {
-                                    throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
-                                }
-
-                                $lot->quantity = $lot->quantity + (($quantity_unit * $compromiseQuantity) * $document_factor);
+                                $lot = ItemLotsGroup::query()->find($item->id);
+                                $lot->quantity = $lot->quantity + (($quantity_unit * $item->compromise_quantity) * $document_factor);
                                 $this->validateStockLotGroup($lot, $document_item);
                                 $lot->save();
                             }
@@ -204,12 +188,7 @@ class InventoryKardexServiceProvider extends ServiceProvider
                         }
                         else{
 
-                            $lotId = $document_item->item->IdLoteSelected;
-                            $lot = ItemLotsGroup::query()->find($lotId);
-                            if (!$lot) {
-                                throw new Exception("Lote no encontrado (id: {$lotId}) para el producto [{$productName}]");
-                            }
-
+                            $lot = ItemLotsGroup::query()->find($document_item->item->IdLoteSelected);
                             try {
                                 $quantity_unit = $document_item->item->presentation->quantity_unit;
                             } catch (Exception $e) {
@@ -1060,6 +1039,22 @@ class InventoryKardexServiceProvider extends ServiceProvider
         try {
             $stockService = app(\Modules\Restaurant\Services\RestaurantStockService::class);
             $stockService->calculateAndUpdateStock($item_id);
+
+            // Notificar al POS del restaurante vía WebSocket que el stock cambió.
+            // Este es el chokepoint de TODOS los movimientos de inventario (venta,
+            // nota de venta, compra, devolución, modificadores), así que cubre todos
+            // los caminos de venta. Se limita a ítems del restaurante para no publicar
+            // en cada venta ajena al módulo.
+            $item = Item::find($item_id);
+            if ($item && $item->apply_restaurant) {
+                $fqdn = app(\Hyn\Tenancy\Contracts\CurrentHostname::class)?->fqdn ?? 'local';
+                $data = app(\Modules\Restaurant\Http\Controllers\RestaurantController::class)
+                    ->getStockStatus()['data'] ?? [];
+                app(\App\Services\CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+                    'event'   => 'stock-updated',
+                    'payload' => $data,
+                ]);
+            }
         } catch (\Exception $e) {
             \Log::warning("No se pudo sincronizar stock del restaurante para item {$item_id}: " . $e->getMessage());
         }
