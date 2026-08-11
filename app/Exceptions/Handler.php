@@ -112,6 +112,12 @@ class Handler extends ExceptionHandler
         }
 
 
+        if (preg_match('/UploadFileHelper\.php/', $exception->getFile()))
+        {
+            return $this->errorResponse($exception->getMessage(), 422, $exception);
+        }
+
+
         if($exception instanceof HttpException)
         {
             return $this->errorResponse('', '', $exception);

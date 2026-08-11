@@ -67,7 +67,7 @@ class DocumentController extends Controller
             // descarga+base64+POST a /print-orders (evita doble impresión).
             'print' => $print_result,
             'data_ws' => [
-                'message_text' => "Su comprobante de pago electrónico {$document->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$document->external_id}/ticket"."",
+                'message_text' => "Su comprobante de pago electrónico {$document->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$document->external_id}/".(optional(\App\Models\Tenant\Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket')."",
                 "pdf_a4_filename" => url('')."/api/document-file/document/{$document->external_id}/a4",
                 "pdf_ticket_filename" => url('')."/api/document-file/document/{$document->external_id}/ticket",
                 "full_filename" => $document->filename.".pdf",
@@ -191,6 +191,30 @@ class DocumentController extends Controller
 
         $records = new DocumentCollection($record);
         return $records;
+    }
+
+    /**
+     * Devuelve un comprobante por su id.
+     *
+     * whereTypeUser() evita que un vendedor pueda leer documentos de otro usuario
+     * pasando ids ajenos; para los demás perfiles no restringe nada.
+     */
+    public function record($id)
+    {
+        $record = Document::whereTypeUser()->find($id);
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró el comprobante solicitado.',
+            ], 404);
+        }
+
+        // Se conserva el envoltorio "data" que agregaba JsonResource para no cambiar
+        // la forma de la respuesta.
+        return response()->json([
+            'data' => $record->getApiResourceFind(),
+        ]);
     }
 
     public function updatestatus(Request $request)

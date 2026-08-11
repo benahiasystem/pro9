@@ -531,9 +531,17 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                             <ul class="nav nav-children">
                                                 @if(in_array('clients', $vc_module_levels))
                                                     <li
-                                                        class="{{ ($firstLevel === 'persons' && $secondLevel === 'customers') ? 'nav-active' : '' }}">
-                                                        <a class="nav-link"
+                                                        class="{{ ($firstLevel === 'persons' && $secondLevel === 'customers') ? 'nav-active' : '' }} nav-item-with-action">
+                                                        <a class="nav-link pe-5"
                                                             href="{{route('tenant.persons.index', ['type' => 'customers'])}}">Clientes</a>
+                                                        <button
+                                                            type="button"
+                                                            class="{{ ($firstLevel === 'persons' && $secondLevel === 'customers') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"
+                                                            title="Crear cliente"
+                                                            onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ route('tenant.persons.index', ['type' => 'customers', 'create' => 1]) }}';"
+                                                        >
+                                                            Crear
+                                                        </button>
                                                     </li>
                                                 @endif
                                                 @if(in_array('clients_types', $vc_module_levels))

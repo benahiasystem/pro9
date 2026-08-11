@@ -6,6 +6,7 @@ use App\CoreFacturalo\Helpers\QrCode\QrCodeGenerate;
 use App\Http\Controllers\Tenant\DownloadController;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\DocumentType;
+use App\Models\Tenant\Catalogs\District;
 use App\Traits\SellerIdTrait;
 use Carbon\Carbon;
 use Eloquent;
@@ -360,6 +361,110 @@ class Document extends ModelTenant
         
         // $factor = ($this->total_value + $this->total_taxes) / $this->total_value;
         return round($total_discount_global + $total_discount_item, 2);
+    }
+
+    /**
+     * Datos esenciales de una factura/boleta para consumo por API.
+     *
+     * Los descuentos siguen el mismo criterio que getTotalDiscountWithIgvAttribute():
+     * los que traen from_global_distribution provienen de repartir el descuento global
+     * entre los ítems, así que se acumulan aparte y no se mezclan con el descuento
+     * propio de cada línea.
+     *
+     * @return array
+     */
+    public function getApiResourceFind()
+    {
+        $global_discount = 0;
+
+        $items = $this->items->map(function ($row) use (&$global_discount) {
+            $item_discount = 0;
+
+            foreach (($row->discounts ?: []) as $discount) {
+                // discount_type_id "00" guarda el importe sin IGV.
+                $amount = $discount->discount_type_id == '00'
+                    ? $discount->amount_without_rounded * 1.18
+                    : $discount->amount;
+
+                if (!empty($discount->from_global_distribution)) {
+                    $global_discount += $amount;
+                } else {
+                    $item_discount += $amount;
+                }
+            }
+
+            return [
+                'quantity'       => (float) $row->quantity,
+                'unit_type_id'   => optional($row->item)->unit_type_id,
+                'description'    => $row->name_product_pdf ?: optional($row->item)->description,
+                'unit_price'     => round((float) $row->unit_price, 2),
+                // Solo el descuento propio de la linea, sin la parte repartida del global.
+                'total_discount' => round($item_discount, 2),
+                'total'          => round((float) $row->total, 2),
+            ];
+        })->values()->all();
+
+        return [
+            'series'                 => $this->series,
+            'number'                 => $this->number,
+            'document_type_id'       => $this->document_type_id,
+            'date_of_issue'          => optional($this->date_of_issue)->format('Y-m-d'),
+            'time_of_issue'          => $this->time_of_issue,
+            'date_of_due'            => optional(optional($this->invoice)->date_of_due)->format('Y-m-d'),
+            'currency_type_id'       => $this->currency_type_id,
+
+            'customer_name'          => optional($this->customer)->name,
+            'customer_number'        => optional($this->customer)->number,
+            'customer_address'       => $this->getApiResourceCustomerAddress(),
+
+            'qr'                     => $this->qr,
+
+            // Operaciones segun su afectacion al IGV.
+            'total_taxed'            => round((float) $this->total_taxed, 2),
+            'total_exonerated'       => round((float) $this->total_exonerated, 2),
+            'total_unaffected'       => round((float) $this->total_unaffected, 2),
+            'total_exportation'      => round((float) $this->total_exportation, 2),
+            'total_free'             => round((float) $this->total_free, 2),
+
+            'total_igv'              => round((float) $this->total_igv, 2),
+            'subtotal'               => round((float) $this->subtotal, 2),
+            // Descuento global (con IGV), reconstruido desde los items.
+            'total_discount_global'  => round($global_discount, 2),
+            'total'                  => round((float) $this->total, 2),
+
+            'items'                  => $items,
+        ];
+    }
+
+    /**
+     * Arma la direccion del cliente igual que las plantillas PDF: la direccion
+     * registrada mas distrito, provincia y departamento, sin partes vacias.
+     *
+     * @return string|null
+     */
+    private function getApiResourceCustomerAddress()
+    {
+        $customer = $this->customer;
+
+        if (!$customer) {
+            return null;
+        }
+
+        $ubigeo = (isset($customer->district_id) && $customer->district_id !== '-')
+            ? District::find($customer->district_id)
+            : null;
+
+        $parts = [
+            $customer->address ?? null,
+            optional($customer->district)->description ?: optional($ubigeo)->description,
+            optional($customer->province)->description ?: optional(optional($ubigeo)->province)->description,
+            optional($customer->department)->description
+                ?: optional(optional(optional($ubigeo)->province)->department)->description,
+        ];
+
+        $parts = array_filter($parts, fn ($part) => !empty(trim((string) $part)));
+
+        return $parts ? implode(', ', $parts) : null;
     }
 
     public function getAdditionalDataAttribute($value)

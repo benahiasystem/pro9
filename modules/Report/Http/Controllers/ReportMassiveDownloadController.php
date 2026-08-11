@@ -67,7 +67,7 @@ class ReportMassiveDownloadController extends Controller
         $host = $request->getHost();
         $tray = DownloadTray::create([
             'user_id' => auth()->user()->id,
-            'module' => 'INVENTORY',
+            'module' => 'REPORT',
             'format' => 'pdf',
             'date_init' => date('Y-m-d H:i:s'),
             'type' => 'Descarga masiva de documentos'
@@ -89,6 +89,7 @@ class ReportMassiveDownloadController extends Controller
         if(count($document_types) == 0){
             $document_types = ['all'];
         }
+        $params->document_types = $document_types;
         ProcessReportMassiveDocuments::dispatch($trayId, $website_id,$document_types, $params);
 
         return  [

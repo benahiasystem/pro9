@@ -187,6 +187,48 @@ use Illuminate\Support\Facades\Mail;
             return null;
         }
 
+        /**
+         * Valida que el plan cumpla los límites NRUS cuando business = 6.
+         *
+         * @param  mixed $plan_id
+         * @param  mixed $business
+         * @return string|null
+         */
+        private function validateNrusBusinessPlan($plan_id, $business)
+        {
+            if ((int) $business !== 6) {
+                return null;
+            }
+
+            $plan = Plan::find($plan_id);
+            if (!$plan) {
+                return 'Plan no encontrado.';
+            }
+
+            if (!$this->planMeetsNrusLimits($plan)) {
+                return 'El plan seleccionado no cumple los límites NRUS (ventas máx. S/ 8000 y 1 sucursal, sin límites ilimitados).';
+            }
+
+            return null;
+        }
+
+        /**
+         * @param  Plan $plan
+         * @return bool
+         */
+        private function planMeetsNrusLimits(Plan $plan): bool
+        {
+            if ($plan->sales_unlimited || (float) $plan->sales_limit > 8000) {
+                return false;
+            }
+
+            if ($plan->establishments_unlimited || (int) $plan->establishments_limit > 1) {
+                return false;
+            }
+
+            return true;
+        }
+
         private function prepareModules(Module $module): Module
         {
             $levels = [];
@@ -569,6 +611,16 @@ use Illuminate\Support\Facades\Mail;
                     ];
                 }
 
+                $plan = Plan::find($request->plan_id);
+                $selected_business = (int) $request->input('business', data_get($plan->module_permissions ?? [], 'business', 0));
+                $nrus_error = $this->validateNrusBusinessPlan($request->plan_id, $selected_business);
+                if ($nrus_error) {
+                    return [
+                        'success' => false,
+                        'message' => $nrus_error,
+                    ];
+                }
+
                 $client
                     ->setSmtpHost($smtp_host)
                     ->setSmtpPort($smtp_port)
@@ -589,8 +641,6 @@ use Illuminate\Support\Facades\Mail;
                 $client->enable_list_product = $request->enable_list_product;
                 $client->save();
 
-                $plan = Plan::find($request->plan_id);
-                $selected_business = (int) $request->input('business', data_get($plan->module_permissions, 'business'));
                 $plan_for_config = $plan->toArray();
                 $module_permissions = $plan_for_config['module_permissions'] ?? [];
                 $module_permissions = is_array($module_permissions) ? $module_permissions : (array) $module_permissions;
@@ -683,6 +733,10 @@ use Illuminate\Support\Facades\Mail;
                     ->table('module_level_user')
                     ->insert($array_levels);
 
+                if ($selected_business === 6) {
+                    $this->applyNrusTenantConfig();
+                }
+
                 // Actualiza el modulo de farmacia.
                 $config = (array)DB::connection('tenant')
                     ->table('configurations')
@@ -752,6 +806,16 @@ use Illuminate\Support\Facades\Mail;
                 return [
                     'success' => false,
                     'message' => $whatsapp_override_error,
+                ];
+            }
+
+            $plan = Plan::find($request->input('plan_id'));
+            $selected_business = (int) $request->input('business', data_get($plan->module_permissions ?? [], 'business', 0));
+            $nrus_error = $this->validateNrusBusinessPlan($request->input('plan_id'), $selected_business);
+            if ($nrus_error) {
+                return [
+                    'success' => false,
+                    'message' => $nrus_error,
                 ];
             }
 
@@ -873,8 +937,6 @@ use Illuminate\Support\Facades\Mail;
             $module_permissions = is_array($module_permissions) ? $module_permissions : (array) $module_permissions;
             $module_permissions['business'] = $selected_business;
             $plan_for_config['module_permissions'] = $module_permissions;
-
-            $is_nrus = (int) data_get($plan->module_permissions, 'business') === 6;
 
             $http = config('tenant.force_https') == true ? 'https://' : 'http://';
 
@@ -1091,13 +1153,8 @@ use Illuminate\Support\Facades\Mail;
                 \Log::info('Módulos básicos insertados');
             }
 
-            // Si el plan corresponde al giro de negocio NRUS, dejar activo únicamente
-            // el tipo de operación "Venta Interna - NRUS" (0113) y desactivar los demás.
             if ($is_nrus) {
-                \Log::info('Plan NRUS detectado, configurando tipos de operación...');
-                DB::connection('tenant')->table('cat_operation_types')->update(['active' => false]);
-                DB::connection('tenant')->table('cat_operation_types')->where('id', '0113')->update(['active' => true]);
-                \Log::info('Tipos de operación NRUS configurados');
+                $this->applyNrusTenantConfig();
             }
 
             \Log::info('=== CLIENTE REGISTRADO EXITOSAMENTE ===', ['timestamp' => now()]);
@@ -1118,6 +1175,19 @@ use Illuminate\Support\Facades\Mail;
             ];
         }
     }
+
+        /**
+         * Configura el tenant para régimen NRUS: plantilla ticket PDF y tipo de operación 0113.
+         */
+        private function applyNrusTenantConfig(): void
+        {
+            DB::connection('tenant')->table('establishments')->update([
+                'template_ticket_pdf' => 'nrus',
+            ]);
+
+            DB::connection('tenant')->table('cat_operation_types')->update(['active' => false]);
+            DB::connection('tenant')->table('cat_operation_types')->where('id', '0113')->update(['active' => true]);
+        }
 
         private function runGuestRegister($from_guest_register, $user_id, $email, $client_id, $payment_order = null)
         {

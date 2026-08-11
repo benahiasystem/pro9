@@ -48,11 +48,21 @@ export default {
         canSend() {
             return !!this.effectiveConfig.qr_api_enable_ws && !!this.effectiveInstance;
         },
+        pdfFormat() {
+            return this.effectiveConfig.qr_api_pdf_format === 'a4' ? 'a4' : 'ticket';
+        },
         resolvedWsFile() {
-            if (this.effectiveConfig.qr_api_pdf_format === 'a4' && this.wsFileA4) {
+            if (this.pdfFormat === 'a4' && this.wsFileA4) {
                 return this.wsFileA4;
             }
             return this.wsFile;
+        },
+        resolvedWsMessage() {
+            if (!this.wsMessage) return this.wsMessage;
+            // Alinear el link del mensaje con el formato PDF configurado (a4/ticket)
+            return String(this.wsMessage)
+                .replace(/\/print\/document\/([^/\s]+)\/(?:ticket(?:_\d+)?|a4|a5)\b/g, `/print/document/$1/${this.pdfFormat}`)
+                .replace(/\/sale-notes\/print\/([^/\s]+)\/(?:ticket(?:_\d+)?|a4|a5)\b/g, `/sale-notes/print/$1/${this.pdfFormat}`);
         },
         disabledReason() {
             if (!this.effectiveConfig.qr_api_enable_ws) {
@@ -98,7 +108,7 @@ export default {
             this.form = {
                 file: base64file,
                 number: `51${this.wsPhone}`,
-                message: this.wsMessage,
+                message: this.resolvedWsMessage,
                 filename: full_filename
             }
         },

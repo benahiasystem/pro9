@@ -121,8 +121,7 @@
                                 <el-option key="CREADOR"
                                            label="Registrado por"
                                            value="CREADOR"></el-option>
-                                <el-option v-show="form.document_type_id !== '80'"
-                                           key="VENDEDOR"
+                                <el-option key="VENDEDOR"
                                            label="Vendedor asignado"
                                            value="VENDEDOR"></el-option>
                             </el-select>
@@ -488,9 +487,6 @@ export default {
             },
 
             ChangedSalesnote(){
-                if(this.form.document_type_id == '80' && this.form.user_type != null ){
-                    this.form.user_type = 'CREADOR';
-                }
                 this.form.person_id = null
                 this.form.user_id = [];
                 this.$eventHub.$emit('changeFilterColumn', 'seller')

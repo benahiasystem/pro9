@@ -1081,6 +1081,7 @@ if ($hostname) {
             Route::post('massive-invoice/process', 'System\MassiveInvoiceController@process')->name('system.massive-invoice.process');
             Route::get('massive-invoice/config', 'System\MassiveInvoiceController@config');
             Route::get('massive-invoice/records', 'System\MassiveInvoiceController@records');
+            Route::get('massive-invoice/export', 'System\MassiveInvoiceController@export');
             Route::get('massive-invoice/download/{id}/{type}', 'System\MassiveInvoiceController@downloadFile');
 
             //Users
@@ -1169,6 +1170,17 @@ if ($hostname) {
             Route::post('configurations/emails/test', 'System\ConfigurationController@testEmail');
             Route::post('configurations/evolution-server', 'System\ConfigurationController@evolutionServer');
             Route::post('configurations/google-maps', 'System\ConfigurationController@googleMaps');
+
+            // Número de WhatsApp conectado al superadmin (envío de notificaciones)
+            Route::post('configurations/whatsapp-notify/connect', 'System\WhatsAppNotifyController@connect');
+            Route::get('configurations/whatsapp-notify/qr', 'System\WhatsAppNotifyController@qr');
+            Route::get('configurations/whatsapp-notify/state', 'System\WhatsAppNotifyController@state');
+            Route::post('configurations/whatsapp-notify/send', 'System\WhatsAppNotifyController@send');
+            Route::post('configurations/whatsapp-notify/disconnect', 'System\WhatsAppNotifyController@disconnect');
+            Route::post('configurations/whatsapp-notify/restart', 'System\WhatsAppNotifyController@restart');
+            Route::post('configurations/whatsapp-notify/renew', 'System\WhatsAppNotifyController@renew');
+            Route::post('configurations/whatsapp-notify/toggle-enabled', 'System\WhatsAppNotifyController@toggleEnabled');
+            Route::post('configurations/whatsapp-notify/regenerate-token', 'System\WhatsAppNotifyController@regenerateToken');
 
             // Términos y Condiciones
             Route::get('configurations/terms', 'System\ConfigurationController@getTerms');

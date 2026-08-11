@@ -127,7 +127,7 @@ class DocumentController extends Controller
     {
         $auth_id = auth()->user()->id;
         $cacheParams = [
-            'category_id' => $request->category_ido,
+            'category_id' => $request->category_id,
             'page' => $request->page,
             'customer_id' => $request->customer_id,
             'd_end' => $request->d_end,
@@ -140,6 +140,9 @@ class DocumentController extends Controller
             'pending_payment' => $request->pending_payment,
             'series' => $request->series,
             'state_type_id' => $request->state_type_id,
+            'purchase_order' => $request->purchase_order,
+            'guides' => $request->guides,
+            'plate_numbers' => $request->plate_numbers,
         ];
         $cacheKey = 'document_list_' . "user-$auth_id" . "_" . md5(json_encode($cacheParams));
         if ($this->pingCache()) {

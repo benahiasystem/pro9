@@ -44,6 +44,13 @@ class Configuration extends Model
         'qr_api_msg',
         'evolution_server_url',
         'evolution_server_apikey',
+        'notify_wa_instance',
+        'notify_wa_connection_state',
+        'notify_wa_connected_phone',
+        'notify_wa_profile_name',
+        'notify_wa_connected_at',
+        'notify_wa_enabled',
+        'notify_wa_api_token',
         'active_cron',
         'hour_generate_payment_order',
         'day_before_due',
@@ -74,6 +81,8 @@ class Configuration extends Model
         'enabled_izipay' => 'boolean',
         'enabled_culqi' => 'boolean',
         'enabled_mp' => 'boolean',
+        'notify_wa_enabled' => 'boolean',
+        'notify_wa_connected_at' => 'datetime',
         'mozo_configuration' => 'array',
         'vendeya_configuration' => 'array',
     ];
@@ -144,6 +153,20 @@ class Configuration extends Model
         return null;
     }
 
+    /**
+     * True si hay algun medio configurado para enviar notificaciones por
+     * WhatsApp: el numero conectado por QR al superadmin (preferido) o,
+     * si no, las credenciales manuales legacy (qr_api_url/qr_api_token).
+     */
+    public function hasWhatsappNotifySender(): bool
+    {
+        if ($this->notify_wa_enabled && !empty($this->notify_wa_instance) && $this->notify_wa_connection_state === 'open') {
+            return true;
+        }
+
+        return !empty($this->qr_api_url) && !empty($this->qr_api_token);
+    }
+
     public function validationConfigNotify()
     {
         $errors = [
@@ -152,7 +175,7 @@ class Configuration extends Model
         ];
         // dd($this->qr_api_url, $this->qr_api_token, $this->mail_host, $this->mail_port, $this->mail_username, $this->mail_password, $this->mail_encryption);
 
-        if (empty($this->qr_api_url) || empty($this->qr_api_token)) {
+        if (!$this->hasWhatsappNotifySender()) {
             $errors['ws'] = 'Falta configurar los parámetros para el envío de notificaciones por WhatsApp';
             return $errors;
         } else if (
