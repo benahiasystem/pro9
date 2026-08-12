@@ -11,7 +11,7 @@
       "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_index-596c10f0.js": {
+  "_index-82393bae.js": {
     "assets": [
       "assets/element-icons-ab40a589.woff",
       "assets/element-icons-a30f5b3b.ttf"
@@ -19,19 +19,19 @@
     "css": [
       "assets/index-fd3e0cf7.css"
     ],
-    "file": "assets/index-596c10f0.js",
+    "file": "assets/index-82393bae.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_vue-clipboard-9d5c8ffb.js": {
+  "_vue-clipboard-3aed40f7.js": {
     "css": [
       "assets/vue-clipboard-141243c1.css"
     ],
-    "file": "assets/vue-clipboard-9d5c8ffb.js",
+    "file": "assets/vue-clipboard-3aed40f7.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js",
-      "_index-596c10f0.js"
+      "_index-82393bae.js"
     ]
   },
   "claim_form.css": {
@@ -43,10 +43,10 @@
     "src": "index.css"
   },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-84cbdc9f.js",
+    "file": "assets/app-50eca7d8.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js",
-      "_index-596c10f0.js",
+      "_index-82393bae.js",
       "_claim_form-62a9b16c.js"
     ],
     "isEntry": true,
@@ -118,18 +118,18 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-691167c1.css",
+    "file": "assets/app-665c6694.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
-      "assets/app-691167c1.css"
+      "assets/app-665c6694.css"
     ],
-    "file": "assets/app-86e65e87.js",
+    "file": "assets/app-2371ef91.js",
     "imports": [
-      "_vue-clipboard-9d5c8ffb.js",
+      "_vue-clipboard-3aed40f7.js",
       "__plugin-vue2_normalizer-839f22b6.js",
-      "_index-596c10f0.js",
+      "_index-82393bae.js",
       "_claim_form-62a9b16c.js"
     ],
     "isEntry": true,
@@ -143,11 +143,11 @@
     "css": [
       "assets/system-04190ff2.css"
     ],
-    "file": "assets/system-05526322.js",
+    "file": "assets/system-054061c8.js",
     "imports": [
-      "_vue-clipboard-9d5c8ffb.js",
+      "_vue-clipboard-3aed40f7.js",
       "__plugin-vue2_normalizer-839f22b6.js",
-      "_index-596c10f0.js"
+      "_index-82393bae.js"
     ],
     "isEntry": true,
     "src": "resources/js/system.js"
