@@ -1308,7 +1308,7 @@
                                         </thead>
                                         <tbody>
                                         <tr v-for="(row, index) in variation_rows" :key="'variation-row-' + index">
-                                            <td class="align-middle">
+                                            <td>
                                                 <span v-for="(color, colorIndex) in row.colors"
                                                       :key="'variation-color-' + index + '-' + colorIndex"
                                                       class="pv-color-dot"
@@ -1318,14 +1318,14 @@
                                                        class="form-control-feedback text-danger d-block"
                                                        v-text="variationError(index, 'variable_value_ids')"></small>
                                             </td>
-                                            <td class="align-middle">
+                                            <td>
                                                 <el-upload :action="`/${resource}/upload`"
                                                            :data="{'type': 'items'}"
                                                            :headers="headers"
                                                            :on-success="(response) => onVariationImageSuccess(response, row)"
                                                            :show-file-list="false"
                                                            class="avatar-uploader item-img"
-                                                           style="width: 48px !important;"
+                                                           style="width: 48px !important; margin-top: 0 !important;"
                                                            :title="row.image_url ? 'Cambiar imagen' : 'Subir imagen para esta combinación'">
                                                     <img v-if="row.image_url"
                                                          :src="row.image_url"
@@ -1357,7 +1357,7 @@
                                                        class="form-control-feedback text-danger"
                                                        v-text="variationError(index, 'stock')"></small>
                                             </td>
-                                            <td class="align-middle">
+                                            <td>
                                                 <button class="btn btn-danger btn-sm"
                                                         type="button"
                                                         @click.prevent="removeVariationRow(index)">x

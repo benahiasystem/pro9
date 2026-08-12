@@ -730,6 +730,39 @@ class Item extends ModelTenant
     }
 
     /**
+     * Atributos de la variación listos para pintarse como etiquetas,
+     * ej: [['variable' => 'Color', 'value' => 'Rojo', 'color' => '#e53935']].
+     * El orden es el de creación (item_variation_values.id), igual que el
+     * de la etiqueta. Precargar variationValues.value y variationValues.variable
+     * para no disparar queries por fila.
+     *
+     * @return array
+     */
+    public function getVariationAttributesData()
+    {
+        if (!$this->parent_item_id) {
+            return [];
+        }
+
+        return $this->variationValues
+            ->sortBy('id')
+            ->map(function ($row) {
+                if (!$row->value) {
+                    return null;
+                }
+
+                return [
+                    'variable' => $row->variable ? $row->variable->name : null,
+                    'value' => $row->value->value,
+                    'color' => $row->value->color,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return HasMany
      */
     public function item_lots()
@@ -1059,11 +1092,11 @@ class Item extends ModelTenant
         } else {
             $stock = '';
         }
-        if($extended == false) {
-            $desc = "{$desc} - {$brand}";
-        }else {
-            $desc = "{$desc} - {$category} - {$brand}";
-        }
+        // sin marca/categoría no se arrastra el separador ("00012 - Polo - ")
+        $parts = ($extended == false) ? [$desc, $brand] : [$desc, $category, $brand];
+        $desc = implode(' - ', array_filter($parts, function ($part) {
+            return trim($part) !== '';
+        }));
         return [
             'full_description'      => $desc,
             'brand'                 => $brand,
@@ -1320,7 +1353,7 @@ class Item extends ModelTenant
             'variations' => ((int) ($this->variations_count ?? 0)) > 0
                 ? $this->variations()
                     ->whereIsActive()
-                    ->with('variationValues.value')
+                    ->with(['variationValues.value', 'variationValues.variable'])
                     ->orderBy('id')
                     ->get()
                     ->map(function ($variation) {
@@ -1328,9 +1361,11 @@ class Item extends ModelTenant
                             'id' => $variation->id,
                             'description' => $variation->description,
                             'variation_label' => $variation->variation_label,
+                            'variation_attributes' => $variation->getVariationAttributesData(),
                             'internal_id' => $variation->internal_id,
                             'barcode' => $variation->barcode,
                             'stock' => $variation->getStockByWarehouse(),
+                            'stock_min' => (float) $variation->stock_min,
                             'sale_unit_price' => (float) $variation->sale_unit_price,
                             'unit_type_id' => $variation->unit_type_id,
                         ];
@@ -1600,6 +1635,10 @@ class Item extends ModelTenant
             'stock' => $this->getStockByWarehouse(),
             'stock_min' => $this->stock_min,
             'parent_item_id' => $this->parent_item_id,
+            // Identificación de la variación en el listado: nombre del producto
+            // principal + atributos (Color, Talla...) como etiquetas
+            'base_description' => $this->parent_item_id ? optional($this->parent)->description : null,
+            'variation_attributes' => $this->getVariationAttributesData(),
             'variations_count' => (int) ($this->variations_count ?? 0),
             'variations_stock' => !is_null($this->variations_stock) ? (float) $this->variations_stock : null,
             'currency_type_id' => $this->currency_type_id,

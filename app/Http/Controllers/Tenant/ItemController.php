@@ -211,6 +211,8 @@ class ItemController extends Controller
         if ($request->variations_view === 'grouped') {
             $records->whereNull('parent_item_id')
                 ->withSum('variations as variations_stock', 'stock');
+        } else {
+            $records->with(['parent', 'variationValues.value', 'variationValues.variable']);
         }
 
         $sortField = $request->get('sort_field', 'id');

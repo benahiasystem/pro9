@@ -109,7 +109,7 @@
                 <div class="row">
                     <div class="col-12">
                 <div class="form-group">
-                    <label class="control-label">Valores de la variable</label>
+                    <label class="mt-2">Valores de la variable</label>
                     <div class="pv-add-row mb-2">
                         <el-input v-model="new_value.value"
                                   placeholder="Ej: S, M, L (separa con comas para agregar varios)"

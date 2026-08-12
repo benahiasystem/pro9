@@ -34,6 +34,7 @@ class ItemVariationController extends Controller
                     'sale_unit_price' => $row->sale_unit_price,
                     'active' => (bool) $row->active,
                     'variation_label' => $row->variation_label,
+                    'variation_attributes' => $row->getVariationAttributesData(),
                     'variable_value_ids' => $row->variationValues->pluck('product_variable_value_id'),
                 ];
             }),

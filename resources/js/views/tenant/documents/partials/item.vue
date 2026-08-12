@@ -144,7 +144,7 @@
                                                              @click.stop="toggleExpandVariations(option)">
                                                             <span>
                                                                 {{ ItemOptionDescriptionView(option) }}
-                                                                <span class="variation-badge">{{ option.variations_count }} variaciones</span>
+                                                                <el-tag type="info">{{ option.variations_count }} variaciones</el-tag>
                                                             </span>
                                                             <span class="d-flex align-items-center">
                                                                 <small class="me-2"
@@ -157,25 +157,41 @@
                                                     </el-option>
                                                 </el-tooltip>
                                                 <template v-if="option.variations_count > 0 && expanded_parent_ids.includes(option.id)">
-                                                    <el-option
-                                                        v-for="variation in option.variations"
-                                                        :key="'variation-' + variation.id"
-                                                        :label="variation.description"
-                                                        :value="variation.id"
-                                                        class="variation-child-option"
-                                                    >
-                                                        <div class="d-flex align-items-center justify-content-between"
-                                                             @click.stop="selectVariation(variation)">
-                                                            <span>
-                                                                <span class="text-muted me-1">└</span>{{ variation.variation_label || variation.description }}
-                                                                <small class="text-muted d-block ms-3">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
-                                                            </span>
-                                                            <span class="text-end" style="line-height: 1.3;">
-                                                                {{ variation.sale_unit_price }}
-                                                                <small class="d-block" :class="variation.stock > 0 ? 'text-success' : 'text-danger'">Stock: {{ variation.stock }}</small>
-                                                            </span>
+                                                    <template v-for="group in variationGroups(option)">
+                                                        <div v-if="group.name"
+                                                             :key="'variation-group-' + option.id + '-' + group.key"
+                                                             class="variation-group-header">
+                                                            <span v-if="group.color"
+                                                                  class="variation-group-header__dot"
+                                                                  :style="{ background: group.color }"></span>
+                                                            <span class="variation-group-header__name">{{ group.name }}</span>
+                                                            <small class="text-muted">{{ formatVariationStock(group.stock) }} en stock</small>
                                                         </div>
-                                                    </el-option>
+                                                        <el-option
+                                                            v-for="variation in group.variations"
+                                                            :key="'variation-' + variation.id"
+                                                            :label="variation.description"
+                                                            :value="variation.id"
+                                                            class="variation-child-option"
+                                                        >
+                                                            <div class="d-flex align-items-center justify-content-between"
+                                                                 @click.stop="selectVariation(variation)">
+                                                                <span class="d-flex align-items-center">
+                                                                    <variation-chips v-if="variation.rest_attributes.length"
+                                                                                     :attributes="variation.rest_attributes"></variation-chips>
+                                                                    <template v-else>{{ variation.variation_label || variation.description }}</template>
+                                                                    <small class="text-muted ms-2">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
+                                                                </span>
+                                                                <span class="text-end" style="line-height: 1.3;">
+                                                                    {{ option.currency_type_symbol }} {{ variation.sale_unit_price }}
+                                                                    <small class="d-block" :class="variationStockClass(variation)">
+                                                                        <template v-if="variation.stock > 0">{{ formatVariationStock(variation.stock) }} disponibles</template>
+                                                                        <template v-else>Sin stock</template>
+                                                                    </small>
+                                                                </span>
+                                                            </div>
+                                                        </el-option>
+                                                    </template>
                                                 </template>
                                             </template>
                                             <template slot="empty">
@@ -1015,6 +1031,27 @@
     padding-top: 6px;
     padding-bottom: 6px;
 }
+.el-select-items .variation-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 20px 5px 20px;
+    background: #f2f2f5;
+    font-size: 12px;
+    font-weight: 600;
+    color: #606266;
+}
+.el-select-items .variation-group-header small {
+    margin-left: auto;
+    font-weight: 400;
+}
+.el-select-items .variation-group-header__dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
 .el-select-items .variation-badge {
     display: inline-block;
     font-size: 11px;
@@ -1036,6 +1073,7 @@
 
 <script>
 import ItemForm from "../../items/form.vue";
+import VariationChips from "../../items/partials/variation_chips.vue";
 import LotsGroup from "./lots_group.vue";
 
 import { calculateRowItem } from "../../../../helpers/functions";
@@ -1082,6 +1120,7 @@ export default {
     ],
     components: {
         ItemForm,
+        VariationChips,
         WarehousesDetail,
         Keypress,
         LotsGroup,
@@ -1916,6 +1955,45 @@ export default {
         },
         variationsTotalStock(option) {
             return (option.variations || []).reduce((total, variation) => total + parseFloat(variation.stock || 0), 0)
+        },
+        variationGroups(option) {
+            const groups = []
+            const index = {}
+
+            ;(option.variations || []).forEach(variation => {
+                const attributes = variation.variation_attributes || []
+                const color_attribute = attributes.find(attribute => attribute.color)
+                const key = color_attribute ? `color-${color_attribute.value}` : 'sin-color'
+
+                if (!index[key]) {
+                    index[key] = {
+                        key,
+                        name: color_attribute ? color_attribute.value : null,
+                        color: color_attribute ? color_attribute.color : null,
+                        stock: 0,
+                        variations: [],
+                    }
+                    groups.push(index[key])
+                }
+
+                index[key].stock += parseFloat(variation.stock || 0)
+                index[key].variations.push({
+                    ...variation,
+                    rest_attributes: attributes.filter(attribute => attribute !== color_attribute),
+                })
+            })
+
+            return groups
+        },
+        formatVariationStock(stock) {
+            const value = parseFloat(stock || 0)
+            return Number.isInteger(value) ? `${value}` : `${parseFloat(value.toFixed(2))}`
+        },
+        variationStockClass(variation) {
+            const stock = parseFloat(variation.stock || 0)
+            if (stock <= 0) return 'text-danger'
+            const stock_min = parseFloat(variation.stock_min || 0)
+            return stock <= stock_min ? 'text-warning' : 'text-success'
         },
         async selectVariation(variation) {
             this.loading_search = true

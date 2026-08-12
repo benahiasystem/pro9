@@ -476,7 +476,9 @@ class PosController extends Controller
             ->withCount('variations')
             ->withSum('variations as variations_stock', 'stock')
             ->with(['variations' => function ($query) {
-                $query->whereIsActive()->with('variationValues.value');
+                $query->whereIsActive()
+                    ->with(['variationValues.value', 'variationValues.variable'])
+                    ->orderBy('id');
             }]);
     }
 

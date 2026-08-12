@@ -279,20 +279,33 @@
                             <td v-if="col.visible && col.key === 'unit_type'" :key="col.key">{{ row.unit_type_id }}</td>
                             <td v-if="col.visible && col.key === 'image'" :key="col.key"><img :src="row.image_url_small" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
                             <td class="fw-semibold" v-if="col.visible && col.key === 'name'" :key="col.key">
-                                {{ row.description }}
-                                <el-tag v-if="variations_view === 'grouped' && row.variations_count > 0"
-                                        size="mini"
-                                        type="primary"
-                                        effect="plain"
-                                        style="cursor: pointer"
-                                        @click.native.stop="toggleVariationsRow(row)">
-                                    {{ row.variations_count }} variaciones <i :class="isExpanded(row.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
-                                </el-tag>
-                                <el-tag v-else-if="variations_view === 'flat' && row.parent_item_id"
-                                        size="mini"
-                                        type="info"
-                                        effect="plain">Variación</el-tag>
-                                <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template>
+                                <template v-if="hasVariationAttributes(row)">
+                                    {{ row.base_description || row.description }}
+                                    <el-tag v-if="variations_view === 'flat'"
+                                            size="mini"
+                                            type="primary"
+                                            effect="plain">Variación</el-tag>
+                                    <div class="mt-1">
+                                        <variation-chips :attributes="row.variation_attributes"
+                                                         :code="row.internal_id"></variation-chips>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    {{ row.description }}
+                                    <el-tag v-if="variations_view === 'grouped' && row.variations_count > 0"
+                                            size="mini"
+                                            type="primary"
+                                            effect="plain"
+                                            style="cursor: pointer"
+                                            @click.native.stop="toggleVariationsRow(row)">
+                                        {{ row.variations_count }} variaciones <i :class="isExpanded(row.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+                                    </el-tag>
+                                    <el-tag v-else-if="variations_view === 'flat' && row.parent_item_id"
+                                            size="mini"
+                                            type="primary"
+                                            effect="plain">Variación</el-tag>
+                                    <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template>
+                                </template>
                             </td>
                             <td v-if="col.visible && col.key === 'description'" :key="col.key"><div class="limit-4-lines">{{ stripHtml(row.name) }}</div></td>
                             <td v-if="col.visible && col.key === 'model'" :key="col.key">{{ row.model }}</td>
@@ -475,11 +488,9 @@
                                 <td v-if="col.visible && col.key === 'has_igv'" :key="col.key"></td>
                                 <td v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key"></td>
                                 <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
-                                    <el-button v-if="typeUser === 'admin'"
-                                               size="mini"
-                                               icon="el-icon-edit"
-                                               title="Editar variación"
-                                               @click.prevent="clickCreate(variation.id)"></el-button>
+                                    <button v-if="typeUser === 'admin'" title="Editar variación" class="btn btn-xs btn-info btn-shad me-1" @click.prevent="clickCreate(variation.id)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415"></path><path d="M16 5l3 3"></path></svg>
+                                    </button>
                                 </td>
                             </template>
                         </tr>
@@ -588,6 +599,7 @@ import ItemsHistory from "@viewsModuleItem/items/history.vue";
 import { mapActions, mapState } from "vuex";
 import ItemsImportUpdatePrice from "./partials/update_prices.vue";
 import ItemsImportVariations from "./partials/import_variations.vue";
+import VariationChips from "./partials/variation_chips.vue";
 import ItemsImportTags from "./partials/export_tag.vue";
 import ItemsExportBartender from "./partials/export_bartender.vue";
 
@@ -609,6 +621,7 @@ export default {
         ItemsImportTags,
         ItemsImportUpdatePrice,
         ItemsImportVariations,
+        VariationChips,
         ItemsExportBartender
     },
     data() {
@@ -825,6 +838,9 @@ export default {
         },
         isExpanded(id) {
             return this.expanded_ids.includes(id)
+        },
+        hasVariationAttributes(row) {
+            return !!(row.variation_attributes && row.variation_attributes.length)
         },
         toggleVariationsRow(row) {
             const index = this.expanded_ids.indexOf(row.id)
