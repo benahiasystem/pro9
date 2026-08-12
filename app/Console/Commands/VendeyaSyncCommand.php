@@ -14,6 +14,12 @@ class VendeyaSyncCommand extends Command
 
     public function handle(VendeyaConfigurationService $configService, VendeyaLogoService $logoService): int
     {
+        if (!$logoService->isBuildPresent()) {
+            $this->comment('Vendeya no está desplegado en public/vendeya; se omitió la sincronización de logos.');
+
+            return self::SUCCESS;
+        }
+
         $logoService->ensureHtaccess();
         $config = $configService->get();
 
