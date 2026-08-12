@@ -48,6 +48,8 @@ use App\Traits\OfflineTrait;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\QueryException;
+use Throwable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Facades\Storage;
@@ -1014,10 +1016,10 @@ class ItemController extends Controller
                     'message' =>  __('app.actions.upload.success'),
                     'data' => $data
                 ];
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 return [
                     'success' => false,
-                    'message' =>  $e->getMessage()
+                    'message' =>  $this->importErrorMessage($e),
                 ];
             }
         }
@@ -1042,10 +1044,10 @@ class ItemController extends Controller
                     'message' =>  __('app.actions.upload.success'),
                     'data' => $data
                 ];
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 return [
                     'success' => false,
-                    'message' =>  $e->getMessage()
+                    'message' =>  $this->importErrorMessage($e),
                 ];
             }
         }
@@ -1053,6 +1055,35 @@ class ItemController extends Controller
             'success' => false,
             'message' =>  __('app.actions.upload.error'),
         ];
+    }
+
+    private function importErrorMessage(Throwable $e): string
+    {
+        if ($e instanceof QueryException) {
+            $sqlMessage = $e->getMessage();
+
+            if (str_contains($sqlMessage, "Column 'sale_unit_price' cannot be null")) {
+                return 'Uno o más productos no tienen precio de venta unitario. Revise la columna G del archivo Excel e intente nuevamente.';
+            }
+
+            if (str_contains($sqlMessage, "Column 'unit_type_id' cannot be null")) {
+                return 'Uno o más productos no tienen unidad de medida. Revise la columna E del archivo Excel.';
+            }
+
+            if (str_contains($sqlMessage, "Column 'currency_type_id' cannot be null")) {
+                return 'Uno o más productos no tienen moneda. Revise la columna F del archivo Excel (PEN o USD).';
+            }
+
+            if (str_contains($sqlMessage, "Column 'description' cannot be null")) {
+                return 'Uno o más productos no tienen descripción. Revise la columna A del archivo Excel.';
+            }
+
+            if (str_contains($sqlMessage, 'Duplicate entry') && str_contains($sqlMessage, 'internal_id')) {
+                return 'Hay productos con código interno duplicado en el archivo o ya registrados en el sistema.';
+            }
+        }
+
+        return $e->getMessage();
     }
 
     public function catalog(Request $request)

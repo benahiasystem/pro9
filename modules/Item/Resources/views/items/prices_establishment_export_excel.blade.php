@@ -16,7 +16,7 @@
                             <tr>
                                 <th>Código Interno</th>
                                 @foreach($records as $key => $value)
-                                <th>Precio Unitario Venta ({{$value->id}})</th>
+                                <th>Precio Unitario Venta ({{$value->description}})</th>
                                 @endforeach
                             </tr>
                         </thead>

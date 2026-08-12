@@ -72,6 +72,7 @@
 
 </head>
 <body class="pr-0">
+    @include('tenant.layouts.partials.outdoor_mode')
     <section class="body">
         <!-- start: header -->
 

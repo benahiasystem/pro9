@@ -2689,6 +2689,15 @@
                                                                                                     index
                                                                                                 )
                                                                                         "
+                                                                                        :on-error="
+                                                                                            (error, file, fileList) =>
+                                                                                                onUploadErrorVoucher(
+                                                                                                    error,
+                                                                                                    file,
+                                                                                                    fileList,
+                                                                                                    index
+                                                                                                )
+                                                                                        "
                                                                                         :limit="
                                                                                             1
                                                                                         "
@@ -3477,6 +3486,15 @@
                                                                             ) =>
                                                                                 onSuccessUploadVoucher(
                                                                                     response,
+                                                                                    file,
+                                                                                    fileList,
+                                                                                    index
+                                                                                )
+                                                                        "
+                                                                        :on-error="
+                                                                            (error, file, fileList) =>
+                                                                                onUploadErrorVoucher(
+                                                                                    error,
                                                                                     file,
                                                                                     fileList,
                                                                                     index
@@ -5068,8 +5086,29 @@ export default {
                 this.form.payments[index].file_list = fileList;
             } else {
                 this.cleanFileListUploadVoucher(index);
-                this.$message.error(response.message);
+                this.$message.error(response.message || 'No se pudo cargar el archivo.');
             }
+        },
+        onUploadErrorVoucher(error, file, fileList, index) {
+            this.cleanFileListUploadVoucher(index);
+            this.$message.error(this.getPaymentFileErrorMessage(error));
+        },
+        getPaymentFileErrorMessage(error) {
+            const data = error && error.response ? error.response.data : null;
+
+            if (typeof data === 'string' && data.trim()) {
+                return data;
+            }
+
+            if (data && data.message) {
+                return data.message;
+            }
+
+            if (error && error.message) {
+                return error.message;
+            }
+
+            return 'Ocurrió un error al procesar la solicitud.';
         },
         cleanFileListUploadVoucher(index) {
             this.form.payments[index].file_list = [];

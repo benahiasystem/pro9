@@ -599,6 +599,7 @@
             <document-payments
                 :showDialog.sync="showDialogPayments"
                 :documentId="recordId"
+                :configuration="configuration"
             ></document-payments>
 
             <document-constancy-detraction

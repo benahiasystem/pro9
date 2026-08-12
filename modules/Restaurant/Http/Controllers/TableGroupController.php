@@ -6,9 +6,21 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\Restaurant\Models\RestaurantTable;
 use Modules\Restaurant\Models\RestaurantTableGroup;
+use App\Services\CentrifugoService;
+use Hyn\Tenancy\Contracts\CurrentHostname;
 
 class TableGroupController extends Controller
 {
+    private function publishTablesUpdate(): void
+    {
+        $fqdn = app(CurrentHostname::class)?->fqdn ?? 'local';
+        $data = app(\Modules\Restaurant\Http\Controllers\RestaurantConfigurationController::class)->tablesAndEnv();
+        app(CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+            'event'   => 'tables-env-updated',
+            'payload' => $data,
+        ]);
+    }
+
     /**
      * Crea un nuevo grupo y asigna la mesa principal.
      */
@@ -51,6 +63,8 @@ class TableGroupController extends Controller
         // Mesa principal entra al grupo
         RestaurantTable::where('id', $request->main_table_id)
             ->update(['group_id' => $group->id]);
+
+        $this->publishTablesUpdate();
 
         return response()->json([
             'success' => true,
@@ -122,6 +136,8 @@ class TableGroupController extends Controller
         // Agregar mesa al grupo
         $table->update(['group_id' => $request->group_id]);
 
+        $this->publishTablesUpdate();
+
         return response()->json([
             'success' => true,
             'message' => "Mesa {$table->label} agregada al grupo exitosamente"
@@ -184,13 +200,17 @@ class TableGroupController extends Controller
             if ($remainingTables <= 1) {
                 RestaurantTable::where('group_id', $groupId)->update(['group_id' => null]);
                 RestaurantTableGroup::where('id', $groupId)->delete();
-                
+
+                $this->publishTablesUpdate();
+
                 return response()->json([
                     'success' => true,
                     'message' => "Mesa {$table->label} separada. El grupo fue disuelto automáticamente."
                 ]);
             }
         }
+
+        $this->publishTablesUpdate();
 
         return response()->json([
             'success' => true,
@@ -248,6 +268,8 @@ class TableGroupController extends Controller
 
         $group->delete();
 
+        $this->publishTablesUpdate();
+
         return response()->json([
             'success' => true,
             'message' => 'Grupo disuelto exitosamente'
@@ -273,6 +295,8 @@ class TableGroupController extends Controller
         $total = $group->tables()->sum('total');
 
         $group->update(['total' => $total]);
+
+        $this->publishTablesUpdate();
 
         return response()->json([
             'success' => true,
