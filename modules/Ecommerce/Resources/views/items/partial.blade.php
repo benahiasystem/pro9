@@ -146,13 +146,22 @@
                         'id' => $record->id,
                         'description' => $record->description,
                         'sale_unit_price' => $displayPrice,
+                        'original_price' => (float) $record->sale_unit_price,
+                        'has_discount' => $hasActiveOffer,
+                        'discount_percent' => ($hasActiveOffer && $activeCampaign && $activeCampaign->discount_type === 'percentage')
+                            ? (int) $activeCampaign->discount_value
+                            : ($hasActiveOffer && $oldPrice > $displayPrice
+                                ? (int) round((1 - $displayPrice / $oldPrice) * 100)
+                                : null),
                         'image' => $record->image,
                         'image_small' => $record->image_small ?? $record->image,
+                        'image_medium' => $record->image_medium ?? $record->image,
                         'currency_type_id' => $record->currency_type_id ?? 'PEN',
                         'currency_type_symbol' => optional($record->currency_type)->symbol ?? 'S/',
                         'sale_affectation_igv_type_id' => $record->sale_affectation_igv_type_id ?? '10',
                         'unit_type_id' => $record->unit_type_id ?? 'NIU',
                         'internal_id' => $record->internal_id,
+                        'stock' => (int) $stock,
                     ];
                 @endphp
 

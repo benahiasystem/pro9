@@ -37,7 +37,26 @@ class EcommerceServiceProvider extends ServiceProvider
                 }
             }
 
-            $view->with(compact('campaigns', 'configEcommerce', 'trustBadges', 'trustBadgesEnabled'));
+            $cartModalCampaignJson = null;
+            $cartModalCampaign = $campaigns instanceof \Illuminate\Support\Collection
+                ? $campaigns->first()
+                : (is_array($campaigns) ? ($campaigns[0] ?? null) : $campaigns);
+
+            if ($cartModalCampaign) {
+                $hasActiveDiscount = method_exists($cartModalCampaign, 'hasActiveDiscount')
+                    ? $cartModalCampaign->hasActiveDiscount()
+                    : ($cartModalCampaign->sp_discount_price && (! $cartModalCampaign->end_date || $cartModalCampaign->end_date > now()));
+
+                if ($hasActiveDiscount) {
+                    $cartModalCampaignJson = [
+                        'sp_discount_price' => (bool) $cartModalCampaign->sp_discount_price,
+                        'discount_type' => $cartModalCampaign->discount_type,
+                        'discount_value' => (float) $cartModalCampaign->discount_value,
+                    ];
+                }
+            }
+
+            $view->with(compact('campaigns', 'configEcommerce', 'trustBadges', 'trustBadgesEnabled', 'cartModalCampaignJson'));
         });
     }
 

@@ -498,9 +498,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     let array = localStorage.getItem('products_cart');
                     array = array ? JSON.parse(array) : [];
                     let found = array.find(x => x.id == item.id);
-                    const price = this.hasActiveOffer
-                        ? this.activeOfferPrice
-                        : item.sale_unit_price;
+                    const cartItem = {
+                        ...item,
+                        sale_unit_price: this.hasActiveOffer ? this.activeOfferPrice : item.sale_unit_price,
+                        original_price: parseFloat(item.sale_unit_price),
+                        has_discount: this.hasActiveOffer,
+                        quantity: this.quantity,
+                        stock: Math.round(this.stock),
+                    };
+
+                    if (typeof cartAddOrUpdateItem === 'function') {
+                        cartAddOrUpdateItem(cartItem, {
+                            quantity: this.quantity,
+                            replaceQuantity: true,
+                            mode: found ? 'exists' : 'added',
+                        });
+                        this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: this.quantity });
+                        return;
+                    }
+
+                    const price = this.hasActiveOffer ? this.activeOfferPrice : item.sale_unit_price;
                     if (found) {
                         found.quantity = this.quantity;
                         found.sale_unit_price = price;

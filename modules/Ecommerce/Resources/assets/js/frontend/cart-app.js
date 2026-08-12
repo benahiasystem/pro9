@@ -453,11 +453,10 @@ var app_cart = new Vue({
             return this.isLoggedIn || this.guestCheckoutAccepted;
         },
         /**
-         * Texto del CTA del resumen.
-         * Solo el flujo invitado cambia según el método; usuarios logueados siguen viendo "Pagar".
+         * Texto del CTA del resumen según el método de pago seleccionado.
          */
         primaryPayButtonLabel() {
-            if (this.isLoggedIn || !this.selectedPaymentMethod) {
+            if (!this.selectedPaymentMethod) {
                 return 'Pagar';
             }
 

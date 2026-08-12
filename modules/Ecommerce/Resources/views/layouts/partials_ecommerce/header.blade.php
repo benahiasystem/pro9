@@ -487,36 +487,48 @@ div.cart-dropdown {
                         this.value = item.description;
                     },
                     addToCart(item) {
+                        var imageSmall = 'imagen-no-disponible.jpg';
+                        if (item.image_url_small) {
+                            imageSmall = item.image_url_small.split(/[\\/]/).pop();
+                        }
+
+                        let priceClean = item.sale_unit_price;
+                        if (typeof priceClean === 'string') {
+                            priceClean = priceClean.replace(/[^\d.,-]/g, '').replace(',', '.');
+                        }
+                        priceClean = parseFloat(priceClean) || 0;
+
+                        const cartItem = {
+                            id: item.id,
+                            description: item.description,
+                            sale_unit_price: priceClean,
+                            original_price: priceClean,
+                            sale_unit_price_display: item.sale_unit_price,
+                            image_small: imageSmall,
+                            image: imageSmall,
+                            sale_affectation_igv_type_id: item.sale_affectation_igv_type_id || '10',
+                            currency_type_id: item.currency_type_id || 'PEN',
+                            currency_type_symbol: item.currency_type_symbol || 'S/',
+                            unit_type_id: item.unit_type_id || 'NIU',
+                            internal_id: item.internal_id || '',
+                            quantity: 1,
+                            stock: item.stock != null ? parseInt(item.stock, 10) : undefined,
+                        };
+
                         let array = localStorage.getItem('products_cart');
                         array = array ? JSON.parse(array) : [];
-                        if (!array.some(x => x.id == item.id)) {
-                            var imageSmall = 'imagen-no-disponible.jpg';
-                            if (item.image_url_small) {
-                                imageSmall = item.image_url_small.split(/[\\/]/).pop();
-                            }
+                        const found = array.some(x => x.id == item.id);
 
-                            let priceClean = item.sale_unit_price;
-                            if (typeof priceClean === 'string') {
-                                priceClean = priceClean.replace(/[^\d.,-]/g, '').replace(',', '.');
-                            }
-                            priceClean = parseFloat(priceClean) || 0;
-
-                            array.push({
-                                id: item.id,
-                                description: item.description,
-                                sale_unit_price: priceClean,
-                                sale_unit_price_display: item.sale_unit_price,
-                                image_small: imageSmall,
-                                image: imageSmall,
-                                // campos que necesita detail.blade.php
-                                sale_affectation_igv_type_id: item.sale_affectation_igv_type_id || '10',
-                                currency_type_id: item.currency_type_id || 'PEN',
-                                currency_type_symbol: item.currency_type_symbol || 'S/',
-                                unit_type_id: item.unit_type_id || 'NIU',
-                                internal_id: item.internal_id || '',
-                                quantity: 1
+                        if (typeof cartAddOrUpdateItem === 'function') {
+                            cartAddOrUpdateItem(cartItem, {
+                                quantity: 1,
+                                mode: found ? 'exists' : 'added',
                             });
+                            return;
+                        }
 
+                        if (!found) {
+                            array.push(cartItem);
                             localStorage.setItem('products_cart', JSON.stringify(array));
                             this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: 1 });
                             window.dispatchEvent(new Event('productAddedToCart'));

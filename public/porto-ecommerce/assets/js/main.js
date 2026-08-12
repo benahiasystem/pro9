@@ -534,36 +534,37 @@ function(e) {
 		{
 			let contex = this
 			e(".add-cart").click(function(t) {
+				t.preventDefault();
+
+				let item = cartParseProductFromButton(this);
+				if (!item) {
+					item = jQuery(this).data('product');
+				}
+				if (!item) {
+					return;
+				}
 
 				let array = localStorage.getItem('products_cart');
-				array = JSON.parse(array);
+				array = array ? JSON.parse(array) : [];
+				let found = array.find(function(x) { return x.id == item.id; });
 
-				let item = jQuery(this).data('product')
-				let found = array.find( x=> x.id == item.id)
-				if(!found)
-				{
-					array.push( jQuery(this).data('product') );
-					localStorage.setItem('products_cart', JSON.stringify( array ) );
-					contex.productsCartDropDown();
-					contex.successAddProduct();
-					contex.calculateTotalCart();
-
-				$('#product_added').html(`
-					<div class="product-single-details-restaurant">
-					<h1 class="product-title">${item.description}</h1>
-					<div class="price-box">
-						<span class="product-price">S/ ${ Number(item.sale_unit_price).toFixed(2) }</span>
-					</div>
-					${item.name ? `<div class="product-desce"><p>${item.name}</p></div>` : ''}
-					</div>`);					const addedImagePath = (item.image_medium && item.image_medium !== 'imagen-no-disponible.jpg')
-						? `/storage/uploads/items/${item.image_medium}`
-						: `/logo/imagen-no-disponible.jpg`;
-					$('#product_added_image').html( `<img src="${addedImagePath}" class="img" alt="${item.description}">`)
+				if (typeof cartAddOrUpdateItem === 'function') {
+					cartAddOrUpdateItem(item, {
+						quantity: 1,
+						mode: found ? 'exists' : 'added',
+						triggerEl: this
+					});
+				} else {
+					if (!found) {
+						array.push(jQuery(this).data('product'));
+						localStorage.setItem('products_cart', JSON.stringify(array));
+						contex.productsCartDropDown();
+						contex.successAddProduct();
+						contex.calculateTotalCart();
+					} else {
+						contex.alreadyProductCart();
+					}
 				}
-				else{
-					contex.alreadyProductCart();
-				}
-				
 			})
 		},
 		successAddProduct: function()
@@ -572,7 +573,7 @@ function(e) {
 		},
 		alreadyProductCart: function()
 		{
-			jQuery('#modal-already-product').modal('show');
+			jQuery('#moda-succes-add-product').modal('show');
 		},
 		initShop: function(){
 			if(!localStorage.getItem('products_cart') )

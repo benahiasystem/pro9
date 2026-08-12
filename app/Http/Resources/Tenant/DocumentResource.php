@@ -4,6 +4,7 @@ namespace App\Http\Resources\Tenant;
 
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Document;
+use App\Models\Tenant\DocumentItem;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\SaleNote;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -172,20 +173,7 @@ class DocumentResource extends JsonResource
             'shipping_status' => json_decode($document->shipping_status),
             'sunat_shipping_status' => json_decode($document->sunat_shipping_status),
             'query_status' => json_decode($document->query_status),
-            'items' => $document->items->map(function ($row) {
-                $item = $row->item;
-                if (is_string($item)) {
-                    $item = json_decode($item);
-                }
-
-                return [
-                    'id' => $row->id,
-                    'description' => data_get($item, 'description') ?: data_get($item, 'name'),
-                    'quantity' => $row->quantity,
-                    'unit_price' => $row->unit_price,
-                    'total' => $row->total,
-                ];
-            })->values(),
+            'items' => self::mapDocumentItems($document),
             'payments' => $document->payments->map(function ($row) {
                 return [
                     'id' => $row->id,
@@ -198,5 +186,61 @@ class DocumentResource extends JsonResource
             })->values(),
         ];
         return $data;
+    }
+
+    /**
+     * Resuelve las filas de ítems del comprobante (relación, consulta directa o tabla document_items).
+     */
+    protected static function resolveDocumentItemRows(Document $document)
+    {
+        if ($document->relationLoaded('items') && $document->items->isNotEmpty()) {
+            return $document->items;
+        }
+
+        $items = $document->items()->get();
+        if ($items->isNotEmpty()) {
+            return $items;
+        }
+
+        return DocumentItem::query()
+            ->where('document_id', $document->id)
+            ->get();
+    }
+
+    public static function mapDocumentItems(Document $document): array
+    {
+        $rows = self::resolveDocumentItemRows($document);
+
+        if ($rows->isEmpty()) {
+            return [];
+        }
+
+        return QuotationResource::getTransformItems($rows)
+            ->map(function ($row) {
+                $item = $row['item'] ?? null;
+                if (is_object($item)) {
+                    $item = json_decode(json_encode($item), true);
+                }
+
+                $description = data_get($item, 'description')
+                    ?: data_get($item, 'name')
+                    ?: data_get($item, 'full_description')
+                    ?: ($row['name_product_pdf'] ?? null)
+                    ?: ($row['name_product_xml'] ?? null);
+
+                if (is_array($description)) {
+                    $description = implode(' | ', array_filter($description));
+                }
+
+                $row['item'] = $item;
+                $row['description'] = $description;
+                $row['quantity'] = (float) ($row['quantity'] ?? 0);
+                $row['unit_price'] = (float) ($row['unit_price'] ?? 0);
+                $row['total'] = (float) ($row['total'] ?? 0);
+
+                return $row;
+            })
+            ->values()
+            ->all();
     }
 }

@@ -102,7 +102,30 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-box-off"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M17.765 17.757l-5.765 3.243l-8 -4.5v-9l2.236 -1.258m2.57 -1.445l3.194 -1.797l8 4.5v8.5" /><path d="M14.561 10.559l5.439 -3.059" /><path d="M12 12v9" /><path d="M12 12l-8 -4.5" /><path d="M3 3l18 18" /></svg> Agotado
                     </span>
                @else
-                        <a href="#" class="paction add-cart" data-product="{{ json_encode( $item ) }}" title="Add to Cart">
+                        @php
+                            $cartProductPayload = [
+                                'id' => $item->id,
+                                'description' => $item->description,
+                                'sale_unit_price' => $hasActiveOffer ? $activeOfferPrice : (float) $item->sale_unit_price,
+                                'original_price' => (float) $item->sale_unit_price,
+                                'has_discount' => $hasActiveOffer,
+                                'discount_percent' => ($hasActiveOffer && $activeCampaign && $activeCampaign->discount_type === 'percentage')
+                                    ? (int) $activeCampaign->discount_value
+                                    : ($hasActiveOffer && $item->sale_unit_price > 0
+                                        ? (int) round((1 - $activeOfferPrice / $item->sale_unit_price) * 100)
+                                        : null),
+                                'image' => $item->image,
+                                'image_small' => $item->image_small ?? $item->image,
+                                'image_medium' => $item->image_medium ?? $item->image,
+                                'currency_type_id' => $item->currency_type_id ?? 'PEN',
+                                'currency_type_symbol' => $item->currency_type['symbol'] ?? 'S/',
+                                'sale_affectation_igv_type_id' => $item->sale_affectation_igv_type_id ?? '10',
+                                'unit_type_id' => $item->unit_type_id ?? 'NIU',
+                                'internal_id' => $item->internal_id ?? '',
+                                'stock' => (int) $item->getStockByWarehouseMain(),
+                            ];
+                        @endphp
+                        <a href="#" class="paction add-cart" data-product='@json($cartProductPayload)' title="Add to Cart">
                             <svg clip-rule="evenodd" fill-rule="evenodd" width="22" height="22" stroke-linejoin="round" stroke-miterlimit="2" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" id="fi_4893746"><path d="m211.892 383.468c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm176.22 0c24.344 0 44.108 19.764 44.108 44.108s-19.764 44.108-44.108 44.108-44.108-19.764-44.108-44.108 19.764-44.108 44.108-44.108zm-288.464-273.226s63.534 222.705 63.534 222.705c6.591 23.103 27.703 39.034 51.727 39.034h157.478c33.502 0 61.98-24.47 67.023-57.59 4.821-31.664 11.838-77.75 17.065-112.081 2.869-18.84-2.626-37.994-15.046-52.449-12.42-14.454-30.529-22.769-49.586-22.769h-235.394l-8.72-30.567c-7.633-26.757-32.085-45.209-59.91-45.209-23.033 0-51.825 0-51.825 0-13.798 0-25 11.202-25 25s11.202 25 25 25h51.825c5.494 0 10.321 3.643 11.829 8.926zm71.066 66.85h221.129c4.482 0 8.741 1.956 11.663 5.355 2.921 3.4 4.213 7.905 3.539 12.337 0 0-17.066 112.081-17.066 112.081-1.323 8.693-8.798 15.116-17.592 15.116h-157.478c-1.693 0-3.181-1.122-3.645-2.751 0 0-40.55-142.138-40.55-142.138z"></path></svg>
                             <span>Agregar a Carrito</span>
                         </a>

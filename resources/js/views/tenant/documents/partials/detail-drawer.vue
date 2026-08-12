@@ -86,6 +86,12 @@
                                     <dt>Documento</dt>
                                     <dd>{{ customerDocument }}</dd>
 
+                                    <dt v-if="customerTelephone">Teléfono</dt>
+                                    <dd v-if="customerTelephone">{{ customerTelephone }}</dd>
+
+                                    <dt v-if="customerEmail">Correo</dt>
+                                    <dd v-if="customerEmail">{{ customerEmail }}</dd>
+
                                     <dt v-if="customerAddress">Dirección fiscal</dt>
                                     <dd v-if="customerAddress">{{ customerAddress }}</dd>
                                 </dl>
@@ -323,6 +329,16 @@ export default {
 
             return number || '—';
         },
+        customerTelephone() {
+            return this.record?.customer?.telephone
+                || this.record?.customer_telephone
+                || null;
+        },
+        customerEmail() {
+            return this.record?.customer?.email
+                || this.record?.customer_email
+                || null;
+        },
         customerAddress() {
             return this.record?.customer_address || null;
         },
@@ -386,15 +402,20 @@ export default {
             const items = Array.isArray(this.record?.items) ? this.record.items : [];
 
             return items.map((row, index) => {
+                const itemData = this.parseItemData(row.item);
                 const quantity = Number(row.quantity || 0);
-                const unitPrice = Number(row.unit_price || 0);
+                const unitPrice = Number(row.unit_price ?? itemData?.sale_unit_price ?? 0);
                 const subtotal = row.total !== undefined && row.total !== null
                     ? Number(row.total)
                     : quantity * unitPrice;
 
                 return {
                     key: row.id || index,
-                    description: row.description || '—',
+                    description: row.description
+                        || itemData?.description
+                        || itemData?.name
+                        || row.name_product_pdf
+                        || '—',
                     quantity,
                     unit_price: unitPrice,
                     subtotal
@@ -440,7 +461,7 @@ export default {
             this.loading = true;
 
             this.$http.get(`/${this.resource}/record/${requestedId}`)
-                .then(response => {
+                .then(async (response) => {
                     if (String(requestedId) !== String(this.recordId)) {
                         return;
                     }
@@ -454,6 +475,11 @@ export default {
                         ? this.initialRow
                         : {};
 
+                    let items = Array.isArray(data.items) ? data.items : [];
+                    if (!items.length) {
+                        items = await this.fetchDocumentItemsFallback(requestedId);
+                    }
+
                     this.record = {
                         ...snapshot,
                         ...data,
@@ -464,6 +490,8 @@ export default {
                         customer_number: data.customer_number || snapshot.customer_number,
                         customer_identity_document_type_description: data.customer_identity_document_type_description
                             || snapshot.customer_identity_document_type_description,
+                        customer_telephone: data.customer_telephone || snapshot.customer_telephone,
+                        customer_email: data.customer_email || snapshot.customer_email,
                         customer_address: data.customer_address || snapshot.customer_address,
                         seller_name: data.seller_name || snapshot.seller_name,
                         user_name: data.user_name || snapshot.user_name,
@@ -473,8 +501,8 @@ export default {
                         total_igv: data.total_igv ?? snapshot.total_igv,
                         total: data.total ?? snapshot.total,
                         balance: data.balance ?? snapshot.balance,
-                        items: data.items || [],
-                        payments: data.payments || [],
+                        items,
+                        payments: Array.isArray(data.payments) ? data.payments : [],
                         has_xml: data.has_xml ?? snapshot.has_xml,
                         has_pdf: data.has_pdf ?? snapshot.has_pdf,
                         has_cdr: data.has_cdr ?? snapshot.has_cdr,
@@ -508,6 +536,71 @@ export default {
             }
 
             window.open(url, '_blank');
+        },
+        normalizeItems(items) {
+            if (!items) {
+                return [];
+            }
+
+            if (Array.isArray(items)) {
+                return items;
+            }
+
+            if (typeof items === 'object') {
+                return Object.values(items);
+            }
+
+            return [];
+        },
+        extractItemsFromPayload(payload) {
+            if (!payload || typeof payload !== 'object') {
+                return [];
+            }
+
+            const candidates = [
+                payload.items,
+                payload.details,
+                payload.document_items,
+                payload.items_document,
+                payload.document?.items,
+                payload.data?.items
+            ];
+
+            for (let i = 0; i < candidates.length; i += 1) {
+                const normalized = this.normalizeItems(candidates[i]);
+                if (normalized.length) {
+                    return normalized;
+                }
+            }
+
+            return [];
+        },
+        fetchDocumentItemsFallback(documentId) {
+            return this.$http.get(`/documents/${documentId}/show`)
+                .then((response) => {
+                    const raw = response.data?.data || response.data;
+                    return this.extractItemsFromPayload(raw);
+                })
+                .catch(() => []);
+        },
+        parseItemData(raw) {
+            if (!raw) {
+                return null;
+            }
+
+            if (typeof raw === 'object') {
+                return raw;
+            }
+
+            if (typeof raw === 'string') {
+                try {
+                    return JSON.parse(raw);
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            return null;
         },
         parseAmount(value) {
             if (value === undefined || value === null || value === '') {

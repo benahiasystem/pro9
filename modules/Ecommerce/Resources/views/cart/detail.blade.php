@@ -1526,6 +1526,12 @@
     .items-cart .thumb { grid-area: thumb; }
     .items-cart .info { grid-area: info; }
     .items-cart .modern-quantity-container { grid-area: quantity; }
+    .items-cart .modern-quantity-container.input-group .input-quantity.form-control {
+        flex: 0 0 auto;
+        min-width: 52px;
+        width: 52px;
+        padding: 0 4px !important;
+    }
     .items-cart .total { grid-area: total; }
     .items-cart .delete-item-btn { grid-area: delete; }
 
@@ -1861,10 +1867,13 @@
 })();
 </script>
 
-<div class="row" id="app">
-    <div class="col-12">
-        <h2 class="my-4 mt-4" style="font-weight: 900;">@{{ isQuotationCheckout ? 'Solicitar cotización' : 'Finalizar compra' }}</h2>
+<div id="app" class="checkout-page-root">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="my-4 mt-4" style="font-weight: 900;">@{{ isQuotationCheckout ? 'Solicitar cotización' : 'Finalizar compra' }}</h2>
+        </div>
     </div>
+    <div class="row checkout-layout">
     <div class="col-md-8 mb-3">
         <div class="card card-cart">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#cartCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
@@ -2781,6 +2790,7 @@
         </div><!-- End .cart-summary -->
       </div><!-- End .summary-sticky -->
     </div><!-- End .col-lg-4 -->
+    </div><!-- End .checkout-layout -->
 
     <!-- Modal de intención: Comprar vs Solicitar cotización (modo híbrido) -->
     <div
@@ -3350,8 +3360,8 @@
     /**
      * Credenciales desde PaymentConfiguration (string plano vía json_encode).
      * Culqi Checkout v4 cifra el payload con RSA-OAEP (window.crypto.subtle).
-     * En http://*.test no hay Secure Context → subtle es undefined → ENCRYPT ERROR
-     * si se envían xculqirsaid/rsapublickey. Solo activamos RSA con subtle + PEM válidos.
+     * En http://*.test no hay Secure Context → v4 falla con ENCRYPT ERROR.
+     * Con llaves pk_test_* cargamos Checkout v3 en HTTP local; producción HTTPS sigue en v4 + RSA.
      */
     function normalizeCulqiPublicKey(raw) {
         return String(raw || '')
@@ -3399,6 +3409,73 @@
         return !!(window.isSecureContext && window.crypto && window.crypto.subtle);
     }
 
+    function isCulqiTestPublicKey(rawKey) {
+        return String(rawKey || '').indexOf('pk_test_') !== -1;
+    }
+
+    /**
+     * Culqi v4 cifra con RSA-OAEP (crypto.subtle). En HTTP fuera de localhost no hay Secure Context.
+     * Con llaves de prueba usamos Checkout v3, compatible con HTTP local sin romper producción HTTPS.
+     */
+    function shouldUseCulqiV3Fallback() {
+        if (canUseCulqiRsaEncryption()) {
+            return false;
+        }
+
+        return isCulqiTestPublicKey(culqiPublicKey);
+    }
+
+    const CULQI_SDK_V4 = 'https://checkout.culqi.com/js/v4';
+    const CULQI_SDK_V3 = 'https://checkout.culqi.com/js/v3';
+    let culqiSdkVersion = null;
+
+    function loadCulqiSdkScript(url) {
+        return new Promise(function (resolve, reject) {
+            const existing = document.querySelector('script[data-culqi-sdk="' + url + '"]');
+            if (existing) {
+                if (typeof window.Culqi !== 'undefined') {
+                    resolve(window.Culqi);
+                    return;
+                }
+
+                existing.addEventListener('load', function () {
+                    if (typeof window.Culqi !== 'undefined') {
+                        resolve(window.Culqi);
+                    } else {
+                        reject(new Error('Culqi SDK no disponible'));
+                    }
+                }, { once: true });
+                existing.addEventListener('error', function () {
+                    reject(new Error('No se pudo cargar Culqi SDK'));
+                }, { once: true });
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = url;
+            script.async = true;
+            script.setAttribute('data-culqi-sdk', url);
+            script.onload = function () {
+                if (typeof window.Culqi !== 'undefined') {
+                    resolve(window.Culqi);
+                } else {
+                    reject(new Error('Culqi SDK no disponible'));
+                }
+            };
+            script.onerror = function () {
+                reject(new Error('No se pudo cargar Culqi SDK'));
+            };
+            document.head.appendChild(script);
+        });
+    }
+
+    function ensureCulqiSdkLoaded() {
+        const useV3 = shouldUseCulqiV3Fallback();
+        culqiSdkVersion = useV3 ? 'v3' : 'v4';
+
+        return loadCulqiSdkScript(useV3 ? CULQI_SDK_V3 : CULQI_SDK_V4);
+    }
+
     const culqiPublicKey = normalizeCulqiPublicKey({!! json_encode($payment_configuration->publickey_culqi ?? '') !!});
     const culqiRsaId = String({!! json_encode($payment_configuration->idrsa_culqi ?? '') !!} || '').trim();
     const culqiRsaPublicKey = normalizeCulqiRsaPublicKey({!! json_encode($payment_configuration->rsa_culqi ?? '') !!});
@@ -3412,7 +3489,13 @@
     function getCulqiErrorMessage(error) {
         if (!error) return '';
         if (error.type === 'error_encrypt') {
-            return 'No se pudo encriptar la tarjeta. En entorno local use HTTPS (p. ej. https://tienda.pro9.test) o verifique RSA Key / ID RSA en Configuración de pagos.';
+            if (shouldUseCulqiV3Fallback()) {
+                return 'No se pudo procesar el pago con tarjeta. Intente nuevamente o elija otro método de pago.';
+            }
+            if (isCulqiTestPublicKey(culqiPublicKey)) {
+                return 'No se pudo procesar el pago en este entorno. Recargue la página e intente de nuevo.';
+            }
+            return 'No se pudo procesar el pago de forma segura. Verifique su conexión e intente nuevamente.';
         }
         return error.user_message || error.merchant_message || '';
     }
@@ -3474,6 +3557,13 @@
             .map(function (value) { return Number(value).toString(16).padStart(2, '0'); })
             .join('');
 
+        if (culqiSdkVersion === 'v3') {
+            Culqi.options({
+                installments: true,
+            });
+            return;
+        }
+
         Culqi.options({
             lang: 'es',
             installments: true,
@@ -3501,7 +3591,7 @@
         }
 
         if (!culqiReadyPromise) {
-            culqiReadyPromise = waitForCulqi().then(function (Culqi) {
+            culqiReadyPromise = ensureCulqiSdkLoaded().then(function (Culqi) {
                 initCulqi(Culqi);
                 culqiReady = true;
                 return Culqi;
@@ -3948,6 +4038,15 @@
             return;
         }
 
+        if (!canUseCulqiRsaEncryption() && !isCulqiTestPublicKey(culqiPublicKey)) {
+            window.mostrarMensaje(
+                'Pago con tarjeta',
+                'Este método de pago requiere una conexión segura (HTTPS). Elija otro método o contacte a la tienda.',
+                'warning'
+            );
+            return;
+        }
+
         let Culqi;
         try {
             Culqi = await ensureCulqiReady();
@@ -3975,21 +4074,29 @@
             amount: precio,
         };
 
-        // RSA solo si hay Web Crypto (HTTPS / localhost). En http://*.test se omite a propósito
-        // para tokenizar sin ENCRYPT ERROR; el canal a secure.culqi.com sigue siendo HTTPS.
-        if (canUseCulqiRsaEncryption() && culqiRsaId && culqiRsaPublicKey) {
+        // v4 + RSA solo en Secure Context (HTTPS / localhost). v3 en HTTP local no usa RSA.
+        if (
+            culqiSdkVersion !== 'v3'
+            && canUseCulqiRsaEncryption()
+            && culqiRsaId
+            && culqiRsaPublicKey
+        ) {
             settings.xculqirsaid = culqiRsaId;
             settings.rsapublickey = culqiRsaPublicKey;
-        } else if (culqiRsaId || culqiRsaPublicKey) {
+        } else if (culqiSdkVersion !== 'v3' && (culqiRsaId || culqiRsaPublicKey)) {
             console.warn(
                 '[Culqi] RSA omitido: se requiere Secure Context (HTTPS) y PEM válido. ' +
-                'Tokenización continúa sin cifrado RSA local.'
+                (shouldUseCulqiV3Fallback()
+                    ? 'Checkout v3 activo para pruebas en HTTP.'
+                    : 'Tokenización continúa sin cifrado RSA local.')
             );
         }
 
         Culqi.settings(settings);
         Culqi.open();
-        showCulqiCloseButton();
+        if (culqiSdkVersion !== 'v3') {
+            showCulqiCloseButton();
+        }
     }
 
 
@@ -4086,7 +4193,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         if (culqiPublicKey) {
             ensureCulqiReady().catch(function () {
-                console.warn('Culqi v4 no disponible al cargar la página.');
+                console.warn('Culqi no disponible al cargar la página.');
             });
         }
     });

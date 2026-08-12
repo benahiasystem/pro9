@@ -396,49 +396,53 @@
     @endif
 @endif
 
-<div class="modal fade" id="moda-succes-add-product" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-body">
+<script>
+    window.__active_campaign = @json($cartModalCampaignJson ?? null);
+    window.__cart_detail_url = @json(route('tenant_detail_cart'));
+</script>
 
-                <div class="alert alert-success" role="alert">
-                    <i class="icon-ok"></i> Tu producto se agregó al carrito
+<div class="modal fade" id="moda-succes-add-product" tabindex="-1" role="dialog"
+    aria-labelledby="cartConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered cart-confirm-dialog" role="document">
+        <div class="modal-content cart-confirm-modal">
+            <button type="button" class="cart-confirm-close" data-dismiss="modal" aria-label="Cerrar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M18 6l-12 12" /><path d="M6 6l12 12" />
+                </svg>
+            </button>
+            <div class="modal-body cart-confirm-body">
+                <div id="cart-confirm-alert" class="cart-confirm-alert alert alert-success" role="alert">
+                    <i class="icon-ok"></i> <span id="cart-confirm-alert-text">Tu producto se agregó al carrito</span>
                 </div>
-                <div class="row">
-                    <div id="product_added_image" class="col-md-4">
-
-
-                    </div>
-                    <div class="col-md-8">
-                        <div id="product_added" class="product-single-details-ecommerce">
-
+                <div class="cart-confirm-product row align-items-start">
+                    <div id="product_added_image" class="col-4 col-md-3 cart-confirm-image"></div>
+                    <div class="col-8 col-md-9">
+                        <div id="product_added" class="product-single-details-ecommerce cart-confirm-details">
+                            <h2 id="cart-confirm-title" class="cart-confirm-title"></h2>
+                            <div class="cart-confirm-price-row">
+                                <div class="cart-confirm-prices">
+                                    <div id="cart-confirm-price-current" class="cart-confirm-price-current"></div>
+                                    <div id="cart-confirm-price-old" class="cart-confirm-price-old"></div>
+                                </div>
+                                <div class="modern-quantity-container cart-confirm-qty">
+                                    <button type="button" id="cart-confirm-qty-minus" class="btn btn-outline-secondary btn-input-group" aria-label="Disminuir cantidad">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
+                                    </button>
+                                    <input type="number" id="cart-confirm-qty-input" class="input-quantity text-center" min="0" value="1" aria-label="Cantidad">
+                                    <button type="button" id="cart-confirm-qty-plus" class="btn btn-outline-secondary btn-input-group" aria-label="Aumentar cantidad">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
                 </div>
             </div>
-            <div class="modal-footer">
-                <a href="{{ route('tenant_detail_cart') }}" class="btn btn-primary text-white">Ir a Carrito</a>
-                <button type="button" class="btn btn-warning" data-dismiss="modal">Seguir Comprando</button>
-            </div>
-        </div>
-    </div>
-</div>
-<div class="modal fade" id="modal-already-product" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-    aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-
-            <div class="modal-body">
-
-                <div style="font-size: 2em;" class="alert alert-warning" role="alert">
-                <i class="fas fa-exclamation"></i> Tu Producto ya está agregado al carrito.
-                </div>
-            </div>
-            <div class="modal-footer">
-                <a href="{{ route('tenant_detail_cart') }}" class="btn btn-primary text-white">Ir al Carrito</a>
-                <button type="button" class="btn btn-warning" data-dismiss="modal">Seguir Comprando</button>
+            <div class="modal-footer cart-confirm-footer">
+                <button type="button" class="cart-confirm-continue" data-dismiss="modal">Seguir comprando</button>
+                <a href="{{ route('tenant_detail_cart') }}" id="cart-confirm-go-cart" class="btn btn-primary cart-confirm-go-cart">Ir al Carro</a>
             </div>
         </div>
     </div>

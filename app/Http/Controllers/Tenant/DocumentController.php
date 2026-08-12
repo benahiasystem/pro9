@@ -6,6 +6,7 @@ use App\CoreFacturalo\Facturalo;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Helpers\Template\ReportHelper;
 use App\Exports\PaymentExport;
+use App\Helpers\CacheHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\SearchItemController;
 use App\Http\Requests\Tenant\DocumentEmailRequest;
@@ -755,7 +756,9 @@ class DocumentController extends Controller
 
     public function record($id)
     {
-        $loadDocument = fn () => Document::with([
+        $this->forgetLegacyDocumentDetailCache($id);
+
+        $document = Document::with([
             'items',
             'payments.payment_method_type',
             'payments.global_payment',
@@ -769,17 +772,21 @@ class DocumentController extends Controller
             'detraction',
         ])->findOrFail($id);
 
-        if ($this->pingCache()) {
-            return $this->cacheWithTagKey(
-                "document_detail_{$id}",
-                ['document_detail'],
-                3600,
-                fn () => new DocumentResource($loadDocument()),
-                ['section' => 'Document Detail', 'item_id' => $id]
-            );
-        }
+        return new DocumentResource($document);
+    }
 
-        return new DocumentResource($loadDocument());
+    /**
+     * Elimina claves de caché obsoletas del detalle (respuestas serializadas sin ítems).
+     */
+    protected function forgetLegacyDocumentDetailCache($id): void
+    {
+        foreach ([
+            "document_detail_{$id}",
+            "document_detail_v2_{$id}",
+            "document_detail_v3_{$id}",
+        ] as $cacheKey) {
+            CacheHelper::forget(['document_detail'], $cacheKey);
+        }
     }
 
 
@@ -1086,7 +1093,7 @@ class DocumentController extends Controller
 
     public function show($documentId)
     {
-        $document = Document::findOrFail($documentId);
+        $document = Document::with('items')->findOrFail($documentId);
         foreach ($document->items as &$item) {
             $discounts = [];
             if($item->discounts) {
