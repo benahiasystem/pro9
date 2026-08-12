@@ -2357,6 +2357,10 @@ this.activeName = null
                 return this.$message.error('Stock Inicial debe ser un número entero.');
             }
 
+            if (this.config.enable_list_product && this.form.item_unit_types.some(row => !row.description || String(row.description).trim() === '')) {
+                return this.$message.error('La descripción de la presentación es obligatoria.');
+            }
+
             if (this.validateItemUnitTypes() > 0)
                 return this.$message.error('Factor inválido: mínimo 0.0001 y solo se permiten decimales en unidades distintas a NIU (Unidad).');
 
