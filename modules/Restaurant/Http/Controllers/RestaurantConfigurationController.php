@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\Tenant\UserResource;
 use Illuminate\Support\Str;
+use App\Helpers\MozoAccessHelper;
 use Modules\Restaurant\Services\RestaurantStockService;
 use App\Services\CentrifugoService;
 use Hyn\Tenancy\Contracts\CurrentHostname;
@@ -263,6 +264,30 @@ class RestaurantConfigurationController extends Controller
         return [
             'success' => true,
             'data' => $alls
+        ];
+    }
+
+    public function generateMozoAccessLink(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|integer',
+        ]);
+
+        $user = User::findOrFail($request->user_id);
+
+        if (!$user->restaurant_role_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El usuario no tiene un rol de restaurante asignado.',
+            ], 422);
+        }
+
+        $helper = new MozoAccessHelper();
+        $url = $helper->generateLink($user);
+
+        return [
+            'success' => true,
+            'url' => $url,
         ];
     }
 
