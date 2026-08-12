@@ -12,7 +12,7 @@ class PaymentConfiguration extends ModelTenant
         'qrcode_yape',
         'name_yape',
         'telephone_yape',
-
+        'default_payment_for_payment_links',
         'enabled_mp',
         'access_token_mp',
         'public_key_mp',
@@ -71,7 +71,8 @@ class PaymentConfiguration extends ModelTenant
             'username_izipay' => $this->username_izipay,
             'password_izipay' => $this->password_izipay,
             'publickey_izipay' => $this->publickey_izipay,
-            'sha256key_izipay' => $this->sha256key_izipay
+            'sha256key_izipay' => $this->sha256key_izipay,
+            'default_payment_for_payment_links' => $this->default_payment_for_payment_links,
         ];
     }
 
@@ -125,10 +126,16 @@ class PaymentConfiguration extends ModelTenant
         return PaymentConfiguration::select('access_token_mp')->firstOrFail()->access_token_mp;
     }
 
+    /**
+     * Credenciales de izipay, null si está deshabilitado o no hay configuración
+     */
     public function scopeAccessIzipay($query)
     {
-        return $query->where('enabled_izipay', true)
-            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay')->first()->toArray();
+        $record = $query->where('enabled_izipay', true)
+            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay')
+            ->first();
+
+        return optional($record)->toArray();
     }
 
     /**
