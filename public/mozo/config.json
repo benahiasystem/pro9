@@ -1,6 +1,7 @@
 {
-  "apiSsl": "https://",
-  "apiUrl": "empresa.pro8.uio.la",
+  "apiSsl": "http://",
+  "apiUrl": "1.facturaloperu-pro8.oo",
+  "wsUrl": "ws://localhost:8000",
   "isStoreEnabled": "false",
   "brandName": "Mozo.pe",
   "Primary": "#32a56a",
