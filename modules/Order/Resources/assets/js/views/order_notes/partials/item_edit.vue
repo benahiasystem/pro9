@@ -607,8 +607,8 @@ export default {
         },
         clickAddDiscount() {
             this.form.discounts.push({
-                discount_type_id: null,
-                discount_type: null,
+                discount_type_id: "00",
+                discount_type: _.find(this.discount_types, { id: "00" }) || null,
                 description: null,
                 percentage: 0,
                 factor: 0,

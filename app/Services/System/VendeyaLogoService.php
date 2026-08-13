@@ -53,8 +53,20 @@ class VendeyaLogoService
         return storage_path('app/vendeya/custom-logo.svg');
     }
 
+    /**
+     * Indica si el build de Vendeya está desplegado en public/vendeya.
+     */
+    public function isBuildPresent(): bool
+    {
+        return File::exists($this->liveDir() . DIRECTORY_SEPARATOR . 'index.html');
+    }
+
     public function ensureOriginalsBackup(): void
     {
+        if (!$this->isBuildPresent()) {
+            return;
+        }
+
         if (!File::isDirectory($this->originalsDir())) {
             File::makeDirectory($this->originalsDir(), 0755, true);
         }
@@ -75,6 +87,10 @@ class VendeyaLogoService
 
     public function applySystemLogo(): void
     {
+        if (!$this->isBuildPresent()) {
+            return;
+        }
+
         $this->ensureOriginalsBackup();
         $systemLogo = $this->systemLogoFilePath();
 
@@ -93,6 +109,10 @@ class VendeyaLogoService
 
     public function restoreDefaultLogo(): void
     {
+        if (!$this->isBuildPresent()) {
+            return;
+        }
+
         $this->ensureOriginalsBackup();
 
         foreach (self::LOGO_FILES as $file) {
@@ -101,6 +121,7 @@ class VendeyaLogoService
             $live = $this->livePath($file);
 
             if (File::exists($backup) && $this->differs($live, md5_file($backup))) {
+                $this->ensureLiveParentDirectory($live);
                 File::copy($backup, $live);
             }
         }
@@ -153,7 +174,7 @@ class VendeyaLogoService
 
     public function applyCustomLogo(): void
     {
-        if (!$this->hasCustomLogo()) {
+        if (!$this->isBuildPresent() || !$this->hasCustomLogo()) {
             return;
         }
 
@@ -185,12 +206,26 @@ class VendeyaLogoService
 
     private function writeToLiveFiles(string $svg): void
     {
+        if (!$this->isBuildPresent()) {
+            return;
+        }
+
         $hash = md5($svg);
         foreach (self::LOGO_FILES as $file) {
             $live = $this->livePath($file);
             if ($this->differs($live, $hash)) {
+                $this->ensureLiveParentDirectory($live);
                 File::put($live, $svg);
             }
+        }
+    }
+
+    private function ensureLiveParentDirectory(string $livePath): void
+    {
+        $directory = dirname($livePath);
+
+        if (!File::isDirectory($directory)) {
+            File::makeDirectory($directory, 0755, true);
         }
     }
 

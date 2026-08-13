@@ -431,8 +431,9 @@ class ItemController extends Controller
     }
 
     public function store(ItemRequest $request) {
+        DB::beginTransaction();
 
-
+        try {
         $id = $request->input('id');
         if (!$request->barcode) {
             if ($request->internal_id) {
@@ -512,7 +513,7 @@ class ItemController extends Controller
 
         $item->save();
 
-        foreach ($request->item_unit_types as $value) {
+        foreach ($request->item_unit_types ?? [] as $value) {
 
             $item_unit_type = ItemUnitType::firstOrNew(['id' => $value['id']]);
             $item_unit_type->item_id = $item->id;
@@ -829,11 +830,22 @@ class ItemController extends Controller
         // Invalidar caché de listas cuando se crea/edita un item
         CacheHelper::flush(['items_list']);
 
+        DB::commit();
+
         return [
             'success' => true,
             'message' => ($id)?'Producto editado con éxito':'Producto registrado con éxito',
             'id' => $item->id
         ];
+        } catch (Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return [
+                'success' => false,
+                'message' => $this->itemStoreErrorMessage($e),
+            ];
+        }
     }
 
     public function visibleMassive(Request $request)
@@ -1084,6 +1096,23 @@ class ItemController extends Controller
         }
 
         return $e->getMessage();
+    }
+
+    private function itemStoreErrorMessage(Throwable $e): string
+    {
+        if ($e instanceof QueryException) {
+            $sqlMessage = $e->getMessage();
+
+            if (str_contains($sqlMessage, 'item_unit_types') && str_contains($sqlMessage, 'description')) {
+                return 'La descripción de la presentación es obligatoria.';
+            }
+
+            if (str_contains($sqlMessage, "Column 'description' cannot be null")) {
+                return 'Complete la descripción de la presentación antes de guardar.';
+            }
+        }
+
+        return 'No se pudo guardar el producto. Verifique los datos e intente nuevamente.';
     }
 
     public function catalog(Request $request)

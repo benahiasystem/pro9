@@ -132,6 +132,7 @@ class CashController extends Controller
             'message' => 'Verificar si existe caja abierta',
             'data' => [
                 'cash_id' => ($cash)?$cash->id:null,
+                'cash' => $cash,
                 'description' => ($cash)?$cash->reference_number . " " . $cash->date_opening . " (" . $cash->user->name . ")":'',
             ]
         ];

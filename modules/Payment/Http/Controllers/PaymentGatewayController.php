@@ -27,7 +27,7 @@ class PaymentGatewayController extends Controller
         $checkout = $is_tenant ? PaymentConfiguration::enabledCheckout() : Configuration::enabledCheckout();
         return [
             'checkout' => $checkout,
-            // 'is_tenant' => app(CurrentHostname::class) ? true : false
+            'is_tenant' => (bool) app(CurrentHostname::class),
         ];
     }
 
@@ -48,6 +48,14 @@ class PaymentGatewayController extends Controller
 
         $privateKey = $this->culqiCredentials($is_tenant);
 
+        if (!$privateKey) {
+            return response()->json([
+                'success'      => false,
+                'paid'         => false,
+                'user_message' => 'No se encontraron las credenciales de Culqi configuradas',
+            ], 400);
+        }
+
         try {
             $charge = $this->charge(
                 ['private_key' => $privateKey],
@@ -60,12 +68,13 @@ class PaymentGatewayController extends Controller
                 ]
             );
 
-            $paid = $charge && $charge->outcome->type === 'venta_exitosa';
+            // la respuesta de culqi puede no traer outcome cuando el cargo no se concreta
+            $paid = data_get($charge, 'outcome.type') === 'venta_exitosa';
 
             return response()->json([
                 'success' => true,
                 'result' => $charge,
-                'pending' => $charge->status === 'pending' ? true : false,
+                'pending' => data_get($charge, 'status') === 'pending',
                 'paid'    => $paid,
             ]);
 
@@ -96,29 +105,30 @@ class PaymentGatewayController extends Controller
     public function culqiRecord(Request $request)
     {
         $is_tenant = $request->boolean('isTenant', false);
-        $publickey_culqi =  $is_tenant ? 
-            PaymentConfiguration::select('publickey_culqi')->first() : 
-            Configuration::select('token_public_culqui')->first();
+
+        $configuration = $is_tenant
+            ? PaymentConfiguration::select('publickey_culqi')->first()
+            : Configuration::select('token_public_culqui')->first();
+
         return [
-            'publickey_culqi' => $publickey_culqi->publickey_culqi ?? $publickey_culqi->token_public_culqui
+            'publickey_culqi' => $is_tenant
+                ? optional($configuration)->publickey_culqi
+                : optional($configuration)->token_public_culqui,
         ];
     }
 
     /**
      * Private key de culqi
+     *
+     * @return string|null null cuando no hay credenciales configuradas
      */
     private function culqiCredentials(bool $is_tenant = false)
     {
-        if (
-            $is_tenant
-        ) {
-            $private_key_culqi = PaymentConfiguration::select('privatekey_culqi')->first()->privatekey_culqi;
-        } else {
-            $private_key_culqi = Configuration::select('token_private_culqui')->first()->token_private_culqui;
+        if ($is_tenant) {
+            return optional(PaymentConfiguration::select('privatekey_culqi')->first())->privatekey_culqi;
         }
 
-        return $private_key_culqi;
-
+        return optional(Configuration::select('token_private_culqui')->first())->token_private_culqui;
     }
 
 
@@ -129,38 +139,76 @@ class PaymentGatewayController extends Controller
     {
 
         $is_tenant = $request->boolean('isTenant', false);
+
+        // validate() descarta lo que no esté declarado, el análisis de riesgo de izipay
+        // rechaza el pago (PSP_641) cuando billingDetails llega incompleto
         $validated = $request->validate([
-            'amount'                              => 'required|numeric',
-            'currency'                            => 'required|string',
-            'orderId'                             => 'nullable|string',
-            'customer.email'                      => 'nullable|email',
-            'customer.billingDetails.firstName'   => 'nullable|string',
-            'customer.billingDetails.lastName'    => 'nullable|string',
-            'customer.billingDetails.phoneNumber' => 'nullable',
+            'amount'                                  => 'required|numeric',
+            'currency'                                => 'required|string',
+            'orderId'                                 => 'nullable|string',
+            'customer.email'                          => 'nullable|email',
+            'customer.billingDetails.firstName'       => 'nullable|string',
+            'customer.billingDetails.lastName'        => 'nullable|string',
+            'customer.billingDetails.phoneNumber'     => 'nullable',
+            'customer.billingDetails.identityType'    => 'nullable|string',
+            'customer.billingDetails.identityCode'    => 'nullable|string',
+            'customer.billingDetails.address'         => 'nullable|string',
+            'customer.billingDetails.country'         => 'nullable|string',
+            'customer.billingDetails.city'            => 'nullable|string',
+            'customer.billingDetails.state'           => 'nullable|string',
+            'customer.billingDetails.zipCode'         => 'nullable|string',
         ]);
 
+        $validated = $this->normalizeIzipayCustomer($validated);
 
         $credentials = $this->izipayCredentials($is_tenant);
-        $result = $this->createPayment($credentials, $validated);
+
+        if (!$credentials) {
+            return [
+                'success' => false,
+                'formToken' => null,
+                'message' => 'No se encontraron las credenciales de Izipay configuradas',
+            ];
+        }
+
+        $result = $this->createPayment($credentials, $validated, $error);
 
         return [
             'success' => $result ? true : false,
-            'formToken' => $result
+            'formToken' => $result,
+            'message' => $error,
         ];
     }
 
 
+    /**
+     * Izipay rechaza los campos vacíos del billingDetails y su análisis de riesgo
+     * penaliza la ausencia de country, se descartan los vacíos y se asume PE
+     */
+    private function normalizeIzipayCustomer(array $payload): array
+    {
+
+        $billing = array_filter(
+            data_get($payload, 'customer.billingDetails', []),
+            fn ($value) => !is_null($value) && $value !== ''
+        );
+
+        $billing['country'] = $billing['country'] ?? 'PE';
+
+        data_set($payload, 'customer.billingDetails', $billing);
+
+        return $payload;
+
+    }
+
+    /**
+     * Credenciales de izipay
+     *
+     * @return array|null null cuando no hay credenciales configuradas o izipay está deshabilitado
+     */
     private function izipayCredentials(bool $is_tenant = false)
     {
-        if (
-            $is_tenant
-        ) {
-            $credentials = PaymentConfiguration::accessIzipay();
-        } else {
-            $credentials = Configuration::accessIzipay();
-        }
-    
-        return $credentials;
+        return $is_tenant ? PaymentConfiguration::accessIzipay() : Configuration::accessIzipay();
     }
 
 
@@ -168,12 +216,13 @@ class PaymentGatewayController extends Controller
     {
 
         $is_tenant = $request->boolean('isTenant', false);
-        $publickey_izipay = $is_tenant ? 
-            PaymentConfiguration::select('publickey_izipay')->first()->publickey_izipay : 
-            Configuration::select('publickey_izipay')->first()->publickey_izipay;
+
+        $configuration = $is_tenant
+            ? PaymentConfiguration::select('publickey_izipay')->first()
+            : Configuration::select('publickey_izipay')->first();
 
         return [
-            'publickey_izipay' => $publickey_izipay,
+            'publickey_izipay' => optional($configuration)->publickey_izipay,
         ];
     }
 
@@ -186,29 +235,42 @@ class PaymentGatewayController extends Controller
             'uuid' => 'required|string'
         ])['uuid'];
 
-        $result = $this->getTransaction($credentials, $uuid);
-        $status = $result['answer']['status'] ;
-        $paid = $status === 'PAID' ? true : false;
-    
+        if (!$credentials) {
+            return [
+                'success' => false,
+                'result' => null,
+                'pending' => false,
+                'paid' => false,
+                'message' => 'No se encontraron las credenciales de Izipay configuradas',
+            ];
+        }
+
+        $result = $this->getTransaction($credentials, $uuid, $error);
+
+        // la consulta puede fallar (null) o responder un error sin la clave answer
+        $status = data_get($result, 'answer.status');
+
         return [
-            'success' => $result ? true : false,
+            'success' => !is_null($status),
             'result' => $result,
-            'pending' =>  $status === 'RUNNING' ? true : false ,
-            'paid' => $paid,
+            'pending' => $status === 'RUNNING',
+            'paid' => $status === 'PAID',
+            'message' => $error,
         ];
     }
 
+    /**
+     * Access token de mercadopago
+     *
+     * @return string|null null cuando no hay credenciales configuradas
+     */
     public function mercadoPagoCredentials(bool $is_tenant = false)
     {
-        if (
-            $is_tenant
-        ) {
-            $access_token = PaymentConfiguration::select('access_token_mp')->first()->access_token_mp;
-        } else {
-            $access_token = Configuration::select('access_token_mp')->first()->access_token_mp;
+        if ($is_tenant) {
+            return optional(PaymentConfiguration::select('access_token_mp')->first())->access_token_mp;
         }
-    
-        return $access_token;
+
+        return optional(Configuration::select('access_token_mp')->first())->access_token_mp;
     }
 
     /**
@@ -230,6 +292,15 @@ class PaymentGatewayController extends Controller
     {
         $is_tenant = $request->boolean('isTenant', false);
         $access_token = $this->mercadoPagoCredentials($is_tenant);
+
+        if (!$access_token) {
+            return [
+                'success' => false,
+                'result' => null,
+                'paid' => false,
+                'message' => 'No se encontraron las credenciales de MercadoPago configuradas',
+            ];
+        }
 
         try {
             $validated = $request->validate([

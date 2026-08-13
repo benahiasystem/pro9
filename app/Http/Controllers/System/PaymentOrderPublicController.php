@@ -169,11 +169,12 @@ class PaymentOrderPublicController extends Controller
         ]);
 
         $credentials = Configuration::accessIzipay();
-        $result = $this->createPayment($credentials, $validated);
+        $result = $this->createPayment($credentials, $validated, $error);
 
         return [
             'success' => $result ? true : false,
             'formToken' => $result,
+            'message' => $error,
         ];
     }
 
@@ -186,7 +187,7 @@ class PaymentOrderPublicController extends Controller
         ])['uuid'];
 
         $credentials = Configuration::accessIzipay();
-        $result = $this->getTransaction($credentials, $transactionUuid);
+        $result = $this->getTransaction($credentials, $transactionUuid, $error);
         $paid = isset($result['answer']['status']) && $result['answer']['status'] === 'PAID';
 
         if ($paid) {
@@ -194,9 +195,10 @@ class PaymentOrderPublicController extends Controller
         }
 
         return [
-            'success' => $result ? true : false,
+            'success' => is_null($error),
             'paid' => $paid,
             'result' => $result,
+            'message' => $error,
             'redirect' => $paid ? route('payment.public.success', ['uuid' => $order->uuid]) : null,
         ];
     }

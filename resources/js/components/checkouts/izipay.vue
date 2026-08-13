@@ -3,14 +3,14 @@
         <button
             type="button"
             class="checkout-pay__btn checkout-pay__btn--izipay"
-            :disabled="disabled || loading"
+            :disabled="disabled || loading || paying"
             @click.prevent="submit"
         >
             <span class="checkout-pay__label">
-                <span v-if="loading" class="checkout-pay__spinner"></span>
-                {{ loading ? 'Cargando…' : 'Pagar con izipay' }}
+                <span v-if="loading || paying" class="checkout-pay__spinner"></span>
+                {{ loading || paying ? 'Cargando…' : 'Pagar con izipay' }}
             </span>
-            <span v-if="!loading" class="checkout-pay__amount">{{ formattedAmount }}</span>
+            <span v-if="!loading && !paying" class="checkout-pay__amount">{{ formattedAmount }}</span>
         </button>
         <div class="kr-izipay-container-inner" >
 
@@ -64,9 +64,11 @@ export default {
     },
     data() {
         return {
-            formtoken: null,
-            url_result: null,
-            loading: true
+            publicKey: null,
+            loading: true,
+            paying: false,
+            // los callbacks de KR se registran una sola vez, KR es un singleton global
+            events_registered: false
         }
     },
     computed: {
@@ -88,16 +90,27 @@ export default {
     //     }
     // },
     async created() {
+
+        if (_.isNil(this.form)) {
+            this.$message.error('No se han cargado información para crear pago con Izipay');
+            return;
+        }
+
         await this.loadConfiguration();
+
+        if (!this.publicKey) {
+            this.$message.error('No se encontró la llave pública de Izipay configurada');
+            return;
+        }
+
         // Cargar el script de Izipay si no está ya cargado
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = "https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
         script.setAttribute('kr-public-key', this.publicKey);
-        // script.setAttribute('kr-post-url-success', this.url_result);
+        // sin kr-post-url-success el resultado del pago llega por KR.onSubmit en lugar de un POST/redirect
         script.setAttribute('kr-popin', true)
         script.setAttribute('kr-language', "es-Es")
-        script.setAttribute('kr-no-pay-button', true)
         document.head.appendChild(script);
 
 
@@ -115,94 +128,175 @@ export default {
 
         document.head.appendChild(script_style);
 
-        this.waitForKR().then(() => {
-            this.eventOnSubmit()
+        try {
+            await this.waitForKR();
             this.loading = false;
-        })
-
-        
-        if (_.isNull(this.form)) {
-           this.$message.error('No se han cargado información para crear pago con Izipay'); 
-        } 
+        } catch (error) {
+            this.$message.error('No se pudo cargar el formulario de pago de Izipay');
+        }
 
     },
     methods: {
         async loadConfiguration() {
             await this.$http.get(`${this.resource}/record?isTenant=${this.isTenant}`)
                 .then(response => {
-                    let data = response.data;
-                    this.publicKey = data.publickey_izipay;
-                    this.url_result = data.url_result;
+                    this.publicKey = response.data.publickey_izipay;
+                })
+                .catch(() => {
+                    this.$message.error('No se pudo obtener la configuración de Izipay');
                 })
         },
 
         submit(){
-            this.$http.post(`${this.resource}/payment`, this.form)
+
+            // evita generar varios formTokens si se hace doble clic
+            if (this.paying) return;
+
+            this.paying = true;
+
+            this.$http.post(`${this.resource}/payment?isTenant=${this.isTenant}`, this.form)
                 .then(async (response) => {
 
                     let formToken = response.data.formToken;
+
                     if (response.data.success && formToken) {
-
-                        let container = document.querySelector('.kr-izipay-container-inner');
-                        let embedded = document.createElement('div');
-
-                        embedded.classList.add('kr-embedded');
-                        embedded.style.display = 'none'
-
-                        // embedded.style.opacity = 0;
-                        // embedded.style.position = 'absolute';
-
-                        container.appendChild(embedded);
-
-                        await KR.setFormConfig({
-                            formToken: formToken ,
-                            'kr-no-pay-button': true
-                        })
-                        KR.openPopin()
+                        await this.renderForm(formToken);
                     } else {
-                        this.$message.error('No se pudo iniciar el pago con Izipay. Verifica que las credenciales configuradas sean válidas.');
+                        this.$message.error(response.data.message || 'No se pudo iniciar el pago con Izipay. Verifica que las credenciales configuradas sean válidas.');
                     }
 
                 })
                 .catch(() => {
                     this.$message.error('Ocurrió un error al iniciar el pago con Izipay. Intenta nuevamente.');
                 })
+                .finally(() => {
+                    this.paying = false;
+                })
 
         },
-        eventOnSubmit() {
-            KR.onSubmit(async (response) => {
-                const uuid = response.clientAnswer.transactions[0].uuid
+        /**
+         * Monta el formulario de Izipay y abre el popin
+         *
+         * El formulario debe estar adjunto y visible antes de abrir el popin,
+         * de lo contrario el cliente de Izipay falla al montar sus componentes
+         */
+        async renderForm(formToken) {
 
-                this.$http.post(`${this.resource}/transaction`, { uuid: uuid })
-                    .then(response => {
-                        if (response.data.success) {
-                            this.$emit('submit', {
-                                status : response.data.result.answer.status,
-                                customer: this.form._customer,
-                                data: response.data
-                            });
-                            this.$message.success('Pago realizado con éxito');
-                            KR.closePopin();
-                        } else {
-                            this.$message.error('No se pudo verificar el pago');
-                        }
-                    })
-                    .finally(() => {
-                        let container = document.querySelector('.kr-izipay-container-inner');
-                        container.innerHTML = '';
-                    })
+            const selector = '.kr-izipay-container-inner';
+            const container = document.querySelector(selector);
+
+            // se limpia para no acumular formularios entre intentos de pago
+            // Izipay crea el div .kr-embedded dentro del contenedor, no debe crearse aca
+            container.innerHTML = '';
+
+            try {
+
+                const { KR: kr } = await KR.setFormConfig({
+                    formToken: formToken
+                });
+
+                // los callbacks se registran sobre la instancia devuelta por setFormConfig,
+                // ya inicializada con la public key, y no sobre el KR global aún sin arrancar
+                await this.registerEvents(kr);
+
+                const { result } = await kr.attachForm(selector);
+
+                await kr.showForm(result.formId);
+                await kr.openPopin();
+
+            } catch (error) {
+                container.innerHTML = '';
+                this.$message.error('No se pudo mostrar el formulario de pago de Izipay.');
+            }
+
+        },
+        /**
+         * KR es un singleton global, registrar los callbacks una sola vez
+         */
+        async registerEvents(kr) {
+
+            if (this.events_registered) return;
+
+            await kr.onSubmit(this.onSubmit);
+            await kr.onError(this.onError);
+
+            this.events_registered = true;
+
+        },
+        /**
+         * onSubmit solo se dispara cuando el pago se procesó correctamente,
+         * los rechazos llegan por onError
+         */
+        onSubmit(event) {
+
+            const uuid = _.get(event, 'clientAnswer.transactions[0].uuid');
+
+            if (!uuid) {
+                this.$message.error('No se pudo obtener la transacción de Izipay');
+                return false;
+            }
+
+            this.$http.post(`${this.resource}/transaction?isTenant=${this.isTenant}`, { uuid: uuid })
+                .then(response => {
+                    if (response.data.success) {
+                        this.$emit('submit', {
+                            status : response.data.result.answer.status,
+                            customer: this.form._customer,
+                            data: response.data
+                        });
+                        this.$message.success('Pago realizado con éxito');
+                    } else {
+                        this.$message.error(response.data.message || 'No se pudo verificar el pago');
+                    }
+                })
+                .catch(() => {
+                    this.$message.error('No se pudo verificar el pago');
+                })
+                .finally(() => {
+                    KR.closePopin();
+                    this.clearForm();
+                })
+
+            // evita que Izipay haga el submit por defecto del formulario y recargue la página
+            return false;
+
+        },
+        onError(error) {
+
+            this.$message.error(_.get(error, 'errorMessage') || 'No se pudo procesar el pago con Izipay');
+
+        },
+        clearForm() {
+
+            const container = document.querySelector('.kr-izipay-container-inner');
+
+            if (container) container.innerHTML = '';
+
+        },
+        /**
+         * Espera a que el cliente de Izipay termine de cargar, rechaza si no llega
+         * para no dejar el botón deshabilitado indefinidamente
+         */
+        waitForKR(timeout = 15000) {
+            return new Promise((resolve, reject) => {
+
+                const started = Date.now();
+
+                const check = setInterval(() => {
+
+                    if (window.KR) {
+                        clearInterval(check);
+                        return resolve(window.KR);
+                    }
+
+                    if (Date.now() - started > timeout) {
+                        clearInterval(check);
+                        reject(new Error('Izipay client timeout'));
+                    }
+
+                }, 100)
             })
         },
-        waitForKR() {
-            return new Promise((resolve) => {
-            const check = setInterval(() => {
-                if (window.KR) {
-                clearInterval(check)
-                resolve()
-                }
-            }, 100)
-        })
-  },
     }
 
 }
