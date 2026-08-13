@@ -131,7 +131,6 @@
                             $offerExpiresAt = $activeCampaign->end_date;
                         }
                     }
-                    $campaignPricing = app(\Modules\Ecommerce\Services\CampaignPriceService::class)->forItem($record);
                     $activeOfferPrice = $campaignPricing['final_price'];
                     $compareAtPrice = $campaignPricing['compare_at_price'];
                     $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
@@ -186,6 +185,13 @@
                 <div class="product-desc pb-0">
                     @if ($record->category && $record->category->name)
                         <p class="product-category">Categoría: <span> {{$record->category->name}} </span></p>
+                    @endif
+                    @if ($record->brand && $record->brand->id)
+                        <p class="product-category">Marca:
+                            <a href="{{ route('tenant.ecommerce.brand', ['id' => $record->brand->id, 'slug' => \Illuminate\Support\Str::slug($record->brand->name)]) }}">
+                                {{ $record->brand->name }}
+                            </a>
+                        </p>
                     @endif
                 <p class="product-stock">Disponible: <span>{{number_format(($record->stock), 0)}} </span>
                 <?php
@@ -287,6 +293,42 @@
         </div><!-- End .col-lg-5 -->
     </div><!-- End .row -->
 </div><!-- End .product-single-container -->
+
+@if($record->components->isNotEmpty())
+<section class="pack-components mb-4" aria-labelledby="pack-components-title">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <p class="text-muted text-uppercase mb-1" style="font-size: 12px; letter-spacing: .08em;">Pack compuesto</p>
+            <h2 id="pack-components-title" class="mb-0">Este pack incluye</h2>
+        </div>
+        <span class="badge badge-light">{{ $record->components->count() }} productos</span>
+    </div>
+    <div class="row">
+        @foreach($record->components as $component)
+            @php
+                $componentImage = ($component->image && $component->image !== 'imagen-no-disponible.jpg')
+                    ? asset('storage/uploads/items/'.$component->image)
+                    : $defaultImagePath;
+            @endphp
+            <article class="col-12 col-sm-6 mb-3">
+                <div class="d-flex h-100 p-3 border rounded bg-white">
+                    <img src="{{ $componentImage }}" alt="{{ $component->name }}"
+                         class="mr-3 rounded" style="width: 88px; height: 88px; object-fit: contain;">
+                    <div class="flex-grow-1">
+                        <div class="font-weight-bold mb-1">{{ $component->name }}</div>
+                        <div class="text-primary font-weight-bold mb-1">
+                            {{ rtrim(rtrim(number_format($component->quantity, 2, '.', ''), '0'), '.') }} unidad(es)
+                        </div>
+                        @if($component->description)
+                            <p class="text-muted mb-0" style="line-height: 1.4;">{{ strip_tags($component->description) }}</p>
+                        @endif
+                    </div>
+                </div>
+            </article>
+        @endforeach
+    </div>
+</section>
+@endif
 
 <div class="product-single-tabs">
     <ul class="nav nav-tabs" role="tablist">

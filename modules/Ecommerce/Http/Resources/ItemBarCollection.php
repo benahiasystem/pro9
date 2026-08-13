@@ -41,6 +41,11 @@ class ItemBarCollection extends ResourceCollection
                 'slug' => $row->id . '/' . Str::slug($row->description),
                 'unit_type_id' => $row->unit_type_id,
                 'description' => $row->description,
+                'brand' => $row->brand && $row->brand->id ? [
+                    'id' => $row->brand->id,
+                    'name' => $row->brand->name,
+                    'slug' => Str::slug($row->brand->name),
+                ] : null,
                 'name' => $row->name,
                 'second_name' => $row->second_name,
                 'warehouse_id' => $row->warehouse_id,

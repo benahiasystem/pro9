@@ -30,6 +30,7 @@ use App\Models\Tenant\Promotion;
 use Modules\ApiPeruDev\Data\ServiceData;
 use App\Models\Tenant\Document;
 use Modules\Item\Models\Category;
+use Modules\Item\Models\Brand;
 use App\Models\Tenant\Catalogs\Department;
 use Modules\Ecommerce\Models\Tenant\DeliveryZone;
 use Modules\Ecommerce\Models\Tenant\DeliveryZoneLocation;
@@ -81,7 +82,7 @@ class EcommerceController extends Controller
     //   $configuration = InventoryConfiguration::first();
     //   return view('ecommerce::index', ['dataPaginate' => $dataPaginate, 'configuration' => $configuration->stock_control]);
     // }
-    public function index($name = null)
+    public function index($name = null, $brand = null)
     {
         if ($name) {
             $name = str_replace('-', ' ', $name);
@@ -101,7 +102,11 @@ class EcommerceController extends Controller
         $order = request()->get('order');
 
         // Query base
-        $query = Item::where([['apply_store', 1], ['internal_id', '!=', null]]);
+        $query = Item::with('brand')->where([['apply_store', 1], ['internal_id', '!=', null]]);
+
+        if ($brand) {
+            $query->where('brand_id', $brand->id);
+        }
 
         // Filtrar solo productos disponibles si está activado
         if (isset($preferences['only_available_products']) && $preferences['only_available_products'] == 1) {
@@ -133,7 +138,8 @@ class EcommerceController extends Controller
             : 16;
 
         $dataPaginate = $query->category($category ? $category->id : null)
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         $configuration = InventoryConfiguration::first();
         // Mostrar también las categorías recién creadas aunque todavía no tengan
@@ -163,9 +169,25 @@ class EcommerceController extends Controller
             'company' => $company,
             'customLinks' => $customLinks,
             'category' => $category,
+            'brand' => $brand,
             'categories' => $categories_filtered,
             'categories_list' => $categories_filtered
         ]);
+    }
+
+    public function brand($id, $slug = null)
+    {
+        $brand = Brand::findOrFail((int) $id);
+        $canonicalSlug = Str::slug($brand->name);
+
+        if ($canonicalSlug !== '' && $slug !== $canonicalSlug) {
+            return redirect()->route('tenant.ecommerce.brand', [
+                'id' => $brand->id,
+                'slug' => $canonicalSlug,
+            ], 301);
+        }
+
+        return $this->index(null, $brand);
     }
 
     /**
@@ -247,7 +269,7 @@ class EcommerceController extends Controller
     public function item(Request $request, $id, $slug = null)
     {
         $id = (int) $id;
-        $row = Item::find($id);
+        $row = Item::with(['brand', 'category', 'items_sets'])->find($id);
 
         if (!$row) {
             abort(404);
@@ -276,6 +298,7 @@ class EcommerceController extends Controller
             'unit_type_id' => $row->unit_type_id,
             'description' => $description,
             'category' => $row->category,
+            'brand' => $row->brand,
             'stock' => $row->getStockByWarehouseMain(),
             // 'description' => $row->description,
             'technical_specifications' => $row->technical_specifications,
@@ -294,20 +317,43 @@ class EcommerceController extends Controller
             'images' => $row->images,
             'attributes' => $row->attributes ? $row->attributes : [],
             'promotion_id' => $promotion_id,
+            'components' => $row->items_sets->map(function ($component) {
+                return (object) [
+                    'id' => $component->id,
+                    'name' => $component->description,
+                    'description' => $component->name,
+                    'quantity' => (float) $component->pivot->quantity,
+                    'unit_type_id' => $component->unit_type_id,
+                    'image' => $component->image,
+                    'image_medium' => $component->image_medium,
+                    'image_small' => $component->image_small,
+                ];
+            })->values(),
         ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['data' => $record]);
+        }
+
+        // El servicio requiere el modelo Eloquent, no el DTO usado por la vista.
+        $campaignPricing = app(CampaignPriceService::class)->forItem($row);
         $categories = \Modules\Item\Models\Category::has('items')->get();
-        return view('ecommerce::items.record', compact('record', 'categories'));
+        return view('ecommerce::items.record', compact('record', 'categories', 'campaignPricing'));
     }
 
     public function items()
     {
-        $records = Item::where('apply_store', 1)->get();
+        $records = Item::with('brand')->where('apply_store', 1)->get();
         return view('ecommerce::items.index', compact('records'));
     }
 
     public function itemsBar()
     {
-        $records = Item::where('apply_store', 1)->get();
+        $records = Item::with('brand')->where('apply_store', 1)
+            ->when(request('brand_id'), function ($query, $brandId) {
+                $query->where('brand_id', (int) $brandId);
+            })
+            ->get();
         // return new ItemCollection($records);
         return new ItemBarCollection($records);
 

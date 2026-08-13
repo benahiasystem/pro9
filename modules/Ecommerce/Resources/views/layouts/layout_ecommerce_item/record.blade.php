@@ -50,7 +50,7 @@
         "sku": "{{ data_get($product, 'internal_id') }}",
         "brand": {
             "@type": "Brand",
-            "name": "{{ $pageTitle }}"
+            "name": "{{ data_get($product, 'brand.name') ?: $pageTitle }}"
         },
         "offers": {
             "@type": "Offer",

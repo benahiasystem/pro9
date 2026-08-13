@@ -798,6 +798,16 @@
                                                     Marca
                                                 </label>
 
+                                                <a v-if="form_brand.add == false"
+                                                   href="#"
+                                                   @click.prevent="form_brand.add = true">[ + Nueva]</a>
+                                                <a v-if="form_brand.add == true"
+                                                   href="#"
+                                                   @click.prevent="saveBrand">[ Guardar]</a>
+                                                <a v-if="form_brand.add == true"
+                                                   href="#"
+                                                   @click.prevent="cancelBrand">[ Cancelar]</a>
+
                                                 <el-input v-if="form_brand.add == true"
                                                         v-model="form_brand.name"
                                                         dusk="item_code"
@@ -1835,6 +1845,7 @@ this.activeName =  'first'
                     if (response.data.success) {
                         this.$message.success(response.data.message)
                         this.brands.push(response.data.data)
+                        this.form.brand_id = response.data.data.id
                         this.form_brand.name = null
 
                     } else {
@@ -1846,6 +1857,10 @@ this.activeName =  'first'
                 })
 
 
+        },
+        cancelBrand() {
+            this.form_brand.add = false
+            this.form_brand.name = null
         },
         changeAttributeType(index) {
             let attribute_type_id = this.form.attributes[index].attribute_type_id

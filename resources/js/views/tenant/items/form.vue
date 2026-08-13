@@ -250,8 +250,26 @@
                 </template>
                 <template #brand_id>
                     <div :class="{'has-danger': errors.brand_id}" class="form-group">
-                        <label class="control-label">Marca</label>
-                        <el-select v-model="form.brand_id" clearable filterable>
+                        <label class="control-label">
+                            Marca
+                            <a v-if="form_brand.add == false"
+                               class="control-label font-weight-bold text-info"
+                               href="#"
+                               @click.prevent="form_brand.add = true">[ + Nuevo]</a>
+                            <a v-if="form_brand.add == true"
+                               class="control-label font-weight-bold text-info"
+                               href="#"
+                               @click.prevent="saveBrand">[ Guardar]</a>
+                            <a v-if="form_brand.add == true"
+                               class="control-label font-weight-bold text-danger"
+                               href="#"
+                               @click.prevent="cancelBrand">[ Cancelar]</a>
+                        </label>
+                        <el-input v-if="form_brand.add == true"
+                                  v-model="form_brand.name"
+                                  placeholder="Nombre de la marca"
+                                  @keyup.enter.native="saveBrand"></el-input>
+                        <el-select v-else v-model="form.brand_id" clearable filterable>
                             <el-option v-for="option in brands"
                                        :key="option.id"
                                        :label="option.name"
@@ -1118,21 +1136,23 @@
                                          class="form-group">
                                         <label class="control-label">
                                             Marca
-                                            <!-- <a v-if="form_brand.add == false"
+                                            <a v-if="form_brand.add == false"
                                                 class="control-label font-weight-bold text-info"
                                                 href="#"
-                                                @click="form_brand.add = true"> [ + Nuevo]</a>
+                                                @click.prevent="form_brand.add = true"> [ + Nuevo]</a>
                                             <a v-if="form_brand.add == true"
                                                 class="control-label font-weight-bold text-info"
                                                 href="#"
-                                                @click="saveBrand()"> [ + Guardar]</a>
+                                                @click.prevent="saveBrand"> [ Guardar]</a>
                                             <a v-if="form_brand.add == true"
                                                 class="control-label font-weight-bold text-danger"
                                                 href="#"
-                                                @click="form_brand.add = false"> [ Cancelar]</a> -->
+                                                @click.prevent="cancelBrand"> [ Cancelar]</a>
                                         </label>
                                         <el-input v-if="form_brand.add == true"
                                                   v-model="form_brand.name"
+                                                  placeholder="Nombre de la marca"
+                                                  @keyup.enter.native="saveBrand"
                                                   dusk="item_code"
                                                   style="margin-bottom:1.5%;"></el-input>
 
@@ -2213,7 +2233,9 @@ this.activeName = null
 
             this.setDataToItemWarehousePrices()
 
-            if (this.warehouses.length === 0) {
+            // El modal permanece montado entre aperturas. Si las marcas fueron
+            // creadas después de inicializarlo, hay que refrescar sus opciones.
+            if (this.warehouses.length === 0 || this.brands.length === 0) {
                 await this.reloadTables();
             }
 
@@ -2224,6 +2246,9 @@ this.activeName = null
                     .then(response => {
                         console.log(response.data.data)
                         this.form = response.data.data;
+                        this.form.brand_id = this.form.brand_id
+                            ? Number(this.form.brand_id)
+                            : null;
                         this.has_percentage_perception = (this.form.percentage_perception) ? true : false;
 
                         this.enabled_percentage_of_profit = parseFloat(this.form.percentage_of_profit) > 0;
@@ -2279,6 +2304,9 @@ this.activeName = null
                 this.$http.get(`/${this.resource}/record/${this.recordId}`)
                     .then(response => {
                         this.form = response.data.data
+                        this.form.brand_id = this.form.brand_id
+                            ? Number(this.form.brand_id)
+                            : null
                         this.enabled_percentage_of_profit = parseFloat(this.form.percentage_of_profit) > 0;
                         if (this.globalIgvHandling) {
                             this.form.has_igv = true
@@ -2523,25 +2551,37 @@ this.activeName = null
                 })
         },
         saveBrand() {
-            this.form_brand.add = false
+            const name = (this.form_brand.name || '').trim()
+            if (!name) {
+                return this.$message.warning('Ingrese el nombre de la marca')
+            }
 
+            this.form_brand.name = name
             this.$http.post(`/brands`, this.form_brand)
                 .then(response => {
                     if (response.data.success) {
                         this.$message.success(response.data.message)
-                        this.brands.push(response.data.data)
-                        this.filteredBrands = this.brands
+                        if (!this.brands.some(brand => brand.id === response.data.data.id)) {
+                            this.brands.push(response.data.data)
+                        }
+                        this.filteredBrands = [...this.brands]
+                        this.form.brand_id = Number(response.data.data.id)
                         this.form_brand.name = null
+                        this.form_brand.add = false
 
                     } else {
-                        this.$message.error('No se guardaron los cambios')
+                        this.$message.error(response.data.message || 'No se guardaron los cambios')
                     }
                 })
-                .catch(error => {
-
+                .catch(() => {
+                    this.$message.error('Error al crear la marca')
                 })
 
 
+        },
+        cancelBrand() {
+            this.form_brand.add = false
+            this.form_brand.name = null
         },
         filterBrands(query) {
             this.brandSearchQuery = query
