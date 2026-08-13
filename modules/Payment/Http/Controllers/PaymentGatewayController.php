@@ -7,10 +7,9 @@ use Hyn\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use MercadoPago\Client\Common\RequestOptions;
-use MercadoPago\Client\Payment\PaymentClient;
-use MercadoPago\Exceptions\MPApiException;
-use MercadoPago\Resources\Payment;
+use Illuminate\Support\Str;
+use MercadoPago\Payment;
+use MercadoPago\SDK;
 use Modules\Payment\Models\PaymentConfiguration;
 use Modules\Payment\Traits\CulqiTrait;
 use Modules\Payment\Traits\IzipayTrait;
@@ -322,40 +321,52 @@ class PaymentGatewayController extends Controller
                 'form_data.payer.identification.number' => 'required|string',
             ]);
 
-
-            $requestOption = new RequestOptions($access_token);
-            $client = new PaymentClient();
-
-            $payment = $client->create([
-                'token'               => $request->input('form_data.token'),           // token de la tarjeta
-                'issuer_id'           => $request->input('form_data.issuer_id'),
-                'payment_method_id'   => $request->input('form_data.payment_method_id'),
-                'transaction_amount'  => (float) $request->input('form_data.transaction_amount'),
-                'installments'        => (int) $request->input('form_data.installments'),
-                'payer'               => $request->input('form_data.payer'),
-            ], $requestOption);
-
-            $paid = $this->getStatusPaymentMP($payment->status);
-            
-            return [
-                'success' => true,
-                'paid' => $paid,
-                'pending' => $payment->status === 'in_process',
-                'result' => $payment,
-            ];
-
-        } catch (\Throwable $th) {
-            if ($th instanceof MPApiException) {
+            if (!$access_token) {
                 return [
                     'success' => false,
                     'result' => null,
-                    'details' => [
-                        'status' => $th->getApiResponse()->getStatusCode(),
-                        'body' => $th->getApiResponse()->getContent(),
-                    ],
-                    'paid' => false
+                    'message' => 'Datos de configuración incorrectos, comuníquese con el administrador',
+                    'paid' => false,
                 ];
             }
+
+            SDK::setAccessToken($access_token);
+            Payment::setCustomHeader('X-Idempotency-Key', (string) Str::uuid());
+
+            $payment = new Payment();
+            $payment->token = $request->input('form_data.token');
+            $payment->issuer_id = $request->input('form_data.issuer_id');
+            $payment->payment_method_id = $request->input('form_data.payment_method_id');
+            $payment->transaction_amount = (float) $request->input('form_data.transaction_amount');
+            $payment->installments = (int) $request->input('form_data.installments');
+            $payment->payer = $request->input('form_data.payer');
+
+            if (!$payment->save()) {
+                $error = $payment->error;
+
+                return [
+                    'success' => false,
+                    'result' => null,
+                    'message' => $error->message ?? 'No se pudo procesar el pago',
+                    'details' => $error ? [
+                        'status' => $error->status ?? null,
+                        'body' => $error,
+                    ] : null,
+                    'paid' => false,
+                ];
+            }
+
+            $paid = $this->getStatusPaymentMP($payment->status);
+
+            return [
+                'success' => true,
+                'paid' => $paid,
+                'pending' => in_array($payment->status, ['in_process', 'pending'], true),
+                'result' => $this->formatMercadoPagoPaymentResult($payment),
+            ];
+
+        } catch (\Throwable $th) {
+            Log::error('MercadoPago payment error', ['message' => $th->getMessage()]);
 
             return [
                 'success' => false,
@@ -367,6 +378,15 @@ class PaymentGatewayController extends Controller
         }
 
 
+    }
+
+    private function formatMercadoPagoPaymentResult(Payment $payment): array
+    {
+        return [
+            'id' => $payment->id ?? null,
+            'status' => $payment->status ?? null,
+            'status_detail' => $payment->status_detail ?? null,
+        ];
     }
     private function getStatusPaymentMP($status)
     {

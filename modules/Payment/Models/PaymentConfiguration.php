@@ -62,6 +62,13 @@ class PaymentConfiguration extends ModelTenant
             'image_url_yape' => $this->image_url_yape,
             'enabled_mp' => $this->enabled_mp,
             'public_key_mp' => $this->public_key_mp,
+            'has_access_token_mp' => !empty($this->access_token_mp),
+            'access_token_mp_suffix' => $this->access_token_mp
+                ? substr($this->access_token_mp, -8)
+                : null,
+            'access_token_mp_length' => $this->access_token_mp
+                ? strlen($this->access_token_mp)
+                : null,
             'enabled_culqi' => $this->enabled_culqi,
             'publickey_culqi' => $this->publickey_culqi,
             'privatekey_culqi' => $this->privatekey_culqi,

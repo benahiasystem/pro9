@@ -23,6 +23,30 @@ class PaymentConfigurationController extends Controller
 
 
     /**
+     * Devuelve el access token completo de Mercado Pago para la sesión actual.
+     *
+     * @return array|\Illuminate\Http\JsonResponse
+     */
+    public function accessTokenMp()
+    {
+        $accessToken = PaymentConfiguration::query()
+            ->value('access_token_mp');
+
+        if (empty($accessToken)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No hay token de acceso configurado',
+            ], 404);
+        }
+
+        return [
+            'success' => true,
+            'access_token_mp' => $accessToken,
+        ];
+    }
+
+
+    /**
      * @return array
      */
     public function recordPermissions()
@@ -76,8 +100,7 @@ class PaymentConfigurationController extends Controller
         $record->enabled_mp = $request->enabled_mp;
         $record->public_key_mp = $request->public_key_mp;
 
-        if($request->access_token_mp)
-        {
+        if ($request->filled('access_token_mp')) {
             $record->access_token_mp = $request->access_token_mp;
         }
 
