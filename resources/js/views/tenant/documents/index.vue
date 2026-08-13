@@ -189,6 +189,7 @@
                                 </template>
                             </template>
                             <th v-if="col.visible && col.key === 'user_name'" :key="col.key">Usuario</th>
+                            <th v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">Origen</th>
                             <th v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-end">T.C.</th>
                             <th v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">Moneda</th>
                             <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Guia</th>
@@ -294,6 +295,7 @@
                                 </template>
                             </template>
                             <td v-if="col.visible && col.key === 'user_name'" :key="col.key">{{ row.user_name }}<br /><small v-text="row.user_email"></small></td>
+                            <td v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">{{ row.source_module_description }}</td>
                             <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key">{{ row.exchange_rate_sale }}</td>
                             <td v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
                             <td v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-center">
@@ -779,22 +781,23 @@ export default {
                 state_type:         { title: "Estado",                         visible: true,  order: 11 },
                 personalized:       { title: "Personalizados",                 visible: true,  order: 12 },
                 user_name:          { title: "Usuario",                        visible: false, order: 13 },
-                exchange_rate_sale: { title: "Tipo de cambio",                 visible: false, order: 14 },
-                currency_type_id:   { title: "Moneda",                         visible: false, order: 15 },
-                guides:             { title: "Guias",                          visible: false, order: 16 },
-                plate_numbers:      { title: "Placa",                          visible: false, order: 17 },
-                total_exportation:  { title: "T.Exportación",                  visible: false, order: 18 },
-                total_free:         { title: "T.Gratuito",                     visible: false, order: 19 },
-                total_unaffected:   { title: "T.Inafecto",                     visible: false, order: 20 },
-                total_exonerated:   { title: "T.Exonerado",                    visible: false, order: 21 },
-                total_charge:       { title: "T.Cargos",                       visible: false, order: 22 },
-                total_taxed:        { title: "T.Gravado",                      visible: true,  order: 23 },
-                total_igv:          { title: "T.Igv",                          visible: true,  order: 24 },
-                total:              { title: "Total",                          visible: false, order: 25 },
-                balance:            { title: "Saldo",                          visible: true,  order: 26 },
-                purchase_order:     { title: "Orden de Compra",                visible: false, order: 27 },
-                downloads:          { title: "Descargas (XML/PDF/CDR)",        visible: true,  order: 28 },
-                actions:            { title: "Acciones",                       visible: true,  order: 29 },
+                source_module:      { title: "Origen",                         visible: false, order: 14 },
+                exchange_rate_sale: { title: "Tipo de cambio",                 visible: false, order: 15 },
+                currency_type_id:   { title: "Moneda",                         visible: false, order: 16 },
+                guides:             { title: "Guias",                          visible: false, order: 17 },
+                plate_numbers:      { title: "Placa",                          visible: false, order: 18 },
+                total_exportation:  { title: "T.Exportación",                  visible: false, order: 19 },
+                total_free:         { title: "T.Gratuito",                     visible: false, order: 20 },
+                total_unaffected:   { title: "T.Inafecto",                     visible: false, order: 21 },
+                total_exonerated:   { title: "T.Exonerado",                    visible: false, order: 22 },
+                total_charge:       { title: "T.Cargos",                       visible: false, order: 23 },
+                total_taxed:        { title: "T.Gravado",                      visible: true,  order: 24 },
+                total_igv:          { title: "T.Igv",                          visible: true,  order: 25 },
+                total:              { title: "Total",                          visible: false, order: 26 },
+                balance:            { title: "Saldo",                          visible: true,  order: 27 },
+                purchase_order:     { title: "Orden de Compra",                visible: false, order: 28 },
+                downloads:          { title: "Descargas (XML/PDF/CDR)",        visible: true,  order: 29 },
+                actions:            { title: "Acciones",                       visible: true,  order: 30 },
             },
             customFieldColumns: [],
             savedCustomFieldVisibilities: {},

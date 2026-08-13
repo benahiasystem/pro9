@@ -5239,6 +5239,7 @@ export default {
                 consigned_address: null,
                 consigned_ubigeo: null,
                 custom_fields_data: {},
+                source_module: "WEB",
             };
 
             this.form_cash_document = {

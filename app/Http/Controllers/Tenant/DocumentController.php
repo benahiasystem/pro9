@@ -797,7 +797,12 @@ class DocumentController extends Controller
 
             if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
 
-            $res = $this->storeWithData($request->all());
+            $data = $request->all();
+            if (empty($data['source_module'])) {
+                $data['source_module'] = 'WEB';
+            }
+
+            $res = $this->storeWithData($data);
             $document_id = $res['data']['id'];
             $this->associateDispatchesToDocument($request, $document_id);
             $this->associateSaleNoteToDocument($request, $document_id);

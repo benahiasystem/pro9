@@ -81,6 +81,8 @@ class DocumentTransform
             'sale_note_id' => Functions::valueKeyInArray($inputs, 'codigo_nota_venta'),
             'seller_id' => Functions::valueKeyInArray($inputs, 'codigo_vendedor'),
             'terms_condition' => Functions::valueKeyInArray($inputs, 'terminos_condiciones'),
+            'source_module' => Functions::valueKeyInArray($inputs, 'source_module'),
+            'hotel_rent_id' => Functions::valueKeyInArray($inputs, 'hotel_rent_id'),
         ];
 
         $inputs_transform = self::invoice($inputs_transform, $inputs);

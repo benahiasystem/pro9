@@ -1054,8 +1054,33 @@ use Modules\Sale\Models\Agent;
                 'custom_fields_data' => $this->custom_fields_data,
                 'total_discount' => $this->generalApplyNumberFormat($this->total_discount),
                 'items_for_report' => $this->getItemsforReport(),
+                'source_module' => $this->source_module,
+                'source_module_description' => $this->getSourceModuleDescription(),
 
             ];
+        }
+
+        /**
+         * Etiqueta legible del origen del documento (Mozo, panel, app, etc.).
+         *
+         * @return string
+         */
+        public function getSourceModuleDescription()
+        {
+            $labels = [
+                'WEB' => 'Panel web',
+                'MOZO' => 'Mozo',
+                'VENDEYA' => 'Vendeya',
+                'APP' => 'App móvil',
+                'HOTEL' => 'Hotel',
+                'POS' => 'POS',
+            ];
+
+            if (empty($this->source_module)) {
+                return '—';
+            }
+
+            return $labels[$this->source_module] ?? $this->source_module;
         }
 
 

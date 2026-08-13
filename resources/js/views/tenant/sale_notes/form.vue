@@ -2957,7 +2957,8 @@ export default {
                 consigned_address_id: null,
                 consigned_address: null,
                 consigned_ubigeo: null,
-                custom_fields_data: {}
+                custom_fields_data: {},
+                source_module: "WEB",
             };
 
             this.total_discount_no_base = 0;

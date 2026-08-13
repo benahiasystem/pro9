@@ -637,7 +637,12 @@ class SaleNoteController extends Controller
 
     public function store(SaleNoteRequest $request)
     {
-        return $this->storeWithData($request->all());
+        $data = $request->all();
+        if (empty($data['source_module'])) {
+            $data['source_module'] = 'WEB';
+        }
+
+        return $this->storeWithData($data);
     }
 
 
