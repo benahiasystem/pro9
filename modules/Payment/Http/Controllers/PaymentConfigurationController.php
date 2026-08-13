@@ -75,6 +75,14 @@ class PaymentConfigurationController extends Controller
                 'record_id' => $record->id,
             ]);
 
+            // Configuración general, no depende de la pestaña/pasarela activa.
+            if ($request->has('default_payment_for_payment_links')) {
+                $defaultPayment = $request->input('default_payment_for_payment_links');
+                $record->default_payment_for_payment_links = in_array($defaultPayment, ['01', '02', '03', '04'], true)
+                    ? $defaultPayment
+                    : null;
+            }
+
             $response = match ($type) {
                 '01' => $this->setDataYape($record, $request),
                 '02' => $this->setDataMP($record, $request),
@@ -85,7 +93,6 @@ class PaymentConfigurationController extends Controller
                     'message' => 'Tipo de pasarela no válido',
                 ],
             };
-
             // Si el setter indicó fallo de negocio, no persistir.
             if (is_array($response) && array_key_exists('success', $response) && $response['success'] === false) {
                 return $response;

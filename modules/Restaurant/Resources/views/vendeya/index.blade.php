@@ -70,8 +70,16 @@ gtag('config', 'G-8PH6FM2JEL');
     </style>
     @php
         $vendeyaIndexPath = public_path('vendeya/index.html');
-        $cacheKey = 'vendeya_build_assets_' . filemtime($vendeyaIndexPath);
+        $mtime = file_exists($vendeyaIndexPath) ? filemtime($vendeyaIndexPath) : 0;
+        $cacheKey = 'vendeya_build_assets_' . $mtime;
         $vendeyaAssets = cache()->rememberForever($cacheKey, function () use ($vendeyaIndexPath) {
+            if (!file_exists($vendeyaIndexPath)) {
+                return [
+                    'js'     => '',
+                    'vendor' => '',
+                    'css'    => '',
+                ];
+            }
             $html = file_get_contents($vendeyaIndexPath);
             preg_match('/<script type="module" crossorigin src="([^"]+)"/', $html, $js);
             preg_match('/<link rel="modulepreload" href="([^"]+)"/', $html, $vendor);

@@ -2,6 +2,7 @@
 
 namespace Modules\Payment\Traits;
 
+use Exception;
 use Illuminate\Support\Facades\Log;
 use Modules\Payment\Models\{
     PaymentLink,
@@ -37,19 +38,20 @@ trait PaymentLinkTrait
     public function getTotal($payment_link, $input_total, &$apply_conversion)
     {
 
-        // si el link de pago es generado a partir de un pago, no se puede modificar el total por url
+        // si el link de pago es generado a partir de un pago, se convierte al tipo de cambio
         if($payment_link['has_payment'])
         {
             $associated_record_payment = $payment_link['associated_record_payment'];
-    
+
             if($associated_record_payment['currency_type_id'] === 'PEN') return $payment_link['total'];
-    
+
             $apply_conversion = true;
-    
+
             return round($payment_link['total'] * $associated_record_payment['exchange_rate_sale'], 2);
         }
 
-        return $input_total;
+        // el monto a cobrar lo define el link, no la url
+        return round((float) $payment_link['total'], 2);
     }
     
 

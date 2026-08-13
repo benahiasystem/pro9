@@ -31,7 +31,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                     @if(auth()->user()->type != 'integrator' && $vc_company->soap_type_id != '03')
                                         @if(in_array('documents', $vc_modules))
                                             @if(in_array('new_document', $vc_module_levels))
-                                                <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                                <div class="col quick-action-col px-1 text-center">
                                                     <a href="{{route('tenant.documents.create')}}" class="w-100 h-100 d-inline-block border bg-danger text-light rounded p-1">
                                                         <div class="h-100 d-flex justify-content-center align-items-center">
                                                             <div class="contain-quick-actions">
@@ -49,7 +49,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                     @endif
 
                                     @if(in_array('sale_notes', $vc_module_levels))
-                                        <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                        <div class="col quick-action-col px-1 text-center">
                                             <a href="{{route('tenant.sale_notes.create')}}" class="w-100 h-100 d-inline-block border bg-danger text-light rounded p-1">
                                                 <div class="h-100 d-flex justify-content-center align-items-center">
                                                     <div class="contain-quick-actions">
@@ -65,7 +65,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                     @endif
 
                                     @if(in_array('quotations', $vc_module_levels))
-                                        <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                        <div class="col quick-action-col px-1 text-center">
                                             <a href="{{route('tenant.quotations.create')}}" class="w-100 h-100 d-inline-block border bg-danger text-light rounded p-1">
                                                 <div class="h-100 d-flex justify-content-center align-items-center">
                                                     <div class="contain-quick-actions">
@@ -82,7 +82,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
 
                                     @if(in_array('documents', $vc_modules) && $vc_company->soap_type_id != '03')
                                         @if(in_array('list_document', $vc_module_levels))
-                                            <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                            <div class="col quick-action-col px-1 text-center">
                                                 <a href="{{route('tenant.documents.index')}}" class="w-100 h-100 d-inline-block border bg-danger text-light rounded p-1">
                                                     <div class="h-100 d-flex justify-content-center align-items-center">
                                                         <div class="contain-quick-actions">
@@ -110,7 +110,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                             <div class="card-body py-2">
                                 <div class="row actions-cards-row">
                                     @if(in_array('items', $vc_module_levels))
-                                        <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                        <div class="col quick-action-col px-1 text-center">
                                             <a href="{{route('tenant.items.index')}}" class="w-100 h-100 d-inline-block border bg-warning text-light rounded p-1">
                                                 <div class="h-100 d-flex justify-content-center align-items-center">
                                                     <div class="contain-quick-actions">
@@ -132,7 +132,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                     @endif
 
                                     @if(in_array('items_services', $vc_module_levels))
-                                        <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                        <div class="col quick-action-col px-1 text-center">
                                             <a href="{{route('tenant.services')}}" class="w-100 h-100 d-inline-block border bg-warning text-light rounded p-1">
                                                 <div class="h-100 d-flex justify-content-center align-items-center">
                                                     <div class="contain-quick-actions">
@@ -149,7 +149,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
 
                                     @if(in_array('inventory', $vc_modules))
                                         @if(in_array('inventory', $vc_module_levels))
-                                            <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                            <div class="col quick-action-col px-1 text-center">
                                                 <a href="{{route('inventory.index')}}" class="w-100 h-100 d-inline-block border bg-warning text-light rounded p-1">
                                                     <div class="h-100 d-flex justify-content-center align-items-center">
                                                         <div class="contain-quick-actions">
@@ -183,7 +183,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                 <div class="card-body py-2">
                                     <div class="row actions-cards-row">
                                         @if(in_array('pos', $vc_module_levels))
-                                            <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                            <div class="col quick-action-col px-1 text-center">
                                                 <a href="{{route('tenant.pos.index')}}" class="w-100 h-100 d-inline-block border bg-primary text-light rounded p-1">
                                                     <div class="h-100 d-flex justify-content-center align-items-center">
                                                         <div class="contain-quick-actions">
@@ -199,7 +199,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                         @endif
 
                                         @if(in_array('cash', $vc_module_levels))
-                                            <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                            <div class="col quick-action-col px-1 text-center">
                                                 <a href="{{route('tenant.cash.index')}}" class="w-100 h-100 d-inline-block border bg-primary text-light rounded p-1">
                                                     <div class="h-100 d-flex justify-content-center align-items-center">
                                                         <div class="contain-quick-actions">
@@ -227,7 +227,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                         <div class="card-body py-2">
                             <div class="row actions-cards-row">
                                 @if(in_array('account_report', $vc_module_levels))
-                                    <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                    <div class="col quick-action-col px-1 text-center">
                                         <a href="{{route('tenant.account_format.index')}}" class="w-100 h-100 d-inline-block border bg-success text-light rounded p-1">
                                             <div class="h-100 d-flex justify-content-center align-items-center">
                                                 <div class="contain-quick-actions">
@@ -242,7 +242,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                     </div>
                                 @endif
 
-                                <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                <div class="col quick-action-col px-1 text-center">
                                     <a href="{{route('tenant.reports.sales.index')}}" class="w-100 h-100 d-inline-block border bg-success text-light rounded p-1">
                                         <div class="h-100 d-flex justify-content-center align-items-center">
                                             <div class="contain-quick-actions">
@@ -256,7 +256,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                     </a>
                                 </div>
 
-                                <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                <div class="col quick-action-col px-1 text-center">
                                     <a href="{{route('tenant.reports.purchases.index')}}" class="w-100 h-100 d-inline-block border bg-success text-light rounded p-1">
                                         <div class="h-100 d-flex justify-content-center align-items-center">
                                             <div class="contain-quick-actions">
@@ -270,7 +270,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                     </a>
                                 </div>
 
-                                <div class="col px-1 text-center" style="height: 100px; max-width: 25%">
+                                <div class="col quick-action-col px-1 text-center">
                                     <a href="{{route('tenant.reports.general_items.index')}}" class="w-100 h-100 d-inline-block border bg-success text-light rounded p-1">
                                         <div class="h-100 d-flex justify-content-center align-items-center">
                                             <div class="contain-quick-actions">

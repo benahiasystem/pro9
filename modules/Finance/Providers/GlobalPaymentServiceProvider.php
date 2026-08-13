@@ -12,6 +12,7 @@ use Modules\Sale\Models\ContractPayment;
 use Modules\Sale\Models\TechnicalServicePayment;
 use Modules\Expense\Models\ExpensePayment;
 use Modules\Finance\Models\IncomePayment;
+use Modules\Payment\Models\PaymentLinkPayment;
 use Modules\Pos\Models\CashTransaction;
 use Illuminate\Support\ServiceProvider;
 use Modules\Hotel\Models\HotelRentItemPayment;
@@ -64,7 +65,36 @@ class GlobalPaymentServiceProvider extends ServiceProvider
                 }
             }
 
+            $this->revertPaymentLinkPayments($record);
+
         });
+
+    }
+
+
+    /**
+     *
+     * Devolver a pendiente el detalle del link de pago cuando se elimina el pago generado
+     *
+     * El link deja de estar pagado porque su pago ya no existe
+     *
+     * @param  mixed $record
+     * @return void
+     */
+    private function revertPaymentLinkPayments($record)
+    {
+
+        $rows = PaymentLinkPayment::where('payment_id', $record->id)
+                    ->where('payment_type', get_class($record))
+                    ->get();
+
+        foreach ($rows as $row) {
+
+            $row->setAsPending();
+
+            if(optional($row->payment_link)->is_paid) $row->payment_link->setAsPending();
+
+        }
 
     }
  

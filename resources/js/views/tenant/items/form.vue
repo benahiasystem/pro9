@@ -34,6 +34,7 @@
         </span>
         <form autocomplete="off"
               :class="{ 'layout-editing-active': editingLayout }"
+              @focusin.capture="selectInputOnFocus"
               @submit.prevent="submit">
 
             <item-form-pinned-bar ref="pinnedBar"
@@ -87,6 +88,7 @@
                     <div :class="{'has-danger': errors.sale_unit_price}" class="form-group">
                         <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template><span class="text-danger">*</span></label>
                         <el-input v-model="form.sale_unit_price"
+                                  class="input-select-all"
                                   dusk="sale_unit_price"
                                   @input="calculatePercentageOfProfitBySale"></el-input>
                         <small v-if="!isNrus" :style="saleUnitPriceBreakdown ? 'opacity: 1' : 'opacity: 0'" class="text-muted">
@@ -203,7 +205,7 @@
                 <template #stock>
                     <div :class="{'has-danger': errors.stock}" class="form-group">
                         <label class="control-label">Stock Inicial</label>
-                        <el-input v-model="form.stock"></el-input>
+                        <el-input v-model="form.stock" class="input-select-all"></el-input>
                         <small v-if="errors.stock"
                                class="form-control-feedback"
                                v-text="errors.stock[0]"></small>
@@ -212,7 +214,7 @@
                 <template #stock_min>
                     <div :class="{'has-danger': errors.stock_min}" class="form-group">
                         <label class="control-label">Stock Mínimo</label>
-                        <el-input v-model="form.stock_min"></el-input>
+                        <el-input v-model="form.stock_min" class="input-select-all"></el-input>
                         <small v-if="errors.stock_min"
                                class="form-control-feedback"
                                v-text="errors.stock_min[0]"></small>
@@ -290,6 +292,7 @@
                     <div :class="{'has-danger': errors.purchase_unit_price}" class="form-group">
                         <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template></label>
                         <el-input v-model="form.purchase_unit_price"
+                                  class="input-select-all"
                                   @input="calculatePercentageOfProfitByPurchase"></el-input>
                         <small v-if="errors.purchase_unit_price"
                                class="form-control-feedback"
@@ -489,7 +492,7 @@
                             <div :class="{'has-danger': errors.stock}"
                                  class="form-group">
                                 <label class="control-label">Stock Inicial</label>
-                                <el-input v-model="form.stock"></el-input>
+                                <el-input v-model="form.stock" class="input-select-all"></el-input>
                                 <small v-if="errors.stock"
                                        class="form-control-feedback"
                                        v-text="errors.stock[0]"></small>
@@ -501,7 +504,7 @@
                             <div :class="{'has-danger': errors.stock_min}"
                                  class="form-group">
                                 <label class="control-label">Stock Mínimo</label>
-                                <el-input v-model="form.stock_min"></el-input>
+                                <el-input v-model="form.stock_min" class="input-select-all"></el-input>
                                 <small v-if="errors.stock_min"
                                        class="form-control-feedback"
                                        v-text="errors.stock_min[0]"></small>
@@ -691,6 +694,7 @@
                                             <div v-show="form.has_perception">
                                                 <div class="form-group">
                                                     <el-input v-model="form.percentage_perception"
+                                                              class="input-select-all"
                                                               placeholder="% de percepción"></el-input>
                                                 </div>
                                             </div>
@@ -773,7 +777,7 @@
                                 <div :class="{'has-danger': errors.percentage_isc}"
                                      class="form-group">
                                     <label class="control-label">Porcentaje ISC</label>
-                                    <el-input v-model="form.percentage_isc"></el-input>
+                                    <el-input v-model="form.percentage_isc" class="input-select-all"></el-input>
                                     <small
                                         v-if="errors.percentage_isc"
                                         class="form-control-feedback"
@@ -1252,6 +1256,7 @@
                                  class="form-group">
                                 <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template></label>
                                 <el-input v-model="form.purchase_unit_price"
+                                          class="input-select-all"
                                           dusk="purchase_unit_price"
                                           @input="calculatePercentageOfProfitByPurchase"></el-input>
                                 <small v-if="!isNrus" :style="purchaseUnitPriceBreakdown ? 'opacity: 1' : 'opacity: 0'" class="text-muted">
@@ -1292,6 +1297,7 @@
                                  class="form-group">
                                 <label class="control-label">Porcentaje de ganancia (%)</label>
                                 <el-input v-model="form.percentage_of_profit"
+                                          class="input-select-all"
                                           :disabled="!enabled_percentage_of_profit"
                                           @input="calculatePercentageOfProfitByPercentage"></el-input>
                                 <small v-if="errors.percentage_of_profit"
@@ -1340,7 +1346,7 @@
                                 <div :class="{'has-danger': errors.purchase_percentage_isc}"
                                      class="form-group">
                                     <label class="control-label">Porcentaje ISC</label>
-                                    <el-input v-model="form.purchase_percentage_isc"></el-input>
+                                    <el-input v-model="form.purchase_percentage_isc" class="input-select-all"></el-input>
                                     <small
                                         v-if="errors.purchase_percentage_isc"
                                         class="form-control-feedback"
@@ -1878,6 +1884,18 @@ export default {
     },
 
     methods: {
+        selectInputOnFocus(event) {
+            const target = event.target
+            if (!target || target.tagName !== 'INPUT') {
+                return
+            }
+            if (target.type === 'checkbox' || target.type === 'radio' || target.type === 'file') {
+                return
+            }
+            if (target.type === 'number' || target.closest('.el-input-number') || target.closest('.input-select-all')) {
+                this.$nextTick(() => target.select())
+            }
+        },
         getCurrencySymbol() {
             return this.form.currency_type_id === 'USD' ? '$' : 'S/'
         },
@@ -2337,6 +2355,10 @@ this.activeName = null
             const stock = parseInt(payload.stock);
             if (isNaN(stock)) {
                 return this.$message.error('Stock Inicial debe ser un número entero.');
+            }
+
+            if (this.config.enable_list_product && this.form.item_unit_types.some(row => !row.description || String(row.description).trim() === '')) {
+                return this.$message.error('La descripción de la presentación es obligatoria.');
             }
 
             if (this.validateItemUnitTypes() > 0)

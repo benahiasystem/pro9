@@ -103,6 +103,23 @@ class ItemRequest extends FormRequest
                 'numeric',
             ],
             
+            'item_unit_types' => [
+                'nullable',
+                'array',
+            ],
+            'item_unit_types.*.description' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'item_unit_types.*.unit_type_id' => [
+                'required',
+            ],
+            'item_unit_types.*.quantity_unit' => [
+                'required',
+                'numeric',
+                'min:0.0001',
+            ],
             // Validación para precios dinámicos en item_unit_types
             'item_unit_types.*.prices' => [
                 'nullable',
@@ -136,6 +153,10 @@ class ItemRequest extends FormRequest
             'description.required' => 'El campo nombre es obligatorio.',
             'name.max' => 'La descripción debe ser inferior a 1000 caracteres.',
             'sale_unit_price.gt' => 'El precio unitario de venta debe ser mayor que 0.',
+            'item_unit_types.*.description.required' => 'La descripción de la presentación es obligatoria.',
+            'item_unit_types.*.unit_type_id.required' => 'Seleccione la unidad de la presentación.',
+            'item_unit_types.*.quantity_unit.required' => 'El factor de la presentación es obligatorio.',
+            'item_unit_types.*.quantity_unit.min' => 'El factor de la presentación debe ser al menos 0.0001.',
         ], $this->getSunatItemCodeMessages());
     }
 }

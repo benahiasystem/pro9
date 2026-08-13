@@ -22594,14 +22594,27 @@ div.sub-title.text-muted {
 }
 .welcome-component{
     margin-bottom: 0px !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
 }
-.welcome-component .welcome-card-body .row{
-    display: flex;
-    flex-direction: column;
+.welcome-component .welcome-card-body > .row.welcome-card-row{
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    margin: 0 !important;
 }
-.welcome-component .welcome-card-body .row .welcome-card,
-.welcome-component .welcome-card-body .row .actions-cards-container{
-    width: 100% !important;
+.welcome-component .welcome-card-body .welcome-card{
+    flex: 0 0 22% !important;
+    max-width: 22% !important;
+    width: 22% !important;
+}
+.welcome-component .welcome-card-body .actions-cards-container{
+    flex: 1 1 78% !important;
+    max-width: 78% !important;
+    width: 78% !important;
+    min-width: 0;
 }
 .welcome-component .welcome-card-body .welcome-card .row{
     margin: 0 !important;
@@ -22610,74 +22623,149 @@ div.welcome-card .welcome-title,
 div.welcome-card .welcome-subtitle{
     text-align: left !important;
 }
-.actions-cards-row{
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
-    gap: 10px;
-    margin: 0 !important;
+@media (max-width: 991.98px){
+    .welcome-component .welcome-card-body > .row.welcome-card-row{
+        flex-direction: column !important;
+        align-items: stretch;
+    }
+    .welcome-component .welcome-card-body .welcome-card,
+    .welcome-component .welcome-card-body .actions-cards-container{
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
 }
-.actions-cards-row .col{
+/* Accesos rápidos — estilo tiles de color (tipo thewolf) */
+.actions-cards-row{
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    gap: 12px;
+    margin: 0 !important;
+    align-items: stretch;
+}
+.actions-cards-row > .col,
+.actions-cards-row > .quick-action-col{
+    flex: 1 1 0 !important;
+    width: auto !important;
     max-width: none !important;
     height: auto !important;
     padding: 0 !important;
+    min-width: 0;
 }
-.actions-cards-row .col a{
-    background-color: #ffffff !important;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e0e0e0 !important;
-    border-radius: 10px !important;
+@media (max-width: 767.98px){
+    .actions-cards-row{
+        flex-wrap: wrap !important;
+    }
+    .actions-cards-row > .col,
+    .actions-cards-row > .quick-action-col{
+        flex: 1 1 calc(50% - 6px) !important;
+        min-width: calc(50% - 6px);
+    }
+}
+@media (max-width: 480px){
+    .actions-cards-row > .col,
+    .actions-cards-row > .quick-action-col{
+        flex: 1 1 100% !important;
+        min-width: 100%;
+    }
+}
+.actions-cards-row .col a,
+.actions-cards-row .quick-action-col a{
+    border: none !important;
+    border-radius: 14px !important;
     height: auto !important;
-    padding: 15px !important;
-    color: #000 !important;
+    min-height: 92px !important;
+    padding: 14px 12px !important;
+    color: #ffffff !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: none !important;
+    transition: filter .15s ease, transform .15s ease;
+}
+.actions-cards-row .col a.bg-danger,
+.actions-cards-row .quick-action-col a.bg-danger{
+    background-color: var(--danger, #e74c3c) !important;
+}
+.actions-cards-row .col a.bg-warning,
+.actions-cards-row .quick-action-col a.bg-warning{
+    background-color: var(--warning, #f0ad4e) !important;
+}
+.actions-cards-row .col a.bg-primary,
+.actions-cards-row .quick-action-col a.bg-primary{
+    background-color: var(--primary, #3498db) !important;
+}
+.actions-cards-row .col a.bg-success,
+.actions-cards-row .quick-action-col a.bg-success{
+    background-color: var(--success, #2ecc71) !important;
+}
+.actions-cards-row .col a:hover,
+.actions-cards-row .quick-action-col a:hover{
+    filter: brightness(0.96);
+    transform: translateY(-1px);
+    text-decoration: none !important;
+    color: #ffffff !important;
 }
 .contain-quick-actions{
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    gap: 10px;
     width: 100%;
 }
 .contain-quick-actions div{
     margin: 0 !important;
 }
+.contain-quick-actions > .d-block{
+    order: 1;
+    flex: 0 0 auto;
+    width: 100%;
+    text-align: center !important;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #ffffff !important;
+}
+.contain-quick-actions > svg.icon-tabler-arrow-right,
+.contain-quick-actions > svg.icon-tabler.icons-tabler-outline.icon-tabler-arrow-right{
+    display: none !important;
+}
 .contain-quick-actions .svg-actions{
+    order: 2;
     width: auto;
     height: auto;
-    padding: 5px;
-    border-style: solid;
-    border-width: 1px;
-    border-radius: 50%;
+    min-width: 0;
+    padding: 0;
+    border: none !important;
+    border-radius: 0;
+    background: transparent !important;
+    color: #ffffff !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
 }
-.bg-danger .contain-quick-actions .svg-actions{
-    border-color: var(--danger);
-    color: var(--danger);
-    background-color: color-mix(in srgb, var(--danger) 10%, #ffffff);
+.contain-quick-actions .svg-actions svg{
+    width: 28px;
+    height: 28px;
+    color: #ffffff !important;
+    stroke: #ffffff !important;
 }
-.bg-danger .contain-quick-actions svg{
-    color: var(--danger);
-}
-.bg-warning .contain-quick-actions .svg-actions{
-    border-color: var(--warning);
-    color: var(--warning);
-    background-color: color-mix(in srgb, var(--warning) 10%, #ffffff);
-}
-.bg-warning .contain-quick-actions svg{
-    color: var(--warning);
-}
-.bg-primary .contain-quick-actions .svg-actions{
-    border-color: var(--primary);
-    color: var(--primary);
-    background-color: color-mix(in srgb, var(--primary) 10%, #ffffff);
-}
-.bg-primary .contain-quick-actions svg{
-    color: var(--primary);
-}
+.bg-danger .contain-quick-actions .svg-actions,
+.bg-warning .contain-quick-actions .svg-actions,
+.bg-primary .contain-quick-actions .svg-actions,
 .bg-success .contain-quick-actions .svg-actions{
-    border-color: var(--success);
-    color: var(--success);
-    background-color: color-mix(in srgb, var(--success) 10%, #ffffff);
+    border: none !important;
+    background: transparent !important;
+    color: #ffffff !important;
 }
+.bg-danger .contain-quick-actions svg,
+.bg-warning .contain-quick-actions svg,
+.bg-primary .contain-quick-actions svg,
 .bg-success .contain-quick-actions svg{
-    color: var(--success);
+    color: #ffffff !important;
 }
 .actions-card{
     background-color: transparent;

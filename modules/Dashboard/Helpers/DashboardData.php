@@ -80,49 +80,7 @@ class DashboardData
 
     private function resolveFilters(array $request = [])
     {
-        $period = $request['period'] ?? 'last_week';
-        $date_start = $request['date_start'] ?? Carbon::now()->subDays(7)->format('Y-m-d');
-        $date_end = $request['date_end'] ?? Carbon::now()->format('Y-m-d');
-        $month_start = $request['month_start'] ?? Carbon::now()->format('Y-m');
-        $month_end = $request['month_end'] ?? Carbon::now()->format('Y-m');
-
-        $d_start = null;
-        $d_end = null;
-
-        switch ($period) {
-            case 'month':
-                $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
-                $d_end = Carbon::parse($month_start.'-01')->endOfMonth()->format('Y-m-d');
-                break;
-            case 'between_months':
-                $d_start = Carbon::parse($month_start.'-01')->format('Y-m-d');
-                $d_end = Carbon::parse($month_end.'-01')->endOfMonth()->format('Y-m-d');
-                break;
-            case 'date':
-                $d_start = $date_start;
-                $d_end = $date_start;
-                break;
-            case 'between_dates':
-            case 'last_week':
-                $d_start = $date_start;
-                $d_end = $date_end;
-                break;
-            case 'all':
-                break;
-            default:
-                $d_start = $date_start;
-                $d_end = $date_end;
-                break;
-        }
-
-        return [
-            'establishment_id' => $request['establishment_id'] ?? null,
-            'period' => $period,
-            'date_start' => $d_start,
-            'date_end' => $d_end,
-            'month_start' => $month_start,
-            'month_end' => $month_end,
-        ];
+        return DashboardFilterHelper::resolve($request);
     }
 
     private function applyEstablishment($query, $establishment_id, $table = null)
@@ -199,7 +157,7 @@ class DashboardData
 
     /**
      * KPIs de un rango (todas las sucursales), normalizado a PEN.
-     * net_utility es aproximado: ventas - compras - gastos (no usa costo por producto).
+     * net_utility: ventas - costo de productos vendidos - gastos (por item).
      */
     private function previousRange($date_start, $date_end)
     {
@@ -287,37 +245,20 @@ class DashboardData
             $sale_notes_payment += collect($sn->payments)->sum('payment') * $factor;
         }
 
-        $purchases = Purchase::query()
-            ->whereIn('state_type_id', ['01', '03', '05', '07', '13'])
-            ->whereBetween('date_of_issue', [$date_start, $date_end])
-            ->when($establishment_id, function ($query) use ($establishment_id) {
-                $query->where('establishment_id', $establishment_id);
-            })->get();
-
-        $purchases_total = 0;
-        foreach ($purchases as $purchase) {
-            $factor = ($purchase->currency_type_id == 'USD') ? $purchase->exchange_rate_sale : 1;
-            $purchases_total += ($purchase->total + $purchase->total_perception) * $factor;
-        }
-
-        $expenses = Expense::query()
-            ->where('state_type_id', '05')
-            ->whereBetween('date_of_issue', [$date_start, $date_end])
-            ->when($establishment_id, function ($query) use ($establishment_id) {
-                $query->where('establishment_id', $establishment_id);
-            })->get();
-
-        $expenses_total = 0;
-        foreach ($expenses as $expense) {
-            $factor = ($expense->currency_type_id == 'USD') ? $expense->exchange_rate_sale : 1;
-            $expenses_total += $expense->total * $factor;
-        }
-
         $monthly_sales = $documents_total + $sale_notes_total;
         $sales_count = $documents_count + $sale_notes_count;
         $average_ticket = $sales_count > 0 ? ($monthly_sales / $sales_count) : 0;
         $accounts_receivable = max($monthly_sales - ($documents_payment + $sale_notes_payment), 0);
-        $net_utility = $monthly_sales - $purchases_total - $expenses_total;
+
+        $utility_totals = (new DashboardUtility())->calculateUtilityTotals(
+            $establishment_id,
+            $date_start,
+            $date_end,
+            true,
+            null
+        );
+
+        $net_utility = (float) $utility_totals['totals']['utility'];
 
         return [
             'monthly_sales' => round($monthly_sales, 2),
@@ -325,7 +266,7 @@ class DashboardData
             'accounts_receivable' => round($accounts_receivable, 2),
             'net_utility' => round($net_utility, 2),
             'income' => round($monthly_sales, 2),
-            'egress' => round($purchases_total + $expenses_total, 2),
+            'egress' => (float) $utility_totals['totals']['total_egress'],
         ];
     }
 

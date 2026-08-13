@@ -151,6 +151,11 @@ class ViewServiceProvider extends ServiceProvider
         );
 
         view()->composer(
+            'tenant.layouts.partials.outdoor_mode',
+            'App\Http\ViewComposers\Tenant\ConfigurationVisualViewComposer'
+        );
+
+        view()->composer(
             'tenant.layouts.app',
             'App\Http\ViewComposers\Tenant\ConfigurationVisualViewComposer'
         );

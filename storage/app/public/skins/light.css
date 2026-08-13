@@ -888,10 +888,10 @@ html.sidebar-gray ul.nav-main li .nav-children li a:after {
     box-shadow: none !important;
 }
 .actions-cards-row .col a{
-    color: var(--dark-color) !important;
+    color: #ffffff !important;
     box-shadow: none !important;
-    border-color: transparent !important;
-    border-radius: 8px !important;
+    border: none !important;
+    border-radius: 14px !important;
 }
 .actions-cards-container .border-top,
 .actions-card .card-header{
@@ -2311,11 +2311,13 @@ html.dark .actions-cards-container .border-top{
     border: none !important;
 }
 html.dark .actions-cards-row .col a{
-    background-color: var(--contents-dark) !important;
-    border-color: var(--borders-dark) !important;
-    color: var(--light-color) !important;
-    border-width: 0 1px 0 1px !important;
+    color: #ffffff !important;
+    border: none !important;
 }
+html.dark .actions-cards-row .col a.bg-danger{ background-color: var(--danger, #e74c3c) !important; }
+html.dark .actions-cards-row .col a.bg-warning{ background-color: var(--warning, #f0ad4e) !important; }
+html.dark .actions-cards-row .col a.bg-primary{ background-color: var(--primary, #3498db) !important; }
+html.dark .actions-cards-row .col a.bg-success{ background-color: var(--success, #2ecc71) !important; }
 html.dark .actions-card .card-body{
     background-color: transparent !important;
 }

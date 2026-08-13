@@ -1,0 +1,159 @@
+{
+  "__plugin-vue2_normalizer-839f22b6.js": {
+    "file": "assets/_plugin-vue2_normalizer-839f22b6.js"
+  },
+  "_claim_form-18abe8a1.js": {
+    "css": [
+      "assets/claim_form-752a1451.css"
+    ],
+    "file": "assets/claim_form-18abe8a1.js",
+    "imports": [
+      "__plugin-vue2_normalizer-839f22b6.js"
+    ]
+  },
+  "_index-596c10f0.js": {
+    "assets": [
+      "assets/element-icons-ab40a589.woff",
+      "assets/element-icons-a30f5b3b.ttf"
+    ],
+    "css": [
+      "assets/index-fd3e0cf7.css"
+    ],
+    "file": "assets/index-596c10f0.js",
+    "imports": [
+      "__plugin-vue2_normalizer-839f22b6.js"
+    ]
+  },
+  "_vue-clipboard-26fa0149.js": {
+    "css": [
+      "assets/vue-clipboard-a16c9b7d.css"
+    ],
+    "file": "assets/vue-clipboard-26fa0149.js",
+    "imports": [
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-596c10f0.js"
+    ]
+  },
+  "claim_form.css": {
+    "file": "assets/claim_form-752a1451.css",
+    "src": "claim_form.css"
+  },
+  "index.css": {
+    "file": "assets/index-fd3e0cf7.css",
+    "src": "index.css"
+  },
+  "modules/ClaimsBook/Resources/assets/js/app.js": {
+    "file": "assets/app-afc50696.js",
+    "imports": [
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-596c10f0.js",
+      "_claim_form-18abe8a1.js"
+    ],
+    "isEntry": true,
+    "src": "modules/ClaimsBook/Resources/assets/js/app.js"
+  },
+  "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
+    "file": "assets/cart-app-8251266e.js",
+    "isEntry": true,
+    "src": "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js"
+  },
+  "modules/Marketplace/Resources/assets/fonts/figtree-italic-latin-ext.woff2": {
+    "file": "assets/figtree-italic-latin-ext-a0cc105b.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/figtree-italic-latin-ext.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/figtree-italic-latin.woff2": {
+    "file": "assets/figtree-italic-latin-7242fa62.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/figtree-italic-latin.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/figtree-latin-ext.woff2": {
+    "file": "assets/figtree-latin-ext-bf7828e2.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/figtree-latin-ext.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/figtree-latin.woff2": {
+    "file": "assets/figtree-latin-4ba7d3d0.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/figtree-latin.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin-ext.woff2": {
+    "file": "assets/jetbrains-mono-latin-ext-db5ff4db.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin-ext.woff2"
+  },
+  "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin.woff2": {
+    "file": "assets/jetbrains-mono-latin-83c005d4.woff2",
+    "src": "modules/Marketplace/Resources/assets/fonts/jetbrains-mono-latin.woff2"
+  },
+  "modules/Marketplace/Resources/assets/img/buho-logo.svg": {
+    "file": "assets/buho-logo-19259b27.svg",
+    "src": "modules/Marketplace/Resources/assets/img/buho-logo.svg"
+  },
+  "modules/Marketplace/Resources/assets/js/marketplace.css": {
+    "file": "assets/marketplace-d0ccd9ee.css",
+    "src": "modules/Marketplace/Resources/assets/js/marketplace.css"
+  },
+  "modules/Marketplace/Resources/assets/js/marketplace.js": {
+    "assets": [
+      "assets/buho-logo-19259b27.svg",
+      "assets/figtree-latin-4ba7d3d0.woff2",
+      "assets/figtree-latin-ext-bf7828e2.woff2",
+      "assets/figtree-italic-latin-7242fa62.woff2",
+      "assets/figtree-italic-latin-ext-a0cc105b.woff2",
+      "assets/jetbrains-mono-latin-83c005d4.woff2",
+      "assets/jetbrains-mono-latin-ext-db5ff4db.woff2"
+    ],
+    "css": [
+      "assets/marketplace-d0ccd9ee.css"
+    ],
+    "file": "assets/marketplace-e8965c37.js",
+    "imports": [
+      "__plugin-vue2_normalizer-839f22b6.js"
+    ],
+    "isEntry": true,
+    "src": "modules/Marketplace/Resources/assets/js/marketplace.js"
+  },
+  "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.ttf": {
+    "file": "assets/element-icons-a30f5b3b.ttf",
+    "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.ttf"
+  },
+  "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff": {
+    "file": "assets/element-icons-ab40a589.woff",
+    "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
+  },
+  "resources/js/app.css": {
+    "file": "assets/app-ac9e7367.css",
+    "src": "resources/js/app.css"
+  },
+  "resources/js/app.js": {
+    "css": [
+      "assets/app-ac9e7367.css"
+    ],
+    "file": "assets/app-77192eac.js",
+    "imports": [
+      "_vue-clipboard-26fa0149.js",
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-596c10f0.js",
+      "_claim_form-18abe8a1.js"
+    ],
+    "isEntry": true,
+    "src": "resources/js/app.js"
+  },
+  "resources/js/system.css": {
+    "file": "assets/system-1171caf0.css",
+    "src": "resources/js/system.css"
+  },
+  "resources/js/system.js": {
+    "css": [
+      "assets/system-1171caf0.css"
+    ],
+    "file": "assets/system-bd6e4eee.js",
+    "imports": [
+      "_vue-clipboard-26fa0149.js",
+      "__plugin-vue2_normalizer-839f22b6.js",
+      "_index-596c10f0.js"
+    ],
+    "isEntry": true,
+    "src": "resources/js/system.js"
+  },
+  "vue-clipboard.css": {
+    "file": "assets/vue-clipboard-a16c9b7d.css",
+    "src": "vue-clipboard.css"
+  }
+}

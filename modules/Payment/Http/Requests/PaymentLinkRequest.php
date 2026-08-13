@@ -25,9 +25,6 @@ class PaymentLinkRequest extends FormRequest
         if($without_payment)
         {
             return [
-                'payment_link_type_id' => [
-                    'required',
-                ],
                 'total' => [
                     'required',
                     'gt:0',

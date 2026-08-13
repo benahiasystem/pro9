@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Tenant;
 
 use App\Models\Tenant\Company;
+use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\DocumentItem;
 use App\Models\Tenant\Person;
@@ -138,7 +139,7 @@ class DocumentResource extends JsonResource
             'response_message' => $response_message,
             'response_type' => $response_type,
             'customer_telephone' => optional($document->person)->telephone,
-            'message_text' => "Su comprobante de pago electrónico {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$this->external_id}/".(optional(\App\Models\Tenant\Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket')."",
+            'message_text' => "Su comprobante de pago electrónico {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$this->external_id}/".(optional(Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket')."",
             'sales_note' => $nvs,
 
             'send_to_pse' => $document->send_to_pse,

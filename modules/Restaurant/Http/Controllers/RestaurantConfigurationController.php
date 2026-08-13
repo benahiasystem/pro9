@@ -19,6 +19,8 @@ use App\Http\Resources\Tenant\UserResource;
 use Illuminate\Support\Str;
 use App\Helpers\MozoAccessHelper;
 use Modules\Restaurant\Services\RestaurantStockService;
+use App\Services\CentrifugoService;
+use Hyn\Tenancy\Contracts\CurrentHostname;
 
 
 class RestaurantConfigurationController extends Controller
@@ -99,6 +101,45 @@ class RestaurantConfigurationController extends Controller
             'enabled_environment_4' => (object)['active' => (bool)$configuration->enabled_environment_4, 'tablesQuantity' => $configuration->tables_quantity_environment_4,'name'=> RestaurantTableEnv::where('id', 4)->pluck('name')->first()],
             'environments' => RestaurantTableEnv::where('active', true)->get()
         ];
+    }
+
+    private function publishTablesUpdate(): void
+    {
+        $fqdn = app(CurrentHostname::class)?->fqdn ?? 'local';
+        app(CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+            'event'   => 'tables-env-updated',
+            'payload' => $this->tablesAndEnv(),
+        ]);
+    }
+
+    /**
+     * Publica el snapshot de stock (cantidades disponibles por ítem) vía WebSocket.
+     * getStockStatus vive en RestaurantController, se llama cross-controller.
+     */
+    private function publishStockUpdate(): void
+    {
+        $fqdn = app(CurrentHostname::class)?->fqdn ?? 'local';
+        $data = app(\Modules\Restaurant\Http\Controllers\RestaurantController::class)
+            ->getStockStatus()['data'] ?? [];
+        app(CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+            'event'   => 'stock-updated',
+            'payload' => $data,
+        ]);
+    }
+
+    /**
+     * Publica el snapshot completo de la comanda vía WebSocket. getStatusItems
+     * vive en RestaurantItemOrderStatusController, se llama cross-controller.
+     */
+    private function publishCommandUpdate(): void
+    {
+        $fqdn = app(CurrentHostname::class)?->fqdn ?? 'local';
+        $data = app(\Modules\Restaurant\Http\Controllers\RestaurantItemOrderStatusController::class)
+            ->getStatusItems(0)['data'] ?? [];
+        app(CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+            'event'   => 'command-items-updated',
+            'payload' => $data,
+        ]);
     }
 
     private function getTimeByDateOpening($date_opening = null)
@@ -293,6 +334,8 @@ class RestaurantConfigurationController extends Controller
             'delivery' => $request->delivery,
         ]);
 
+        $this->publishTablesUpdate();
+
         return [
             'success' => true,
             'message' => 'Mesa creada con éxito.',
@@ -336,6 +379,11 @@ class RestaurantConfigurationController extends Controller
                 $itemsToDelete->delete();
             }
 
+            // La mesa (delivery/takeaway) y sus órdenes se eliminaron → notificar a
+            // todas las pantallas para que se limpien (antes lo cubría el polling).
+            $this->publishTablesUpdate();
+            $this->publishCommandUpdate();
+
             return [
                 'success' => true,
                 'message' => 'Pedido finalizado, entrega realizada',
@@ -352,6 +400,7 @@ class RestaurantConfigurationController extends Controller
 
         $table->fill($data);
         $table->save();
+        $this->publishTablesUpdate();
 
         if ($table->group_id) {
             \Modules\Restaurant\Models\RestaurantTableGroup::where('id', $table->group_id)
@@ -403,6 +452,11 @@ class RestaurantConfigurationController extends Controller
             if ($ordersToRelease->isNotEmpty()) {
                 RestaurantItemOrderStatus::where('table_id', $id)->delete();
             }
+
+            // Se liberó stock reservado y se borraron las órdenes → notificar al
+            // POS (stock) y a la comanda (ítems) vía WebSocket.
+            $this->publishStockUpdate();
+            $this->publishCommandUpdate();
         }
 
         return [
@@ -417,6 +471,7 @@ class RestaurantConfigurationController extends Controller
         $table->label = $request->label ;
         $table->shape = $request->shape ;
         $table->save();
+        $this->publishTablesUpdate();
         return [
             'success' => true,
             'message' => 'Mesa actualizada con éxito.',
@@ -656,6 +711,7 @@ class RestaurantConfigurationController extends Controller
         // Toggle estado
         $table->is_active = !$table->is_active;
         $table->save();
+        $this->publishTablesUpdate();
 
         return response()->json([
             'success' => true,
@@ -738,6 +794,7 @@ class RestaurantConfigurationController extends Controller
         }
 
         $mesa->save();
+        $this->publishTablesUpdate();
 
         DB::connection('tenant')->commit();
 
@@ -804,6 +861,7 @@ class RestaurantConfigurationController extends Controller
         $mesa->environment = $ambienteOriginal;
         $mesa->original_environment = null;
         $mesa->save();
+        $this->publishTablesUpdate();
 
         DB::connection('tenant')->commit();
 

@@ -6,6 +6,7 @@ use App\Models\Tenant\Quotation;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Models\Tenant\Item;
 use App\Models\Tenant\Person;
+use App\Models\Tenant\Configuration;
 use Modules\Inventory\Models\Warehouse as ModuleWarehouse;
 use Carbon\Carbon;
 
@@ -85,7 +86,7 @@ class QuotationResource extends JsonResource
             'quotation' => $quotationArray,
             'customer' => $customer,
             'message_text' => "Su cotización {$this->number_full} ha sido generado correctamente, " .
-                "puede revisarlo en el siguiente enlace: " . url('') . "/print/quotation/{$this->external_id}/ticket" . "",
+                "puede revisarlo en el siguiente enlace: " . url('') . "/print/quotation/{$this->external_id}/".(optional(Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket'),
             'number_full' => $this->number_full,
             'customer_email' => optional($quotation->person)->email,
             'customer_telephone' => optional($quotation->person)->telephone,
