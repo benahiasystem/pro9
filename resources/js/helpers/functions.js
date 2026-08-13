@@ -140,7 +140,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
                         discount_base += discount.amount_without_rounded
                     } else {
                         discount.amount = getAmountFromInputDiscount(discount)
-                        discount_base += discount.amount_exact !== 0 ? discount.amount_exact : discount.amount
+                        discount_base += getDiscountBaseIncrement(discount)
                     }
 
                 } else {
@@ -178,7 +178,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
                         discount_base += discount.amount_without_rounded
                     } else {
                         discount.amount = _.round(discount.base * discount.factor, 2)
-                        discount_base += discount.amount_exact !== 0 ? discount.amount_exact : discount.amount
+                        discount_base += getDiscountBaseIncrement(discount)
                     }
                     // } else {
                     //     discount_no_base += discount.amount
@@ -394,6 +394,14 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
 * use_input_amount propiedad para determinar si se toma el valor de discount.amount
 * y no de discount.percentage cuando es descuento por monto
 */
+function getDiscountBaseIncrement(discount) {
+    const exact = Number(discount.amount_exact)
+    if (!Number.isNaN(exact) && exact !== 0) {
+        return exact
+    }
+    return Number(discount.amount) || 0
+}
+
 function getAmountFromInputDiscount(discount)
 {
     let value = 0

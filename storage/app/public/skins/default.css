@@ -1866,10 +1866,10 @@ section.auth__form-right .auth__form .auth__social a{
     border: none !important;
 }
 .actions-cards-row .col a{
-    color: var(--dark-color) !important;
+    color: #ffffff !important;
     box-shadow: none !important;
-    border-color: var(--accent-color) !important;
-    border-radius: 12px !important;
+    border: none !important;
+    border-radius: 14px !important;
 }
 .theme-color-selector-black, .sidebar-margin-selector-container,
 .sidebar-theme-selector-container{
@@ -4082,10 +4082,13 @@ html.dark .actions-cards-container .border-top{
     border: none !important;
 }
 html.dark .actions-cards-row .col a{
-    background-color: var(--contents-dark) !important;
-    border-color: var(--contents-dark) !important;
-    color: var(--light-color) !important;
+    color: #ffffff !important;
+    border: none !important;
 }
+html.dark .actions-cards-row .col a.bg-danger{ background-color: var(--danger, #e74c3c) !important; }
+html.dark .actions-cards-row .col a.bg-warning{ background-color: var(--warning, #f0ad4e) !important; }
+html.dark .actions-cards-row .col a.bg-primary{ background-color: var(--primary, #3498db) !important; }
+html.dark .actions-cards-row .col a.bg-success{ background-color: var(--success, #2ecc71) !important; }
 html.dark .actions-card .card-body{
     background-color: transparent !important;
 }

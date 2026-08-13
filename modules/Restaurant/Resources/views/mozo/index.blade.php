@@ -65,8 +65,16 @@ gtag('config', 'G-8PH6FM2JEL');
     />
     @php
         $mozoIndexPath = public_path('mozo/index.html');
-        $cacheKey = 'mozo_build_assets_' . filemtime($mozoIndexPath);
+        $mtime = file_exists($mozoIndexPath) ? filemtime($mozoIndexPath) : 0;
+        $cacheKey = 'mozo_build_assets_' . $mtime;
         $mozoAssets = cache()->rememberForever($cacheKey, function () use ($mozoIndexPath) {
+            if (!file_exists($mozoIndexPath)) {
+                return [
+                    'js'     => '',
+                    'vendor' => '',
+                    'css'    => '',
+                ];
+            }
             $html = file_get_contents($mozoIndexPath);
             preg_match('/<script type="module" crossorigin src="([^"]+)"/', $html, $js);
             preg_match('/<link rel="modulepreload" href="([^"]+)"/', $html, $vendor);
