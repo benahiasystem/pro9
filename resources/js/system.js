@@ -64,6 +64,7 @@ import SystemGuestRegisterPlanPanel from './views/system/guest-register/plan-pan
 import XImportServiceGuest from './../../modules/ApiPeruDev/Resources/assets/js/components/InputServiceGuest.vue'
 import SystemConfigurationThemes from './views/system/configuration/themes.vue'
 import SystemsVisibleColumns from './views/system/configuration/visibleColumns.vue'
+import SystemStorageManagement from './views/system/storage-management/index.vue'
 
 locale.use(lang)
 
@@ -168,6 +169,8 @@ Vue.component('checkout-guest', CheckoutGuest)
 
 Vue.component('system-configuration-themes', SystemConfigurationThemes)
 Vue.component('system-configuration-visible-columns', SystemsVisibleColumns)
+
+Vue.component('system-storage-management-index', SystemStorageManagement)
 
 import VueClipboard from 'vue-clipboard2'
 Vue.use(VueClipboard)

@@ -1081,6 +1081,16 @@ if ($hostname) {
             Route::get('massive-invoice/export', 'System\MassiveInvoiceController@export');
             Route::get('massive-invoice/download/{id}/{type}', 'System\MassiveInvoiceController@downloadFile');
 
+            //Storage management
+            Route::get('storage-management', 'System\StorageManagementController@index')->name('system.storage-management.index');
+            Route::get('storage-management/records', 'System\StorageManagementController@records');
+            Route::get('storage-management/packages/{uuid}', 'System\StorageManagementController@packages');
+            Route::post('storage-management/clean/{uuid}', 'System\StorageManagementController@clean');
+            Route::get('storage-management/configurations', 'System\StorageManagementController@configurations');
+            Route::get('storage-management/configurations/tables', 'System\StorageManagementController@configurationTables');
+            Route::post('storage-management/configurations', 'System\StorageManagementController@storeConfiguration');
+            Route::delete('storage-management/configurations/{id}', 'System\StorageManagementController@destroyConfiguration');
+
             //Users
             Route::get('users/create', 'System\UserController@create')->name('system.users.create');
             Route::get('users/record', 'System\UserController@record');

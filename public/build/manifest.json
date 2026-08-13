@@ -136,14 +136,14 @@
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-1171caf0.css",
+    "file": "assets/system-f9256776.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-1171caf0.css"
+      "assets/system-f9256776.css"
     ],
-    "file": "assets/system-3d98a6e3.js",
+    "file": "assets/system-e404f6b8.js",
     "imports": [
       "_vue-clipboard-b1b087f4.js",
       "__plugin-vue2_normalizer-839f22b6.js",
