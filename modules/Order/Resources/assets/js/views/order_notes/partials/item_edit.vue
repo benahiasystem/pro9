@@ -75,6 +75,80 @@
                             </el-input>
                         </div>
                     </div>
+
+                    <div class="col-md-12 mt-2" v-if="config.show_item_discounts_charges_attributes !== false">
+                        <el-collapse v-model="activePanel">
+                            <el-collapse-item
+                                name="1"
+                                title="+ Agregar Descuentos/Cargos/Atributos especiales"
+                            >
+                                <div v-if="discount_types.length > 0">
+                                    <label class="control-label">
+                                        Descuentos
+                                        <a href="#" @click.prevent="clickAddDiscount">[+ Agregar]</a>
+                                    </label>
+                                    <div class="table-overflow-x-auto">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th style="min-width: 145px;">Tipo</th>
+                                                    <th style="min-width: 155px;">Descripción</th>
+                                                    <th style="min-width: 75px;">Porcentaje</th>
+                                                    <th style="min-width: 48px;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr
+                                                    v-for="(row, index) in form.discounts"
+                                                    :key="index"
+                                                >
+                                                    <td>
+                                                        <el-select
+                                                            v-model="row.discount_type_id"
+                                                            @change="changeDiscountType(index)"
+                                                        >
+                                                            <el-option
+                                                                v-for="option in discount_types"
+                                                                :key="option.id"
+                                                                :label="option.description"
+                                                                :value="option.id"
+                                                            ></el-option>
+                                                        </el-select>
+                                                    </td>
+                                                    <td>
+                                                        <el-input v-model="row.description"></el-input>
+                                                    </td>
+                                                    <td>
+                                                        <template v-if="row.is_amount">
+                                                            <el-input v-model="row.amount"></el-input>
+                                                        </template>
+                                                        <template v-else>
+                                                            <el-input v-model="row.percentage"></el-input>
+                                                        </template>
+                                                        <br />
+                                                        <el-checkbox
+                                                            v-model="row.is_amount"
+                                                            @change="changeIsDiscountAmount(index)"
+                                                            >Ingresar monto fijo
+                                                        </el-checkbox>
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            class="btn btn-danger"
+                                                            type="button"
+                                                            @click.prevent="clickRemoveDiscount(index)"
+                                                        >
+                                                            x
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </el-collapse-item>
+                        </el-collapse>
+                    </div>
                 </div>
             </div>
 
@@ -514,6 +588,21 @@ export default {
                     }
                 }
 
+                this.form.discounts = (this.recordItem.discounts || []).map(discount => {
+                    const row = { ...discount };
+                    row.discount_type = _.find(this.discount_types, { id: row.discount_type_id }) || row.discount_type || null;
+                    row.amount_exact = row.amount_exact || 0;
+                    row.use_input_amount = true;
+                    delete row.amount_without_rounded;
+                    return row;
+                });
+                this.form.charges = this.recordItem.charges
+                    ? [...this.recordItem.charges]
+                    : [];
+                if (this.form.discounts.length || this.form.charges.length) {
+                    this.activePanel = "1";
+                }
+
                 this.calculateQuantity();
                 
             }
@@ -615,7 +704,8 @@ export default {
                 amount: 0,
                 amount_exact: 0,
                 base: 0,
-                is_amount: false
+                is_amount: false,
+                use_input_amount: true
             });
         },
         clickRemoveDiscount(index) {
@@ -627,6 +717,11 @@ export default {
                 this.discount_types,
                 { id: discount_type_id }
             );
+        },
+        changeIsDiscountAmount(index) {
+            this.form.discounts[index].amount = 0;
+            this.form.discounts[index].percentage = 0;
+            this.form.discounts[index].amount_exact = 0;
         },
         clickAddCharge() {
             this.form.charges.push({
