@@ -18,14 +18,29 @@
             </div>
         </div>
         <div v-if="sendSunat">
-            <div>Enviando comprobante a sunat</div>
-            <div>{{ response_sunat_send.message }}</div>
+            <!-- <div>Enviando comprobante a sunat</div> -->
+            <!-- <div>{{ response_sunat_send.message }}</div> -->
             <template v-if="response_sunat_send.success">
-                <div>Consultando ticket a sunat</div>
+                <!-- <div>Consultando ticket a sunat</div> -->
                 <template v-if="response_sunat_status_ticket">
-                    <div>{{ response_sunat_status_ticket.message }}</div>
-                    <div v-if="!response_sunat_status_ticket.success">
+                    <el-alert class="mt-2"
+                              :closable="false"
+                              :title="statusTicketTitle"
+                              :type="statusTicketType"
+                              show-icon>
+                        <div v-if="statusTicketCode" class="mt-1">
+                            <small><strong>Código SUNAT:</strong> {{ statusTicketCode }}</small>
+                        </div>
+                        <ul v-if="statusTicketNotes.length" class="mt-1 mb-0 pl-3">
+                            <li v-for="(note, index) in statusTicketNotes"
+                                :key="index">
+                                <small>{{ note }}</small>
+                            </li>
+                        </ul>
+                    </el-alert>
+                    <div v-if="showRetryStatusTicket" class="mt-2">
                         <el-button class="list"
+                                   :loading="loading_sunat_status_ticket"
                                    @click="clickStatusTicket">Consultar ticket
                         </el-button>
                     </div>
@@ -48,7 +63,7 @@
             </div>
         </div>
 
-        <template v-if="(response_sunat_status_ticket && response_sunat_status_ticket.success) || !sendSunat">
+        <template v-if="showDocumentActions">
             <div class="row">
                 <div class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
                     <button class="btn btn-lg btn-info waves-effect waves-light"
@@ -74,7 +89,7 @@
                     </button>
                     <p>58MM</p>
                 </div>
-                <div v-if="sendSunat" class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
+                <div v-if="sendSunat && showDownloadCdr" class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
                     <button class="btn btn-lg btn-info waves-effect waves-light"
                             type="button"
                             @click="clickDownloadCdr()">
@@ -186,6 +201,57 @@ export default {
         ...mapState([
             'config',
         ]),
+        /**
+         * Tipo de alerta devuelto por statusTicket: success (aceptado),
+         * warning (observado), error (rechazado) o info (en proceso)
+         */
+        statusTicketType() {
+            const response = this.response_sunat_status_ticket
+            if (!response) return 'info'
+            if (response.response_type) return response.response_type
+
+            return response.success ? 'success' : 'error'
+        },
+        statusTicketTitle() {
+            const response = this.response_sunat_status_ticket
+            if (!response) return ''
+
+            const state = response.state_description ? `${response.state_description}: ` : ''
+
+            return `${state}${response.message || ''}`
+        },
+        statusTicketCode() {
+            const response = this.response_sunat_status_ticket
+
+            return response ? response.sunat_code : null
+        },
+        statusTicketNotes() {
+            const response = this.response_sunat_status_ticket
+
+            return (response && Array.isArray(response.notes)) ? response.notes : []
+        },
+        /**
+         * En proceso (03) o error de comunicacion: permite volver a consultar
+         */
+        showRetryStatusTicket() {
+            const response = this.response_sunat_status_ticket
+            if (!response) return false
+
+            return !response.success || response.state_type_id === '03'
+        },
+        showDocumentActions() {
+            if (!this.sendSunat) return true
+
+            const response = this.response_sunat_status_ticket
+
+            return !!(response && response.success && response.state_type_id !== '03')
+        },
+        showDownloadCdr() {
+            const response = this.response_sunat_status_ticket
+            if (!response) return true
+
+            return response.has_cdr !== false
+        },
     },
     methods: {
         ...mapActions(['loadConfiguration']),
@@ -305,9 +371,25 @@ export default {
             this.$emit('update:showDialog', false);
         },
         async clickStatusTicket() {
+            this.loading_sunat_status_ticket = true;
             await this.$http.get(`/service/dispatch/status_ticket/${this.form.external_id}`)
                 .then(response => {
                     this.response_sunat_status_ticket = response.data;
+                })
+                .catch(error => {
+                    this.response_sunat_status_ticket = {
+                        success: false,
+                        response_type: 'error',
+                        state_description: null,
+                        sunat_code: null,
+                        notes: [],
+                        message: (error.response && error.response.data && error.response.data.message)
+                            ? error.response.data.message
+                            : 'No fue posible consultar el ticket, vuelva a intentarlo.'
+                    };
+                })
+                .then(() => {
+                    this.loading_sunat_status_ticket = false;
                 });
         }
     }
