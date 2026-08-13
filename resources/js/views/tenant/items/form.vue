@@ -554,7 +554,8 @@
                                        v-text="errors.item_code[0]"></small>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div v-show="showPharmaElement"
+                             class="col-md-3">
                             <div :class="{'has-danger': errors.line}"
                                  class="form-group">
                                 <label class="control-label">
