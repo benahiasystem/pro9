@@ -355,17 +355,24 @@
             <div class="col-md-4 form-group mt-2"><el-switch v-model="campaignForm.sp_rating" active-text="Estrellas Rating"></el-switch></div>
 
             <template v-if="campaignForm.sp_discount_price || campaignForm.sp_countdown">
-              <div class="col-12 mt-3 mb-1"><h6 class="text-muted"><strong>Configuración de Descuento</strong></h6></div>
+              <div class="col-12 mt-3 mb-1">
+                <h6 class="text-muted"><strong>Configuración de Precio Tachado</strong></h6>
+                <small class="text-muted d-block mb-2">
+                  El precio del producto en catálogo es el que se cobra. Este valor solo arma el “precio anterior” tachado
+                  (ej.: producto a S/ 100 con 50% → muestra S/ 150 tachado y S/ 100 de oferta).
+                </small>
+              </div>
               <div class="col-md-4 form-group">
-                <label>Tipo de Descuento</label>
+                <label>Tipo</label>
                 <el-select v-model="campaignForm.discount_type" class="w-100">
                   <el-option label="Porcentaje (%)" value="percentage"></el-option>
                   <el-option label="Monto Fijo (S/.)" value="fixed"></el-option>
                 </el-select>
               </div>
               <div class="col-md-4 form-group">
-                <label>Valor del Descuento</label>
+                <label>Valor a sumar al precio (tachado)</label>
                 <el-input-number v-model="campaignForm.discount_value" :precision="2" :step="1" :min="0" class="w-100"></el-input-number>
+                <small class="text-muted">% o monto que se agrega sobre el precio de catálogo para el tachado.</small>
               </div>
               <div class="col-md-4 form-group" v-if="campaignForm.sp_countdown">
                 <label>Fin de la Campaña (Cronómetro)</label>

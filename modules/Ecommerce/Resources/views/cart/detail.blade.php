@@ -280,13 +280,15 @@
         display: grid;
     }
 
+    /* Porto: html 62.5% => 1rem=10px. Sin font-size en rem: hereda body (~1.4rem ≈ 14px). */
     .payment-success-dialog {
-        width: min(480px, 94vw);
+        width: min(520px, 94vw);
         padding: 36px 32px 32px;
         border-radius: 20px;
         background: #fff;
         text-align: center;
         box-shadow: 0 24px 70px rgba(15, 33, 55, .25);
+        line-height: 1.45;
     }
 
     .payment-success-badge {
@@ -302,15 +304,14 @@
 
     .payment-success-dialog h3 {
         margin: 0 0 12px;
-        font-size: 1.75rem;
         font-weight: 700;
         color: #0f2137;
         line-height: 1.25;
+        font-size: 1.55em;
     }
 
     .payment-success-dialog .payment-success-sub {
         margin: 0 0 22px;
-        font-size: 1.2rem;
         line-height: 1.5;
         color: #667085;
     }
@@ -329,8 +330,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 9px 0;
-        font-size: 1.15rem;
+        padding: 10px 0;
     }
 
     .payment-success-summary .psr-row + .psr-row {
@@ -348,7 +348,8 @@
     }
 
     .payment-success-summary .psr-row--total .val {
-        font-size: 1.35rem;
+        font-weight: 700;
+        font-size: 1.15em;
         color: var(--primary-color, #ff7a00);
     }
 
@@ -360,7 +361,6 @@
         padding: 14px 16px;
         border-radius: 10px;
         background: #f3f5f7;
-        font-size: 1.1rem;
         line-height: 1.5;
         color: #52606d;
         text-align: left;
@@ -407,7 +407,6 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        font-size: 1.12rem;
         min-height: 52px;
     }
 
@@ -431,7 +430,6 @@
 
     .payment-success-footer-hint {
         margin: 16px 0 0;
-        font-size: 1.05rem;
         line-height: 1.5;
         color: #98a2b3;
     }
@@ -444,6 +442,79 @@
         border-radius: 50%;
         animation: paymentProcessSpin .75s linear infinite;
         flex-shrink: 0;
+    }
+
+    /* Modal de alerta / error (estilo tienda, reemplaza SweetAlert en checkout) */
+    .payment-alert-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2147483002;
+        display: none;
+        place-items: center;
+        padding: 24px;
+        background: rgba(15, 33, 55, .55);
+        backdrop-filter: blur(4px);
+    }
+
+    .payment-alert-overlay.is-open {
+        display: grid;
+    }
+
+    .payment-alert-dialog {
+        width: min(440px, 94vw);
+        padding: 36px 28px 28px;
+        border-radius: 20px;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 24px 70px rgba(15, 33, 55, .25);
+        border: 1px solid #e9edf1;
+        line-height: 1.45;
+    }
+
+    .payment-alert-badge {
+        display: grid;
+        place-items: center;
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 18px;
+        border-radius: 50%;
+        background: #fff4eb;
+        color: var(--primary-color, #ff7a00);
+    }
+
+    .payment-alert-badge.is-error {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .payment-alert-badge.is-warning {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .payment-alert-badge.is-success {
+        background: #ecfdf5;
+        color: #16a34a;
+    }
+
+    .payment-alert-dialog h3 {
+        margin: 0 0 10px;
+        font-weight: 700;
+        color: #0f2137;
+        line-height: 1.3;
+        font-size: 1.45em;
+    }
+
+    .payment-alert-dialog .payment-alert-text {
+        margin: 0 0 24px;
+        color: #667085;
+        line-height: 1.5;
+    }
+
+    .payment-alert-dialog .pay-btn {
+        width: 100%;
+        justify-content: center;
+        min-height: 52px;
     }
 
     .checkout-methods .pay-btn + .pay-btn,
@@ -1611,6 +1682,10 @@
         background: #fafafa;
     }
 
+    .pay-method-panel:not(:has(*)) {
+        display: none;
+    }
+
     .pay-method-panel p {
         font-size: 13px;
         color: #555;
@@ -1874,7 +1949,7 @@
         </div>
     </div>
     <div class="row checkout-layout">
-    <div class="col-md-8 mb-3">
+        <div class="col-md-8 mb-3 checkout-form-col">
         <div class="card card-cart">
             <button type="button" class="btn btn-link btn-block text-left p-0" data-toggle="collapse" data-target="#cartCollapse" aria-expanded="true" style="text-decoration: none; display: block;">
                 <div class="card-header d-flex align-items-center bg-white border-bottom-0 card-cart-header" style="cursor: pointer;">
@@ -2524,8 +2599,15 @@
                             </span>
                             <span class="pay-method-label">@{{ titleCulqi }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'culqi' && descriptionCulqi" class="pay-method-panel">
-                            <p>@{{ descriptionCulqi }}</p>
+                        <div v-if="selectedPaymentMethod === 'culqi' && ((descriptionCulqi && String(descriptionCulqi).trim()) || !isSecurePage)" class="pay-method-panel">
+                            <div v-if="!isSecurePage" class="ship-alert ship-alert--warn" role="alert">
+                                Culqi solo funciona con HTTPS. Estás en HTTP
+                                (<strong>No seguro</strong>).
+                                <a :href="httpsCheckoutUrl" style="font-weight:700; text-decoration:underline;">
+                                    Abrir carrito en HTTPS
+                                </a>
+                            </div>
+                            <p v-if="descriptionCulqi && String(descriptionCulqi).trim()">@{{ descriptionCulqi }}</p>
                         </div>
 
                         <label v-if="enableIzipay" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'izipay' }">
@@ -2535,7 +2617,7 @@
                             </span>
                             <span class="pay-method-label">@{{ titleIzipay }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'izipay' && descriptionIzipay" class="pay-method-panel">
+                        <div v-if="selectedPaymentMethod === 'izipay' && descriptionIzipay && String(descriptionIzipay).trim()" class="pay-method-panel">
                             <p>@{{ descriptionIzipay }}</p>
                         </div>
 
@@ -2546,7 +2628,7 @@
                             </span>
                             <span class="pay-method-label">@{{ titleMp }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'mp' && descriptionMp" class="pay-method-panel">
+                        <div v-if="selectedPaymentMethod === 'mp' && descriptionMp && String(descriptionMp).trim()" class="pay-method-panel">
                             <p>@{{ descriptionMp }}</p>
                         </div>
 
@@ -2557,7 +2639,7 @@
                             </span>
                             <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'cash' && cashPaymentDescription" class="pay-method-panel">
+                        <div v-if="selectedPaymentMethod === 'cash' && cashPaymentDescription && String(cashPaymentDescription).trim()" class="pay-method-panel">
                             <p>@{{ cashPaymentDescription }}</p>
                         </div>
 
@@ -2626,7 +2708,7 @@
         </transition>
     </div><!-- End .col-lg-8 -->
 
-    <div class="col-md-4 checkout-summary-col">
+    <div class="col-md-4 checkout-summary-col mb-3">
       <div class="summary-sticky">
         <div class="cart-summary" :class="{ 'is-quote-summary': isQuotationCheckout }">
             <div class="sum-head">
@@ -2717,7 +2799,7 @@
                 <div class="checkout-methods">
                     <template v-if="allowPurchase">
                     <p v-if="!isLoggedIn && guestCheckoutAccepted && isGuestCheckoutComplete" class="checkout-hint">
-                        Elige un método de pago y confirma con el botón Pagar.
+                        Elige un método de pago y confirma con el botón de la derecha.
                     </p>
                     <button
                         v-if="!isLoggedIn && !guestCheckoutAccepted"
@@ -2929,6 +3011,37 @@
             <p class="payment-success-footer-hint" v-if="isYapePaymentSuccess">
                 Al enviar el comprobante, procesaremos tu pedido lo antes posible.
             </p>
+        </div>
+    </div>
+
+    <!-- Modal alerta / error (Culqi y mensajes del checkout) -->
+    <div
+        id="payment-alert-overlay"
+        class="payment-alert-overlay"
+        :class="{ 'is-open': paymentAlertVisible }"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="payment-alert-title"
+        :aria-hidden="paymentAlertVisible ? 'false' : 'true'"
+        @click.self="hideStoreAlert"
+    >
+        <div class="payment-alert-dialog" v-if="paymentAlertVisible">
+            <div
+                class="payment-alert-badge"
+                :class="{
+                    'is-error': paymentAlertType === 'error',
+                    'is-warning': paymentAlertType === 'warning',
+                    'is-success': paymentAlertType === 'success'
+                }"
+                aria-hidden="true"
+            >
+                <svg v-if="paymentAlertType === 'success'" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg v-else-if="paymentAlertType === 'warning'" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <h3 id="payment-alert-title">@{{ paymentAlertTitle }}</h3>
+            <p class="payment-alert-text">@{{ paymentAlertText }}</p>
+            <button type="button" class="pay-btn" @click="hideStoreAlert">Entendido</button>
         </div>
     </div>
 
@@ -3501,6 +3614,10 @@
     }
 
     window.mostrarMensaje = function (title, text, type) {
+        if (typeof app_cart !== 'undefined' && typeof app_cart.showStoreAlert === 'function') {
+            app_cart.showStoreAlert(title, text, type || 'info');
+            return;
+        }
         if (typeof app_cart !== 'undefined' && typeof app_cart.showSwalMessage === 'function') {
             app_cart.showSwalMessage(title, text, type || 'info');
             return;

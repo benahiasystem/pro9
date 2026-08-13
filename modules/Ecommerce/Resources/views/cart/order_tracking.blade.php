@@ -2,30 +2,31 @@
 
 @section('content')
 <style>
+    /* Porto: 1rem~10px. Sin font-size: hereda body (~1.4rem ~ 14px). */
     .ot-page {
-        max-width: 720px;
-        margin: 28px auto 60px;
-        padding: 0 16px;
+        max-width: 840px;
+        margin: 32px auto 64px;
+        padding: 0 18px;
     }
     .ot-card {
         background: #fff;
-        border-radius: 18px;
+        border-radius: 20px;
         box-shadow: 0 12px 40px rgba(15, 33, 55, .08);
         border: 1px solid #eef1f4;
-        padding: 28px 24px 24px;
+        padding: 34px 30px 28px;
     }
     .ot-title {
-        margin: 0 0 6px;
-        font-size: 1.55rem;
+        margin: 0 0 8px;
         font-weight: 700;
         color: #0f2137;
         text-align: center;
+        line-height: 1.3;
     }
     .ot-sub {
-        margin: 0 0 22px;
+        margin: 0 0 24px;
         text-align: center;
         color: #667085;
-        font-size: .95rem;
+        line-height: 1.5;
     }
     .ot-search {
         display: flex;
@@ -43,8 +44,7 @@
         min-width: 140px;
         border: 1px solid #e5e7eb;
         border-radius: 10px;
-        padding: 12px 14px;
-        font-size: 15px;
+        padding: 13px 14px;
         outline: none;
     }
     .ot-search input:focus {
@@ -53,17 +53,17 @@
     }
     .ot-search-hint {
         margin: -6px 0 0;
-        font-size: .82rem;
         color: #667085;
+        line-height: 1.4;
     }
     .ot-search button {
         border: 0;
         border-radius: 10px;
         background: var(--primary-color, #ff7a00);
         color: #fff;
-        font-weight: 700;
-        padding: 0 18px;
-        min-height: 46px;
+        font-weight: 600;
+        padding: 0 20px;
+        min-height: 48px;
         white-space: nowrap;
         cursor: pointer;
     }
@@ -77,8 +77,8 @@
         background: #fff7ed;
         border: 1px solid #fed7aa;
         color: #9a3412;
-        font-size: .9rem;
         margin-bottom: 16px;
+        line-height: 1.45;
     }
     .ot-msg.is-error {
         background: #fef2f2;
@@ -98,14 +98,12 @@
     .ot-head .ot-number {
         font-weight: 700;
         color: #0f2137;
-        font-size: 1.05rem;
     }
     .ot-badge {
         display: inline-flex;
         align-items: center;
         padding: 5px 12px;
         border-radius: 999px;
-        font-size: .78rem;
         font-weight: 700;
         color: #fff;
         background: #f59e0b;
@@ -123,7 +121,6 @@
     }
     .ot-courier-label {
         display: block;
-        font-size: .75rem;
         font-weight: 700;
         color: #64748b;
         text-transform: uppercase;
@@ -132,14 +129,12 @@
     }
     .ot-courier-code {
         font-family: Consolas, Monaco, monospace;
-        font-size: 1rem;
         font-weight: 700;
         color: #0f2137;
         word-break: break-all;
     }
     .ot-section-title {
         margin: 0 0 14px;
-        font-size: .95rem;
         font-weight: 700;
         color: #0f2137;
     }
@@ -178,7 +173,6 @@
         place-items: center;
         flex-shrink: 0;
         z-index: 1;
-        font-size: 12px;
         font-weight: 700;
     }
     .ot-step.is-done .ot-dot {
@@ -199,13 +193,11 @@
     .ot-step-title {
         font-weight: 700;
         color: #0f2137;
-        font-size: .95rem;
     }
     .ot-step.is-pending .ot-step-title {
         color: #98a2b3;
     }
     .ot-step-meta {
-        font-size: .75rem;
         color: #98a2b3;
         margin-top: 2px;
         text-transform: uppercase;
@@ -223,7 +215,6 @@
     }
     .ot-detail-heading {
         margin: 0 0 14px;
-        font-size: 1rem;
         font-weight: 700;
         color: #0f2137;
     }
@@ -264,18 +255,15 @@
     .ot-item-name {
         font-weight: 700;
         color: #0f2137;
-        font-size: .95rem;
         line-height: 1.3;
     }
     .ot-item-qty {
         margin-top: 2px;
-        font-size: .82rem;
         color: #667085;
     }
     .ot-item-amt {
         font-weight: 700;
         color: #0f2137;
-        font-size: .95rem;
         white-space: nowrap;
     }
     .ot-summary {
@@ -288,7 +276,6 @@
         display: flex;
         justify-content: space-between;
         gap: 12px;
-        font-size: .92rem;
         color: #52606d;
     }
     .ot-summary .row.total {
@@ -297,7 +284,6 @@
         border-top: 1px solid #e5e7eb;
         font-weight: 700;
         color: #0f2137;
-        font-size: 1.05rem;
     }
     .ot-actions {
         display: grid;
@@ -314,8 +300,7 @@
         padding: 12px 16px;
         border-radius: 12px;
         border: 0;
-        font-weight: 700;
-        font-size: .95rem;
+        font-weight: 600;
         text-decoration: none !important;
         cursor: pointer;
         transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
@@ -343,7 +328,6 @@
     }
     .ot-empty-statuses {
         color: #667085;
-        font-size: .9rem;
         margin-bottom: 16px;
     }
     @media (max-width: 575px) {
@@ -362,7 +346,7 @@
 
 <div class="ot-page">
     <div class="ot-card">
-        <h1 class="ot-title">Estado de tu pedido</h1>
+        <p class="ot-title" role="heading" aria-level="1">Estado de tu pedido</p>
         <p class="ot-sub">Consulta con tu número de pedido y DNI.</p>
 
         <form class="ot-search" id="ot-search-form" autocomplete="off">
@@ -371,7 +355,7 @@
                     id="ot-pedido-input"
                     type="text"
                     name="pedido"
-                    placeholder="N° de pedido (ej: 000192)"
+                    placeholder="N° de pedido (ej: 120801)"
                     value="{{ $initialPedido }}"
                     inputmode="numeric"
                 >
@@ -481,7 +465,7 @@
     function setBusy(busy) {
         if (!searchBtn) return;
         searchBtn.disabled = !!busy;
-        searchBtn.textContent = busy ? 'Buscando…' : 'Buscar';
+        searchBtn.textContent = busy ? "Buscando\u2026" : 'Buscar';
     }
 
     function renderTimeline(statuses, currentId) {
@@ -516,9 +500,9 @@
                 || status.kind === 'payment_pending'
                 || status.kind === 'payment_completed';
             var dotContent = state === 'is-done'
-                ? '✓'
+                ? "\u2713"
                 : (isPaymentStep && state === 'is-current'
-                    ? '⏱'
+                    ? "\u23F1"
                     : String(index + 1));
             li.innerHTML =
                 '<div class="ot-dot" aria-hidden="true">' +
@@ -606,8 +590,8 @@
             itemsEl.innerHTML = '<div class="ot-item"><div class="ot-item-info"><div class="ot-item-name">Sin detalle de productos</div></div></div>';
         }
 
-        document.getElementById('ot-delivery').textContent = order.delivery_label || '—';
-        document.getElementById('ot-payment').textContent = order.payment_label || '—';
+        document.getElementById('ot-delivery').textContent = order.delivery_label || '\u2014';
+        document.getElementById('ot-payment').textContent = order.payment_label || '\u2014';
         document.getElementById('ot-total').textContent = money(order.total);
 
         result.style.display = 'block';

@@ -126,16 +126,30 @@ class CulqiController extends Controller
 
         $culqi = new Culqi(array('api_key' => $SECRET_API_KEY));
 
-        $charge = $culqi->Charges->create(
-            array(
-                "amount" => $chargeAmount,
-                "currency_code" => "PEN",
-                "email" => $chargeEmail,
-                "description" =>  $request->producto,
-                "source_id" => $chargeToken,
-                "installments" => $chargeInstallments
-              )
-        );
+        $description = trim((string) ($request->producto ?: 'Compra tienda virtual'));
+        if (mb_strlen($description) < 5) {
+            $description = 'Compra tienda virtual';
+        }
+        if (mb_strlen($description) > 80) {
+            $description = mb_substr($description, 0, 80);
+        }
+
+        $chargePayload = [
+            'amount' => $chargeAmount,
+            'capture' => true,
+            'currency_code' => 'PEN',
+            'email' => $chargeEmail,
+            'description' => $description,
+            'source_id' => $chargeToken,
+            'installments' => $chargeInstallments,
+        ];
+
+        $antifraud = $this->buildCulqiAntifraudDetails($customer);
+        if (! empty($antifraud)) {
+            $chargePayload['antifraud_details'] = $antifraud;
+        }
+
+        $charge = $culqi->Charges->create($chargePayload);
 
         $chargeObj = $charge;
         if (is_string($charge)) {
@@ -228,7 +242,7 @@ class CulqiController extends Controller
             $document->total = $request->precio_culqi;
             $document->items = is_array($orderItems) ? $orderItems : [];
             $document->id = $order->id;
-            $document->order_number = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+            $document->order_number = $order->publicNumber();
             $document->tracking_url = route('tenant_ecommerce_order_tracking', [
                 'pedido' => $document->order_number,
             ]);
@@ -467,10 +481,20 @@ class CulqiController extends Controller
         $base['currency'] = isset($chargeObj->currency_code) ? (string) $chargeObj->currency_code : null;
 
         if (isset($chargeObj->object) && $chargeObj->object === 'error') {
-            $base['message'] = $chargeObj->user_message
-                ?? $chargeObj->merchant_message
-                ?? $base['message'];
-            $base['outcome'] = $chargeObj->type ?? 'error';
+            $type = (string) ($chargeObj->type ?? 'error');
+            $userMessage = (string) ($chargeObj->user_message ?? '');
+            $merchantMessage = (string) ($chargeObj->merchant_message ?? '');
+
+            if ($type === 'api_error') {
+                $base['message'] = 'Culqi no pudo procesar el cobro en este momento (error interno de Culqi). '
+                    . 'Verifica tus llaves de prueba en el panel, usa una tarjeta de prueba oficial e inténtalo de nuevo. '
+                    . 'Si persiste, revisa el estado del servicio en Culqi o contacta a culqi.com/soporte.';
+            } else {
+                $base['message'] = $userMessage !== ''
+                    ? $userMessage
+                    : ($merchantMessage !== '' ? $merchantMessage : $base['message']);
+            }
+            $base['outcome'] = $type;
 
             return $base;
         }
@@ -600,6 +624,48 @@ class CulqiController extends Controller
             'merchant_message' => $chargeObj->merchant_message ?? data_get($chargeObj, 'outcome.merchant_message'),
             'charge_id' => isset($chargeObj->id) ? (string) $chargeObj->id : null,
         ];
+    }
+
+    /**
+     * Datos antifraude opcionales recomendados por Culqi al crear un cargo.
+     */
+    private function buildCulqiAntifraudDetails(array $customer): array
+    {
+        $fullName = trim((string) ($customer['apellidos_y_nombres_o_razon_social'] ?? ''));
+        $firstName = 'Cliente';
+        $lastName = 'Ecommerce';
+        if ($fullName !== '') {
+            $parts = preg_split('/\s+/', $fullName) ?: [];
+            if (count($parts) === 1) {
+                $firstName = $parts[0];
+            } elseif (count($parts) > 1) {
+                $firstName = array_shift($parts);
+                $lastName = implode(' ', $parts);
+            }
+        }
+
+        $phone = preg_replace('/\D+/', '', (string) ($customer['telefono'] ?? ''));
+        $address = trim((string) ($customer['direccion'] ?? ''));
+        if (mb_strlen($address) > 100) {
+            $address = mb_substr($address, 0, 100);
+        }
+
+        $details = [
+            'first_name' => mb_substr($firstName, 0, 50) ?: 'Cliente',
+            'last_name' => mb_substr($lastName, 0, 50) ?: 'Ecommerce',
+            'country_code' => 'PE',
+        ];
+
+        if ($address !== '') {
+            $details['address'] = $address;
+            $details['address_city'] = 'LIMA';
+        }
+
+        if ($phone !== '' && strlen($phone) >= 6) {
+            $details['phone_number'] = $phone;
+        }
+
+        return $details;
     }
 
 }

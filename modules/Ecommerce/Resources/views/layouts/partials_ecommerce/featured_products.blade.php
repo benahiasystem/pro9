@@ -31,7 +31,7 @@
                       <span>Add to Wishlist</span>
                   </a>
 
-                  <a href="#" data-product="{{ json_encode( $item ) }}" class="paction add-cart" title="Add to Cart">
+                  <a href="javascript:void(0)" role="button" data-product="{{ json_encode( $item ) }}" class="paction add-cart" title="Add to Cart">
                       <span>Add to Cart</span>
                   </a>
 

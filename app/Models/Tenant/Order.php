@@ -6,6 +6,8 @@ namespace App\Models\Tenant;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Http\Helpers\HeaderNotifications;
 use App\Models\Tenant\Document;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Modules\Ecommerce\Models\Tenant\DiscountCoupon;
 
 
@@ -15,6 +17,7 @@ class Order extends ModelTenant
 
     protected $fillable = [
         'external_id',
+        'order_code',
         'customer',
         'shipping_address',
         'items',
@@ -40,6 +43,82 @@ class Order extends ModelTenant
         'purchase' => 'object',
         'stock_discounted' => 'boolean'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (self $order) {
+            if (empty($order->order_code)) {
+                $order->order_code = self::nextDailyOrderCode();
+            }
+        });
+    }
+
+    /**
+     * N° público del pedido: ddmm + secuencia diaria (ej. 120801).
+     * Pedidos antiguos sin order_code conservan el id rellenado a 6 dígitos.
+     */
+    public function publicNumber(): string
+    {
+        if (! empty($this->order_code)) {
+            return (string) $this->order_code;
+        }
+
+        return str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Genera el siguiente código del día: ddmm + secuencia (01, 02, …).
+     */
+    public static function nextDailyOrderCode($at = null): string
+    {
+        $at = Carbon::parse($at ?? now());
+        $prefix = $at->format('dm');
+
+        return DB::transaction(function () use ($prefix, $at) {
+            $codes = static::query()
+                ->whereDate('created_at', $at->toDateString())
+                ->whereNotNull('order_code')
+                ->where('order_code', 'like', $prefix . '%')
+                ->lockForUpdate()
+                ->pluck('order_code');
+
+            $max = 0;
+            foreach ($codes as $code) {
+                if (preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', (string) $code, $m)) {
+                    $max = max($max, (int) $m[1]);
+                }
+            }
+
+            $seq = $max + 1;
+
+            return $prefix . str_pad((string) $seq, 2, '0', STR_PAD_LEFT);
+        });
+    }
+
+    /**
+     * Resuelve un pedido por N° público (order_code) o por id legado.
+     */
+    public static function findByPublicNumber(?string $raw): ?self
+    {
+        $digits = preg_replace('/\D+/', '', (string) $raw);
+        if ($digits === '') {
+            return null;
+        }
+
+        $byCode = static::where('order_code', $digits)->first();
+        if ($byCode) {
+            return $byCode;
+        }
+
+        $id = (int) $digits;
+        if ($id <= 0) {
+            return null;
+        }
+
+        return static::find($id);
+    }
 
     public function status_order()
     {
@@ -85,7 +164,8 @@ class Order extends ModelTenant
             'id' => $this->id,
             'external_id' => $this->external_id,
             'number_document' => $this->number_document,
-            'order_id' => str_pad($this->id, 6, "0", STR_PAD_LEFT),
+            'order_id' => $this->publicNumber(),
+            'order_code' => $this->order_code,
             'customer' => $this->customer->apellidos_y_nombres_o_razon_social,
             'customer_email' => $this->customer->correo_electronico,
             'customer_telefono' => $this->customer->telefono,

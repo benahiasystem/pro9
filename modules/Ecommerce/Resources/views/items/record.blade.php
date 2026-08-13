@@ -92,6 +92,7 @@
                     $activeCampaign = null;
                     $hasActiveOffer = false;
                     $activeOfferPrice = (float) $record->sale_unit_price;
+                    $compareAtPrice = null;
                     $offerExpiresAt = null;
                     $stockThreshold = 10;
 
@@ -111,13 +112,14 @@
                             : ($activeCampaign->sp_discount_price && (! $activeCampaign->end_date || $activeCampaign->end_date > now()))
                         ) {
                             $hasActiveOffer = true;
-                            if ($activeCampaign->discount_type === 'percentage') {
-                                $activeOfferPrice = $record->sale_unit_price - ($record->sale_unit_price * ((float) $activeCampaign->discount_value / 100));
-                            } else {
-                                $activeOfferPrice = $record->sale_unit_price - (float) $activeCampaign->discount_value;
-                            }
-                            if ($activeOfferPrice < 0) {
-                                $activeOfferPrice = 0;
+                            $activeOfferPrice = method_exists($activeCampaign, 'discountedPrice')
+                                ? $activeCampaign->discountedPrice((float) $record->sale_unit_price)
+                                : (float) $record->sale_unit_price;
+                            $compareAtPrice = method_exists($activeCampaign, 'compareAtPrice')
+                                ? $activeCampaign->compareAtPrice((float) $record->sale_unit_price)
+                                : null;
+                            if (! $compareAtPrice) {
+                                $hasActiveOffer = false;
                             }
                         }
 
@@ -143,9 +145,9 @@
 
                     @if($storefront_show_prices ?? true)
                     <div class="price-box my-2">
-                        <template v-if="hasActiveOffer">
+                        <template v-if="hasActiveOffer && compareAtPrice">
                             <span class="old-price text-muted text-decoration-line-through mr-2">
-                                @{{ product.currency_type_symbol }} @{{ Number(product.sale_unit_price).toFixed(2) }}
+                                @{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}
                             </span>
                             <span class="product-price text-danger font-weight-bold" style="font-size: 1.5rem;">
                                 @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
@@ -421,6 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 stockThreshold: {{ (int) $stockThreshold }},
                 hasActiveOffer: {{ $hasActiveOffer ? 'true' : 'false' }},
                 activeOfferPrice: {{ number_format((float) $activeOfferPrice, 2, '.', '') }},
+                compareAtPrice: {{ $compareAtPrice !== null ? number_format((float) $compareAtPrice, 2, '.', '') : 'null' }},
                 offerExpiresAt: {{ $offerExpiresAt ? (int) \Carbon\Carbon::parse($offerExpiresAt)->getTimestamp() : 'null' }},
                 socialProofConfig: {
                     sp_countdown: {{ ($activeCampaign && $activeCampaign->sp_countdown) ? 'true' : 'false' }},

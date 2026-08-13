@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $encryption = $config->mail_encryption;
-        $host = $config->mail_host;
+        $host = $config->mail_host ?: env('MAIL_HOST', '127.0.0.1');
 
         if ($encryption === 'none' || $encryption === '') {
             $encryption = null;

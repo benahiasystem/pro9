@@ -987,7 +987,7 @@ class EcommerceController extends Controller
                 $document->total = $request->precio_culqi;
                 $document->items = $request->items;
                 $document->id = $order->id;
-                $document->order_number = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+                $document->order_number = $order->publicNumber();
                 $document->tracking_url = route('tenant_ecommerce_order_tracking', [
                     'pedido' => $document->order_number,
                 ]);
@@ -2498,11 +2498,9 @@ class EcommerceController extends Controller
         ];
 
         $raw = trim((string) $request->query('pedido', ''));
-        $digits = preg_replace('/\D+/', '', $raw);
-        $orderId = (int) $digits;
         $document = preg_replace('/\D+/', '', (string) $request->query('documento', $request->query('dni', '')));
 
-        if ($orderId <= 0) {
+        if (preg_replace('/\D+/', '', $raw) === '') {
             return response()->json([
                 'success' => false,
                 'message' => 'Ingresa un número de pedido válido.',
@@ -2516,7 +2514,7 @@ class EcommerceController extends Controller
             ]);
         }
 
-        $order = Order::with(['shipping_status_order', 'payment_status_order'])->find($orderId);
+        $order = Order::with(['shipping_status_order', 'payment_status_order'])->findByPublicNumber($raw);
         if (! $order || ! $this->orderTrackingDocumentMatches($order, $document)) {
             return response()->json($denied);
         }
@@ -2765,7 +2763,8 @@ class EcommerceController extends Controller
             'success' => true,
             'order' => [
                 'id' => (int) $order->id,
-                'number' => '#' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
+                'number' => '#' . $order->publicNumber(),
+                'order_code' => $order->order_code,
                 'total' => round((float) $order->total, 2),
                 'payment_label' => $paymentLabel,
                 'delivery_label' => $deliveryLabel,

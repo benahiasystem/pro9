@@ -487,35 +487,47 @@ function(e) {
 		},
 		productsCartDropDown: function()
 		{
-			//console.log('drop dowm')
-			//clean cart dropdown
+			// Prefer the footer/header cart dropdown renderer when available.
+			if (typeof window.populate === 'function') {
+				window.populate();
+				if (typeof window.calculatetotal === 'function') {
+					window.calculatetotal();
+				}
+				return;
+			}
+
 			jQuery(".dropdown-cart-products").empty();
 			jQuery(".cart-count").empty();
 			let count = 0;
-			//get data local syrogare prodicts
-			let array = localStorage.getItem('products_cart');
-			array = JSON.parse(array)
+			let array = [];
+			try {
+				array = JSON.parse(localStorage.getItem('products_cart') || '[]') || [];
+			} catch (err) {
+				array = [];
+			}
+			if (!Array.isArray(array)) array = [];
 			count = array.length;
-				
+
 			array.forEach(element => {
 				const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
 					? `/storage/uploads/items/${element.image_small}`
 					: `/logo/imagen-no-disponible.jpg`;
+				const qty = parseInt(element.quantity, 10) || 1;
 				jQuery(".dropdown-cart-products").append( `
 						<div class="product">
 							<div class="product-details">
 							<h4 class="product-title">
-								<a href="$">${element.description}</a>
+								<a href="#">${element.description}</a>
 							</h4>
 							<span class="cart-product-info">
-								<span class="cart-product-qty">1</span> x ${element.sale_unit_price}
+								<span class="cart-product-qty">${qty}</span> x ${element.sale_unit_price}
 							</span>
 							</div>
 							<figure class="product-image-container">
 								<a href="#" class="product-image">
 									<img alt="${element.description}" src="${imagePath}" />
 								</a>
-								<a href="#" onclick="remove(${element.id})" class="btn-remove" title="Remove Product">
+								<a href="#" onclick="remove(${element.id}); return false;" class="btn-remove" title="Remove Product">
 									<i class="icon-cancel"></i>
 								</a>
 							</figure>
@@ -530,23 +542,149 @@ function(e) {
 			}
 
 		},
+		getCartArray: function()
+		{
+			let array = [];
+			try {
+				array = JSON.parse(localStorage.getItem('products_cart') || '[]') || [];
+			} catch (err) {
+				array = [];
+			}
+			return Array.isArray(array) ? array : [];
+		},
+		saveCartArray: function(array)
+		{
+			localStorage.setItem('products_cart', JSON.stringify(array || []));
+			window.dispatchEvent(new Event('productAddedToCart'));
+		},
+		escapeHtml: function(value)
+		{
+			return String(value == null ? '' : value)
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#039;');
+		},
+		fillAddedProductModal: function(item)
+		{
+			const symbol = (item.currency_type && item.currency_type.symbol)
+				? item.currency_type.symbol
+				: (item.currency_type_symbol || 'S/');
+			const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+			const price = Number(item.sale_unit_price) || 0;
+			const compareAt = Number(item.compare_at_price) || 0;
+			const showPrices = !(window.__storefront_show_prices === false || window.__storefront_show_prices === 0);
+			const thumb = (item.image_medium && item.image_medium !== 'imagen-no-disponible.jpg')
+				? `/storage/uploads/items/${item.image_medium}`
+				: ((item.image_small && item.image_small !== 'imagen-no-disponible.jpg')
+					? `/storage/uploads/items/${item.image_small}`
+					: ((item.image && item.image !== 'imagen-no-disponible.jpg')
+						? `/storage/uploads/items/${item.image}`
+						: `/logo/imagen-no-disponible.jpg`));
+
+			jQuery('#cart_added_product_row').attr('data-product-id', item.id);
+			jQuery('#product_added_image').html('<img src="' + thumb + '" alt="' + this.escapeHtml(item.description || '') + '">');
+			jQuery('#cart_added_name').text(item.description || 'Producto');
+			const metaParts = [];
+			if (item.brand && item.brand.name) metaParts.push(item.brand.name);
+			if (item.category && item.category.name) metaParts.push(item.category.name);
+			if (!metaParts.length && item.name) metaParts.push(String(item.name).replace(/<[^>]*>/g, '').trim());
+			jQuery('#cart_added_meta').text(metaParts.filter(Boolean).join(' · '));
+
+			if (showPrices) {
+				let priceHtml = '<span class="cart-added-modal__price-current">' + this.escapeHtml(symbol) + ' ' + price.toFixed(2) + '</span>';
+				if (compareAt > price) {
+					priceHtml = '<span class="cart-added-modal__price-old">' + this.escapeHtml(symbol) + ' ' + compareAt.toFixed(2) + '</span>' + priceHtml;
+				}
+				jQuery('#cart_added_price').html(priceHtml).show();
+			} else {
+				jQuery('#cart_added_price').empty().hide();
+			}
+
+			jQuery('#cart_added_qty_input').val(qty);
+			jQuery('#cart_added_qty_minus').prop('disabled', qty <= 1);
+		},
+		syncCartQuantity: function(productId, quantity)
+		{
+			const contex = this;
+			return Promise.resolve().then(function () {
+				let qty = parseInt(quantity, 10);
+				if (!qty || qty < 1) qty = 1;
+				const array = contex.getCartArray();
+				const found = array.find(x => String(x.id) === String(productId));
+				if (!found) {
+					return qty;
+				}
+				found.quantity = qty;
+				if (found.cantidad) found.cantidad = qty;
+				contex.saveCartArray(array);
+				contex.productsCartDropDown();
+				contex.calculateTotalCart();
+				jQuery('#cart_added_qty_input').val(qty);
+				jQuery('#cart_added_qty_minus').prop('disabled', qty <= 1);
+				return qty;
+			});
+		},
+		bindAddedProductQtyControls: function()
+		{
+			const contex = this;
+			if (this._cartAddedQtyBound) return;
+			this._cartAddedQtyBound = true;
+
+			e(document).on('click', '#cart_added_qty_minus', function (ev) {
+				ev.preventDefault();
+				const id = jQuery('#cart_added_product_row').attr('data-product-id');
+				const current = parseInt(jQuery('#cart_added_qty_input').val(), 10) || 1;
+				if (current <= 1) return;
+				contex.syncCartQuantity(id, current - 1);
+			});
+
+			e(document).on('click', '#cart_added_qty_plus', function (ev) {
+				ev.preventDefault();
+				const id = jQuery('#cart_added_product_row').attr('data-product-id');
+				const current = parseInt(jQuery('#cart_added_qty_input').val(), 10) || 1;
+				contex.syncCartQuantity(id, current + 1);
+			});
+
+			e(document).on('change', '#cart_added_qty_input', function () {
+				const id = jQuery('#cart_added_product_row').attr('data-product-id');
+				let current = parseInt(jQuery(this).val(), 10);
+				if (!current || current < 1) current = 1;
+				contex.syncCartQuantity(id, current);
+			});
+
+			// Cierre explícito por si data-dismiss no responde en algún layout.
+			e(document).on('click', '#moda-succes-add-product .cart-added-modal__close, #modal-already-product .cart-added-modal__close', function (ev) {
+				ev.preventDefault();
+				jQuery(this).closest('.modal').modal('hide');
+			});
+		},
 		addToCart: function()
 		{
-			let contex = this
-			e(".add-cart").click(function(t) {
+			let contex = this;
+			contex.bindAddedProductQtyControls();
+
+			// Delegación: cubre listados y productos cargados luego.
+			// Solo anchors con data-product (no el botón Vue del PDP).
+			e(document).off('click.ecommerceAddCart', 'a.add-cart[data-product]').on('click.ecommerceAddCart', 'a.add-cart[data-product]', function(t) {
 				t.preventDefault();
+				t.stopPropagation();
 
-				let item = cartParseProductFromButton(this);
-				if (!item) {
-					item = jQuery(this).data('product');
-				}
-				if (!item) {
-					return;
+				let item = jQuery(this).data('product');
+				if (!item || typeof item !== 'object') {
+					return false;
 				}
 
-				let array = localStorage.getItem('products_cart');
-				array = array ? JSON.parse(array) : [];
-				let found = array.find(function(x) { return x.id == item.id; });
+				// Clone so we don't mutate jQuery cache oddly across clicks
+				item = Object.assign({}, item);
+				const compareRaw = jQuery(this).attr('data-compare-at');
+				if (compareRaw && !isNaN(parseFloat(compareRaw))) {
+					item.compare_at_price = parseFloat(compareRaw);
+				}
+
+				let array = contex.getCartArray();
+				let found = array.find(x => String(x.id) === String(item.id));
 
 				if (typeof cartAddOrUpdateItem === 'function') {
 					cartAddOrUpdateItem(item, {
@@ -556,24 +694,68 @@ function(e) {
 					});
 				} else {
 					if (!found) {
-						array.push(jQuery(this).data('product'));
-						localStorage.setItem('products_cart', JSON.stringify(array));
-						contex.productsCartDropDown();
-						contex.successAddProduct();
-						contex.calculateTotalCart();
+						item.quantity = 1;
+						item.cantidad = 1;
+						array.push(item);
+						found = item;
 					} else {
-						contex.alreadyProductCart();
+						found.quantity = (parseInt(found.quantity, 10) || 1) + 1;
+						found.cantidad = found.quantity;
+						if (item.compare_at_price && !found.compare_at_price) {
+							found.compare_at_price = item.compare_at_price;
+						}
 					}
+
+					contex.saveCartArray(array);
+					contex.productsCartDropDown();
+					contex.calculateTotalCart();
+					contex.fillAddedProductModal(found);
+					contex.successAddProduct();
 				}
-			})
+
+				return false;
+			});
 		},
 		successAddProduct: function()
 		{
-			jQuery('#moda-succes-add-product').modal('show');
+			this.showModalKeepScroll('#moda-succes-add-product');
 		},
 		alreadyProductCart: function()
 		{
-			jQuery('#moda-succes-add-product').modal('show');
+			this.showModalKeepScroll('#modal-already-product');
+		},
+		showModalKeepScroll: function(selector)
+		{
+			var scrollY = window.scrollY || window.pageYOffset || 0;
+			var $modal = jQuery(selector);
+			$modal
+				.off('shown.bs.modal.keepScroll hidden.bs.modal.keepScroll show.bs.modal.keepScroll')
+				.one('show.bs.modal.keepScroll', function () {
+					document.body.classList.add('cart-added-modal-open');
+					// Backdrop + modal por encima de la barra de publicidad (z-index 10001).
+					setTimeout(function () {
+						var $backdrop = jQuery('.modal-backdrop').last();
+						$backdrop.addClass('cart-added-modal-backdrop').css('z-index', 11010);
+						$modal.css('z-index', 11020);
+						var bar = document.getElementById('announcement-bar');
+						if (bar) {
+							bar.style.zIndex = '1040';
+						}
+					}, 0);
+				})
+				.one('shown.bs.modal.keepScroll', function () {
+					window.scrollTo(0, scrollY);
+				})
+				.one('hidden.bs.modal.keepScroll', function () {
+					document.body.classList.remove('cart-added-modal-open');
+					jQuery('.modal-backdrop').removeClass('cart-added-modal-backdrop');
+					var bar = document.getElementById('announcement-bar');
+					if (bar) {
+						bar.style.zIndex = '';
+					}
+					window.scrollTo(0, scrollY);
+				})
+				.modal('show');
 		},
 		initShop: function(){
 			if(!localStorage.getItem('products_cart') )
@@ -584,11 +766,11 @@ function(e) {
 		calculateTotalCart: function()
 		{
 
-			let array = localStorage.getItem('products_cart');
-			array = JSON.parse(array);
+			let array = this.getCartArray();
 			let total = 0;
 			array.forEach(element => {
-				total += parseFloat(element.sale_unit_price)
+				const qty = parseInt(element.quantity, 10) || 1;
+				total += (parseFloat(element.sale_unit_price) || 0) * qty;
 			});
 	
 			$(".cart-total-price").empty();

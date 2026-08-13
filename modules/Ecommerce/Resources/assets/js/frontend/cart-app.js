@@ -245,6 +245,10 @@ var app_cart = new Vue({
         paymentLoadingText: 'Por favor no cierres esta ventana...',
         paymentSuccessVisible: false,
         paymentSuccessRedirecting: false,
+        paymentAlertVisible: false,
+        paymentAlertTitle: '',
+        paymentAlertText: '',
+        paymentAlertType: 'error',
         successOrder: null,
         successIsYape: false,
         successOrderNumber: '',
@@ -460,19 +464,28 @@ var app_cart = new Vue({
                 return 'Pagar';
             }
 
+            const payWith = (title, fallback) => {
+                const cleaned = String(title || '')
+                    .replace(/^(pagar|pago)\s+con\s+/i, '')
+                    .trim();
+                return 'Pagar con ' + (cleaned || fallback);
+            };
+
             switch (this.selectedPaymentMethod) {
                 case 'culqi':
-                    return 'Pagar con ' + (this.titleCulqi || 'Tarjeta (Culqi)');
+                    return payWith(this.titleCulqi, 'Tarjeta (Culqi)');
                 case 'izipay':
-                    return 'Pagar con ' + (this.titleIzipay || 'Izipay');
+                    return payWith(this.titleIzipay, 'Izipay');
                 case 'mp':
-                    return 'Pagar con ' + (this.titleMp || 'Mercado Pago');
+                    return payWith(this.titleMp, 'Mercado Pago');
                 case 'cash':
                     return 'Confirmar pedido — ' + (this.cashPaymentTitle || 'Pago contra entrega');
                 case 'yape':
                     return 'Confirmar pedido con Yape';
                 case 'transfer':
                     return 'Confirmar pedido con transferencia';
+                case 'paypal':
+                    return 'Pagar con PayPal';
                 default:
                     return 'Pagar';
             }
@@ -1652,7 +1665,7 @@ var app_cart = new Vue({
             if (!this.selectedPaymentMethod) {
                 return this.showSwalMessage(
                     'Método de pago',
-                    'Selecciona un método de pago y confirma desde el botón correspondiente.',
+                    'Selecciona un método de pago y confirma con el botón de pago del resumen.',
                     'info'
                 );
             }
@@ -2218,12 +2231,37 @@ var app_cart = new Vue({
             };
             return map[this.selectedPaymentMethod] || 'efectivo';
         },
+        showStoreAlert(title, text, type) {
+            const normalizedType = ['error', 'warning', 'success', 'info'].includes(type)
+                ? type
+                : 'info';
+            let message = String(text || '').trim();
+            // Mensajes genéricos / mal acentuados de pasarela
+            if (/contact[aá]te con soporte/i.test(message)) {
+                message = 'Contáctate con soporte o intenta con otra tarjeta.';
+            }
+            if (!message) {
+                message = normalizedType === 'error'
+                    ? 'No se pudo completar la operación. Intenta nuevamente.'
+                    : 'Revisa la información e intenta de nuevo.';
+            }
+
+            this.paymentAlertTitle = title || (normalizedType === 'error' ? 'Pago no realizado' : 'Aviso');
+            this.paymentAlertText = message;
+            this.paymentAlertType = normalizedType === 'info' ? 'warning' : normalizedType;
+            this.paymentAlertVisible = true;
+            document.body.style.overflow = 'hidden';
+        },
+        hideStoreAlert() {
+            this.paymentAlertVisible = false;
+            this.paymentAlertTitle = '';
+            this.paymentAlertText = '';
+            if (!this.paymentSuccessVisible && !this.processingPayment && !this.quotationSuccessVisible) {
+                document.body.style.overflow = '';
+            }
+        },
         showSwalMessage(title, text, type){
-            swal({
-                title: title,
-                text: text,
-                type: type
-            })
+            this.showStoreAlert(title, text, type || 'info');
         },
         executePayment() {
             if (!this.allowPurchase) {
@@ -2948,8 +2986,8 @@ var app_cart = new Vue({
             const deliveryLabel = (this.isPickupMode && this.selectedPickupBranch)
                 ? 'Recojo en tienda — ' + this.selectedPickupBranch.name
                 : (this.isPickupMode ? 'Recojo en tienda' : 'Envío a domicilio');
-            const number = (order && (order.id || order.external_id))
-                ? '#' + String(order.id || order.external_id).toString().padStart(6, '0')
+            const number = (order && (order.order_code || order.order_id || order.id || order.external_id))
+                ? this.formatOrderNumber(order)
                 : '#—';
             return {
                 number: number,
@@ -3037,8 +3075,19 @@ var app_cart = new Vue({
             const key = String(referencePayment || '').toLowerCase();
             return labels[key] || (key ? key.charAt(0).toUpperCase() + key.slice(1) : '—');
         },
-        formatOrderNumber(orderId) {
-            const id = Number(orderId) || 0;
+        formatOrderNumber(orderOrId) {
+            if (orderOrId && typeof orderOrId === 'object') {
+                const code = orderOrId.order_code || orderOrId.order_id || orderOrId.public_number;
+                if (code) {
+                    const clean = String(code).replace(/^#/, '');
+                    return `#${clean}`;
+                }
+                if (orderOrId.id) {
+                    return `#${String(orderOrId.id).padStart(6, '0')}`;
+                }
+                return '#—';
+            }
+            const id = Number(orderOrId) || 0;
             return `#${String(id).padStart(6, '0')}`;
         },
         formatMoney(amount) {
@@ -3076,8 +3125,8 @@ var app_cart = new Vue({
 
             if (summary.number) {
                 this.successOrderNumber = summary.number;
-            } else if (backendOrder.id) {
-                this.successOrderNumber = this.formatOrderNumber(backendOrder.id);
+            } else if (backendOrder.order_code || backendOrder.id) {
+                this.successOrderNumber = this.formatOrderNumber(backendOrder);
             } else if (backendOrder.external_id) {
                 this.successOrderNumber = '#' + String(backendOrder.external_id).padStart(6, '0');
             } else {
@@ -3111,6 +3160,9 @@ var app_cart = new Vue({
             if (order && order.id) {
                 formatted.id = order.id;
             }
+            if (order && order.order_code) {
+                formatted.order_code = order.order_code;
+            }
             this.successIsYape = this.isYapeOrderPayload(order, formatted);
             formatted.isYape = this.successIsYape;
             this.successOrder = formatted;
@@ -3131,11 +3183,12 @@ var app_cart = new Vue({
             document.body.style.overflow = 'hidden';
 
             let targetUrl = null;
-            if (this.isYapePaymentSuccess && this.successOrder && this.successOrder.id) {
-                const padded = String(this.successOrder.id).padStart(6, '0');
+            if (this.isYapePaymentSuccess && this.successOrder && (this.successOrder.order_code || this.successOrder.id)) {
+                const pedido = this.successOrder.order_code
+                    || String(this.successOrder.id).padStart(6, '0');
                 const base = window.__routes?.order_tracking || '/ecommerce/seguimiento';
                 const sep = base.indexOf('?') >= 0 ? '&' : '?';
-                targetUrl = `${base}${sep}pedido=${encodeURIComponent(padded)}`;
+                targetUrl = `${base}${sep}pedido=${encodeURIComponent(pedido)}`;
             } else {
                 targetUrl = this.thankYouUrl
                     || (this.successOrder && this.successOrder.external_id

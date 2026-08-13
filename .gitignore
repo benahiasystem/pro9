@@ -44,3 +44,4 @@ public/porto-light/js/bloquear_cliente.js
 
 .antigravitycli
 /public/build/
+/storage/framework/views/*

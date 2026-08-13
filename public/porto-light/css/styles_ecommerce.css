@@ -3786,10 +3786,10 @@ html:has(#app.checkout-page-root) .main,
 html:has(#app.checkout-page-root) .container {
     overflow: visible;
 }
-
 .checkout-layout {
     position: relative;
-    align-items: flex-start;
+    /* stretch: la columna del resumen iguala la altura del formulario (necesario para sticky) */
+    align-items: stretch;
 }
 
 .checkout-summary-col {
@@ -3798,6 +3798,8 @@ html:has(#app.checkout-page-root) .container {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    /* Contiene el sticky dentro de la columna hasta el final del checkout (antes del footer) */
+    overflow: visible;
 }
 
 .summary-sticky {
@@ -3810,14 +3812,22 @@ html:has(#app.checkout-page-root) .container {
     .summary-sticky {
         position: -webkit-sticky;
         position: sticky;
-        top: var(--checkout-sticky-top);
+        top: var(--checkout-sticky-top, 11.2rem);
         z-index: 5;
-        max-height: calc(100vh - var(--checkout-sticky-top) - var(--checkout-sticky-gap));
+        max-height: calc(100vh - var(--checkout-sticky-top, 11.2rem) - var(--checkout-sticky-gap, 2.4rem));
+        overflow-x: hidden;
         overflow-y: auto;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
         scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        align-self: flex-start;
+        width: 100%;
+    }
+
+    body.has-announcement-bar .summary-sticky {
+        /* + altura aproximada de la barra roja fija */
+        --checkout-sticky-top: 14.8rem;
     }
 
     .summary-sticky::-webkit-scrollbar {
@@ -3828,6 +3838,10 @@ html:has(#app.checkout-page-root) .container {
         background: rgba(0, 0, 0, 0.15);
         border-radius: 999px;
     }
+
+    .summary-sticky .cart-summary {
+        margin-bottom: 0;
+    }
 }
 
 @media (max-width: 767.98px) {
@@ -3835,6 +3849,7 @@ html:has(#app.checkout-page-root) .container {
         position: static;
         max-height: none;
         overflow: visible;
+        top: auto;
     }
 }
 
@@ -4376,14 +4391,14 @@ html:has(#app.checkout-page-root) .container {
 }
 .ty-card h1 {
     margin: 0;
-    font-size: 26px;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -.02em;
     color: var(--title-color);
+    /* Porto 1rem≈10px → 2.3rem ≈ 23px (entre body y el h1 anterior de 26px) */
+    font-size: 2.3rem;
 }
 .ty-card .ty-sub {
     margin-top: 8px;
-    font-size: 15px;
     line-height: 1.55;
     color: var(--subtitle-color);
 }
@@ -4396,7 +4411,6 @@ html:has(#app.checkout-page-root) .container {
     border-radius: 999px;
     border: 1px solid #e9edf1;
     background: hsl(var(--primary-h), var(--primary-s), 98%);
-    font-size: 13.5px;
     font-weight: 700;
     color: var(--title-color);
 }
@@ -4416,7 +4430,6 @@ html:has(#app.checkout-page-root) .container {
     justify-content: space-between;
     gap: 12px;
     padding: 6px 0;
-    font-size: 14px;
 }
 .ty-info .ti-row .lbl {
     color: var(--subtitle-color);
@@ -4433,7 +4446,7 @@ html:has(#app.checkout-page-root) .container {
     border-top: 1.5px solid #e9edf1;
 }
 .ty-info .ti-total .val {
-    font-size: 18px;
+    font-weight: 800;
     color: var(--primary-color);
 }
 .ty-note {
@@ -4445,7 +4458,6 @@ html:has(#app.checkout-page-root) .container {
     text-align: left;
     border-radius: 13px;
     background: hsl(var(--primary-h), var(--primary-s), 97%);
-    font-size: 13.5px;
     line-height: 1.5;
     color: var(--title-color);
 }
@@ -4461,6 +4473,7 @@ html:has(#app.checkout-page-root) .container {
 }
 .ty-btns .pay-btn {
     height: 52px;
+    font-weight: 500;
 }
 /* =====================================================================
    Modal (.app-modal)

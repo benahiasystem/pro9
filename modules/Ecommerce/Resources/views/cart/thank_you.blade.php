@@ -2,6 +2,7 @@
 
 @section('content')
 <style>
+    /* Porto: 1rem≈10px. Sin font-size: hereda body (~1.4rem ≈ 14px). */
     .ty-token-box {
         margin: 16px 0 4px;
         padding: 14px 14px 12px;
@@ -12,7 +13,6 @@
     }
     .ty-token-box .ty-token-label {
         display: block;
-        font-size: .78rem;
         font-weight: 700;
         color: #667085;
         text-transform: uppercase;
@@ -30,8 +30,8 @@
         border: 1px solid #e5e7eb;
         border-radius: 8px;
         padding: 10px 12px;
-        font-size: .82rem;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-weight: 600;
         color: #0f2137;
         background: #fff;
     }
@@ -41,7 +41,6 @@
         background: var(--primary-color, #ff7a00);
         color: #fff;
         font-weight: 700;
-        font-size: .85rem;
         padding: 10px 14px;
         white-space: nowrap;
         cursor: pointer;
@@ -51,9 +50,8 @@
     }
     .ty-token-hint {
         margin: 8px 0 0;
-        font-size: .8rem;
         color: #667085;
-        line-height: 1.35;
+        line-height: 1.45;
     }
 </style>
 
@@ -65,7 +63,7 @@
             </div></div>
             <h1>¡Gracias por tu compra!</h1>
             <p class="ty-sub">Tu pedido fue registrado con éxito. Te enviaremos los detalles y coordinaremos la entrega contigo.</p>
-            <div class="ty-order"><span>N° de pedido:</span> <b>#{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</b></div>
+            <div class="ty-order"><span>N° de pedido:</span> <b>#{{ $order->publicNumber() }}</b></div>
 
             <div class="ty-token-box">
                 <span class="ty-token-label">Número de pedido</span>
@@ -74,7 +72,7 @@
                         id="ty-token-input"
                         type="text"
                         readonly
-                        value="{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}"
+                        value="{{ $order->publicNumber() }}"
                         aria-label="Número de pedido"
                     >
                     <button type="button" class="ty-token-copy" id="ty-token-copy">Copiar</button>
@@ -93,7 +91,7 @@
                 <span>@if($isPickup)Acércate a la sucursal elegida para recoger tu pedido. Te avisaremos cuando esté listo.@else Coordinaremos la entrega contigo. Te contactaremos por el teléfono registrado para concretar tu pedido.@endif</span>
             </div>
             <div class="ty-btns">
-                <a href="{{ route('tenant_ecommerce_order_tracking', ['pedido' => str_pad($order->id, 6, '0', STR_PAD_LEFT)]) }}" class="pay-btn second-btn">Ver estado del pedido</a>
+                <a href="{{ route('tenant_ecommerce_order_tracking', ['pedido' => $order->publicNumber()]) }}" class="pay-btn second-btn">Ver estado del pedido</a>
                 <a href="{{ route('tenant_order_list') }}" class="pay-btn second-btn">Ver mis pedidos</a>
                 <a href="{{ route('tenant.ecommerce.index') }}" class="pay-btn">Seguir comprando</a>
             </div>

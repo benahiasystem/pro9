@@ -401,48 +401,364 @@
     window.__cart_detail_url = @json(route('tenant_detail_cart'));
 </script>
 
-<div class="modal fade" id="moda-succes-add-product" tabindex="-1" role="dialog"
-    aria-labelledby="cartConfirmModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered cart-confirm-dialog" role="document">
-        <div class="modal-content cart-confirm-modal">
-            <button type="button" class="cart-confirm-close" data-dismiss="modal" aria-label="Cerrar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                    <path d="M18 6l-12 12" /><path d="M6 6l12 12" />
-                </svg>
-            </button>
-            <div class="modal-body cart-confirm-body">
-                <div id="cart-confirm-alert" class="cart-confirm-alert alert alert-success" role="alert">
+<div class="modal fade cart-added-modal" id="moda-succes-add-product" tabindex="-1" role="dialog"
+    aria-labelledby="cartAddedTitle" aria-hidden="true" data-backdrop="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content cart-added-modal__content">
+            <div class="cart-added-modal__header">
+                <div class="cart-added-modal__title-wrap">
+                    <span class="cart-added-modal__check" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                    <div class="cart-added-modal__title" id="cartAddedTitle">Producto agregado a tu Carro</div>
+                </div>
+                <button type="button" class="cart-added-modal__close" data-dismiss="modal" aria-label="Cerrar" title="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <div class="cart-added-modal__body">
+                <!-- Alerta para cart.js (si existe) -->
+                <div id="cart-confirm-alert" class="cart-confirm-alert alert alert-success" style="display: none; padding: 0.8rem 1.2rem; border-radius: 8px; margin-bottom: 1.2rem; font-size: 1.3rem;" role="alert">
                     <i class="icon-ok"></i> <span id="cart-confirm-alert-text">Tu producto se agregó al carrito</span>
                 </div>
-                <div class="cart-confirm-product row align-items-start">
-                    <div id="product_added_image" class="col-4 col-md-3 cart-confirm-image"></div>
-                    <div class="col-8 col-md-9">
-                        <div id="product_added" class="product-single-details-ecommerce cart-confirm-details">
-                            <h2 id="cart-confirm-title" class="cart-confirm-title"></h2>
-                            <div class="cart-confirm-price-row">
-                                <div class="cart-confirm-prices">
-                                    <div id="cart-confirm-price-current" class="cart-confirm-price-current"></div>
-                                    <div id="cart-confirm-price-old" class="cart-confirm-price-old"></div>
-                                </div>
-                                <div class="modern-quantity-container cart-confirm-qty">
-                                    <button type="button" id="cart-confirm-qty-minus" class="btn btn-outline-secondary btn-input-group" aria-label="Disminuir cantidad">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
-                                    </button>
-                                    <input type="number" id="cart-confirm-qty-input" class="input-quantity text-center" min="0" value="1" aria-label="Cantidad">
-                                    <button type="button" id="cart-confirm-qty-plus" class="btn btn-outline-secondary btn-input-group" aria-label="Aumentar cantidad">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
-                                    </button>
-                                </div>
-                            </div>
+
+                <div class="cart-added-modal__product" id="cart_added_product_row" data-product-id="">
+                    <div class="cart-added-modal__thumb" id="product_added_image"></div>
+                    <div class="cart-added-modal__info" id="product_added">
+                        <div class="cart-added-modal__name" id="cart_added_name">
+                            <!-- Para cart.js -->
+                            <span id="cart-confirm-title"></span>
                         </div>
+                        <div class="cart-added-modal__meta" id="cart_added_meta"></div>
+                        <div class="cart-added-modal__price" id="cart_added_price">
+                            <!-- Para cart.js -->
+                            <span id="cart-confirm-price-current"></span>
+                            <span id="cart-confirm-price-old"></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Controles para main.js (sin campañas) -->
+                    <div class="cart-added-modal__qty main-js-qty" aria-label="Cantidad">
+                        <button type="button" class="cart-added-modal__qty-btn" id="cart_added_qty_minus" aria-label="Disminuir">−</button>
+                        <input type="number" class="cart-added-modal__qty-input" id="cart_added_qty_input" value="1" min="1" inputmode="numeric" aria-label="Cantidad en carrito">
+                        <button type="button" class="cart-added-modal__qty-btn" id="cart_added_qty_plus" aria-label="Aumentar">+</button>
+                    </div>
+
+                    <!-- Controles para cart.js (con campañas) -->
+                    <div class="modern-quantity-container cart-confirm-qty cart-js-qty" style="display: none;">
+                        <button type="button" id="cart-confirm-qty-minus" class="btn btn-outline-secondary btn-input-group" aria-label="Disminuir cantidad" style="border: 1px solid #d1d5db; border-radius: 1rem 0 0 1rem; width: 4rem; height: 4rem; background: #fff; line-height: 1; font-size: 2rem; cursor: pointer; color: #374151;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </button>
+                        <input type="number" id="cart-confirm-qty-input" class="input-quantity text-center" min="1" value="1" aria-label="Cantidad" style="width: 5rem; height: 4rem; text-align: center; border: 1px solid #d1d5db; border-left: 0; border-right: 0; outline: none; font-size: 1.4rem; font-weight: 600; color: #111827;">
+                        <button type="button" id="cart-confirm-qty-plus" class="btn btn-outline-secondary btn-input-group" aria-label="Aumentar cantidad" style="border: 1px solid #d1d5db; border-radius: 0 1rem 1rem 0; width: 4rem; height: 4rem; background: #fff; line-height: 1; font-size: 2rem; cursor: pointer; color: #374151;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </button>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer cart-confirm-footer">
-                <button type="button" class="cart-confirm-continue" data-dismiss="modal">Seguir comprando</button>
-                <a href="{{ route('tenant_detail_cart') }}" id="cart-confirm-go-cart" class="btn btn-primary cart-confirm-go-cart">Ir al Carro</a>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof cartAddOrUpdateItem === 'function') {
+                        var mainQty = document.querySelector('.main-js-qty');
+                        var cartQty = document.querySelector('.cart-js-qty');
+                        if (mainQty) mainQty.style.setProperty('display', 'none', 'important');
+                        if (cartQty) cartQty.style.setProperty('display', 'inline-flex', 'important');
+                    }
+                });
+            </script>
+
+            <div class="cart-added-modal__footer">
+                <button type="button" class="cart-added-modal__continue" data-dismiss="modal">Seguir comprando</button>
+                <a href="{{ route('tenant_detail_cart') }}" class="cart-added-modal__go">Ir al Carro</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Porto: html { font-size: 62.5% } => 1rem = 10px. Sin font-size custom: hereda body (1.4rem). */
+/* Barra publicidad: z-index 10001. Modal y backdrop deben quedar encima y taparla. */
+#moda-succes-add-product.cart-added-modal,
+#moda-succes-add-product.modal {
+    z-index: 11020 !important;
+}
+.modal-backdrop.cart-added-modal-backdrop {
+    z-index: 11010 !important;
+}
+body.cart-added-modal-open #announcement-bar.announcement-bar {
+    z-index: 1040 !important;
+}
+.cart-added-modal .modal-dialog {
+    max-width: 56rem;
+    margin: 1.5rem auto;
+}
+.cart-added-modal__content {
+    border: 0 !important;
+    border-radius: 1.2rem;
+    box-shadow: 0 1.2rem 3.6rem rgba(15, 23, 42, 0.16);
+    overflow: hidden;
+    line-height: 1.4;
+    position: relative;
+    z-index: 1;
+}
+.cart-added-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+    padding: 2rem 2.4rem 1.2rem;
+}
+.cart-added-modal__title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+}
+.cart-added-modal__check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 999px;
+    background: #e8f7ee;
+    color: #1f9d55;
+    flex-shrink: 0;
+}
+.cart-added-modal__check svg {
+    width: 1.6rem;
+    height: 1.6rem;
+}
+.cart-added-modal__title {
+    margin: 0 !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    line-height: 1.3 !important;
+}
+.cart-added-modal__close {
+    border: 0;
+    background: #f3f4f6;
+    color: #374151;
+    width: 3.2rem;
+    height: 3.2rem;
+    padding: 0;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.cart-added-modal__close span {
+    font-size: 2.4rem;
+    font-weight: 400;
+    line-height: 1;
+    margin-top: -0.15rem;
+}
+.cart-added-modal__close:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+.cart-added-modal__body {
+    padding: 0.8rem 2.4rem 1.8rem;
+}
+.cart-added-modal__product {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+}
+.cart-added-modal__thumb {
+    width: 8.8rem;
+    height: 8.8rem;
+    border-radius: 1rem;
+    overflow: hidden;
+    background: #f8fafc;
+    flex-shrink: 0;
+    border: 1px solid #eef2f7;
+}
+.cart-added-modal__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.cart-added-modal__info {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.cart-added-modal__name {
+    font-weight: 700 !important;
+    color: #111827 !important;
+    line-height: 1.35 !important;
+    margin: 0 0 0.4rem !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.cart-added-modal__meta {
+    color: #6b7280 !important;
+    margin-bottom: 0.6rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.cart-added-modal__meta:empty {
+    display: none;
+}
+.cart-added-modal__price {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.cart-added-modal__price-current {
+    font-weight: 700 !important;
+    color: #111827 !important;
+}
+.cart-added-modal__price-old {
+    color: #9ca3af !important;
+    text-decoration: line-through;
+}
+.cart-added-modal__qty {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #d1d5db;
+    border-radius: 1rem;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #fff;
+}
+.cart-added-modal__qty-btn {
+    width: 4rem;
+    height: 4rem;
+    border: 0;
+    background: #fff;
+    color: #374151;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+.cart-added-modal__qty-btn:hover {
+    background: #f9fafb;
+}
+.cart-added-modal__qty-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.cart-added-modal__qty-input {
+    width: 4.4rem;
+    height: 4rem;
+    border: 0;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    text-align: center;
+    font-weight: 700 !important;
+    color: #111827 !important;
+    outline: none;
+    -moz-appearance: textfield;
+}
+.cart-added-modal__qty-input::-webkit-outer-spin-button,
+.cart-added-modal__qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.cart-added-modal__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.4rem;
+    padding: 1.6rem 2.4rem 2.2rem;
+    border-top: 1px solid #f1f5f9;
+}
+.cart-added-modal__continue {
+    border: 0;
+    background: transparent;
+    padding: 0.8rem 0.4rem;
+    color: #4b5563 !important;
+    font-weight: 600 !important;
+    text-decoration: underline;
+    text-underline-offset: 0.35rem;
+    cursor: pointer;
+}
+.cart-added-modal__continue:hover {
+    color: #111827 !important;
+}
+.cart-added-modal__go {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 15rem;
+    min-height: 4.4rem;
+    padding: 1rem 2.2rem;
+    border-radius: 1rem;
+    background: var(--primary-color, #f68b24);
+    color: #fff !important;
+    font-weight: 700 !important;
+    text-decoration: none !important;
+    border: 0;
+    transition: filter .15s ease;
+}
+.cart-added-modal__go:hover {
+    filter: brightness(0.95);
+    color: #fff !important;
+}
+@media (max-width: 575.98px) {
+    .cart-added-modal .modal-dialog {
+        max-width: calc(100% - 2rem);
+        margin: 1.2rem auto;
+    }
+    .cart-added-modal__header,
+    .cart-added-modal__body,
+    .cart-added-modal__footer {
+        padding-left: 1.8rem;
+        padding-right: 1.8rem;
+    }
+    .cart-added-modal__thumb {
+        width: 7.6rem;
+        height: 7.6rem;
+    }
+    .cart-added-modal__product {
+        flex-wrap: wrap;
+        gap: 1.2rem;
+    }
+    .cart-added-modal__qty {
+        margin-left: auto;
+    }
+    .cart-added-modal__footer {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    .cart-added-modal__go,
+    .cart-added-modal__continue {
+        width: 100%;
+        text-align: center;
+    }
+}
+</style>
+<div class="modal fade" id="modal-already-product" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content cart-added-modal__content">
+            <div class="cart-added-modal__header">
+                <div class="cart-added-modal__title-wrap">
+                    <span class="cart-added-modal__check" aria-hidden="true">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                    <div class="cart-added-modal__title">Este producto ya está en tu Carro</div>
+                </div>
+                <button type="button" class="cart-added-modal__close" data-dismiss="modal" aria-label="Cerrar" title="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="cart-added-modal__footer" style="border-top:0;padding-top:4px;">
+                <button type="button" class="cart-added-modal__continue" data-dismiss="modal">Seguir comprando</button>
+                <a href="{{ route('tenant_detail_cart') }}" class="cart-added-modal__go">Ir al Carro</a>
+
             </div>
         </div>
     </div>

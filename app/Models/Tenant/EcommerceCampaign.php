@@ -237,19 +237,39 @@ class EcommerceCampaign extends ModelTenant
         return true;
     }
 
+    /**
+     * Precio de cobro en tienda.
+     * El precio del producto (catálogo) se mantiene; el descuento de campaña
+     * solo construye el "precio anterior" tachado para social proof.
+     */
     public function discountedPrice(float $basePrice): float
     {
+        return round(max(0, $basePrice), 2);
+    }
+
+    /**
+     * Precio "antes" tachado a partir del precio de catálogo.
+     * - percentage: catálogo * (1 + %/100)  → 100 con 50% = 150
+     * - fixed: catálogo + valor
+     */
+    public function compareAtPrice(float $basePrice): ?float
+    {
         if (! $this->hasActiveDiscount()) {
-            return $basePrice;
+            return null;
         }
+
+        $basePrice = max(0, (float) $basePrice);
 
         if ($this->discount_type === 'percentage') {
-            $price = $basePrice - ($basePrice * ((float) $this->discount_value / 100));
+            $old = $basePrice * (1 + ((float) $this->discount_value / 100));
         } else {
-            $price = $basePrice - (float) $this->discount_value;
+            $old = $basePrice + (float) $this->discount_value;
         }
 
-        return max(0, round($price, 2));
+        $old = round(max(0, $old), 2);
+
+        // Solo tiene sentido tachar si es claramente mayor al precio de venta.
+        return $old > $basePrice ? $old : null;
     }
 
     public function stockThreshold(): int

@@ -27,7 +27,8 @@ class OrderResource extends JsonResource
 
             
             'number_document' => $this->number_document,
-            'order_id' => str_pad($this->id, 6, "0", STR_PAD_LEFT),
+            'order_id' => $this->publicNumber(),
+            'order_code' => $this->order_code,
             'customer' => $this->customer->apellidos_y_nombres_o_razon_social,
             
             'items' => $this->items,

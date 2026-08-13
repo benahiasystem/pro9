@@ -51,7 +51,7 @@ class SendOrderStatusEmail implements ShouldQueue
             return;
         }
 
-        $orderNumber = str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+        $orderNumber = $order->publicNumber();
         $trackingUrl = route('tenant_ecommerce_order_tracking', [
             'pedido' => $orderNumber,
         ]);
