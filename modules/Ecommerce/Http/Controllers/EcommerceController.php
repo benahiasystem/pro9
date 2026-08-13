@@ -43,6 +43,7 @@ use Modules\Ecommerce\Jobs\SendOrderStatusEmail;
 use Illuminate\Support\Facades\Log;
 use Exception;
 use App\Services\Tenant\OrderDocumentFromStatusService;
+use Modules\Ecommerce\Services\CampaignPriceService;
 
 
 class EcommerceController extends Controller
@@ -135,7 +136,10 @@ class EcommerceController extends Controller
             ->paginate($perPage);
 
         $configuration = InventoryConfiguration::first();
-        $categories_filtered = Category::has('items')->get();
+        // Mostrar también las categorías recién creadas aunque todavía no tengan
+        // productos asociados. Antes `has('items')` hacía que desaparecieran de
+        // la navegación y de la sección "Nuestras Categorías".
+        $categories_filtered = Category::orderBy('name')->get();
 
         // Obtener los anuncios publicitarios (spots) activos
         $spots = Promotion::where('apply_restaurant', 0)
@@ -905,11 +909,12 @@ class EcommerceController extends Controller
                 }
                 $purchase = Order::attachEcommerceCheckoutMeta($purchase, $user, $isGuestOverride);
 
+                $authoritativeItems = $this->applyAuthoritativeCampaignPrices((array) $request->items);
                 $order = Order::create([
                     'external_id' => Str::uuid()->toString(),
                     'customer' =>  $request->customer,
                     'shipping_address' => $request->input('shipping_address', ''),
-                    'items' =>  $request->items,
+                    'items' => $authoritativeItems,
                     'total' => $request->precio_culqi,
                     'reference_payment' => $request->input('reference_payment', 'efectivo'),
                     'status_order_id' => $initialStatusId,
@@ -1079,11 +1084,12 @@ class EcommerceController extends Controller
             }
             $purchase = Order::attachEcommerceCheckoutMeta($purchase, $ecommerceUser, $isGuestOverride);
 
+            $rawItems = is_string($request->items) ? json_decode($request->items, true) : $request->items;
             $order = Order::create([
                 'external_id' => Str::uuid()->toString(),
                 'customer' => $customer,
                 'shipping_address' => $request->input('shipping_address', ''),
-                'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
+                'items' => $this->applyAuthoritativeCampaignPrices((array) $rawItems),
                 'total' => $request->precio_culqi,
                 'reference_payment' => $request->input('reference_payment', 'mp'),
                 'status_order_id' => StatusOrder::resolveInitialOrderStatusId(),
@@ -1150,11 +1156,12 @@ class EcommerceController extends Controller
         $purchase = Order::attachEcommerceCheckoutMeta($purchase, $ecommerceUser, $isGuestOverride);
 
         // Pedido previo al formulario: inicia en pago pendiente hasta confirmar PAID.
+        $rawItems = is_string($request->items) ? json_decode($request->items, true) : $request->items;
         $order = Order::create([
             'external_id' => Str::uuid()->toString(),
             'customer' => $customer,
             'shipping_address' => $request->input('shipping_address', ''),
-            'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
+            'items' => $this->applyAuthoritativeCampaignPrices((array) $rawItems),
             'total' => $request->precio_culqi,
             'reference_payment' => 'izipay',
             'status_order_id' => StatusOrder::resolveInitialOrderStatusId(),
@@ -3091,5 +3098,36 @@ class EcommerceController extends Controller
             'email' => $email,
             'name' => $name,
         ];
+    }
+
+    private function applyAuthoritativeCampaignPrices(array $lines): array
+    {
+        if (empty($lines)) {
+            return [];
+        }
+
+        $items = Item::whereIn('id', collect($lines)->pluck('id')->filter()->unique())->get()->keyBy('id');
+        $pricingService = app(CampaignPriceService::class);
+
+        return collect($lines)->map(function ($line) use ($items, $pricingService) {
+            $line = is_object($line) ? (array) $line : $line;
+            $item = $items->get($line['id'] ?? null);
+            if (! $item) {
+                return $line;
+            }
+
+            $pricing = $pricingService->forItem($item);
+            $quantity = max(1, (float) ($line['cantidad'] ?? $line['quantity'] ?? 1));
+            $line['original_price'] = $pricing['base_price'];
+            $line['compare_at_price'] = $pricing['compare_at_price'];
+            $line['sale_unit_price'] = $pricing['final_price'];
+            $line['sub_total'] = round($pricing['final_price'] * $quantity, 2);
+            $line['discount_campaign_id'] = $pricing['discount_campaign_id'];
+            $line['discount_campaign_name'] = $pricing['discount_campaign_name'];
+            $line['campaign_discount_percent'] = $pricing['real_discount_percentage'];
+            $line['campaign_discount_embedded'] = $pricing['has_real_discount'];
+
+            return $line;
+        })->values()->all();
     }
 }

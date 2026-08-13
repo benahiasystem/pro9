@@ -18,7 +18,7 @@ class DiscountCouponRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // 'code' se valida en el Controller
+            'code'                  => ['required', 'string', 'max:20'],
             'type'                  => ['required', Rule::in(['percentage', 'fixed'])],
             'amount'                => ['required', 'numeric', 'min:0'],
             'has_purchase_limits'   => ['boolean'],
@@ -30,6 +30,15 @@ class DiscountCouponRequest extends FormRequest
             'expires_at'            => ['nullable', 'date'],
             'free_shipping'         => ['boolean'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($this->input('type') === 'percentage' && (float) $this->input('amount') > 100) {
+                $validator->errors()->add('amount', 'El porcentaje no puede ser mayor a 100%.');
+            }
+        });
     }
 
     public function messages(): array

@@ -36,6 +36,10 @@
                 $hasActiveOffer = false;
             }
         }
+        $campaignPricing = app(\Modules\Ecommerce\Services\CampaignPriceService::class)->forItem($item);
+        $activeOfferPrice = $campaignPricing['final_price'];
+        $compareAtPrice = $campaignPricing['compare_at_price'];
+        $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
     @endphp
     <div class="col-6 mb-2 {{ \Route::currentRouteName() == 'tenant.ecommerce.index' ? 'col-md-3' : 'col-md-4' }}">
         <div class="product product-style h-100 m-0 d-flex flex-column {{ stock($item, $configuration) ? 'productdisabled' : '' }}">
@@ -90,12 +94,10 @@
                 <div class="product-price-ecommerce mt-auto">
                     @if($storefront_show_prices ?? true)
                     <div class="price-box-ecommerce">
-                        @if($hasActiveOffer && $compareAtPrice)
+                        @if($compareAtPrice)
                             <span class="old-price">{{ $item->currency_type['symbol'] }} {{ number_format($compareAtPrice, 2) }}</span>
-                            <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($activeOfferPrice, 2) }}</span>
-                        @else
-                            <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($item->sale_unit_price, 2) }}</span>
                         @endif
+                        <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($activeOfferPrice, 2) }}</span>
                     </div>
                     @endif
                     <div class="product-action">
@@ -110,12 +112,13 @@
                                 'description' => $item->description,
                                 'sale_unit_price' => $hasActiveOffer ? $activeOfferPrice : (float) $item->sale_unit_price,
                                 'original_price' => (float) $item->sale_unit_price,
+                                'compare_at_price' => $compareAtPrice,
+                                'discount_campaign_id' => $campaignPricing['discount_campaign_id'],
+                                'discount_campaign_name' => $campaignPricing['discount_campaign_name'],
+                                'campaign_discount_percent' => $campaignPricing['real_discount_percentage'],
+                                'campaign_discount_embedded' => $campaignPricing['has_real_discount'],
                                 'has_discount' => $hasActiveOffer,
-                                'discount_percent' => ($hasActiveOffer && $activeCampaign && $activeCampaign->discount_type === 'percentage')
-                                    ? (int) $activeCampaign->discount_value
-                                    : ($hasActiveOffer && $item->sale_unit_price > 0
-                                        ? (int) round((1 - $activeOfferPrice / $item->sale_unit_price) * 100)
-                                        : null),
+                                'discount_percent' => $campaignPricing['real_discount_percentage'],
                                 'image' => $item->image,
                                 'image_small' => $item->image_small ?? $item->image,
                                 'image_medium' => $item->image_medium ?? $item->image,

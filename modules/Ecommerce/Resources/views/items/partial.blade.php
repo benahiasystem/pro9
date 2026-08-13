@@ -132,6 +132,10 @@
                         }
                     }
 
+                    $campaignPricing = app(\Modules\Ecommerce\Services\CampaignPriceService::class)->forItem($record);
+                    $activeOfferPrice = $campaignPricing['final_price'];
+                    $compareAtPrice = $campaignPricing['compare_at_price'];
+                    $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
                     $displayPrice = (float) $activeOfferPrice;
                     $oldPrice = ($hasActiveOffer && $compareAtPrice) ? (float) $compareAtPrice : null;
                     $savings = $oldPrice !== null ? max(0, $oldPrice - $displayPrice) : 0;
@@ -149,12 +153,13 @@
                         'description' => $record->description,
                         'sale_unit_price' => $displayPrice,
                         'original_price' => (float) $record->sale_unit_price,
+                        'compare_at_price' => $compareAtPrice,
+                        'discount_campaign_id' => $campaignPricing['discount_campaign_id'],
+                        'discount_campaign_name' => $campaignPricing['discount_campaign_name'],
+                        'campaign_discount_percent' => $campaignPricing['real_discount_percentage'],
+                        'campaign_discount_embedded' => $campaignPricing['has_real_discount'],
                         'has_discount' => $hasActiveOffer,
-                        'discount_percent' => ($hasActiveOffer && $activeCampaign && $activeCampaign->discount_type === 'percentage')
-                            ? (int) $activeCampaign->discount_value
-                            : ($hasActiveOffer && $oldPrice > $displayPrice
-                                ? (int) round((1 - $displayPrice / $oldPrice) * 100)
-                                : null),
+                        'discount_percent' => $campaignPricing['real_discount_percentage'],
                         'image' => $record->image,
                         'image_small' => $record->image_small ?? $record->image,
                         'image_medium' => $record->image_medium ?? $record->image,
@@ -179,7 +184,7 @@
                     @if($showPrices)
                     <div class="price-box preview d-flex align-items-end justify-content-start w-100 mb-1" style="gap: 10px">
                         <span class="product-price">{{ optional($record->currency_type)->symbol ?? 'S/' }} {{ number_format($displayPrice, 2) }}</span>
-                        @if($hasActiveOffer)
+                        @if($oldPrice !== null)
                             <span class="old-price">{{ optional($record->currency_type)->symbol ?? 'S/' }} {{ number_format($oldPrice, 2) }}</span>
                             @if($savings > 0)
                             <span class="tag-ecommerce warning">

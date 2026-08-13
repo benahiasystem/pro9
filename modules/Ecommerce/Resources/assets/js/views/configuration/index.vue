@@ -1,6 +1,6 @@
 <template>
   <div class="col-12 pt-2 pt-md-0">
-    <el-tabs type="border-card" tab-position="left" class="el-tab-ecommerce-config">
+    <el-tabs v-model="activeConfigTab" type="border-card" tab-position="left" class="el-tab-ecommerce-config">
       <el-tab-pane label="Información">
         <div>
           <form autocomplete="off" @submit.prevent="submit">
@@ -265,7 +265,7 @@
       <el-tab-pane label="Social Proof">
         <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
           <div>
-            <h4 class="mb-0"><strong>Campaña de Social Proof</strong></h4>
+            <h4 class="mb-0"><strong>Campañas de descuento</strong></h4>
             <small class="text-muted">Una sola campaña global: afecta a todos los productos de la tienda.</small>
           </div>
           <el-button
@@ -446,7 +446,7 @@
           <PaymentGateways />
         </div>
       </el-tab-pane>
-      <el-tab-pane label="Cupones de descuento">
+      <el-tab-pane label="Cupones de descuento" name="discount-coupons">
         <div>
           <div class="d-flex align-items-center justify-content-between mb-3">
             <h4 class="mb-0"><strong>Cupones de Descuento</strong></h4>
@@ -455,6 +455,7 @@
             </button>
           </div>
           <DigitalCoupon ref="digitalCoupon" />
+          <DiscountCampaigns />
         </div>
       </el-tab-pane>
       <el-tab-pane label="Zonas de delivery">
@@ -662,6 +663,7 @@ import DeliveryZones from '../configuration_delivery_zones/index.vue';
 import 'ckeditor5/ckeditor5.css';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import DigitalCoupon from '../configuration_digital_coupon/index.vue';
+import DiscountCampaigns from '../configuration_discount_campaigns/index.vue';
 import PickupBranches from '../configuration_pickup_branches/index.vue';
 import BannerSettingsManager from '@views/configurations/BannerSettingsManager.vue';
 import CKEditor from 'vue-ckeditor5';
@@ -670,6 +672,7 @@ export default {
     ConfigurationLinks,
     PaymentGateways,
     DigitalCoupon,
+    DiscountCampaigns,
     DeliveryZones,
     PickupBranches,
     BannerSettingsManager,
@@ -677,6 +680,7 @@ export default {
   },
   data() {
     return {
+      activeConfigTab: '0',
       loading_submit: false,
       resource: "ecommerce",
       errors: {},

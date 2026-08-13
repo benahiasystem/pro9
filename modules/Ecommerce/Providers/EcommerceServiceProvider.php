@@ -67,6 +67,7 @@ class EcommerceServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->app->singleton(\Modules\Ecommerce\Services\CampaignPriceService::class);
         $this->app->register(RouteServiceProvider::class);
     }
 

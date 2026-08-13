@@ -131,6 +131,10 @@
                             $offerExpiresAt = $activeCampaign->end_date;
                         }
                     }
+                    $campaignPricing = app(\Modules\Ecommerce\Services\CampaignPriceService::class)->forItem($record);
+                    $activeOfferPrice = $campaignPricing['final_price'];
+                    $compareAtPrice = $campaignPricing['compare_at_price'];
+                    $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
                 @endphp
 
                 <style>[v-cloak]{display:none}@keyframes sp-pulse{0%{opacity:1}50%{opacity:.75}100%{opacity:1}}</style>
@@ -145,7 +149,7 @@
 
                     @if($storefront_show_prices ?? true)
                     <div class="price-box my-2">
-                        <template v-if="hasActiveOffer && compareAtPrice">
+                        <template v-if="compareAtPrice">
                             <span class="old-price text-muted text-decoration-line-through mr-2">
                                 @{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}
                             </span>
@@ -155,7 +159,7 @@
                         </template>
                         <template v-else>
                             <span class="product-price font-weight-bold" style="font-size: 1.5rem;">
-                                @{{ product.currency_type_symbol }} @{{ Number(product.sale_unit_price).toFixed(2) }}
+                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
                             </span>
                         </template>
                     </div>
@@ -416,6 +420,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     currency_type_symbol: @json($record->currency_type['symbol'] ?? 'S/'),
                     unit_type_id: @json($record->unit_type_id ?? 'NIU'),
                     internal_id: @json($record->internal_id ?? ''),
+                    original_price: {{ number_format((float) $record->sale_unit_price, 2, '.', '') }},
+                    compare_at_price: {{ $compareAtPrice !== null ? number_format((float) $compareAtPrice, 2, '.', '') : 'null' }},
+                    discount_campaign_id: {{ $campaignPricing['discount_campaign_id'] ?: 'null' }},
+                    discount_campaign_name: @json($campaignPricing['discount_campaign_name']),
+                    campaign_discount_percent: {{ number_format((float) $campaignPricing['real_discount_percentage'], 2, '.', '') }},
+                    campaign_discount_embedded: {{ $campaignPricing['has_real_discount'] ? 'true' : 'false' }},
                 },
                 cartQuantities: {},
                 quantity: 1,
@@ -503,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     let found = array.find(x => x.id == item.id);
                     const cartItem = {
                         ...item,
-                        sale_unit_price: this.hasActiveOffer ? this.activeOfferPrice : item.sale_unit_price,
+                        sale_unit_price: this.activeOfferPrice,
                         original_price: parseFloat(item.sale_unit_price),
                         has_discount: this.hasActiveOffer,
                         quantity: this.quantity,
@@ -520,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         return;
                     }
 
-                    const price = this.hasActiveOffer ? this.activeOfferPrice : item.sale_unit_price;
+                    const price = this.activeOfferPrice;
                     if (found) {
                         found.quantity = this.quantity;
                         found.sale_unit_price = price;

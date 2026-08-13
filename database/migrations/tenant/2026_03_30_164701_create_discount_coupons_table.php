@@ -28,7 +28,8 @@ return new class extends Migration
             $table->boolean('has_usage_limits')->default(false);
             $table->unsignedInteger('max_total_uses')->nullable();
             $table->unsignedInteger('max_uses_per_customer')->nullable();
-            $table->date('expires_at')->nullable();
+            $table->dateTime('expires_at')->nullable();
+            $table->unsignedInteger('uses_count')->default(0);
 
             // Envío gratis
             $table->boolean('free_shipping')->default(false);
@@ -37,6 +38,7 @@ return new class extends Migration
             $table->boolean('active')->default(true);
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

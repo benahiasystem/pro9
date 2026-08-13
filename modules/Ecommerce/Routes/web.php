@@ -121,6 +121,17 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
         Route::delete('/{id}', 'DiscountCouponController@destroy');
     });
 
+    // Campañas de descuento reales (independientes de Social Proof)
+    Route::prefix('discount-campaigns')->group(function () {
+        Route::get('/records', 'DiscountCampaignController@records');
+        Route::get('/options', 'DiscountCampaignController@options');
+        Route::post('/validate', 'DiscountCampaignController@validateCart');
+        Route::get('/record/{id}', 'DiscountCampaignController@record');
+        Route::post('/', 'DiscountCampaignController@store');
+        Route::post('/{id}/status', 'DiscountCampaignController@status');
+        Route::delete('/{id}', 'DiscountCampaignController@destroy');
+    });
+
     // Zonas de delivery
     Route::get('delivery-zones/check', 'EcommerceController@checkDeliveryZone')->name('tenant.ecommerce.delivery_zones.check');
     Route::prefix('delivery-zones')->group(function () {
@@ -167,6 +178,9 @@ Route::middleware(['check.permission', 'locked.tenant','check.email.verified'])-
 
 
 Route::middleware(['locked.tenant'])->group(function() {
+    Route::post('/api/coupons/validate', 'CouponController@validateCoupon')
+        ->name('tenant.api.coupons.validate');
+
     // ecommerce
     Route::get('/ecommerce/{name?}', 'EcommerceController@index');
 

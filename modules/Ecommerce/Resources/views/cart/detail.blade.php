@@ -1992,6 +1992,9 @@
                                 <h5 class="product-title m-0">
                                     <a href="#">@{{ row.description }}</a>
                                 </h5>
+                                <span class="price text-muted text-decoration-line-through mr-1" v-if="showCartPrices && row.compare_at_price">
+                                    @{{ row.currency_type_symbol }} @{{ Number(row.compare_at_price).toFixed(2) }}
+                                </span>
                                 <span class="price text-muted" v-if="showCartPrices">
                                     @{{ row.currency_type_symbol }} @{{ row.sale_unit_price }}
                                 </span>
@@ -2761,6 +2764,10 @@
                                 &minus; S/ @{{ appliedCoupon.discount }}
                             </td>
                         </tr>
+                        <tr v-if="!isQuotationCheckout && parseFloat(campaignSavings) > 0">
+                            <td>Campaña de descuento</td>
+                            <td>&minus; S/ @{{ parseFloat(campaignSavings).toFixed(2) }}</td>
+                        </tr>
                         <tr v-if="!isQuotationCheckout && deliveryZone && parseFloat(deliveryZone.price) > 0">
                             <td>Envío <small class="text-muted">(@{{ deliveryZone.name }})</small></td>
                             <td>S/ @{{ summary.delivery }}</td>
@@ -2785,6 +2792,7 @@
                         <button class="coupon-btn" @click="applyCoupon" :disabled="couponLoading">Aplicar</button>
                     </div>
                     <small class="coupon-msg text-danger" v-if="couponMessage">@{{ couponMessage }}</small>
+                    <small class="coupon-msg text-success" v-if="couponSuccessMessage">@{{ couponSuccessMessage }}</small>
                 </div>
 
                 <div class="quotation-summary-note" v-if="isQuotationCheckout">

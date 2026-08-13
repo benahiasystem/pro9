@@ -146,8 +146,14 @@ var app_cart = new Vue({
         records_old: [],
         couponField: '',
         couponMessage: null,
+        couponSuccessMessage: null,
         couponLoading: false,
         appliedCoupon: null,
+        appliedCampaignDiscount: 0,
+        campaignSavings: 0,
+        appliedCampaigns: [],
+        campaignValidationTimer: null,
+        campaignExpirationInterval: null,
         order_generated: {},
         summary: {
             subtotal: '0.0',
@@ -639,6 +645,13 @@ var app_cart = new Vue({
         },
     },
     watch: {
+        records: {
+            deep: true,
+            handler() {
+                clearTimeout(this.campaignValidationTimer);
+                this.campaignValidationTimer = setTimeout(() => this.validateDiscountCampaigns(), 350);
+            },
+        },
         'form_contact.telephone'(value) {
             if (!this.showGuestForm || this.isLoggedIn) {
                 return;
@@ -757,6 +770,8 @@ var app_cart = new Vue({
         })
 
         this.calculateSummary()
+        await this.validateDiscountCampaigns()
+        this.campaignExpirationInterval = setInterval(() => this.validateDiscountCampaigns(), 30000)
 
         this.userAddresses = this.normalizeAddressList(this.userAddresses);
         if (this.userDefaultAddress) {
@@ -802,6 +817,10 @@ var app_cart = new Vue({
         this.bindCheckoutIntentBootHandler();
         this.flushPendingCheckoutIntentChoice();
         this.restoreGuestCheckoutState();
+    },
+    beforeDestroy() {
+        clearInterval(this.campaignExpirationInterval)
+        clearTimeout(this.campaignValidationTimer)
     },
     methods: {
         restoreGuestCheckoutState() {
@@ -2213,7 +2232,8 @@ var app_cart = new Vue({
                 is_guest: isGuest,
                 discount_coupon_code: this.appliedCoupon ? this.appliedCoupon.code : null,
                 discount_coupon_id: this.appliedCoupon ? this.appliedCoupon.id : null,
-                total_discount: this.appliedCoupon ? this.appliedCoupon.discount : 0,
+                total_discount: (this.appliedCoupon ? this.appliedCoupon.discount : 0) + parseFloat(this.appliedCampaignDiscount || 0),
+                discount_campaigns: this.appliedCampaigns,
                 shipping_address: shippingAddress,
                 reference_payment: this.getSelectedReferencePayment(),
             }
@@ -4667,10 +4687,11 @@ var app_cart = new Vue({
             if (this.appliedCoupon && this.appliedCoupon.discount) {
                 computedTotal = Math.max(0, computedTotal - parseFloat(this.appliedCoupon.discount));
             }
+            computedTotal = Math.max(0, computedTotal - parseFloat(this.appliedCampaignDiscount || 0));
 
             let deliveryPrice = (this.deliveryZone && this.deliveryZone.price) ? parseFloat(this.deliveryZone.price) : 0;
             // Si el modo es recojo en tienda, no se cobra delivery
-            if (this.isPickupMode) {
+            if (this.isPickupMode || (this.appliedCoupon && this.appliedCoupon.free_shipping)) {
                 deliveryPrice = 0;
             }
             computedTotal += deliveryPrice;
@@ -4958,34 +4979,76 @@ var app_cart = new Vue({
             if (!this.couponField || this.couponLoading) return;
             this.couponLoading = true;
             this.couponMessage = null;
+            this.couponSuccessMessage = null;
 
             try {
-                const payload = { code: this.couponField, order_total: this.summary.total };
-                const res = await axios.post('/ecommerce/validate-coupon', payload, this.getHeaderConfig());
+                const subtotal = this.records.reduce((sum, item) => sum + parseFloat(item.sub_total || 0), 0);
+                const payload = { code: this.couponField.trim().toUpperCase(), subtotal: subtotal };
+                const res = await axios.post('/api/coupons/validate', payload, this.getHeaderConfig());
                 if (res.data && res.data.success) {
                     const d = res.data.data;
+                    this.couponField = d.code;
                     this.appliedCoupon = {
                         id: d.id,
                         code: d.code,
                         discount: parseFloat(d.discount),
                         free_shipping: d.free_shipping
                     };
-                    if (typeof d.new_total !== 'undefined') {
-                        this.summary.total = parseFloat(d.new_total).toFixed(2);
-                        this.payment_cash.amount = this.summary.total;
-                    }
-                    this.couponMessage = null;
+                    this.calculateSummary();
+                    this.couponSuccessMessage = `Cupón ${d.code} aplicado. Ahorras S/ ${parseFloat(d.discount || 0).toFixed(2)}.`;
                 } else {
-                    this.couponMessage = (res.data && res.data.message) ? res.data.message : 'cupon no valido';
+                    this.couponMessage = (res.data && res.data.message) ? res.data.message : 'El cupón no es válido.';
                 }
             } catch (err) {
                 if (err.response && err.response.data && err.response.data.message) {
                     this.couponMessage = err.response.data.message;
                 } else {
-                    this.couponMessage = 'cupon no valido';
+                    this.couponMessage = 'No fue posible validar el cupón.';
                 }
             } finally {
                 this.couponLoading = false;
+            }
+        },
+
+        async validateDiscountCampaigns() {
+            if (!this.records.length || this.isQuotationCheckout) {
+                this.appliedCampaignDiscount = 0;
+                this.campaignSavings = 0;
+                this.appliedCampaigns = [];
+                return;
+            }
+
+            try {
+                const items = this.records.map(item => ({
+                    item_id: item.id,
+                    subtotal: parseFloat(item.sub_total || 0),
+                    quantity: parseFloat(item.cantidad || 1),
+                }));
+                const response = await axios.post('/ecommerce/discount-campaigns/validate', { items }, this.getHeaderConfig());
+                (response.data.items || []).forEach(detail => {
+                    const item = this.records.find(row => Number(row.id) === Number(detail.item_id));
+                    if (!item) return;
+                    item.original_price = parseFloat(detail.base_unit_price || 0);
+                    item.compare_at_price = detail.compare_at_price ? parseFloat(detail.compare_at_price) : null;
+                    item.sale_unit_price = parseFloat(detail.final_unit_price || detail.base_unit_price || 0).toFixed(2);
+                    item.sub_total = (parseFloat(item.sale_unit_price) * parseFloat(item.cantidad || 1)).toFixed(2);
+                    item.discount_campaign_id = detail.campaign_id;
+                    item.discount_campaign_name = detail.campaign;
+                    item.campaign_discount_percent = parseFloat(detail.percentage || 0);
+                    item.campaign_discount_embedded = !!detail.campaign_id;
+                });
+                this.campaignSavings = parseFloat(response.data.discount || 0);
+                const allCampaignPricesEmbedded = this.records.every(item => {
+                    const detail = (response.data.items || []).find(row => Number(row.item_id) === Number(item.id));
+                    return !detail || (item.campaign_discount_embedded && Number(item.discount_campaign_id) === Number(detail.campaign_id));
+                });
+                this.appliedCampaignDiscount = allCampaignPricesEmbedded ? 0 : this.campaignSavings;
+                this.appliedCampaigns = response.data.items || [];
+                this.calculateSummary();
+            } catch (error) {
+                this.appliedCampaignDiscount = 0;
+                this.campaignSavings = 0;
+                this.appliedCampaigns = [];
             }
         },
 
@@ -4993,6 +5056,7 @@ var app_cart = new Vue({
             this.appliedCoupon = null;
             this.couponField = '';
             this.couponMessage = null;
+            this.couponSuccessMessage = null;
             this.calculateSummary();
         },
     },
