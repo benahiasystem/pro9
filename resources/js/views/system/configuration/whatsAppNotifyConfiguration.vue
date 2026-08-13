@@ -21,12 +21,11 @@
                     </el-input>
                     <small class="text-muted">3 a 40 caracteres. Sin espacios ni símbolos especiales.</small>
                 </div>
-                <div class="col-md-5 d-flex align-items-end">
+                <div class="col-md-5 d-flex align-items-center">
                     <el-button
                         :loading="loading"
                         :disabled="!canStart"
                         type="primary"
-                        class="w-100"
                         @click="startConnection">
                         Conectar
                     </el-button>
