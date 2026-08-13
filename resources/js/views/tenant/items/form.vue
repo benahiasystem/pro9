@@ -508,20 +508,6 @@
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('stock_min')"><i class="el-icon-top"></i> Fijar arriba</button>
                         </div>
-                        <div v-show="form.unit_type_id !='ZZ' && form.lots_enabled"
-                             class="col-md-3">
-                            <div :class="{'has-danger': errors.date_of_due}"
-                                 class="form-group">
-                                <label class="control-label">Fec. Vencimiento</label>
-                                <el-date-picker v-model="form.date_of_due"
-                                                :clearable="true"
-                                                type="date"
-                                                value-format="yyyy-MM-dd"></el-date-picker>
-                                <small v-if="errors.date_of_due"
-                                       class="form-control-feedback"
-                                       v-text="errors.date_of_due[0]"></small>
-                            </div>
-                        </div>
                         <div v-show="!isPinned('barcode')" class="col-md-3 field-pinnable">
                             <div :class="{'has-danger': errors.barcode}"
                                  class="form-group">
@@ -532,24 +518,6 @@
                                        v-text="errors.barcode[0]"></small>
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('barcode')"><i class="el-icon-top"></i> Fijar arriba</button>
-                        </div>
-                        <div class="col-md-3">
-                            <div :class="{'has-danger': errors.item_code}"
-                                 class="form-group">
-                                <label class="control-label">Código Sunat
-                                    <el-tooltip class="item"
-                                                content="Código proporcionado por SUNAT, campo obligatorio para exportaciones"
-                                                effect="dark"
-                                                placement="top">
-                                        <i class="fa fa-info-circle"></i>
-                                    </el-tooltip>
-                                </label>
-                                <el-input v-model="form.item_code"
-                                          dusk="item_code"></el-input>
-                                <small v-if="errors.item_code"
-                                       class="form-control-feedback"
-                                       v-text="errors.item_code[0]"></small>
-                            </div>
                         </div>
                         <div class="col-md-3">
                             <div :class="{'has-danger': errors.line}"
@@ -615,27 +583,6 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3">
-                            <div :class="{'has-danger': errors.factory_code}"
-                                 class="form-group">
-                                <label class="control-label">
-                                    Código de fábrica
-                                    <el-tooltip
-                                        class="item"
-                                        content="Para habilitar la búsqueda debe realizarlo en configuración/avanzado"
-                                        effect="dark"
-                                        placement="top">
-                                        <i class="fa fa-info-circle"></i>
-                                    </el-tooltip>
-                                </label>
-                                <el-input v-model="form.factory_code">
-                                </el-input>
-                                <small v-if="errors.factory_code"
-                                       class="form-control-feedback"
-                                       v-text="errors.factory_code[0]"></small>
-                            </div>
-                        </div>
-
                         <div class="col-md-3" v-if="resolvedVariant === 'restaurant'">
                             <div :class="{'has-danger': errors.preparation_area_id}" class="form-group">
                                 <label class="control-label">Areas de preparación</label>
@@ -652,149 +599,6 @@
                         </div>
 
                         <template v-if="!isNrus">
-                        <div class="col-12 mt-2">
-                            <div class="table-responsive table-border-none">
-                                <table class="table table-sm mb-0 table-borderless">
-                                    <thead>
-                                    <tr>
-                                        <th width="25%" class="bg-transparent border-0">
-                                            <el-checkbox v-model="form.has_perception"
-                                                         @change="changeHasPerception">Incluye percepción
-                                            </el-checkbox>
-                                        </th>
-                                        <th width="25%" class="bg-transparent border-0">
-                                            <div v-show="form.unit_type_id !='ZZ'">
-                                                <el-checkbox v-model="form.lots_enabled"
-                                                             @change="changeLotsEnabled">¿Maneja lotes?
-                                                </el-checkbox>
-                                            </div>
-                                        </th>
-                                        <th width="25%" class="bg-transparent border-0">
-                                            <div v-show="form.unit_type_id !='ZZ'">
-                                                <el-checkbox v-model="form.series_enabled"
-                                                             @change="changeLotsEnabled">¿Maneja series?
-                                                </el-checkbox>
-                                            </div>
-                                        </th>
-                                        <!-- <th width="25%">
-                                            <div v-show="form.unit_type_id !='ZZ' && canSeeProduction">
-                                                <el-checkbox v-model="form.is_for_production"
-                                                             @change="changeProductioTab">Este producto, ¿requiere insumos?
-                                                </el-checkbox>
-                                            </div>
-                                        </th> -->
-                                    </tr>
-                                                                        </thead>
-                                    <tbody>
-                                    <tr>
-                                        <td>
-                                            <div v-show="form.has_perception">
-                                                <div class="form-group">
-                                                    <el-input v-model="form.percentage_perception"
-                                                              placeholder="% de percepción"></el-input>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div v-show="form.unit_type_id !='ZZ' && form.lots_enabled">
-                                                <div :class="{'has-danger': errors.lot_code}"
-                                                     class="form-group">
-
-                                                     <el-tooltip class="item"
-                                                    content="Si va a usar el mismo LOTE en otros almacenes coloque un prefijo para diferenciarlos."
-                                                    effect="dark"
-                                                    placement="top">
-                                                    <el-input v-model="form.lot_code"
-                                                              placeholder="Código de lote"></el-input>
-                                                    </el-tooltip>
-                                                    <small v-if="errors.lot_code"
-                                                           class="form-control-feedback"
-                                                           v-text="errors.lot_code[0]"></small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div v-show="form.unit_type_id !='ZZ' && form.series_enabled && !recordId">
-                                                <div :class="{'has-danger': errors.lot_code}"
-                                                     class="form-group">
-                                                    <el-button icon="el-icon-edit-outline"
-                                                               size="small"
-                                                               type="primary"
-                                                               @click.prevent="clickLotcode">Ingrese series
-                                                    </el-button>
-                                                    <small v-if="errors.lot_code"
-                                                           class="form-control-feedback"
-                                                           v-text="errors.lot_code[0]"></small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3">
-                            <div :class="{'has-danger': errors.has_isc}"
-                                 class="form-group ms-2">
-                                <el-checkbox v-model="form.has_isc"
-                                             @change="changeIsc">Incluye ISC
-                                </el-checkbox>
-                                <br>
-                                <small v-if="errors.has_isc"
-                                       class="form-control-feedback"
-                                       v-text="errors.has_isc[0]"></small>
-                            </div>
-                        </div>
-
-                        <template v-if="form.has_isc">
-                            <div class="col-md-3">
-                                <div :class="{'has-danger': errors.system_isc_type_id}"
-                                     class="form-group">
-                                    <label class="control-label">Tipo de sistema ISC</label>
-                                    <el-select
-                                        v-model="form.system_isc_type_id"
-                                        filterable>
-                                        <el-option
-                                            v-for="option in system_isc_types"
-                                            :key="option.id"
-                                            :label="option.description"
-                                            :value="option.id"
-                                        ></el-option>
-                                    </el-select>
-                                    <small
-                                        v-if="errors.system_isc_type_id"
-                                        class="form-control-feedback"
-                                        v-text="errors.system_isc_type_id[0]"></small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-3">
-                                <div :class="{'has-danger': errors.percentage_isc}"
-                                     class="form-group">
-                                    <label class="control-label">Porcentaje ISC</label>
-                                    <el-input v-model="form.percentage_isc"></el-input>
-                                    <small
-                                        v-if="errors.percentage_isc"
-                                        class="form-control-feedback"
-                                        v-text="errors.percentage_isc[0]"></small>
-                                </div>
-                            </div>
-                        </template>
-
-
-                        <div class="col-md-3">
-                            <div :class="{'has-danger': errors.subject_to_detraction}"
-                                 class="form-group ms-1">
-                                <el-checkbox v-model="form.subject_to_detraction">Sujeto a detracción</el-checkbox>
-                                <br>
-                                <small v-if="errors.subject_to_detraction"
-                                       class="form-control-feedback"
-                                       v-text="errors.subject_to_detraction[0]"></small>
-                            </div>
-                        </div>
-
-
                         <div class="col-md-3" v-if="showRestrictSaleItemsCpe">
                             <div :class="{'has-danger': errors.restrict_sale_cpe}"
                                  class="form-group">
@@ -1673,6 +1477,169 @@
                         -->
                     </div>
                 </el-tab-pane>
+
+                <el-tab-pane v-if="showTab('advanced')"
+                             class
+                             name="advanced">
+                    <span slot="label">Avanzado</span>
+
+                    <div class="advanced-section">
+                        <h6 class="advanced-section__title">Códigos</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div :class="{'has-danger': errors.item_code}"
+                                     class="form-group">
+                                    <label class="control-label">Código Sunat
+                                        <el-tooltip class="item"
+                                                    content="Código proporcionado por SUNAT, campo obligatorio para exportaciones"
+                                                    effect="dark"
+                                                    placement="top">
+                                            <i class="fa fa-info-circle"></i>
+                                        </el-tooltip>
+                                    </label>
+                                    <el-input v-model="form.item_code"
+                                              dusk="item_code"></el-input>
+                                    <small v-if="errors.item_code"
+                                           class="form-control-feedback"
+                                           v-text="errors.item_code[0]"></small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div :class="{'has-danger': errors.factory_code}"
+                                     class="form-group">
+                                    <label class="control-label">
+                                        Código de fábrica
+                                        <el-tooltip class="item"
+                                                    content="Para habilitar la búsqueda debe realizarlo en configuración/avanzado"
+                                                    effect="dark"
+                                                    placement="top">
+                                            <i class="fa fa-info-circle"></i>
+                                        </el-tooltip>
+                                    </label>
+                                    <el-input v-model="form.factory_code"></el-input>
+                                    <small v-if="errors.factory_code"
+                                           class="form-control-feedback"
+                                           v-text="errors.factory_code[0]"></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-show="form.unit_type_id != 'ZZ'" class="advanced-section">
+                        <h6 class="advanced-section__title">Trazabilidad de inventario</h6>
+
+                        <div class="advanced-toggle">
+                            <div class="advanced-toggle__check">
+                                <el-checkbox v-model="form.lots_enabled"
+                                             @change="changeLotsEnabled">¿Maneja lotes?
+                                </el-checkbox>
+                            </div>
+                            <div class="advanced-toggle__fields">
+                                <template v-if="form.lots_enabled">
+                                    <el-tooltip class="item"
+                                                content="Si va a usar el mismo LOTE en otros almacenes coloque un prefijo para diferenciarlos."
+                                                effect="dark"
+                                                placement="top">
+                                        <el-input v-model="form.lot_code"
+                                                  size="small"
+                                                  placeholder="Código de lote"></el-input>
+                                    </el-tooltip>
+                                    <el-date-picker v-model="form.date_of_due"
+                                                    :clearable="true"
+                                                    size="small"
+                                                    type="date"
+                                                    placeholder="Fec. vencimiento"
+                                                    value-format="yyyy-MM-dd"></el-date-picker>
+                                    <small v-if="errors.lot_code"
+                                           class="text-danger"
+                                           v-text="errors.lot_code[0]"></small>
+                                    <small v-if="errors.date_of_due"
+                                           class="text-danger"
+                                           v-text="errors.date_of_due[0]"></small>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="advanced-toggle">
+                            <div class="advanced-toggle__check">
+                                <el-checkbox v-model="form.series_enabled"
+                                             @change="changeLotsEnabled">¿Maneja series?
+                                </el-checkbox>
+                            </div>
+                            <div class="advanced-toggle__fields">
+                                <template v-if="form.series_enabled && !recordId">
+                                    <el-button icon="el-icon-edit-outline"
+                                               size="small"
+                                               type="primary"
+                                               @click.prevent="clickLotcode">Ingrese series
+                                    </el-button>
+                                    <small v-if="errors.lot_code"
+                                           class="text-danger"
+                                           v-text="errors.lot_code[0]"></small>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="!isNrus" class="advanced-section">
+                        <h6 class="advanced-section__title">Tributos y retenciones</h6>
+
+                        <div class="advanced-toggle">
+                            <div class="advanced-toggle__check">
+                                <el-checkbox v-model="form.has_perception"
+                                             @change="changeHasPerception">Incluye percepción
+                                </el-checkbox>
+                            </div>
+                            <div class="advanced-toggle__fields">
+                                <el-input v-if="form.has_perception"
+                                          v-model="form.percentage_perception"
+                                          size="small"
+                                          placeholder="% de percepción"></el-input>
+                            </div>
+                        </div>
+
+                        <div class="advanced-toggle">
+                            <div class="advanced-toggle__check">
+                                <el-checkbox v-model="form.has_isc"
+                                             @change="changeIsc">Incluye ISC
+                                </el-checkbox>
+                            </div>
+                            <div class="advanced-toggle__fields">
+                                <template v-if="form.has_isc">
+                                    <el-select v-model="form.system_isc_type_id"
+                                               size="small"
+                                               placeholder="Tipo de sistema ISC"
+                                               filterable>
+                                        <el-option v-for="option in system_isc_types"
+                                                   :key="option.id"
+                                                   :label="option.description"
+                                                   :value="option.id"></el-option>
+                                    </el-select>
+                                    <el-input v-model="form.percentage_isc"
+                                              size="small"
+                                              placeholder="% de ISC"></el-input>
+                                    <small v-if="errors.system_isc_type_id"
+                                           class="text-danger"
+                                           v-text="errors.system_isc_type_id[0]"></small>
+                                    <small v-if="errors.percentage_isc"
+                                           class="text-danger"
+                                           v-text="errors.percentage_isc[0]"></small>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="advanced-toggle">
+                            <div class="advanced-toggle__check">
+                                <el-checkbox v-model="form.subject_to_detraction">Sujeto a detracción</el-checkbox>
+                            </div>
+                            <div class="advanced-toggle__fields">
+                                <small v-if="errors.subject_to_detraction"
+                                       class="text-danger"
+                                       v-text="errors.subject_to_detraction[0]"></small>
+                            </div>
+                        </div>
+                    </div>
+                </el-tab-pane>
             </el-tabs>
             <div class="form-actions text-end pt-2 mt-2" v-if="!editingLayout">
                 <template v-if="forOnlyShowAllDetails">
@@ -1722,9 +1689,9 @@ import ItemPricesTable from "@components/items/partials/ItemPricesTable.vue";
 const ALLOWED_VARIANTS = ['standard', 'ecommerce', 'restaurant']
 
 const TABS_BY_VARIANT = {
-    standard:   ['general', 'warehouses', 'presentations', 'attributes', 'purchase', 'extra_info', 'production'],
-    ecommerce:  ['general', 'extra_info'],
-    restaurant: ['general', 'supplies', 'modifiers', 'imagen'],
+    standard:   ['general', 'warehouses', 'presentations', 'attributes', 'purchase', 'extra_info', 'production', 'advanced'],
+    ecommerce:  ['general', 'extra_info', 'advanced'],
+    restaurant: ['general', 'supplies', 'modifiers', 'imagen', 'advanced'],
 }
 
 export default {
@@ -3099,6 +3066,50 @@ this.activeName = null
 </script>
 
 <style scoped>
+.advanced-section + .advanced-section {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+.advanced-section__title {
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6c757d;
+}
+.advanced-toggle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 46px;
+}
+.advanced-toggle + .advanced-toggle {
+    border-top: 1px dashed rgba(0, 0, 0, 0.06);
+}
+.advanced-toggle__check {
+    flex: 0 0 220px;
+}
+.advanced-toggle__fields {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-width: 0;
+}
+.advanced-toggle__fields >>> .el-input,
+.advanced-toggle__fields >>> .el-select,
+.advanced-toggle__fields >>> .el-date-editor {
+    width: 190px;
+}
+@media (max-width: 767px) {
+    .advanced-toggle__check {
+        flex: 0 0 100%;
+    }
+}
+
 /* Estilos para tabla de precios expandible */
 .prices-row td {
     border-top: none !important;

@@ -468,7 +468,9 @@
                                 <td v-if="col.visible && col.key === 'unit_type'" :key="col.key"></td>
                                 <td v-if="col.visible && col.key === 'image'" :key="col.key"></td>
                                 <td v-if="col.visible && col.key === 'name'" :key="col.key">
-                                    <span class="text-muted me-1">└</span>{{ variation.description }}
+                                    <span class="text-muted me-1">└</span>
+                                    <template v-if="variation.variation_attributes && variation.variation_attributes.length">{{ row.description }}<span v-for="(attribute, index) in variation.variation_attributes" :key="index"><span class="text-muted mx-1">·</span><span v-if="attribute.color" class="variation-dot" :style="{ background: attribute.color }"></span>{{ variationAttributeLabel(attribute) }}</span></template>
+                                    <template v-else>{{ variation.description }}</template>
                                     <template v-if="columns.internal_id && columns.internal_id.visible">
                                         <br><small class="text-muted uppercase ms-3">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
                                     </template>
@@ -580,6 +582,15 @@
     border-top: none;
     padding-top: 6px;
     padding-bottom: 6px;
+}
+.variation-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    vertical-align: baseline;
 }
 </style>
 <script>
@@ -841,6 +852,13 @@ export default {
         },
         hasVariationAttributes(row) {
             return !!(row.variation_attributes && row.variation_attributes.length)
+        },
+        variationAttributeLabel(attribute) {
+            if (attribute.color || !attribute.variable) {
+                return attribute.value
+            }
+
+            return `${attribute.variable} ${attribute.value}`
         },
         toggleVariationsRow(row) {
             const index = this.expanded_ids.indexOf(row.id)
