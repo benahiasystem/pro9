@@ -247,19 +247,6 @@ class ConfigurationController extends Controller
         ];
     }
 
-    public function store_configuration_tag(Request $request)
-    {
-        $id = $request->input('id');
-        $configuration = ConfigurationEcommerce::find($id);
-        $configuration->fill($request->all());
-        $configuration->save();
-
-        return [
-            'success' => true,
-            'message' => 'Configuración Tags actualizada'
-        ];
-    }
-
     public function store_configuration_social(Request $request)
     {
         $id = $request->input('id');
@@ -375,11 +362,13 @@ class ConfigurationController extends Controller
                         return null;
                     }
 
+                    $icon = (string) ($badge['icon'] ?? '');
+
                     return [
-                        'icon' => in_array(($badge['icon'] ?? ''), ['shield', 'refresh', 'truck', 'lock', 'check'], true)
-                            ? $badge['icon']
-                            : 'shield',
+                        // Nombre de ícono de Tabler: minúsculas, dígitos y guiones.
+                        'icon' => preg_match('/^[a-z0-9-]{1,60}$/', $icon) ? $icon : 'shield',
                         'text' => mb_substr($text, 0, 80),
+                        'svg' => $this->sanitizeBadgeSvg((string) ($badge['svg'] ?? '')),
                     ];
                 }, $prefs['trust_badges'])));
             }
@@ -397,6 +386,59 @@ class ConfigurationController extends Controller
             'message' => 'Configuración de color y preferencias actualizadas correctamente'
         ];
 
+    }
+
+    /**
+     * Depura el SVG de un sello de autoridad antes de persistirlo.
+     *
+     * Los íconos outline de Tabler se componen únicamente de nodos <path>, así
+     * que la cadena se reconstruye desde cero conservando solo esos nodos y una
+     * lista blanca de atributos con valores validados. El sello se pinta con
+     * v-html en la tienda, por lo que cualquier otra cosa (scripts, handlers,
+     * <image>, <foreignObject>…) se descarta en lugar de escaparse.
+     */
+    private function sanitizeBadgeSvg($svg)
+    {
+        $svg = (string) $svg;
+
+        if ($svg === '' || strlen($svg) > 20000) {
+            return '';
+        }
+
+        $allowed = [
+            'd' => '/^[MmLlHhVvCcSsQqTtAaZz0-9 ,.\-eE]+$/',
+            'fill' => '/^(currentColor|none|#[0-9a-fA-F]{3,8})$/',
+            'stroke' => '/^(currentColor|none|#[0-9a-fA-F]{3,8})$/',
+            'opacity' => '/^(0|1|0?\.[0-9]+)$/',
+        ];
+
+        if (! preg_match_all('/<path\b([^>]*)>/i', $svg, $nodes)) {
+            return '';
+        }
+
+        $paths = [];
+
+        foreach ($nodes[1] as $rawAttributes) {
+            preg_match_all('/([a-zA-Z-]+)\s*=\s*"([^"]*)"/', $rawAttributes, $found, PREG_SET_ORDER);
+
+            $attributes = [];
+
+            foreach ($found as $match) {
+                $name = strtolower($match[1]);
+
+                if (! isset($allowed[$name]) || ! preg_match($allowed[$name], $match[2])) {
+                    continue;
+                }
+
+                $attributes[$name] = $name.'="'.$match[2].'"';
+            }
+
+            if (isset($attributes['d'])) {
+                $paths[] = '<path '.implode(' ', $attributes).'/>';
+            }
+        }
+
+        return substr(implode('', $paths), 0, 20000);
     }
 
     public function getColorEcommerce()

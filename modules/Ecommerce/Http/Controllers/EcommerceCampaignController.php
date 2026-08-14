@@ -20,7 +20,13 @@ class EcommerceCampaignController extends Controller
         }
 
         $records = $all
-            ->map(fn (EcommerceCampaign $campaign) => $campaign->toAdminArray())
+            ->map(function (EcommerceCampaign $campaign) {
+                $data = $campaign->toAdminArray();
+                // Nombre fijo: la campaña es única y no se nombra desde el formulario.
+                $data['title'] = EcommerceCampaign::DEFAULT_TITLE;
+
+                return $data;
+            })
             ->values();
 
         return compact('records');
@@ -35,18 +41,11 @@ class EcommerceCampaignController extends Controller
 
     public function store(Request $request)
     {
-        $id = $request->input('id');
-
-        if (! $id && EcommerceCampaign::query()->exists()) {
-            return [
-                'success' => false,
-                'message' => 'Solo puedes tener una campaña. Edita la existente.',
-            ];
-        }
-
-        $campaign = EcommerceCampaign::firstOrNew(['id' => $id]);
+        $campaign = EcommerceCampaign::orderByDesc('id')->first() ?: new EcommerceCampaign();
+        $existed = $campaign->exists;
         $campaign->fill($request->only($campaign->getFillable()));
 
+        $campaign->title = EcommerceCampaign::DEFAULT_TITLE;
         $campaign->status = (bool) $request->input('status', true);
         $campaign->sp_countdown = (bool) $request->input('sp_countdown', false);
         $campaign->sp_discount_price = (bool) $request->input('sp_discount_price', false);
@@ -67,7 +66,7 @@ class EcommerceCampaignController extends Controller
 
         return [
             'success' => true,
-            'message' => $id ? 'Campaña editada con éxito' : 'Campaña registrada con éxito',
+            'message' => $existed ? 'Campaña actualizada con éxito' : 'Campaña configurada con éxito',
             'id' => $campaign->id,
         ];
     }
@@ -93,7 +92,8 @@ class EcommerceCampaignController extends Controller
 
         return [
             'success' => true,
-            'message' => 'Estado de la campaña actualizado con éxito',
+            'status' => (bool) $campaign->status,
+            'message' => $campaign->status ? 'Campaña activada con éxito' : 'Campaña pausada con éxito',
         ];
     }
 }

@@ -10,6 +10,12 @@ class EcommerceCampaign extends ModelTenant
 {
     protected $table = 'ecommerce_campaigns';
 
+    /**
+     * La tienda maneja una sola campaña global, por lo que el nombre es fijo
+     * y no se solicita al usuario.
+     */
+    public const DEFAULT_TITLE = 'Campaña de descuento';
+
     protected $fillable = [
         'title',
         'discount_type',

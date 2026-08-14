@@ -133,44 +133,6 @@
             </div>
           </div>
 
-          <!-- Tags menú -->
-          <div class="col-12 mt-3">
-            <h4><strong>Tags menú</strong></h4>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group" :class="{'has-danger': errors.tag_shipping}">
-              <label class="control-label">Tag Envío</label>
-              <el-input v-model="form.tag_shipping"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.tag_shipping"
-                v-text="errors.tag_shipping[0]"
-              ></small>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group" :class="{'has-danger': errors.tag_dollar}">
-              <label class="control-label">Tag moneda</label>
-              <el-input v-model="form.tag_dollar"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.tag_dollar"
-                v-text="errors.tag_dollar[0]"
-              ></small>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-group" :class="{'has-danger': errors.tag_support}">
-              <label class="control-label">Tag soporte</label>
-              <el-input v-model="form.tag_support"></el-input>
-              <small
-                class="form-control-feedback"
-                v-if="errors.tag_support"
-                v-text="errors.tag_support[0]"
-              ></small>
-            </div>
-          </div>
-
           <!-- Redes sociales -->
           <div class="col-12 mt-3">
             <h4><strong>Redes Sociales</strong></h4>
@@ -245,9 +207,6 @@ export default {
         customised_link_two: "", // Link 2
         title_three_customised_link: "", // Título 3
         customised_link_three: "", // Link 3
-        tag_shipping: "",
-        tag_dollar: "",
-        tag_support: "",
         link_facebook: "",
         link_youtube: "",
         link_tiktok: "",
@@ -271,9 +230,6 @@ export default {
         this.form.link_youtube = data.link_youtube;
         this.form.link_tiktok = data.link_tiktok;
         this.form.link_instagram = data.link_instagram;
-        this.form.tag_shipping = data.tag_shipping;
-        this.form.tag_dollar = data.tag_dollar;
-        this.form.tag_support = data.tag_support;
         this.form.publicidad_activa = data.publicidad_activa;
         this.form.publicidad_texto = data.publicidad_texto;
         this.form.publicidad_color_fondo = data.publicidad_color_fondo;
@@ -294,9 +250,6 @@ export default {
         customised_link_two: "",
         title_three_customised_link: "",
         customised_link_three: "",
-        tag_shipping: "",
-        tag_dollar: "",
-        tag_support: "",
         link_facebook: "",
         link_youtube: "",
         link_tiktok: "",

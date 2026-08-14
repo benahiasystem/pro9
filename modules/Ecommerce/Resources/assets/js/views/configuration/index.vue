@@ -266,49 +266,71 @@
         <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
           <div>
             <h4 class="mb-0"><strong>Campañas de descuento</strong></h4>
-            <small class="text-muted">Una sola campaña global: afecta a todos los productos de la tienda.</small>
+            <small class="text-muted">Una sola campaña global: afecta a todos los productos de la tienda. Actívala o pausala con el interruptor de la tabla.</small>
           </div>
-          <el-button
-            v-if="campaigns.length === 0"
-            type="primary"
-            icon="el-icon-plus"
-            @click.prevent="openCampaignDialog(null)"
-          >Crear Campaña</el-button>
         </div>
 
-        <el-table :data="campaigns" border stripe v-loading="campaigns_loading" style="width: 100%">
-          <el-table-column prop="title" label="Título" min-width="150"></el-table-column>
-          <el-table-column label="Descuento" width="160">
-            <template slot-scope="scope">
-              <span v-if="scope.row.sp_discount_price">
-                <el-tag type="danger" size="mini">{{ scope.row.discount_type === 'percentage' ? scope.row.discount_value + '%' : 'S/. ' + scope.row.discount_value }}</el-tag>
-              </span>
-              <span v-else class="text-muted">—</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Cronómetro" width="120">
-            <template slot-scope="scope">
-              <el-tag type="warning" size="mini" v-if="scope.row.sp_countdown">Activo</el-tag>
-              <span v-else class="text-muted">—</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="Alcance" min-width="160">
-            <template>
-              <el-tag type="success" size="mini">Todos los productos</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="Estado" width="100">
-            <template slot-scope="scope">
-              <el-switch :value="!!scope.row.status" @change="toggleCampaignStatus(scope.row)"></el-switch>
-            </template>
-          </el-table-column>
-          <el-table-column label="Acciones" width="130" align="center">
-            <template slot-scope="scope">
-              <el-button size="mini" icon="el-icon-edit" @click.prevent="openCampaignDialog(scope.row)">Editar</el-button>
-              <el-button size="mini" type="danger" icon="el-icon-delete" @click.prevent="deleteCampaign(scope.row.id)"></el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="table-responsive" v-loading="campaigns_loading">
+          <table class="table">
+            <thead>
+              <tr>
+                <th class="text-start">Título</th>
+                <th class="text-start">Descuento</th>
+                <th class="text-start">Cronómetro</th>
+                <th class="text-start">Alcance</th>
+                <th class="text-center">Estado</th>
+                <th class="text-end">Opciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in campaignRows" :key="row.id || 'placeholder'">
+                <td class="text-start">
+                  <div class="fw-bold">{{ row.title }}</div>
+                  <small class="text-muted">{{ campaignConfigured ? 'Aplica a toda la tienda' : 'Aún no has configurado la campaña' }}</small>
+                </td>
+                <td class="text-start">
+                  <el-tag v-if="row.sp_discount_price" type="danger" size="small">
+                    {{ row.discount_type === 'percentage' ? row.discount_value + '%' : 'S/. ' + row.discount_value }}
+                  </el-tag>
+                  <span v-else class="text-muted">&mdash;</span>
+                </td>
+                <td class="text-start">
+                  <el-tag v-if="row.sp_countdown" type="warning" size="small">Activo</el-tag>
+                  <span v-else class="text-muted">&mdash;</span>
+                </td>
+                <td class="text-start">
+                  <el-tag v-if="campaignConfigured" type="success" size="small">Todos los productos</el-tag>
+                  <span v-else class="text-muted">&mdash;</span>
+                </td>
+                <td class="text-center">
+                  <div class="campaign-status-cell">
+                    <el-tooltip content="Configura la campaña para poder activarla." placement="top" :disabled="campaignConfigured">
+                      <span class="campaign-switch-wrapper" @click="onCampaignSwitchClick">
+                        <el-switch
+                          :value="!!row.status"
+                          :disabled="!campaignConfigured"
+                          active-color="#13ce66"
+                          @change="toggleCampaignStatus(row)"
+                        ></el-switch>
+                      </span>
+                    </el-tooltip>
+                    <el-tag :type="campaignStatusTag.type" size="mini">{{ campaignStatusTag.label }}</el-tag>
+                  </div>
+                </td>
+                <td class="text-end">
+                  <button
+                    class="btn btn-sm"
+                    :class="campaignConfigured ? 'second-buton' : 'btn-primary'"
+                    @click.prevent="openCampaignDialog()"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                    {{ campaignConfigured ? 'Configurar' : 'Configurar campaña' }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
         <div class="mt-5 pt-3 border-top">
           <h5 class="mb-2"><strong>Sellos de autoridad (Trust Badges)</strong></h5>
@@ -318,13 +340,11 @@
           </div>
           <div v-for="(badge, idx) in trustBadges" :key="'tb-'+idx" class="row mb-2 align-items-center">
             <div class="col-md-3">
-              <el-select v-model="badge.icon" class="w-100" placeholder="Ícono">
-                <el-option label="Escudo" value="shield"></el-option>
-                <el-option label="Devolución" value="refresh"></el-option>
-                <el-option label="Envío" value="truck"></el-option>
-                <el-option label="Candado" value="lock"></el-option>
-                <el-option label="Check" value="check"></el-option>
-              </el-select>
+              <tabler-icon-picker
+                :icon="badge.icon"
+                :svg="badge.svg"
+                @select="applyBadgeIcon(badge, $event)"
+              ></tabler-icon-picker>
             </div>
             <div class="col-md-7">
               <el-input v-model="badge.text" maxlength="60" placeholder="Texto del sello"></el-input>
@@ -334,19 +354,25 @@
             </div>
           </div>
           <div class="d-flex gap-2 mt-2">
-            <el-button size="mini" icon="el-icon-plus" @click.prevent="trustBadges.push({ icon: 'shield', text: '' })">Agregar sello</el-button>
+            <el-button size="mini" icon="el-icon-plus" @click.prevent="trustBadges.push({ icon: 'shield', text: '', svg: '' })">Agregar sello</el-button>
             <el-button type="primary" size="mini" :loading="trust_badges_saving" @click.prevent="saveTrustBadges">Guardar sellos</el-button>
           </div>
         </div>
 
-        <el-dialog :title="campaignForm.id ? 'Editar Campaña' : 'Nueva Campaña'" :visible.sync="campaignDialogVisible" width="780px" @close="resetCampaignForm">
+        <el-dialog title="Configurar campaña de descuento" :visible.sync="campaignDialogVisible" width="780px" @close="resetCampaignForm">
           <div class="row">
-            <div class="col-md-12 form-group">
-              <label><strong>Nombre de la Campaña</strong></label>
-              <el-input v-model="campaignForm.title" placeholder="Ej: Cyber Wow, Liquidación de Stock..."></el-input>
+            <div class="col-12">
+              <el-alert
+                type="info"
+                :closable="false"
+                show-icon
+                class="mb-3"
+                title="Tu tienda maneja una sola campaña global."
+                description="Elige qué módulos de Social Proof se muestran y su configuración. Puedes activarla o pausarla cuando quieras desde la tabla."
+              ></el-alert>
             </div>
 
-            <div class="col-12 mt-3 mb-2"><h6 class="text-muted"><strong>Módulos de Social Proof a Activar</strong></h6></div>
+            <div class="col-12 mb-2"><h6 class="text-muted"><strong>Módulos de Social Proof a Activar</strong></h6></div>
             <div class="col-md-4 form-group"><el-switch v-model="campaignForm.sp_countdown" active-text="Cuenta Regresiva"></el-switch></div>
             <div class="col-md-4 form-group"><el-switch v-model="campaignForm.sp_discount_price" active-text="Precio Tachado"></el-switch></div>
             <div class="col-md-4 form-group"><el-switch v-model="campaignForm.sp_purchase_count" active-text="Ventas Simuladas"></el-switch></div>
@@ -421,7 +447,7 @@
               </div>
             </template>
 
-            <div class="col-md-4 form-group mt-3">
+            <div class="col-md-6 form-group mt-3">
               <el-switch v-model="campaignForm.status" active-text="Campaña Activa" inactive-text="Pausada"></el-switch>
             </div>
             <div class="col-12">
@@ -429,10 +455,10 @@
             </div>
           </div>
 
-          <span slot="footer">
+          <div class="d-flex justify-content-end mt-2">
             <el-button @click="campaignDialogVisible = false">Cancelar</el-button>
-            <el-button type="primary" :loading="campaigns_loading" @click.prevent="saveCampaign">Guardar Campaña</el-button>
-          </span>
+            <el-button type="primary" class="ms-2" :loading="campaigns_loading" @click.prevent="saveCampaign">Guardar cambios</el-button>
+          </div>
         </el-dialog>
       </el-tab-pane>
       <el-tab-pane label="Enlaces">
@@ -655,6 +681,14 @@
     min-height: 150px;
     height: 200px;
 }
+.campaign-status-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.campaign-switch-wrapper {
+    display: inline-flex;
+}
 </style>
 <script>
 import ConfigurationLinks from '../configuration_links/index.vue';
@@ -667,8 +701,10 @@ import DiscountCampaigns from '../configuration_discount_campaigns/index.vue';
 import PickupBranches from '../configuration_pickup_branches/index.vue';
 import BannerSettingsManager from '@views/configurations/BannerSettingsManager.vue';
 import CKEditor from 'vue-ckeditor5';
+import TablerIconPicker from '../../components/TablerIconPicker.vue';
 export default {
   components: {
+    TablerIconPicker,
     ConfigurationLinks,
     PaymentGateways,
     DigitalCoupon,
@@ -677,6 +713,18 @@ export default {
     PickupBranches,
     BannerSettingsManager,
     'vue-ckeditor': CKEditor.component
+  },
+  computed: {
+    campaignConfigured() {
+      return this.campaigns.length > 0 && !!this.campaigns[0].id;
+    },
+    campaignRows() {
+      return this.campaignConfigured ? [this.campaigns[0]] : [this.placeholderCampaignRow()];
+    },
+    campaignStatusTag() {
+      if (!this.campaignConfigured) return { type: 'info', label: 'Sin configurar' };
+      return this.campaigns[0].status ? { type: 'success', label: 'Activa' } : { type: 'info', label: 'Pausada' };
+    }
   },
   data() {
     return {
@@ -689,8 +737,10 @@ export default {
       campaigns: [],
       campaigns_loading: false,
       campaignDialogVisible: false,
+      // Nombre fijo (el backend lo fuerza igual): la campaña es única.
+      campaignTitle: 'Campaña de descuento',
       campaignForm: {
-        id: null, title: '', discount_type: 'percentage', discount_value: 0,
+        id: null, title: 'Campaña de descuento', discount_type: 'percentage', discount_value: 0,
         start_date: null, end_date: null, sp_product_ids: [], status: true,
         sp_countdown: false, sp_discount_price: false, sp_purchase_count: false,
         sp_views_count: false, sp_stock_alert: false, sp_rating: false,
@@ -699,9 +749,9 @@ export default {
       },
       trustBadgesEnabled: true,
       trustBadges: [
-        { icon: 'shield', text: 'Pago 100% Seguro' },
-        { icon: 'refresh', text: 'Devolución Garantizada' },
-        { icon: 'truck', text: 'Envío Rápido' },
+        { icon: 'shield', text: 'Pago 100% Seguro', svg: '' },
+        { icon: 'refresh', text: 'Devolución Garantizada', svg: '' },
+        { icon: 'truck', text: 'Envío Rápido', svg: '' },
       ],
       trust_badges_saving: false,
       soap_sends: [],
@@ -787,6 +837,7 @@ export default {
           this.trustBadges = preferences.trust_badges.map(b => ({
             icon: b.icon || 'shield',
             text: b.text || '',
+            svg: b.svg || '',
           }));
         }
       } else {
@@ -799,9 +850,16 @@ export default {
       const found = this.products.find(p => p.id == id);
       return found ? found.description : ('#' + id);
     },
+    placeholderCampaignRow() {
+      return {
+        id: null, title: this.campaignTitle, status: false,
+        discount_type: 'percentage', discount_value: 0,
+        sp_countdown: false, sp_discount_price: false
+      };
+    },
     defaultCampaignForm() {
       return {
-        id: null, title: '', discount_type: 'percentage', discount_value: 0,
+        id: null, title: this.campaignTitle, discount_type: 'percentage', discount_value: 0,
         start_date: null, end_date: null, sp_product_ids: [], status: true,
         sp_countdown: false, sp_discount_price: false, sp_purchase_count: false,
         sp_views_count: false, sp_stock_alert: false, sp_rating: false,
@@ -827,15 +885,12 @@ export default {
       const pad = (n) => String(n).padStart(2, '0');
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     },
-    openCampaignDialog(campaign) {
-      if (!campaign && this.campaigns.length > 0) {
-        this.$message.warning('Solo puedes tener una campaña. Edita la existente.');
-        return;
-      }
+    openCampaignDialog() {
+      const campaign = this.campaignConfigured ? this.campaigns[0] : null;
       if (campaign) {
         this.campaignForm = {
           id: campaign.id,
-          title: campaign.title,
+          title: this.campaignTitle,
           discount_type: campaign.discount_type || 'percentage',
           discount_value: parseFloat(campaign.discount_value) || 0,
           start_date: this.formatCampaignDate(campaign.start_date),
@@ -862,11 +917,13 @@ export default {
     resetCampaignForm() {
       this.campaignForm = this.defaultCampaignForm();
     },
+    onCampaignSwitchClick() {
+      if (this.campaignConfigured) return;
+      this.$message.info('Configura la campaña para poder activarla.');
+      this.openCampaignDialog();
+    },
     saveCampaign() {
-      if (!this.campaignForm.title) {
-        this.$message.warning('Ingresa un nombre para la campaña');
-        return;
-      }
+      this.campaignForm.title = this.campaignTitle;
       this.campaigns_loading = true;
       this.$http.post(`/${this.resource}/campaigns`, this.campaignForm)
         .then(response => {
@@ -881,26 +938,20 @@ export default {
         .catch(() => this.$message.error('Error al guardar la campaña'))
         .finally(() => { this.campaigns_loading = false; });
     },
-    deleteCampaign(id) {
-      this.$confirm('¿Eliminar esta campaña?', 'Confirmar', { type: 'warning' })
-        .then(() => this.$http.delete(`/${this.resource}/campaigns/${id}`))
-        .then(response => {
-          if (response && response.data && response.data.success) {
-            this.$message.success(response.data.message);
-            this.loadCampaigns();
-          }
-        })
-        .catch(() => {});
-    },
     toggleCampaignStatus(campaign) {
+      if (!campaign || !campaign.id) return;
       this.$http.get(`/${this.resource}/campaigns/${campaign.id}/status`)
         .then(response => {
           if (response.data.success) {
-            campaign.status = !campaign.status;
+            this.$set(campaign, 'status', !campaign.status);
             this.$message.success(response.data.message);
           }
         })
         .catch(() => this.$message.error('No se pudo actualizar el estado'));
+    },
+    applyBadgeIcon(badge, selection) {
+      this.$set(badge, 'icon', selection.icon);
+      this.$set(badge, 'svg', selection.svg);
     },
     saveTrustBadges() {
       this.trust_badges_saving = true;

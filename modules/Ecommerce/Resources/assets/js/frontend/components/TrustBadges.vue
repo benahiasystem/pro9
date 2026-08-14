@@ -5,7 +5,7 @@
       :key="index"
       class="sp-trust-badge"
     >
-      <span class="sp-trust-badge__icon" aria-hidden="true" v-html="iconSvg(badge.icon)"></span>
+      <span class="sp-trust-badge__icon" aria-hidden="true" v-html="iconSvg(badge)"></span>
       <span class="sp-trust-badge__text">{{ badge.text }}</span>
     </div>
   </div>
@@ -75,8 +75,12 @@ export default {
     }
   },
   methods: {
-    iconSvg(name) {
-      return ICONS[name] || ICONS.shield;
+    iconSvg(badge) {
+      if (badge.svg) {
+        return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${badge.svg}</svg>`;
+      }
+
+      return ICONS[badge.icon] || ICONS.shield;
     },
     loadRemote() {
       const url = '/ecommerce/social-proof/trust-badges';
