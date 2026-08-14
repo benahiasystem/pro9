@@ -33,7 +33,8 @@
                 :disabled="loading_submit"
               ></el-switch>
               <span class="gateway-switch__brand gateway-switch__brand--square">
-                <img :src="gatewayLogos.transfer" alt="Transferencia bancaria" class="gateway-switch__logo">
+                <!-- <img :src="gatewayLogos.transfer" alt="Transferencia bancaria" class="gateway-switch__logo"> -->
+                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-bank"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 21l18 0" /><path d="M3 10l18 0" /><path d="M5 6l7 -3l7 3" /><path d="M4 10l0 11" /><path d="M20 10l0 11" /><path d="M8 14l0 3" /><path d="M12 14l0 3" /><path d="M16 14l0 3" /></svg>
               </span>
               <label class="mb-0 gateway-switch__label">Habilitar transferencia bancaria</label>
             </div>
@@ -192,7 +193,8 @@
                 :disabled="loading_submit"
               ></el-switch>
               <span class="gateway-switch__brand gateway-switch__brand--square">
-                <img :src="gatewayLogos.cash" alt="Pago contra entrega" class="gateway-switch__logo">
+                <!-- <img :src="gatewayLogos.cash" alt="Pago contra entrega" class="gateway-switch__logo"> -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck-delivery"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /><path d="M3 9l4 0" /></svg>
               </span>
               <label class="mb-0 gateway-switch__label">Habilitar pago contra entrega</label>
             </div>
@@ -203,7 +205,7 @@
 
           <div v-if="form.enable_cash === 1" class="payment-gateway-panel">
             <div class="form-group mb-3">
-              <label class="mb-2" style="font-weight: 600;">Título</label>
+              <label class="control-label" style="font-weight: 600;">Título</label>
               <el-input
                 v-model="form.cash_title"
                 placeholder="Ej: Pago contra entrega"
@@ -211,7 +213,7 @@
               ></el-input>
             </div>
             <div class="form-group mb-3">
-              <label class="mb-2" style="font-weight: 600;">Descripción</label>
+              <label class="control-label" style="font-weight: 600;">Descripción</label>
               <el-input
                 type="textarea"
                 :rows="3"
@@ -271,10 +273,8 @@
 
 .payment-gateway-panel {
   animation: fadeIn 0.3s;
-  background: #f9f9f9;
   padding: 15px;
   border-radius: 8px;
-  border: 1px solid #eee;
   margin-bottom: 1rem;
 }
 

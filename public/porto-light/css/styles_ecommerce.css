@@ -3476,6 +3476,83 @@ textarea.input {
 .addr-change:hover {
     background: hsl(var(--primary-h), var(--primary-s), 96%);
 }
+.delivery-mode {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 18px;
+}
+.delivery-segmented {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 999px;
+    background: #f1f4f6;
+}
+.delivery-segment {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 9px 18px;
+    border-radius: 999px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--subtitle-color);
+    cursor: pointer;
+    transition: background .15s, color .15s, box-shadow .15s;
+}
+.delivery-segment input[type="radio"] {
+    position: absolute;
+    width: 0;
+    height: 0;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+.delivery-segment > svg {
+    flex: none;
+}
+.delivery-segment:hover {
+    color: var(--title-color);
+}
+.delivery-segment--active {
+    background: #fff;
+    color: var(--primary-color);
+    box-shadow: 0 1px 3px rgba(20, 30, 45, .14);
+}
+.delivery-segment--active:hover {
+    color: var(--primary-color);
+}
+.delivery-mode-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--subtitle-color);
+}
+.delivery-mode-note > svg {
+    flex: none;
+    color: var(--success);
+}
+
+@media (max-width: 575.98px) {
+    .delivery-segmented {
+        width: 100%;
+    }
+    .delivery-segment {
+        flex: 1;
+        justify-content: center;
+        padding: 9px 8px;
+        font-size: 13px;
+    }
+}
 
 /* ----- Switch recojo en tienda ----- */
 .pickup-switch {
@@ -3633,6 +3710,65 @@ textarea.input {
 }
 .ship-note--ok {
     color: var(--success);
+}
+.ship-alert--icon {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+}
+.ship-alert--icon > svg {
+    flex: none;
+    margin-top: 1px;
+}
+.ship-alert--info.ship-alert--icon > svg {
+    color: var(--primary-color);
+}
+.ship-alert-link {
+    color: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+}
+.ship-alert-link:hover {
+    color: inherit;
+    opacity: .8;
+}
+.field-label + .ship-alert {
+    margin-top: 0;
+}
+.contact-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border: 1.5px solid #e9edf1;
+    border-radius: 12px;
+    background: #fff;
+}
+.contact-switch-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.contact-switch-body strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--title-color);
+}
+.contact-switch-sub {
+    font-size: 12.5px;
+    line-height: 1.35;
+    color: var(--subtitle-color);
+}
+.contact-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.contact-fields .hint {
+    margin-top: 6px;
 }
 
 /* ----- Datos del comprobante ----- */

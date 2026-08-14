@@ -97,7 +97,10 @@ var app_cart = new Vue({
         form_contact: {
             address:   '',
             telephone:   '',
+            receiver_name: '',
+            receiver_telephone: '',
         },
+        deliveryContactOverride: false,
         addressModal: {
             address: '',
             reference: '',
@@ -226,6 +229,7 @@ var app_cart = new Vue({
         cashPaymentPickupOnly: window.__ecommerce_config?.cash_payment_pickup_only || false,
         enableYape: window.__ecommerce_config?.enable_yape || false,
         enableTransfer: window.__ecommerce_config?.enable_transfer || false,
+        enablePaypal: window.__ecommerce_config?.enable_paypal || false,
         
         enableIzipay: window.__ecommerce_config?.enable_izipay || false,
         titleIzipay: window.__ecommerce_config?.title_izipay || 'Pago con Izipay',
@@ -400,6 +404,47 @@ var app_cart = new Vue({
         isGuestFormReady() {
             return this.isGuestCheckoutComplete;
         },
+        defaultContactName() {
+            return String(
+                (this.guest_form && this.guest_form.name)
+                || (this.user && this.user.name)
+                || ''
+            ).trim();
+        },
+        defaultContactPhone() {
+            return String(
+                (this.guest_form && this.guest_form.telephone)
+                || (this.user && this.user.telephone)
+                || ''
+            ).trim();
+        },
+        buyerContactPhone() {
+            return String(this.form_contact.telephone || '').trim() || this.defaultContactPhone;
+        },
+        needsBuyerPhoneField() {
+            return !this.defaultContactPhone;
+        },
+        deliveryContactName() {
+            if (this.deliveryContactOverride) {
+                return String(this.form_contact.receiver_name || '').trim();
+            }
+            return this.defaultContactName;
+        },
+        deliveryContactPhone() {
+            if (this.deliveryContactOverride) {
+                return String(this.form_contact.receiver_telephone || '').trim();
+            }
+            return this.buyerContactPhone;
+        },
+        deliveryContactSummary() {
+            return [this.deliveryContactName, this.deliveryContactPhone].filter(Boolean).join(' · ');
+        },
+        checkoutContactPhone() {
+            return this.buyerContactPhone || this.deliveryContactPhone;
+        },
+        buyerContactSummary() {
+            return [this.defaultContactName, this.buyerContactPhone].filter(Boolean).join(' · ');
+        },
         maxLength: function () {
             if (this.typeDocuments === '6') {
                 return 11
@@ -462,39 +507,31 @@ var app_cart = new Vue({
         showCheckoutSections() {
             return this.isLoggedIn || this.guestCheckoutAccepted;
         },
+        isCashPaymentAvailable() {
+            return this.enableCash && (!this.cashPaymentPickupOnly || this.isPickupMode);
+        },
+        isCashHiddenByPickupOnly() {
+            return this.enableCash && this.cashPaymentPickupOnly && !this.isPickupMode;
+        },
+        availablePaymentMethodsCount() {
+            return [
+                this.enableCulqi,
+                this.enableIzipay,
+                this.enableMp,
+                this.isCashPaymentAvailable,
+                this.enableYape,
+                this.enableTransfer,
+                this.enablePaypal,
+            ].filter(Boolean).length;
+        },
+        hasPaymentMethods() {
+            return this.availablePaymentMethodsCount > 0;
+        },
         /**
-         * Texto del CTA del resumen según el método de pago seleccionado.
+         * Texto del CTA del resumen. Fijo para evitar etiquetas largas según la pasarela.
          */
         primaryPayButtonLabel() {
-            if (!this.selectedPaymentMethod) {
-                return 'Pagar';
-            }
-
-            const payWith = (title, fallback) => {
-                const cleaned = String(title || '')
-                    .replace(/^(pagar|pago)\s+con\s+/i, '')
-                    .trim();
-                return 'Pagar con ' + (cleaned || fallback);
-            };
-
-            switch (this.selectedPaymentMethod) {
-                case 'culqi':
-                    return payWith(this.titleCulqi, 'Tarjeta (Culqi)');
-                case 'izipay':
-                    return payWith(this.titleIzipay, 'Izipay');
-                case 'mp':
-                    return payWith(this.titleMp, 'Mercado Pago');
-                case 'cash':
-                    return 'Confirmar pedido — ' + (this.cashPaymentTitle || 'Pago contra entrega');
-                case 'yape':
-                    return 'Confirmar pedido con Yape';
-                case 'transfer':
-                    return 'Confirmar pedido con transferencia';
-                case 'paypal':
-                    return 'Pagar con PayPal';
-                default:
-                    return 'Pagar';
-            }
+            return 'Confirmar pedido';
         },
         guestCheckoutTotal() {
             return parseFloat(this.summary.total || 0);
@@ -651,6 +688,13 @@ var app_cart = new Vue({
                 clearTimeout(this.campaignValidationTimer);
                 this.campaignValidationTimer = setTimeout(() => this.validateDiscountCampaigns(), 350);
             },
+        },
+        // El teléfono del comprador se hereda de los datos ya ingresados si aquí está vacío
+        defaultContactPhone(value) {
+            const phone = (value || '').trim();
+            if (phone && !(this.form_contact.telephone || '').trim()) {
+                this.form_contact.telephone = phone;
+            }
         },
         'form_contact.telephone'(value) {
             if (!this.showGuestForm || this.isLoggedIn) {
@@ -1586,6 +1630,11 @@ var app_cart = new Vue({
                 };
             }
 
+            const receiverError = this.getDeliveryReceiverError();
+            if (receiverError) {
+                return { valid: false, message: receiverError };
+            }
+
             return { valid: true, message: '' };
         },
         scrollToGuestForm() {
@@ -2067,8 +2116,9 @@ var app_cart = new Vue({
                 return;
             }
 
+            // El comprobante prioriza el teléfono del comprador; si no tiene, usa el de quien recibe
             this.form_document.datos_del_cliente_o_receptor.direccion = this.resolveCustomerAddressForPayment()
-            this.form_document.datos_del_cliente_o_receptor.telefono = (this.form_contact.telephone || '').replace(/\D/g, '')
+            this.form_document.datos_del_cliente_o_receptor.telefono = (this.checkoutContactPhone || '').replace(/\D/g, '')
             this.form_document.datos_del_cliente_o_receptor.codigo_tipo_documento_identidad = this.typeDocuments
             this.form_document.datos_del_cliente_o_receptor.numero_documento = this.numberDocument
             this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments
@@ -2098,13 +2148,38 @@ var app_cart = new Vue({
                 return false;
             }
 
-            const phone = (this.form_contact.telephone || '').trim();
-            if (!phone) {
-                this.showSwalMessage('Ocurrió un error!', 'El campo teléfono es obligatorio', 'error');
+            const receiverError = this.getDeliveryReceiverError();
+            if (receiverError) {
+                this.showSwalMessage('Datos incompletos', receiverError, 'warning');
+                return false;
+            }
+
+            if (!this.checkoutContactPhone) {
+                this.showSwalMessage(
+                    'Falta un teléfono de contacto',
+                    'No tienes un teléfono guardado en tu cuenta. Agrégalo desde "Mi cuenta" o indica quién recibe el pedido.',
+                    'warning'
+                );
                 return false;
             }
 
             return true;
+        },
+        getDeliveryReceiverError() {
+            if (this.isPickupMode || !this.deliveryContactOverride) {
+                return '';
+            }
+
+            if (!String(this.form_contact.receiver_name || '').trim()) {
+                return 'Ingresa el nombre de quien recibe el pedido.';
+            }
+
+            const digits = String(this.form_contact.receiver_telephone || '').replace(/\D/g, '');
+            if (digits.length < 7) {
+                return 'Ingresa un teléfono válido de quien recibe el pedido.';
+            }
+
+            return '';
         },
         buildShippingAddress() {
             if (this.isPickupMode && this.selectedPickupBranch) {
@@ -2112,7 +2187,23 @@ var app_cart = new Vue({
                     (this.selectedPickupBranch.address ? ' — ' + this.selectedPickupBranch.address : '');
             }
 
-            return (this.form_contact.address || '').trim();
+            const address = (this.form_contact.address || '').trim();
+            const receiver = this.deliveryContactReceiverNote();
+
+            return receiver ? (address + ' ' + receiver).trim() : address;
+        },
+        deliveryContactReceiverNote() {
+            if (this.isPickupMode || !this.deliveryContactOverride) {
+                return '';
+            }
+
+            const name = String(this.form_contact.receiver_name || '').trim();
+            const phone = String(this.form_contact.receiver_telephone || '').trim();
+            if (!name && !phone) {
+                return '';
+            }
+
+            return '(Recibe: ' + [name, phone].filter(Boolean).join(' - ') + ')';
         },
         resolveCustomerAddressForPayment() {
             const shippingAddress = this.buildShippingAddress();
@@ -4951,6 +5042,18 @@ var app_cart = new Vue({
             this.selectedPickupBranch = branch;
             this.calculateSummary();
         },
+        // Alterna el switch "otra persona recibe el pedido" (solo envío a domicilio)
+        toggleDeliveryContactOverride() {
+            this.deliveryContactOverride = !this.deliveryContactOverride;
+
+            if (this.deliveryContactOverride) {
+                return;
+            }
+
+            // Al apagarlo se descartan los datos de la otra persona
+            this.form_contact.receiver_name = '';
+            this.form_contact.receiver_telephone = '';
+        },
         // Alterna el modo de recojo en tienda y resetea la selección contraria
         togglePickupMode() {
             this.setPickupMode(!this.isPickupMode);
@@ -4960,6 +5063,12 @@ var app_cart = new Vue({
             if (this.isPickupMode === value) return;
             this.isPickupMode = value;
             if (this.isPickupMode) {
+                // En recojo no se piden datos de entrega: se descartan los de la otra persona
+                if (this.deliveryContactOverride) {
+                    this.deliveryContactOverride = false;
+                    this.form_contact.receiver_name = '';
+                    this.form_contact.receiver_telephone = '';
+                }
                 // Al activar recojo: limpiar zona de delivery
                 this.deliveryZone = null;
                 this.availableDeliveryZones = [];

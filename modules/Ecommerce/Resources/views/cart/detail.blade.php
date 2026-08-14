@@ -1590,7 +1590,7 @@
         grid-template-areas: "thumb info quantity total delete";
         align-items: center;
         gap: 10px;
-        padding: 10px 0;
+        padding: 10px 15px;
         border-bottom: 1px solid #eee;
     }
 
@@ -1619,18 +1619,21 @@
     /* Guest checkout modals — removidos; se conservan estilos de formulario invitado */
     .guest-form-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(12, minmax(0, 1fr));
         gap: 1rem;
     }
 
-    .guest-form-grid .field-full {
-        grid-column: 1 / -1;
+    .guest-form-grid .field-full { grid-column: span 12; }
+    .guest-form-grid .field-half { grid-column: span 6; }
+    .guest-form-grid .field-quarter { grid-column: span 3; }
+
+    @media (max-width: 991px) {
+        .guest-form-grid .field-quarter { grid-column: span 6; }
     }
 
+    /* Móvil: una columna */
     @media (max-width: 767px) {
-        .guest-form-grid {
-            grid-template-columns: 1fr;
-        }
+        .guest-form-grid > * { grid-column: span 12; }
     }
 
     /* Iconos brand al extremo derecho de cada tarjeta (diseño Fabrizio) */
@@ -1656,22 +1659,22 @@
     }
 
     .pay-methods .pay-method-ic--brand {
-        width: 48px;
+        width: 80px;
         height: 48px;
         border-radius: 11px;
-        border: 1px solid #e4e8ed;
-        background: #fff;
         padding: 0;
         overflow: hidden;
         display: grid;
         place-items: center;
+        border: none
     }
 
     .pay-methods .pay-method-ic--brand img {
         display: block;
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
+        min-height: 0
     }
 
     .pay-method-panel {
@@ -2110,34 +2113,20 @@
 
                     {{-- Paso 2: formulario de contacto (solo tras elegir invitado) --}}
                     <div class="contact-guest-form" v-if="guestCheckoutAccepted">
-                    <p class="hint mb-3">Estos datos se usarán solo para esta compra. No se creará una cuenta ni se solicitará contraseña.</p>
+                    <p class="hint mb-2 mt-0">Estos datos se usarán solo para esta compra. No se creará una cuenta ni se solicitará contraseña.</p>
                     <div class="guest-form-grid">
-                        <div class="field-full">
-                            <label class="field-label" for="guest_email">Correo electrónico *</label>
+                        <div class="field-half">
+                            <label class="field-label" for="guest_name">Nombres / Razón social *</label>
                             <input
-                                id="guest_email"
-                                type="email"
+                                id="guest_name"
+                                type="text"
                                 class="input"
-                                v-model.trim="guest_form.email"
-                                placeholder="tu@correo.com"
-                                autocomplete="email"
+                                v-model.trim="guest_form.name"
+                                placeholder="Nombre completo o razón social"
                                 required
                             >
                         </div>
-                        <div>
-                            <label class="field-label" for="guest_phone">Teléfono *</label>
-                            <input
-                                id="guest_phone"
-                                type="tel"
-                                class="input"
-                                v-model.trim="guest_form.telephone"
-                                placeholder="Ej: 987 654 321"
-                                maxlength="15"
-                                inputmode="numeric"
-                                required
-                            >
-                        </div>
-                        <div>
+                        <div class="field-quarter">
                             <label class="field-label" for="guest_doc_type">Tipo de documento *</label>
                             <select
                                 id="guest_doc_type"
@@ -2151,7 +2140,7 @@
                                 >@{{ option.label }}</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="field-quarter">
                             <label class="field-label" for="guest_doc_number">Número de documento *</label>
                             <input
                                 id="guest_doc_number"
@@ -2163,14 +2152,30 @@
                                 required
                             >
                         </div>
-                        <div class="field-full">
-                            <label class="field-label" for="guest_name">Nombres / Razón social *</label>
+
+                        {{-- Fila 2: contacto --}}
+                        <div class="field-half">
+                            <label class="field-label" for="guest_email">Correo electrónico *</label>
                             <input
-                                id="guest_name"
-                                type="text"
+                                id="guest_email"
+                                type="email"
                                 class="input"
-                                v-model.trim="guest_form.name"
-                                placeholder="Nombre completo o razón social"
+                                v-model.trim="guest_form.email"
+                                placeholder="tu@correo.com"
+                                autocomplete="email"
+                                required
+                            >
+                        </div>
+                        <div class="field-half">
+                            <label class="field-label" for="guest_phone">Teléfono *</label>
+                            <input
+                                id="guest_phone"
+                                type="tel"
+                                class="input"
+                                v-model.trim="guest_form.telephone"
+                                placeholder="Ej: 987 654 321"
+                                maxlength="15"
+                                inputmode="numeric"
                                 required
                             >
                         </div>
@@ -2262,10 +2267,10 @@
                             <b v-if="selectedPickupBranch">@{{ selectedPickupBranch.name }}</b>
                             <span v-else class="head-summary-warn">Elige sucursal</span>
                         </template>
-                        <template v-else-if="form_contact.address || form_contact.telephone">
+                        <template v-else-if="form_contact.address || deliveryContactPhone || buyerContactPhone">
                             <span class="head-summary-addr" v-if="form_contact.address">@{{ form_contact.address }}</span>
-                            <span class="head-summary-sep" v-if="form_contact.address && form_contact.telephone">·</span>
-                            <b v-if="form_contact.telephone">@{{ form_contact.telephone }}</b>
+                            <span class="head-summary-sep" v-if="form_contact.address && (deliveryContactPhone || buyerContactPhone)">·</span>
+                            <b v-if="deliveryContactPhone || buyerContactPhone">@{{ deliveryContactPhone || buyerContactPhone }}</b>
                         </template>
                         <span v-else class="head-summary-warn">Falta completar</span>
                     </span>
@@ -2275,53 +2280,35 @@
             <div id="deliveryCollapse" class="collapse show">
                 <div class="card-body card-body-h-auto card-cart-body ship-body">
 
-                    {{-- Switch: Recojo en tienda (solo si está habilitado en configuración) --}}
-                    <div class="pickup-switch" v-if="enableStorePickup">
-                        {{-- <label class="pickup-switch-label" @click="togglePickupMode">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9 -7 9 7v11a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                            Recojo en tienda
-                        </label>
-                        <button type="button" class="switch" :class="{ 'switch--on': isPickupMode }" @click="togglePickupMode" :aria-pressed="isPickupMode ? 'true' : 'false'" aria-label="Activar recojo en tienda">
-                            <span class="switch-knob"></span>
-                        </button> --}}
-                        <label
-                            class="option-card send-mode"
-                            :class="{ 'option-card--active': !isPickupMode }"
-                        >
-                            <span class="icon-delivery">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path> <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path> <path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path> <path d="M3 9l4 0"></path></svg>
-                            </span>
-                            <span class="option-card-body">
-                                <strong>Envío a domicilio</strong>
-                                <span class="option-card-sub">Llega a tu dirección</span>
-                            </span>
-                            <input
-                                type="radio"
-                                name="delivery_mode"
-                                style="margin-left: auto"
-                                :checked="!isPickupMode"
-                                @change="setPickupMode(false)"
-                            >
-                        </label>
-                        <label
-                            class="option-card send-mode"
-                            :class="{ 'option-card--active': isPickupMode }"
-                        >
-                            <span class="icon-delivery">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"></path><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"></path><path d="M3 9h18"></path><path d="M9 21v-6h6v6"></path></svg>
-                            </span>
-                            <span class="option-card-body">
-                                <strong>Recojo en tienda</strong>
-                                <span class="option-card-sub">Gratis · tú lo retiras</span>
-                            </span>
-                            <input
-                                type="radio"
-                                name="delivery_mode"
-                                style="margin-left: auto"
-                                :checked="isPickupMode"
-                                @change="setPickupMode(true)"
-                            >
-                        </label>
+                    {{-- Selector compacto de modo de entrega (solo si el recojo está habilitado) --}}
+                    <div class="delivery-mode" v-if="enableStorePickup">
+                        <div class="delivery-segmented" role="radiogroup" aria-label="Modo de entrega">
+                            <label class="delivery-segment" :class="{ 'delivery-segment--active': !isPickupMode }">
+                                <input
+                                    type="radio"
+                                    name="delivery_mode"
+                                    :checked="!isPickupMode"
+                                    @change="setPickupMode(false)"
+                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"/><path d="M3 9l4 0"/></svg>
+                                <span>Envío a domicilio</span>
+                            </label>
+                            <label class="delivery-segment" :class="{ 'delivery-segment--active': isPickupMode }">
+                                <input
+                                    type="radio"
+                                    name="delivery_mode"
+                                    :checked="isPickupMode"
+                                    @change="setPickupMode(true)"
+                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l18 0"/><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4"/><path d="M5 21l0 -10.15"/><path d="M19 21l0 -10.15"/><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"/></svg>
+                                <span>Recojo en tienda</span>
+                            </label>
+                        </div>
+                        <span class="delivery-mode-note">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5 -5"/></svg>
+                            <span v-if="isPickupMode">Gratis · tú lo retiras</span>
+                            <span v-else>Llega a tu dirección</span>
+                        </span>
                     </div>
 
                     <div class="ship-grid">
@@ -2417,19 +2404,99 @@
                             </template>
                         </div>
 
-                        {{-- Columna derecha: teléfono de contacto --}}
-                        <div class="ship-col">
-                            <span class="field-label">Teléfono de contacto</span>
-                            <input
-                                type="tel"
-                                v-model="form_contact.telephone"
-                                class="input"
-                                placeholder="Ej: 987 654 321"
-                                maxlength="15"
-                                inputmode="numeric"
-                                required
-                            >
-                            <p class="hint">Te escribiremos por aquí para coordinar la entrega.</p>
+                        <div class="ship-col" style="padding-top: 31px">
+                            <template v-if="isPickupMode">
+                                <span class="field-label">Datos de contacto</span>
+                                <div class="ship-alert ship-alert--info ship-alert--icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
+                                    <div>
+                                        En <strong>recojo en tienda</strong> solo necesitas <strong>seleccionar una sucursal</strong>.
+                                        Usaremos los datos que ya ingresaste<template v-if="buyerContactSummary">:
+                                        <strong>@{{ buyerContactSummary }}</strong></template>.
+                                    </div>
+                                </div>
+
+                                <div v-if="needsBuyerPhoneField && isLoggedIn" class="ship-alert ship-alert--warn ship-alert--icon" role="alert">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
+                                    <div>
+                                        No tienes un teléfono guardado en tu cuenta. Agrégalo desde
+                                        <a href="{{ route('tenant_ecommerce_account') }}" class="ship-alert-link">Mi cuenta</a>
+                                        antes de pagar: lo necesitamos para avisarte cuando tu pedido esté listo.
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template v-else>
+                                <template v-if="needsBuyerPhoneField && isLoggedIn">
+                                    <div v-if="!deliveryContactOverride" class="ship-alert ship-alert--warn ship-alert--icon mb-1 mt-0" role="alert">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
+                                        <div>
+                                            No tienes un teléfono guardado en tu cuenta. Agrégalo desde
+                                            <a href="{{ route('tenant_ecommerce_account') }}" class="ship-alert-link">Mi cuenta</a>
+                                            para que podamos coordinar la entrega.
+                                        </div>
+                                    </div>
+                                    <div v-else class="ship-alert ship-alert--info ship-alert--icon mb-1 mt-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
+                                        <div>
+                                            Coordinaremos esta entrega con el teléfono de quien recibe.
+                                            Guarda el tuyo en <a href="{{ route('tenant_ecommerce_account') }}" class="ship-alert-link">Mi cuenta</a>
+                                            para tus próximas compras.
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div class="contact-switch">
+                                    <span class="contact-switch-body">
+                                        <strong>Otra persona recibe el pedido</strong>
+                                        <span class="contact-switch-sub">Actívalo si la entrega la recibe alguien más.</span>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        class="switch"
+                                        :class="{ 'switch--on': deliveryContactOverride }"
+                                        @click="toggleDeliveryContactOverride"
+                                        :aria-pressed="deliveryContactOverride ? 'true' : 'false'"
+                                        aria-label="Indicar que otra persona recibe el pedido"
+                                    >
+                                        <span class="switch-knob"></span>
+                                    </button>
+                                </div>
+
+                                <div v-if="!deliveryContactOverride" class="ship-alert ship-alert--info ship-alert--icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5 -5"/></svg>
+                                    <div>
+                                        Coordinaremos la entrega contigo
+                                        <template v-if="buyerContactSummary">: <strong>@{{ buyerContactSummary }}</strong></template>.
+                                    </div>
+                                </div>
+
+                                <div v-else class="contact-fields">
+                                    <div>
+                                        <label class="field-label" for="receiver_name">Nombre de quien recibe</label>
+                                        <input
+                                            id="receiver_name"
+                                            type="text"
+                                            v-model.trim="form_contact.receiver_name"
+                                            class="input"
+                                            placeholder="Nombre completo"
+                                        >
+                                    </div>
+                                    <div>
+                                        <label class="field-label" for="receiver_telephone">Teléfono de quien recibe</label>
+                                        <input
+                                            id="receiver_telephone"
+                                            type="tel"
+                                            v-model="form_contact.receiver_telephone"
+                                            class="input"
+                                            placeholder="Ej: 987 654 321"
+                                            maxlength="15"
+                                            inputmode="numeric"
+                                        >
+                                        <p class="hint">Solo se usa para coordinar esta entrega. Tus datos de contacto no cambian.</p>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -2626,7 +2693,7 @@
 
                         <label v-if="enableMp" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'mp' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="mp" autocomplete="off">
-                            <span class="pay-method-ic pay-method-ic--brand">
+                            <span class="pay-method-ic pay-method-ic--brand" style="width: 85px">
                                 <img src="/porto-ecommerce/assets/images/payment-gateways/mercado-pago-checkout.svg?v=4" alt="Mercado Pago">
                             </span>
                             <span class="pay-method-label">@{{ titleMp }}</span>
@@ -2638,7 +2705,7 @@
                         <label v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="cash" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
-                                <img src="/porto-ecommerce/assets/images/payment-gateways/cash-delivery.svg?v=1" alt="Pago contra entrega">
+                                <svg data-v-4acbed09="" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck-delivery"><path data-v-4acbed09="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-4acbed09="" d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path data-v-4acbed09="" d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path data-v-4acbed09="" d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path><path data-v-4acbed09="" d="M3 9l4 0"></path></svg>
                             </span>
                             <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
@@ -2672,7 +2739,7 @@
                         <label v-if="enableTransfer" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'transfer' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="transfer" autocomplete="off">
                             <span class="pay-method-ic pay-method-ic--brand">
-                                <img src="/porto-ecommerce/assets/images/payment-gateways/bank-transfer.svg?v=1" alt="Transferencia">
+                                <svg data-v-4acbed09="" xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-bank"><path data-v-4acbed09="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-4acbed09="" d="M3 21l18 0"></path><path data-v-4acbed09="" d="M3 10l18 0"></path><path data-v-4acbed09="" d="M5 6l7 -3l7 3"></path><path data-v-4acbed09="" d="M4 10l0 11"></path><path data-v-4acbed09="" d="M20 10l0 11"></path><path data-v-4acbed09="" d="M8 14l0 3"></path><path data-v-4acbed09="" d="M12 14l0 3"></path><path data-v-4acbed09="" d="M16 14l0 3"></path></svg>
                             </span>
                             <span class="pay-method-label">Transferencia bancaria</span>
                         </label>
@@ -2704,6 +2771,18 @@
                             <span class="pay-method-label">PayPal</span>
                         </label>
                         @endif
+
+                        <div v-if="hasPaymentMethods === false" class="ship-alert ship-alert--warn ship-alert--icon" role="alert">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
+                            <div v-if="isCashHiddenByPickupOnly">
+                                <strong>@{{ cashPaymentTitle }}</strong> solo está disponible para <strong>recojo en tienda</strong>.
+                                Cambia el modo de entrega arriba o habilita otro método de pago en la configuración de la tienda.
+                            </div>
+                            <div v-else>
+                                No hay métodos de pago habilitados para esta tienda.
+                                Actívalos en <strong>Configuración &rsaquo; Pasarelas de pago</strong> del panel administrativo.
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2840,7 +2919,7 @@
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                         <span v-if="processingPayment">Procesando…</span>
-                        <span v-else>@{{ primaryPayButtonLabel }}</span>
+                        <span v-else>Confirmar pedido</span>
                     </button>
                     </template>
                     <button
@@ -3375,6 +3454,7 @@
         pickup_branches: {!! json_encode($pickup_branches ?? []) !!},
         enable_yape: {!! json_encode($enable_yape ?? false) !!},
         enable_transfer: {!! json_encode($enable_transfer ?? false) !!},
+        enable_paypal: {!! json_encode(!empty($information->script_paypal)) !!},
         enable_cash: {!! json_encode(isset($configuration->preferences['enable_cash']) && $configuration->preferences['enable_cash'] == 1) !!},
         cash_payment_title: {!! json_encode($configuration->preferences['cash_title'] ?? 'Pago contra entrega') !!},
         cash_payment_description: {!! json_encode($configuration->preferences['cash_description'] ?? '') !!},
