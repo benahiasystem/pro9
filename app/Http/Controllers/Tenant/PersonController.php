@@ -131,7 +131,7 @@ class PersonController extends Controller
             
                     return [
                         'success' => false,
-                        'message' => 'Falta registrar el ubigeo en la dirección secundaria #' . ($index)
+                        'message' => 'Falta registrar el ubigeo en la dirección secundaria #' . ($index + 1)
                     ];
                 }
             }
@@ -160,18 +160,7 @@ class PersonController extends Controller
 
         $person->save();
 
-        $addressesByPerson  = $person->addresses()->get();
-        $addresses = $request->input('addresses');
-
-        if ($addressesByPerson->count() > count($addresses)) {
-            $addressesByPerson->each(function ($item) use($addresses) {
-                if (!collect($addresses)->contains('id', $item->id))  $item->delete();
-            });
-        } else {
-            foreach ($addresses as $row) {
-                $person->addresses()->updateOrCreate(['id' => $row['id']], $row);
-            }
-        }
+        $this->syncPersonAddresses($person, $addresses);
 
         $optional_email = $request->optional_email;
         if (!empty($optional_email)) {
@@ -189,6 +178,61 @@ class PersonController extends Controller
             'message' => $msg,
             'id' => $person->id
         ];
+    }
+
+    /**
+     * Sincroniza direcciones secundarias: actualiza las existentes, crea las nuevas
+     * y elimina las que ya no vienen en el request.
+     *
+     * El ubigeo se toma de location_id (cascader). Se ignoran department_id /
+     * province_id / district_id del payload porque al editar suelen quedar
+     * con los valores originales y pisan el ubigeo nuevo.
+     *
+     * @param  \App\Models\Tenant\Person  $person
+     * @param  array  $addresses
+     * @return void
+     */
+    private function syncPersonAddresses(Person $person, $addresses)
+    {
+        $addresses = is_array($addresses) ? $addresses : [];
+        $keepIds = [];
+
+        foreach ($addresses as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $id = !empty($row['id']) ? $row['id'] : null;
+
+            if (isset($row['location_id']) && is_array($row['location_id']) && count($row['location_id']) === 3) {
+                $row['department_id'] = $row['location_id'][0] ?: null;
+                $row['province_id'] = $row['location_id'][1] ?: null;
+                $row['district_id'] = $row['location_id'][2] ?: null;
+            }
+
+            unset(
+                $row['id'],
+                $row['location_id'],
+                $row['consigned_name'],
+                $row['trade_name'],
+                $row['from_sunat_establishment']
+            );
+
+            if ($id) {
+                $address = $person->addresses()->updateOrCreate(['id' => $id], $row);
+            } else {
+                $address = $person->addresses()->create($row);
+            }
+
+            $keepIds[] = $address->id;
+        }
+
+        $query = $person->addresses();
+        if (empty($keepIds)) {
+            $query->delete();
+        } else {
+            $query->whereNotIn('id', $keepIds)->delete();
+        }
     }
 
     public function destroy($id)

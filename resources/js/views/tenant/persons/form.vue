@@ -212,8 +212,7 @@
                                      class="form-group">
                                     <label class="control-label">País</label>
                                     <el-select v-model="form.country_id"
-                                               filterable
-                                               @change="handleCountryChange(row, index)">
+                                               filterable>
                                         <el-option v-for="option in countries"
                                                    :key="option.id"
                                                    :label="option.description"
@@ -433,15 +432,11 @@
                             </div>
                         </div>
                         <div v-for="(row, index) in form.addresses"
+                             :key="row.id || ('new-address-' + index)"
                              class="row m-t-10">
                             <div class="col-md-12">
-                                <label v-if="index === 0"
-                                       class="control-label">
-                                    Dirección principal
-                                </label>
-                                <label v-else
-                                       class="control-label">
-                                    Dirección secundaria # {{ index }}
+                                <label class="control-label">
+                                    Dirección secundaria # {{ index + 1 }}
                                     <el-button class="btn-default-danger"
                                                icon="el-icon-minus"
                                                size="mini"
@@ -454,8 +449,6 @@
                                      class="form-group">
                                     <label class="control-label">País</label>
                                     <el-select v-model="row.country_id"
-                                               filterable
-                                               @change="handleCountryChange(row, index)">
                                                filterable
                                                @change="handleCountryChange(row, index)">
                                         <el-option v-for="option in countries"
@@ -1290,10 +1283,7 @@ export default {
             }
 
             if (hasErrorInAdditionalAddresses) {
-                const mensaje = addressWithError - 1 === 0 
-                    ? `Falta registrar el ubigeo en la Dirección principal` 
-                    : `Falta registrar el ubigeo en la Dirección secundaria #${addressWithError - 1}`;
-                return this.$message.error(mensaje);
+                return this.$message.error(`Falta registrar el ubigeo en la Dirección secundaria #${addressWithError}`);
             }
 
             // if(this.form.location_id.length===3 && this.form.identity_document_type_id === '6'){
