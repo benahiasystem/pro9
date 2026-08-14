@@ -4,6 +4,7 @@ namespace Modules\WhatsAppBot\Services\Evolution;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
+use Modules\WhatsAppBot\Services\Contracts\WhatsAppProviderClientInterface;
 use RuntimeException;
 
 /**
@@ -20,7 +21,7 @@ use RuntimeException;
  * Mantiene el nombre EvolutionClient por compatibilidad con el resto del
  * modulo; internamente decide a cual de los dos backends apuntar.
  */
-class EvolutionClient
+class EvolutionClient implements WhatsAppProviderClientInterface
 {
     private bool $direct;
     private string $baseUrl;
