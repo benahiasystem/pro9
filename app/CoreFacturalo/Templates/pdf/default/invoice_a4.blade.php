@@ -865,7 +865,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 @endphp
                 @if ($global)
                     @php
-                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : $global->amount;
+                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : 0;
                     @endphp
                     <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
                 @else 

@@ -7841,6 +7841,11 @@ export default {
          * total_value y la base imponible del item; el IGV solo se genera cuando
          * la afectación es gravada ('10') — en el resto queda en 0 por norma SUNAT.
          *
+         * Los descuentos globales que NO afectan la base imponible (catálogo 53
+         * tipo '01') dejan el item intacto — valor, base, IGV y unit_price se
+         * mantienen; solo se acumulan en item.total_discount. Su efecto sobre el
+         * comprobante lo aplica calculateTotal vía total_discount_no_base.
+         *
          * SUNAT:
          * - 3271: LineExtensionAmount = qty * unit_value - AllowanceCharge
          *   → unit_value se mantiene ORIGINAL (pre-descuento)
@@ -7891,14 +7896,21 @@ export default {
                     const amount = d.amount_without_rounded
                         ? d.amount_without_rounded
                         : d.amount;
-                    discount_base += parseFloat(amount);
+                    // Catalogo 53: '01' = descuento global que NO afecta la base
+                    // imponible. No toca valor de linea, base ni IGV del item; se
+                    // descuenta del total via total_discount_no_base en calculateTotal.
+                    if (d.discount_type_id === "01") {
+                        discount_no_base += parseFloat(amount);
+                    } else {
+                        discount_base += parseFloat(amount);
+                    }
                 });
             }
 
-            // Aplica a todas las afectaciones: reduce el valor del item
-            const total_value = total_value_partial - discount_base - discount_no_base;
-            // Aplica a todas: reduce la base imponible (relevante solo si paga IGV)
-            const total_base_igv = total_value_partial - discount_base;
+            // Solo el descuento que afecta la BI reduce el valor del item
+            const total_value = total_value_partial - discount_base;
+            // Base imponible del item (relevante solo si paga IGV)
+            const total_base_igv = total_value;
 
             // IGV por afectación
             let total_igv = 0;
@@ -7930,13 +7942,16 @@ export default {
             const quantity = parseFloat(item.quantity) || 1;
             // 3270: precio unitario de la operación = total de línea con impuestos / cant.
             const unit_price_operation =
-                quantity > 0
-                    ? (total_value + total_taxes - discount_no_base) / quantity
-                    : orig.unit_price;
+                quantity > 0 ? total / quantity : orig.unit_price;
 
-            // 3271: unit_value ORIGINAL; 3270: unit_price = precio operación post-dto
+            // 3271: unit_value ORIGINAL; 3270: unit_price = precio operación post-dto.
+            // Si el descuento no afecta la BI, el item no cambia: se conserva el
+            // unit_price original (evita ademas arrastre de redondeo).
             item.unit_value = orig.unit_value;
-            item.unit_price = _.round(unit_price_operation, 6);
+            item.unit_price =
+                discount_base > 0
+                    ? _.round(unit_price_operation, 6)
+                    : orig.unit_price - discount_no_base;
             item.total_value = _.round(total_value, 2);
             item.total_base_igv = _.round(total_base_igv, 2);
             item.total_igv = _.round(total_igv, 2);
