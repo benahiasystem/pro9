@@ -175,6 +175,14 @@
                                     </el-button>
                                 </div>
                             </div>
+                            <div class="col-md-12" v-if="showWahaSwitcher">
+                                <waha-server-switcher
+                                    :provider="form.provider"
+                                    :current-server-key="form.waha_server_key"
+                                    renew-url="/whatsapp-bot/renew"
+                                    @switched="onServerSwitched">
+                                </waha-server-switcher>
+                            </div>
                         </div>
 
                         <!-- Step 2: QR + polling -->
@@ -212,7 +220,12 @@
 
                             <div class="col-md-6 mt-3 form-modern">
                                 <label class="control-label">Instancia</label>
-                                <div class="metric-value">{{ form.evolution_instance || '—' }}</div>
+                                <div class="metric-value">
+                                    {{ form.evolution_instance || '—' }}
+                                    <el-tag size="mini" :type="form.provider === 'waha' ? 'warning' : 'info'" class="ms-1">
+                                        {{ form.provider === 'waha' ? 'WAHA' : 'Evolution' }}
+                                    </el-tag>
+                                </div>
                             </div>
                             <div class="col-md-6 mt-3 form-modern">
                                 <label class="control-label">Estado</label>
@@ -270,6 +283,14 @@
                                     </el-button>
                                 </div>
                             </div>
+                            <div class="col-md-12" v-if="showWahaSwitcher">
+                                <waha-server-switcher
+                                    :provider="form.provider"
+                                    :current-server-key="form.waha_server_key"
+                                    renew-url="/whatsapp-bot/renew"
+                                    @switched="onServerSwitched">
+                                </waha-server-switcher>
+                            </div>
                         </div>
                         </template>
                     </el-tab-pane>
@@ -291,9 +312,12 @@
 </template>
 
 <script>
+import WahaServerSwitcher from '../../../components/whatsapp/WahaServerSwitcher.vue';
+
 const POLL_INTERVAL_MS = 5000;
 
 export default {
+    components: { WahaServerSwitcher },
     props: ['configuration'],
     data() {
         return {
@@ -311,6 +335,8 @@ export default {
                 qr_api_instance_adopted: this.configuration?.qr_api_instance_adopted || false,
                 qr_api_connected_phone: this.configuration?.qr_api_connected_phone || null,
                 qr_api_profile_name: this.configuration?.qr_api_profile_name || null,
+                provider: this.configuration?.evolution_provider || 'evolution',
+                waha_server_key: this.configuration?.evolution_waha_server_key || null,
             },
             instanceName: '',
             qrImage: null,
@@ -368,6 +394,14 @@ export default {
         connectedPhoneFormatted() {
             const p = this.form.connected_phone;
             return p ? `+${p}` : '—';
+        },
+        // La salvaguarda de "cambiar de servidor" solo aplica a una conexión
+        // propia del bot en WAHA — si el bot toma prestada la instancia de
+        // QR Api, el switcher correspondiente vive en esa otra pestaña.
+        showWahaSwitcher() {
+            return !this.form.evolution_use_qr_api_instance
+                && this.form.provider === 'waha'
+                && (this.step === 'connected' || this.step === 'disconnected');
         },
     },
     watch: {
@@ -481,6 +515,8 @@ export default {
                     this.form.evolution_instance = data.instance_name;
                     this.form.evolution_connection_state = 'connecting';
                     this.form.instance_adopted = false;
+                    this.form.provider = data.provider || 'evolution';
+                    this.form.waha_server_key = data.waha_server_key || null;
                     this.reconnecting = true;
                     await this.$nextTick();
                     this.refreshQr();
@@ -506,6 +542,8 @@ export default {
                     this.form.evolution_instance = data.instance_name;
                     this.form.evolution_connection_state = 'open';
                     this.form.instance_adopted = true;
+                    this.form.provider = 'evolution';
+                    this.form.waha_server_key = null;
                     this.lastState = 'open';
                     this.linkMode = false;
                     this.linkInstanceName = '';
@@ -562,6 +600,8 @@ export default {
                 if (data.profile_name) this.form.profile_name = data.profile_name;
                 if (data.instance_adopted !== undefined) this.form.instance_adopted = data.instance_adopted;
                 this.form.instance_token = data.instance_token || null;
+                if (data.provider) this.form.provider = data.provider;
+                this.form.waha_server_key = data.waha_server_key || null;
                 if (data.connected && this.form.evolution_connection_state !== 'open') {
                     this.form.evolution_connection_state = 'open';
                     this.reconnecting = false;
@@ -598,6 +638,8 @@ export default {
                     if (data.profile_name) this.form.profile_name = data.profile_name;
                     if (data.instance_adopted !== undefined) this.form.instance_adopted = data.instance_adopted;
                     this.form.instance_token = data.instance_token || null;
+                    if (data.provider) this.form.provider = data.provider;
+                    this.form.waha_server_key = data.waha_server_key || null;
                     this.$message({
                         message: data.connected ? `Conectado (${data.state})` : `Estado: ${data.state}`,
                         type: data.connected ? 'success' : 'warning',
@@ -643,6 +685,23 @@ export default {
                 this.loading_renew = false;
             }
         },
+        // Igual que el éxito de renew(), pero disparado desde el switcher de
+        // servidor WAHA — la conexión se movió a otro servidor, hay que
+        // volver a escanear el QR.
+        onServerSwitched(newServerKey) {
+            this.form.waha_server_key = newServerKey;
+            this.form.evolution_connection_state = 'connecting';
+            this.form.connected_phone = null;
+            this.form.profile_name = null;
+            this.form.instance_adopted = false;
+            this.qrImage = null;
+            this.lastState = 'connecting';
+            this.reconnecting = true;
+            this.$nextTick(() => {
+                this.refreshQr();
+                this.startPolling();
+            });
+        },
         async restart() {
             this.loading_restart = true;
             try {
@@ -678,6 +737,8 @@ export default {
                     this.form.connected_phone = null;
                     this.form.profile_name = null;
                     this.form.instance_adopted = false;
+                    this.form.provider = 'evolution';
+                    this.form.waha_server_key = null;
                     this.instanceName = '';
                     this.qrImage = null;
                     this.lastState = null;
