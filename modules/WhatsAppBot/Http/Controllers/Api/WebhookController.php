@@ -5,16 +5,17 @@ namespace Modules\WhatsAppBot\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\Configuration;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
-use Modules\WhatsAppBot\Models\BotMessage;
-use Modules\WhatsAppBot\Services\BotOrchestrator;
+use Modules\WhatsAppBot\Services\Webhook\IncomingWebhookProcessor;
 
+/**
+ * Ingesta de webhooks de Evolution API (Baileys). Solo hace el parseo
+ * específico del shape de Evolution — el resto (auth, dedupe, self-chat,
+ * despacho al bot) vive en IncomingWebhookProcessor, compartido con
+ * WahaWebhookController.
+ */
 class WebhookController extends Controller
 {
-    private const LOCK_TTL_SECONDS = 60;
-
-    public function __construct(private BotOrchestrator $orchestrator)
+    public function __construct(private IncomingWebhookProcessor $processor)
     {
     }
 
@@ -22,14 +23,13 @@ class WebhookController extends Controller
     {
         $configuration = Configuration::first();
 
-        if (!$configuration || !$configuration->evolution_webhook_token || !hash_equals($configuration->evolution_webhook_token, $token)) {
-            return response()->json(['error' => 'unauthorized'], 401);
-        }
-
-        // Toggle global del bot (Configuracion del Bot > tab Bot conversacional).
-        // Si esta OFF, devolvemos 200 sin procesar para que Evolution no reintente.
-        if (!$configuration->whatsapp_bot_enabled) {
-            return response()->json(['ok' => true, 'ignored' => 'bot_disabled']);
+        $unauthorized = $this->processor->authorize(
+            $configuration?->evolution_webhook_token,
+            $token,
+            (bool) $configuration?->whatsapp_bot_enabled
+        );
+        if ($unauthorized) {
+            return $unauthorized;
         }
 
         $payload = $request->all();
@@ -41,11 +41,7 @@ class WebhookController extends Controller
 
         $data = $payload['data'] ?? [];
         $remoteJid = data_get($data, 'key.remoteJid', '');
-
-        // Ignorar grupos (JID termina en @g.us) y broadcast (@broadcast)
-        if ($remoteJid && (str_ends_with($remoteJid, '@g.us') || str_ends_with($remoteJid, '@broadcast'))) {
-            return response()->json(['ok' => true, 'ignored' => 'group_or_broadcast']);
-        }
+        $isGroupOrBroadcast = $remoteJid && (str_ends_with($remoteJid, '@g.us') || str_ends_with($remoteJid, '@broadcast'));
 
         // Direccionamiento LID: el remitente llega como <id>@lid sin numero real.
         // El proxy bot-proxy-v2 inyecta key.senderPn con el numero real.
@@ -60,67 +56,6 @@ class WebhookController extends Controller
             ?? data_get($data, 'message.extendedTextMessage.text')
             ?? null;
 
-        if ($messageId && BotMessage::where('message_id', $messageId)->exists()) {
-            Log::info('[WhatsAppBot] Webhook duplicado ignorado', [
-                'message_id' => $messageId,
-                'phone' => $phone,
-            ]);
-            return response()->json(['ok' => true, 'deduped' => true]);
-        }
-
-        // Self-chat: el dueño habla consigo mismo en su propio numero conectado.
-        // Evolution lo manda con fromMe=true y remoteJid igual al numero del bot.
-        // En ese caso procesamos como mensaje del dueño (autorizado via
-        // evolution_owner_user_id). En cualquier otro fromMe (mensaje del dueño
-        // a un cliente) lo ignoramos — no usamos eso como señal de nada.
-        $connectedPhone = $configuration->evolution_connected_phone;
-        $isSelfChat = $fromMe && $connectedPhone && $phone === $connectedPhone;
-
-        if ($fromMe && !$isSelfChat) {
-            return response()->json(['ok' => true, 'ignored' => 'from_me_to_other']);
-        }
-
-        BotMessage::create([
-            'session_id' => null,
-            'direction' => 'in',
-            'phone' => $phone,
-            'body' => $body,
-            'message_id' => $messageId,
-            'from_me' => $fromMe,
-            'raw_payload' => $payload,
-        ]);
-
-        Log::info('[WhatsAppBot] webhook received', [
-            'phone' => $phone,
-            'message_id' => $messageId,
-            'self_chat' => $isSelfChat,
-        ]);
-
-        if (empty($phone) || empty($body)) {
-            return response()->json(['ok' => true]);
-        }
-
-        $lock = Cache::lock("whatsapp-bot:phone:{$phone}", self::LOCK_TTL_SECONDS);
-
-        if (!$lock->get()) {
-            Log::warning('[WhatsAppBot] Otro mensaje del phone ya está siendo procesado, ignorado', [
-                'phone' => $phone,
-                'message_id' => $messageId,
-            ]);
-            return response()->json(['ok' => true, 'locked' => true]);
-        }
-
-        try {
-            $this->orchestrator->handleIncoming($phone, $body, $isSelfChat);
-        } catch (\Throwable $e) {
-            Log::error('[WhatsAppBot] Orchestrator falló', [
-                'exception' => $e->getMessage(),
-                'phone' => $phone,
-            ]);
-        } finally {
-            $lock->release();
-        }
-
-        return response()->json(['ok' => true]);
+        return $this->processor->process($configuration, $phone, $body, $fromMe, $messageId, $isGroupOrBroadcast, $payload);
     }
 }

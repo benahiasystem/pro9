@@ -12,6 +12,7 @@ if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
         Route::prefix('whatsapp-bot')->group(function () {
             Route::post('webhook/{token}', 'Api\WebhookController@receive')->name('whatsapp-bot.webhook');
+            Route::post('waha-webhook/{token}', 'Api\WahaWebhookController@receive')->name('whatsapp-bot.waha-webhook');
         });
     });
 }

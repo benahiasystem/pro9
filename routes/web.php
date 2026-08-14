@@ -141,6 +141,7 @@ if ($hostname) {
             Route::post('whatsapp-bot/toggle-enabled', 'Tenant\WhatsAppBotController@toggleEnabled');
             Route::post('whatsapp-bot/toggle-use-qr-api-instance', 'Tenant\WhatsAppBotController@toggleUseQrApiInstance');
             Route::post('whatsapp-bot/commands', 'Tenant\WhatsAppBotController@storeCommands');
+            Route::get('whatsapp-bot/waha-servers', 'Tenant\WhatsAppBotController@wahaServers');
             Route::post('configurations/apiruc', 'Tenant\ConfigurationController@storeApiRuc');
             Route::post('configurations/icbper', 'Tenant\ConfigurationController@icbper');
             Route::post('configurations/changeFormat', 'Tenant\ConfigurationController@changeFormat');
@@ -1166,6 +1167,13 @@ if ($hostname) {
             Route::post('configurations/emails', 'System\ConfigurationController@emails');
             Route::post('configurations/emails/test', 'System\ConfigurationController@testEmail');
             Route::post('configurations/evolution-server', 'System\ConfigurationController@evolutionServer');
+            Route::get('configurations/whatsapp-provider', 'System\ConfigurationController@whatsappProviderConfig');
+            Route::post('configurations/whatsapp-provider', 'System\ConfigurationController@storeWhatsappProviderConfig');
+
+            Route::get('waha-servers/records', 'System\WahaServerController@records');
+            Route::post('waha-servers', 'System\WahaServerController@store');
+            Route::delete('waha-servers/{wahaServer}', 'System\WahaServerController@destroy');
+            Route::post('waha-servers/{wahaServer}/set-default', 'System\WahaServerController@setDefault');
             Route::post('configurations/google-maps', 'System\ConfigurationController@googleMaps');
 
             // Número de WhatsApp conectado al superadmin (envío de notificaciones)

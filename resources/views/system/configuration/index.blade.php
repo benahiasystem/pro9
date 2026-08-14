@@ -19,6 +19,8 @@
             <system-openai-configuration></system-openai-configuration>
             <system-google-maps-configuration :configuration='@json($configuration)'></system-google-maps-configuration>
             <system-cron-order-configuration :configuration='@json($configuration)'></system-cron-order-configuration>
+            <system-whatsapp-provider-configuration></system-whatsapp-provider-configuration>
+            <system-waha-servers-index></system-waha-servers-index>
         </div>
         <div class="col-lg-6 col-md-12">
             <system-configuration-payment-gateway></system-configuration-payment-gateway>

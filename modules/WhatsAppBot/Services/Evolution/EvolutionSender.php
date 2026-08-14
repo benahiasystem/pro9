@@ -6,20 +6,50 @@ use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\Models\Tenant\Configuration;
 use Illuminate\Support\Facades\Log;
 use Modules\WhatsAppBot\Models\BotMessage;
+use Modules\WhatsAppBot\Services\WhatsAppProviderFactory;
 
 class EvolutionSender
 {
     use StorageDocument;
 
+    /**
+     * Triplete {instance, provider, server_key} de la conexión que
+     * efectivamente usa el bot para enviar — la propia, o la de QrApi si
+     * `evolution_use_qr_api_instance` está activo. Mismo criterio que
+     * WhatsAppBotController::effectiveConnection().
+     */
+    private function effectiveConnection(Configuration $config): array
+    {
+        if ($config->evolution_use_qr_api_instance) {
+            return [
+                'instance' => $config->qr_api_instance,
+                'provider' => $config->qr_api_provider ?: 'evolution',
+                'server_key' => $config->qr_api_waha_server_key,
+            ];
+        }
+
+        return [
+            'instance' => $config->evolution_instance,
+            'provider' => $config->evolution_provider ?: 'evolution',
+            'server_key' => $config->evolution_waha_server_key,
+        ];
+    }
+
     public function sendTyping(string $toPhone, int $delay = 1200): void
     {
         $config = Configuration::first();
-        if (!$config || empty($config->evolution_instance)) {
+        if (!$config) {
+            return;
+        }
+
+        $connection = $this->effectiveConnection($config);
+        if (empty($connection['instance'])) {
             return;
         }
 
         try {
-            (new EvolutionClient())->sendPresence($config->evolution_instance, $toPhone, 'composing', $delay);
+            WhatsAppProviderFactory::forProviderAndKey($connection['provider'], $connection['server_key'])
+                ->sendPresence($connection['instance'], $toPhone, 'composing', $delay);
         } catch (\Throwable $e) {
             // silent: presence is best-effort
         }
@@ -28,14 +58,16 @@ class EvolutionSender
     public function sendText(string $toPhone, string $text, ?int $sessionId = null): ?array
     {
         $config = Configuration::first();
+        $connection = $config ? $this->effectiveConnection($config) : null;
 
-        if (!$config || empty($config->evolution_instance)) {
+        if (!$config || empty($connection['instance'])) {
             Log::error('[WhatsAppBot] EvolutionSender: tenant sin instance configurada');
             return null;
         }
 
         try {
-            $data = (new EvolutionClient())->sendText($config->evolution_instance, $toPhone, $text);
+            $data = WhatsAppProviderFactory::forProviderAndKey($connection['provider'], $connection['server_key'])
+                ->sendText($connection['instance'], $toPhone, $text);
         } catch (\Throwable $e) {
             Log::error('[WhatsAppBot] Evolution sendText exception', [
                 'exception' => $e->getMessage(),
@@ -62,8 +94,9 @@ class EvolutionSender
     public function sendDocumentPdf(string $toPhone, string $filenameBase, string $displayFilename, ?string $caption = null, ?int $sessionId = null): ?array
     {
         $config = Configuration::first();
+        $connection = $config ? $this->effectiveConnection($config) : null;
 
-        if (!$config || empty($config->evolution_instance)) {
+        if (!$config || empty($connection['instance'])) {
             Log::error('[WhatsAppBot] EvolutionSender PDF: tenant sin instance configurada');
             return null;
         }
@@ -79,13 +112,14 @@ class EvolutionSender
         }
 
         try {
-            $data = (new EvolutionClient())->sendMedia($config->evolution_instance, $toPhone, [
-                'mediatype' => 'document',
-                'mimetype' => 'application/pdf',
-                'media' => base64_encode($pdfBinary),
-                'fileName' => $displayFilename,
-                'caption' => $caption ?: $displayFilename,
-            ]);
+            $data = WhatsAppProviderFactory::forProviderAndKey($connection['provider'], $connection['server_key'])
+                ->sendMedia($connection['instance'], $toPhone, [
+                    'mediatype' => 'document',
+                    'mimetype' => 'application/pdf',
+                    'media' => base64_encode($pdfBinary),
+                    'fileName' => $displayFilename,
+                    'caption' => $caption ?: $displayFilename,
+                ]);
         } catch (\Throwable $e) {
             Log::error('[WhatsAppBot] Evolution sendMedia (PDF) exception', [
                 'exception' => $e->getMessage(),

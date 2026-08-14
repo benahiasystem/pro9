@@ -3,35 +3,54 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Models\System\WahaServer;
 use App\Models\Tenant\Configuration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Modules\WhatsAppBot\Services\Evolution\EvolutionClient;
+use Modules\WhatsAppBot\Services\WhatsAppProviderFactory;
 
 class WhatsAppBotController extends Controller
 {
     private const NO_INSTANCE_MSG = 'No hay instancia activa.';
 
-    private function buildWebhookUrl(string $token): string
+    private function buildWebhookUrl(string $token, string $provider = 'evolution'): string
     {
         $override = env('WHATSAPP_WEBHOOK_BASE_URL');
         $base = $override ? rtrim($override, '/') : rtrim(url('/'), '/');
-        return $base . '/api/whatsapp-bot/webhook/' . $token;
+        $path = $provider === 'waha' ? 'waha-webhook' : 'webhook';
+        return $base . '/api/whatsapp-bot/' . $path . '/' . $token;
     }
 
-    private function effectiveInstance(Configuration $config): ?string
+    /**
+     * Triplete {instance, provider, server_key} de la conexión que
+     * efectivamente usa el bot — la propia, o la de QrApi si
+     * `evolution_use_qr_api_instance` está activo. Compartir instancia
+     * siempre comparte el triplete completo, no solo el nombre, para que el
+     * cliente correcto se resuelva sin importar en qué proveedor esté.
+     */
+    private function effectiveConnection(Configuration $config): array
     {
         if ($config->evolution_use_qr_api_instance) {
-            return $config->qr_api_instance;
+            return [
+                'instance' => $config->qr_api_instance,
+                'provider' => $config->qr_api_provider ?: 'evolution',
+                'server_key' => $config->qr_api_waha_server_key,
+            ];
         }
-        return $config->evolution_instance;
+
+        return [
+            'instance' => $config->evolution_instance,
+            'provider' => $config->evolution_provider ?: 'evolution',
+            'server_key' => $config->evolution_waha_server_key,
+        ];
     }
 
     /**
      * Activa/desactiva "usar el mismo número de QR Api" para el bot. Al
      * activarlo, si el bot tenía su propia instancia y no fue adoptada, se
-     * elimina en Evolution (si fue adoptada, solo se desvincula localmente).
+     * elimina (si fue adoptada, solo se desvincula localmente).
      */
     public function toggleUseQrApiInstance(Request $request)
     {
@@ -42,7 +61,7 @@ class WhatsAppBotController extends Controller
         if ($newValue && !$config->evolution_use_qr_api_instance && !empty($config->evolution_instance)) {
             if (!$config->evolution_instance_adopted) {
                 try {
-                    (new EvolutionClient())->deleteInstance($config->evolution_instance);
+                    WhatsAppProviderFactory::forChannel($config, 'bot')->deleteInstance($config->evolution_instance);
                 } catch (\Throwable $e) {
                     Log::warning('[WhatsAppBot] No se pudo borrar instancia previa al cambiar a modo QrApi', [
                         'exception' => $e->getMessage(),
@@ -51,6 +70,8 @@ class WhatsAppBotController extends Controller
             }
             $config->evolution_instance = null;
             $config->evolution_instance_adopted = false;
+            $config->evolution_provider = 'evolution';
+            $config->evolution_waha_server_key = null;
             $config->evolution_connected_phone = null;
             $config->evolution_profile_name = null;
             $config->evolution_connection_state = 'disconnected';
@@ -89,9 +110,9 @@ class WhatsAppBotController extends Controller
         }
 
         try {
-            $client = new EvolutionClient();
-            $webhookUrl = $this->buildWebhookUrl($config->evolution_webhook_token);
-            $client->createInstance($instance, $webhookUrl);
+            $resolved = WhatsAppProviderFactory::forNewConnection();
+            $webhookUrl = $this->buildWebhookUrl($config->evolution_webhook_token, $resolved['provider']);
+            $resolved['client']->createInstance($instance, $webhookUrl);
         } catch (\Throwable $e) {
             Log::error('[WhatsAppBot] No se pudo crear instancia', [
                 'instance' => $instance,
@@ -105,6 +126,8 @@ class WhatsAppBotController extends Controller
 
         $config->evolution_instance = $instance;
         $config->evolution_instance_adopted = false;
+        $config->evolution_provider = $resolved['provider'];
+        $config->evolution_waha_server_key = $resolved['server_key'];
         $config->evolution_use_qr_api_instance = false;
         $config->evolution_connected_phone = null;
         $config->evolution_profile_name = null;
@@ -118,6 +141,8 @@ class WhatsAppBotController extends Controller
         return [
             'success' => true,
             'instance_name' => $instance,
+            'provider' => $resolved['provider'],
+            'waha_server_key' => $resolved['server_key'],
             'message' => 'Instancia creada. Escanea el código QR para vincular el WhatsApp.',
         ];
     }
@@ -126,6 +151,8 @@ class WhatsAppBotController extends Controller
      * Adopta una instancia que ya existe y ya está conectada (ej. porque se
      * conectó primero desde Chatwoot) en vez de crear una nueva. No llama a
      * createInstance() — solo verifica propiedad y registra el webhook.
+     * Exclusivo de Evolution: WAHA no tiene token por sesión, así que no hay
+     * forma segura de verificar propiedad (ver WahaClient::verifyOwnership()).
      */
     public function linkExisting(Request $request)
     {
@@ -150,7 +177,7 @@ class WhatsAppBotController extends Controller
         }
 
         try {
-            $webhookUrl = $this->buildWebhookUrl($config->evolution_webhook_token);
+            $webhookUrl = $this->buildWebhookUrl($config->evolution_webhook_token, 'evolution');
             $client->setWebhook($instance, $webhookUrl);
         } catch (\Throwable $e) {
             Log::error('[WhatsAppBot] linkExisting: no se pudo registrar webhook', [
@@ -162,6 +189,8 @@ class WhatsAppBotController extends Controller
 
         $config->evolution_instance = $instance;
         $config->evolution_instance_adopted = true;
+        $config->evolution_provider = 'evolution';
+        $config->evolution_waha_server_key = null;
         $config->evolution_use_qr_api_instance = false;
         $config->evolution_connected_phone = $verification['connected_phone'];
         $config->evolution_connection_state = 'open';
@@ -180,19 +209,20 @@ class WhatsAppBotController extends Controller
     public function qr()
     {
         $config = Configuration::first();
-        $instance = $this->effectiveInstance($config);
-        if (empty($instance)) {
+        $connection = $this->effectiveConnection($config);
+        if (empty($connection['instance'])) {
             return ['success' => false, 'message' => self::NO_INSTANCE_MSG];
         }
 
         try {
-            $response = (new EvolutionClient())->connect($instance);
-            $qr = EvolutionClient::extractQr($response);
+            $client = WhatsAppProviderFactory::forProviderAndKey($connection['provider'], $connection['server_key']);
+            $response = $client->connect($connection['instance']);
+            $qr = $client::extractQr($response);
 
             return [
                 'success' => $qr !== null,
                 'qr' => $qr,
-                'message' => $qr ? null : 'Evolution no devolvió un QR válido.',
+                'message' => $qr ? null : 'El proveedor no devolvió un QR válido.',
             ];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => 'Error al obtener QR: ' . $e->getMessage()];
@@ -202,15 +232,16 @@ class WhatsAppBotController extends Controller
     public function state()
     {
         $config = Configuration::first();
-        $instance = $this->effectiveInstance($config);
+        $connection = $this->effectiveConnection($config);
+        $instance = $connection['instance'];
         if (empty($instance)) {
             return ['success' => false, 'connected' => false, 'state' => 'disconnected'];
         }
 
         try {
-            $client = new EvolutionClient();
+            $client = WhatsAppProviderFactory::forProviderAndKey($connection['provider'], $connection['server_key']);
             $response = $client->connectionState($instance);
-            $connected = EvolutionClient::isConnected($response);
+            $connected = $client::isConnected($response);
             $state = data_get($response, 'instance.state') ?: data_get($response, 'state') ?: 'unknown';
 
             // Si esta instancia es propia (no compartida con QrApi), guardamos los datos.
@@ -266,6 +297,7 @@ class WhatsAppBotController extends Controller
             // El token solo se expone cuando la instancia es propia (creada
             // desde el bot, no adoptada ni compartida) — es el que hay que
             // copiar hacia ChatBuho para que ellos puedan adoptarla ahí.
+            // Nunca aplica para WAHA (no tiene token por sesión).
             $instanceToken = (!$config->evolution_use_qr_api_instance && !$instanceAdopted)
                 ? $config->evolution_instance_token
                 : null;
@@ -292,6 +324,8 @@ class WhatsAppBotController extends Controller
                 'connected_phone' => $connectedPhone,
                 'profile_name' => $profileName,
                 'instance_token' => $instanceToken,
+                'provider' => $connection['provider'],
+                'waha_server_key' => $connection['server_key'],
             ];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => 'Error al consultar estado: ' . $e->getMessage()];
@@ -300,9 +334,9 @@ class WhatsAppBotController extends Controller
 
     /**
      * Desconecta el bot de su instancia. Si la instancia fue adoptada (vino
-     * de ChatBuho, ver linkExisting()), NO se elimina en Evolution — solo se
-     * desvincula localmente, para no romper la conexión de ChatBuho. Si la
-     * instancia la creó Pro9, sí se elimina como siempre.
+     * de ChatBuho, ver linkExisting()), NO se elimina — solo se desvincula
+     * localmente, para no romper la conexión de ChatBuho. Si la instancia la
+     * creó Pro9, sí se elimina como siempre.
      */
     public function disconnect()
     {
@@ -315,7 +349,7 @@ class WhatsAppBotController extends Controller
 
         if (!$wasAdopted) {
             try {
-                (new EvolutionClient())->deleteInstance($config->evolution_instance);
+                WhatsAppProviderFactory::forChannel($config, 'bot')->deleteInstance($config->evolution_instance);
             } catch (\Throwable $e) {
                 Log::warning('[WhatsAppBot] deleteInstance fallo (continuo limpiando local)', [
                     'exception' => $e->getMessage(),
@@ -325,6 +359,8 @@ class WhatsAppBotController extends Controller
 
         $config->evolution_instance = null;
         $config->evolution_instance_adopted = false;
+        $config->evolution_provider = 'evolution';
+        $config->evolution_waha_server_key = null;
         $config->evolution_connected_phone = null;
         $config->evolution_profile_name = null;
         $config->evolution_connection_state = 'disconnected';
@@ -343,21 +379,34 @@ class WhatsAppBotController extends Controller
     public function restart()
     {
         $config = Configuration::first();
-        $instance = $this->effectiveInstance($config);
-        if (empty($instance)) {
+        $connection = $this->effectiveConnection($config);
+        if (empty($connection['instance'])) {
             return ['success' => false, 'message' => self::NO_INSTANCE_MSG];
         }
 
         try {
-            (new EvolutionClient())->restartInstance($instance);
+            WhatsAppProviderFactory::forProviderAndKey($connection['provider'], $connection['server_key'])
+                ->restartInstance($connection['instance']);
             return ['success' => true, 'message' => 'Instancia reiniciada.'];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => 'No se pudo reiniciar: ' . $e->getMessage()];
         }
     }
 
-    public function renew()
+    /**
+     * Renueva la instancia/sesión (borra + crea de nuevo, hay que reescanear
+     * el QR). Si se manda `waha_server_key` y la conexión actual ya está en
+     * WAHA, en vez de recrear en el mismo servidor mueve la sesión al
+     * servidor destino — es el mecanismo de "cambiar de motor" (salvaguarda
+     * si un motor WAHA falla: el cliente elige otro servidor y reescanea).
+     */
+    public function renew(Request $request)
     {
+        $data = $request->validate([
+            'waha_server_key' => ['sometimes', 'nullable', 'string'],
+        ]);
+        $targetServerKey = $data['waha_server_key'] ?? null;
+
         $config = Configuration::first();
         if (empty($config?->evolution_instance)) {
             return ['success' => false, 'message' => self::NO_INSTANCE_MSG];
@@ -370,26 +419,36 @@ class WhatsAppBotController extends Controller
             ];
         }
 
+        if ($targetServerKey && $config->evolution_provider !== 'waha') {
+            return ['success' => false, 'message' => 'Solo se puede cambiar de servidor si la conexión actual ya está en WAHA.'];
+        }
+
         $instance = $config->evolution_instance;
-        $client = new EvolutionClient();
 
         try {
-            $client->deleteInstance($instance);
+            WhatsAppProviderFactory::forProviderAndKey($config->evolution_provider ?: 'evolution', $config->evolution_waha_server_key)
+                ->deleteInstance($instance);
         } catch (\Throwable $e) {
             Log::warning('[WhatsAppBot] renew: deleteInstance fallo', ['exception' => $e->getMessage()]);
         }
 
         sleep(2);
 
+        $newProvider = $targetServerKey ? 'waha' : ($config->evolution_provider ?: 'evolution');
+        $newServerKey = $targetServerKey ?: $config->evolution_waha_server_key;
+
         try {
-            $client->createInstance($instance);
-            $webhookUrl = $this->buildWebhookUrl($config->evolution_webhook_token);
-            $client->setWebhook($instance, $webhookUrl);
+            $newClient = WhatsAppProviderFactory::forProviderAndKey($newProvider, $newServerKey);
+            $newClient->createInstance($instance);
+            $webhookUrl = $this->buildWebhookUrl($config->evolution_webhook_token, $newProvider);
+            $newClient->setWebhook($instance, $webhookUrl);
         } catch (\Throwable $e) {
             Log::error('[WhatsAppBot] renew: no se pudo recrear instancia', ['exception' => $e->getMessage()]);
             return ['success' => false, 'message' => 'No se pudo renovar la instancia: ' . $e->getMessage()];
         }
 
+        $config->evolution_provider = $newProvider;
+        $config->evolution_waha_server_key = $newServerKey;
         $config->evolution_connected_phone = null;
         $config->evolution_profile_name = null;
         $config->evolution_connection_state = 'connecting';
@@ -398,7 +457,9 @@ class WhatsAppBotController extends Controller
 
         return [
             'success' => true,
-            'message' => 'Instancia renovada. Escanea el nuevo QR para reconectar.',
+            'message' => $targetServerKey
+                ? 'Conexión movida al nuevo servidor. Escanea el nuevo QR para reconectar.'
+                : 'Instancia renovada. Escanea el nuevo QR para reconectar.',
         ];
     }
 
@@ -447,5 +508,18 @@ class WhatsAppBotController extends Controller
             'success' => true,
             'message' => 'Comandos actualizados.',
         ];
+    }
+
+    /**
+     * Lista de servidores WAHA activos (sin api_key) para que el tenant
+     * elija a cuál conectar o mover su sesión — la consumen tanto la
+     * pestaña del bot como la de comprobantes (QrApi).
+     */
+    public function wahaServers()
+    {
+        return WahaServer::where('active', true)
+            ->orderBy('name')
+            ->get(['key', 'name', 'engine'])
+            ->values();
     }
 }
