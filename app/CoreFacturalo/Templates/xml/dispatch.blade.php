@@ -195,7 +195,7 @@
                     </cac:PartyLegalEntity>
                 </cac:CarrierParty>
             @endif
-            @if($document['transport_mode_type_id'] === '02' && !$document['is_transport_m1l'])
+            @if($document['transport_mode_type_id'] === '02' && !$document['is_transport_m1l'] || (  $document['transport_mode_type_id'] === '01' && !$document['is_transport_m1l'] && $document['has_transport_driver_01']))
             <!-- CONDUCTOR PRINCIPAL -->
                 <cac:DriverPerson>
                     <!-- TIPO Y NUMERO DE DOCUMENTO DE IDENTIDAD -->
