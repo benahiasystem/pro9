@@ -627,11 +627,13 @@ class ServiceDispatchController extends Controller
                             // El código del CDR define aceptado / observado / rechazado
                             $state_type_id = $this->getStateTypeByCdrCode($sunat_code, $state_type_id);
 
+                            // mismo esquema que arma Facturalo, es el que leen los
+                            // Resources: sent, code, description, notes
                             $soap_shipping_response = [
-                                'codigo' => $sunat_code,
+                                'sent' => true,
+                                'code' => $sunat_code,
+                                'description' => $message,
                                 'notes' => $notes,
-                                'error' => '',
-                                'mensaje' => $message
                             ];
 
                             if ($state_type_id === self::STATE_REJECTED) {

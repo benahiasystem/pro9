@@ -19,23 +19,24 @@ class DispatchResource extends JsonResource
         $response_type = null;
         $code = null;
 
-        if($this->soap_shipping_response){
-            if($this->soap_shipping_response->sent){
+        // el accessor del modelo devuelve un stdClass vacio cuando la columna trae
+        // json invalido, y un objeto vacio pasa como verdadero: por eso se consulta
+        // la propiedad directamente en lugar de chequear el objeto
+        if($this->soap_shipping_response->sent ?? false){
 
-                $response_message = $this->soap_shipping_response->description;
-                $code =  (int) $this->soap_shipping_response->code;
+            $response_message = $this->soap_shipping_response->description ?? null;
+            $code =  (int) $this->soap_shipping_response->code;
 
-                if($code === 0) {
-                    $response_type = 'success';
-                }elseif($code < 2000) {
-                    $response_type = 'error';
-                }elseif ($code < 4000) {
-                    $response_type = 'error';
-                } else {
-                    $response_type = 'warning';
-                }
-
+            if($code === 0) {
+                $response_type = 'success';
+            }elseif($code < 2000) {
+                $response_type = 'error';
+            }elseif ($code < 4000) {
+                $response_type = 'error';
+            } else {
+                $response_type = 'warning';
             }
+
         }
 
         $has_cdr = false;
