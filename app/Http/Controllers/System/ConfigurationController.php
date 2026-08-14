@@ -584,6 +584,35 @@ class ConfigurationController extends Controller
         ];
     }
 
+    /**
+     * Selector de proveedor de conexión WhatsApp (Evolution o WAHA) a nivel
+     * de instalación. Define el default para conexiones NUEVAS — no afecta
+     * retroactivamente a tenants ya conectados (ver WhatsAppProviderFactory).
+     */
+    public function whatsappProviderConfig()
+    {
+        $record = Configuration::first();
+        return [
+            'whatsapp_provider' => $record->whatsapp_provider ?: 'evolution',
+        ];
+    }
+
+    public function storeWhatsappProviderConfig(Request $request)
+    {
+        $request->validate([
+            'whatsapp_provider' => 'required|in:evolution,waha',
+        ]);
+
+        $record = Configuration::first();
+        $record->whatsapp_provider = $request->whatsapp_provider;
+        $record->save();
+
+        return [
+            'success' => true,
+            'message' => 'Proveedor de WhatsApp actualizado',
+        ];
+    }
+
     public function cron(Request $request)
     {
         $record = Configuration::first();

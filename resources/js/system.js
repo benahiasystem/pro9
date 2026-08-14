@@ -50,6 +50,8 @@ import SystemReportLoginLockout from '@viewsModuleReport/system/report_login_loc
 import SystemUserNotChangePassword from '@viewsModuleReport/system/user_not_change_password/index.vue';
 import SystemPlansIndex from './views/system/plans/index.vue';
 import SystemPlansForm from './views/system/plans/form.vue';
+import SystemWahaServersIndex from './views/system/waha_servers/index.vue';
+import SystemWhatsappProviderConfiguration from './views/system/configuration/whatsappProviderConfiguration.vue';
 import SystemConfigurationCronOrderPayments from './views/system/configuration/cronOrderPayments.vue';
 import SystemPaymentsIndex from './views/system/payments/index.vue';
 import SystemPaymentViewIndex from './views/system/payments/payment-view.vue';
@@ -144,6 +146,10 @@ Vue.component('system-user-not-change-password-index', SystemUserNotChangePasswo
 // System plans
 Vue.component('system-plans-index', SystemPlansIndex);
 Vue.component('system-plans-form', SystemPlansForm);
+
+// WAHA (proveedor de conexión WhatsApp alternativo a Evolution)
+Vue.component('system-waha-servers-index', SystemWahaServersIndex);
+Vue.component('system-whatsapp-provider-configuration', SystemWhatsappProviderConfiguration);
 
 // inputservice
 Vue.component('x-input-service', InputService);
