@@ -44,6 +44,7 @@ class Configuration extends Model
         'qr_api_msg',
         'evolution_server_url',
         'evolution_server_apikey',
+        'whatsapp_provider',
         'notify_wa_instance',
         'notify_wa_connection_state',
         'notify_wa_connected_phone',
