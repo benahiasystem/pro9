@@ -26,7 +26,18 @@ class ConfigurationController extends Controller
     public function record() {
         $configuration = ConfigurationEcommerce::first();
         $record = new ConfigurationEcommerceResource($configuration);
-        return $record;
+        
+        $bank_accounts = \App\Models\Tenant\BankAccount::with('bank', 'currency_type')->get()->map(function($row) {
+            return [
+                'id' => $row->id,
+                'description' => $row->bank->description . ' - ' . $row->currency_type->symbol . ' - ' . $row->number,
+            ];
+        });
+
+        return [
+            'data' => $record,
+            'bank_accounts' => $bank_accounts
+        ];
     }
 
 
@@ -75,12 +86,35 @@ class ConfigurationController extends Controller
     {
         $id = $request->input('id');
         $configuration = ConfigurationEcommerce::find($id);
+        
+        $preferences = $configuration->preferences ?: [];
+        $preferences['ecommerce_bank_account_ids'] = $request->input('ecommerce_bank_account_ids', []);
+        
+        $preferences['enable_cash'] = $request->input('enable_cash', 0);
+        $preferences['cash_title'] = $request->input('cash_title', 'Pago contra entrega');
+        $preferences['cash_description'] = $request->input('cash_description', null);
+        $preferences['cash_pickup_only'] = $request->input('cash_pickup_only', 0) ? true : false;
+        
+        // Custom gateway configurations
+        $preferences['enable_izipay'] = $request->input('enable_izipay', 0);
+        $preferences['title_izipay'] = $request->input('title_izipay', 'Pago con Izipay');
+        $preferences['description_izipay'] = $request->input('description_izipay', null);
+
+        $preferences['enable_mp'] = $request->input('enable_mp', 0);
+        $preferences['title_mp'] = $request->input('title_mp', 'Mercado Pago');
+        $preferences['description_mp'] = $request->input('description_mp', null);
+
+        $preferences['enable_culqi'] = $request->input('enable_culqi', 0);
+        $preferences['title_culqi'] = $request->input('title_culqi', 'Pago con Tarjeta');
+        $preferences['description_culqi'] = $request->input('description_culqi', null);
+
         $configuration->fill($request->all());
+        $configuration->preferences = $preferences;
         $configuration->save();
 
         return [
             'success' => true,
-            'message' => 'Configuración Culqui actualizada'
+            'message' => 'Configuración actualizada'
         ];
     }
 

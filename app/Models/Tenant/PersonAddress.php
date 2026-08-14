@@ -107,9 +107,11 @@ class PersonAddress extends ModelTenant
 
     public function setLocationIdAttribute($value)
     {
-        $this->attributes['department_id'] = (count($value) === 3)?$value[0]:null;
-        $this->attributes['province_id'] = (count($value) === 3)?$value[1]:null;
-        $this->attributes['district_id'] = (count($value) === 3)?$value[2]:null;
+        $hasUbigeo = is_array($value) && count($value) === 3 && !empty($value[0]) && !empty($value[1]) && !empty($value[2]);
+
+        $this->attributes['department_id'] = $hasUbigeo ? $value[0] : null;
+        $this->attributes['province_id'] = $hasUbigeo ? $value[1] : null;
+        $this->attributes['district_id'] = $hasUbigeo ? $value[2] : null;
     }
 
     public function getLocationIdAttribute()

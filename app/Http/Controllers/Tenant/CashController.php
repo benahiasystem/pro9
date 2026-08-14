@@ -148,16 +148,37 @@ class CashController extends Controller
     public function store(CashRequest $request) {
 
         $id = $request->input('id');
-        $user_id = $request->input('user_id');
         $cashId = 0;
+        $notFound = false;
 
-        if($user_id == 0){
-            $request->merge(['user_id' => auth()->user()->id]);
-        }
 
-        DB::connection('tenant')->transaction(function () use ($id, $request,&$cashId) {
+        DB::connection('tenant')->transaction(function () use ($id, $request,&$cashId,&$notFound) {
+            $user_id = $request->input('user_id');
 
-            $cash = Cash::firstOrNew(['id' => $id]);
+            if($user_id == 0){
+                $user_id = auth()->user()->id;
+                $request->merge(['user_id' => auth()->user()->id]);
+            }
+
+            if (!$id) {
+                // Apertura: si el usuario ya tiene una caja activa se reutiliza, si no se crea una nueva
+                $cash = Cash::where('user_id', $user_id)
+                        ->where('state', true)
+                        ->first();
+
+                if (!$cash) {
+                    $cash = new Cash;
+                }
+            } else {
+                // Edición: la caja debe existir, no se crea una nueva
+                $cash = Cash::find($id);
+
+                if (!$cash) {
+                    $notFound = true;
+                    return;
+                }
+            }
+
             $cash->fill($request->all());
 
             if(!$id){
@@ -170,6 +191,13 @@ class CashController extends Controller
             $this->createCashTransaction($cash, $request);
 
         });
+
+        if ($notFound) {
+            return [
+                'success' => false,
+                'message' => 'Caja no encontrada',
+            ];
+        }
 
 
         return [

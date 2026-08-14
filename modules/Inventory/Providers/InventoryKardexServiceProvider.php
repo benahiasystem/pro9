@@ -1060,6 +1060,22 @@ class InventoryKardexServiceProvider extends ServiceProvider
         try {
             $stockService = app(\Modules\Restaurant\Services\RestaurantStockService::class);
             $stockService->calculateAndUpdateStock($item_id);
+
+            // Notificar al POS del restaurante vía WebSocket que el stock cambió.
+            // Este es el chokepoint de TODOS los movimientos de inventario (venta,
+            // nota de venta, compra, devolución, modificadores), así que cubre todos
+            // los caminos de venta. Se limita a ítems del restaurante para no publicar
+            // en cada venta ajena al módulo.
+            $item = Item::find($item_id);
+            if ($item && $item->apply_restaurant) {
+                $fqdn = app(\Hyn\Tenancy\Contracts\CurrentHostname::class)?->fqdn ?? 'local';
+                $data = app(\Modules\Restaurant\Http\Controllers\RestaurantController::class)
+                    ->getStockStatus()['data'] ?? [];
+                app(\App\Services\CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+                    'event'   => 'stock-updated',
+                    'payload' => $data,
+                ]);
+            }
         } catch (\Exception $e) {
             \Log::warning("No se pudo sincronizar stock del restaurante para item {$item_id}: " . $e->getMessage());
         }

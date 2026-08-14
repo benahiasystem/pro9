@@ -91,6 +91,7 @@
                     <tr slot="heading">
                         <template v-for="col in orderedColumns">
                             <th v-if="col.visible && col.key === 'seller_name'" :key="col.key" class="text-end">Vendedor</th>
+                            <th v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">Origen</th>
                             <th v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-center">Fecha Emisión</th>
                             <th v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">Fecha de pago</th>
                             <th v-if="col.visible && col.key === 'customer'" :key="col.key">Cliente</th>
@@ -132,6 +133,7 @@
                     <tr slot-scope="{ index, row }" :class="{'anulate_color': row.state_type_id === '11'}">
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'seller_name'" :key="col.key" class="text-end">{{ row.seller_name }}</td>
+                            <td v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">{{ row.source_module_description }}</td>
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-center">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
@@ -412,37 +414,38 @@ export default {
             statusDispatch: null,
             columns: {
                 seller_name:        { title: "Vendedor",             visible: false, order: 0  },
-                date_of_issue:      { title: "Fecha Emisión",        visible: true,  order: 1  },
-                date_payment:       { title: "Fecha de pago",        visible: false, order: 2  },
-                customer:           { title: "Cliente",              visible: true,  order: 3  },
-                full_number:        { title: "Nota de Venta",        visible: true,  order: 4  },
-                state_type:         { title: "Estado",               visible: true,  order: 5  },
-                exchange_rate_sale: { title: "Tipo de cambio",       visible: false, order: 6  },
-                currency_type:      { title: "Moneda",               visible: true,  order: 7  },
-                due_date:           { title: "Fecha de Vencimiento", visible: false, order: 8  },
-                total_exportation:  { title: "T.Exportación",        visible: false, order: 9  },
-                total_free:         { title: "T.Gratuito",           visible: false, order: 10 },
-                total_unaffected:   { title: "T.Inafecto",           visible: false, order: 11 },
-                total_exonerated:   { title: "T.Exonerado",          visible: false, order: 12 },
-                total_taxed:        { title: "T.Gravado",            visible: false, order: 13 },
-                total_igv:          { title: "T.IGV",                visible: false, order: 14 },
-                total:              { title: "Total",                visible: true,  order: 15 },
-                total_paid:         { title: "Pagado",               visible: false, order: 16 },
-                total_pending_paid: { title: "Por pagar",            visible: false, order: 17 },
-                documents:          { title: "Comprobantes",         visible: true,  order: 18 },
-                payment_status:     { title: "Estado pago",          visible: true,  order: 19 },
-                purchase_order:     { title: "Orden de compra",      visible: true,  order: 20 },
-                payments:           { title: "Pagos",                visible: true,  order: 21 },
-                download:           { title: "Descarga",             visible: true,  order: 22 },
-                personalized:       { title: "Personalizados",       visible: true,  order: 23 },
-                recurrence:         { title: "Recurrencia",          visible: false, order: 24 },
-                region:             { title: "Region",               visible: false, order: 25 },
-                dispatch_status:    { title: "Estado de despacho",   visible: false, order: 26 },
-                type_period:        { title: "Tipo Periodo",         visible: true,  order: 27 },
-                quantity_period:    { title: "Cantidad Periodo",     visible: true,  order: 28 },
-                paid:               { title: "Estado de Pago",       visible: false, order: 29 },
-                license_plate:      { title: "Placa",                visible: true,  order: 30 },
-                actions:            { title: "Acciones",             visible: true,  order: 31 },
+                source_module:      { title: "Origen",               visible: false, order: 1  },
+                date_of_issue:      { title: "Fecha Emisión",        visible: true,  order: 2  },
+                date_payment:       { title: "Fecha de pago",        visible: false, order: 3  },
+                customer:           { title: "Cliente",              visible: true,  order: 4  },
+                full_number:        { title: "Nota de Venta",        visible: true,  order: 5  },
+                state_type:         { title: "Estado",               visible: true,  order: 6  },
+                exchange_rate_sale: { title: "Tipo de cambio",       visible: false, order: 7  },
+                currency_type:      { title: "Moneda",               visible: true,  order: 8  },
+                due_date:           { title: "Fecha de Vencimiento", visible: false, order: 9  },
+                total_exportation:  { title: "T.Exportación",        visible: false, order: 10 },
+                total_free:         { title: "T.Gratuito",           visible: false, order: 11 },
+                total_unaffected:   { title: "T.Inafecto",           visible: false, order: 12 },
+                total_exonerated:   { title: "T.Exonerado",          visible: false, order: 13 },
+                total_taxed:        { title: "T.Gravado",            visible: false, order: 14 },
+                total_igv:          { title: "T.IGV",                visible: false, order: 15 },
+                total:              { title: "Total",                visible: true,  order: 16 },
+                total_paid:         { title: "Pagado",               visible: false, order: 17 },
+                total_pending_paid: { title: "Por pagar",            visible: false, order: 18 },
+                documents:          { title: "Comprobantes",         visible: true,  order: 19 },
+                payment_status:     { title: "Estado pago",          visible: true,  order: 20 },
+                purchase_order:     { title: "Orden de compra",      visible: true,  order: 21 },
+                payments:           { title: "Pagos",                visible: true,  order: 22 },
+                download:           { title: "Descarga",             visible: true,  order: 23 },
+                personalized:       { title: "Personalizados",       visible: true,  order: 24 },
+                recurrence:         { title: "Recurrencia",          visible: false, order: 25 },
+                region:             { title: "Region",               visible: false, order: 26 },
+                dispatch_status:    { title: "Estado de despacho",   visible: false, order: 27 },
+                type_period:        { title: "Tipo Periodo",         visible: true,  order: 28 },
+                quantity_period:    { title: "Cantidad Periodo",     visible: true,  order: 29 },
+                paid:               { title: "Estado de Pago",       visible: false, order: 30 },
+                license_plate:      { title: "Placa",                visible: true,  order: 31 },
+                actions:            { title: "Acciones",             visible: true,  order: 32 },
             },
             customFieldColumns: [],
             savedCustomFieldVisibilities: {},

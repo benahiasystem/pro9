@@ -118,9 +118,23 @@ class RestaurantController extends Controller
             $fqdn = $currentHostname ?: request()->getHost();
             $protocol = config('tenant.force_https') ? 'https://' : 'http://';
 
+            // WebSocket público (Centrifugo) para las apps mozo/vendeya.
+            // Es un ÚNICO subdominio ws.{dominio-base} por instalación, compartido
+            // por todos los tenants (el canal restaurant:{fqdn} diferencia a cada uno).
+            // Se deriva del fqdn del tenant quitando el label del subdominio:
+            //   1.facturaloperu-pro8.oo  ->  wss://ws.facturaloperu-pro8.oo
+            // OJO: esto NO es CENTRIFUGO_URL del .env (esa es la ruta INTERNA
+            // Laravel->Centrifugo para publicar vía HTTP API dentro de docker).
+            $firstDot = strpos($fqdn, '.');
+            $baseDomain = $firstDot !== false ? substr($fqdn, $firstDot + 1) : $fqdn;
+            $wsScheme = config('tenant.force_https') ? 'wss' : 'ws';
+            $wsUrl = "{$wsScheme}://ws.{$baseDomain}";
+            // $wsUrl = "ws://localhost:8000"; // temporal para desarrollo local, reemplazar por la línea anterior en producción
+
             return response()->json(array_merge([
                 'apiSsl' => $protocol,
                 'apiUrl' => $fqdn,
+                'wsUrl' => $wsUrl,
                 'isStoreEnabled' => 'false',
             ], $branding))->header('Cache-Control', 'no-store, no-cache, must-revalidate');
         } catch (\Exception $e) {

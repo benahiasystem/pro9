@@ -209,6 +209,8 @@ class DocumentCollection extends ResourceCollection
                 'user_name' => ($row->user) ? $row->user->name : '',
                 'user_email' => ($row->user) ? $row->user->email : '',
                 'user_id' => $row->user_id,
+                'source_module' => $row->source_module,
+                'source_module_description' => $this->getSourceModuleDescription($row->source_module),
                 'email_send_it' => $email_send_it,
                 'email_send_it_array' => $email_send_it_array,
                 'external_id' => $row->external_id,
@@ -242,6 +244,24 @@ class DocumentCollection extends ResourceCollection
         });
     }
 
+
+    private function getSourceModuleDescription($source_module)
+    {
+        $labels = [
+            'WEB' => 'Panel web',
+            'MOZO' => 'Mozo',
+            'VENDEYA' => 'Vendeya',
+            'APP' => 'App móvil',
+            'HOTEL' => 'Hotel',
+            'POS' => 'POS',
+        ];
+
+        if (empty($source_module)) {
+            return '—';
+        }
+
+        return $labels[$source_module] ?? $source_module;
+    }
 
     private function getDispatches($row)
     {

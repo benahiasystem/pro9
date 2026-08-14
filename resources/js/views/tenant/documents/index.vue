@@ -189,6 +189,7 @@
                                 </template>
                             </template>
                             <th v-if="col.visible && col.key === 'user_name'" :key="col.key">Usuario</th>
+                            <th v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">Origen</th>
                             <th v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-end">T.C.</th>
                             <th v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">Moneda</th>
                             <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Guia</th>
@@ -294,6 +295,7 @@
                                 </template>
                             </template>
                             <td v-if="col.visible && col.key === 'user_name'" :key="col.key">{{ row.user_name }}<br /><small v-text="row.user_email"></small></td>
+                            <td v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">{{ row.source_module_description }}</td>
                             <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key">{{ row.exchange_rate_sale }}</td>
                             <td v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
                             <td v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-center">
@@ -466,7 +468,14 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
                                     Opciones
                                   </el-dropdown-item>
-                              
+
+                                  <el-dropdown-item
+                                    @click.native="clickPaymentLink(row.id)"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-link me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>
+                                    Link de pago
+                                  </el-dropdown-item>
+
                                   <el-dropdown-item
                                     v-if="row.btn_voided"
                                     @click.native="clickVoided(row.id)"
@@ -599,6 +608,7 @@
             <document-payments
                 :showDialog.sync="showDialogPayments"
                 :documentId="recordId"
+                :configuration="configuration"
             ></document-payments>
 
             <document-constancy-detraction
@@ -771,22 +781,23 @@ export default {
                 state_type:         { title: "Estado",                         visible: true,  order: 11 },
                 personalized:       { title: "Personalizados",                 visible: true,  order: 12 },
                 user_name:          { title: "Usuario",                        visible: false, order: 13 },
-                exchange_rate_sale: { title: "Tipo de cambio",                 visible: false, order: 14 },
-                currency_type_id:   { title: "Moneda",                         visible: false, order: 15 },
-                guides:             { title: "Guias",                          visible: false, order: 16 },
-                plate_numbers:      { title: "Placa",                          visible: false, order: 17 },
-                total_exportation:  { title: "T.Exportación",                  visible: false, order: 18 },
-                total_free:         { title: "T.Gratuito",                     visible: false, order: 19 },
-                total_unaffected:   { title: "T.Inafecto",                     visible: false, order: 20 },
-                total_exonerated:   { title: "T.Exonerado",                    visible: false, order: 21 },
-                total_charge:       { title: "T.Cargos",                       visible: false, order: 22 },
-                total_taxed:        { title: "T.Gravado",                      visible: true,  order: 23 },
-                total_igv:          { title: "T.Igv",                          visible: true,  order: 24 },
-                total:              { title: "Total",                          visible: false, order: 25 },
-                balance:            { title: "Saldo",                          visible: true,  order: 26 },
-                purchase_order:     { title: "Orden de Compra",                visible: false, order: 27 },
-                downloads:          { title: "Descargas (XML/PDF/CDR)",        visible: true,  order: 28 },
-                actions:            { title: "Acciones",                       visible: true,  order: 29 },
+                source_module:      { title: "Origen",                         visible: false, order: 14 },
+                exchange_rate_sale: { title: "Tipo de cambio",                 visible: false, order: 15 },
+                currency_type_id:   { title: "Moneda",                         visible: false, order: 16 },
+                guides:             { title: "Guias",                          visible: false, order: 17 },
+                plate_numbers:      { title: "Placa",                          visible: false, order: 18 },
+                total_exportation:  { title: "T.Exportación",                  visible: false, order: 19 },
+                total_free:         { title: "T.Gratuito",                     visible: false, order: 20 },
+                total_unaffected:   { title: "T.Inafecto",                     visible: false, order: 21 },
+                total_exonerated:   { title: "T.Exonerado",                    visible: false, order: 22 },
+                total_charge:       { title: "T.Cargos",                       visible: false, order: 23 },
+                total_taxed:        { title: "T.Gravado",                      visible: true,  order: 24 },
+                total_igv:          { title: "T.Igv",                          visible: true,  order: 25 },
+                total:              { title: "Total",                          visible: false, order: 26 },
+                balance:            { title: "Saldo",                          visible: true,  order: 27 },
+                purchase_order:     { title: "Orden de Compra",                visible: false, order: 28 },
+                downloads:          { title: "Descargas (XML/PDF/CDR)",        visible: true,  order: 29 },
+                actions:            { title: "Acciones",                       visible: true,  order: 30 },
             },
             customFieldColumns: [],
             savedCustomFieldVisibilities: {},
@@ -973,6 +984,55 @@ export default {
         clickOptions(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptions = true;
+        },
+        clickPaymentLink(document_id) {
+            this.$http
+                .post(`/payment-links/store-from-document`, { document_id })
+                .then(response => {
+                    if (response.data.success) {
+                        this.showPaymentLink(response.data.data, response.data.message);
+                    } else {
+                        this.$message.error(response.data.message);
+                    }
+                })
+                .catch(error => {
+                    this.$message.error(
+                        error.response.data.message ||
+                            "No se pudo generar el link de pago"
+                    );
+                });
+        },
+        showPaymentLink(data, message) {
+            this.$alert(data.user_payment_link, message, {
+                confirmButtonText: "Copiar link",
+                showCancelButton: true,
+                cancelButtonText: "Cerrar"
+            })
+                .then(() => {
+                    this.copyToClipboard(data.user_payment_link);
+                })
+                .catch(() => {});
+        },
+        copyToClipboard(text) {
+            const input = document.createElement("textarea");
+
+            input.value = text;
+            input.setAttribute("readonly", "");
+            input.style.position = "absolute";
+            input.style.left = "-9999px";
+
+            document.body.appendChild(input);
+            input.select();
+
+            const copied = document.execCommand("copy");
+
+            document.body.removeChild(input);
+
+            if (copied) {
+                this.$message.success("Link copiado al portapapeles");
+            } else {
+                this.$message.error("No se pudo copiar el link");
+            }
         },
         clickReStore(document_id) {
             this.$http

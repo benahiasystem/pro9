@@ -48,6 +48,8 @@ use App\Traits\OfflineTrait;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\QueryException;
+use Throwable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Facades\Storage;
@@ -451,8 +453,9 @@ class ItemController extends Controller
     }
 
     public function store(ItemRequest $request) {
+        DB::beginTransaction();
 
-
+        try {
         $id = $request->input('id');
         if (!$request->barcode) {
             if ($request->internal_id) {
@@ -532,7 +535,7 @@ class ItemController extends Controller
 
         $item->save();
 
-        foreach ($request->item_unit_types as $value) {
+        foreach ($request->item_unit_types ?? [] as $value) {
 
             $item_unit_type = ItemUnitType::firstOrNew(['id' => $value['id']]);
             $item_unit_type->item_id = $item->id;
@@ -849,11 +852,22 @@ class ItemController extends Controller
         // Invalidar caché de listas cuando se crea/edita un item
         CacheHelper::flush(['items_list']);
 
+        DB::commit();
+
         return [
             'success' => true,
             'message' => ($id)?'Producto editado con éxito':'Producto registrado con éxito',
             'id' => $item->id
         ];
+        } catch (Throwable $e) {
+            DB::rollBack();
+            report($e);
+
+            return [
+                'success' => false,
+                'message' => $this->itemStoreErrorMessage($e),
+            ];
+        }
     }
 
     public function visibleMassive(Request $request)
@@ -1044,10 +1058,10 @@ class ItemController extends Controller
                     'message' =>  __('app.actions.upload.success'),
                     'data' => $data
                 ];
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 return [
                     'success' => false,
-                    'message' =>  $e->getMessage()
+                    'message' =>  $this->importErrorMessage($e),
                 ];
             }
         }
@@ -1072,10 +1086,10 @@ class ItemController extends Controller
                     'message' =>  __('app.actions.upload.success'),
                     'data' => $data
                 ];
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 return [
                     'success' => false,
-                    'message' =>  $e->getMessage()
+                    'message' =>  $this->importErrorMessage($e),
                 ];
             }
         }
@@ -1083,6 +1097,52 @@ class ItemController extends Controller
             'success' => false,
             'message' =>  __('app.actions.upload.error'),
         ];
+    }
+
+    private function importErrorMessage(Throwable $e): string
+    {
+        if ($e instanceof QueryException) {
+            $sqlMessage = $e->getMessage();
+
+            if (str_contains($sqlMessage, "Column 'sale_unit_price' cannot be null")) {
+                return 'Uno o más productos no tienen precio de venta unitario. Revise la columna G del archivo Excel e intente nuevamente.';
+            }
+
+            if (str_contains($sqlMessage, "Column 'unit_type_id' cannot be null")) {
+                return 'Uno o más productos no tienen unidad de medida. Revise la columna E del archivo Excel.';
+            }
+
+            if (str_contains($sqlMessage, "Column 'currency_type_id' cannot be null")) {
+                return 'Uno o más productos no tienen moneda. Revise la columna F del archivo Excel (PEN o USD).';
+            }
+
+            if (str_contains($sqlMessage, "Column 'description' cannot be null")) {
+                return 'Uno o más productos no tienen descripción. Revise la columna A del archivo Excel.';
+            }
+
+            if (str_contains($sqlMessage, 'Duplicate entry') && str_contains($sqlMessage, 'internal_id')) {
+                return 'Hay productos con código interno duplicado en el archivo o ya registrados en el sistema.';
+            }
+        }
+
+        return $e->getMessage();
+    }
+
+    private function itemStoreErrorMessage(Throwable $e): string
+    {
+        if ($e instanceof QueryException) {
+            $sqlMessage = $e->getMessage();
+
+            if (str_contains($sqlMessage, 'item_unit_types') && str_contains($sqlMessage, 'description')) {
+                return 'La descripción de la presentación es obligatoria.';
+            }
+
+            if (str_contains($sqlMessage, "Column 'description' cannot be null")) {
+                return 'Complete la descripción de la presentación antes de guardar.';
+            }
+        }
+
+        return 'No se pudo guardar el producto. Verifique los datos e intente nuevamente.';
     }
 
     public function catalog(Request $request)

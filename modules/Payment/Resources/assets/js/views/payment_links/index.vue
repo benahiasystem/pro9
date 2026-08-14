@@ -23,8 +23,8 @@
                 <tr slot="heading" width="100%">
                     <th>#</th>
                     <th>Identificador</th>
-                    <th>Pago asociado</th>
-                    <th>Tipo</th>
+                    <th>Cliente</th>
+                    <th>Estado</th>
                     <th>Link</th>
                     <th>Total</th>
                     <th class="text-end"></th>
@@ -34,8 +34,12 @@
                 <tr slot-scope="{ index, row }">
                     <td>{{ index }}</td>
                     <td>{{ row.uuid }}</td>
-                    <td>{{ row.payment_number_full }}</td>
-                    <td>{{ row.payment_link_type_description }}</td>
+                    <td>{{ row.customer_name }}</td>
+                    <td>
+                        <span class="badge" :class="row.is_paid ? 'bg-success' : 'bg-warning'">
+                            {{ row.status_description }}
+                        </span>
+                    </td>
                     <td>
 
                         <button type="button"
@@ -51,7 +55,15 @@
                     <td>{{ row.total }}</td>
 
                     <td class="text-end">
+                        <!--
+                            Un link pagado no admite ninguna acción, se oculta el menú completo
+                            para no abrir un desplegable vacío
+
+                            Transacciones tambien queda fuera: solo el flujo antiguo de mercadopago
+                            registraba filas, los checkouts actuales no generan ninguna
+                        -->
                         <el-dropdown
+                            v-if="typeUser === 'admin' && !row.is_paid"
                             trigger="click"
                             @command="handleDropdownCommand($event, row)"
                         >
@@ -64,23 +76,15 @@
                                 <i class="fas fa-ellipsis-h" style="display: none;"></i>
                             </el-button>
                             <el-dropdown-menu slot="dropdown">
-                                <template v-if="typeUser === 'admin'">
-                                    <el-dropdown-item
-                                        v-if="row.payment_link_type_id == '02'"
-                                        command="transactions"
-                                    >
-                                        Transacciones
-                                    </el-dropdown-item>
-                                    <el-dropdown-item
-                                        v-if="!row.has_payment"
-                                        command="edit"
-                                    >
-                                        Editar
-                                    </el-dropdown-item>
-                                    <el-dropdown-item command="delete">
-                                        Eliminar
-                                    </el-dropdown-item>
-                                </template>
+                                <el-dropdown-item command="confirm_payment">
+                                    Marcar como pagado
+                                </el-dropdown-item>
+                                <el-dropdown-item command="edit">
+                                    Editar
+                                </el-dropdown-item>
+                                <el-dropdown-item command="delete">
+                                    Eliminar
+                                </el-dropdown-item>
                             </el-dropdown-menu>
                         </el-dropdown>
                     </td>
@@ -129,17 +133,14 @@
         async created() {
         },
         methods: { 
+            // el menú solo se renderiza para links pendientes, no hace falta revalidar is_paid
             handleDropdownCommand(command, row) {
                 switch (command) {
-                    case 'transactions':
-                        if (row.payment_link_type_id == '02') {
-                            this.clickShowTransactions(row.id);
-                        }
+                    case 'confirm_payment':
+                        this.clickConfirmPayment(row.id);
                         break;
                     case 'edit':
-                        if (!row.has_payment) {
-                            this.clickCreate(row.id);
-                        }
+                        this.clickCreate(row.id);
                         break;
                     case 'delete':
                         this.clickDelete(row.id);
@@ -147,6 +148,32 @@
                     default:
                         break;
                 }
+            },
+            clickConfirmPayment(id) {
+
+                this.$confirm('Se registrarán los pagos de los comprobantes asociados al link. ¿Desea continuar?', 'Marcar como pagado', {
+                    confirmButtonText: 'Aceptar',
+                    cancelButtonText: 'Cancelar',
+                    type: 'warning'
+                })
+                .then(() => {
+
+                    this.$http.post(`/${this.resource}/confirm-payment`, {id})
+                        .then(response => {
+                            if (response.data.success) {
+                                this.$message.success(response.data.message)
+                                this.$eventHub.$emit('reloadData')
+                            } else {
+                                this.$message.error(response.data.message)
+                            }
+                        })
+                        .catch(error => {
+                            this.$message.error(error.response.data.message || 'No se pudo marcar el link como pagado')
+                        })
+
+                })
+                .catch(() => {})
+
             },
             clickDelete(id) {
                 this.destroy(`/${this.resource}/${id}`).then(() =>

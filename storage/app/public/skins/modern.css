@@ -791,10 +791,10 @@ html.fixed.sidebar-white:not(.dark) .sidebar-left, html.fixed.sidebar-white:not(
     margin: 0 10px;
 }
 .actions-cards-row .col a{
-    color: #66789c !important;
+    color: #ffffff !important;
     box-shadow: none !important;
-    border-color: #E0E6F7 !important;
-    border-radius: 8px !important;
+    border: none !important;
+    border-radius: 14px !important;
 }
 .actions-cards-container .border-top,
 .actions-card .card-header{
@@ -1934,10 +1934,13 @@ html.dark .actions-cards-container .border-top{
     border: none !important;
 }
 html.dark .actions-cards-row .col a{
-    background-color: var(--md-content-dark) !important;
-    border-color: var(--md-border-dark) !important;
-    color: #fff !important;
+    color: #ffffff !important;
+    border: none !important;
 }
+html.dark .actions-cards-row .col a.bg-danger{ background-color: var(--danger, #e74c3c) !important; }
+html.dark .actions-cards-row .col a.bg-warning{ background-color: var(--warning, #f0ad4e) !important; }
+html.dark .actions-cards-row .col a.bg-primary{ background-color: var(--primary, #3498db) !important; }
+html.dark .actions-cards-row .col a.bg-success{ background-color: var(--success, #2ecc71) !important; }
 html.dark .actions-card .card-body{
     background-color: transparent !important;
 }

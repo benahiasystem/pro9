@@ -9,6 +9,8 @@ use Exception;
 use App\Models\Tenant\Item;
 use Modules\Restaurant\Models\RestaurantItemOrderStatus;
 use Modules\Restaurant\Services\RestaurantStockService;
+use App\Services\CentrifugoService;
+use Hyn\Tenancy\Contracts\CurrentHostname;
 
 
 class RestaurantItemOrderStatusController extends Controller
@@ -118,6 +120,9 @@ class RestaurantItemOrderStatusController extends Controller
         $orderStatus->status_description = $request->status_description;
         $orderStatus->save();
 
+        $this->publishCommandUpdate();
+        $this->publishStockUpdate();
+
         return [
             'success' => true,
             'message' => 'Producto agregado con éxito.'
@@ -216,10 +221,42 @@ class RestaurantItemOrderStatusController extends Controller
         }
         $order->save();
 
+        $this->publishCommandUpdate();
+
         return [
             'success' => true,
             'message' => 'Estado cambiado con éxito'
         ];
+    }
+
+    /**
+     * Publica el snapshot completo de la comanda (las 4 colas, todas las mesas)
+     * vía WebSocket. El front lo aplica directo y filtra por mesa client-side.
+     * getStatusItems(0) no filtra por mesa, así que trae todo (el bucket
+     * "Entregado" ya viene limitado a 20 en getItemsByStatus).
+     */
+    private function publishCommandUpdate(): void
+    {
+        $fqdn = app(CurrentHostname::class)?->fqdn ?? 'local';
+        app(CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+            'event'   => 'command-items-updated',
+            'payload' => $this->getStatusItems(0)['data'],
+        ]);
+    }
+
+    /**
+     * Publica el snapshot de stock (cantidades disponibles por ítem) vía WebSocket.
+     * getStockStatus vive en RestaurantController, se llama cross-controller.
+     */
+    private function publishStockUpdate(): void
+    {
+        $fqdn = app(CurrentHostname::class)?->fqdn ?? 'local';
+        $data = app(\Modules\Restaurant\Http\Controllers\RestaurantController::class)
+            ->getStockStatus()['data'] ?? [];
+        app(CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+            'event'   => 'stock-updated',
+            'payload' => $data,
+        ]);
     }
 
 }

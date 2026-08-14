@@ -24,7 +24,11 @@ class ItemUpdatePriceEstablishmentImport implements ToCollection
             $total = count($rows);
             $registered = 0;
             unset($rows[0]);
-            $records = Warehouse::all();
+            // values() para reindexar de 0 en adelante: el orden debe coincidir
+            // con el usado al generar el Excel (PricesEstablishmentFormatExport),
+            // ya que la columna de cada almacén se identifica por su posición,
+            // no por su id (los ids pueden tener huecos si se eliminó un almacén).
+            $records = Warehouse::all()->values();
 
             foreach ($rows as $row)
             {
@@ -34,14 +38,15 @@ class ItemUpdatePriceEstablishmentImport implements ToCollection
 
                 if($internal_id) $item = Item::whereFilterUpdatePrices($internal_id)->first();
 
-                
-                if($item) 
+
+                if($item)
                 {
-                    foreach ($records as $record){
+                    foreach ($records as $index => $record){
 
                         $item_warehouse_price = ItemWarehousePrice::where('item_id',$item->id)->where('warehouse_id',$record->id)->first();
 
-                        $price = $row[$record->id] ?? null;
+                        // +1 porque la columna 0 del Excel es el Código Interno
+                        $price = $row[$index + 1] ?? null;
 
                         if (!$item_warehouse_price) {
                             if ($price) {

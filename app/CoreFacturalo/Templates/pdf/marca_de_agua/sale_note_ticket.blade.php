@@ -291,10 +291,6 @@
         @endif
         
         <tr>
-            <td colspan="5" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
-            <td class="text-right font-bold desc"></td>
-        </tr>
-        <tr>
             <td colspan="5" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total, 2) }}</td>
         </tr>

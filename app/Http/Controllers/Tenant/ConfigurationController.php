@@ -679,6 +679,32 @@ class ConfigurationController extends Controller
             $sidebarMargin = is_null($parsed) ? $currentSidebarMargin : $parsed;
         }
 
+        $currentOutdoorMode = false;
+        $currentOutdoorLevel = 'medium';
+        if (is_object($currentVisual)) {
+            $currentOutdoorMode = property_exists($currentVisual, 'outdoor_mode')
+                ? (bool)$currentVisual->outdoor_mode
+                : false;
+            $currentOutdoorLevel = property_exists($currentVisual, 'outdoor_level') && $currentVisual->outdoor_level
+                ? $currentVisual->outdoor_level
+                : 'medium';
+        } elseif (is_array($currentVisual)) {
+            $currentOutdoorMode = (bool)($currentVisual['outdoor_mode'] ?? false);
+            $currentOutdoorLevel = $currentVisual['outdoor_level'] ?? 'medium';
+        }
+
+        $outdoorMode = $currentOutdoorMode;
+        if ($request->has('outdoor_mode')) {
+            $parsedOutdoor = filter_var($request->outdoor_mode, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            $outdoorMode = is_null($parsedOutdoor) ? $currentOutdoorMode : $parsedOutdoor;
+        }
+
+        $outdoorLevel = $request->has('outdoor_level') ? $request->outdoor_level : $currentOutdoorLevel;
+        if (!in_array($outdoorLevel, ['soft', 'medium', 'strong'], true)) {
+            $outdoorLevel = 'medium';
+        }
+
+
         $visuals = [
             'bg' => $request->bg,
             'header' => $request->header,
@@ -693,6 +719,8 @@ class ConfigurationController extends Controller
             'branch_selector_in_sidebar' => $request->has('branch_selector_in_sidebar')
                 ? (filter_var($request->branch_selector_in_sidebar, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? $currentBranchSelector)
                 : $currentBranchSelector,
+            'outdoor_mode' => $outdoorMode,
+            'outdoor_level' => $outdoorLevel,
         ];
         $configuration->visual = $visuals;
         if ($request->has('sidebar_mode')) {

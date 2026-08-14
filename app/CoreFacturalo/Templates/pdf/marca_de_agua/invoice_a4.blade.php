@@ -631,7 +631,7 @@
         </tr>
 
         <tr>
-            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="7">
+            <td class="p-1 text-left align-top desc cell-solid" colspan="3" rowspan="6">
                 @php
                     // Solo contar productos (no servicios) para total bultos
                     $total_packages = 0;
@@ -702,7 +702,7 @@
                     @endif
 
                 @endif
-            <td class="p-1 text-center align-top desc cell-solid " rowspan="7">
+            <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
                 <img src="data:image/png;base64, {{ $document->qr }}" class="p-0 m-0" style="width: 120px;" /><br>
                 Código Hash: {{ $document->hash }}
             </td>
@@ -735,10 +735,6 @@
                 IGV ({{ \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentIgvPercentage($document) }}%). {{$document->currency_type->symbol}}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
-        </tr>
-        <tr>
-            <td class="p-1 text-left align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">Productos:</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
         </tr>
         <tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">

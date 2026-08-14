@@ -1,11 +1,7 @@
 @php
     $establishment = $document->establishment;
     $customer = $document->customer;
-    //$path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
-
     $document_number = $document->series.'-'.str_pad($document->number, 8, '0', STR_PAD_LEFT);
-    // $document_type_driver = App\Models\Tenant\Catalogs\IdentityDocumentType::findOrFail($document->driver->identity_document_type_id);
-
 @endphp
 <html>
 <head>
@@ -13,85 +9,7 @@
     {{--<link href="{{ $path_style }}" rel="stylesheet" />--}}
 </head>
 <body>
-@php
-    $logo = null;
-
-    if (!empty($establishment->logo)) {
-        $logo = $establishment->logo;
-    } elseif (!empty($company->logo)) {
-        $logo = "storage/uploads/logos/{$company->logo}";
-    }
-
-    $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
-    $exists_company_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads(!empty($company->logo) ? "storage/uploads/logos/{$company->logo}" : null);
-@endphp
-
-@if($exists_logo)
-    <div class="item_watermark" style="
-        position: absolute;
-        top: 35%;
-        left: 10%;
-        width: 80%;
-        height: 300px;
-        text-align: center;
-    ">
-        <img
-            src="data:{{ mime_content_type(public_path($logo)) }};base64,{{ base64_encode(file_get_contents(public_path($logo))) }}"
-            alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
-            style="width: 100%; height: auto; object-fit: contain; opacity: 0.1;"
-        >
-    </div>
-@endif
-<table class="full-width">
-    <tr>
-        @if($exists_company_logo)
-            <td width="10%">
-                <img
-                    src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}"
-                    alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 300px">
-            </td>
-            <td width="50%" class="text-center">
-                <div class="text-left">
-                    @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
-                    <h5 style="text-transform: uppercase;">
-                        {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                        {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                        {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                        {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
-                    </h5>
-                    <h5>{{ ($establishment->email !== '-')? $establishment->email : '' }}</h5>
-                    <h5>{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</h5>
-                </div>
-            </td>
-            <td width="40%" class="border-box p-4 text-center">
-                <h3 class="text-center font-bold">{{ 'R.U.C. '.$company->number }}</h3>
-                <h4 class="text-center">{{ $document->document_type->description }}</h4>
-                <h3 class="text-center">{{ $document_number }}</h3>
-            </td>
-        @else
-            <td width="60%" class="pl-1">
-                <div class="text-left">
-                    @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
-                    <h5 style="text-transform: uppercase;">
-                        {{ ($establishment->address !== '-')? $establishment->address : '' }}
-                        {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
-                        {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
-                        {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
-                    </h5>
-                    <h5>{{ ($establishment->email !== '-')? $establishment->email : '' }}</h5>
-                    <h5>{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</h5>
-                </div>
-            </td>
-            <td width="40%" class="border-box p-4 text-center">
-                <h3 class="text-center font-bold">{{ 'R.U.C. '.$company->number }}</h3>
-                <h4 class="text-center">{{ $document->document_type->description }}</h4>
-                <h3 class="text-center">{{ $document_number }}</h3>
-            </td>
-        @endif        
-    </tr>
-</table>
+@include('pdf.marca_de_agua.partials.document_header_a4')
 @if($document->transfer_reason_type_id === '04')
     <table class="full-width border-box mt-10 mb-10">
         <thead>

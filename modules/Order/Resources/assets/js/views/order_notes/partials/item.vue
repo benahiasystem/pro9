@@ -415,7 +415,6 @@
                         <div class="col-md-12 mt-2" v-if="config.show_item_discounts_charges_attributes !== false">
                             <el-collapse v-model="activePanel">
                                 <el-collapse-item
-                                    :disabled="isUpdateItem"
                                     name="1"
                                     title="+ Agregar Descuentos/Cargos/Atributos especiales"
                                 >
@@ -477,18 +476,18 @@
                                                             ></el-input>
                                                         </td>
                                                         <td>
+                                                            <template v-if="row.is_amount">
+                                                                <el-input v-model="row.amount"></el-input>
+                                                            </template>
+                                                            <template v-else>
+                                                                <el-input v-model="row.percentage"></el-input>
+                                                            </template>
+                                                            <br />
                                                             <el-checkbox
-                                                                v-model="
-                                                                    row.is_amount
-                                                                "
+                                                                v-model="row.is_amount"
+                                                                @change="changeIsDiscountAmount(index)"
                                                                 >Ingresar monto fijo
                                                             </el-checkbox>
-                                                            <br />
-                                                            <el-input
-                                                                v-model="
-                                                                    row.percentage
-                                                                "
-                                                            ></el-input>
                                                         </td>
                                                         <td>
                                                             <button
@@ -1167,6 +1166,21 @@ export default {
                     }
                 }
 
+                this.form.discounts = (this.recordItem.discounts || []).map(discount => {
+                    const row = { ...discount };
+                    row.discount_type = _.find(this.discount_types, { id: row.discount_type_id }) || row.discount_type || null;
+                    row.amount_exact = row.amount_exact || 0;
+                    row.use_input_amount = true;
+                    delete row.amount_without_rounded;
+                    return row;
+                });
+                this.form.charges = this.recordItem.charges
+                    ? [...this.recordItem.charges]
+                    : [];
+                if (this.form.discounts.length || this.form.charges.length) {
+                    this.activePanel = "1";
+                }
+
                 this.calculateQuantity();
                 
             }
@@ -1260,14 +1274,16 @@ export default {
         },
         clickAddDiscount() {
             this.form.discounts.push({
-                discount_type_id: null,
-                discount_type: null,
+                discount_type_id: "00",
+                discount_type: _.find(this.discount_types, { id: "00" }) || null,
                 description: null,
                 percentage: 0,
                 factor: 0,
                 amount: 0,
+                amount_exact: 0,
                 base: 0,
-                is_amount: false
+                is_amount: false,
+                use_input_amount: true
             });
         },
         clickRemoveDiscount(index) {
@@ -1279,6 +1295,11 @@ export default {
                 this.discount_types,
                 { id: discount_type_id }
             );
+        },
+        changeIsDiscountAmount(index) {
+            this.form.discounts[index].amount = 0;
+            this.form.discounts[index].percentage = 0;
+            this.form.discounts[index].amount_exact = 0;
         },
         clickAddCharge() {
             this.form.charges.push({
