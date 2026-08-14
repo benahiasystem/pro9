@@ -219,7 +219,10 @@ export default {
             }
           },
           formatDecimal(value) {
-            const number = parseFloat(value || 0)
+            if (value === undefined || value === null || value === '') {
+              return Number(0).toFixed(this.decimal_quantity)
+            }
+            const number = parseFloat(String(value).replace(/,/g, ''))
 
             if (isNaN(number)) {
               return Number(0).toFixed(this.decimal_quantity)

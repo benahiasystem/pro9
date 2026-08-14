@@ -3,6 +3,7 @@
     $supplier = $document->supplier;
     //$path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
     $tittle = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
+    $decimals = (int) (\App\Models\Tenant\Configuration::query()->value('decimal_quantity') ?: 2);
 @endphp
 <html>
 <head>
@@ -333,7 +334,7 @@
                 @endif
             </td>
             <td class="text-center align-top desc cell-solid-rl p-1">{{ $row->item->model ?? '' }}</td>
-            <td class="text-center align-top desc cell-solid-rl p-1">{{ number_format($row->unit_price, 2) }}</td>
+            <td class="text-center align-top desc cell-solid-rl p-1">{{ number_format($row->unit_price, $decimals) }}</td>
             <td class="text-center align-top desc cell-solid-rl p-1">
                 @if($row->discounts)
                     @php
@@ -342,12 +343,12 @@
                             $total_discount_line = $total_discount_line + $disto->amount;
                         }
                     @endphp
-                    {{ number_format($total_discount_line, 2) }}
+                    {{ number_format($total_discount_line, $decimals) }}
                 @else
                 0
                 @endif
             </td>
-            <td class="text-center align-top desc cell-solid-rl p-1">{{ number_format($row->total, 2) }}</td>
+            <td class="text-center align-top desc cell-solid-rl p-1">{{ number_format($row->total, $decimals) }}</td>
         </tr>
     @endforeach
     @php
@@ -369,46 +370,46 @@
         @if($document->total_exportation > 0)
             <tr>
                 <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">OP. EXPORTACIÓN: {{ $document->currency_type->symbol }}</td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_exportation, 2) }}</td>
+                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_exportation, $decimals) }}</td>
             </tr>
         @endif
         @if($document->total_free > 0)
             <tr>
                 <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">OP. GRATUITAS: {{ $document->currency_type->symbol }}</td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_free, 2) }}</td>
+                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_free, $decimals) }}</td>
             </tr>
         @endif
         @if($document->total_unaffected > 0)
             <tr>
                 <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
+                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_unaffected, $decimals) }}</td>
             </tr>
         @endif
         @if($document->total_exonerated > 0)
             <tr>
                 <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_exonerated, 2) }}</td>
+                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_exonerated, $decimals) }}</td>
             </tr>
         @endif
         @if($document->total_taxed > 0)
             <tr>
                 <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">OP. GRAVADAS: {{ $document->currency_type->symbol }}</td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_taxed, 2) }}</td>
+                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_taxed, $decimals) }}</td>
             </tr>
         @endif
         @if($document->total_discount_with_igv > 0)
             <tr>
                 <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}: {{ $document->currency_type->symbol }}</td>
-                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_discount_with_igv, 2) }}</td>
+                <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_discount_with_igv, $decimals) }}</td>
             </tr>
         @endif
         <tr>
             <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">IGV: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, $decimals) }}</td>
         </tr>
         <tr>
             <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, $decimals) }}</td>
         </tr>
     </tbody>
 </table>
