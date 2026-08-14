@@ -367,6 +367,8 @@ trait ReportTrait
                                     'name' => $row->name,
                                     'number' => $row->number,
                                     'identity_document_type_id' => $row->identity_document_type_id,
+                                    'perception_agent' => (bool) $row->perception_agent,
+                                    'credit_days' => (int) $row->credit_days,
                                 ];
                             });
 

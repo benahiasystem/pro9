@@ -496,6 +496,7 @@ export default {
                 this.currency_types = response.data.currency_types
                 this.establishment = response.data.establishment
                 this.suppliers = response.data.suppliers
+                this.all_suppliers = response.data.suppliers
                 this.payment_method_types = response.data.payment_method_types
                 this.company = response.data.company
 
@@ -667,17 +668,33 @@ export default {
             }
 
         },
+        getSelectedSupplier() {
+            return _.find(this.suppliers, {'id': this.form.supplier_id})
+                || _.find(this.all_suppliers, {'id': this.form.supplier_id})
+                || null
+        },
+        getSupplierCreditDays() {
+            const supplier = this.getSelectedSupplier()
+            const days = supplier ? parseInt(supplier.credit_days, 10) : 0
+            return isNaN(days) || days < 0 ? 0 : days
+        },
+        applyDueDate() {
+            const creditDays = this.getSupplierCreditDays()
+            const paymentMethod = _.find(this.payment_method_types, {'id': this.form.payment_method_type_id})
+            const paymentDays = (paymentMethod && paymentMethod.number_days)
+                ? parseInt(paymentMethod.number_days, 10)
+                : 0
+            const days = creditDays > 0 ? creditDays : (isNaN(paymentDays) ? 0 : paymentDays)
+
+            this.form.date_of_due = moment(this.form.date_of_issue)
+                .add(days, 'days')
+                .format('YYYY-MM-DD')
+        },
         changePaymentMethodType(flag_submit = true) {
-            let payment_method_type = _.find(this.payment_method_types, {'id': this.form.payment_method_type_id})
-            if (payment_method_type.number_days) {
-                this.form.date_of_issue = moment().add(payment_method_type.number_days, 'days').format('YYYY-MM-DD');
-                this.changeDateOfIssue()
-            } else {
-                if (flag_submit) {
-                    this.form.date_of_issue = moment().format('YYYY-MM-DD')
-                    this.changeDateOfIssue()
-                }
+            if (!flag_submit) {
+                return
             }
+            this.applyDueDate()
         },
         inputTotalPerception() {
             this.total_amount = parseFloat(this.form.total) + parseFloat(this.form.total_perception)
@@ -690,6 +707,7 @@ export default {
         },
         changeSupplier() {
             this.calculatePerception()
+            this.applyDueDate()
         },
         filterSuppliers() {
 
@@ -786,10 +804,8 @@ export default {
             this.changeCurrencyType()
         },
         async changeDateOfIssue() {
-            this.form.date_of_due = moment(this.form.date_of_issue)
-                .add(15, 'days')
-                .format('YYYY-MM-DD');
-            
+            this.applyDueDate()
+
             await this.searchExchangeRateByDate(this.form.date_of_issue).then(response => {
                 this.form.exchange_rate_sale = (response == 0) ? 1 : response
             })
@@ -877,7 +893,7 @@ export default {
         },
         calculatePerception() {
 
-            let supplier = _.find(this.all_suppliers, {'id': this.form.supplier_id})
+            let supplier = this.getSelectedSupplier()
 
             if (supplier) {
 
@@ -964,6 +980,7 @@ export default {
                 this.suppliers = this.all_suppliers
                 this.calculatePerception()
                 this.selectSupplier()
+                this.applyDueDate()
 
             })
         },

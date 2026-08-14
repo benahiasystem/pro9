@@ -278,6 +278,8 @@ class PurchaseOrderController extends Controller
                         'name' => $row->name,
                         'number' => $row->number,
                         'email' => $row->email,
+                        'perception_agent' => (bool) $row->perception_agent,
+                        'credit_days' => (int) $row->credit_days,
                         'identity_document_type_id' => $row->identity_document_type_id,
                         'identity_document_type_code' => $row->identity_document_type->code
                     ];
