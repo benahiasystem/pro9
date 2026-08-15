@@ -55,35 +55,42 @@
 
     @if(isset($visual))
         @php
+            // Paletas excluyentes por skin (ver tenant/layouts/app.blade.php):
+            // skins claros -> themes.json; skin black -> black-themes.json.
             $themeInlineCss = '';
             $blackThemeInlineCss = '';
 
-            $themeKey = (property_exists($visual, 'sidebar_theme') && $visual->sidebar_theme) ? $visual->sidebar_theme : 'white';
-            $themesPath = public_path('json/themes/themes.json');
-            if (is_file($themesPath)) {
-                $themesAll = json_decode(file_get_contents($themesPath), true) ?: [];
-                $colors = $themesAll[$themeKey] ?? $themesAll['white'] ?? null;
-                if (is_array($colors) && !isset($colors['--primary-color'])) {
-                    $colors = $colors['default'] ?? $colors['light'] ?? $colors;
-                }
-                if (is_array($colors)) {
-                    foreach ($colors as $var => $val) {
-                        if (strpos($var, '--') === 0) {
-                            $themeInlineCss .= $var . ':' . $val . ';';
+            $activeSkin = strtolower($vc_compact_sidebar->skin->filename ?? '');
+            $isBlackSkin = strpos($activeSkin, 'black') !== false;
+
+            if (!$isBlackSkin) {
+                $themeKey = (property_exists($visual, 'sidebar_theme') && $visual->sidebar_theme) ? $visual->sidebar_theme : 'white';
+                $themesPath = public_path('json/themes/themes.json');
+                if (is_file($themesPath)) {
+                    $themesAll = json_decode(file_get_contents($themesPath), true) ?: [];
+                    $colors = $themesAll[$themeKey] ?? $themesAll['white'] ?? null;
+                    if (is_array($colors) && !isset($colors['--primary-color'])) {
+                        $colors = $colors['default'] ?? $colors['light'] ?? $colors;
+                    }
+                    if (is_array($colors)) {
+                        foreach ($colors as $var => $val) {
+                            if (strpos($var, '--') === 0) {
+                                $themeInlineCss .= $var . ':' . $val . ';';
+                            }
                         }
                     }
                 }
-            }
-
-            $blackThemeKey = (property_exists($visual, 'black_theme') && $visual->black_theme) ? $visual->black_theme : 'default';
-            $blackThemesPath = public_path('json/themes/black-themes.json');
-            if (is_file($blackThemesPath)) {
-                $blackAll = json_decode(file_get_contents($blackThemesPath), true) ?: [];
-                $blackColors = $blackAll[$blackThemeKey] ?? $blackAll['default'] ?? null;
-                if (is_array($blackColors)) {
-                    foreach ($blackColors as $var => $val) {
-                        if (strpos($var, '--') === 0) {
-                            $blackThemeInlineCss .= $var . ':' . $val . ';';
+            } else {
+                $blackThemeKey = (property_exists($visual, 'black_theme') && $visual->black_theme) ? $visual->black_theme : 'default';
+                $blackThemesPath = public_path('json/themes/black-themes.json');
+                if (is_file($blackThemesPath)) {
+                    $blackAll = json_decode(file_get_contents($blackThemesPath), true) ?: [];
+                    $blackColors = $blackAll[$blackThemeKey] ?? $blackAll['default'] ?? null;
+                    if (is_array($blackColors)) {
+                        foreach ($blackColors as $var => $val) {
+                            if (strpos($var, '--') === 0) {
+                                $blackThemeInlineCss .= $var . ':' . $val . ';';
+                            }
                         }
                     }
                 }

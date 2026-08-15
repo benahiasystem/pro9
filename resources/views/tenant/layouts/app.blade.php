@@ -43,6 +43,9 @@
     <script>
         window.vc_visual = window.vc_visual || {};
         window.vc_visual.sidebar_theme = @json($visual->sidebar_theme);
+        window.vc_visual.black_theme = @json((property_exists($visual, 'black_theme') && $visual->black_theme) ? $visual->black_theme : null);
+        {{-- El skin activo decide qué paleta (clara o black) puede aplicarse en runtime --}}
+        window.vc_visual.active_skin = @json($vc_compact_sidebar->skin->filename ?? null);
     </script>
 
     @vite(['resources/js/app.js'])
@@ -150,35 +153,45 @@
     @endif
 
     @php
+        // Cada skin tiene su propio sistema de paletas y son EXCLUYENTES:
+        // los skins claros usan themes.json (#theme-styles) y el skin black usa
+        // black-themes.json (#black-theme-styles). Inyectar ambas mezcla los
+        // colores del skin anterior con el actual (p. ej. un tema verde "forest"
+        // pisando --primary-color encima del skin black).
         $themeInlineCss = '';
         $blackThemeInlineCss = '';
 
-        $themeKey = $visual->sidebar_theme ?: 'white';
-        $themesPath = public_path('json/themes/themes.json');
-        if (is_file($themesPath)) {
-            $themesAll = json_decode(file_get_contents($themesPath), true) ?: [];
-            $colors = $themesAll[$themeKey] ?? $themesAll['white'] ?? null;
-            if (is_array($colors) && !isset($colors['--primary-color'])) {
-                $colors = $colors['default'] ?? $colors['light'] ?? $colors;
-            }
-            if (is_array($colors)) {
-                foreach ($colors as $var => $val) {
-                    if (strpos($var, '--') === 0) {
-                        $themeInlineCss .= $var . ':' . $val . ';';
+        $activeSkin = strtolower($vc_compact_sidebar->skin->filename ?? '');
+        $isBlackSkin = strpos($activeSkin, 'black') !== false;
+
+        if (!$isBlackSkin) {
+            $themeKey = $visual->sidebar_theme ?: 'white';
+            $themesPath = public_path('json/themes/themes.json');
+            if (is_file($themesPath)) {
+                $themesAll = json_decode(file_get_contents($themesPath), true) ?: [];
+                $colors = $themesAll[$themeKey] ?? $themesAll['white'] ?? null;
+                if (is_array($colors) && !isset($colors['--primary-color'])) {
+                    $colors = $colors['default'] ?? $colors['light'] ?? $colors;
+                }
+                if (is_array($colors)) {
+                    foreach ($colors as $var => $val) {
+                        if (strpos($var, '--') === 0) {
+                            $themeInlineCss .= $var . ':' . $val . ';';
+                        }
                     }
                 }
             }
-        }
-
-        $blackThemeKey = (property_exists($visual, 'black_theme') && $visual->black_theme) ? $visual->black_theme : 'default';
-        $blackThemesPath = public_path('json/themes/black-themes.json');
-        if (is_file($blackThemesPath)) {
-            $blackAll = json_decode(file_get_contents($blackThemesPath), true) ?: [];
-            $blackColors = $blackAll[$blackThemeKey] ?? $blackAll['default'] ?? null;
-            if (is_array($blackColors)) {
-                foreach ($blackColors as $var => $val) {
-                    if (strpos($var, '--') === 0) {
-                        $blackThemeInlineCss .= $var . ':' . $val . ';';
+        } else {
+            $blackThemeKey = (property_exists($visual, 'black_theme') && $visual->black_theme) ? $visual->black_theme : 'default';
+            $blackThemesPath = public_path('json/themes/black-themes.json');
+            if (is_file($blackThemesPath)) {
+                $blackAll = json_decode(file_get_contents($blackThemesPath), true) ?: [];
+                $blackColors = $blackAll[$blackThemeKey] ?? $blackAll['default'] ?? null;
+                if (is_array($blackColors)) {
+                    foreach ($blackColors as $var => $val) {
+                        if (strpos($var, '--') === 0) {
+                            $blackThemeInlineCss .= $var . ':' . $val . ';';
+                        }
                     }
                 }
             }

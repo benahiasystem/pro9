@@ -3,202 +3,140 @@
         :visible="showDialog"
         @open="create"
         @opened="opened"
-        width="60%"
+        width="70%"
+        custom-class="pos-success"
         :close-on-click-modal="false"
         :close-on-press-escape="false"
         :show-close="false"
     >
         <Keypress key-event="keyup" :key-code="13" @success="someMethod" />
+
         <span slot="title">
-            <div class="widget-summary widget-summary-xs pl-3 p-2">
-                <div class="widget-summary-col widget-summary-col-icon">
-                    <div class="summary-icon bg-success">
-                        <i class="fas fa-check"></i>
-                    </div>
+            <div class="pos-success__header">
+                <div class="pos-success__icon">
+                    <i class="fas fa-check"></i>
                 </div>
-                <div class="widget-summary-col">
-                    <div class="summary row">
-                        <div class="col-md-6">
-                            <h4 class="title">
-                                Venta exitosa : comprobante {{ form.number }}
-                            </h4>
-                        </div>
-                        <div class="col-md-6">
-                            <h4 class="title">
-                                Estado de comprobante:
-                                {{
-                                    statusDocument.sent
-                                        ? "Enviado a Sunat"
-                                        : "No enviado a Sunat"
-                                }}
-                            </h4>
-                            <h4 class="title">
-                                Envio automático:
-                                {{
-                                    configuration.send_auto
-                                        ? "Activado"
-                                        : "Desactivado"
-                                }}
-                            </h4>
-                        </div>
-                    </div>
+                <div class="pos-success__heading">
+                    <span class="pos-success__eyebrow">Venta registrada</span>
+                    <h4 class="pos-success__title">{{ form.number }}</h4>
+                </div>
+                <div class="pos-success__badges">
+                    <span
+                        class="pos-chip"
+                        :class="statusDocument.sent ? 'is-ok' : 'is-warn'"
+                    >
+                        <i
+                            :class="
+                                statusDocument.sent
+                                    ? 'fas fa-cloud-upload-alt'
+                                    : 'fas fa-exclamation-circle'
+                            "
+                        ></i>
+                        {{
+                            statusDocument.sent
+                                ? "Enviado a SUNAT"
+                                : "No enviado a SUNAT"
+                        }}
+                    </span>
+                    <span class="pos-chip is-muted">
+                        Envío automático:
+                        {{ configuration.send_auto ? "activado" : "desactivado" }}
+                    </span>
                 </div>
             </div>
         </span>
-        <div class="form-body el-dialog__body_custom">
-            <div class="row">
-                <div class="col-md-12 m-bottom">
-                    <el-tabs v-model="activeName">
-                        <el-tab-pane
-                            label="Ticket 80mm"
-                            name="first"
-                            v-if="config !== null && config.show_ticket_80"
-                        >
-                            <embed
-                                v-if="config !== null && config.show_ticket_80"
-                                id="nemo"
-                                :src="form.print_ticket"
-                                type="application/pdf"
-                                width="100%"
-                                height="450px"
-                            />
-                        </el-tab-pane>
-                        <el-tab-pane
-                            label="Ticket 58mm"
-                            name="second"
-                            v-if="config.show_ticket_58"
-                        >
-                            <embed
-                                v-if="config.show_ticket_58"
-                                :src="form.print_ticket_58"
-                                type="application/pdf"
-                                width="100%"
-                                height="450px"
-                            />
-                        </el-tab-pane>
-                        <el-tab-pane
-                            label="Ticket 50mm"
-                            name="third"
-                            v-if="config.show_ticket_50"
-                        >
-                            <embed
-                                v-if="config.show_ticket_50"
-                                :src="form.print_ticket_50"
-                                type="application/pdf"
-                                width="100%"
-                                height="450px"
-                            />
-                        </el-tab-pane>
-                        <el-tab-pane label="A4" name="quarter" v-if="!isNrus">
-                            <embed
-                                :src="form.print_a4"
-                                type="application/pdf"
-                                width="100%"
-                                height="450px"
-                            />
-                        </el-tab-pane>
-                        <el-tab-pane label="A5" name="fifth" v-if="!isNrus">
-                            <embed
-                                :src="form.print_a5"
-                                type="application/pdf"
-                                width="100%"
-                                height="450px"
-                            />
-                        </el-tab-pane>
-                    </el-tabs>
-                </div>
-                <div class="col-md-12 d-sm-block d-md-block d-lg-none">
-                    <div class="row">
-                        <div v-if="!isNrus" class="col text-center font-weight-bold mt-3">
-                            <button
-                                class="btn btn-lg btn-info waves-effect waves-light"
-                                type="button"
-                                @click="clickPrint(form.print_a4)"
-                            >
-                                <i class="fa fa-file-alt"></i>
-                            </button>
-                            <p>A4</p>
-                        </div>
-                        <div
-                            v-if="config !== null && config.show_ticket_80"
-                            class="col text-center font-weight-bold mt-3"
-                        >
-                            <button
-                                class="btn btn-lg btn-info waves-effect waves-light"
-                                type="button"
-                                @click="clickPrint(form.print_ticket)"
-                            >
-                                <i class="fa fa-receipt"></i>
-                            </button>
-                            <p>Ticket</p>
-                        </div>
-                        <div
-                            v-if="config.show_ticket_58"
-                            class="col text-center font-weight-bold mt-3"
-                        >
-                            <button
-                                class="btn btn-lg btn-info waves-effect waves-light"
-                                type="button"
-                                @click="clickPrint(form.print_ticket_58)"
-                            >
-                                <i class="fa fa-receipt"></i>
-                            </button>
-                            <p>Ticket 58</p>
-                        </div>
-                        <div
-                            v-if="config.show_ticket_50"
-                            class="col text-center font-weight-bold mt-3"
-                        >
-                            <button
-                                class="btn btn-lg btn-info waves-effect waves-light"
-                                type="button"
-                                @click="clickPrint(form.print_ticket_50)"
-                            >
-                                <i class="fa fa-receipt"></i>
-                            </button>
-                            <p>Ticket 50</p>
-                        </div>
-                        <div v-if="!isNrus" class="col text-center font-weight-bold mt-3">
-                            <button
-                                class="btn btn-lg btn-info waves-effect waves-light"
-                                type="button"
-                                @click="clickPrint(form.print_a5)"
-                            >
-                                <i class="fa fa-file-alt"></i>
-                            </button>
-                            <p>A5</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row col-md-12">
-                    <div class="col-md-6 btn-submit-container position-relative">
-                        <el-input
-                            v-model="form.customer_email"
-                            ref="ref_customer_email"
-                            @keyup.native="keyupCustomerEmail"
-                        >
-                            <el-button
-                                slot="append"
-                                icon="el-icon-message"
-                                @click="clickSendEmail"
-                                :loading="loading"
-                                >Enviar</el-button
-                            >
-                        </el-input>
-                        <!-- <small class="form-control-feedback" v-if="errors.customer_email" v-text="errors.customer_email[0]"></small> -->
-                    </div>
 
-                    <div
-                        class="col-md-6 btn-submit-container position-relative"
-                        v-if="!config.qr_api_enable_ws"
+        <div class="pos-success__body">
+
+            <!-- Vista previa del comprobante -->
+            <div class="pos-success__preview">
+                <el-tabs v-model="activeName">
+                    <el-tab-pane
+                        label="Ticket 80mm"
+                        name="first"
+                        v-if="config !== null && config.show_ticket_80"
                     >
-                        <div class="code-number-container">
-                            <span>+51</span>
-                        </div>
-                        <el-input v-model="form.customer_telephone">
-                            <template slot="prepend"
-                                >+51</template
-                            >
+                        <embed
+                            v-if="config !== null && config.show_ticket_80"
+                            id="nemo"
+                            :src="form.print_ticket"
+                            type="application/pdf"
+                            width="100%"
+                            height="450px"
+                        />
+                    </el-tab-pane>
+                    <el-tab-pane
+                        label="Ticket 58mm"
+                        name="second"
+                        v-if="config.show_ticket_58"
+                    >
+                        <embed
+                            v-if="config.show_ticket_58"
+                            :src="form.print_ticket_58"
+                            type="application/pdf"
+                            width="100%"
+                            height="450px"
+                        />
+                    </el-tab-pane>
+                    <el-tab-pane
+                        label="Ticket 50mm"
+                        name="third"
+                        v-if="config.show_ticket_50"
+                    >
+                        <embed
+                            v-if="config.show_ticket_50"
+                            :src="form.print_ticket_50"
+                            type="application/pdf"
+                            width="100%"
+                            height="450px"
+                        />
+                    </el-tab-pane>
+                    <el-tab-pane label="A4" name="quarter" v-if="!isNrus">
+                        <embed
+                            :src="form.print_a4"
+                            type="application/pdf"
+                            width="100%"
+                            height="450px"
+                        />
+                    </el-tab-pane>
+                    <el-tab-pane label="A5" name="fifth" v-if="!isNrus">
+                        <embed
+                            :src="form.print_a5"
+                            type="application/pdf"
+                            width="100%"
+                            height="450px"
+                        />
+                    </el-tab-pane>
+                </el-tabs>
+            </div>
+
+            <!-- Acciones -->
+            <aside class="pos-success__side">
+
+                <section class="pos-success__block">
+                    <h5 class="pos-success__block-title">Enviar comprobante</h5>
+
+                    <label class="pos-success__label">Correo electrónico</label>
+                    <el-input
+                        v-model="form.customer_email"
+                        ref="ref_customer_email"
+                        placeholder="correo@ejemplo.com"
+                        @keyup.native="keyupCustomerEmail"
+                    >
+                        <el-button
+                            slot="append"
+                            icon="el-icon-message"
+                            @click="clickSendEmail"
+                            :loading="loading"
+                            >Enviar</el-button
+                        >
+                    </el-input>
+
+                    <label class="pos-success__label">WhatsApp</label>
+                    <div v-if="!config.qr_api_enable_ws">
+                        <el-input v-model="form.customer_telephone"
+                                  placeholder="999 999 999">
+                            <template slot="prepend">+51</template>
                             <el-button slot="append" @click="clickSendWhatsapp"
                                 >Enviar
                                 <el-tooltip
@@ -214,7 +152,7 @@
                     </div>
                     <template v-else>
                         <QrApi
-                            colClass="col-md-6"
+                            colClass="pos-success__qr"
                             :wsPhone="form.customer_telephone"
                             :wsFile="form.print_ticket"
                             :wsFileA4="form.print_a4"
@@ -223,27 +161,73 @@
                             :wsData="form.pdf_a4_data"
                         />
                     </template>
+                </section>
 
-                    <div class="col-md-6 mt-4"></div>
-                    <div class="col-md-6 mt-4">
-                        <el-button
-                            type="primary"
-                            class="float-right"
-                            @click="clickNewSale"
-                            >Nueva venta</el-button
+                <section class="pos-success__block">
+                    <h5 class="pos-success__block-title">Imprimir o descargar</h5>
+                    <div class="pos-success__formats">
+                        <button
+                            v-if="config !== null && config.show_ticket_80"
+                            type="button"
+                            class="pos-success__format"
+                            @click="clickPrint(form.print_ticket)"
                         >
-
-                        <template v-if="showButtonConvertCpePos && isFromPos">
-                            <el-button
-                                type="success"
-                                class="float-right ml-3 mr-3"
-                                @click="clickConvertCpe"
-                                >Convertir a CPE</el-button
-                            >
-                        </template>
+                            <i class="fa fa-receipt"></i> Ticket 80
+                        </button>
+                        <button
+                            v-if="config.show_ticket_58"
+                            type="button"
+                            class="pos-success__format"
+                            @click="clickPrint(form.print_ticket_58)"
+                        >
+                            <i class="fa fa-receipt"></i> Ticket 58
+                        </button>
+                        <button
+                            v-if="config.show_ticket_50"
+                            type="button"
+                            class="pos-success__format"
+                            @click="clickPrint(form.print_ticket_50)"
+                        >
+                            <i class="fa fa-receipt"></i> Ticket 50
+                        </button>
+                        <button
+                            v-if="!isNrus"
+                            type="button"
+                            class="pos-success__format"
+                            @click="clickPrint(form.print_a4)"
+                        >
+                            <i class="fa fa-file-alt"></i> A4
+                        </button>
+                        <button
+                            v-if="!isNrus"
+                            type="button"
+                            class="pos-success__format"
+                            @click="clickPrint(form.print_a5)"
+                        >
+                            <i class="fa fa-file-alt"></i> A5
+                        </button>
                     </div>
+                </section>
+
+                <div class="pos-success__actions">
+                    <button
+                        type="button"
+                        class="pos-success__new"
+                        @click="clickNewSale"
+                    >
+                        <i class="fas fa-plus"></i> Nueva venta
+                    </button>
+
+                    <button
+                        v-if="showButtonConvertCpePos && isFromPos"
+                        type="button"
+                        class="pos-success__convert"
+                        @click="clickConvertCpe"
+                    >
+                        Convertir a CPE
+                    </button>
                 </div>
-            </div>
+            </aside>
         </div>
 
         <sale-note-generate
@@ -256,8 +240,295 @@
     </el-dialog>
 </template>
 <style>
-.code-number-container {
+/* =========================================================================
+   Modal de venta exitosa
+   ========================================================================= */
+
+/* Misma cadena de resolución que pos.css: variables legacy de los temas
+   claros -> familia --black-* del skin black -> derivado del color de marca
+   (skin modern). Ningún tema define --border-color: no se consulta. */
+.pos-success {
+    --ps-primary: var(--primary-color, #3d6bf5);
+    --ps-text: var(--dark-color, var(--black-dark, #3a4658));
+    --ps-muted: var(--muted, var(--black-accent, color-mix(in srgb, var(--ps-text) 62%, #fff)));
+    --ps-surface: #fff;
+    --ps-surface-2: var(--light-color, var(--black-highlight, color-mix(in srgb, var(--ps-primary) 5%, #fff)));
+    --ps-border: var(--accent-color, color-mix(in srgb, var(--black-accent, var(--ps-primary)) 16%, #fff));
+    --ps-border-strong: color-mix(in srgb, var(--black-accent, var(--ps-primary)) 28%, #fff);
+    --ps-success: var(--success, #00c666);
+    --ps-warning: var(--warning, #ff8400);
+    --ps-radius: var(--border-radius-sm, 8px);
+    --ps-radius-lg: var(--border-radius-lg, 14px);
+
+    max-width: 1120px;
+    border-radius: var(--ps-radius-lg);
+    overflow: hidden;
+}
+
+html.dark .pos-success {
+    --ps-text: #d1d2d6;
+    --ps-muted: #8b93ab;
+    --ps-surface: var(--contents-dark, var(--black-content-dark, var(--md-content-dark, #283046)));
+    --ps-surface-2: var(--background-dark, var(--black-bg-dark, var(--md-bg-dark, #212c56)));
+    --ps-border: var(--borders-dark, var(--black-border-dark, var(--md-border-dark, #314267)));
+    --ps-border-strong: color-mix(in srgb, var(--borders-dark, var(--black-border-dark, var(--md-border-dark, #3a4870))) 78%, #fff);
+}
+
+.pos-success .el-dialog__header {
+    padding: 0;
+    border-bottom: 1px solid var(--ps-border);
+}
+
+.pos-success .el-dialog__body {
+    padding: 0;
+}
+
+/* ---- Cabecera ---- */
+
+.pos-success__header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 16px 22px;
+}
+
+.pos-success__icon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    background: var(--ps-success);
+    color: #fff;
+    font-size: 16px;
+}
+
+.pos-success__heading {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pos-success__eyebrow {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ps-muted);
+}
+
+.pos-success__title {
+    margin: 1px 0 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ps-text);
+}
+
+.pos-success__badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.pos-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.pos-chip.is-ok {
+    background: color-mix(in srgb, var(--ps-success) 12%, transparent);
+    color: var(--ps-success);
+}
+
+.pos-chip.is-warn {
+    background: color-mix(in srgb, var(--ps-warning) 14%, transparent);
+    color: var(--ps-warning);
+}
+
+.pos-chip.is-muted {
+    background: var(--ps-surface-2);
+    color: var(--ps-muted);
+}
+
+/* ---- Cuerpo ---- */
+
+.pos-success__body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.pos-success__preview {
+    min-width: 0;
+    padding: 10px 18px 16px;
+    background: var(--ps-surface-2);
+}
+
+.pos-success__preview .el-tabs__header {
+    margin-bottom: 10px;
+}
+
+.pos-success__preview .el-tabs__nav-wrap::after {
     display: none;
+}
+
+.pos-success__preview embed {
+    display: block;
+    border: 1px solid var(--ps-border);
+    border-radius: var(--ps-radius);
+    background: #fff;
+}
+
+/* ---- Panel de acciones ---- */
+
+.pos-success__side {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 16px 20px 18px;
+    border-left: 1px solid var(--ps-border);
+    background: var(--ps-surface);
+}
+
+.pos-success__block-title {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ps-text);
+}
+
+.pos-success__label {
+    display: block;
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ps-muted);
+}
+
+.pos-success__block .el-input + .pos-success__label,
+.pos-success__block > div + .pos-success__label,
+.pos-success__block .pos-success__qr + .pos-success__label {
+    margin-top: 12px;
+}
+
+.pos-success__qr {
+    width: 100%;
+}
+
+.pos-success__formats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.pos-success__format {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border: 1px solid var(--ps-border-strong);
+    border-radius: 999px;
+    background: var(--ps-surface);
+    color: var(--ps-text);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos-success__format:hover {
+    background: var(--ps-primary);
+    border-color: var(--ps-primary);
+    color: #fff;
+}
+
+.pos-success__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 4px;
+}
+
+.pos-success__new {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 13px 16px;
+    border: 0;
+    border-radius: var(--ps-radius-lg);
+    background: var(--ps-primary);
+    color: #fff;
+    font-size: 14.5px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    cursor: pointer;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--ps-primary) 28%, transparent);
+    transition: filter .15s ease;
+}
+
+.pos-success__new:hover {
+    filter: brightness(1.06);
+}
+
+.pos-success__convert {
+    width: 100%;
+    padding: 10px 16px;
+    border: 1px solid var(--ps-success);
+    border-radius: var(--ps-radius);
+    background: transparent;
+    color: var(--ps-success);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.pos-success__convert:hover {
+    background: var(--ps-success);
+    color: #fff;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 991.98px) {
+    .pos-success {
+        width: 95% !important;
+    }
+
+    .pos-success__body {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pos-success__side {
+        border-left: 0;
+        border-top: 1px solid var(--ps-border);
+    }
+
+    .pos-success__header {
+        gap: 10px;
+    }
+
+    .pos-success__badges {
+        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
+        width: 100%;
+    }
 }
 </style>
 <script>

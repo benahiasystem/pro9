@@ -58,8 +58,43 @@ export function applyThemeAndShowContent(savedTheme, savedBlackTheme) {
         }
     };
 
-    const themeToApply = savedTheme || localStorage.getItem('current_theme');
-    const blackThemeToApply = savedBlackTheme || localStorage.getItem('black_theme');
+    // El skin activo decide QUÉ paleta corresponde y son excluyentes:
+    // skins claros -> themes.json (#theme-styles); skin black ->
+    // black-themes.json (#black-theme-styles). Aplicar ambas mezcla los
+    // colores de un skin con el otro. El layout expone el skin en
+    // window.vc_visual.active_skin; como respaldo se detecta el <link>
+    // del skin ya presente en el <head>.
+    const detectActiveSkin = () => {
+        const exposed = window.vc_visual && window.vc_visual.active_skin;
+        if (exposed) {
+            return String(exposed).toLowerCase();
+        }
+        const link = document.querySelector('link[href*="storage/skins/"]');
+        if (link) {
+            const href = link.getAttribute('href') || '';
+            return href.split('/').pop().split('?')[0].toLowerCase();
+        }
+        return null;
+    };
+
+    const removeStyleTag = (id) => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
+    };
+
+    const isBlackSkin = (detectActiveSkin() || '').includes('black');
+
+    const themeToApply = isBlackSkin
+        ? null
+        : (savedTheme || localStorage.getItem('current_theme'));
+    const blackThemeToApply = !isBlackSkin
+        ? null
+        : (savedBlackTheme || localStorage.getItem('black_theme') || 'default');
+
+    // Retirar la paleta que no corresponde al skin activo (el blade de
+    // versiones anteriores pudo haberla emitido, y el cache de localStorage
+    // puede traer la del skin usado antes del cambio).
+    removeStyleTag(isBlackSkin ? 'theme-styles' : 'black-theme-styles');
 
     const cachedApplied =
         applyCachedTheme(themeToApply, 'theme_colors_', 'theme-styles') ||

@@ -384,16 +384,18 @@
                                         </h5>
                                     </template>
                                     <template v-else>
-                                        <el-input
-                                            min="0"
-                                            v-model="item.edit_sale_unit_price"
-                                            class="mt-1 mb-2"
-                                            size="mini"
-                                        >                                            
-                                        </el-input>
-                                        <div class="btn-edit-price-container d-flex">
+                                        <div class="pos-price-edit">
+                                            <el-input
+                                                min="0"
+                                                v-model="item.edit_sale_unit_price"
+                                                class="pos-price-edit__input"
+                                                size="mini"
+                                            >
+                                            </el-input>
                                             <button
-                                            class="btn btn-primary d-flex justify-content-center align-items-center p-0"
+                                                type="button"
+                                                class="pos-price-edit__btn is-confirm"
+                                                title="Guardar precio"
                                                 @click="
                                                     clickEditUnitPriceItem(
                                                         index
@@ -403,7 +405,9 @@
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
                                             </button>
                                             <button
-                                                class="btn second-buton btn-close-pos d-flex justify-content-center align-items-center p-0"
+                                                type="button"
+                                                class="pos-price-edit__btn is-cancel"
+                                                title="Cancelar"
                                                 @click="
                                                     clickCancelUnitPriceItem(
                                                         index
@@ -750,99 +754,140 @@
                     </div>
                 </div>
             </div>
-            <div
-                class="col-lg-4 col-md-6 bg-white m-0 p-0"
-                style="height: calc(100vh - 110px)"
-            >
-                <div class="h-60" style="overflow-y: auto">
-                    <div class="row py-1 m-0 p-0">
-                        <div class="col-12">
-                            <table
-                                class="table table-sm table-borderless mb-0 pos-list-items"
-                            >
-                                <tr
-                                    v-for="(item, index) in form.items"
-                                    :key="index"
-                                >
-                                    <td>
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <p class="item-description mb-0">
-                                                {{ item.item.description }}
-                                                <template v-if="item.presentation &&
-                                                    item.presentation.hasOwnProperty(
-                                                        'description'
-                                                    )
-                                                 " >
-                                                 {{ item.item.presentation
-                                                              .description
-                                                  }}
-                                                </template>
-                                            </p>
-                                            <a
-                                                class="btn btn-sm btn-default text-danger btn-trash-product-pos"
-                                                @click="clickDeleteItem(item)"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
-                                            </a>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center mt-1">
-                                            <div>
-                                                <small>{{ item.unit_type_id }}</small>
-                                                <small
-                                                    v-html="nameSets(item.item_id)"
-                                                ></small>
-                                            </div>
-                                            <div class="d-flex align-items-center justify-content-end gap-4">
-                                                <div :style="{ width: Math.min(120, Math.max(50, String(item.item.aux_quantity == null ? '' : item.item.aux_quantity).length * 9 + 24)) + 'px' }">
-                                                    <el-input
-                                                        v-model="item.item.aux_quantity"
-                                                        @input="
-                                                                clickAddItem(
-                                                                    item,
-                                                                    index,
-                                                                    true,
-                                                                )
-                                                        "
-                                                        @keyup.enter.native="
-                                                            keyupEnterQuantity
-                                                        "
-                                                    ></el-input>
-                                                </div>
-                                                <div class="font-weight-semibold text-end">
-                                                    <template v-if="edit_unit_price">
-                                                        <span class="d-flex align-items-center">
-                                                            <span class="me-2">
-                                                                {{ currency_type.symbol }}
-                                                            </span>
-                                                            <el-input
-                                                                v-model="item.total"
-                                                                size="mini"
-                                                                :style="{ width: Math.min(120, Math.max(70, String(item.total == null ? '' : item.total).length * 9 + 24)) + 'px' }"
-                                                                @blur="changeRowTotal(index)"
-                                                                :readonly="!edit_unit_price && !item.item.calculate_quantity"
-                                                            ></el-input>
-                                                        </span>
-                                                    </template>
-                                                    <template v-else>
-                                                        {{ currency_type.symbol }} {{ item.total }}
-                                                    </template>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
+            <aside class="col-lg-4 col-md-6 pos-cart">
+                <div class="pos-cart__body">
+                    <div v-if="form.items.length === 0" class="pos-cart__empty">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
+                        <p class="pos-cart__empty-title">El carrito está vacío</p>
+                        <p class="pos-cart__empty-text">
+                            Busca o selecciona un producto para agregarlo a la venta.
+                        </p>
                     </div>
+
+                    <ul v-else class="pos-cart__list">
+                        <li
+                            v-for="(item, index) in form.items"
+                            :key="index"
+                            class="pos-cart-item"
+                        >
+                            <div class="pos-cart-item__top">
+                                <p class="pos-cart-item__name" :title="item.item.description">
+                                    {{ item.item.description }}
+                                    <template v-if="item.presentation &&
+                                        item.presentation.hasOwnProperty(
+                                            'description'
+                                        )
+                                     " >
+                                     {{ item.item.presentation
+                                                  .description
+                                      }}
+                                    </template>
+                                </p>
+                                <button
+                                    type="button"
+                                    class="pos-cart-item__remove"
+                                    title="Quitar producto"
+                                    @click="clickDeleteItem(item, index)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                </button>
+                            </div>
+
+                            <div class="pos-cart-item__meta">
+                                <span class="pos-cart-item__unit">{{ item.unit_type_id }}</span>
+                                <span class="pos-cart-item__unit-price">
+                                    {{ currency_type.symbol }} {{ rowUnitPrice(item) }} c/u
+                                </span>
+                                <small
+                                    class="pos-cart-item__sets"
+                                    v-html="nameSets(item.item_id)"
+                                ></small>
+                            </div>
+
+                            <div class="pos-cart-item__bottom">
+                                <div class="pos-qty">
+                                    <button
+                                        type="button"
+                                        class="pos-qty__btn"
+                                        title="Quitar una unidad"
+                                        @click="changeCartQuantity(item, index, -1)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
+                                    </button>
+                                    <el-input
+                                        class="pos-qty__input"
+                                        v-model="item.item.aux_quantity"
+                                        @input="
+                                                clickAddItem(
+                                                    item,
+                                                    index,
+                                                    true,
+                                                )
+                                        "
+                                        @keyup.enter.native="
+                                            keyupEnterQuantity
+                                        "
+                                    ></el-input>
+                                    <button
+                                        type="button"
+                                        class="pos-qty__btn"
+                                        title="Agregar una unidad"
+                                        @click="changeCartQuantity(item, index, 1)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                                    </button>
+                                </div>
+
+                                <div class="pos-cart-item__total">
+                                    <template v-if="edit_unit_price">
+                                        <span class="pos-cart-item__total-edit">
+                                            <span class="pos-cart-item__currency">
+                                                {{ currency_type.symbol }}
+                                            </span>
+                                            <el-input
+                                                v-model="item.total"
+                                                size="mini"
+                                                @blur="changeRowTotal(index)"
+                                                :readonly="!edit_unit_price && !item.item.calculate_quantity"
+                                            ></el-input>
+                                        </span>
+                                    </template>
+                                    <template v-else>
+                                        <span class="pos-cart-item__total-text">
+                                            {{ currency_type.symbol }} {{ rowTotal(item) }}
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
-                <div class="h-40 bg-light border-top-dashed" style="overflow-y: auto">
-                    <div class="row py-3 border-bottom m-0 p-0">
-                        <div class="col-10">
+
+                <footer class="pos-cart__footer" v-if="form.items.length > 0">
+                    <div class="pos-cart__footer-top">
+                        <span class="pos-cart__count">
+                            {{ form.items.length }}
+                            {{ form.items.length === 1 ? 'producto' : 'productos' }}
+                        </span>
+                        <button
+                            type="button"
+                            class="pos-cart__clear"
+                            @click="clickClearCart"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                            Vaciar carrito
+                        </button>
+                    </div>
+
+                    <div class="pos-cart__customer"
+                         :class="{ 'is-required': !form.customer_id }">
+                        <div class="pos-cart__customer-row">
                             <el-select
                                 ref="select_person"
                                 v-model="form.customer_id"
                                 filterable
-                                placeholder="Cliente"
+                                clearable
+                                placeholder="Seleccione un cliente"
                                 @change="changeCustomer"
                                 @keyup.native="keyupCustomer"
                                 @keyup.enter.native="keyupEnterCustomer"
@@ -856,153 +901,83 @@
                                     :value="option.id"
                                 ></el-option>
                             </el-select>
-                        </div>
-                        <div class="col-2">
-                            <div class="btn-group h-100 w-100" role="group">
-                                <a
-                                    class="btn btn-sm btn-default d-flex align-items-center justify-content-center w-100"
+                            <el-tooltip
+                                class="item"
+                                effect="dark"
+                                content="Registrar nuevo cliente"
+                                placement="top"
+                            >
+                                <button
+                                    type="button"
+                                    class="pos-cart__icon-btn"
                                     @click.prevent="showDialogNewPerson = true"
                                 >
                                     <i class="fas fa-plus"></i>
-                                </a>
-                            </div>
+                                </button>
+                            </el-tooltip>
                         </div>
                     </div>
-                    <div
-                        class="row bg-light m-0 p-0 d-flex align-items-right pt-2"
-                    >
-                        <div class="col-md-12">
-                            <table class="col-md-12" style="color:#021a6f">
-                                <tr
-                                    v-if="form.total_exonerated > 0"
-                                    class="m-0"
-                                >
-                                    <td>OP.EXONERADAS</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_exonerated }}
-                                    </td>
-                                </tr>
-                                <tr v-if="form.total_free > 0" class="m-0">
-                                    <td>OP.GRATUITAS</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_free }}
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-if="form.total_unaffected > 0"
-                                    class="m-0"
-                                >
-                                    <td>OP.INAFECTAS</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_unaffected }}
-                                    </td>
-                                </tr>
-                                <tr v-if="form.total_taxed > 0 && !isNrus" class="m-0">
-                                    <td>OP.GRAVADA</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_taxed }}
-                                    </td>
-                                </tr>
-                                <tr v-if="form.total_igv > 0 && !isNrus" class="m-0">
-                                    <td>IGV</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_igv }}
-                                    </td>
-                                </tr>
-                                <template v-if="form.has_retention && !isNrus">
-                                    <tr v-if="form.retention && form.retention.amount > 0" class="m-0">
-                                        <td>M. RETENCIÓN
-                                                    ({{
-                                                        configuration.igv_retention_percentage
-                                                                    }}%):
-                                            </td>
-                                        <td class="text-end font-weight-semibold">
-                                            {{ currency_type.symbol }}
-                                            {{ form.retention.amount }}
-                                        </td>
-                                    </tr>
-                                </template>
-                                <tr v-if="form.total_isc > 0 && !isNrus" class="m-0">
-                                    <td>ISC</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_isc }}
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-if="form.total_plastic_bag_taxes > 0"
-                                    class="m-0"
-                                >
-                                    <td>ICBPER</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_plastic_bag_taxes }}
-                                    </td>
-                                </tr>
-                            </table>
+
+                    <div class="pos-cart__totals">
+                        <div v-if="form.total_exonerated > 0" class="pos-cart__total-row">
+                            <span>Op. exoneradas</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_exonerated) }}</span>
                         </div>
-
-                        <!-- <div class="col-12 text-right px-0" v-if="form.total_taxed > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.GRAVADA: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_taxed }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_free > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.GRATUITAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_free }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_unaffected > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.INAFECTAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_unaffected }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_exonerated > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.EXONERADAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_exonerated }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_igv > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">IGV: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{form.total_igv}}</span>
-              </h4>
-            </div> -->
-                    </div>
-
-                    <div class="m-2 ">
-                        <div
-                            class="btn py-3 col-12"
-                            @click="clickPayment"
-                            v-bind:class="[
-                                form.total > 0
-                                    ? 'btn-warning'
-                                    : 'bg-dark text-white'
-                            ]"
-                        >
-                            <span>PAGAR </span>
-                            <b
-                                >{{ currency_type.symbol }}
-                                {{ form.total.toFixed(2) }}</b
+                        <div v-if="form.total_free > 0" class="pos-cart__total-row">
+                            <span>Op. gratuitas</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_free) }}</span>
+                        </div>
+                        <div v-if="form.total_unaffected > 0" class="pos-cart__total-row">
+                            <span>Op. inafectas</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_unaffected) }}</span>
+                        </div>
+                        <div v-if="form.total_taxed > 0 && !isNrus" class="pos-cart__total-row">
+                            <span>Op. gravada</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_taxed) }}</span>
+                        </div>
+                        <div v-if="form.total_igv > 0 && !isNrus" class="pos-cart__total-row">
+                            <span>IGV</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_igv) }}</span>
+                        </div>
+                        <template v-if="form.has_retention && !isNrus">
+                            <div
+                                v-if="form.retention && form.retention.amount > 0"
+                                class="pos-cart__total-row"
                             >
-                            <i class="fas fa-arrow-right ms-2"></i>
+                                <span>M. retención ({{ configuration.igv_retention_percentage }}%)</span>
+                                <span>{{ currency_type.symbol }} {{ money(form.retention.amount) }}</span>
+                            </div>
+                        </template>
+                        <div v-if="form.total_isc > 0 && !isNrus" class="pos-cart__total-row">
+                            <span>ISC</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_isc) }}</span>
                         </div>
+                        <div v-if="form.total_plastic_bag_taxes > 0" class="pos-cart__total-row">
+                            <span>ICBPER</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_plastic_bag_taxes) }}</span>
+                        </div>
+
+                        <div class="pos-cart__total-row pos-cart__total-row--grand">
+                            <span>TOTAL</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total) }}</span>
+                        </div>
+
                     </div>
-                </div>
-            </div>
+
+                    <button
+                        type="button"
+                        class="pos-cart__pay"
+                        :class="{ 'is-disabled': !(form.total > 0) }"
+                        @click="clickPayment"
+                    >
+                        <span class="pos-cart__pay-label">PAGAR</span>
+                        <span class="pos-cart__pay-amount">
+                            {{ currency_type.symbol }} {{ money(form.total) }}
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+                    </button>
+                </footer>
+            </aside>
 
             <person-form
                 :showDialog.sync="showDialogNewPerson"
@@ -1598,7 +1573,8 @@ export default {
         },
         keyupTabCustomer(e) {
             // console.log(e.keyCode)
-            if (e.keyCode === 9) {
+            // El selector de cliente sólo existe cuando el carrito tiene productos.
+            if (e.keyCode === 9 && this.$refs.select_person) {
                 this.$refs.select_person.$el
                     .getElementsByTagName("input")[0]
                     .focus();
@@ -2270,18 +2246,18 @@ export default {
                 return;
             }
 
-            let addingNotification = this.$notify({
-                title: "",
-                message: "Agregando...",
-                type: "info",
-                duration: 0
-            });
 
             let exchangeRateSale = this.form.exchange_rate_sale;
             let presentation = item.presentation;
             let exist_item = false;
 
-            if (this.selected_option_price && !input) {
+            // Al cambiar la cantidad desde el carrito, `item` ya es la fila que se
+            // está editando: se usa esa y no la primera coincidencia por producto
+            // (un mismo producto puede estar varias veces con precios distintos).
+            if (input && this.form.items[index] === item) {
+                exist_item = item;
+            }
+            else if (this.selected_option_price && !input) {
                 exist_item = _.filter(this.form.items, {
                     item_id: item.item_id,
                     unit_type_id: item.unit_type_id
@@ -2340,7 +2316,6 @@ export default {
                     if (!response.success) {
                         item.item.aux_quantity = item.quantity;
                         this.loading = false;
-                        addingNotification.close();
                         return this.$message.error(response.message);
                     }
 
@@ -2352,7 +2327,6 @@ export default {
                     );
                     if (!response.success) {
                         this.loading = false;
-                        addingNotification.close();
                         return this.$message.error(response.message);
                     }
 
@@ -2424,7 +2398,6 @@ export default {
                 );
                 if (!response.success) {
                     this.loading = false;
-                    addingNotification.close();
                     return this.$message.error(response.message);
                 }
 
@@ -2493,14 +2466,15 @@ export default {
 
             // console.log("pos", this.row);
 
-            addingNotification.close();
 
-            this.$notify({
-                title: "",
-                message: "Producto añadido!",
-                type: "success",
-                duration: 1000
-            });
+            if (!input) {
+                this.$notify({
+                    title: "",
+                    message: "Producto añadido!",
+                    type: "success",
+                    duration: 1000
+                });
+            }
 
             this.cleanInput();
 
@@ -2527,13 +2501,94 @@ export default {
                 });
             return data;
         },
-        async clickDeleteItem(item) {
-            let index = this.form.items.findIndex(
-                row => row.item_id === item.item_id
-            );
+        async clickDeleteItem(item, row_index = null) {
+            let index =
+                row_index !== null && this.form.items[row_index] === item
+                    ? row_index
+                    : this.form.items.indexOf(item);
+
+            if (index < 0) {
+                index = this.form.items.findIndex(
+                    row => row.item_id === item.item_id
+                );
+            }
+
+            if (index < 0) return;
+
             this.form.items.splice(index, 1);
             this.calculateTotal();
             await this.setFormPosLocalStorage();
+        },
+        /**
+         * Formatea un importe para mostrarlo siempre con 2 decimales.
+         */
+        money(value) {
+            let amount = parseFloat(value);
+            if (isNaN(amount)) amount = 0;
+            return amount.toFixed(2);
+        },
+        /**
+         * Precio unitario (con IGV) de una fila del carrito.
+         */
+        rowUnitPrice(row) {
+            let unit_price = parseFloat(row.unit_price);
+
+            if (isNaN(unit_price)) {
+                const total = parseFloat(row.total);
+                const quantity = parseFloat(row.quantity);
+                unit_price =
+                    !isNaN(total) && !isNaN(quantity) && quantity > 0
+                        ? total / quantity
+                        : 0;
+            }
+
+            return _.round(unit_price, 2).toFixed(2);
+        },
+        /**
+         * Importe de una fila del carrito (modo solo lectura).
+         */
+        rowTotal(row) {
+            return this.money(row.total);
+        },
+        /**
+         * Aumenta/disminuye en una unidad la cantidad de una fila del carrito.
+         */
+        changeCartQuantity(item, index, delta) {
+            const current = parseFloat(item.item.aux_quantity);
+            let quantity = (isNaN(current) ? 0 : current) + delta;
+
+            if (quantity < 1) {
+                if (delta < 0) return;
+                quantity = 1;
+            }
+
+            item.item.aux_quantity = _.round(quantity, 4);
+            this.clickAddItem(item, index, true);
+        },
+        /**
+         * Vacía el carrito conservando el cliente seleccionado.
+         */
+        async clickClearCart() {
+            if (this.form.items.length === 0) return;
+
+            try {
+                await this.$confirm(
+                    "Se quitarán todos los productos de la venta actual.",
+                    "¿Vaciar el carrito?",
+                    {
+                        confirmButtonText: "Sí, vaciar",
+                        cancelButtonText: "Cancelar",
+                        type: "warning"
+                    }
+                );
+            } catch (e) {
+                return;
+            }
+
+            this.form.items = [];
+            this.calculateTotal();
+            await this.setFormPosLocalStorage();
+            this.initFocus();
         },
         calculateTotal() {
             let total_discount = 0;
