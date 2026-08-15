@@ -32,6 +32,10 @@ if($current_hostname) {
                 Route::get('debtors', 'DashboardController@debtors');
                 Route::get('month-goal', 'DashboardController@monthGoal');
                 Route::get('sales-by-product', 'DashboardController@salesByProduct');
+                Route::get('widgets/catalog', 'DashboardController@widgetCatalog');
+                Route::post('widgets/data', 'DashboardController@widgetData');
+                Route::get('widgets/layout', 'DashboardController@widgetLayout');
+                Route::put('widgets/layout', 'DashboardController@widgetLayoutStore');
             });
 
             //Commands

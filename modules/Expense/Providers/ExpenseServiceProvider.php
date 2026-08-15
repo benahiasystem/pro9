@@ -3,6 +3,8 @@
 namespace Modules\Expense\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Dashboard\Widgets\WidgetSourceRegistry;
+use Modules\Expense\Widgets\ExpenseTotalsSource;
 // use Illuminate\Database\Eloquent\Factory;
 
 class ExpenseServiceProvider extends ServiceProvider
@@ -19,6 +21,12 @@ class ExpenseServiceProvider extends ServiceProvider
         $this->registerViews();
         // $this->registerFactories();
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+
+        // Fuente de widget aportada al dashboard (patrón de extensión,
+        // ver modules/Dashboard/WIDGETS.md).
+        $this->app->afterResolving(WidgetSourceRegistry::class, function ($registry) {
+            $registry->register(new ExpenseTotalsSource());
+        });
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace Modules\Dashboard\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Dashboard\Widgets\WidgetSourceRegistry;
 // // use Illuminate\Database\Eloquent\Factory;
 
 class DashboardServiceProvider extends ServiceProvider
@@ -29,6 +30,10 @@ class DashboardServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->register(RouteServiceProvider::class);
+
+        // Catálogo de fuentes de widgets del dashboard; otros módulos
+        // registran las suyas resolviendo este singleton en su boot().
+        $this->app->singleton(WidgetSourceRegistry::class);
     }
 
     /**
