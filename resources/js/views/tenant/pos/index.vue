@@ -89,7 +89,7 @@
                         </el-select>
                     </div>
                     <div class="col-6">
-                        <el-button-group class="d-flex">
+                        <el-button-group class="d-flex gap-1">
                             <el-tooltip
                                 class="item"
                                 effect="dark"
@@ -99,9 +99,9 @@
                                 <el-button
                                     type="button"
                                     @click="back()"
-                                    class="btn btn-custom btn-sm  mt-2 me-2 me-sm-0"
+                                    class="btn btn-custom btn-sm me-2 me-sm-0"
                                 >
-                                    <i class="fa fa-border-all"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /></svg>
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip
@@ -114,9 +114,9 @@
                                     type="button"
                                     :disabled="place == 'cat2'"
                                     @click="setView('cat2')"
-                                    class="btn btn-custom btn-sm  mt-2 me-2 me-sm-0"
+                                    class="btn btn-custom btn-sm me-2 me-sm-0"
                                 >
-                                    <i class="fa fa-bars"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M4 14m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /></svg>
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip
@@ -129,9 +129,9 @@
                                     type="button"
                                     :disabled="place == 'cat3'"
                                     @click="setView('cat3')"
-                                    class="btn btn-custom btn-sm  mt-2 me-2 me-sm-0"
+                                    class="btn btn-custom btn-sm me-2 me-sm-0"
                                 >
-                                    <i class="fas fa-list-ul"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" /><path d="M3 10h18" /><path d="M10 3v18" /></svg>
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip
@@ -144,9 +144,9 @@
                                     type="button"
                                     :disabled="place == 'cat'"
                                     @click="back()"
-                                    class="btn btn-custom btn-sm  mt-2 me-2 me-sm-0"
+                                    class="btn btn-custom btn-sm me-2 me-sm-0"
                                 >
-                                    <i class="fa fa-undo"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 14l-4 -4l4 -4" /><path d="M5 10h11a4 4 0 1 1 0 8h-1" /></svg>
                                 </el-button>
                             </el-tooltip>
                         </el-button-group>
@@ -298,37 +298,33 @@
                                     >
                                         {{ item.description }}
                                     </p> -->
-                                    <img
-                                        :src="item.image_url"
-                                        class="img-thumbail img-custom"
-                                    />
-                                    <p
-                                        class="text-muted mb-0 "
-                                        style="display: flex; justify-content: space-between; align-items: center;"
-                                    >
-                                        <small class="text-primary" style="width: 45%;">{{
-                                            item.internal_id
-                                        }}</small>
+                                    <div class="pos-card-media">
+                                        <img
+                                            :src="item.image_url"
+                                            class="img-thumbail img-custom"
+                                        />
                                         <el-tooltip
-                                            class="item text-center"
+                                            v-if="item.sets.length > 0"
+                                            class="item"
                                             effect="dark"
                                             :content="
                                                 item.sets.flat().join(',\n')
                                             "
                                             placement="bottom"
-                                            style="width: 10%;"
                                         >
-                                            <i
-                                                v-if="item.sets.length > 0"
-                                                class="fas fa-box-open ms-2"
-                                                style="cursor: pointer;"
-                                            >
-                                            </i>
+                                            <span class="pos-card-media__badge"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M2 13.5v5.5l5 3" /><path d="M7 16.545l5 -3.03" /><path d="M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M12 19l5 3" /><path d="M17 16.5l5 -3" /><path d="M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5" /><path d="M7 5.03v5.455" /><path d="M12 8l5 -3" /></svg></span>
                                         </el-tooltip>
+                                    </div>
+                                    <p
+                                        class="text-muted mb-0 py-1"
+                                        style="display: flex; justify-content: space-between; align-items: center;"
+                                    >
+                                        <small class="text-primary">{{
+                                            item.internal_id
+                                        }}</small>
 
                                         <small
                                             class="measuring-unit text-end"
-                                            style="width: 45%;"
                                             >
                                             <el-tag type="primary" size="mini">
                                                 {{ item.unit_type_id }}
@@ -374,12 +370,12 @@
                                                         edit_unit_price
                                                 "
                                                 type="button"
-                                                class="btn btn-xs btn-primary-pos edit-price"
+                                                class="pos-card-action pos-card-action--edit edit-price"
                                                 @click="
                                                     clickOpenInputEditUP(index)
                                                 "
                                             >
-                                                <i class="fas fa-pen"></i>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /></svg>
                                             </button>
                                         </h5>
                                     </template>
@@ -464,14 +460,14 @@
                                                 <button
                                                     style="width:100%"
                                                     type="button"
-                                                    class="btn btn-xs btn-primary-pos"
+                                                    class="pos-card-action"
                                                     @click="
                                                         clickWarehouseDetail(
                                                             item
                                                         )
                                                     "
                                                 >
-                                                    <i class="fa fa-box"></i>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /><path d="M16 5.25l-8 4.5" /></svg>
                                                 </button>
                                             </el-tooltip>
                                         </el-col>
@@ -488,14 +484,14 @@
                                                 <button
                                                     type="button"
                                                     style="width:100%;"
-                                                    class="btn btn-xs btn-primary-pos"
+                                                    class="pos-card-action"
                                                     @click="
                                                         clickHistorySales(
                                                             item.item_id
                                                         )
                                                     "
                                                 >
-                                                    <i class="fa fa-list"></i>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 8l0 4l2 2" /><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /></svg>
                                                 </button>
                                             </el-tooltip>
                                         </el-col>
@@ -512,26 +508,27 @@
                                                 <button
                                                     type="button"
                                                     style="width:100%"
-                                                    class="btn btn-xs btn-primary-pos"
+                                                    class="pos-card-action"
                                                     @click="
                                                         clickHistoryPurchases(
                                                             item.item_id
                                                         )
                                                     "
                                                 >
-                                                    <i class="fas fa-clock"></i>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
                                                 </button>
                                             </el-tooltip>
                                         </el-col>
                                         <el-col :span="6">
                                             <el-tooltip
+                                                v-if="priceOptionsCount(item) > 0"
                                                 class="item"
                                                 effect="dark"
                                                 content="Ver precios disponibles"
                                                 placement="bottom-end"
                                             >
                                                 <el-popover
-                                                    placement="top"                                                    
+                                                    placement="top"
                                                     width="370"
                                                     trigger="click"
                                                 >
@@ -645,7 +642,7 @@
 
 
                                                         </tbody>
-                                                    </table>                                                    
+                                                    </table>
                                                     <!-- <el-table
                                                         v-if="item.item_unit_types"
                                                         :data="item.item_unit_types"
@@ -712,13 +709,22 @@
                                                         slot="reference"
                                                         type="button"
                                                         style="width:100%"
-                                                        class="btn btn-xs btn-primary-pos"
+                                                        class="pos-card-action"
                                                     >
-                                                        <i
-                                                            class="fa fa-tag"
-                                                        ></i>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
                                                     </button>
                                                 </el-popover>
+                                            </el-tooltip>
+                                            <el-tooltip
+                                                v-else
+                                                class="item"
+                                                effect="dark"
+                                                content="Sin lista de precios"
+                                                placement="bottom-end"
+                                            >
+                                                <span class="pos-card-action is-disabled" style="width:100%">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
+                                                </span>
                                             </el-tooltip>
                                         </el-col>
                                     </el-row>
@@ -731,6 +737,7 @@
                 <table-items
                     ref="table_items"
                     @clickAddItem="clickAddItem"
+                    @escape="onTableEscape"
                     @clickWarehouseDetail="clickWarehouseDetail"
                     @clickHistorySales="clickHistorySales"
                     @clickHistoryPurchases="clickHistoryPurchases"
@@ -1456,9 +1463,9 @@ export default {
                     validated = true
                     newTotal = item.item.sale_unit_price_original
                 }
-                    
+
             }
-            
+
             if (item.item.calculate_quantity) {
                 this.blurCalculateQuantity(index);
                 return;
@@ -1490,9 +1497,9 @@ export default {
                 return this.$message.error(
                     "El Precio Unitario debe ser mayor o igual al costo de compra"
                 );
-                
+
             }
-            
+
 
         },
         ...mapActions(["loadConfiguration"]),
@@ -1722,7 +1729,7 @@ export default {
                 index
             ].edit_sale_unit_price;
             let product = this.items[index];
-            
+
             if (this.config.condition_sale_purchase_price_to_item) {
 
                 if (edit_sale_unit_price < product.purchase_unit_price) {
@@ -1890,10 +1897,10 @@ export default {
             let customer = _.find(this.all_customers, {
                 id: this.form.customer_id
             });
-            
+
             this.customer = customer;
             this.form.has_retention = customer.is_agent_retention
-            
+
             this.validateCustomerRetention(customer.identity_document_type_id);
 
             if (this.configuration.default_document_type_80) {
@@ -1960,7 +1967,7 @@ export default {
             }
         },
         validateCustomerRetention(identity_document_type_id) {
-            
+
             if (identity_document_type_id != "6" || !this.form.has_retention) {
                 if (this.form.has_retention) {
                     this.form.has_retention = false;
@@ -2237,7 +2244,7 @@ export default {
         },
         async clickAddItem(item, index, input = false) {
             //Validar precio mínimo
-            
+
             if (parseFloat(item.sale_unit_price) < 0.1) {
                 this.$message.error(
                     "El precio del producto debe ser mayor a 0.1"
@@ -2272,20 +2279,20 @@ export default {
                     price = Number(price_list) == 0 ? item.sale_unit_price : price_list
 
                 }
-                
+
                 exist_item = _.find(this.form.items, i => {
                     return i.item_id === item.item_id &&
                         i.unit_type_id === item.unit_type_id &&
-                        i.item.sale_unit_price == price 
+                        i.item.sale_unit_price == price
                 });
-                
+
             }
             else if (presentation === undefined) {
                 exist_item = _.find(this.form.items, {
                     item_id: item.item_id,
                     unit_type_id: item.unit_type_id
                 });
-            } 
+            }
             else {
                 // Se evalua si existe presentation de item
                 exist_item = _.find(this.form.items, {
@@ -2386,7 +2393,7 @@ export default {
                 this.row["unit_type_id"] = item.unit_type_id;
 
                 this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
-                
+
                 // Preservar la presentation (calculateRowItem no la copia)
                 this.row.presentation = exist_item.presentation;
 
@@ -2786,7 +2793,7 @@ export default {
                 this.form.customer_id = this.establishment.customer_id;
             }
             this.changeCustomer();
-            
+
         },
         renderCategories(source) {
             const contex = this;
@@ -3042,6 +3049,15 @@ export default {
         cleanInput() {
             this.input_item = null;
         },
+        /**
+         * Esc en el listado de productos: limpia la búsqueda, recarga el
+         * listado completo y devuelve el foco al buscador.
+         */
+        async onTableEscape() {
+            this.cleanInput();
+            await this.getRecords();
+            this.initFocus();
+        },
         filterItems() {
             if (this.place === "cat3") {
                 this.items = this.all_items;
@@ -3118,6 +3134,14 @@ export default {
                 this.$refs.table_items.reset();
             }
 
+            // La vista de categorías y productos también debe cargar el
+            // listado: al venir de la vista de categorías (back() vacía
+            // all_items) quedaba en blanco hasta filtrar una categoría.
+            if (view == "cat2") {
+                this.category_selected = "";
+                await this.getRecords();
+            }
+
             this.setFocusInInputSearch();
         },
         nameSets(id) {
@@ -3153,7 +3177,7 @@ export default {
         },
         async ChangeSelectedPrice() {
             // recorrer items
-            
+
             this.items.forEach(row => {
                     if(row.item_unit_types && row.item_unit_types.length > 0) {
                         let first_list = row.item_unit_types[0];
@@ -3168,30 +3192,30 @@ export default {
                         if (!row.affected_list_price) { // funcion candado, para colocar el valor original ya que sale_unit_price se ve modificado al cambiar la lista de precios
                             row.original_sale_unit_price = original_price;
                         }
-                        
+
                         // Buscar y asignar el precio correspondiente usando 'id'
                         if(priceLabelId && first_list.prices && first_list.prices.length > 0) {
-                            
+
                             const priceObj = first_list.prices.find(p => p.price_label_id == priceLabelId);
-                            
+
                             if(priceObj && Number(priceObj.price) > 0) {
                                 row.sale_unit_price = parseFloat(priceObj.price);
                                 row.affected_list_price = true;
                             } else {
                                 row.sale_unit_price = row.original_sale_unit_price
                             }
-                            
+
                             // Si no se encuentra o es 0, mantener el sale_unit_price original
                         } else {
                             row.sale_unit_price = row.original_sale_unit_price
                         }
                     }
-                
+
             });
         },
             itemSetSaleUnitPrice(row)
             {
-                
+
                 if(!this.configuration.enable_list_product && this.selected_option_price !== 1) {
                     if(Array.isArray( row.item_unit_types) &&  row.item_unit_types.length) {
                         let first_list = row.item_unit_types[0];
@@ -3205,7 +3229,7 @@ export default {
                         // Buscar el precio correspondiente en el array prices usando 'id'
                         if(priceLabelId && first_list.prices && first_list.prices.length > 0) {
                             const priceObj = first_list.prices.find(p => p.price_label_id === priceLabelId);
-                            
+
                             if(priceObj) {
                                 return row.unit_price_value = parseFloat(priceObj.price).toFixed(2);
                             } else {

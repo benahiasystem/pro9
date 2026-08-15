@@ -153,8 +153,8 @@ button.edit-price {
 }
 
 .card-footer.configuration-options{
-    width:100% !important; 
-    padding:6px 0 2px 0 !important;
+    width:100% !important;
+    padding: 6px 2px 10px !important;
 }
 
 .card.product-item:hover {
@@ -272,7 +272,8 @@ html.dark .pos .product-item .card-body  {
       --primary-color).
    `--border-color` no existe en ningún tema: no se consulta. */
 
-.pos {
+.pos,
+.pos-table {
     --pos-primary: var(--primary-color, #3d6bf5);
     --pos-text: var(--dark-color, var(--black-dark, #3a4658));
     --pos-muted: var(--muted, var(--black-accent, color-mix(in srgb, var(--pos-text) 62%, #fff)));
@@ -288,7 +289,8 @@ html.dark .pos .product-item .card-body  {
     --pos-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .06);
 }
 
-html.dark .pos {
+html.dark .pos,
+html.dark .pos-table {
     --pos-text: #d1d2d6;
     --pos-muted: #8b93ab;
     --pos-surface: var(--contents-dark, var(--black-content-dark, var(--md-content-dark, #283046)));
@@ -302,14 +304,142 @@ html.dark .pos {
    El skin fuerza `background: transparent !important` sobre .product-item;
    aquí se restituye la superficie blanca (y su equivalente en modo oscuro). */
 
-.pos .card.product-item,
+/* El fondo se pinta SOLO en la tarjeta: su propio border-radius lo recorta.
+   Si también se pintan body/footer, sus esquinas cuadradas se superponen al
+   borde redondeado. */
+
+.pos .card.product-item {
+    background-color: var(--pos-surface) !important;
+}
+
 .pos .card.product-item .card-body,
 .pos .card.product-item .card-footer {
-    background-color: var(--pos-surface) !important;
+    background-color: transparent !important;
 }
 
 .pos .card.product-item {
     border-color: var(--pos-border) !important;
+    margin-bottom: 10px !important;
+}
+
+/* Acciones de la tarjeta de producto (grid): botones uniformes de 30px.
+   Antes usaban .btn-primary-pos y cada skin los pintaba como píldora oscura
+   con tamaños dispares. */
+
+.pos .pos-card-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    color: var(--pos-muted);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos .pos-card-action:hover {
+    border-color: var(--pos-primary);
+    color: var(--pos-primary);
+}
+
+/* Sin lista de precios: botón deshabilitado (span para que el tooltip funcione) */
+
+.pos .pos-card-action.is-disabled,
+.pos .pos-card-action.is-disabled:hover {
+    opacity: .45;
+    cursor: not-allowed;
+    border-color: var(--pos-border-strong);
+    color: var(--pos-muted);
+}
+
+.pos .configuration-options .el-col {
+    padding: 0 2px;
+}
+
+/* Lápiz de edición: mismo lenguaje visual, aparece al pasar el mouse
+   (las reglas de .edit-price de posición/opacidad se mantienen) */
+
+/* El lápiz vive fuera del flujo: el precio queda centrado exacto y el
+   lápiz aparece a la derecha de la fila al pasar el mouse */
+
+.pos .pos-card-action--edit {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+}
+
+/* Pie de precio con altura estable: la línea normal mide lo mismo que el
+   modo edición, así la tarjeta no crece al editar */
+
+.pos .product-item .card-footer h5 {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    margin: 2px 0 6px;
+}
+
+.pos .product-item .product-name-description {
+    line-height: 1.3;
+    font-size: 14px;
+}
+
+/* Contenedor de la imagen: solo ancla el indicador de pack
+   (la imagen conserva su altura fija original) */
+
+.pos .product-item .card-body .pos-card-media {
+    position: relative;
+}
+
+/* Indicador de pack: dentro de la imagen, esquina inferior izquierda,
+   sobre un círculo blanco para que destaque */
+
+.pos .pos-card-media__badge {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--pos-text);
+    box-shadow: 0 1px 4px rgba(16, 24, 40, .22);
+    cursor: pointer;
+}
+
+
+
+.pos .product-item p {
+    line-height: 1.3;
+}
+
+/* Etiqueta de unidad (NIU/ZZ): misma píldora que la del carrito
+   (fondo tintado, sin borde) */
+
+.pos .product-item .el-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 19px;
+    padding: 0 7px;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: var(--pos-border) !important;
+    color: var(--pos-primary) !important;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
 }
 
 /* Edición del precio en la tarjeta de producto */
@@ -318,7 +448,7 @@ html.dark .pos {
     display: flex;
     align-items: center;
     gap: 5px;
-    margin: 6px 0 8px;
+    margin: 2px 0 6px;
 }
 
 .pos .pos-price-edit__input {
@@ -328,8 +458,8 @@ html.dark .pos {
 
 .pos .pos-price-edit__input .el-input__inner {
     width: 100%;
-    height: 32px !important;
-    line-height: 32px !important;
+    height: 26px !important;
+    line-height: 26px !important;
     padding: 0 8px !important;
     border-radius: var(--pos-radius) !important;
     text-align: center;
@@ -343,8 +473,8 @@ html.dark .pos {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     border: 1px solid transparent;
     border-radius: var(--pos-radius);
@@ -1693,4 +1823,333 @@ html.dark .pos .pos-checkout__confirm:disabled {
         margin-top: 0;
         align-items: center;
     }
+}
+
+
+/* =========================================================================
+   Listado de productos (vista tabla del POS)  ·  teclado + columnas
+   ========================================================================= */
+
+.pos-table__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 2px 0 8px;
+}
+
+.pos-table__hints {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    font-size: 12.5px;
+    color: var(--pos-muted);
+}
+
+.pos-table__hint-text {
+    margin-right: 8px;
+}
+
+.pos-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border: 1px solid var(--pos-border-strong);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    background: var(--pos-surface);
+    color: var(--pos-text);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Pista de tecla junto al icono, solo en la fila seleccionada */
+
+.pos-key--hint {
+    min-width: 24px;
+    height: 18px;
+    margin-left: 6px;
+    font-size: 9.5px;
+    vertical-align: middle;
+    color: var(--pos-primary);
+    border-color: color-mix(in srgb, var(--pos-primary) 40%, #fff);
+}
+
+.pos-table__toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pos-table__toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    color: var(--pos-text);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos-table__toolbar-btn:hover {
+    border-color: var(--pos-primary);
+    color: var(--pos-primary);
+}
+
+/* Popover de columnas */
+
+.pos-table__cols {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pos-table__cols .el-checkbox {
+    display: block;
+    margin: 0;
+    padding: 3px 0;
+}
+
+.pos-table__cols-title {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--pos-muted, #8492a6);
+}
+
+/* Selección única de fila: el mismo resaltado para teclado, hover y click,
+   con el color del tema activo (antes: azules fijos #A9E6FF/#ACE1F6). */
+
+.pos-table .el-table__body tr.current-row > td {
+    background: color-mix(in srgb, var(--pos-primary) 11%, var(--pos-surface)) !important;
+}
+
+.pos-table .el-table__body tr.current-row > td:first-child {
+    box-shadow: inset 3px 0 0 var(--pos-primary);
+}
+
+/* Un solo estado visual posible: la fila seleccionada (current-row). El hover
+   ya mueve la selección, así que se anula toda otra pintura de hover — la
+   clase hover-row de Element-UI y los tr:hover de los skins — para que un
+   hover "pegado" por movimiento rápido o scroll nunca deje filas marcadas. */
+.pos-table .el-table__body tr.hover-row > td,
+.pos-table .el-table--enable-row-hover .el-table__body tr:hover > td,
+.pos-table .el-table__body tbody tr:hover {
+    background: transparent !important;
+}
+
+.pos-table .el-table__body tr {
+    cursor: pointer;
+}
+
+/* Celdas: interlineado compacto (cabeceras de dos líneas y packs) */
+
+.pos-table .el-table th .cell,
+.pos-table .el-table td .cell {
+    line-height: 1.35;
+}
+
+.pos-table__muted {
+    font-size: 12px;
+    color: var(--pos-muted);
+}
+
+/* Botón de icono ghost (stock, historial) */
+
+.pos-table__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    color: var(--pos-muted);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos-table__icon-btn:hover {
+    border-color: var(--pos-primary);
+    color: var(--pos-primary);
+}
+
+/* Pack: un producto por línea */
+
+.pos-table__pack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--pos-muted);
+}
+
+/* Chips de precio: click = agregar con ese precio */
+
+.pos-price-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.pos-price-chip {
+    padding: 3px 9px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: 999px;
+    background: var(--pos-surface);
+    color: var(--pos-text);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos-price-chip:hover {
+    background: var(--pos-primary);
+    border-color: var(--pos-primary);
+    color: #fff;
+}
+
+.pos-price-chip--more {
+    color: var(--pos-primary);
+    border-style: dashed;
+}
+
+/* Selector rápido de precios (diálogo, montado en <body>) */
+
+.pos-price-pick__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pos-price-pick__list li + li {
+    border-top: 1px solid var(--accent-color, #e7edfc);
+}
+
+.pos-price-pick__opt {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 6px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font-size: 13.5px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background .15s ease;
+}
+
+.pos-price-pick__opt:hover {
+    background: color-mix(in srgb, var(--primary-color, #3d6bf5) 8%, #fff);
+}
+
+.pos-price-pick__info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.pos-price-pick__label {
+    font-weight: 600;
+    color: var(--dark-color, #3a4658);
+    line-height: 1.3;
+}
+
+.pos-price-pick__meta {
+    font-size: 11.5px;
+    color: var(--muted, #8492a6);
+    line-height: 1.3;
+}
+
+.pos-price-pick__price {
+    margin-left: auto;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--dark-color, #3a4658);
+}
+
+/* Nombre de la lista dentro del chip */
+
+.pos-price-chip__label {
+    display: inline-block;
+    max-width: 76px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    margin-right: 3px;
+    font-weight: 500;
+    color: var(--pos-muted);
+}
+
+.pos-price-chip:hover .pos-price-chip__label {
+    color: #fff;
+}
+
+/* Diálogo de atajos */
+
+.pos-shortcuts__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pos-shortcuts__list li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--accent-color, #e7edfc);
+    font-size: 13px;
+}
+
+.pos-shortcuts__list li:last-child {
+    border-bottom: 0;
+}
+
+.pos-shortcuts__list li > span:first-child {
+    flex: 0 0 92px;
+    display: flex;
+    gap: 4px;
+}
+
+.pos-shortcuts__note {
+    margin: 10px 0 0;
+    padding: 9px 11px;
+    border-radius: 8px;
+    background: var(--light-color, #f5f8ff);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+/* El diálogo se monta con append-to-body (fuera de .pos): tokens propios */
+.pos-shortcuts .pos-key {
+    --pos-border-strong: color-mix(in srgb, var(--primary-color, #3d6bf5) 28%, #fff);
+    --pos-surface: #fff;
+    --pos-text: var(--dark-color, #3a4658);
 }
