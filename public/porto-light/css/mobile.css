@@ -177,6 +177,46 @@
         display: none !important;
     }
 
+    /* Relleno lateral de los campos: Element UI usa 15px por lado, que en un
+       campo angosto (listas de precios, cantidades dentro de tablas) se come
+       casi todo el espacio y el valor escrito no se llega a ver. Se recorta,
+       salvo en los campos con icono a la izquierda o a la derecha, que
+       necesitan ese espacio para el icono. */
+    .el-input:not(.el-input--prefix) > .el-input__inner {
+        padding-left: 8px;
+    }
+
+    .el-input:not(.el-input--suffix) > .el-input__inner {
+        padding-right: 8px;
+    }
+
+    /* Dentro de tablas los campos son todavía más estrechos */
+    table .el-input:not(.el-input--prefix) > .el-input__inner,
+    .el-table .el-input:not(.el-input--prefix) > .el-input__inner {
+        padding-left: 4px;
+    }
+
+    table .el-input:not(.el-input--suffix) > .el-input__inner,
+    .el-table .el-input:not(.el-input--suffix) > .el-input__inner {
+        padding-right: 4px;
+        text-align: center;
+    }
+
+    /* Listado de precios del producto (Presentaciones): son 5 o más columnas
+       de precio dentro del modal, así que cada campo quedaba en 33px y no
+       cabía ni el valor. Se les da un ancho mínimo utilizable y la tabla se
+       desplaza en horizontal dentro de su contenedor. */
+    .el-dialog table.table-sm input {
+        min-width: 64px;
+    }
+
+    .el-dialog table.table-sm th,
+    .el-dialog table.table-sm td {
+        padding-left: 4px;
+        padding-right: 4px;
+        white-space: nowrap;
+    }
+
     /* iOS hace zoom al enfocar inputs con fuente < 16px; forzar 16px lo evita */
     input[type="text"],
     input[type="email"],
@@ -285,6 +325,219 @@
            componentes DataTable*, así que estas reglas aplican a todos.
        ---------------------------------------------------------------------- */
 
+    /* Nombre del módulo en la cabecera: el tema oculta en celular tanto el
+       <h2> como las migas de pan, y la tarjeta superior quedaba vacía. Se
+       muestra el último nivel de las migas (el módulo actual) como título,
+       en la misma fila que el botón de la derecha. */
+    .content-body .page-header:has(.breadcrumbs) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .content-body .page-header .breadcrumbs {
+        display: block !important;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .content-body .page-header .breadcrumbs > li {
+        display: none;
+    }
+
+    .content-body .page-header .breadcrumbs > li:last-child {
+        display: block;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: var(--color-foreground, inherit);
+    }
+
+    /* Con varios botones (Nuevo, Reporte de Pagos, Validación masiva) no
+       caben junto al título: bajan de línea en vez de montarse encima */
+    .content-body .page-header .breadcrumbs {
+        flex: 1 1 auto;
+    }
+
+    .content-body .page-header .right-wrapper {
+        float: none;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        flex: 0 1 auto;
+        min-width: 0;
+        /* separación del borde: los botones quedaban pegados a la derecha */
+        padding-right: 6px;
+    }
+
+    .content-body .page-header .right-wrapper .btn {
+        margin: 0 !important;
+    }
+
+    /* Fila de herramientas del listado: el contenedor de filtros traía 40px
+       de margen superior y cada botón caía en su propia línea (uno a la
+       izquierda y otro a la derecha). Convertidos en iconos, entran juntos
+       en una sola fila pegada al título. */
+    .content-body .row > .filter-container {
+        margin-top: 0 !important;
+        flex: 0 0 auto;
+        width: auto;
+        max-width: none;
+        padding-right: 0;
+    }
+
+    /* El bloque siguiente (ver todos + selector) conserva el ancho completo
+       y se alinea a la izquierda: si se le deja ancho automático, el
+       selector hereda el desplazamiento de la fila compartida */
+    .content-body .row > .filter-container + [class*="col-"] {
+        /* mismo margen que el contenedor de filtros, para que los iconos
+           queden alineados verticalmente entre sí */
+        padding-left: 10px;
+    }
+
+    .content-body .row > .filter-container + [class*="col-"] > .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .content-body .row > .filter-container + [class*="col-"] .text-end,
+    .content-body .row > .filter-container + [class*="col-"] .w-100 {
+        width: auto !important;
+        text-align: left !important;
+    }
+
+    /* Acciones de la cabecera: sólo queda fuera el botón de crear, como "+";
+       el resto vive en un menú de tres puntos (lo arma mobile-app-behavior.js
+       con copias que reenvían el clic al botón real, que queda oculto). */
+    .m-accion-en-menu {
+        display: none !important;
+    }
+
+    .m-ico-nuevo {
+        font-size: 0 !important;
+        min-width: 42px;
+        padding: 9px 12px !important;
+        margin: 0 !important;
+    }
+
+    .m-ico-nuevo::before {
+        content: "\eb0b";
+        font-family: "tabler-icons";
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .m-ico-nuevo > i,
+    .m-ico-nuevo > svg {
+        display: none !important;
+    }
+
+    .m-menu-acciones {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .m-menu-acciones__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+        height: 40px;
+        padding: 0 10px;
+        border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+        border-radius: 10px;
+        background: var(--color-surface, #fff);
+        color: inherit;
+    }
+
+    .m-menu-acciones__btn::before {
+        content: "\ea94";
+        font-family: "tabler-icons";
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .m-menu-acciones__panel {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        z-index: 1050;
+        min-width: 210px;
+        max-width: calc(100vw - 32px);
+        padding: 6px;
+        border-radius: 12px;
+        background: var(--color-surface, #fff);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    .m-menu-acciones.is-open .m-menu-acciones__panel {
+        display: block;
+    }
+
+    .m-menu-acciones__item {
+        display: block;
+        width: 100%;
+        padding: 11px 12px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: inherit;
+        font-size: 14px;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .m-menu-acciones__item:active {
+        background: var(--color-bg, rgba(0, 0, 0, 0.05));
+    }
+
+    /* Leyenda de colores (Boletas / Facturas / Notas de crédito): ocupa una
+       franja entera en celular; los colores siguen visibles en las filas */
+    .documents-legend {
+        display: none !important;
+    }
+
+    /* Botones de herramientas como icono: el texto ocupaba una línea entera
+       cada uno. Los glifos vienen de la fuente Tabler ya cargada. */
+    .m-boton-icono {
+        font-size: 0 !important;
+        min-width: 42px;
+        padding: 9px 12px !important;
+        margin: 0 !important;
+    }
+
+    .m-boton-icono::before {
+        font-family: "tabler-icons";
+        font-size: 19px;
+        font-weight: 400;
+        line-height: 1;
+    }
+
+    /* Los iconos que el botón ya traía (incluido el ⓘ de ayuda) sobran
+       cuando el botón entero es un icono */
+    .m-boton-icono > i,
+    .m-boton-icono > svg {
+        display: none !important;
+    }
+
+    .m-ico-filtros::before {
+        content: "\eaa5";
+    }
+
+    .m-ico-columnas::before {
+        content: "\eb83";
+    }
+
+    .m-ico-todos::before {
+        content: "\ea9a";
+    }
+
     /* Barra de "Mostrar columnas / Mostrar filtros": el contenedor es un
        flex sin wrap con columnas Bootstrap dentro, así que en celular los
        botones se empujaban fuera de la pantalla en vez de bajar de línea. */
@@ -311,11 +564,20 @@
         justify-content: flex-start !important;
         gap: 6px;
         padding: 0 10px;
+        /* 40px de separación pensados para escritorio: en celular sólo
+           dejaban un hueco entre la cabecera y la barra de herramientas */
+        margin-top: 0 !important;
     }
 
     /* Los .row de Bootstrap tienen margen negativo: sin esto los botones
-       del toolbar quedan pegados al borde de la pantalla */
+       del toolbar quedan pegados al borde de la pantalla.
+       Además se saca de su capa flotante (position:absolute + z-index:5):
+       así montado se dibujaba por encima de menús y capas superpuestas. */
     .content-body .data-table-visible-columns {
+        /* Conserva su posición absoluta (así comparte fila con el botón de
+           filtros), pero sin capa propia: con z-index se dibujaba por encima
+           de los menús y de otras capas superpuestas. */
+        z-index: auto !important;
         padding: 0 10px;
     }
 
@@ -359,6 +621,85 @@
 
     .table-responsive .table > thead > tr > th:first-child {
         z-index: 3;
+    }
+
+    /* Cabecera de los formularios: hasta tres fechas (emisión, vencimiento,
+       entrega) en columnas de ~117px, donde la fecha se veía cortada
+       ("16-08" en vez de 16-08-2026) y las etiquetas largas partían la
+       fila. En celular van a media fila para que quepa la fecha completa. */
+    .content-body .row > [class*="col-4"]:has(.el-date-editor),
+    .content-body .row > [class*="col-4"]:has(.el-select) {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    /* Barra de campos personalizable (formulario de producto): en celular se
+       respeta el ORDEN que definió el usuario, pero no los anchos —se guardan
+       como col-md-*, pensados para escritorio—. Cada campo ocupa la fila
+       completa salvo los cortos por naturaleza, que van a media fila. Así una
+       configuración hecha en escritorio nunca deja campos ilegibles aquí. */
+    .item-form-pinned-bar [class*="col-md-"] {
+        /* !important: gana a la heurística general de campos cortos, que se
+           guía por el ancho de escritorio y aquí no debe decidir */
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
+    .item-form-pinned-bar [class*="col-md-"]:has(.el-date-editor),
+    .item-form-pinned-bar [class*="col-md-"]:has(.el-select),
+    .item-form-pinned-bar [class*="col-md-"]:has(.el-input-number),
+    .item-form-pinned-bar [class*="col-md-"]:has(input[inputmode="decimal"]),
+    .item-form-pinned-bar [class*="col-md-"].m-campo-corto {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+
+    /* Campos cortos a media fila en lugar de ocupar todo el ancho.
+       Dos señales, ambas del propio formulario:
+       · el ancho declarado para escritorio (col-md-1/2/3 = campo corto);
+       · un maxlength corto (RUC, DNI, serie…), que marca mobile-app-behavior.js
+         con la clase m-campo-corto.
+       col-md-4 en adelante se deja completo: ahí caben valores largos
+       (p. ej. "No Domiciliado sin Ruc" en Tipo de documento).
+       page-header queda fuera: no es un formulario sino la barra de
+       herramientas del módulo, y a la mitad del ancho sus controles
+       (lista de precios + botones de vista) no entran en una fila. */
+    .row:not(.page-header) > .col-md-1:not(:has(.el-input-group)):not(:has(.input-group)),
+    .row:not(.page-header) > .col-md-2:not(:has(.el-input-group)):not(:has(.input-group)),
+    .row:not(.page-header) > .col-md-3:not(:has(.el-input-group)):not(:has(.input-group)),
+    .row:not(.page-header) > .m-campo-corto {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    /* Modal "Agregar Producto o Servicio": Cantidad / Precio Unitario /
+       Total venían en tres columnas de ~106px, donde la etiqueta "Precio
+       Unitario" se partía a mitad de palabra y descuadraba la fila. En
+       celular cada campo ocupa el ancho completo. Se acota a este modal
+       (el que contiene .product-model) para no alterar otros diálogos. */
+    .el-dialog:has(.product-model) .row > .col-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+        margin-bottom: 8px;
+    }
+
+    /* Los diálogos traen word-break: break-all heredado: en pantallas
+       angostas parte las palabras a mitad ("cliente/pr | oveedor"). Se
+       vuelve al corte normal, rompiendo solo palabras que no quepan. */
+    .el-dialog .el-dialog__body,
+    .el-dialog .el-dialog__body * {
+        word-break: normal;
+        overflow-wrap: break-word;
+    }
+
+    /* El encabezado del colapsable partía palabras ("es|peciales") y el
+       texto se metía debajo de la flecha */
+    .el-dialog .el-collapse-item__header {
+        word-break: normal;
+        overflow-wrap: anywhere;
+        padding-right: 28px;
+        line-height: 1.35;
+        height: auto;
     }
 
     /* Formularios (cotización, comprobante, nota de venta, pedido, contrato):
@@ -434,6 +775,41 @@
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
         touch-action: pan-y;
+    }
+
+    /* Cabecera del menú lateral: el logo (50px) desbordaba su contenedor
+       (40px) y quedaba descuadrado; además, mientras la imagen cargaba el
+       botón de cerrar se recolocaba y el logo parecía no aparecer. Se
+       acota el logo y se reserva su espacio para que nada salte. */
+    .sidebar-header-mobile {
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+    }
+
+    .sidebar-header-mobile .logo-container-sidebar {
+        display: flex;
+        align-items: center;
+        min-width: 130px;
+        height: auto;
+        padding: 0 !important;
+        margin: 0;
+    }
+
+    .sidebar-header-mobile .logo-container-sidebar img {
+        max-height: 34px !important;
+        max-width: 100%;
+        width: auto !important;
+        object-fit: contain;
+    }
+
+    /* Quedaban ~55px de aire entre la cabecera y el primer módulo */
+    html.sidebar-left-opened .sidebar-left .nano-content-mobile {
+        padding-top: 0 !important;
+    }
+
+    html.sidebar-left-opened .sidebar-left .nav-main {
+        padding-top: 4px;
     }
 
     /* Logo dentro del encabezado: se acota para que no se salga de la
@@ -700,9 +1076,44 @@
 
     /* Fila "Precio principal" + botones de vista: que no desborde a la
        derecha; el select cede espacio y los botones pierden márgenes */
+    /* La fila de lista de precios + botones de vista se desbordaba por la
+       izquierda en algunos skins: se permite que baje de línea y que el
+       selector ceda ancho en vez de empujar */
+    /* Lista de precios y botones de vista en una sola fila: el selector cede
+       el ancho que haga falta (antes empujaba a los botones a otra línea) */
     .pos .page-header .col-md-3 > .d-flex {
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-start;
         gap: 6px;
         padding: 0 6px;
+        min-width: 0;
+    }
+
+    .pos .page-header .col-md-3 .col-6:has(.el-select) {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .pos .page-header .col-md-3 .col-6:not(:has(.el-select)) {
+        flex: 0 0 auto;
+    }
+
+    .pos .page-header .el-select {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    /* Que "Precio principal" entre completo en el ancho que sobra */
+    .pos .page-header .el-select .el-input__inner {
+        font-size: 13px;
+        padding-left: 8px;
+        padding-right: 20px;
+    }
+
+    .pos .page-header .el-select .el-input__suffix {
+        right: 2px;
     }
 
     .pos .page-header .col-md-3 .col-6 {
@@ -718,8 +1129,57 @@
     }
 
     .pos .page-header .el-button-group .el-button {
-        padding: 7px 8px;
+        padding: 8px 6px;
         margin-right: 0 !important;
+    }
+
+    .pos .page-header .el-button-group {
+        flex-wrap: nowrap;
+        gap: 4px !important;
+    }
+
+    /* Vista 1 — sólo categorías: cada una toma el ancho de su texto (antes
+       ocupaban media pantalla), pero con buen tamaño para tocarlas cómodo y
+       pegadas entre sí. */
+    .pos .row.no-gutters > .col,
+    .garage .row.no-gutters > .col {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: 100%;
+    }
+
+    .pos .row.no-gutters > .col .card,
+    .garage .row.no-gutters > .col .card {
+        margin: 0 !important;
+    }
+
+    .pos .row.no-gutters > .col .card-body,
+    .garage .row.no-gutters > .col .card-body {
+        padding: 16px 22px !important;
+        font-size: 16px !important;
+        white-space: nowrap;
+    }
+
+    .pos .row.no-gutters,
+    .garage .row.no-gutters {
+        gap: 4px;
+        row-gap: 4px;
+    }
+
+    /* Vista 2 — categorías junto a los productos: la tira se desplaza en
+       horizontal, así que cada categoría toma el ancho de su texto en vez de
+       ocupar la pantalla entera. La altura sólo se recorta un poco (de 70px
+       a ~50px) para que no quede apretada. */
+    .pos .testimonial-group .col-sm-3-name,
+    .garage .testimonial-group .col-sm-3-name {
+        flex: 0 0 auto;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 14px 18px !important;
+        margin-right: 6px !important;
+        font-size: 15px !important;
+        line-height: 1.2;
     }
 
     /* Tarjetas de producto compactas: más productos por pantalla */
@@ -813,7 +1273,9 @@
         top: 52px;
         z-index: 20;
         padding: 16px 0 8px;
-        background: var(--color-bg-page, #f5f2ef);
+        /* El fondo lo calcula mobile-app-behavior.js leyendo el color real
+           del contenedor: un color fijo desentona al cambiar de skin */
+        background: var(--m-fondo-pagina, #f5f2ef);
     }
 
     /* Botón "Nuevo Producto" compacto para que el input respire */
