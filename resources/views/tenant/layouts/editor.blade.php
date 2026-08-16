@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="sidebar-light sidebar-left-big-icons">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -51,6 +51,9 @@
         <link rel="stylesheet" href="{{ asset('storage/skins/' . $vc_compact_sidebar->skin->filename) }}" />
       @endif
     @endif
+
+    {{-- Iconografía Tabler sobre las clases .fa-* existentes --}}
+    <link rel="stylesheet" href="{{ asset('porto-light/css/icons-tabler.css') }}?v={{ filemtime(public_path('porto-light/css/icons-tabler.css')) }}" />
 
     {{-- Capa móvil global: siempre al final para ganar la cascada --}}
     <link rel="stylesheet" href="{{ asset('porto-light/css/mobile.css') }}?v={{ filemtime(public_path('porto-light/css/mobile.css')) }}" />

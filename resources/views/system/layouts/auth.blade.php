@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="googlebot" content="noindex">
     <meta name="robots" content="noindex">
@@ -23,6 +23,9 @@
     @if (file_exists(public_path('theme/custom_styles.css')))
         <link rel="stylesheet" href="{{ asset('theme/custom_styles.css') }}" />
     @endif
+
+    {{-- Iconografía Tabler sobre las clases .fa-* existentes --}}
+    <link rel="stylesheet" href="{{ asset('porto-light/css/icons-tabler.css') }}?v={{ filemtime(public_path('porto-light/css/icons-tabler.css')) }}" />
 
     {{-- Capa móvil global: siempre al final para ganar la cascada --}}
     <link rel="stylesheet" href="{{ asset('porto-light/css/mobile.css') }}?v={{ filemtime(public_path('porto-light/css/mobile.css')) }}" />

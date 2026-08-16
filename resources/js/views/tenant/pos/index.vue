@@ -286,22 +286,26 @@
                                 <div
                                     v-if="cartQty(item) > 0"
                                     class="pos-m-card-qty"
+                                    :class="{
+                                        'is-busy': card_busy_id === item.item_id,
+                                        'is-flash': card_flash_id === item.item_id
+                                    }"
                                 >
                                     <button
                                         type="button"
                                         class="pos-m-card-qty__btn"
-                                        @click.stop="decrementCardItem(item)"
+                                        @click.stop="cardRemoveItem(item)"
                                     >&minus;</button>
                                     <span class="pos-m-card-qty__num">{{ cartQtyLabel(item) }}</span>
                                     <button
                                         type="button"
                                         class="pos-m-card-qty__btn"
-                                        @click.stop="clickAddItem(item, index)"
+                                        @click.stop="cardAddItem(item, index)"
                                     >+</button>
                                 </div>
                                 <div
                                     class="card-body pointer px-2 pt-2"
-                                    @click="clickAddItem(item, index)"
+                                    @click="cardAddItem(item, index)"
                                 >
                                     <!-- <p
                                         class="font-weight-semibold mb-0"
@@ -782,7 +786,10 @@
                     </div>
                 </div>
             </div>
-            <aside class="col-lg-4 col-md-6 pos-cart">
+            <aside
+                class="col-lg-4 col-md-6 pos-cart"
+                :class="{ 'pos-m-cart-open': show_cart_mobile }"
+            >
                 <div class="pos-cart__body">
                     <div v-if="form.items.length === 0" class="pos-cart__empty">
                         <svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
@@ -901,6 +908,16 @@
                         </span>
                         <button
                             type="button"
+                            class="pos-m-cart-toggle"
+                            @click="show_cart_mobile = !show_cart_mobile"
+                        >
+                            {{ show_cart_mobile ? 'Ocultar carrito' : 'Ver carrito' }}
+                            <span class="pos-m-cart-toggle__badge">
+                                {{ form.items.length }}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
                             class="pos-cart__clear"
                             @click="clickClearCart"
                         >
@@ -918,6 +935,8 @@
                                 filterable
                                 clearable
                                 placeholder="Seleccione un cliente"
+                                popper-class="pos-customer-dropdown"
+                                :popper-append-to-body="false"
                                 @change="changeCustomer"
                                 @keyup.native="keyupCustomer"
                                 @keyup.enter.native="keyupEnterCustomer"
@@ -997,7 +1016,9 @@
                     <button
                         type="button"
                         class="pos-cart__pay"
-                        :class="{ 'is-disabled': !(form.total > 0) }"
+                        :class="{ 'is-disabled': !canPay }"
+                        :disabled="!canPay"
+                        :title="!form.customer_id ? 'Seleccione un cliente para cobrar' : ''"
                         @click="clickPayment"
                     >
                         <span class="pos-cart__pay-label">PAGAR</span>
@@ -1292,6 +1313,14 @@ export default {
     data() {
         return {
             place: "cat",
+            // Solo celular: despliega la lista del carrito dentro de la
+            // barra fija inferior (en escritorio la lista siempre se ve)
+            show_cart_mobile: false,
+            // Producto cuya cantidad se está actualizando (la validación de
+            // stock es una petición) y el que acaba de cambiar, para avisar
+            // al usuario sin que tenga que mirar el número fijamente
+            card_busy_id: null,
+            card_flash_id: null,
             showDialogItemUnitTypes: false,
             history_item_id: null,
             search_item_by_barcode: false,
@@ -1400,6 +1429,11 @@ export default {
                 default:
                     return "default";
             }
+        },
+        // No se puede cobrar sin cliente: el botón queda inhabilitado hasta
+        // que se seleccione uno
+        canPay() {
+            return this.form.total > 0 && !!this.form.customer_id;
         },
         ...mapState(["config"]),
         isNrus: function() {
@@ -2568,7 +2602,7 @@ export default {
         },
         // Quita una unidad desde la tarjeta del producto; al llegar a 1
         // elimina la fila del carrito
-        decrementCardItem(item) {
+        async decrementCardItem(item) {
             const index = this.form.items.findIndex(
                 r => r.item_id === item.item_id
             );
@@ -2576,9 +2610,35 @@ export default {
 
             const row = this.form.items[index];
             if (parseFloat(row.item.aux_quantity) <= 1) {
-                return this.clickDeleteItem(row, index);
+                return await this.clickDeleteItem(row, index);
             }
-            this.changeCartQuantity(row, index, -1);
+            await this.changeCartQuantity(row, index, -1);
+        },
+        // Agregar/quitar desde la tarjeta: marca el indicador mientras se
+        // valida el stock y lo destaca al terminar, para que el cambio se
+        // note sin mirar el número
+        async cardAddItem(item, index) {
+            this.card_busy_id = item.item_id;
+            try {
+                await this.clickAddItem(item, index);
+            } finally {
+                this.endCardFeedback(item.item_id);
+            }
+        },
+        async cardRemoveItem(item) {
+            this.card_busy_id = item.item_id;
+            try {
+                await this.decrementCardItem(item);
+            } finally {
+                this.endCardFeedback(item.item_id);
+            }
+        },
+        endCardFeedback(item_id) {
+            if (this.card_busy_id === item_id) this.card_busy_id = null;
+            this.card_flash_id = item_id;
+            setTimeout(() => {
+                if (this.card_flash_id === item_id) this.card_flash_id = null;
+            }, 600);
         },
         async clickDeleteItem(item, row_index = null) {
             let index =
@@ -2642,7 +2702,7 @@ export default {
             }
 
             item.item.aux_quantity = _.round(quantity, 4);
-            this.clickAddItem(item, index, true);
+            return this.clickAddItem(item, index, true);
         },
         /**
          * Vacía el carrito conservando el cliente seleccionado.

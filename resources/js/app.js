@@ -1,4 +1,5 @@
 import './bootstrap';
+import './mobile-app-behavior';
 
 import Vue from 'vue'
 import store from './store'

@@ -1,4 +1,5 @@
 import './bootstrap';
+import './mobile-app-behavior';
 import Swal from 'sweetalert2';
 
 import 'bootstrap/dist/js/bootstrap.bundle.js'; // Incluye Popper
