@@ -54,6 +54,9 @@
     @if (file_exists(public_path('theme/custom_styles.css')))
         <link rel="stylesheet" href="{{ asset('theme/custom_styles.css') }}" />
     @endif
+
+    {{-- Capa móvil global: siempre al final para ganar la cascada --}}
+    <link rel="stylesheet" href="{{ asset('porto-light/css/mobile.css') }}?v={{ filemtime(public_path('porto-light/css/mobile.css')) }}" />
     {{--@stack('styles')--}}
 
 

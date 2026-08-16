@@ -196,14 +196,14 @@
                         @input="searchItems"
                         @keyup.native="keyupTabCustomer"
                         @keyup.enter.native="keyupEnterAddItem"
-                        class="m-bottom input-search-pos mt-0"
+                        class="m-bottom input-search-pos mt-0 pos-m-search"
                         ref="ref_search_items"
                     >
                         <template v-if="validteCreateProduct">
                             <el-button
                                 slot="append"
                                 @click.prevent="showDialogNewItem = true"
-                                class="btn-add-product-pos"
+                                class="btn-add-product-pos pos-m-new-item"
                                 >Nuevo Producto</el-button
                             >
                         </template>
@@ -223,7 +223,7 @@
                         @change="searchItemsBarcode"
                         @keyup.native="keyupTabCustomer"
                         ref="ref_search_items"
-                        class="m-bottom input-search-pos mt-0"
+                        class="m-bottom input-search-pos mt-0 pos-m-search"
                         @focus="searchFromBarcode = true"
                         @blur="searchFromBarcode = false"
                     >
@@ -231,6 +231,7 @@
                             <el-button
                                 slot="append"
                                 @click.prevent="showDialogNewItem = true"
+                                class="pos-m-new-item"
                                 >Nuevo Producto</el-button
                             >
                         </template>
@@ -278,7 +279,26 @@
                 >
                     <template v-for="(item, index) in items">
                         <div :key="index">
-                            <section class="card product-item">
+                            <section
+                                class="card product-item"
+                                :class="{ 'pos-m-in-cart': cartQty(item) > 0 }"
+                            >
+                                <div
+                                    v-if="cartQty(item) > 0"
+                                    class="pos-m-card-qty"
+                                >
+                                    <button
+                                        type="button"
+                                        class="pos-m-card-qty__btn"
+                                        @click.stop="decrementCardItem(item)"
+                                    >&minus;</button>
+                                    <span class="pos-m-card-qty__num">{{ cartQtyLabel(item) }}</span>
+                                    <button
+                                        type="button"
+                                        class="pos-m-card-qty__btn"
+                                        @click.stop="clickAddItem(item, index)"
+                                    >+</button>
+                                </div>
                                 <div
                                     class="card-body pointer px-2 pt-2"
                                     @click="clickAddItem(item, index)"
@@ -383,6 +403,7 @@
                                         <div class="pos-price-edit">
                                             <el-input
                                                 min="0"
+                                                inputmode="decimal"
                                                 v-model="item.edit_sale_unit_price"
                                                 class="pos-price-edit__input"
                                                 size="mini"
@@ -823,6 +844,7 @@
                                     </button>
                                     <el-input
                                         class="pos-qty__input"
+                                        inputmode="decimal"
                                         v-model="item.item.aux_quantity"
                                         @input="
                                                 clickAddItem(
@@ -854,6 +876,7 @@
                                             <el-input
                                                 v-model="item.total"
                                                 size="mini"
+                                                inputmode="decimal"
                                                 @blur="changeRowTotal(index)"
                                                 :readonly="!edit_unit_price && !item.item.calculate_quantity"
                                             ></el-input>
@@ -1359,7 +1382,7 @@ export default {
 
         await this.selectDefaultCustomer();
         await this.enabledSearchItemByBarcode();
-        this.enabledCategoriesProductsView();
+        await this.restoreViewPreference();
     },
     computed: {
         layout_mode() {
@@ -1559,6 +1582,17 @@ export default {
                 this.setView("cat2");
             }
         },
+        // La vista elegida por el usuario persiste en el navegador
+        // (recargas, nuevas ventas, salir y volver a entrar); si no hay
+        // preferencia guardada se aplica la vista de la configuración
+        async restoreViewPreference() {
+            const saved = localStorage.getItem("pos_view_preference");
+            if (saved === "cat2" || saved === "cat3") {
+                await this.setView(saved);
+            } else if (saved !== "cat") {
+                this.enabledCategoriesProductsView();
+            }
+        },
         setFocusInInputSearch() {
             this.$nextTick(() => {
                 this.initFocus();
@@ -1574,6 +1608,10 @@ export default {
             this.setView("cat3");
         },
         initFocus() {
+            // En celular no se devuelve el foco al buscador: abre el teclado
+            // en pantalla y el navegador hace scroll hasta arriba tras cada
+            // producto agregado
+            if (window.matchMedia("(max-width: 767.98px)").matches) return;
             this.$refs.ref_search_items.$el
                 .getElementsByTagName("input")[0]
                 .focus();
@@ -1897,6 +1935,13 @@ export default {
             let customer = _.find(this.all_customers, {
                 id: this.form.customer_id
             });
+
+            // Sin cliente (selector limpiado o sin cliente por defecto) no hay
+            // nada que aplicar; si esto lanza, se corta el created() completo
+            if (!customer) {
+                this.customer = null;
+                return;
+            }
 
             this.customer = customer;
             this.form.has_retention = customer.is_agent_retention
@@ -2507,6 +2552,33 @@ export default {
                     data = response.data;
                 });
             return data;
+        },
+        // Cantidad total del producto en el carrito (suma todas sus filas)
+        cartQty(item) {
+            let total = 0;
+            for (const row of this.form.items) {
+                if (row.item_id === item.item_id) {
+                    total += parseFloat(row.quantity) || 0;
+                }
+            }
+            return total;
+        },
+        cartQtyLabel(item) {
+            return _.round(this.cartQty(item), 2);
+        },
+        // Quita una unidad desde la tarjeta del producto; al llegar a 1
+        // elimina la fila del carrito
+        decrementCardItem(item) {
+            const index = this.form.items.findIndex(
+                r => r.item_id === item.item_id
+            );
+            if (index < 0) return;
+
+            const row = this.form.items[index];
+            if (parseFloat(row.item.aux_quantity) <= 1) {
+                return this.clickDeleteItem(row, index);
+            }
+            this.changeCartQuantity(row, index, -1);
         },
         async clickDeleteItem(item, row_index = null) {
             let index =
@@ -3123,15 +3195,20 @@ export default {
         back() {
             this.all_items = [];
             this.place = "cat";
+            localStorage.setItem("pos_view_preference", "cat");
             this.loading = false;
         },
         async setView(view) {
             this.place = view;
+            localStorage.setItem("pos_view_preference", view);
 
             if (view == "cat3") {
                 this.category_selected = "";
                 await this.getRecords();
-                this.$refs.table_items.reset();
+                // Al restaurar la vista en el arranque la tabla aún no montó
+                if (this.$refs.table_items) {
+                    this.$refs.table_items.reset();
+                }
             }
 
             // La vista de categorías y productos también debe cargar el

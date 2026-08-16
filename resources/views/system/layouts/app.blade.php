@@ -34,6 +34,9 @@
         <link rel="stylesheet" href="{{ asset('theme/custom_styles.css') }}" />
     @endif
 
+    {{-- Capa móvil global: siempre al final para ganar la cascada --}}
+    <link rel="stylesheet" href="{{ asset('porto-light/css/mobile.css') }}?v={{ filemtime(public_path('porto-light/css/mobile.css')) }}" />
+
     {{--<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css" />--}}
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/7.26.29/sweetalert2.min.css" />
     <link rel="stylesheet" href="{{asset('porto-light/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.css')}}" />

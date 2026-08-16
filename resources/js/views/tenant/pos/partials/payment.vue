@@ -179,6 +179,7 @@
                             <div class="pos-money-input">
                                 <span class="pos-money-input__symbol">{{ currencyTypeActive.symbol }}</span>
                                 <el-input ref="enter_amount"
+                                          inputmode="decimal"
                                           v-model="enter_amount"
                                           @input="enterAmount()"
                                           @keyup.enter.native="keyupEnterAmount()">
@@ -239,6 +240,7 @@
                                     {{ is_discount_amount ? currencyTypeActive.symbol : '%' }}
                                 </span>
                                 <el-input v-model="discount_amount"
+                                          inputmode="decimal"
                                           :disabled="!enabled_discount"
                                           @change="inputDiscountAmount()">
                                 </el-input>
@@ -281,6 +283,7 @@
                             <div class="pos-money-input pos-money-input--sm pos-tip__amount">
                                 <span class="pos-money-input__symbol">{{ currencyTypeActive.symbol }}</span>
                                 <el-input v-model="form.total_tips"
+                                          inputmode="decimal"
                                           @input="sanitizeTipAmount"></el-input>
                             </div>
                         </div>

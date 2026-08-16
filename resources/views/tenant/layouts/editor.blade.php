@@ -51,6 +51,9 @@
         <link rel="stylesheet" href="{{ asset('storage/skins/' . $vc_compact_sidebar->skin->filename) }}" />
       @endif
     @endif
+
+    {{-- Capa móvil global: siempre al final para ganar la cascada --}}
+    <link rel="stylesheet" href="{{ asset('porto-light/css/mobile.css') }}?v={{ filemtime(public_path('porto-light/css/mobile.css')) }}" />
     {{--@stack('styles')--}}
 
     @if(isset($visual))
