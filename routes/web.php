@@ -279,7 +279,15 @@ if ($hostname) {
             Route::post('items/destroyMassive', 'Tenant\ItemController@destroyMassive');
             Route::delete('items/{item}', 'Tenant\ItemController@destroy');
             Route::delete('items/item-unit-type/{item}', 'Tenant\ItemController@destroyItemUnitType');
+            // ########### INICIO CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
             Route::post('items/import', 'Tenant\ItemController@import');
+            Route::get(
+                'items/import/validation/{token}',
+                'Tenant\ItemController@downloadImportValidation'
+            )
+                ->whereUuid('token')
+                ->name('tenant.items.import.validation');
+            // ########### FIN CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
             Route::post('items/import/restaurant', 'Tenant\ItemController@importRestaurant');
             Route::post('items/catalog', 'Tenant\ItemController@catalog');
             Route::get('items/import/tables', 'Tenant\ItemController@tablesImport');
