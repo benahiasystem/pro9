@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="es">
     <head>
@@ -262,7 +263,7 @@
                                 </tr> -->
                                 @php
 
-                                    if($value->currency_type_id == 'PEN'){
+                                    if($value->currency_type_id == 'VES'){
 
                                         /*$acum_total_taxed +=  $signal != '07' ? $value->total_taxed : -$value->total_taxed ;
                                         $acum_total_igv +=  $signal != '07' ? $value->total_igv : -$value->total_igv ;
@@ -316,7 +317,7 @@
                             @endforeach
                             <tr>
                                 <td class="celda" colspan="16"></td>
-                                <td class="celda" >Totales PEN</td>
+                                <td class="celda" >Totales VES</td>
                                 <td class="celda">{{$acum_total_taxed}}</td>
                                 <td class="celda">{{$acum_total_igv}}</td>
                                 <td class="celda">{{$acum_total}}</td>
@@ -339,3 +340,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

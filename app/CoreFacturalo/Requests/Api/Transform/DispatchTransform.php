@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\CoreFacturalo\Requests\Api\Transform;
 
 use App\CoreFacturalo\Requests\Api\Transform\Common\EstablishmentTransform;
@@ -85,11 +87,11 @@ class DispatchTransform
             ->where('districts.id', '=', $data['ubigeo'])
             ->select('districts.id as district_id', 'provinces.id as province_id','departments.id as department_id')
             ->first();
-            
+
             if ($locations) {
                 $locations = (array) $locations;
             }
-            
+
             $location_id = [ $locations['department_id'], $locations['province_id'],$locations['district_id']];
             return [
                 'address' => $data["direccion"],
@@ -243,7 +245,7 @@ class DispatchTransform
                     'item_code' => Functions::valueKeyInArray($row, 'codigo_producto_sunat'),
                     'item_code_gs1' => Functions::valueKeyInArray($row, 'codigo_producto_gsl'),
                     'unit_type_id' => Functions::valueKeyInArray($row, 'unidad_de_medida'),
-                    'currency_type_id' => 'PEN',
+                    'currency_type_id' => 'VES',
 
                     'quantity' => Functions::valueKeyInArray($row, 'cantidad'),
                     'unit_value' => Functions::valueKeyInArray($row, 'valor_unitario'),
@@ -371,3 +373,5 @@ class DispatchTransform
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

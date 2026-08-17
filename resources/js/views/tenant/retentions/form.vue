@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -157,15 +158,15 @@
                     </div>
                 </form>
             </div>
-    
+
             <retention-form-document :showDialog.sync="showDialogAddDocument"
                                :active-retention-type="activeRetentionType"
                                @add="addDocument"></retention-form-document>
-    
+
             <supplier-form :showDialog.sync="showDialogNewSupplier"
                            type="suppliers"
                            :external="true"></supplier-form>
-    
+
             <retention-options :showDialog.sync="showDialogOptions"
                                 :recordId="recordId"
                                 :showClose="false"></retention-options>
@@ -188,13 +189,13 @@
                 showDialogNewSupplier: false,
                 loading_submit: false,
                 errors: {},
-                form: {},  
+                form: {},
                 activeRetentionType:{},
-                suppliers: [], 
+                suppliers: [],
                 establishments: [],
                 all_series: [],
                 series: [],
-                retention_types: [], 
+                retention_types: [],
                 showDialogOptions: false,
                 recordId: null,
                 disabledDateOfIssue: {
@@ -208,11 +209,11 @@
             this.initForm()
             this.$http.get(`/${this.resource}/tables`)
                 .then(response => {
- 
-                    this.suppliers = response.data.suppliers 
+
+                    this.suppliers = response.data.suppliers
                     this.establishments = response.data.establishments
                     this.all_series = response.data.series
-                    this.retention_types = response.data.retention_types 
+                    this.retention_types = response.data.retention_types
                     this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
                     this.form.retention_type_id = (this.retention_types.length > 0)?this.retention_types[0].id:null
                     this.form.document_type_id = '20'
@@ -225,7 +226,7 @@
             })
         },
         methods: {
-            initForm() { 
+            initForm() {
                 this.errors = {}
                 this.form = {
                     id: null,
@@ -252,7 +253,7 @@
                     has_cdr: 0,
                     documents: [],
                 }
-            }, 
+            },
             resetForm() {
 
                 this.initForm()
@@ -286,10 +287,10 @@
             },
             clickRemoveDocument(index) {
                 this.form.documents.splice(index, 1)
-                this.calculateTotal()  
+                this.calculateTotal()
             },
             changeCurrencyType() {
-                this.currency_symbol = (this.form.currency_type_code === 'PEN')?'S/':'$'
+                this.currency_symbol = (this.form.currency_type_code === 'VES')?'Bs.':'$'
             },
             calculateTotal() {
 
@@ -310,7 +311,7 @@
                 this.$http.post(`/${this.resource}`, this.form)
                     .then(response => {
                         if (response.data.success) {
-                            
+
                             this.resetForm()
                             this.recordId = response.data.data.id
                             this.showDialogOptions = true
@@ -345,3 +346,4 @@
         }
     }
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

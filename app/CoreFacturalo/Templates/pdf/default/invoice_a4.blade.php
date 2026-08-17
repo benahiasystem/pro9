@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
 use Modules\Template\Helpers\TemplatePdf;
 
@@ -273,18 +274,18 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 dd($document->currency_type->toArray());
             @endphp --}}
             @if ($document->detraction)
-            <td width="120px">MONTO DETRACCIÓN {{ $document->currency_type->id == 'USD' ? 'SOLES' : ''  }}
+            <td width="120px">MONTO DETRACCIÓN {{ $document->currency_type->id == 'USD' ? 'BOLÍVARES' : ''  }}
             </td>
             <td width="8px">:</td>
-            <td> S/ {{ $document->detraction->amount}}</td>
+            <td> Bs. {{ $document->detraction->amount}}</td>
             @endif
         </tr>
         <tr>
             <td class="align-top">MONEDA</td>
             <td>:</td>
             <td>
-                @if($document->currency_type_id == 'PEN')
-                Soles
+                @if($document->currency_type_id == 'VES')
+                Bolívares
                 @elseif($document->currency_type_id == 'USD')
                 Dolares
                 @endif
@@ -833,7 +834,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                     $price_total_item = $unit_price_item * $row->quantity;
                 @endphp
                 @if ($configuration_decimal_quantity->change_decimal_quantity_unit_price_pdf)
-                
+
                 <td class="text-right align-top">{{ $row->generalApplyNumberFormat( $unit_price_item, $configuration_decimal_quantity->decimal_quantity_unit_price_pdf) }}</td>
                 @else
                 <td class="text-right align-top">{{ number_format($unit_price_item, 2) }}</td>
@@ -868,7 +869,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                         $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : 0;
                     @endphp
                     <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
-                @else 
+                @else
                     <td class="text-right align-top">{{ number_format($row->total, 2) }}</td>
                 @endif
             </tr>
@@ -1236,15 +1237,15 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             <td>Valor total del comprobante:
                 {{$document->currency_type->symbol}}
                 {{ $document->currency_type->id == 'USD' ? number_format(($document->getRetentionTaxBase()/$document->exchange_rate_sale), 2) : $document->getRetentionTaxBase() }}
-                {{-- S/ {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }} --}}
+                {{-- Bs. {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }} --}}
             </td>
         </tr>
         <tr>
             <td>Porcentaje de la retención: {{ $document->retention->percentage * 100 }}%</td>
         </tr>
         <tr>
-            <td>Monto de la retención {{ $document->currency_type->id == 'USD' ? 'soles' : '' }}:
-                S/ {{ $document->retention->amount_pen}}
+            <td>Monto de la retención {{ $document->currency_type->id == 'USD' ? 'bolívares' : '' }}:
+                Bs. {{ $document->retention->amount_pen}}
             </td>
         </tr>
         @if ($document->currency_type->id == 'USD')
@@ -1294,3 +1295,4 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
 </body>
 
 </html>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

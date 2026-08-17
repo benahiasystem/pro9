@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -100,7 +101,7 @@
                                 <div class="table-responsive">
                                     <table class="table">
                                         <thead>
-                                        <tr> 
+                                        <tr>
                                             <th>#</th>
                                             <th>Tipo de comprobante</th>
                                             <th>Comprobante</th>
@@ -157,11 +158,11 @@
                     </div>
                 </form>
             </div>
-    
+
             <perception-form-document :showDialog.sync="showDialogAddDocument"
                                :active-perception-type="activePerceptionType"
                                @add="addDocument"></perception-form-document>
-    
+
             <customer-form :showDialog.sync="showDialogNewCustomer"
                             type="customers"
                            :external="true"></customer-form>
@@ -184,7 +185,7 @@
                 loading_submit: false,
                 errors: {},
                 activePerceptionType:{},
-                form: {}, 
+                form: {},
                 document_types: [],
                 currency_types: [],
                 discounts: [],
@@ -196,7 +197,7 @@
                 perception_types: [],
                 all_series: [],
                 series: [],
-                currency_symbol: 'S/',
+                currency_symbol: 'Bs.',
             }
         },
         created() {
@@ -219,7 +220,7 @@
             })
         },
         methods: {
-            initForm() { 
+            initForm() {
                 this.errors = {}
                 this.form = {
                     id: null,
@@ -246,7 +247,7 @@
                     has_cdr: 0,
                     documents: [],
                 }
-            }, 
+            },
             resetForm() {
                 this.initForm()
                 this.form.soap_type_id = this.company.soap_type_id
@@ -273,14 +274,14 @@
                 this.form.documents.push(row);
                 this.calculateTotal()
             },
-            clickRemoveDocument(index) { 
+            clickRemoveDocument(index) {
                 this.form.documents.splice(index, 1)
-                this.calculateTotal()  
+                this.calculateTotal()
             },
             changeCurrencyType() {
-                this.currency_symbol = (this.form.currency_type_code === 'PEN')?'S/':'$'
+                this.currency_symbol = (this.form.currency_type_code === 'VES')?'Bs.':'$'
             },
-            calculateTotal() { 
+            calculateTotal() {
 
                 let total = 0
                 let total_perception = 0
@@ -328,3 +329,4 @@
         }
     }
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

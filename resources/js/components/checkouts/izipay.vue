@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="kr-izipay-container checkout-pay">
         <button
@@ -23,7 +24,7 @@ import _ from 'lodash';
 /**
  * form : {
  *  amount: 0,
- *  currency: 'PEN',
+ *  currency: 'VES',
  *  orderId: '',
  *  customer: {
  *   email: '',
@@ -77,7 +78,7 @@ export default {
         },
         formattedAmount() {
             const amount = Number(this.form.amount || 0) / 100;
-            const symbol = this.form.currency === 'USD' ? '$' : 'S/';
+            const symbol = this.form.currency === 'USD' ? '$' : 'Bs.';
             return `${symbol} ${amount.toLocaleString('es-PE', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -362,3 +363,4 @@ export default {
     to { transform: rotate(360deg); }
 }
 </style>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

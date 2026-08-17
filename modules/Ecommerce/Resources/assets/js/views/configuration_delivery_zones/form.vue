@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :title="titleDialog"
@@ -25,7 +26,7 @@
                 <div class="row">
                     <div class="col-6">
                         <div class="form-group" :class="{'has-danger': errors.price}">
-                            <label class="control-label">PRECIO DE ENVÍO (S/)</label>
+                            <label class="control-label">PRECIO DE ENVÍO (Bs.)</label>
                             <el-input-number
                                 v-model="form.price"
                                 :min="0"
@@ -332,3 +333,5 @@ export default {
     },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

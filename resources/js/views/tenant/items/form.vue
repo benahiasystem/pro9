@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :close-on-click-modal="false"
                :visible="showDialog"
@@ -1898,7 +1899,7 @@ export default {
             }
         },
         getCurrencySymbol() {
-            return this.form.currency_type_id === 'USD' ? '$' : 'S/'
+            return this.form.currency_type_id === 'USD' ? '$' : 'Bs.'
         },
         ...mapActions([
             'loadConfiguration',
@@ -2075,7 +2076,7 @@ export default {
                 name: null,
                 second_name: null,
                 unit_type_id: 'NIU',
-                currency_type_id: 'PEN',
+                currency_type_id: 'VES',
                 sale_unit_price: 0,
                 purchase_unit_price: 0,
                 has_isc: false,
@@ -2822,3 +2823,5 @@ this.activeName = null
     color: #8c939d;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 {!!  '<'.'?xml version="1.0" encoding="utf-8" standalone="no"?'.'>'  !!}
 <SummaryDocuments
         xmlns="urn:sunat:names:specification:ubl:peru:schema:xsd:SummaryDocuments-1"
@@ -67,9 +68,9 @@
         <sac:SUNATPerceptionSummaryDocumentReference>
             <sac:SUNATPerceptionSystemCode>{{ $perception->code }}</sac:SUNATPerceptionSystemCode>
             <sac:SUNATPerceptionPercent>{{ $perception->percentage }}</sac:SUNATPerceptionPercent>
-            <cbc:TotalInvoiceAmount currencyID="PEN">{{ $perception->amount }}</cbc:TotalInvoiceAmount>
-            <sac:SUNATTotalCashed currencyID="PEN">{{ round((float)$perception->base + (float)$perception->amount, 2) }}</sac:SUNATTotalCashed>
-            <cbc:TaxableAmount currencyID="PEN">{{ $perception->base }}</cbc:TaxableAmount>
+            <cbc:TotalInvoiceAmount currencyID="VES">{{ $perception->amount }}</cbc:TotalInvoiceAmount>
+            <sac:SUNATTotalCashed currencyID="VES">{{ round((float)$perception->base + (float)$perception->amount, 2) }}</sac:SUNATTotalCashed>
+            <cbc:TaxableAmount currencyID="VES">{{ $perception->base }}</cbc:TaxableAmount>
         </sac:SUNATPerceptionSummaryDocumentReference>
         @endif
         <cac:Status>
@@ -189,3 +190,4 @@
     </sac:SummaryDocumentsLine>
     @endforeach
 </SummaryDocuments>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

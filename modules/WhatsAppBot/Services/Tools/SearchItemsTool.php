@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\WhatsAppBot\Services\Tools;
 
 use App\Models\Tenant\Item;
@@ -181,3 +183,5 @@ class SearchItemsTool implements ToolInterface
         return $item->has_igv ? round($price, 2) : round($price * (1 + self::IGV_RATE), 2);
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

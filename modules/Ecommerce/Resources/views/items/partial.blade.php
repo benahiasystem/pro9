@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $configurationModel = \App\Models\Tenant\Configuration::first();
     $phoneWhatsapp = $ecommerceConfiguration->phone_whatsapp ?? $configurationModel->phone_whatsapp ?? null;
@@ -192,7 +193,7 @@
 .price-box.preview .product-price,
 .price-box.preview .old-price,
 .price-box.preview .tag-ecommerce{
-    white-space: nowrap; /* evita S/ arriba y el monto abajo */
+    white-space: nowrap; /* evita Bs. arriba y el monto abajo */
 }
 @media (max-width: 576px){
     .price-box.preview{
@@ -236,3 +237,4 @@
     }
 }
 </style>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

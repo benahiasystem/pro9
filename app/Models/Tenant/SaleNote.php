@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace App\Models\Tenant;
 
     use App\Models\Tenant\Catalogs\CurrencyType;
@@ -1625,7 +1627,7 @@ use Modules\Sale\Models\Agent;
          */
         public function getTransformTotal()
         {
-            return ($this->currency_type_id === 'PEN') ? $this->total : ($this->total * $this->exchange_rate_sale);
+            return ($this->currency_type_id === 'VES') ? $this->total : ($this->total * $this->exchange_rate_sale);
         }
 
 
@@ -2030,3 +2032,5 @@ use Modules\Sale\Models\Agent;
         }
 
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

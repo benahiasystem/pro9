@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
     $customer = $document->customer;
@@ -156,7 +157,7 @@
         @if ($document->detraction)
             <td width="120px">MONTO DETRACCIÓN</td>
             <td width="8px">:</td>
-            <td>S/ {{ $document->detraction->amount}}</td>
+            <td>Bs. {{ $document->detraction->amount}}</td>
         @endif
     </tr>
     @endif
@@ -603,7 +604,7 @@
             <td>
                 <strong>PAGO: </strong>{{ $document->payment_method_type->description }}
             </td>
-        </tr> 
+        </tr>
     </table>
 @endif
 
@@ -649,3 +650,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

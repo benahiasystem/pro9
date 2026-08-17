@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create">
         <form autocomplete="off" @submit.prevent="clickAddItem" >
@@ -214,7 +215,7 @@
                     exchange_rate_sale: 0,
                     exchange_rate: {
                         currency_type_id_source: null,
-                        currency_type_id_target: 'PEN',
+                        currency_type_id_target: 'VES',
                         factor: 1,
                         date_of_exchange_rate: null,
                     },
@@ -229,10 +230,10 @@
                 }else{
                     this.form.total_retention = 0
                 }
-                
+
             },
             async changeDocumentType(){
-                let doc_type = await _.find(this.document_types,{'id':this.form.document_type_id}) 
+                let doc_type = await _.find(this.document_types,{'id':this.form.document_type_id})
                 this.form.document_type_description = doc_type.description
             },
             create() {
@@ -287,7 +288,7 @@
 
                 if(this.form.total_document<=0 || this.form.total_retention<=0 || this.form.total_to_pay<=0 || this.form.total_payment<=0 )
                     return { success:false, message:'Los totales deben ser mayores a cero' }
-                     
+
                 let sum_total_payment = _.sumBy(this.form.payments, (o) => { return parseFloat(o.total_payment); });
 
                 if(sum_total_payment > this.form.total_document)
@@ -316,3 +317,4 @@
     }
 
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

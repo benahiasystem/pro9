@@ -1,4 +1,6 @@
 <?php
+
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 namespace App\Http\Controllers\Tenant;
 
 use Illuminate\Support\Facades\DB;
@@ -1083,7 +1085,7 @@ class ItemController extends Controller
             }
 
             if (str_contains($sqlMessage, "Column 'currency_type_id' cannot be null")) {
-                return 'Uno o más productos no tienen moneda. Revise la columna F del archivo Excel (PEN o USD).';
+                return 'Uno o más productos no tienen moneda. Revise la columna F del archivo Excel (VES o USD).';
             }
 
             if (str_contains($sqlMessage, "Column 'description' cannot be null")) {
@@ -1511,7 +1513,7 @@ class ItemController extends Controller
 
         $records = $items->with('item_unit_types.prices')->get();
         $price_labels = PriceLabel::active()->ordered()->get();
-        
+
         return (new ItemExport())
             ->setExtraData($extradata)
             ->records($records)
@@ -2070,3 +2072,5 @@ class ItemController extends Controller
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="btn-filter-content">
@@ -94,9 +95,9 @@
                         </label>
                         <el-select v-model="form.currency_type_id"
                                    @change="changeCurrency">
-                            <el-option key="PEN"
-                                       label="Soles"
-                                       value="PEN"></el-option>
+                            <el-option key="VES"
+                                       label="Bolívares"
+                                       value="VES"></el-option>
                             <el-option key="USD"
                                        label="Dolares"
                                        value="USD"></el-option>
@@ -280,7 +281,7 @@ export default {
             'config',
         ]),
         curencySymbol() {
-            return this.form.currency_type_id == 'PEN' ? 'S/': '$'
+            return this.form.currency_type_id == 'VES' ? 'Bs.': '$'
         }
     },
     created() {
@@ -305,10 +306,10 @@ export default {
         checkScrollShadows() {
             const el = this.$refs.scrollContainer;
             if (!el) return;
-            
+
             const scrollLeft = el.scrollLeft;
             const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-            
+
             this.showLeftShadow = scrollLeft > 1;
             this.showRightShadow = scrollRight > 1;
         },
@@ -334,7 +335,7 @@ export default {
                 date_end: moment().format('YYYY-MM-DD'),
                 month_start: moment().format('YYYY-MM'),
                 month_end: moment().format('YYYY-MM'),
-                currency_type_id: 'PEN'
+                currency_type_id: 'VES'
             }
         },
         ShowTransferModal(){
@@ -418,3 +419,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

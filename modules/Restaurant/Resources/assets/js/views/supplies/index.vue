@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pr-0">
@@ -66,7 +67,7 @@
                             >
                                 <!-- <td>{{ index + 1 }}</td> -->
                                 <td>{{ row.name }}</td>
-                                <td class="text-end">S/ {{ formatNumber(row.cost) }}</td>
+                                <td class="text-end">Bs. {{ formatNumber(row.cost) }}</td>
                                 <td class="text-center">{{ row.unit_type ? row.unit_type.description : '-' }}</td>
                                 <td class="text-end">{{ formatNumber(row.waste_percentage) }}%</td>
                                 <td class="text-end">{{ formatNumber(row.stock) }}</td>
@@ -226,3 +227,5 @@ export default {
     background-color: #fff3cd !important;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

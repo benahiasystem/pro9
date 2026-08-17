@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace Modules\Sale\Models;
 
     use App\Models\Tenant\CashDocument;
@@ -193,7 +195,7 @@
                 if (empty($item->establishment_id) && !empty($item->user_id)) {
                     $item->establishment_id = $item->user->establishment_id;
                 }
-                if(empty($item->currency_type_id)) $item->currency_type_id = 'PEN';
+                if(empty($item->currency_type_id)) $item->currency_type_id = 'VES';
                 //self::adjustSellerIdField($model);
             });
             static::retrieved(function (self $item) {
@@ -201,7 +203,7 @@
                 if (empty($item->establishment_id) && !empty($item->user_id)) {
                     $item->establishment_id = $item->user->establishment_id;
                 }
-                if (empty($item->currency_type_id)) $item->currency_type_id = 'PEN';
+                if (empty($item->currency_type_id)) $item->currency_type_id = 'VES';
             });
 
         }
@@ -289,7 +291,7 @@
                     $user = new User();
                 }
             }
-            else { 
+            else {
                 $user = auth()->user();
             }
             return ($user->type == 'seller') ? $query->where('user_id', $user->id) : null;
@@ -375,7 +377,7 @@
          */
         public function getCurrencyTypeIdAttribute()
         {
-            return 'PEN';
+            return 'VES';
         }
 
         /**
@@ -1501,7 +1503,7 @@
 
 
         /**
-         * 
+         *
          * Obtener descripción del tipo de documento
          *
          * @return string
@@ -1513,7 +1515,7 @@
 
 
         /**
-         * 
+         *
          * Obtener pagos en efectivo
          *
          * @return Collection
@@ -1525,7 +1527,7 @@
             }});
         }
 
-        
+
         /**
          * Total del servicio tecnico
          *
@@ -1538,7 +1540,7 @@
 
 
         /**
-         * 
+         *
          * Total pagado
          *
          * @return float
@@ -1572,9 +1574,9 @@
             return $this->hasFullPayment();
         }
 
-            
+
         /**
-         * 
+         *
          * Tipo de transaccion para caja
          *
          * @return string
@@ -1586,7 +1588,7 @@
 
 
         /**
-         * 
+         *
          * Tipo de documento para caja
          *
          * @return string
@@ -1596,9 +1598,9 @@
             return $this->getTable();
         }
 
-        
+
         /**
-         * 
+         *
          * Datos para resumen diario de operaciones
          *
          * @return array
@@ -1624,7 +1626,7 @@
             return $this->payments()->filterCashPaymentWithoutDestination()->sum('payment');
         }
 
-        
+
         /**
          *
          * Obtener total de pagos en transferencia
@@ -1636,9 +1638,9 @@
             return $this->payments()->filterTransferPayment()->sum('payment');
         }
 
-        
+
         /**
-         * 
+         *
          * Validar que no tenga comprobantes asociados
          *
          * @param  Builder $query
@@ -1651,7 +1653,7 @@
 
 
         /**
-         * 
+         *
          * Validar que no tenga notas de venta asociadas
          *
          * @param  Builder $query
@@ -1663,3 +1665,5 @@
         }
 
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
 
@@ -126,7 +127,7 @@
                 <h5 class="text-center">COTIZACIÓN</h5>
                 <h3 class="text-center">{{ $tittle }}</h3>
             </td>
-        @endif        
+        @endif
     </tr>
 </table>
 <table class="full-width mt-5">
@@ -189,11 +190,11 @@
     </tr>
     @endif
         <tr>
-            <td class="align-top">MONEDA: 
+            <td class="align-top">MONEDA:
             </td>
             <td>
-                @if($document->currency_type_id == 'PEN')
-                Soles
+                @if($document->currency_type_id == 'VES')
+                Bolívares
                 @elseif($document->currency_type_id == 'USD')
                 Dolares
                 @endif
@@ -321,8 +322,8 @@
 
         @if($showColumns['fecha_vencimiento'] && $show_due)
             <th class="border-top-bottom text-center py-2 px-1">F. VENC.</th>
-        @endif 
-        @if($showColumns['precio_unitario']) <th class="border-top-bottom text-right py-2 col-total">P.UNIT</th> @endif    
+        @endif
+        @if($showColumns['precio_unitario']) <th class="border-top-bottom text-right py-2 col-total">P.UNIT</th> @endif
         @if($showColumns['descuento']) <th class="border-top-bottom text-right py-2" width="8%">DTO.</th> @endif
         @if($showColumns['total']) <th class="border-top-bottom text-right py-2 col-total">TOTAL</th> @endif
     </tr>
@@ -426,7 +427,7 @@
                 @endif
             </td>
             @endif
-            
+
             @if($showColumns['modelo'] && $show_model)
                 <td class="text-left">{{ $row->item->model ?? '' }}</td>
             @endif
@@ -447,7 +448,7 @@
                         -
                     @endif
                 </td>
-            @endif    
+            @endif
             @if($showColumns['precio_unitario']) <td class="text-right align-top">{{ number_format($row->unit_price, 2) }}</td> @endif
             @if($showColumns['descuento']) <td class="text-right align-top">
                 @if($row->discounts)
@@ -586,3 +587,5 @@
 </table>
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

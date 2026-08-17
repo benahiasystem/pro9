@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <section class="card card-dashboard ws-panel">
     <div class="card-body">
@@ -104,7 +105,7 @@ export default {
           },
           y: {
             formatter: (val) =>
-              "S/ " +
+              "Bs. " +
               Number(val).toLocaleString("es-PE", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -168,3 +169,5 @@ export default {
   background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

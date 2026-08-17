@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Models\Tenant;
 
 use App\Models\Tenant\GuideFile;
@@ -493,7 +495,7 @@ class Quotation extends ModelTenant
      */
     public function getTransformTotal()
     {
-        return ($this->currency_type_id === 'PEN') ? $this->total : ($this->total * $this->exchange_rate_sale);
+        return ($this->currency_type_id === 'VES') ? $this->total : ($this->total * $this->exchange_rate_sale);
     }
 
 
@@ -703,3 +705,5 @@ class Quotation extends ModelTenant
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

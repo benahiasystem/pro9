@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Imports;
 
 use App\Models\Tenant\Document;
@@ -52,7 +54,7 @@ class DocumentsImport implements ToCollection
                 $create_date = Carbon::instance(Date::excelToDateTimeObject($row[5]));
                 $date_create = Carbon::parse($create_date)->format('Y-m-d');
 
-                $currency = ($row[11] == 'S') ? 'PEN' : 'Registre nueva moneda' ;
+                $currency = ($row[11] == 'S') ? 'VES' : 'Registre nueva moneda' ;
 
                 //cliente
                 $co_number = rtrim($row[9]);
@@ -219,3 +221,5 @@ class DocumentsImport implements ToCollection
         return $this->data;
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

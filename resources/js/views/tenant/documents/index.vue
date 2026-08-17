@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="documents">
         <div class="page-header pe-0">
@@ -131,7 +132,7 @@
                 </el-dropdown>
             </div>
             -->
-            
+
             <div class="card-body card-body-invoice">
                 <data-table :resource="resource">
                     <div slot="showhide">
@@ -225,7 +226,7 @@
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'soap_type'" :key="col.key">{{ row.soap_type_description }}</td>
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">
-                                {{ formatDateLong(row.date_of_issue) }}                               
+                                {{ formatDateLong(row.date_of_issue) }}
                             </td>
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
@@ -304,15 +305,15 @@
                             <td v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">
                                 <span v-for="(item, i) in row.plate_numbers" :key="i">{{ item.description }} <br /></span>
                             </td>
-                            <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
-                            <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_free) }}</td>
-                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_unaffected) }}</td>
-                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
-                            <td v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_charge) }}</td>
-                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
-                            <!-- <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td> -->
-                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IGV {{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</small></template></td>
-                            <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.balance) }}</td>
+                            <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_exportation) }}</td>
+                            <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_free) }}</td>
+                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_unaffected) }}</td>
+                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_exonerated) }}</td>
+                            <td v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_charge) }}</td>
+                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_taxed) }}</td>
+                            <!-- <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</td> -->
+                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IGV {{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</small></template></td>
+                            <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_symbol }} {{ formatDecimal(row.balance) }}</td>
                             <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
                             <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center">
                                 <button v-if="row.has_xml" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_xml)">XML</button>
@@ -334,7 +335,7 @@
                                       Editar
                                     </a>
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-else-if="row.state_type_id === '01' && userId == row.user_id && row.is_editable"
                                   >
@@ -343,7 +344,7 @@
                                       Editar
                                     </a>
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="row.btn_resend && !isClient"
                                     @click.native="clickResend(row.id)"
@@ -351,7 +352,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-forward-up me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 14l4 -4l-4 -4" /><path d="M19 10h-11a4 4 0 1 0 0 8h1" /></svg>
                                     Reenviar
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="row.btn_recreate_document"
                                     @click.native="clickReStore(row.id)"
@@ -359,7 +360,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-refresh-cw me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
                                     Volver a recrear
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="row.btn_change_to_registered_status"
                                     @click.native="clickChangeToRegisteredStatus(row.id)"
@@ -387,14 +388,14 @@
                                           )
                                       "
                                   ></el-dropdown-item>
-                    
+
                                   <el-dropdown-item v-if="row.btn_note">
                                     <a :href="`/${resource}/note/${row.id}`" style="text-decoration: none; color: inherit;">
                                       <svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4v17l2 -2l2 2l2 -2l2 2l2 -2l2 2l2 -2v-17z"></path><path d="M14 8h-4"></path><path d="M14 12h-4"></path><path d="M14 16h-4"></path></svg>
                                       Nota
                                     </a>
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item v-if="row.btn_guide">
                                     <a :href="`/dispatches/create_new/document/${row.id}`" style="text-decoration: none; color: inherit;">
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck me-2">
@@ -406,7 +407,7 @@
                                       Guía
                                     </a>
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="row.btn_constancy_detraction"
                                     @click.native="clickCDetraction(row.id)"
@@ -421,7 +422,7 @@
                                     </svg>
                                     C. Detracción
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="isClient && !row.send_server"
                                     @click.native="clickSendOnline(row.id)"
@@ -429,7 +430,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-server-2 me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M3 12m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M7 8l0 .01" /><path d="M7 16l0 .01" /><path d="M11 8h6" /><path d="M11 16h6" /></svg>
                                     Enviar Servidor
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="isClient && row.send_server && (row.state_type_id === '01' || row.state_type_id === '03')"
                                     @click.native="clickCheckOnline(row.id)"
@@ -437,21 +438,21 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-server-cog me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v2a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z" /><path d="M12 20h-6a3 3 0 0 1 -3 -3v-2a3 3 0 0 1 3 -3h10.5" /><path d="M18 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M18 14.5v1.5" /><path d="M18 20v1.5" /><path d="M21.032 16.25l-1.299 .75" /><path d="M16.27 19l-1.3 .75" /><path d="M14.97 16.25l1.3 .75" /><path d="M19.733 19l1.3 .75" /><path d="M7 8v.01" /><path d="M7 16v.01" /></svg>
                                     Consultar Servidor
                                   </el-dropdown-item>
-                              
-                                  <el-dropdown-item 
+
+                                  <el-dropdown-item
                                     divided
                                     v-if="row.btn_note || row.btn_guide || row.btn_constancy_detraction ||
                                      (isClient && !row.send_server) ||
                                       (isClient && row.send_server && (row.state_type_id === '01' || row.state_type_id === '03'))"
                                   />
-                              
+
                                   <el-dropdown-item
                                     @click.native="clickPayment(row.id)"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
                                     Pagos
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="row.btn_retention"
                                     @click.native="clickRetention(row.id)"
@@ -459,9 +460,9 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-text me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path><line x1="9" y1="9" x2="10" y2="9"></line><line x1="9" y1="13" x2="15" y2="13"></line><line x1="9" y1="17" x2="15" y2="17"></line></svg>
                                     Retención
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item divided />
-                              
+
                                   <el-dropdown-item
                                     @click.native="clickOptions(row.id)"
                                   >
@@ -484,7 +485,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x-circle me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
                                     Anular
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="row.btn_delete_doc_type_03"
                                     @click.native="clickDeleteDocument(row.id)"
@@ -493,7 +494,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="4" y1="7" x2="20" y2="7" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
                                     Eliminar
                                   </el-dropdown-item>
-                              
+
                                   <el-dropdown-item
                                     v-if="row.btn_force_send_by_summary && typeUser === 'admin'"
                                     @click.native="clickForceSendBySummary(row.id)"
@@ -804,16 +805,16 @@ export default {
             decimal_quantity: 2,
             kpis: {
                 sales: {
-                    total: 'S/ 0.00',
-                    facturas: 'S/ 0.00',
-                    boletas: 'S/ 0.00',
+                    total: 'Bs. 0.00',
+                    facturas: 'Bs. 0.00',
+                    boletas: 'Bs. 0.00',
                     variation: '',
                     variation_up: true,
                 },
                 receivable: {
-                    total: 'S/ 0.00',
-                    current: 'S/ 0.00',
-                    overdue: 'S/ 0.00',
+                    total: 'Bs. 0.00',
+                    current: 'Bs. 0.00',
+                    overdue: 'Bs. 0.00',
                 },
             },
         };
@@ -1226,3 +1227,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

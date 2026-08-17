@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <div>
     <div class="page-header pe-0">
@@ -74,10 +75,10 @@
             <!-- <td class="text-right">{{ row.total_free }}</td>
             <td class="text-right">{{ row.total_unaffected }}</td>
             <td class="text-end">{{ row.total_exonerated }}</td> -->
-            <td class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total_taxed) }}</td>
-            <td class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total_igv) }}</td>
+            <td class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_taxed) }}</td>
+            <td class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_igv) }}</td>
             <!-- <td class="text-right">{{ row.total_perception ? row.total_perception : 0 }}</td> -->
-            <td class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total) }}</td>
+            <td class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total) }}</td>
 
                         <td class="text-center">
 
@@ -107,10 +108,10 @@
                     <i class="fas fa-ellipsis-v"></i>
                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                 </el-button>
-              
+
                 <template #dropdown>
                   <el-dropdown-menu>
-                  
+
                     <el-dropdown-item
                       v-if="row.show_actions_row"
                       command="edit"
@@ -118,15 +119,15 @@
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
                       Editar
                     </el-dropdown-item>
-                  
+
                     <el-dropdown-item
                       v-if="row.show_actions_row"
                       command="generate"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304" /><path d="M9 11v-5a3 3 0 0 1 6 0v5" /></svg>
                       Generar compra
-                    </el-dropdown-item>                                      
-                  
+                    </el-dropdown-item>
+
                     <el-dropdown-item
                       command="options"
                     >
@@ -138,13 +139,13 @@
 
                     <el-dropdown-item
                       v-if="row.show_actions_row"
-                      command="anulate"      
-                      class="option-delete text-danger"                
+                      command="anulate"
+                      class="option-delete text-danger"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-x me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M10 10l4 4m0 -4l-4 4"></path></svg>
                       Anular
                     </el-dropdown-item>
-                  
+
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -258,15 +259,15 @@ export default {
               case 'edit':
                 this.clickCreate(row.id)
                 break
-            
+
               case 'generate':
                 location.href = `/purchases/create/${row.id}`
                 break
-            
+
               case 'anulate':
                 this.clickAnulate(row.id)
                 break
-            
+
               case 'options':
                 this.clickOptions(row.id)
                 break
@@ -275,3 +276,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

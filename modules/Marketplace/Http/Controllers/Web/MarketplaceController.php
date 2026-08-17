@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Marketplace\Http\Controllers\Web;
 
 use Illuminate\Contracts\View\View;
@@ -137,7 +139,7 @@ class MarketplaceController extends Controller
                 'items_per_page' => Settings::get('items_per_page'),
                 'report_reasons' => Settings::get('report_reasons', []),
                 'whatsapp_cart_greeting' => Settings::get('whatsapp_cart_greeting'),
-                'currency_symbol' => Settings::get('currency_symbol', 'S/'),
+                'currency_symbol' => Settings::get('currency_symbol', 'Bs.'),
                 // Para el banner de datos personales (Ley 29733). Vacío = el
                 // enlace ARCO no se muestra.
                 'arco_email' => Settings::get('arco_email', ''),
@@ -159,3 +161,5 @@ class MarketplaceController extends Controller
         return $path ? Storage::disk(config('marketplace.disk'))->url($path) : null;
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

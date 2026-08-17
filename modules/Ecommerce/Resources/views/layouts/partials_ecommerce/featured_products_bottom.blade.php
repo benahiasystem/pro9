@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
 
 $currentItem = $record ?? null;
@@ -47,8 +48,8 @@ $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
                             </h2>
                             <div class="d-flex flex-column ml-3" style="gap: 10px; flex-shrink: 0;">
                                 <div class="price-box w-100 d-flex flex-column align-items-end m-0">
-                                    <span class="text-muted" style="font-size: 13px; text-decoration: line-through;">S/ {{ number_format(round($item->sale_unit * 1.25), 2) }}</span>
-                                    
+                                    <span class="text-muted" style="font-size: 13px; text-decoration: line-through;">Bs. {{ number_format(round($item->sale_unit * 1.25), 2) }}</span>
+
                                     <span class="product-price text-nowrap m-0 font-weight-bold" style="font-size: 15px">{{ $item->currency_type_symbol }} {{ number_format($item->sale_unit, 2) }}</span>
                                 </div><!-- End .price-box -->
 
@@ -75,3 +76,5 @@ $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
     </div>
 </div>
 @endif
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :close-on-click-modal="false"
@@ -111,11 +112,11 @@
                                             <p v-if="loading_search" class="el-select-dropdown__empty">
                                                 Cargando...
                                             </p>
-                                        
+
                                             <p v-else class="el-select-dropdown__empty">
                                                 No se encontraron resultados
                                             </p>
-                                        
+
                                             <div
                                                 v-if="!loading_search"
                                                 class="el-select-dropdown__item new-option"
@@ -505,7 +506,7 @@
                                                     </tr>
                                                 </tbody>
                                             </table>
-                                        </div>                                        
+                                        </div>
                                     </div>
                                     <div v-if="charge_types.length > 0">
                                         <label class="control-label">
@@ -585,7 +586,7 @@
                                                     </tr>
                                                 </tbody>
                                             </table>
-                                        </div>                                        
+                                        </div>
                                     </div>
                                     <div v-if="attribute_types.length > 0">
                                         <label class="control-label">
@@ -663,7 +664,7 @@
                                                     </tr>
                                                 </tbody>
                                             </table>
-                                        </div>                                        
+                                        </div>
                                     </div>
                                 </el-collapse-item>
                             </el-collapse>
@@ -1182,7 +1183,7 @@ export default {
                 }
 
                 this.calculateQuantity();
-                
+
             }
 
             /* Migrado de resources/js/views/tenant/sale_notes/partials/item.vue*/
@@ -1209,7 +1210,7 @@ export default {
 
                 if (this.isEditItemNote) {
                     this.form.item.currency_type_id = this.currencyTypeIdActive
-                    this.form.item.currency_type_symbol = (this.currencyTypeIdActive == 'PEN') ? 'S/' : '$'
+                    this.form.item.currency_type_symbol = (this.currencyTypeIdActive == 'VES') ? 'Bs.' : '$'
 
                     if (this.documentTypeId == '07' && this.noteCreditOrDebitTypeId == '07') {
 
@@ -1664,3 +1665,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

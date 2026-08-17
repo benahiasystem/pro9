@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <?php
     use App\Models\Tenant\Document;
     use App\CoreFacturalo\Helpers\Template\TemplateHelper;
@@ -9,7 +10,7 @@
     foreach ($items as $value) {
         dd($value->item->description);
     }
-    
+
 } */
     //
 ?>
@@ -203,7 +204,7 @@
                                 get_class($value) == SaleNote::class
                             ){
                                 $payments = TemplateHelper::getDetailedPayment($value);
-                                
+
                             }
                             @endphp
 
@@ -315,7 +316,7 @@
                             @php
                             $payments= [];
                             if(
-                                get_class($value) == Document::class 
+                                get_class($value) == Document::class
                             ){
                                 $payments = DocumentPayment::where('document_id',$value->id)->sum('payment');
                             }else{
@@ -345,11 +346,11 @@
                             }
                             $items_total=implode(', ', $description);
                         @endphp
-                        
+
                         <td>{{$items_total}}</td>
                     </tr>
                     @php
-                        if($value->currency_type_id == 'PEN'){
+                        if($value->currency_type_id == 'VES'){
                             /*$acum_total_taxed +=  $signal != '07' ? $value->total_taxed : -$value->total_taxed ;
                             $acum_total_igv +=  $signal != '07' ? $value->total_igv : -$value->total_igv ;
                             $acum_total += $signal != '07' ? $value->total : -$value->total ;*/
@@ -427,7 +428,7 @@
                 @endforeach
                 <tr>
                     <td colspan="13"></td>
-                    <td colspan="2">Totales PEN</td>
+                    <td colspan="2">Totales VES</td>
                     <td>{{number_format($acum_total_charges, 2)}}</td>
                     <td>{{number_format($acum_total_exonerado, 2)}}</td>
                     <td>{{number_format ($acum_total_inafecto, 2 )}}</td>
@@ -463,3 +464,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

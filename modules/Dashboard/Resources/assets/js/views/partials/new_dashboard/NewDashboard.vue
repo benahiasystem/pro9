@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="new-dashboard row-new bg-transparent mt-0">
         <!-- <div class="nd-tabs">
@@ -108,7 +109,7 @@
                             <span class="nd-card-title text-muted text-uppercase">Ventas {{ periodLabel }}</span>
                             <span v-if="form.compare !== 'none'" class="nd-badge" :class="badgeClass(kpi.monthSalesVariation)">{{ formatPercent(kpi.monthSalesVariation) }}</span>
                         </div>
-                        <div class="nd-card-value">S/ {{ kpi.monthSales }}</div>
+                        <div class="nd-card-value">Bs. {{ kpi.monthSales }}</div>
                     </div>
                 </div>
 
@@ -118,7 +119,7 @@
                             <span class="nd-card-title text-muted text-uppercase">Compras {{ periodLabel }}</span>
                             <span v-if="form.compare !== 'none'" class="nd-badge" :class="badgeClass(kpi.monthPurchasesVariation)">{{ formatPercent(kpi.monthPurchasesVariation) }}</span>
                         </div>
-                        <div class="nd-card-value">S/ {{ kpi.monthPurchases }}</div>
+                        <div class="nd-card-value">Bs. {{ kpi.monthPurchases }}</div>
                     </div>
                 </div>
 
@@ -138,7 +139,7 @@
                             <span class="nd-card-title text-muted text-uppercase">Ventas Acumuladas</span>
                             <small class="nd-card-note text-muted text-end">Anual<br />{{ kpi.accumulatedYear }}</small>
                         </div>
-                        <div class="nd-card-value">S/ {{ kpi.accumulatedSales }}</div>
+                        <div class="nd-card-value">Bs. {{ kpi.accumulatedSales }}</div>
                     </div>
                 </div>
             </div>
@@ -663,3 +664,5 @@ export default {
     padding: 3rem;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

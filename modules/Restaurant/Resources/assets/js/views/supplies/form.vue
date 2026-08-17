@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :title="form.id ? 'Editar Insumo' : 'Nuevo Insumo'"
@@ -48,7 +49,7 @@
                             step="0.01"
                             placeholder="0.00"
                         >
-                            <template slot="prepend">S/</template>
+                            <template slot="prepend">Bs.</template>
                         </el-input>
                     </div>
                 </div>
@@ -231,3 +232,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

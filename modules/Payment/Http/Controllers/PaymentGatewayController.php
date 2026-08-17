@@ -3,6 +3,9 @@ namespace Modules\Payment\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\System\Configuration;
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+use App\Support\Venezuela\Localization;
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 use Hyn\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +26,15 @@ class PaymentGatewayController extends Controller
     {
 
         $is_tenant = $request->boolean('isTenant', false);
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        if (Localization::nationalCurrencyId() === 'VES') {
+            return [
+                'checkout' => null,
+                'is_tenant' => (bool) app(CurrentHostname::class),
+                'message' => 'Las pasarelas configuradas no admiten cobros en bolívares.',
+            ];
+        }
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
         $checkout = $is_tenant ? PaymentConfiguration::enabledCheckout() : Configuration::enabledCheckout();
         return [
             'checkout' => $checkout,
@@ -44,6 +56,16 @@ class PaymentGatewayController extends Controller
             'email'         => 'nullable|email',
             'source_id'     => 'required|string',
         ]);
+
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        if (Localization::isNationalCurrency($validated['currency_code'])) {
+            return response()->json([
+                'success' => false,
+                'paid' => false,
+                'user_message' => 'Culqi no está habilitado para cobros en bolívares.',
+            ], 422);
+        }
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 
         $privateKey = $this->culqiCredentials($is_tenant);
 
@@ -157,6 +179,16 @@ class PaymentGatewayController extends Controller
             'customer.billingDetails.state'           => 'nullable|string',
             'customer.billingDetails.zipCode'         => 'nullable|string',
         ]);
+
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        if (Localization::isNationalCurrency($validated['currency'])) {
+            return [
+                'success' => false,
+                'formToken' => null,
+                'message' => 'Izipay no está habilitado para cobros en bolívares.',
+            ];
+        }
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 
         $validated = $this->normalizeIzipayCustomer($validated);
 
@@ -289,6 +321,16 @@ class PaymentGatewayController extends Controller
 
     public function mercadoPagoCreatePayment(Request $request)
     {
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        if (Localization::nationalCurrencyId() === 'VES') {
+            return [
+                'success' => false,
+                'result' => null,
+                'paid' => false,
+                'message' => 'MercadoPago no está habilitado para cobros en bolívares.',
+            ];
+        }
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
         $is_tenant = $request->boolean('isTenant', false);
         $access_token = $this->mercadoPagoCredentials($is_tenant);
 

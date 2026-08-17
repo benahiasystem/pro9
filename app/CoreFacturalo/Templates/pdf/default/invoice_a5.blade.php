@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
 
@@ -186,13 +187,13 @@
     <tr>
         <td class="align-top">MONEDA:</td>
         <td>
-            @if($document->currency_type_id == 'PEN')
-            Soles
+            @if($document->currency_type_id == 'VES')
+            Bolívares
             @elseif($document->currency_type_id == 'USD')
             Dolares
             @endif
         </td>
-    </tr>    
+    </tr>
     @if ($document->detraction)
         <tr>
             @inject('detractionType', 'App\Services\DetractionTypeService')
@@ -211,7 +212,7 @@
         </tr>
         <tr>
             <td>MONTO DETRACCIÓN:</td>
-            <td>S/ {{ $document->detraction->amount}}</td>
+            <td>Bs. {{ $document->detraction->amount}}</td>
             @if($document->detraction->pay_constancy)
                 <td >C. PAGO:</td>
                 <td>{{ $document->detraction->pay_constancy}}</td>
@@ -379,7 +380,7 @@ foreach ($document->items as $row) {
             <th class="border-top-bottom text-center py-2">MARCA</th>
         @endif
         @if($showLoteColumn) <th class="border-top-bottom text-center py-2" width="12%">
-             LOTE 
+             LOTE
         </th> @endif
         @if($showLoteColumn) <th class="border-top-bottom text-center py-2" width="9%"> F. VENC. </th> @endif
         <th class="border-top-bottom text-right py-2 col-total">P.UNIT</th>
@@ -511,7 +512,7 @@ foreach ($document->items as $row) {
                             ? ltrim($date_due, '/')
                             : ($row->relation_item->date_of_due ? $row->relation_item->date_of_due->format('Y-m-d') : '');
                     @endphp
-            
+
                     {{ $cleanedDate }}
                 </td>
             @endif
@@ -819,9 +820,9 @@ foreach ($document->items as $row) {
                     <tr>
                         <td colspan="2">
                             <p class="font-bold">Información de la retención</p>
-                            <p>Base imponible de la retención: S/ {{ $document->getRetentionTaxBase() }}</p>
+                            <p>Base imponible de la retención: Bs. {{ $document->getRetentionTaxBase() }}</p>
                             <p>Porcentaje de la retención: {{ $document->retention->percentage * 100 }}%</p>
-                            <p>Monto de la retención: S/ {{ $document->retention->amount_pen }}</p>
+                            <p>Monto de la retención: Bs. {{ $document->retention->amount_pen }}</p>
                         </td>
                     </tr>
                 @endif
@@ -835,3 +836,5 @@ foreach ($document->items as $row) {
 </table>
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

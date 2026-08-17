@@ -2,11 +2,11 @@
   "__plugin-vue2_normalizer-839f22b6.js": {
     "file": "assets/_plugin-vue2_normalizer-839f22b6.js"
   },
-  "_claim_form-18abe8a1.js": {
+  "_claim_form-6e5c661d.js": {
     "css": [
-      "assets/claim_form-752a1451.css"
+      "assets/claim_form-de5d5df6.css"
     ],
-    "file": "assets/claim_form-18abe8a1.js",
+    "file": "assets/claim_form-6e5c661d.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js"
     ]
@@ -24,18 +24,18 @@
       "__plugin-vue2_normalizer-839f22b6.js"
     ]
   },
-  "_vue-clipboard-b1b087f4.js": {
+  "_vue-clipboard-abbfb8ca.js": {
     "css": [
-      "assets/vue-clipboard-ff3b7431.css"
+      "assets/vue-clipboard-03e192bd.css"
     ],
-    "file": "assets/vue-clipboard-b1b087f4.js",
+    "file": "assets/vue-clipboard-abbfb8ca.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js",
       "_index-596c10f0.js"
     ]
   },
   "claim_form.css": {
-    "file": "assets/claim_form-752a1451.css",
+    "file": "assets/claim_form-de5d5df6.css",
     "src": "claim_form.css"
   },
   "index.css": {
@@ -43,17 +43,17 @@
     "src": "index.css"
   },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-afc50696.js",
+    "file": "assets/app-ea66d711.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js",
       "_index-596c10f0.js",
-      "_claim_form-18abe8a1.js"
+      "_claim_form-6e5c661d.js"
     ],
     "isEntry": true,
     "src": "modules/ClaimsBook/Resources/assets/js/app.js"
   },
   "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js": {
-    "file": "assets/cart-app-d23fafd6.js",
+    "file": "assets/cart-app-90f17ce4.js",
     "isEntry": true,
     "src": "modules/Ecommerce/Resources/assets/js/frontend/cart-app.js"
   },
@@ -86,7 +86,7 @@
     "src": "modules/Marketplace/Resources/assets/img/buho-logo.svg"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.css": {
-    "file": "assets/marketplace-d0ccd9ee.css",
+    "file": "assets/marketplace-682d0488.css",
     "src": "modules/Marketplace/Resources/assets/js/marketplace.css"
   },
   "modules/Marketplace/Resources/assets/js/marketplace.js": {
@@ -100,9 +100,9 @@
       "assets/jetbrains-mono-latin-ext-db5ff4db.woff2"
     ],
     "css": [
-      "assets/marketplace-d0ccd9ee.css"
+      "assets/marketplace-682d0488.css"
     ],
-    "file": "assets/marketplace-e8965c37.js",
+    "file": "assets/marketplace-23292f70.js",
     "imports": [
       "__plugin-vue2_normalizer-839f22b6.js"
     ],
@@ -118,34 +118,34 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-5f872742.css",
+    "file": "assets/app-4985a983.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
-      "assets/app-5f872742.css"
+      "assets/app-4985a983.css"
     ],
-    "file": "assets/app-0be05c6b.js",
+    "file": "assets/app-0e14576a.js",
     "imports": [
-      "_vue-clipboard-b1b087f4.js",
+      "_vue-clipboard-abbfb8ca.js",
       "__plugin-vue2_normalizer-839f22b6.js",
       "_index-596c10f0.js",
-      "_claim_form-18abe8a1.js"
+      "_claim_form-6e5c661d.js"
     ],
     "isEntry": true,
     "src": "resources/js/app.js"
   },
   "resources/js/system.css": {
-    "file": "assets/system-1171caf0.css",
+    "file": "assets/system-fd2d588e.css",
     "src": "resources/js/system.css"
   },
   "resources/js/system.js": {
     "css": [
-      "assets/system-1171caf0.css"
+      "assets/system-fd2d588e.css"
     ],
-    "file": "assets/system-5950b2e1.js",
+    "file": "assets/system-47a6fa77.js",
     "imports": [
-      "_vue-clipboard-b1b087f4.js",
+      "_vue-clipboard-abbfb8ca.js",
       "__plugin-vue2_normalizer-839f22b6.js",
       "_index-596c10f0.js"
     ],
@@ -153,7 +153,7 @@
     "src": "resources/js/system.js"
   },
   "vue-clipboard.css": {
-    "file": "assets/vue-clipboard-ff3b7431.css",
+    "file": "assets/vue-clipboard-03e192bd.css",
     "src": "vue-clipboard.css"
   }
 }

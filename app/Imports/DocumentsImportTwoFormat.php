@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Imports;
 
 use App\Models\Tenant\Document;
@@ -54,7 +56,7 @@ class DocumentsImportTwoFormat implements ToCollection
                 $date_document = $date_create->format('Y-m-d');
 
                 //moneda
-                $currency = ($row[5] == 'S') ? 'PEN' : 'Registre con los administradores nueva moneda' ;
+                $currency = ($row[5] == 'S') ? 'VES' : 'Registre con los administradores nueva moneda' ;
 
                 //cliente
                 $co_number = rtrim($row[3]);
@@ -235,3 +237,5 @@ class DocumentsImportTwoFormat implements ToCollection
         return $this->data;
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

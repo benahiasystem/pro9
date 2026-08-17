@@ -1,7 +1,8 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <?php
     $iscType = $value->system_isc_type;
     $warehouse_description = \App\CoreFacturalo\Helpers\Template\ReportHelper::getWarehouseDescription($value, $purchase);
-    
+
     $apply_conversion_to_pen = $request_apply_conversion_to_pen == 'true';
 
     $unit_price = $value->unit_price;
@@ -21,7 +22,7 @@
         $total_value = round($value->getConvertTotalValueToPen(), 2);
         $total_isc = round($value->getConvertTotalIscToPen(), 2);
         $total_igv = round($value->getConvertTotalIgvToPen(), 2);
-        $description_apply_conversion_to_pen = '(Se aplicó conversión a soles)';
+        $description_apply_conversion_to_pen = '(Se aplicó conversión a bolívares)';
     }
     // aplicar conversión si es que esta habilitada la configuracion
 
@@ -83,7 +84,7 @@
     <td class="celda"> {{$total_isc}}</td>
     <td class="celda"> {{$value->total_plastic_bag_taxes}}</td>
     <td class="celda"> {{$total}}</td>
-    
+
     <td class="celda">{{ $purchase->exchange_rate_sale }}</td>
     <td class="celda">{{ $warehouse_description }}</td>
 
@@ -94,3 +95,5 @@
     <td class="celda">{{ $category }}</td>
     --}}
 </tr>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

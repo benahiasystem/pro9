@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="btn-filter-content">
@@ -142,22 +143,22 @@
                             <td class="text-right">{{ row.income_payment | DecimalText}}</td>
                             <td class="text-right">{{ row.purchase_payment | DecimalText}}</td>
                             <td class="text-right">{{ row.expense_payment | DecimalText}}</td>
-                            <td class="text-right">S/ {{ row.balance | DecimalText}}</td>
+                            <td class="text-right">Bs. {{ row.balance | DecimalText}}</td>
                         </tr>
                         </tbody>
                         <tfoot>
                         <tr>
                             <td class="text-left pl-3" colspan="2">Totales</td>
-                            <td class="text-right" v-if="resource !== 'finances/payment-method-types'">S/ {{ totals.t_initial_balance | DecimalText }}</td>
-                            <td class="text-right">S/ {{ totals.t_documents | DecimalText }}</td>
-                            <td class="text-right">S/ {{ totals.t_sale_notes | DecimalText}}</td>
-                            <td class="text-right">S/ {{ totals.t_quotations | DecimalText}}</td>
-                            <td class="text-right">S/ {{ totals.t_contracts | DecimalText}}</td>
-                            <td class="text-right">S/ {{ totals.t_technical_services | DecimalText}}</td>
-                            <td class="text-right">S/ {{ totals.t_income | DecimalText}}</td>
-                            <td class="text-right">S/ {{ totals.t_purchases | DecimalText}}</td>
-                            <td class="text-right">S/ {{ totals.t_expenses | DecimalText}}</td>
-                            <td class="text-right">S/ {{ totals.t_balance | DecimalText}}</td>
+                            <td class="text-right" v-if="resource !== 'finances/payment-method-types'">Bs. {{ totals.t_initial_balance | DecimalText }}</td>
+                            <td class="text-right">Bs. {{ totals.t_documents | DecimalText }}</td>
+                            <td class="text-right">Bs. {{ totals.t_sale_notes | DecimalText}}</td>
+                            <td class="text-right">Bs. {{ totals.t_quotations | DecimalText}}</td>
+                            <td class="text-right">Bs. {{ totals.t_contracts | DecimalText}}</td>
+                            <td class="text-right">Bs. {{ totals.t_technical_services | DecimalText}}</td>
+                            <td class="text-right">Bs. {{ totals.t_income | DecimalText}}</td>
+                            <td class="text-right">Bs. {{ totals.t_purchases | DecimalText}}</td>
+                            <td class="text-right">Bs. {{ totals.t_expenses | DecimalText}}</td>
+                            <td class="text-right">Bs. {{ totals.t_balance | DecimalText}}</td>
                         </tr>
                         </tfoot>
                     </table>
@@ -231,10 +232,10 @@ export default {
         checkScrollShadows() {
             const el = this.$refs.scrollContainer;
             if (!el) return;
-            
+
             const scrollLeft = el.scrollLeft;
             const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-            
+
             this.showLeftShadow = scrollLeft > 1;
             this.showRightShadow = scrollRight > 1;
         },
@@ -331,3 +332,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -11,38 +12,38 @@
                 font-family: sans-serif;
                 font-size: 12px;
             }
-            
+
             table {
                 width: 100%;
                 border-spacing: 0;
                 border: 1px solid black;
             }
-            
+
             .celda {
                 text-align: center;
                 padding: 5px;
                 border: 0.1px solid black;
             }
-            
+
             th {
                 padding: 5px;
                 text-align: center;
                 border-color: #0088cc;
                 border: 0.1px solid black;
             }
-            
+
             .title {
                 font-weight: bold;
                 padding: 5px;
                 font-size: 20px !important;
                 text-decoration: underline;
             }
-            
+
             p>strong {
                 margin-left: 5px;
                 font-size: 13px;
             }
-            
+
             thead {
                 font-weight: bold;
                 background: #0088cc;
@@ -82,9 +83,9 @@
         @if(!empty($records))
             <div class="">
                 <div class=" ">
-                    @php 
-                        $acum_total=0; 
-                        $acum_total_amount=0; 
+                    @php
+                        $acum_total=0;
+                        $acum_total_amount=0;
                     @endphp
                     <table class="">
                         <thead>
@@ -107,9 +108,9 @@
                                     <td  class="celda">{{$value->order_note->user->name}}</td>
                                     <td  class="celda">{{$value->order_note->customer->name}}</td>
                                     <td class="celda">{{$value->item->description}}</td>
-                                    <td class="celda">{{$value->quantity}}</td> 
-                                    <td class="celda">S/ {{ $total_item }}</td>
-                                </tr> 
+                                    <td class="celda">{{$value->quantity}}</td>
+                                    <td class="celda">Bs. {{ $total_item }}</td>
+                                </tr>
 
                                 @php
                                     $acum_total += $value->quantity;
@@ -120,8 +121,8 @@
                                 <td class="celda" colspan="3"></td>
                                 <td class="celda" ><strong>Total</strong></td>
                                 <td class="celda">{{$acum_total}}</td>
-                                <td class="celda">S/ {{$acum_total_amount}}</td>
-                            </tr> 
+                                <td class="celda">Bs. {{$acum_total_amount}}</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -133,3 +134,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('tenant.layouts.layout_ecommerce_cart.index')
 @section('content')
 
@@ -25,7 +26,7 @@
                                 <a href="#">@{{ row.name }}</a>
                             </h2>
                         </td>
-                        <td>S/ @{{ row.sale_unit_price }}</td>
+                        <td>Bs. @{{ row.sale_unit_price }}</td>
                         <td>
                             <input class="vertical-quantity form-control input_quantity" :data-product="row.id"
                                 type="text">
@@ -65,18 +66,18 @@
                 <tbody>
                     <tr>
                         <td>Subtotal</td>
-                        <td>S/ @{{summary.subtotal}}</td>
+                        <td>Bs. @{{summary.subtotal}}</td>
                     </tr>
 
                     <tr>
                         <td>IGV</td>
-                        <td>S/ @{{summary.tax}}</td>
+                        <td>Bs. @{{summary.tax}}</td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
                         <td>Orden Total</td>
-                        <td>S/ @{{summary.total}}</td>
+                        <td>Bs. @{{summary.total}}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -110,8 +111,8 @@
                     </div>
                 </div>
 
-                <form class="btn btn-block btn-sm " action="https://www.paypal.com/cgi-bin/webscr" method="post"
-                    target="_blank">
+                <form class="btn btn-block btn-sm " action="#" method="post"
+                    onsubmit="event.preventDefault(); alert('PayPal no está habilitado para cobros en bolívares.'); return false;">
                     <input type="hidden" name="cmd" value="_xclick">
                     <input type="hidden" name="business" value="cristian.ballon@gmail.com">
                     <input type="hidden" name="lc" value="AL">
@@ -119,7 +120,7 @@
                     <input type="hidden" name="item_number" value="0001">
                     <input type="hidden" name="button_subtype" value="services">
                     <input type="hidden" name="no_note" value="0">
-                    <input type="hidden" name="currency_code" value="PEN">
+                    <input type="hidden" name="currency_code" value="VES">
                     <input type="hidden" name="bn" value="PP-BuyNowBF:btn_buynowCC_LG.gif:NonHostedGuest">
                     <input type="image" src="https://simple-membership-plugin.com/wp-content/uploads/2018/09/paypal-smart-payment-button-for-simple-membership.jpg" border="0"
                         name="submit" alt="PayPal - The safer, easier way to pay online!">
@@ -543,7 +544,7 @@
                     "hora_de_emision": moment().format('HH:mm:ss'),
                     "codigo_tipo_operacion": "0101",
                     "codigo_tipo_documento": "01",
-                    "codigo_tipo_moneda": "PEN",
+                    "codigo_tipo_moneda": "VES",
                     "fecha_de_vencimiento": moment().format('YYYY-MM-DD'),
                     "numero_orden_de_compra": "000001",
                     "datos_del_cliente_o_receptor": {
@@ -619,7 +620,7 @@
         if (precio > 0) {
             Culqi.settings({
                 title: "Productos Ecommerce",
-                currency: 'PEN',
+                currency: 'VES',
                 description: 'Compras Ecommerce Facturador Pro',
                 amount: precio
             });
@@ -723,3 +724,5 @@
 </script>
 
 @endpush
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

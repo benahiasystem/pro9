@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $title = "Reporte pagos efectivo con destino caja V2";
     $title = str_replace(['*', ':', '/', '\\', '?', '[', ']'],'',$title);
@@ -98,31 +99,31 @@
                 </td>
             @endif
         </tr>
-        
+
         <tr>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
         </tr>
-        
+
         <tr>
             <td colspan="2" class="td-custom">
-                <p><strong>Montos de operación en Soles: </strong></p>
+                <p><strong>Montos de operación en Bolívares: </strong></p>
             </td>
         </tr>
         <tr>
             <td class="td-custom">
-                <p><strong>Saldo inicial efectivo:</strong>&nbsp; S/ {{$data['cash_beginning_balance']}}</p>
+                <p><strong>Saldo inicial efectivo:</strong>&nbsp; Bs. {{$data['cash_beginning_balance']}}</p>
             </td>
             <td class="td-custom">
-                <p><strong>Ingreso efectivo:</strong>&nbsp; S/ {{ $data['cash_income_pen'] }}</p>
+                <p><strong>Ingreso efectivo:</strong>&nbsp; Bs. {{ $data['cash_income_pen'] }}</p>
             </td>
         </tr>
         <tr>
             <td class="td-custom">
-                <p><strong>Saldo final efectivo:</strong>&nbsp; S/ {{ $data['balance_cash_pen'] }} </p>
+                <p><strong>Saldo final efectivo:</strong>&nbsp; Bs. {{ $data['balance_cash_pen'] }} </p>
             </td>
             <td class="td-custom">
-                <p><strong>Egreso efectivo:</strong>&nbsp; S/ {{$data['cash_egress_pen']}} </p>
+                <p><strong>Egreso efectivo:</strong>&nbsp; Bs. {{$data['cash_egress_pen']}} </p>
             </td>
         </tr>
         <tr>
@@ -158,7 +159,7 @@
     <div class="">
         <div class=" ">
             <div>
-                <h3><b>Pagos en Soles</b></h3>
+                <h3><b>Pagos en Bolívares</b></h3>
                 <br>
             </div>
             <table class="">
@@ -178,7 +179,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                @foreach($data['payments_pen'] as $key => $value) 
+                @foreach($data['payments_pen'] as $key => $value)
                     <tr>
                         <td class="celda">
                             {{ $loop->iteration }}
@@ -186,7 +187,7 @@
                         <td class="celda">
                             {{ $value['type_transaction_description'] }}
                         </td>
-                        
+
                         <td class="celda">
                             {!! $value['items_description_html'] ?? '' !!}
                         </td>
@@ -223,13 +224,13 @@
     </div>
 @else
     <div class="callout callout-info">
-        <p>No se encontraron pagos en soles.</p>
+        <p>No se encontraron pagos en bolívares.</p>
     </div>
 @endif
 
 <br><br>
 
-@if($data['payments_usd']->count() > 0) 
+@if($data['payments_usd']->count() > 0)
     <div class="">
         <div class=" ">
             <div>
@@ -261,7 +262,7 @@
                         <td class="celda">
                             {{ $value['type_transaction_description'] }}
                         </td>
-                        
+
                         <td class="celda">
                             {!! $value['items_description_html'] ?? '' !!}
                         </td>
@@ -303,3 +304,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

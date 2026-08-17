@@ -1,8 +1,9 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div
         :class="{ 'content-opacity': isVisible }"
         class="card mb-0 pt-2 pt-md-0"
-        @click.self="toggleInformation" 
+        @click.self="toggleInformation"
     >
     <span class="module-title-marker" :data-page-title="resourceId ? 'Editar Cotización' : 'Nueva Cotización'"></span>
         <!-- <div class="card-header bg-info">
@@ -16,7 +17,7 @@
                 <header class="clearfix clearfix-default py-2 px-0 px-md-2">
                     <div class="row mx-1 my-1 mx-md-1 my-md-0">
                         <div class="col-sm-2 text-center mt-3 mb-0 d-none d-md-block">
-                            <logo 
+                            <logo
                                 url="/"
                                 :path_logo="getCurrentLogo"
                             ></logo>
@@ -139,11 +140,11 @@
                                             <p v-if="loading_search" class="el-select-dropdown__empty">
                                                 Cargando...
                                             </p>
-                                        
+
                                             <p v-else class="el-select-dropdown__empty">
                                                 No se encontraron resultados
                                             </p>
-                                        
+
                                             <div
                                                 v-if="!loading_search"
                                                 class="el-select-dropdown__item new-option"
@@ -307,7 +308,7 @@
                                 <h3 class="text-center">
                                     Información Adicional
                                 </h3>
-                                    
+
                                 <div class="close-container">
                                     <i class="el-icon el-icon-close"
                                         @click="toggleInformation">
@@ -1424,7 +1425,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             <div class="row">
                             <div class="col-md-6 mt-3"></div>
                             <div
@@ -1477,7 +1478,7 @@
                                                                         <tr
                                                                             v-for="(row,
                                                                             index) in form.payments"
-                                                                            
+
                                                                             :key="
                                                                                 index
                                                                             "
@@ -1792,7 +1793,7 @@ export default {
             this.discount_types = data.discount_types;
             this.charges_types = data.charges_types;
             this.company = data.company;
-            
+
             const configCurrencyAvailable = this.currency_types.some(c => c.id === this.config.currency_type_id);
             this.form.currency_type_id = (this.config.currency_type_id && configCurrencyAvailable)
                 ? this.config.currency_type_id
@@ -1845,7 +1846,7 @@ export default {
         },
         getCurrentLogo() {
             const isDarkMode = document.documentElement.classList.contains('dark');
-        
+
             if (isDarkMode && this.company.logo_dark) {
                 return `/storage/uploads/logos/${this.company.logo_dark}`;
             }
@@ -1970,7 +1971,7 @@ export default {
             } else if (this.payment_condition == "02") {
                 this.payment_method_types_filter = this.payment_method_types.filter(element => element.is_credit == 1)
                 this.clickAddPayment(true)
-            } 
+            }
 
             this.changePaymentMethodType()
         },
@@ -1982,18 +1983,18 @@ export default {
                 this.form.payments[index].payment_method_type_id !== undefined
             ) {
                 id = this.form.payments[index].payment_method_type_id;
-            } 
+            }
             let payment_method_type = _.find(this.payment_method_types_filter, {
                 id: id
             });
 
-            
+
             let date = moment(this.form.date_of_issue)
                     .add(payment_method_type.number_days, "days")
                     .format("YYYY-MM-DD");
 
 
-            this.form.payment_method_type_id = payment_method_type.id            
+            this.form.payment_method_type_id = payment_method_type.id
 
             if (payment_method_type.number_days) {
                 this.form.payments[index].date_of_payment = date
@@ -2202,7 +2203,7 @@ export default {
             this.showPayments = true; // Asegurar que la tabla se muestre
 
             this.setTotalDefaultPayment();
-            
+
         },
         getPaymentDestinationId() {
             if (
@@ -2470,8 +2471,8 @@ export default {
                 );
             });
             this.form.items = items;
-            
-            if (this.form.currency_type_id === 'PEN') {
+
+            if (this.form.currency_type_id === 'VES') {
                 this.total_global_discount = _.round( this.total_global_discount* this.form.exchange_rate_sale,2)
             } else {
                 this.total_global_discount = _.round(this.total_global_discount / this.form.exchange_rate_sale,2)
@@ -2529,7 +2530,7 @@ export default {
                     if (row.total_igv_without_rounding) {
                         total_igv += parseFloat(row.total_igv_without_rounding);
                         total += parseFloat(row.total);
-                        
+
                     } else {
                         total_igv += parseFloat(row.total_igv);
                         total += parseFloat(row.total);
@@ -2785,3 +2786,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

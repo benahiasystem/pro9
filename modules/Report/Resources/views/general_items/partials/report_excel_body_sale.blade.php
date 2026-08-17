@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <?php
 
     use App\Services\ItemLotsGroupService;
@@ -12,8 +13,8 @@
     } else {
         $observation = $data['additional_information']?$data['additional_information'][0]:'';
     }
-    
-    
+
+
     $purchseOrder = $document->purchase_order;
 $stablihsment = $stablihsment ?? [
         'district' => '',
@@ -56,7 +57,7 @@ if (!isset($qty)) {
     $category = $relation_item->category->name;
     $brand = $relation_item->brand->name;
 
-    
+
     // aplicar conversión si es que esta habilitada la configuracion
     if($apply_conversion_to_pen && $value->isCurrencyTypeUsd())
     {
@@ -67,7 +68,7 @@ if (!isset($qty)) {
         $total_value = round($value->getConvertTotalValueToPen(), 2);
         $igv = round($value->getConvertTotalIgvToPen(), 2);
         $total_isc = round($value->getConvertTotalIscToPen(), 2);
-        $description_apply_conversion_to_pen = '(Se aplicó conversión a soles)';
+        $description_apply_conversion_to_pen = '(Se aplicó conversión a bolívares)';
     }
     // aplicar conversión si es que esta habilitada la configuracion
 
@@ -117,7 +118,7 @@ $isSaleNote = ($document_type_id != '80' && $type == 'sale') ? true : false;
     }
 
     $warehouse_description = \App\CoreFacturalo\Helpers\Template\ReportHelper::getWarehouseDescription($value, $document);
-    
+
 
     $item_lots_group_service = new ItemLotsGroupService();
 
@@ -232,3 +233,5 @@ $isSaleNote = ($document_type_id != '80' && $type == 'sale') ? true : false;
     <td class="celda">{{ $warehouse_description }}</td>
 
 </tr>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

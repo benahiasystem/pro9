@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <div>
     <div class="page-header pe-0">
@@ -21,7 +22,7 @@
               :style="{ backgroundColor: getStateColor(pay.id) }"
             >
               <div>
-                <span class="status-price">S/ {{ parseFloat(pay.total).toFixed(2) }}</span>
+                <span class="status-price">Bs. {{ parseFloat(pay.total).toFixed(2) }}</span>
                 <p class="m-0">{{ pay.name }}</p>
               </div>
               <div v-html="getStateIcon(pay.id)"></div>
@@ -60,7 +61,7 @@
                 <td>
                   <span class="text-muted">{{ record.description }}</span>
                 </td>
-                <td class="text-center">S/ {{ parseFloat(record.amount).toFixed(2) }}</td>
+                <td class="text-center">Bs. {{ parseFloat(record.amount).toFixed(2) }}</td>
                 <td class="text-center">{{ record.due_date }}</td>
                 <td class="text-center">
                   <span class="badge badge-pill" :class="getStateBadgeClass(record.order_state_id)">
@@ -211,3 +212,5 @@ export default {
   fill: rgba(255, 255, 255, 0);
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

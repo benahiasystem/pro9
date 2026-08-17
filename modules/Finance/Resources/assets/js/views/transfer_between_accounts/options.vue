@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :show-close="false"
@@ -77,7 +78,7 @@
                         Monto a transferir
                         <el-tooltip
                             class="item"
-                            content="Si la moneda de la cuenta bancaria difiere de soles, se realiza la conversion."
+                            content="Si la moneda de la cuenta bancaria difiere de bolívares, se realiza la conversion."
                             effect="dark"
                             placement="top-start">
                             <i class="fa fa-info-circle"></i>
@@ -289,8 +290,8 @@ export default {
                 }
                 let total = this.transfer_amount.amount_transform_temp
                 if (coinIn !== coinOut) {
-                    if (coinIn === 'PEN') {
-                        // si la moneda de ingreso es Soles, se divide
+                    if (coinIn === 'VES') {
+                        // si la moneda de ingreso es Bolívares, se divide
                         total = total / this.exchange_rate_sale;
                     } else {
                         total = total * this.exchange_rate_sale;
@@ -305,3 +306,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

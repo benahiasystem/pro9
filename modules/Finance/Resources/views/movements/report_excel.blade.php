@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="es">
     <head>
@@ -121,9 +122,9 @@
                                     <td class="celda">{{$value->payment->associated_record_payment->currency_type_id}}</td>
                                     <td class="celda">{{$value->instance_type_description}}</td>
 
-                                    <td class="celda"> {{ ($value->type_movement == 'input') ? "S/".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
-                                    <td class="celda"> {{ ($value->type_movement == 'output') ? "S/".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
-                                    <td class="celda">S/{{ $balance }}</td>
+                                    <td class="celda"> {{ ($value->type_movement == 'input') ? "Bs.".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
+                                    <td class="celda"> {{ ($value->type_movement == 'output') ? "Bs.".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
+                                    <td class="celda">Bs.{{ $balance }}</td>
                                 </tr>
 
 
@@ -132,9 +133,9 @@
                         <tfoot>
                             <tr>
                                 <td colspan="9" class="celda"></td>
-                                <td class="celda">S/{{$total_input}}</td>
-                                <td class="celda">S/{{$total_output}}</td>
-                                <td class="celda">S/{{$total_input - $total_output}}</td>
+                                <td class="celda">Bs.{{$total_input}}</td>
+                                <td class="celda">Bs.{{$total_output}}</td>
+                                <td class="celda">Bs.{{$total_input - $total_output}}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -147,3 +148,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

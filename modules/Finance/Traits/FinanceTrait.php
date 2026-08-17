@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace Modules\Finance\Traits;
 
     use App\Models\Tenant\{Document, DocumentPayment, PurchasePayment, SaleNotePayment, PurchaseSettlementPayment, SaleNote};
@@ -119,12 +121,12 @@
                 'cash_id' => $cash->id,
                 $documentField => $document->id,
             ]) : null;
-            
+
             $cashDocument = $cash->cash_documents()->updateOrCreate([
                 $documentField => $id
             ]);
 
-            
+
             $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
                 CashDocumentPayment::updateOrCreate([
                     'cash_id' => $cash->id,
@@ -302,7 +304,7 @@
          *
          * @return array
          */
-        public function getBalanceByCash($cash, $requestCurrencyTipeId = 'PEN')
+        public function getBalanceByCash($cash, $requestCurrencyTipeId = 'VES')
         {
 
             $document_payment = $this->getSumPayment($cash, DocumentPayment::class, $requestCurrencyTipeId);
@@ -372,7 +374,7 @@
 
         }
 
-        public function getSumPayment($record, $model, $requestCurrencyTipeId = 'PEN')
+        public function getSumPayment($record, $model, $requestCurrencyTipeId = 'VES')
         {
             return $record->where('payment_type', $model)->sum(function ($row) use($model, $requestCurrencyTipeId) {
 
@@ -397,7 +399,7 @@
             });
         }
 
-        public function getTotalCreditNotes($record, $requestCurrencyTipeId = 'PEN')
+        public function getTotalCreditNotes($record, $requestCurrencyTipeId = 'VES')
         {
 
             $credit_notes = $record->affected_documents->where('note_type', 'credit');
@@ -415,9 +417,9 @@
 
         }
 
-        public function calculateTotalCurrencyType($record, $payment, $requestCurrencyTipeId = 'PEN')
+        public function calculateTotalCurrencyType($record, $payment, $requestCurrencyTipeId = 'VES')
         {
-            if($requestCurrencyTipeId == 'PEN') {
+            if($requestCurrencyTipeId == 'VES') {
                 return ($record->currency_type_id === 'USD') ? $payment * $record->exchange_rate_sale : $payment;
             }
             else {
@@ -551,7 +553,7 @@
          *
          * @return Collection|\Illuminate\Support\Collection
          */
-        public function getBalanceByBankAcounts($bank_accounts,  $requestCurrencyTipeId = 'PEN')
+        public function getBalanceByBankAcounts($bank_accounts,  $requestCurrencyTipeId = 'VES')
         {
 
             $exchangeRate = ExchangeRate::where('date', date('Y-m-d'))->first();
@@ -870,7 +872,7 @@
 
 
         /**
-         * 
+         *
          * Obtener soap_type_id para registro de entorno
          *
          * @return string
@@ -881,3 +883,5 @@
         }
 
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

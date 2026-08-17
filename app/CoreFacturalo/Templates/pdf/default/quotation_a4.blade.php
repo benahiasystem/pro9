@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
     //dd($document->customer);
@@ -94,7 +95,7 @@
                 <h5 class="text-center">COTIZACIÓN</h5>
                 <h3 class="text-center">{{ $tittle }}</h3>
             </td>
-        @endif        
+        @endif
     </tr>
 </table>
 <table class="full-width mt-5">
@@ -166,11 +167,11 @@
     </tr>
     @endif
         <tr>
-            <td class="align-top">MONEDA: 
+            <td class="align-top">MONEDA:
             </td>
             <td>
-                @if($document->currency_type_id == 'PEN')
-                Soles
+                @if($document->currency_type_id == 'VES')
+                Bolívares
                 @elseif($document->currency_type_id == 'USD')
                 Dolares
                 @endif
@@ -307,7 +308,7 @@
 
         @if($show_due)
             <th class="border-top-bottom text-center py-2 px-1">F. VENC.</th>
-        @endif 
+        @endif
         <th class="border-top-bottom text-right py-2 col-total">P.UNIT</th>
         <th class="border-top-bottom text-right py-2" width="8%">DTO.</th>
         <th class="border-top-bottom text-right py-2 col-total">TOTAL</th>
@@ -421,7 +422,7 @@
                         -
                     @endif
                 </td>
-            @endif    
+            @endif
             <td class="text-right align-top">{{ number_format($row->unit_price, 2) }}</td>
             <td class="text-right align-top">
                 @if($row->discounts)
@@ -592,3 +593,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

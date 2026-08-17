@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -132,8 +133,8 @@
         <td class="celda">{{ number_format($total_purchase_unit_price, 2, '.','') }}</td>
         <td class="celda">{{ $total}}</td>
         <td class="celda">{{ number_format($total_sale_unit_price, 2, '.','') }}</td>
-        <td class="celda">S/ {{ number_format($total_profit,2,'.','') }} </td>
-        <td class="celda">S/ {{number_format($total_all_profit,2,'.','')}}</td>
+        <td class="celda">Bs. {{ number_format($total_profit,2,'.','') }} </td>
+        <td class="celda">Bs. {{number_format($total_all_profit,2,'.','')}}</td>
         <td colspan="4"
             class="celda"></td>
     </tr>
@@ -141,3 +142,5 @@
 </table>
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

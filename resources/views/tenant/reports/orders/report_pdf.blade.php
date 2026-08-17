@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
 @endphp
@@ -79,15 +80,17 @@
       <td>{{ $row->cantidad }}</td>
       <td>{{ $row->currency_type_id }}</td>
       <td>{{ $row->currency_type->symbol }}{{ $row->sale_unit_price }}</td>
-      <td>S/ {{ $row->sub_total }}</td>
+      <td>Bs. {{ $row->sub_total }}</td>
     </tr>
     @endforeach
     <tr><td></td></tr>
     <tr>
-      <td colspan="4" class="text-right font-bold desc">TOTAL A PAGAR: S/ {{ number_format($records->total, 2) }}</td>
+      <td colspan="4" class="text-right font-bold desc">TOTAL A PAGAR: Bs. {{ number_format($records->total, 2) }}</td>
     </tr>
   </tbody>
 </table>
 
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <section class="card card-dashboard pm-panel">
     <div class="card-body">
@@ -14,7 +15,7 @@
           <li v-for="(label, index) in labels" :key="index" class="pm-legend-item">
             <span class="pm-dot" :style="{ background: palette[index % palette.length] }"></span>
             <span class="pm-label text-truncate">{{ label }}</span>
-            <span class="pm-value">S/ {{ values[index] | pmMoney }}</span>
+            <span class="pm-value">Bs. {{ values[index] | pmMoney }}</span>
           </li>
         </ul>
       </div>
@@ -71,7 +72,7 @@ export default {
                 value: {
                   fontSize: "18px",
                   fontWeight: 700,
-                  formatter: (val) => "S/ " + this.formatK(val),
+                  formatter: (val) => "Bs. " + this.formatK(val),
                 },
                 total: {
                   show: true,
@@ -79,7 +80,7 @@ export default {
                   label: "COBRADO",
                   color: "#9ca3af",
                   fontSize: "11px",
-                  formatter: () => "S/ " + this.formatK(this.total),
+                  formatter: () => "Bs. " + this.formatK(this.total),
                 },
               },
             },
@@ -88,7 +89,7 @@ export default {
         tooltip: {
           y: {
             formatter: (val) =>
-              "S/ " +
+              "Bs. " +
               Number(val).toLocaleString("es-PE", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -183,3 +184,5 @@ export default {
   color: #fff !important;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

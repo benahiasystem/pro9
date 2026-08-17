@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('ecommerce::layouts.layout_ecommerce_cart.index')
 
 @push('styles')
@@ -272,7 +273,7 @@
                         <template v-if="records.length > 0">
                             <b>@{{ records.length }} @{{ records.length === 1 ? 'producto' : 'productos' }}</b>
                             <span class="head-summary-sep">·</span>
-                            <span class="head-summary-amt">S/ @{{ summary.total }}</span>
+                            <span class="head-summary-amt">Bs. @{{ summary.total }}</span>
                         </template>
                         <span v-else class="head-summary-warn">Carrito vacío</span>
                     </span>
@@ -518,14 +519,14 @@
                                             >
                                             <span>@{{ zone.name }}</span>
                                         </span>
-                                        <strong class="option-card-price">S/ @{{ parseFloat(zone.price).toFixed(2) }}</strong>
+                                        <strong class="option-card-price">Bs. @{{ parseFloat(zone.price).toFixed(2) }}</strong>
                                     </label>
                                 </div>
 
                                 {{-- Una sola zona disponible: mostrar informativo --}}
                                 <div v-else-if="availableDeliveryZones.length === 1 && deliveryZone" class="ship-note ship-note--ok mt-2">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5 -5"/></svg>
-                                    Envío disponible: <strong>@{{ deliveryZone.name }}</strong> &mdash; S/ @{{ parseFloat(deliveryZone.price).toFixed(2) }}
+                                    Envío disponible: <strong>@{{ deliveryZone.name }}</strong> &mdash; Bs. @{{ parseFloat(deliveryZone.price).toFixed(2) }}
                                 </div>
                             </template>
                         </div>
@@ -739,7 +740,7 @@
                         <p>Completa tus datos de contacto y la información de envío para habilitar los métodos de pago.</p>
                     </div>
                     <div class="pay-methods" v-if="isLoggedIn || isGuestCheckoutComplete" role="radiogroup">
-                        
+
                         <label v-if="enableCulqi" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'culqi' }">
                             <input type="radio" v-model="selectedPaymentMethod" value="culqi" autocomplete="off">
                             <span class="pay-method-ic">
@@ -804,7 +805,7 @@
                             </span>
                             <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
-                        
+
                         <div v-if="selectedPaymentMethod === 'cash'" class="pay-method-panel">
                             <p v-if="cashPaymentDescription">@{{ cashPaymentDescription }}</p>
                             <button
@@ -823,7 +824,7 @@
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
-                        
+
                         <div v-if="selectedPaymentMethod === 'yape'" class="pay-method-panel">
                             <p>Escanea el código QR desde tu app de Yape.</p>
                             @if(!empty($payment_configuration->image_url_yape))
@@ -855,7 +856,7 @@
                             </span>
                             <span class="pay-method-label">Transferencia bancaria</span>
                         </label>
-                        
+
                         <div v-if="selectedPaymentMethod === 'transfer'" class="pay-method-panel">
                             <p>Realiza el depósito en alguna de nuestras cuentas bancarias y envíanos el voucher por WhatsApp.</p>
                             @if(isset($bank_accounts) && count($bank_accounts) > 0)
@@ -907,15 +908,15 @@
 
                         <tr v-if="summary.total_exonerated > 0">
                             <td>Op. exoneradas</td>
-                            <td>S/ @{{ summary.total_exonerated }}</td>
+                            <td>Bs. @{{ summary.total_exonerated }}</td>
                         </tr>
                         <tr v-if="summary.total_taxed > 0">
                             <td>Op. gravada</td>
-                            <td>S/ @{{ summary.total_taxed }}</td>
+                            <td>Bs. @{{ summary.total_taxed }}</td>
                         </tr>
                         <tr v-if="summary.total_igv > 0">
                             <td>IGV (18%)</td>
-                            <td>S/ @{{ summary.total_igv }}</td>
+                            <td>Bs. @{{ summary.total_igv }}</td>
                         </tr>
                         <tr v-if="appliedCoupon && appliedCoupon.code">
                             <td>
@@ -923,18 +924,18 @@
                                 <button class="coupon-remove" @click="removeCoupon">Eliminar</button>
                             </td>
                             <td>
-                                &minus; S/ @{{ appliedCoupon.discount }}
+                                &minus; Bs. @{{ appliedCoupon.discount }}
                             </td>
                         </tr>
                         <tr v-if="deliveryZone && parseFloat(deliveryZone.price) > 0">
                             <td>Envío <small class="text-muted">(@{{ deliveryZone.name }})</small></td>
-                            <td>S/ @{{ summary.delivery }}</td>
+                            <td>Bs. @{{ summary.delivery }}</td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
                             <td>Total</td>
-                            <td>S/ @{{summary.total}}</td>
+                            <td>Bs. @{{summary.total}}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -1228,11 +1229,11 @@
                     <span class="o-amt">@{{ it.symbol }} @{{ it.total }}</span>
                 </div>
                 <div class="o-sep"></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_exonerated) > 0">Op. exoneradas <span class="v">S/ @{{ successOrder.total_exonerated }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_taxed) > 0">Op. gravada <span class="v">S/ @{{ successOrder.total_taxed }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_igv) > 0">IGV (18%) <span class="v">S/ @{{ successOrder.total_igv }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.delivery) > 0">Envío <span class="v">S/ @{{ successOrder.delivery }}</span></div>
-                <div class="o-total"><span class="l">Total pagado</span><span class="a">S/ @{{ successOrder.total }}</span></div>
+                <div class="o-row" v-if="parseFloat(successOrder.total_exonerated) > 0">Op. exoneradas <span class="v">Bs. @{{ successOrder.total_exonerated }}</span></div>
+                <div class="o-row" v-if="parseFloat(successOrder.total_taxed) > 0">Op. gravada <span class="v">Bs. @{{ successOrder.total_taxed }}</span></div>
+                <div class="o-row" v-if="parseFloat(successOrder.total_igv) > 0">IGV (18%) <span class="v">Bs. @{{ successOrder.total_igv }}</span></div>
+                <div class="o-row" v-if="parseFloat(successOrder.delivery) > 0">Envío <span class="v">Bs. @{{ successOrder.delivery }}</span></div>
+                <div class="o-total"><span class="l">Total pagado</span><span class="a">Bs. @{{ successOrder.total }}</span></div>
                 <div class="o-pay">
                     <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                     Pago: @{{ successOrder.paymentLabel }} · @{{ successOrder.deliveryLabel }}
@@ -1417,7 +1418,7 @@
         if (precio > 0) {
             Culqi.settings({
                 title: "Productos Ecommerce",
-                currency: 'PEN',
+                currency: 'VES',
                 description: 'Compras Ecommerce Facturador Pro',
                 amount: precio
             });
@@ -1575,3 +1576,5 @@
 <script src="{{ route('google_maps_script') }}"></script>
 
 @endpush
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

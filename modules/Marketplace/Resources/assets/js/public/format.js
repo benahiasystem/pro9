@@ -1,3 +1,4 @@
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 // Números compactos para el público: 940, 2.5k, 12k, 1.3M
 //
 // El valor exacto no le aporta nada a un vecino que está eligiendo dónde
@@ -19,7 +20,7 @@ function short(n) {
     return String(n < 10 ? Math.round(n * 10) / 10 : Math.round(n))
 }
 
-// Precio con símbolo y dos decimales: «S/ 12.50», «S/ 1,234.00». El símbolo lo
+// Precio con símbolo y dos decimales: «Bs. 12.50», «Bs. 1,234.00». El símbolo lo
 // decide el admin (ajuste currency_symbol). Siempre dos decimales, con
 // separador de miles, que es como se lee un precio.
 export function formatPrice(value, symbol) {
@@ -31,5 +32,7 @@ export function formatPrice(value, symbol) {
     const [int, dec] = n.toFixed(2).split('.')
     const withThousands = int.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 
-    return `${symbol || 'S/'} ${withThousands}.${dec}`
+    return `${symbol || 'Bs.'} ${withThousands}.${dec}`
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

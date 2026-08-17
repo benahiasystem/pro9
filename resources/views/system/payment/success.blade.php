@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('system.guest-register.layouts.main')
 
 @push('styles')
@@ -69,7 +70,7 @@
             <div class="payment-success__icon"><i class="fa fa-check"></i></div>
             <h1 class="payment-success__title">¡Pago confirmado!</h1>
             <p class="payment-success__order">Orden #{{ $order_number }}</p>
-            <p class="payment-success__amount">S/ {{ number_format($amount, 2) }}</p>
+            <p class="payment-success__amount">Bs. {{ number_format($amount, 2) }}</p>
 
             @if($is_autoregistro)
                 <div class="payment-success__next">
@@ -87,3 +88,5 @@
     </div>
 </section>
 @endsection
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <tenant-checkout-izipay @submit="submitChild" :isTenant="true" :form="_form" :disabled="disabled" v-if="type === 'izipay' && up" />
@@ -14,7 +15,7 @@
 /*
         <checkout-tenant :form="{
             amount: 50 * 100,
-            currency: 'PEN',
+            currency: 'VES',
             orderId: '123456',
             description: 'Pago de prueba',
             customer: {
@@ -29,9 +30,9 @@
 /**
  *  form: {
  *    amount: 0,
- *    currency: 'PEN', 
+ *    currency: 'VES',
  *    order_id: '',   -> Unicamente para Izipay o Culqi (order)
- *    description: '', -> Unicamente para Culqi 
+ *    description: '', -> Unicamente para Culqi
  *    customer: {
  *      name: '',
  *      email: '',
@@ -122,3 +123,4 @@ export default {
     }
 }
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

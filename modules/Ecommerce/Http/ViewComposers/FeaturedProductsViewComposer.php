@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Ecommerce\Http\ViewComposers;
 
 
@@ -31,7 +33,7 @@ class FeaturedProductsViewComposer
                 'category_id' => $row->category_id,
                 'name' => $row->name,
                 'second_name' => $row->second_name,
-                'sale_unit_price' => ($row->currency_type_id === 'PEN') ? $sale_unit_price : $sale_unit_price * $exchange_rate_sale,
+                'sale_unit_price' => ($row->currency_type_id === 'VES') ? $sale_unit_price : $sale_unit_price * $exchange_rate_sale,
                 'sale_unit' => $sale_unit_price,
                 'currency_type_id' => $row->currency_type_id,
                 'has_igv' => (bool) $row->has_igv,
@@ -60,3 +62,5 @@ class FeaturedProductsViewComposer
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

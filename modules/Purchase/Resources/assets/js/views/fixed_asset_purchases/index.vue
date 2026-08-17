@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -33,7 +34,7 @@
                         <th>Proveedor</th>
                         <th>Estado</th>
                         <th>Número</th>
-                        <th>Productos</th> 
+                        <th>Productos</th>
                         <th class="text-center">Moneda</th>
                         <th v-if="columns.total_free.visible"  class="text-end">T.Gratuita</th>
                         <th v-if="columns.total_unaffected.visible" class="text-end">T.Inafecta</th>
@@ -70,13 +71,13 @@
                         </td>
 
                         <td class="text-center">{{ row.currency_type_id }}</td>
-                        <td v-if="columns.total_free.visible" class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total_free) }}</td>
-                        <td v-if="columns.total_unaffected.visible" class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total_unaffected) }}</td>
-                        <td v-if="columns.total_exonerated.visible" class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total_exonerated) }}</td>
-                        <td v-if="columns.total_taxed.visible" class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total_taxed) }}</td>
-                        <td v-if="columns.total_igv.visible" class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total_igv) }}</td>
+                        <td v-if="columns.total_free.visible" class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_free) }}</td>
+                        <td v-if="columns.total_unaffected.visible" class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_unaffected) }}</td>
+                        <td v-if="columns.total_exonerated.visible" class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_exonerated) }}</td>
+                        <td v-if="columns.total_taxed.visible" class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_taxed) }}</td>
+                        <td v-if="columns.total_igv.visible" class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total_igv) }}</td>
                         <!-- <td v-if="columns.total_perception.visible" class="text-end">{{ row.total_perception ? row.total_perception : 0 }}</td> -->
-                        <td class="text-end">{{row.currency_type_id === 'PEN' ? 'S/' : '$'}} {{ formatDecimal(row.total) }}</td>
+                        <td class="text-end">{{row.currency_type_id === 'VES' ? 'Bs.' : '$'}} {{ formatDecimal(row.total) }}</td>
                         <td class="text-end">
 
                             <a v-if="row.state_type_id != '11'" :href="`/${resource}/create/${row.id}`" type="button" class="btn btn-xs btn-info btn-shad me-1" title="Editar">
@@ -93,10 +94,10 @@
                     </tr>
                 </data-table>
             </div>
- 
+
         </div>
 
-         
+
     </div>
 </template>
 
@@ -155,7 +156,7 @@
             this.loadDecimalQuantity();
             this.loadColumnVisibility();
         },
-        methods: { 
+        methods: {
             async loadDecimalQuantity() {
                 try {
                     const response = await this.$http.get('/configurations/record')
@@ -206,3 +207,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

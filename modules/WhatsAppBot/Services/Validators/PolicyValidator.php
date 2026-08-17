@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\WhatsAppBot\Services\Validators;
 
 class PolicyValidator implements DocumentValidator
@@ -27,7 +29,7 @@ class PolicyValidator implements DocumentValidator
 
         if ($type === '03' && empty($customerDocument) && $total > self::MAX_AMOUNT_BOLETA_NO_DNI) {
             return ValidationResult::fail(
-                'Boleta sin DNI no puede exceder S/ ' . number_format(self::MAX_AMOUNT_BOLETA_NO_DNI, 2) . '. Pide el DNI al cliente.',
+                'Boleta sin DNI no puede exceder Bs. ' . number_format(self::MAX_AMOUNT_BOLETA_NO_DNI, 2) . '. Pide el DNI al cliente.',
                 'boleta_no_dni_amount_exceeded'
             );
         }
@@ -42,3 +44,5 @@ class PolicyValidator implements DocumentValidator
         return ValidationResult::ok();
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

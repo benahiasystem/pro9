@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 /**
  * Estructura efectiva clonada desde `tenancy_bbc`.
  * Tabla: `configurations`.
@@ -87,7 +89,7 @@
  * - `mi_tienda_pe`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `group_items_generate_document`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
  * - `change_free_affectation_igv`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `currency_type_id`: varchar(255); NULL; DEFAULT PEN; COLLATE utf8mb4_unicode_ci — Id de cat_currency_types_id
+ * - `currency_type_id`: varchar(255); NULL; DEFAULT VES; COLLATE utf8mb4_unicode_ci — Id de cat_currency_types_id
  * - `select_available_price_list`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `show_extra_info_to_item`: tinyint(3) unsigned; NULL; DEFAULT 0 — Habilita datos extra para item
  * - `enabled_global_igv_to_purchase`: tinyint(3) unsigned; NULL; DEFAULT 0 — Habilita el igv global en la compra. Sobreescribe has_igv del item
@@ -343,7 +345,7 @@ CREATE TABLE `configurations` (
   `mi_tienda_pe` tinyint(1) NOT NULL DEFAULT '0',
   `group_items_generate_document` tinyint(1) NOT NULL DEFAULT '1',
   `change_free_affectation_igv` tinyint(1) NOT NULL DEFAULT '0',
-  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'PEN' COMMENT 'Id de cat_currency_types_id',
+  `currency_type_id` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT 'VES' COMMENT 'Id de cat_currency_types_id',
   `select_available_price_list` tinyint(1) NOT NULL DEFAULT '0',
   `show_extra_info_to_item` tinyint(3) unsigned DEFAULT '0' COMMENT 'Habilita datos extra para item',
   `enabled_global_igv_to_purchase` tinyint(3) unsigned DEFAULT '0' COMMENT 'Habilita el igv global en la compra. Sobreescribe has_igv del item',
@@ -516,3 +518,5 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `configurations`');
     }
 };
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

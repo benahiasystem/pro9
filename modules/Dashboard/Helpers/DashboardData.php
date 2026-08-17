@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Dashboard\Helpers;
 
 use App\Models\Tenant\Document;
@@ -156,7 +158,7 @@ class DashboardData
     }
 
     /**
-     * KPIs de un rango (todas las sucursales), normalizado a PEN.
+     * KPIs de un rango (todas las sucursales), normalizado a VES.
      * net_utility: ventas - costo de productos vendidos - gastos (por item).
      */
     private function previousRange($date_start, $date_end)
@@ -875,11 +877,11 @@ class DashboardData
                                            ->get();
         }
 
-        //PEN
+        //VES
         $sale_note_total_pen = 0;
         $sale_note_total_payment_pen = 0;
 
-        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'PEN'))->sum('total');
+        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->sum('total');
 
         //USD
         $sale_note_total_usd = 0;
@@ -889,7 +891,7 @@ class DashboardData
         foreach ($sale_notes as $sale_note)
         {
 
-            if($sale_note->currency_type_id == 'PEN'){
+            if($sale_note->currency_type_id == 'VES'){
 
                 $sale_note_total_payment_pen += collect($sale_note->payments)->sum('payment');
 
@@ -935,9 +937,9 @@ class DashboardData
 
 
     /**
-     * 
+     *
      * Obtener totales de cpe
-     * 
+     *
      * Usado en:
      * App\Traits\LockedEmissionTrait - Control de limite de ventas mensual
      *
@@ -959,11 +961,11 @@ class DashboardData
 
         $sale_notes = $sale_notes_query->get();
 
-        //PEN
+        //VES
         $sale_note_total_pen = 0;
         $sale_note_total_payment_pen = 0;
 
-        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'PEN'))->sum('total');
+        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->sum('total');
 
         //USD
         $sale_note_total_usd = 0;
@@ -973,7 +975,7 @@ class DashboardData
         foreach ($sale_notes as $sale_note)
         {
 
-            if($sale_note->currency_type_id == 'PEN'){
+            if($sale_note->currency_type_id == 'VES'){
 
                 $sale_note_total_payment_pen += collect($sale_note->payments)->sum('payment');
 
@@ -1012,12 +1014,12 @@ class DashboardData
                 ->whereIn('state_type_id', ['01','03','05','07','13'])
                 ->get();
         }
-        //PEN
+        //VES
         $document_total_pen = 0;
         $document_total_payment_pen = 0;
         $document_total_note_credit_pen = 0;
 
-        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'PEN')->sum('total');
+        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'VES')->sum('total');
 
 
         //USD
@@ -1037,7 +1039,7 @@ class DashboardData
 
         foreach ($documents as $document)
         {
-            if($document->currency_type_id == 'PEN'){
+            if($document->currency_type_id == 'VES'){
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
 
@@ -1096,12 +1098,12 @@ class DashboardData
             ]
         ];
     }
-    
-    
+
+
     /**
-     * 
+     *
      * Obtener totales de cpe
-     * 
+     *
      * Usado en:
      * App\Traits\LockedEmissionTrait - Control de limite de ventas mensual
      *
@@ -1121,13 +1123,13 @@ class DashboardData
         }
 
         $documents = $documents_query->get();
-        
-        //PEN
+
+        //VES
         $document_total_pen = 0;
         $document_total_payment_pen = 0;
         $document_total_note_credit_pen = 0;
 
-        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'PEN')->sum('total');
+        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'VES')->sum('total');
 
 
         //USD
@@ -1147,7 +1149,7 @@ class DashboardData
 
         foreach ($documents as $document)
         {
-            if($document->currency_type_id == 'PEN'){
+            if($document->currency_type_id == 'VES'){
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
 
@@ -1180,7 +1182,7 @@ class DashboardData
     }
 
     /**
-     * Total de ventas (comprobantes netos de NC + notas de venta), normalizado a PEN
+     * Total de ventas (comprobantes netos de NC + notas de venta), normalizado a VES
      *
      * @param int    $establishment_id
      * @param string $date_start  Y-m-d
@@ -1272,11 +1274,11 @@ class DashboardData
 
 
         //DOCUMENT
-        //PEN
+        //VES
         $document_total_pen = 0;
         $document_total_note_credit_pen = 0;
 
-        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'PEN')->sum('total');
+        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'VES')->sum('total');
 
         //USD
         $document_total_usd = 0;
@@ -1297,7 +1299,7 @@ class DashboardData
 
             if(in_array($document->state_type_id, ['01','03','05','07','13'])){
 
-                if($document->currency_type_id == 'PEN'){
+                if($document->currency_type_id == 'VES'){
                     $document_total_note_credit_pen += ($document->document_type_id == '07') ? $document->total:0; //nota de credito
                 }else{
                     $document_total_note_credit_usd += ($document->document_type_id == '07') ? $document->total * $document->exchange_rate_sale:0; //nota de credito
@@ -1317,10 +1319,10 @@ class DashboardData
 
         //SALE NOTE
 
-        //PEN
+        //VES
         $sale_note_total_pen = 0;
 
-        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'PEN'))->sum('total');
+        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->sum('total');
 
         //USD
         $sale_note_total_usd = 0;
@@ -1438,7 +1440,7 @@ class DashboardData
 
             $sale_note_total_pen = $sale_notes->filter(function ($row) use($h_format) {
                 return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->where('currency_type_id', 'PEN')->sum('total');
+            })->where('currency_type_id', 'VES')->sum('total');
 
             $sale_note_total_col_usd = $sale_notes->filter(function ($row) use($h_format) {
                 return substr($row->time_of_issue, 0, 2) === $h_format;
@@ -1463,7 +1465,7 @@ class DashboardData
 
             $document_total_pen = $documents->filter(function ($row) use($h_format) {
                 return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'PEN')->whereIn('document_type_id', ['01','03','08'])->sum('total');
+            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'VES')->whereIn('document_type_id', ['01','03','08'])->sum('total');
 
             $document_total_col_usd = $documents->filter(function ($row) use($h_format) {
                 return substr($row->time_of_issue, 0, 2) === $h_format;
@@ -1476,7 +1478,7 @@ class DashboardData
             //NC
             $document_total_note_credit_pen = $documents->filter(function ($row) use($h_format) {
                 return substr($row->time_of_issue, 0, 2) === $h_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'PEN')->sum('total');
+            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'VES')->sum('total');
 
             $document_total_nc_col_usd = $documents->filter(function ($row) use($h_format) {
                 return substr($row->time_of_issue, 0, 2) === $h_format;
@@ -1515,7 +1517,7 @@ class DashboardData
         {
 
             //SALE NOTE
-            $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'PEN'))->where('date_of_issue', $d_start)->sum('total');
+            $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->where('date_of_issue', $d_start)->sum('total');
 
             $sale_note_total_usd = collect($sale_notes->where('currency_type_id', 'USD'))->where('date_of_issue', $d_start)->map(function ($item, $key) {
                 return $item->total * $item->exchange_rate_sale;
@@ -1527,7 +1529,7 @@ class DashboardData
             //DOCUMENT
             $document_total_pen = collect($documents)->whereIn('state_type_id', ['01','03','05','07','13'])
                                                  ->whereIn('document_type_id', ['01','03','08'])
-                                                 ->where('currency_type_id', 'PEN')
+                                                 ->where('currency_type_id', 'VES')
                                                  ->where('date_of_issue', $d_start)->sum('total');
 
             $document_total_usd = collect($documents)->whereIn('state_type_id', ['01','03','05','07','13'])
@@ -1540,7 +1542,7 @@ class DashboardData
 
             $document_total_note_credit_pen = collect($documents)->where('document_type_id', '07')
                                                             ->whereIn('state_type_id', ['01','03','05','07','13'])
-                                                            ->where('currency_type_id', 'PEN')
+                                                            ->where('currency_type_id', 'VES')
                                                             ->where('date_of_issue', $d_start)
                                                             ->sum('total');
 
@@ -1588,7 +1590,7 @@ class DashboardData
             $sale_note_total_col_usd = [];
             $sale_note_total_usd = 0;
 
-            $sale_note_total_pen = $sale_notes->where('currency_type_id', 'PEN')->filter(function ($row) use($m_format) {
+            $sale_note_total_pen = $sale_notes->where('currency_type_id', 'VES')->filter(function ($row) use($m_format) {
                 return $row->date_of_issue->format('m') === $m_format;
             })->sum('total');
 
@@ -1614,7 +1616,7 @@ class DashboardData
 
             $document_total_pen = $documents->filter(function ($row) use($m_format) {
                 return $row->date_of_issue->format('m') === $m_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'PEN')
+            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('currency_type_id', 'VES')
             ->whereIn('document_type_id', ['01','03','08'])->sum('total');
 
             $document_total_col_usd = $documents->filter(function ($row) use($m_format) {
@@ -1628,7 +1630,7 @@ class DashboardData
             //NC
             $document_total_note_credit_pen = $documents->filter(function ($row) use($m_format) {
                 return $row->date_of_issue->format('m') === $m_format;
-            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'PEN')->sum('total');
+            })->whereIn('state_type_id', ['01','03','05','07','13'])->where('document_type_id', '07')->where('currency_type_id', 'VES')->sum('total');
 
             $document_total_nc_col_usd = $documents->filter(function ($row) use($m_format) {
                 return $row->date_of_issue->format('m') === $m_format;
@@ -1773,13 +1775,13 @@ class DashboardData
             'general' => $this->totals($establishment_id, $d_start, $d_end, $period, $month_start, $month_end),
         ];
     }
-    
+
 
     /**
-     * 
+     *
      * Método para acceder a los totales (método privado)
      * El gráfico no incluye pedidos
-     * 
+     *
      * Usado en:
      * ReportController - App
      *
@@ -1796,7 +1798,7 @@ class DashboardData
         $data = $this->totals($establishment_id, $d_start, $d_end, $period, $month_start, $month_end);
 
         $total_order_notes = $this->getTotalsOrderNote($establishment_id, $d_start, $d_end);
-        
+
         $data['totals']['total_order_notes'] = $this->roundNumber($total_order_notes);
         $data['totals']['total'] = $this->roundNumber($total_order_notes + (float) $data['totals']['total']);
 
@@ -1805,3 +1807,5 @@ class DashboardData
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

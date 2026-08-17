@@ -1,3 +1,4 @@
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 import { checkPermissionEditPrices } from '@mixins/check-permission-edit-prices'
 
 export const editableRowItems = {
@@ -15,7 +16,7 @@ export const editableRowItems = {
         //     return (this.typeUser === 'admin') ? true : this.configuration.allow_edit_unit_price_to_seller
         // },
     },
-    methods: 
+    methods:
     {
         hasRowAdvancedOption(row)
         {
@@ -35,7 +36,7 @@ export const editableRowItems = {
         },
         setRowValuesFreeAffectationIgv(row, total_plastic_bag_taxes)
         {
-            if (row.affectation_igv_type.free) 
+            if (row.affectation_igv_type.free)
             {
                 row.price_type_id = '02'
                 row.unit_value = 0
@@ -57,12 +58,12 @@ export const editableRowItems = {
         {
             let total_igv = 0
 
-            switch (affectation_igv_type_id) 
+            switch (affectation_igv_type_id)
             {
                 case '10':
                     total_igv = total_base_igv * this.percentage_igv
                     break
-            
+
                 case '20':
                 case '30':
                     total_igv = 0
@@ -75,12 +76,12 @@ export const editableRowItems = {
         {
             let unit_value = 0
 
-            switch (affectation_igv_type_id) 
+            switch (affectation_igv_type_id)
             {
                 case '10':
                     unit_value = parseFloat(unit_price) / (1 + this.percentage_igv)
                     break
-            
+
                 case '20':
                 case '30':
                     unit_value = parseFloat(unit_price)
@@ -93,12 +94,12 @@ export const editableRowItems = {
         {
             let unit_price = 0
 
-            switch (affectation_igv_type_id) 
+            switch (affectation_igv_type_id)
             {
                 case '10':
                     unit_price = parseFloat(unit_value) * (1 + this.percentage_igv)
                     break
-            
+
                 case '20':
                 case '30':
                     unit_price = parseFloat(unit_value)
@@ -111,7 +112,7 @@ export const editableRowItems = {
         {
             let total_plastic_bag_taxes = 0
 
-            if (row.input_has_plastic_bag_taxes) 
+            if (row.input_has_plastic_bag_taxes)
             {
                 total_plastic_bag_taxes = _.round(row.quantity * row.item.amount_plastic_bag_taxes, 1)
                 row.total_plastic_bag_taxes = total_plastic_bag_taxes
@@ -130,7 +131,7 @@ export const editableRowItems = {
             let total_taxes = total_igv + total_plastic_bag_taxes
             let total = total_value + total_taxes
 
-            return { 
+            return {
                 total_value,
                 total_base_igv,
                 total_igv,
@@ -145,11 +146,11 @@ export const editableRowItems = {
             {
                 if(this.form.currency_type_id !== row.item.currency_type_id)
                 {
-                    if (row.item.currency_type_id === 'PEN' && this.form.currency_type_id === 'USD') 
+                    if (row.item.currency_type_id === 'VES' && this.form.currency_type_id === 'USD')
                     {
                         row.item.unit_price = this.getFormatUnitPriceRow(row.unit_price * this.form.exchange_rate_sale, row)
                     }
-                    else 
+                    else
                     {
                         row.item.unit_price = this.getFormatUnitPriceRow(row.unit_price / this.form.exchange_rate_sale, row)
                     }
@@ -179,7 +180,7 @@ export const editableRowItems = {
         changeRowTotal(row)
         {
             let input_total = row.total
-            if (row.input_has_plastic_bag_taxes) input_total -= row.total_plastic_bag_taxes 
+            if (row.input_has_plastic_bag_taxes) input_total -= row.total_plastic_bag_taxes
 
             row.unit_price = parseFloat(input_total) / parseFloat(row.quantity)
             row.unit_value = this.getFormatUnitPriceRow(this.getRowCalculatedUnitValue(row.affectation_igv_type_id, row.unit_price), row)
@@ -193,7 +194,7 @@ export const editableRowItems = {
             const { total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes } = this.startRowTotalsVariables(row, row.unit_value * row.quantity)
 
             this.setRowCalculatedTotals(row, { total_value, total_base_igv, total_igv, total_taxes })
-            
+
             this.endRowCalculateTotal(row, total_value, total_base_igv, total_igv, total_taxes, total, total_plastic_bag_taxes)
         },
         changeRowTotalValue(row)
@@ -243,3 +244,4 @@ export const editableRowItems = {
     }
 
 }
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <Keypress
@@ -354,7 +355,7 @@
                                                 <template v-if="form.detraction">
                                                     <tr v-if="form.detraction.amount > 0">
                                                         <td width="60%">M. DETRACCIÓN:</td>
-                                                        <td>S/ {{ form.detraction.amount }}</td>
+                                                        <td>Bs. {{ form.detraction.amount }}</td>
                                                         <!-- <td>{{ currency_type.symbol }} {{ form.detraction.amount }}</td> -->
                                                     </tr>
                                                 </template>
@@ -723,7 +724,7 @@
                                     <template v-if="form.detraction">
                                         <tr v-if="form.detraction.amount > 0">
                                             <td width="60%">M. DETRACCIÓN:</td>
-                                            <td>S/ {{ form.detraction.amount }}</td>
+                                            <td>Bs. {{ form.detraction.amount }}</td>
                                         </tr>
                                     </template>
 
@@ -2837,7 +2838,7 @@ export default {
 
             if (this.form.detraction) {
 
-                if (this.form.currency_type_id == 'PEN') {
+                if (this.form.currency_type_id == 'VES') {
 
                     // this.form.detraction.amount = _.round(parseFloat(this.form.total) * (parseFloat(this.form.detraction.percentage) / 100), 2)
                     this.form.detraction.amount = _.round(parseFloat(this.form.total) * (parseFloat(this.form.detraction.percentage) / 100), 0)
@@ -2871,13 +2872,13 @@ export default {
 
                 let detraction = this.form.detraction
 
-                let tot = (this.form.currency_type_id == 'PEN') ? this.form.total : (this.form.total * this.form.exchange_rate_sale)
+                let tot = (this.form.currency_type_id == 'VES') ? this.form.total : (this.form.total * this.form.exchange_rate_sale)
                 let total_restriction = (this.form.operation_type_id == '1001') ? 700 : 400
 
                 if (tot <= total_restriction)
                     return {
                         success: false,
-                        message: `El importe de la operación debe ser mayor a S/ ${total_restriction}.00 o equivalente en USD`
+                        message: `El importe de la operación debe ser mayor a Bs. ${total_restriction}.00 o equivalente en USD`
                     }
 
                 if (!detraction.detraction_type_id)
@@ -3842,3 +3843,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

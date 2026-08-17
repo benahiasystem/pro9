@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 // Modules/ClaimsBook/Http/Controllers/ClaimController.php
 
 namespace Modules\ClaimsBook\Http\Controllers;
@@ -555,7 +557,7 @@ JS;
             'receipt_series'           => 'nullable|string|max:10',
             'receipt_number'           => 'nullable|string|max:20',
             'receipt_amount'           => 'nullable|numeric|min:0',
-            'receipt_currency'         => 'nullable|in:PEN,USD',
+            'receipt_currency'         => 'nullable|in:VES,USD',
 
             // Paso 3
             'claim_type'               => 'required|in:queja,reclamo',
@@ -1159,3 +1161,5 @@ JS;
         });
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="dashboard" v-if="typeUser == 'admin'">
         <header
@@ -162,7 +163,7 @@
                                         <li v-for="(item, index) in saleNoteLegendItems" :key="index" class="sn-legend-item">
                                             <span class="sn-dot" :style="{ background: item.color }"></span>
                                             <span class="sn-label text-truncate">{{ item.label }}</span>
-                                            <span class="sn-value">S/ {{ item.value | saleNoteMoney }}</span>
+                                            <span class="sn-value">Bs. {{ item.value | saleNoteMoney }}</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -194,7 +195,7 @@
                                         <li v-for="(item, index) in documentLegendItems" :key="index" class="sn-legend-item">
                                             <span class="sn-dot" :style="{ background: item.color }"></span>
                                             <span class="sn-label text-truncate">{{ item.label }}</span>
-                                            <span class="sn-value">S/ {{ item.value | saleNoteMoney }}</span>
+                                            <span class="sn-value">Bs. {{ item.value | saleNoteMoney }}</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -226,7 +227,7 @@
                                 <div class="gt-metrics">
                                     <div v-for="item in generalLegendItems" :key="`metric-${item.label}`" class="gt-metric">
                                         <small class="text-muted">{{ item.label }}</small>
-                                        <strong>S/ {{ item.value | saleNoteMoney }}</strong>
+                                        <strong>Bs. {{ item.value | saleNoteMoney }}</strong>
                                     </div>
                                 </div>
 
@@ -311,7 +312,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>    
+                                    </div>
                                     <div class="mt-3" v-show="!loaders.balance">
                                         <table class="table-dashboard mb-0 table-sm">
                                             <tbody class="card-default">
@@ -319,29 +320,29 @@
                                                     <td class="d-flex align-items-center">
                                                         <el-popover placement="right" width="100%" trigger="hover">
                                                             <p><span class="custom-badge">T. Ventas - T. Compras/Gastos</span></p>
-                                                            <p>Total comprobantes:<span class="custom-badge pull-right">S/ {{ balance.totals.total_document }}</span></p>
-                                                            <p>Total notas de venta:<span class="custom-badge pull-right">S/ {{ balance.totals.total_sale_note }}</span></p>
-                                                            <p>Total compras:<span class="custom-badge pull-right">- S/ {{ balance.totals.total_purchase }}</span></p>
-                                                            <p>Total gastos:<span class="custom-badge pull-right">- S/ {{ balance.totals.total_expense }}</span></p>
+                                                            <p>Total comprobantes:<span class="custom-badge pull-right">Bs. {{ balance.totals.total_document }}</span></p>
+                                                            <p>Total notas de venta:<span class="custom-badge pull-right">Bs. {{ balance.totals.total_sale_note }}</span></p>
+                                                            <p>Total compras:<span class="custom-badge pull-right">- Bs. {{ balance.totals.total_purchase }}</span></p>
+                                                            <p>Total gastos:<span class="custom-badge pull-right">- Bs. {{ balance.totals.total_expense }}</span></p>
                                                             <el-button class="me-1" icon="el-icon-view" type="primary" size="mini" slot="reference" circle></el-button>
                                                         </el-popover>
                                                         Totales
                                                     </td>
-                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ balance.totals.all_totals_payment }}</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ balance.totals.all_totals_payment }}</td>
                                                 </tr>
                                                 <tr class="text-danger text-bold td-total">
                                                     <td class="d-flex align-items-center">
                                                         <el-popover placement="right" width="100%" trigger="hover">
                                                         <p><span class="custom-badge">T. Pagos Ventas - T. Pagos Compras/Gastos</span></p>
-                                                        <p>Total pagos comprobantes:<span class="custom-badge pull-right">S/ {{ balance.totals.total_payment_document }}</span></p>
-                                                        <p>Total pagos notas de venta:<span class="custom-badge pull-right">S/ {{ balance.totals.total_payment_sale_note }}</span></p>
-                                                        <p>Total pagos compras:<span class="custom-badge pull-right">- S/ {{ balance.totals.total_payment_purchase }}</span></p>
-                                                        <p>Total pagos gastos:<span class="custom-badge pull-right">- S/ {{ balance.totals.total_payment_expense }}</span></p>
+                                                        <p>Total pagos comprobantes:<span class="custom-badge pull-right">Bs. {{ balance.totals.total_payment_document }}</span></p>
+                                                        <p>Total pagos notas de venta:<span class="custom-badge pull-right">Bs. {{ balance.totals.total_payment_sale_note }}</span></p>
+                                                        <p>Total pagos compras:<span class="custom-badge pull-right">- Bs. {{ balance.totals.total_payment_purchase }}</span></p>
+                                                        <p>Total pagos gastos:<span class="custom-badge pull-right">- Bs. {{ balance.totals.total_payment_expense }}</span></p>
                                                         <el-button class="me-1" icon="el-icon-view" type="danger" size="mini" slot="reference" circle></el-button>
                                                         </el-popover>
                                                         Total pagos
                                                     </td>
-                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ balance.totals.all_totals_payment }}</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ balance.totals.all_totals_payment }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -371,7 +372,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>                                
+                                    </div>
                                     <div class="mt-3" v-show="!loaders.utility">
                                         <table class="table-dashboard mb-0 table-sm">
                                             <tbody class="card-default">
@@ -396,15 +397,15 @@
                                                 </tr>
                                                 <tr class="text-info text-bold">
                                                     <td>Ingreso</td>
-                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ utilities.totals.total_income }}</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.total_income }}</td>
                                                 </tr>
                                                 <tr class="text-danger text-bold">
                                                     <td>Egreso</td>
-                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ utilities.totals.total_egress }}</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.total_egress }}</td>
                                                 </tr>
                                                 <tr class="text-bold td-total">
                                                     <td class="">Utilidad</td>
-                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ utilities.totals.utility }}</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ utilities.totals.utility }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -451,15 +452,15 @@
                                             <tbody class="card-default">
                                                 <tr class="text-info text-bold">
                                                     <td>Total percepciones</td>
-                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ purchase.totals.purchases_total_perception }}</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ purchase.totals.purchases_total_perception }}</td>
                                                 </tr>
                                                 <tr class="text-danger text-bold">
                                                     <td>Total compras</td>
-                                                    <td class="text-end right font-weight-bold">S/&nbsp;{{ purchase.totals.purchases_total }}</td>
+                                                    <td class="text-end right font-weight-bold">Bs.&nbsp;{{ purchase.totals.purchases_total }}</td>
                                                 </tr>
                                                 <tr class="text-bold td-total">
                                                     <td class="">Total</td>
-                                                    <td class="text-end font-weight-bold">S/&nbsp;{{ purchase.totals.total }}</td>
+                                                    <td class="text-end font-weight-bold">Bs.&nbsp;{{ purchase.totals.total }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -480,7 +481,7 @@
                                     <label>Top clientes</label>
                                     <div class="mt-3">
                                         <el-checkbox  v-model="form.enabled_transaction_customer" @change="loadDataAditional">Ordenar por transacciones</el-checkbox><br>
-                                    </div>                                
+                                    </div>
                                     <div class="mt-3" v-show="!loaders.top_customers">
                                         <div class="table-responsive table-default">
                                             <table class="table table-default">
@@ -805,14 +806,14 @@ export default {
         case 'month':
           return this.form.month_start ? `Filtrado por mes: ${moment(this.form.month_start).format('MM/YYYY')}` : 'Filtrado por: Por mes';
         case 'between_months':
-          return this.form.month_start && this.form.month_end 
-            ? `Filtrado entre meses: ${moment(this.form.month_start).format('MM/YYYY')} - ${moment(this.form.month_end).format('MM/YYYY')}` 
+          return this.form.month_start && this.form.month_end
+            ? `Filtrado entre meses: ${moment(this.form.month_start).format('MM/YYYY')} - ${moment(this.form.month_end).format('MM/YYYY')}`
             : 'Filtrado por: Entre meses';
         case 'date':
           return this.form.date_start ? `Filtrado por fecha: ${moment(this.form.date_start).format('DD/MM/YYYY')}` : 'Filtrado por: Por fecha';
         case 'between_dates':
-          return this.form.date_start && this.form.date_end 
-            ? `Filtrado entre fechas: ${moment(this.form.date_start).format('DD/MM/YYYY')} - ${moment(this.form.date_end).format('DD/MM/YYYY')}` 
+          return this.form.date_start && this.form.date_end
+            ? `Filtrado entre fechas: ${moment(this.form.date_start).format('DD/MM/YYYY')} - ${moment(this.form.date_end).format('DD/MM/YYYY')}`
             : 'Filtrado por: Entre fechas';
         default:
           return 'Filtrado por: Última semana';
@@ -820,7 +821,7 @@ export default {
     },
     visibleFiltersCount() {
       let count = 2; // Siempre: Sucursal + Periodo
-      
+
       if (this.form.period === 'month') {
         count += 1; // + Mes de
       } else if (this.form.period === 'between_months') {
@@ -830,7 +831,7 @@ export default {
       } else if (this.form.period === 'between_dates') {
         count += 2; // + Fecha del + Fecha al
       }
-      
+
       return count;
     },
     filterColumnClass() {
@@ -903,7 +904,7 @@ export default {
                 value: {
                   fontSize: "18px",
                   fontWeight: 700,
-                  formatter: (val) => "S/ " + this.formatSaleNoteK(val),
+                  formatter: (val) => "Bs. " + this.formatSaleNoteK(val),
                 },
                 total: {
                   show: true,
@@ -911,7 +912,7 @@ export default {
                   label: "TOTAL",
                   color: "#9ca3af",
                   fontSize: "11px",
-                  formatter: () => "S/ " + this.formatSaleNoteK(this.saleNoteTotal),
+                  formatter: () => "Bs. " + this.formatSaleNoteK(this.saleNoteTotal),
                 },
               },
             },
@@ -920,7 +921,7 @@ export default {
         tooltip: {
           y: {
             formatter: (val) =>
-              "S/ " +
+              "Bs. " +
               Number(val).toLocaleString("es-PE", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -990,7 +991,7 @@ export default {
                 value: {
                   fontSize: "18px",
                   fontWeight: 700,
-                  formatter: (val) => "S/ " + this.formatSaleNoteK(val),
+                  formatter: (val) => "Bs. " + this.formatSaleNoteK(val),
                 },
                 total: {
                   show: true,
@@ -998,7 +999,7 @@ export default {
                   label: "TOTAL",
                   color: "#9ca3af",
                   fontSize: "11px",
-                  formatter: () => "S/ " + this.formatSaleNoteK(this.documentTotal),
+                  formatter: () => "Bs. " + this.formatSaleNoteK(this.documentTotal),
                 },
               },
             },
@@ -1007,7 +1008,7 @@ export default {
         tooltip: {
           y: {
             formatter: (val) =>
-              "S/ " +
+              "Bs. " +
               Number(val).toLocaleString("es-PE", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -1104,7 +1105,7 @@ export default {
         tooltip: {
           y: {
             formatter: (val) =>
-              "S/ " +
+              "Bs. " +
               Number(val).toLocaleString("es-PE", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -1457,3 +1458,5 @@ export default {
   },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

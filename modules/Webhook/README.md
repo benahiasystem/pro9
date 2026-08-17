@@ -76,7 +76,7 @@ Todos los eventos comparten el mismo envelope:
   "filename": "20123456789-01-F001-45",
   "state_type_id": "05",
   "state_type_description": "Aceptado",
-  "number_to_letter": "CIENTO DIECIOCHO CON 00/100 SOLES",
+  "number_to_letter": "CIENTO DIECIOCHO CON 00/100 BOLÍVARES",
   "hash": "...",
   "qr": "...",
   "date_of_issue": "2026-06-11",

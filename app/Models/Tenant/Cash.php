@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Models\Tenant;
 
 use Modules\Finance\Models\GlobalPayment;
@@ -102,7 +104,7 @@ class Cash extends ModelTenant
      */
     public function getCurrencyTypeIdAttribute()
     {
-        return 'PEN';
+        return 'VES';
     }
 
     /**
@@ -120,7 +122,7 @@ class Cash extends ModelTenant
     }
 
     public function scopeWhereActive($query)
-    { 
+    {
         return $query->where([
             ['user_id', auth()->user()->id],
             ['state', true],
@@ -131,10 +133,10 @@ class Cash extends ModelTenant
     {
         return $this->hasMany(CashDocumentCredit::class);
     }
-    
+
 
     /**
-     * 
+     *
      * Obtener total de ingresos por tipo de documento
      *
      * @return array
@@ -148,8 +150,8 @@ class Cash extends ModelTenant
                             ->sum(function($row){
                                 return $row->document->getTotalAllPayments();
                             });
-        
-        
+
+
         $sale_note_total_payments = $this->cash_documents()
                             ->whereHas('sale_note')
                             ->get()
@@ -161,25 +163,25 @@ class Cash extends ModelTenant
             'document_total_payments' => $this->generalApplyNumberFormat($document_total_payments),
             'sale_note_total_payments' => $this->generalApplyNumberFormat($sale_note_total_payments),
         ];
-        
+
     }
-    
-    
+
+
     /**
-     * 
+     *
      * Obtener comprobantes y notas de venta ordenados para reporte ingresos en caja
      *
      * @return array
      */
     public function getIncomePaymentsData()
     {
-        
+
         $documents = $this->cash_documents()
                         ->join('documents', 'documents.id', '=', 'cash_documents.document_id')
                         ->orderBy('documents.document_type_id')
                         ->orderBy('documents.created_at')
                         ->get();
-        
+
         $sale_notes = $this->cash_documents()
                             ->join('sale_notes', 'sale_notes.id', '=', 'cash_documents.sale_note_id')
                             ->orderBy('sale_notes.created_at')
@@ -189,14 +191,14 @@ class Cash extends ModelTenant
             'documents' => $documents,
             'sale_notes' => $sale_notes,
         ];
-        
+
     }
 
 
     /**
-     * 
+     *
      * Filtrar cajas del usuario que realiza la petición
-     * 
+     *
      * Usado en:
      * caja - app
      *
@@ -215,9 +217,9 @@ class Cash extends ModelTenant
                     ->latest();
     }
 
-        
+
     /**
-     * 
+     *
      * Obtener datos para api (app)
      *
      * @return array
@@ -285,7 +287,7 @@ class Cash extends ModelTenant
                         })
                         ->sum('payment');
 
-                    $final_balance += ($cash_document->sale_note->currency_type_id == 'PEN')
+                    $final_balance += ($cash_document->sale_note->currency_type_id == 'VES')
                         ? $balance
                         : ($balance * $cash_document->sale_note->exchange_rate_sale);
                 }
@@ -302,18 +304,18 @@ class Cash extends ModelTenant
                                 $query->where('cash_id', $id);
                             })
                             ->sum('payment');
-                        $final_balance += ($cash_document->document->currency_type_id == 'PEN')
+                        $final_balance += ($cash_document->document->currency_type_id == 'VES')
                             ? $balance
                             : ($balance * $cash_document->document->exchange_rate_sale);
                     }
                 } else {
                     foreach ($note as $n) {
                         if ($n->isDebit()) {
-                            $final_balance += ($n->currency_type_id == 'PEN')
+                            $final_balance += ($n->currency_type_id == 'VES')
                                 ? $n->total
                                 : ($n->total * $n->exchange_rate_sale);
                         } else {
-                            $final_balance -= ($n->currency_type_id == 'PEN')
+                            $final_balance -= ($n->currency_type_id == 'VES')
                                 ? $n->total
                                 : ($n->total * $n->exchange_rate_sale);
                         }
@@ -325,7 +327,7 @@ class Cash extends ModelTenant
 
                 $expense = $cash_document->expense_payment->expense;
                 if ($expense->state_type_id == '05') {
-                    $final_balance -= ($expense->currency_type_id == 'PEN')
+                    $final_balance -= ($expense->currency_type_id == 'VES')
                         ? $cash_document->expense_payment->payment
                         : ($cash_document->expense_payment->payment * $expense->exchange_rate_sale);
                 }
@@ -335,7 +337,7 @@ class Cash extends ModelTenant
 
                 if (in_array($cash_document->purchase->state_type_id, $valid_states)) {
                     if ($cash_document->purchase->total_canceled == 1) {
-                        $final_balance -= ($cash_document->purchase->currency_type_id == 'PEN')
+                        $final_balance -= ($cash_document->purchase->currency_type_id == 'VES')
                             ? $cash_document->purchase->total
                             : ($cash_document->purchase->total * $cash_document->purchase->exchange_rate_sale);
                     }
@@ -364,7 +366,7 @@ class Cash extends ModelTenant
 
         foreach ($incomes as $income) {
             if (in_array($income->state_type_id, $valid_states)) {
-                $final_balance += ($income->currency_type_id == 'PEN')
+                $final_balance += ($income->currency_type_id == 'VES')
                     ? $income->total
                     : ($income->total * $income->exchange_rate_sale);
             }
@@ -376,9 +378,9 @@ class Cash extends ModelTenant
         ];
     }
 
-    
+
     /**
-     * 
+     *
      * @return string
      */
     public function getStateDescriptionAttribute()
@@ -386,9 +388,9 @@ class Cash extends ModelTenant
         return ($this->state) ? 'Aperturada':'Cerrada';
     }
 
-        
+
     /**
-     * 
+     *
      * Se agrega scope polimorfico para filtrar destino en global payment
      *
      * @param  Builder $query
@@ -399,9 +401,9 @@ class Cash extends ModelTenant
         return $query;
     }
 
-    
+
     /**
-     * 
+     *
      * Obtener relaciones necesarias o aplicar filtros para reporte pagos - finanzas
      *
      * @param  Builder $query
@@ -414,9 +416,9 @@ class Cash extends ModelTenant
                     ]);
     }
 
-    
+
     /**
-     * 
+     *
      * Filtro para reporte general de caja v2
      *
      * @param  Builder $query
@@ -431,9 +433,9 @@ class Cash extends ModelTenant
         ]);
     }
 
-    
+
     /**
-     * 
+     *
      * Filtro para reporte de pagos en efectivo con destino caja
      *
      * @param  Builder $query
@@ -448,9 +450,9 @@ class Cash extends ModelTenant
         ]);
     }
 
-    
+
     /**
-     * 
+     *
      * Filtro para reporte de ingresos con destino caja - condicion de pago al contado
      *
      * @param  Builder $query
@@ -466,3 +468,5 @@ class Cash extends ModelTenant
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

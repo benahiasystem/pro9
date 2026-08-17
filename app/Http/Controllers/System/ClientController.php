@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace App\Http\Controllers\System;
 
     use App\CoreFacturalo\Helpers\Certificate\GenerateCertificate;
@@ -206,7 +208,7 @@ use Illuminate\Support\Facades\Mail;
             }
 
             if (!$this->planMeetsNrusLimits($plan)) {
-                return 'El plan seleccionado no cumple los límites NRUS (ventas máx. S/ 8000 y 1 sucursal, sin límites ilimitados).';
+                return 'El plan seleccionado no cumple los límites NRUS (ventas máx. Bs. 8000 y 1 sucursal, sin límites ilimitados).';
             }
 
             return null;
@@ -1591,3 +1593,5 @@ use Illuminate\Support\Facades\Mail;
             }
         }
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

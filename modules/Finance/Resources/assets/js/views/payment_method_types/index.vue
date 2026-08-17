@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -29,22 +30,22 @@
                                 <!-- <th class="text-center"> <strong>Saldo</strong></th> -->
                             </tr>
                             <tr slot-scope="{ index, row }">
-                                <td>{{ index }}</td> 
+                                <td>{{ index }}</td>
                                 <td>{{row.description}}</td>
-                                <td class="text-center">{{ (row.document_payment != '-') ? 'S/ '+row.document_payment : row.document_payment}}</td>
-                                <td class="text-center">{{ (row.sale_note_payment != '-') ? 'S/ '+row.sale_note_payment : row.sale_note_payment}}</td>
-                                <td v-if="configuration.cotizaction_finance" class="text-center">{{ (row.quotation_payment != '-') ? 'S/ '+row.quotation_payment : row.quotation_payment}}</td>
-                                <td class="text-center">{{ (row.contract_payment != '-') ? 'S/ '+row.contract_payment : row.contract_payment}}</td>
-                                <td class="text-center">{{ (row.technical_service_payment != '-') ? 'S/ '+row.technical_service_payment : row.technical_service_payment}}</td>
-                                <td class="text-center">{{ (row.income_payment != '-') ? 'S/ '+row.income_payment : row.income_payment}}</td>
-                                <td class="text-center">{{ (row.purchase_payment != '-') ? 'S/ '+row.purchase_payment : row.purchase_payment}}</td>
-                                <td class="text-center">{{ (row.expense_payment != '-') ? 'S/ '+row.expense_payment : row.expense_payment}}</td>
+                                <td class="text-center">{{ (row.document_payment != '-') ? 'Bs. '+row.document_payment : row.document_payment}}</td>
+                                <td class="text-center">{{ (row.sale_note_payment != '-') ? 'Bs. '+row.sale_note_payment : row.sale_note_payment}}</td>
+                                <td v-if="configuration.cotizaction_finance" class="text-center">{{ (row.quotation_payment != '-') ? 'Bs. '+row.quotation_payment : row.quotation_payment}}</td>
+                                <td class="text-center">{{ (row.contract_payment != '-') ? 'Bs. '+row.contract_payment : row.contract_payment}}</td>
+                                <td class="text-center">{{ (row.technical_service_payment != '-') ? 'Bs. '+row.technical_service_payment : row.technical_service_payment}}</td>
+                                <td class="text-center">{{ (row.income_payment != '-') ? 'Bs. '+row.income_payment : row.income_payment}}</td>
+                                <td class="text-center">{{ (row.purchase_payment != '-') ? 'Bs. '+row.purchase_payment : row.purchase_payment}}</td>
+                                <td class="text-center">{{ (row.expense_payment != '-') ? 'Bs. '+row.expense_payment : row.expense_payment}}</td>
                                 <!-- <td class="text-center">{{row.balance}}</td>  -->
                             </tr>
                         </data-table>
                     </div>
             </div>
-    
+
         </div>
     </div>
 </template>
@@ -71,3 +72,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

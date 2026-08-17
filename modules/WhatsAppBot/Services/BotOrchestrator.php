@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\WhatsAppBot\Services;
 
 use App\Models\Tenant\Company;
@@ -135,7 +137,7 @@ class BotOrchestrator
                     $total = number_format($draft['total'] ?? 0, 2);
                     $type = ucfirst($draft['document_type_label'] ?? 'comprobante');
                     $customer = $draft['customer_name'] ?? 'consumidor final';
-                    $greeting = "Retomamos. Tenías una {$type} a {$customer} por S/ {$total} pendiente de confirmar.\n"
+                    $greeting = "Retomamos. Tenías una {$type} a {$customer} por Bs. {$total} pendiente de confirmar.\n"
                         . "¿Confirmas la emisión con \"sí\" o cancelas con \"no\"?";
                 } elseif ($resuming) {
                     $greeting = "Retomamos donde lo dejamos. ¿En qué te ayudo?";
@@ -465,13 +467,13 @@ class BotOrchestrator
             $document = \App\Models\Tenant\Document::find($documentId);
             if ($document && !empty($document->filename)) {
                 $displayName = $numberFull . '.pdf';
-                $caption = "{$type} {$numberFull} — Total S/ " . number_format($draft['total'], 2);
+                $caption = "{$type} {$numberFull} — Total Bs. " . number_format($draft['total'], 2);
                 $this->sender->sendDocumentPdf($toPhone, $document->filename, $displayName, $caption, $sessionId);
             }
 
             return [
                 'success' => true,
-                'message' => "{$type} emitida correctamente.\nNúmero: {$numberFull}\nTotal: S/ " . number_format($draft['total'], 2),
+                'message' => "{$type} emitida correctamente.\nNúmero: {$numberFull}\nTotal: Bs. " . number_format($draft['total'], 2),
             ];
         } catch (\Throwable $e) {
             Log::error('[WhatsAppBot] Excepción al emitir', [
@@ -527,3 +529,5 @@ class BotOrchestrator
         return "Ocurrió un problema al emitir el comprobante. Por favor, contacta con el administrador.";
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

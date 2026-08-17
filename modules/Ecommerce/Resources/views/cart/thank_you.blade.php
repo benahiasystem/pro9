@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('ecommerce::layouts.layout_ecommerce_cart.index')
 
 @section('content')
@@ -15,7 +16,7 @@
                 <div class="ti-row"><span class="lbl">Método de entrega</span><span class="val">{{ $deliveryLabel }}</span></div>
                 <div class="ti-row"><span class="lbl">Forma de pago</span><span class="val">{{ $paymentLabel }}</span></div>
                 <div class="ti-row"><span class="lbl">Productos</span><span class="val">{{ $itemsCount }}</span></div>
-                <div class="ti-row ti-total"><span class="lbl">Total</span><span class="val">S/ {{ number_format($order->total, 2) }}</span></div>
+                <div class="ti-row ti-total"><span class="lbl">Total</span><span class="val">Bs. {{ number_format($order->total, 2) }}</span></div>
             </div>
             <div class="ty-note">
                 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -30,3 +31,5 @@
 </div>
 
 @endsection
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
 <div class="card">
     <div class="card-header bg-info bg-info-customer-admin">
@@ -49,7 +50,7 @@
                                v-text="errors.validate_ruc_register[0]"></small>
                     </div>
                 </div>
-                
+
                 <!-- URL de registro simplificada (visible solo cuando está habilitado) -->
                 <div class="col-md-6" v-if="form.enable_guest_register">
                     <div class="form-group mb-0 position-relative">
@@ -87,7 +88,7 @@
                             <el-option
                                 v-for="plan in allPlans"
                                 :key="plan.id"
-                                :label="plan.name + ' - S/' + plan.pricing + ' (' + plan.limit_documents + ' docs / ' + plan.limit_users + ' users)'"
+                                :label="plan.name + ' - Bs.' + plan.pricing + ' (' + plan.limit_documents + ' docs / ' + plan.limit_users + ' users)'"
                                 :value="plan.id">
                             </el-option>
                         </el-select>
@@ -108,7 +109,7 @@
                             <i class="fa fa-info-circle"></i>
                         </el-tooltip>
                     </label>
-                    
+
                     <div :class="{'has-danger': errors.tenant_show_ads}"
                             class="form-group">
                         <el-switch v-model="form.tenant_show_ads"
@@ -140,9 +141,9 @@
                     </div>
                 </div>
 
-                
+
                 <div class="col-md-6">
-                    
+
                     <label class="control-label">
                         Habilitar contraseña segura
                         <el-tooltip class="item"
@@ -152,7 +153,7 @@
                             <i class="fa fa-info-circle"></i>
                         </el-tooltip>
                     </label>
-                    
+
                     <div :class="{'has-danger': errors.regex_password_client}"
                             class="form-group">
                         <el-switch v-model="form.regex_password_client"
@@ -216,7 +217,7 @@ export default {
     methods: {
         copyUrl() {
             const urlToCopy = this.registerUrl;
-            
+
             // Intentar copiar usando navigator.clipboard
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(urlToCopy)
@@ -232,7 +233,7 @@ export default {
                 this.fallbackCopy(urlToCopy);
             }
         },
-        
+
         fallbackCopy(text) {
             // Crear un textarea temporal
             const textArea = document.createElement('textarea');
@@ -242,7 +243,7 @@ export default {
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-            
+
             try {
                 const successful = document.execCommand('copy');
                 if (successful) {
@@ -254,10 +255,10 @@ export default {
                 console.error('Error en fallback copy:', err);
                 this.$message.error('Error al copiar al portapapeles');
             }
-            
+
             document.body.removeChild(textArea);
         },
-        
+
         handleCopySuccess() {
             this.urlCopied = true;
             this.$message.success('¡URL copiada al portapapeles!');
@@ -293,8 +294,8 @@ export default {
                     console.error('Error loading configuration:', error);
                 });
         },
-        successUpload(response, file, fileList) 
-        { 
+        successUpload(response, file, fileList)
+        {
             if (response.success) {
                 this.$message.success(response.message)
                 this.form.tenant_image_ads = response.name
@@ -342,3 +343,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

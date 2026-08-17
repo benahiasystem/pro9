@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="orders" v-loading="loading_submit">
         <div class="page-header pe-0">
@@ -107,7 +108,7 @@
                                                             .currency_type_id ===
                                                         "USD"
                                                             ? "$"
-                                                            : "S/"
+                                                            : "Bs."
                                                     }}
                                                     {{
                                                         Number(
@@ -129,7 +130,7 @@
                                         >
                                             <template slot-scope="scope">
                                                 <span
-                                                    >S/
+                                                    >Bs.
                                                     {{
                                                         subtotal(scope.row)
                                                     }}</span
@@ -167,7 +168,7 @@
                                 </el-popover>
                             </template>
                         </td>
-                        <td class="text-end">S/ {{ row.total }}</td>
+                        <td class="text-end">Bs. {{ row.total }}</td>
                         <td>{{ formatDate(row.created_at) }}</td>
                         <td>{{ row.reference_payment }}</td>
                         <td>
@@ -774,3 +775,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

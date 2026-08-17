@@ -30,17 +30,17 @@
       "serie_documento": "F001",
       "numero_documento": "3",
       "fecha_de_emision": "2018-10-09",
-      "codigo_tipo_moneda": "PEN",
+      "codigo_tipo_moneda": "VES",
       "pagos": [
         {
           "fecha_de_pago": "2018-10-09",
           "total_pago": 200.00,
-          "codigo_tipo_moneda": "PEN"
+          "codigo_tipo_moneda": "VES"
         }
       ],
       "tipo_de_cambio": {
-        "codigo_tipo_moneda_referencia": "PEN",
-        "codigo_tipo_moneda_objetivo": "PEN",
+        "codigo_tipo_moneda_referencia": "VES",
+        "codigo_tipo_moneda_objetivo": "VES",
         "factor": 1,
         "fecha_tipo_de_cambio": "2018-10-09"
       },
@@ -66,7 +66,7 @@
       ],
       "tipo_de_cambio": {
         "codigo_tipo_moneda_referencia": "USD",
-        "codigo_tipo_moneda_objetivo": "PEN",
+        "codigo_tipo_moneda_objetivo": "VES",
         "factor": 3.00,
         "fecha_tipo_de_cambio": "2018-10-09"
       },

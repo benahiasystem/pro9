@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Dashboard\Helpers;
 
 use App\Models\Tenant\Document;
@@ -174,7 +176,7 @@ class DashboardSalePurchase
             ->select('id', 'state_type_id', 'establishment_id', 'currency_type_id', 'total', 'exchange_rate_sale', 'total_perception')
             ->get();
 
-        $purchases_total = $purchases->where('currency_type_id', 'PEN')->sum('total');
+        $purchases_total = $purchases->where('currency_type_id', 'VES')->sum('total');
 
         $purchase_dollr = $purchases->where('currency_type_id', 'USD');
 
@@ -256,7 +258,7 @@ class DashboardSalePurchase
 
 
     /**
-     * Total de compras (normalizado a PEN) filtrado por rango de fechas.
+     * Total de compras (normalizado a VES) filtrado por rango de fechas.
      *
      * @param int    $establishment_id
      * @param string $date_start  Y-m-d
@@ -371,7 +373,7 @@ class DashboardSalePurchase
                     $move_quantity += $it->quantity;
 
                 }
-                
+
             }
 
             $difference = $totals - $total_credit_note;
@@ -436,3 +438,5 @@ class DashboardSalePurchase
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

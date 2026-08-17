@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('ecommerce::layouts.layout_account')
 @section('account_content')
 
@@ -58,7 +59,7 @@
     <div class="">
         <div>
             <div class="dropdown dropdown-table d-flex justify-content-between align-items-center filters">
-                <div class="d-flex align-items-end">                    
+                <div class="d-flex align-items-end">
                     <template v-if="filterId == 1">
                         <div class="d-flex flex-column">
                             <span>
@@ -103,8 +104,8 @@
                             <span>
                                 Por estado:
                             </span>
-                            <el-select 
-                                v-model="filters.state_type_id" 
+                            <el-select
+                                v-model="filters.state_type_id"
                                 placeholder="Seleccionar estado"
                                 size="small"
                                 style="width: 200px; margin-left: 8px;"
@@ -129,7 +130,7 @@
                                 </el-option>
                             </el-select>
                         </div>
-                    </template>                
+                    </template>
                 </div>
 
                 <button class="btn btn-default dropdown-toggle mr-2 mt-1" style="height: 35px" type="button" id="dropdownFilter" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -140,10 +141,10 @@
                   <li><a href="#" @click="filterRecords('05')" >Aceptados</a></li>
                   <li><a href="#" @click="filterRecords('09')" >Rechazados</a></li>
                   <li><a href="#" @click="filterRecords('11')" >Anulados</a></li> --}}
-                  <li><a @click="filterId = 1; filters={date_of_issue: new Date().toISOString().split('T')[0]}; getRecords()" href="#">Por fecha</a></li> 
+                  <li><a @click="filterId = 1; filters={date_of_issue: new Date().toISOString().split('T')[0]}; getRecords()" href="#">Por fecha</a></li>
                   <li><a @click="filterId = 2; filters={state_type_id: 'all'}; getRecords()" href="#">Estado</a></li>
                 </ul>
-            </div>        
+            </div>
             <table class="table table-cart rounded-0">
                 <thead>
                     <tr>
@@ -165,7 +166,7 @@
                                 @{{ row.status }}
                             </span>
                         </td>
-                        <td class="text-success">S/ @{{ row.total }}</td>
+                        <td class="text-success">Bs. @{{ row.total }}</td>
                         <td class="text-right">
                             <template v-if="row.download_pdf || row.download_xml">
                                 <el-dropdown trigger="click" placement="bottom-end">
@@ -241,7 +242,7 @@
         computed: {
             pagL: function () {
                 return this.page == 1 ? true: false
-            }, 
+            },
             pagR: function () {
                 return this.page != this.last_page ? false: true
             },
@@ -263,18 +264,18 @@
                 }
 
                 try {
-                    let response = await axios.get(`/ecommerce/documents${parameters}`);            
-                    
+                    let response = await axios.get(`/ecommerce/documents${parameters}`);
+
                     this.records = response.data.data || [];
                     this.filter_records = response.data.data || [];
                     this.last_page = response.data.last_page || 1;
-                    this.loading = false;   
+                    this.loading = false;
                 } catch (error) {
                     console.error('Error al cargar documentos:', error);
                     this.records = [];
                     this.filter_records = [];
                     this.loading = false;
-                    
+
                     // Mostrar mensaje de error al usuario
                     if (error.response && error.response.status === 401) {
                         alert('Sesión expirada. Por favor, inicie sesión nuevamente.');
@@ -290,7 +291,7 @@
                         this.page += 1;
                         this.getRecords();
                     }
-                    
+
                 } else if (type == "back") {
                     this.filter_records = [];
                     if(!this.pagL) {
@@ -326,3 +327,5 @@
 
 
 @endpush
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

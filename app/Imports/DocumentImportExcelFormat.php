@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Imports;
 
 use Exception;
@@ -35,7 +37,7 @@ class DocumentImportExcelFormat implements ToCollection
                 'customer_address' => trim($row[5]),
                 'customer_email' => trim($row[6]),
                 'plate_number' => trim($row[7]),
-                'currency_type_id' => (func_str_to_upper_utf8($row[8]) === 'S') ? 'PEN' : null,
+                'currency_type_id' => (func_str_to_upper_utf8($row[8]) === 'S') ? 'VES' : null,
                 'item_name' => trim($row[9]),
                 'unit_type_id' => trim($row[10]),
                 'quantity' => trim($row[11]),
@@ -208,3 +210,5 @@ class DocumentImportExcelFormat implements ToCollection
         return $this->data;
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -1,16 +1,17 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" @close="close" @open="create" append-to-body top="7vh">
         <form autocomplete="off" @submit.prevent="submit">
             <div class="form-body">
                 <div class="row">
- 
+
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.description}">
                             <label class="control-label">Producto</label>
                             <el-input v-model="form.description" readonly></el-input>
                             <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
                         </div>
-                    </div>    
+                    </div>
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.commission_type}">
                             <label class="control-label">Tipo comisión</label>
@@ -26,15 +27,15 @@
                             <el-input v-model="form.commission_amount" ></el-input>
                             <small class="form-control-feedback" v-if="errors.commission_amount" v-text="errors.commission_amount[0]"></small>
                         </div>
-                    </div> 
+                    </div>
                 </div>
- 
+
             </div>
             <div class="form-actions text-right mt-4">
                 <el-button class="second-buton" @click.prevent="close()">Cancelar</el-button>
                 <el-button type="primary" native-type="submit" :loading="loading_submit">Guardar</el-button>
             </div>
-        </form> 
+        </form>
     </el-dialog>
 </template>
 
@@ -44,23 +45,23 @@
         props: ['showDialog', 'recordId'],
 
         data() {
-            return { 
+            return {
                 loading_submit: false,
                 titleDialog: null,
-                resource: 'incentives', 
-                form: {}, 
+                resource: 'incentives',
+                form: {},
                 text_commission_type:null,
                 commission_types:[]
             }
         },
         created() {
-            
+
             this.commission_types = [{id:'amount', description:'Monto'}, {id:'percentage', description:'Porcentaje'}]
-            
-            this.initForm() 
+
+            this.initForm()
 
         },
-        methods: { 
+        methods: {
             initForm() {
                 this.loading_submit = false,
                 this.errors = {}
@@ -74,7 +75,7 @@
                     name: null,
                     second_name: null,
                     unit_type_id: 'NIU',
-                    currency_type_id: 'PEN',
+                    currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
                     has_isc: false,
@@ -104,9 +105,9 @@
                 }
                 this.show_has_igv = true
                 this.enabled_percentage_of_profit = false
-            }, 
+            },
             resetForm() {
-                this.initForm() 
+                this.initForm()
             },
             create() {
                 this.titleDialog = 'Registrar comisión'
@@ -116,14 +117,14 @@
                             this.form = response.data.data
                         })
                 }
-            }, 
-            submit() { 
+            },
+            submit() {
 
                 this.loading_submit = true
                 this.$http.post(`/${this.resource}`, this.form)
                     .then(response => {
                         if (response.data.success) {
-                            this.$message.success(response.data.message) 
+                            this.$message.success(response.data.message)
                             this.$eventHub.$emit('reloadData')
                             this.close()
                         } else {
@@ -144,7 +145,9 @@
             close() {
                 this.$emit('update:showDialog', false)
                 this.resetForm()
-            }, 
+            },
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

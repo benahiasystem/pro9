@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
 
@@ -39,9 +40,9 @@
 <body>
 @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top: 30%; left: 0; right: 0;">
-        <img 
-            src="data:{{ mime_content_type(public_path('status_images/anulado.png')) }};base64,{{ base64_encode(file_get_contents(public_path('status_images/anulado.png'))) }}" 
-            alt="anulado" 
+        <img
+            src="data:{{ mime_content_type(public_path('status_images/anulado.png')) }};base64,{{ base64_encode(file_get_contents(public_path('status_images/anulado.png'))) }}"
+            alt="anulado"
             style="opacity: 0.6; max-width: 300px; width: auto; height: auto;"
         >
     </div>
@@ -54,9 +55,9 @@
         height: 300px;
         text-align: center;
     ">
-        <img 
-            src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}" 
-            alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" 
+        <img
+            src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}"
+            alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
             style="width: 100%; height: auto; object-fit: contain; opacity: 0.1;"
         >
     </div>
@@ -152,7 +153,7 @@
                 <h5 class="text-center">{{ $document->document_type->description }}</h5>
                 <h3 class="text-center">{{ $document_number }}</h3>
             </td>
-        @endif        
+        @endif
     </tr>
 </table>
 <table class="full-width mt-2">
@@ -160,7 +161,7 @@
         <td width="47%" class="border-box pl-3 align-top">
             <table class="full-width">
                 @if ($document->detraction)
-                <tr>                    
+                <tr>
                     <td class="font-sm" width="80px">
                         <strong>N. CTA DETRACCIONES</strong>
                     </td>
@@ -187,7 +188,7 @@
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">{{$document->detraction->detraction_type_id}}
                         - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}</td>
-                </tr>                    
+                </tr>
                 @endif
                 <tr>
                     <td class="font-sm" width="80px">
@@ -200,7 +201,7 @@
                             <br>
                             <small>{{ $customer->internal_code ?? '' }}</small>
                         @endif
-                    </td>                    
+                    </td>
                 </tr>
                 @if ($document->detraction)
                 <tr>
@@ -235,19 +236,19 @@
                     if (!empty($customer->address)) {
                         $addressParts[] = $customer->address;
                     }
-                
+
                     if (!empty($customer->district_id) && $customer->district_id !== '-' && isset($customer->district) && !empty($customer->district->description)) {
                         $addressParts[] = $customer->district->description;
                     }
-                
+
                     if (!empty($customer->province_id) && $customer->province_id !== '-' && isset($customer->province) && !empty($customer->province->description)) {
                         $addressParts[] = $customer->province->description;
                     }
-                
+
                     if (!empty($customer->department_id) && $customer->department_id !== '-' && isset($customer->department) && !empty($customer->department->description)) {
                         $addressParts[] = $customer->department->description;
                     }
-                
+
                     $fullAddress = implode(', ', $addressParts);
                 @endphp
 
@@ -279,7 +280,7 @@
                         <strong>MONTO DETRACCIÓN</strong>
                     </td>
                     <td class="font-sm" width="8px">:</td>
-                    <td class="font-sm">S/ {{ $document->detraction->amount}}</td>
+                    <td class="font-sm">Bs. {{ $document->detraction->amount}}</td>
                 </tr>
                 @endif
                 @if ($document->detraction)
@@ -293,8 +294,8 @@
                                 {{ $document->detraction->pay_constancy}}
                             </td>
                         </tr>
-                    @endif    
-                @endif                        
+                    @endif
+                @endif
                 </tr>
                 @endif
                 @if ($document->reference_data)
@@ -343,7 +344,7 @@
                         </tr>
                     @endforeach
                 @endif
-                    
+
                 @if ($document->dispatch)
                     <tr>
                         <td class="font-sm" width="80px">
@@ -353,7 +354,7 @@
                         <td class="font-sm">{{ $document->dispatch->number_full }}</td>
                     </tr>
                 @endif
-                
+
                 @if ($document->reference_guides && count($document->reference_guides) > 0)
                     @foreach($document->reference_guides as $guide)
                         <tr>
@@ -399,7 +400,7 @@
                         <td class="font-sm" width="8px">:</td>
                         <td class="font-sm">{{ $document->date_of_issue->addDays($document->quotation->delivery_date)->format('d-m-Y') }}</td>
                     @endisset
-                </tr>                
+                </tr>
                 @endif
                 @isset($document->quotation->sale_opportunity)
                 <tr>
@@ -433,10 +434,10 @@
                 </tr>
                 @endif
             </table>
-        </td>        
+        </td>
     </tr>
 </table>
-<table class="full-width mt-3">    
+<table class="full-width mt-3">
 </table>
 
 {{--<table class="full-width mt-3">--}}
@@ -628,7 +629,7 @@ foreach ($document->items as $row) {
                             ? ltrim($date_due, '/')
                             : ($row->relation_item->date_of_due ? $row->relation_item->date_of_due->format('d-m-Y') : '');
                     @endphp
-            
+
                     {{ $cleanedDate }}
                 </td>
             @endif
@@ -743,7 +744,7 @@ foreach ($document->items as $row) {
                 Código Hash: {{ $document->hash }}
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. INAFECTAS: {{ $document->currency_type->symbol }}</td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_unaffected, 2) }}</td> 
+            <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_unaffected, 2) }}</td>
     </tr>
     <tr>
         <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">OP. EXONERADAS: {{ $document->currency_type->symbol }}</td>
@@ -773,7 +774,7 @@ foreach ($document->items as $row) {
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">ICBPER: {{ $document->currency_type->symbol }}</td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
         </tr>
-    @endif    
+    @endif
 
     @if($document->total_isc > 0)
         <tr>
@@ -834,7 +835,7 @@ foreach ($document->items as $row) {
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">VUELTO: {{ $document->currency_type->symbol }}</td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format(abs($balance),2, ".", "") }}</td>
         </tr>
-    @endif    
+    @endif
     </tbody>
 </table>
 <table class="full-width">
@@ -909,13 +910,13 @@ foreach ($document->items as $row) {
             @if ($document->retention)
                 <p><strong>Información de la retención</strong></p>
                 <p>
-                    Base imponible de la retención: S/ {{ $document->getRetentionTaxBase() }}
+                    Base imponible de la retención: Bs. {{ $document->getRetentionTaxBase() }}
                 </p>
                 <p>
-                    Porcentaje de la retención: {{ $document->retention->percentage * 100 }}% 
+                    Porcentaje de la retención: {{ $document->retention->percentage * 100 }}%
                 </p>
                 <p>
-                    Monto de la retención: S/ {{ $document->retention->amount_pen }}
+                    Monto de la retención: Bs. {{ $document->retention->amount_pen }}
                 </p>
             @endif
 
@@ -986,10 +987,10 @@ foreach ($document->items as $row) {
                 <strong>Información de la retención:</strong>
             </td>
             <td>Base imponible de la retención:
-                S/ {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }}
+                Bs. {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }}
             </td>
             <td>Porcentaje de la retención {{ $document->retention->percentage * 100 }}%</td>
-            <td>Monto de la retención S/ {{ $document->retention->amount_pen }}</td>
+            <td>Monto de la retención Bs. {{ $document->retention->amount_pen }}</td>
         </tr>
     </table>
 @endif --}}
@@ -1006,3 +1007,5 @@ foreach ($document->items as $row) {
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

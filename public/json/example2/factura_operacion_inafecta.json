@@ -5,7 +5,7 @@
   "hora_de_emision": "10:11:11",
   "codigo_tipo_operacion": "0101",
   "codigo_tipo_documento":"01",
-  "codigo_tipo_moneda": "PEN",
+  "codigo_tipo_moneda": "VES",
   "fecha_de_vencimiento":"2018-08-30",
   "numero_orden_de_compra": "0045467898",
   "datos_del_emisor": {

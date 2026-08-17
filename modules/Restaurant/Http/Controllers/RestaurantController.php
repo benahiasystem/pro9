@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Restaurant\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -368,7 +370,7 @@ class RestaurantController extends Controller
             'technical_specifications' => $row->technical_specifications,
             'name' => $row->name,
             'second_name' => $row->second_name,
-            'sale_unit_price' => ($row->currency_type_id === 'PEN') ? $sale_unit_price : ($sale_unit_price * $exchange_rate_sale),
+            'sale_unit_price' => ($row->currency_type_id === 'VES') ? $sale_unit_price : ($sale_unit_price * $exchange_rate_sale),
             'currency_type' => $row->currency_type,
             'has_igv' => (bool) $row->has_igv,
             'sale_unit' => $row->sale_unit_price,
@@ -611,3 +613,5 @@ class RestaurantController extends Controller
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

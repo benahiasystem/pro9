@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :title="titleDialog"
@@ -43,12 +44,12 @@
                               type="number"
                               min="0"
                               step="0.01"
-                              :placeholder="form.type === 'percentage' ? '% 0' : 'S/ 0'"
+                              :placeholder="form.type === 'percentage' ? '% 0' : 'Bs. 0'"
                               style="width: 130px;"
                           ></el-input>
                           <el-radio-group v-model="form.type" size="small">
                               <el-radio-button label="percentage">% Porcentaje</el-radio-button>
-                              <el-radio-button label="fixed">S/ Fijo</el-radio-button>
+                              <el-radio-button label="fixed">Bs. Fijo</el-radio-button>
                           </el-radio-group>
                       </div>
                       <small class="form-control-feedback" v-if="errors.amount" v-text="errors.amount[0]"></small>
@@ -80,7 +81,7 @@
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    placeholder="S/0.00"
+                                    placeholder="Bs.0.00"
                                 ></el-input>
                                 <small class="form-control-feedback" v-if="errors.min_amount" v-text="errors.min_amount[0]"></small>
                             </div>
@@ -93,7 +94,7 @@
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    placeholder="S/0.00"
+                                    placeholder="Bs.0.00"
                                 ></el-input>
                                 <small class="form-control-feedback" v-if="errors.max_amount" v-text="errors.max_amount[0]"></small>
                             </div>
@@ -267,3 +268,5 @@ export default {
     },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

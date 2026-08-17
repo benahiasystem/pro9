@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
   <h2 class="carousel-title">Featured Products</h2>
 
 
@@ -23,7 +24,7 @@
                   <a href="#">{{$item->name}}</a>
               </h2>
               <div class="price-box">
-                  <span class="product-price">S/ {{ number_format($item->sale_unit_price, 2) }}</span>
+                  <span class="product-price">Bs. {{ number_format($item->sale_unit_price, 2) }}</span>
               </div><!-- End .price-box -->
 
               <div class="product-action">
@@ -43,13 +44,15 @@
       </div><!-- End .product -->
 
 
-    
-       
+
+
     @endforeach
 
 
 
-     
 
-    
+
+
   </div><!-- End .featured-proucts -->
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

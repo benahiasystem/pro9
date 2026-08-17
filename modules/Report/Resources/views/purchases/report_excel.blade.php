@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="es">
     <head>
@@ -129,7 +130,7 @@
 
                                 @if ($apply_conversion_to_pen && $value->isCurrencyTypeUsd())
 
-                                    <td class="celda">{{$value->currency_type_id}} (Se aplicó conversión a soles)</td>
+                                    <td class="celda">{{$value->currency_type_id}} (Se aplicó conversión a bolívares)</td>
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->total_perception}}</td>
                                     <td class="celda">{{$value->state_type_id == '11' ? 0 : $value->getConvertTotalExoneratedToPen() }}</td>
                                     <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalUnaffectedToPen() }}</td>
@@ -167,7 +168,7 @@
 
                             @php
 
-                                if($value->currency_type_id == 'PEN'){
+                                if($value->currency_type_id == 'VES'){
 
                                     if($state == '11'){
 
@@ -207,7 +208,7 @@
                             @if (!$apply_conversion_to_pen)
                                 <tr>
                                     <td class="celda" colspan="16"></td>
-                                    <td class="celda" >Totales PEN</td>
+                                    <td class="celda" >Totales VES</td>
                                     <td class="celda">{{$acum_total_taxed}}</td>
                                     <td class="celda">{{$acum_total_igv}}</td>
                                     <td class="celda">{{$acum_total}}</td>
@@ -232,3 +233,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

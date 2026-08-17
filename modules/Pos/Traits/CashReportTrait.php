@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Pos\Traits;
 
 use App\CoreFacturalo\Helpers\Functions\GeneralPdfHelper;
@@ -10,33 +12,33 @@ use App\Exports\GeneralFormatExport;
 
 trait CashReportTrait
 {
-       
+
     /**
      *
      * Reporte excel v2 de caja para pagos en efectivo con destino caja, ingresos y egresos
-     * 
+     *
      * @return void
      */
     public function setDataCashPaymentReportExcel($cash, &$data)
     {
         $payments = collect();
 
-        foreach ($cash->global_destination as $global_payment) 
+        foreach ($cash->global_destination as $global_payment)
         {
             $payments->push($global_payment->payment->getDataCashPaymentReport());
         }
 
         $payments_pen = $payments->where('currency_type_id', PaymentMethodType::NATIONAL_CURRENCY_ID);
         $payments_usd = $payments->where('currency_type_id', PaymentMethodType::DOLAR_CURRENCY_ID);
-        
+
         $data['payments_pen'] = $payments_pen;
         $data['payments_usd'] = $payments_usd;
 
         $data['cash_income_pen'] = GeneralPdfHelper::setNumberFormat($payments_pen->where('type_transaction', 'income')->sum('payment'));
         $data['cash_egress_pen'] = GeneralPdfHelper::setNumberFormat($payments_pen->where('type_transaction', 'egress')->sum('payment'));
-        
-        //saldo inicial de caja se considera en soles
-        $data['balance_cash_pen'] = GeneralPdfHelper::setNumberFormat(($data['cash_income_pen'] + $data['cash_beginning_balance']) - $data['cash_egress_pen']); 
+
+        //saldo inicial de caja se considera en bolívares
+        $data['balance_cash_pen'] = GeneralPdfHelper::setNumberFormat(($data['cash_income_pen'] + $data['cash_beginning_balance']) - $data['cash_egress_pen']);
 
 
         $data['cash_income_usd'] = GeneralPdfHelper::setNumberFormat($payments_usd->where('type_transaction', 'income')->sum('payment'));
@@ -51,25 +53,25 @@ trait CashReportTrait
     /**
      *
      * Data para reporte de caja v2 asociados a caja
-     * 
+     *
      * @return array
      */
     public function getDataCashReportWithPayments($cash, &$data)
     {
         $payments = collect();
 
-        foreach ($cash->global_destination as $global_payment) 
+        foreach ($cash->global_destination as $global_payment)
         {
             $payments->push($global_payment->payment->getRowResourceCashPayment());
         }
-        
+
         $data['total_income'] = $payments->where('type_transaction', 'income')->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID)->sum('payment');
         $data['total_egress'] = $payments->where('type_transaction', 'egress')->where('payment_method_type_id', PaymentMethodType::CASH_PAYMENT_ID)->sum('payment');
         $data['total_balance'] =  $data['cash_beginning_balance'] + $data['total_income'] - $data['total_egress'];
 
         $payments_with_payment_method = $payments->where('type', '!=', 'expense_payment');
         $expense_payments = $payments->where('type', 'expense_payment'); // no tiene relacion con payment_method_type_id, se agregara a la data de efectivo, ya que el registro va directo a caja
-        
+
         // se agrupara pagos que tienen relacion con payment_method_type_id
         $group_payments = $payments_with_payment_method->sortBy('payment_method_type_id')->groupBy('payment_method_type_id');
 
@@ -84,18 +86,18 @@ trait CashReportTrait
     /**
      *
      * Data para reporte de pagos asociados a caja, con destino caja y en efectivo
-     * 
+     *
      * @return array
      */
     public function getDataPaymentsAssociatedCash($cash, &$data)
     {
         $payments = collect();
 
-        foreach ($cash->global_destination as $global_payment) 
+        foreach ($cash->global_destination as $global_payment)
         {
             $payments->push($global_payment->payment->getRowResourceCashPayment());
         }
-        
+
         $data['total_income'] = $payments->sum('payment');
 
         return [
@@ -123,7 +125,7 @@ trait CashReportTrait
                 'total_transfer' => 0,
                 'total' => 0,
             ],
-            
+
             'purchase_cash' => [
                 'total_cash' => 0,
                 'total_transfer' => 0,
@@ -148,9 +150,9 @@ trait CashReportTrait
         ];
     }
 
-    
+
     /**
-     * 
+     *
      * Asignar datos de ventas al credito y amortizacion de ventas credito
      *
      * @param  Cash $cash
@@ -169,11 +171,11 @@ trait CashReportTrait
                 if($model_associated)
                 {
                     $data_summary_daily = $model_associated->applySummaryDailyOperations();
-                    
+
                     if($data_summary_daily['apply'])
                     {
                         $data['credit_sales'] += $model_associated->total;
-                        
+
                         $total_cash = $model_associated->totalCashPaymentsWithoutDestination();
                         $total_transfer = $model_associated->totalTransferPayments();
 
@@ -185,10 +187,10 @@ trait CashReportTrait
             }
         }
     }
-    
-    
+
+
     /**
-     * 
+     *
      * Datos de ventas al contado efectivo/transferencia - Compras credito/contado
      *
      * @param  Cash $cash
@@ -200,7 +202,7 @@ trait CashReportTrait
         foreach ($cash->cash_documents as $cash_document)
         {
             $model_associated = $cash_document->getDataModelAssociated();
-            
+
             if($model_associated)
             {
                 $data_summary_daily = $model_associated->applySummaryDailyOperations();
@@ -219,10 +221,10 @@ trait CashReportTrait
             }
         }
     }
-    
-        
+
+
     /**
-     * 
+     *
      * Asignar valores finales
      *
      * @param  array $data
@@ -251,12 +253,12 @@ trait CashReportTrait
 
         // saldo total
         $data['total_balance'] = $data['cash_balance'] + $data['balance_transfer'];
-        
+
     }
 
 
     /**
-     * 
+     *
      * Datos de ventas al contado efectivo/transferencia
      *
      * @param  $model_associated
@@ -276,7 +278,7 @@ trait CashReportTrait
 
 
     /**
-     * 
+     *
      * Datos de compras al contado efectivo/transferencia y credito
      *
      * @param  $model_associated
@@ -307,9 +309,9 @@ trait CashReportTrait
         }
     }
 
-    
+
     /**
-     * 
+     *
      * Imprimir reporte a4
      *
      * @param  string $view
@@ -328,9 +330,9 @@ trait CashReportTrait
         return GeneralPdfHelper::getPreviewTempPdfWithFilename($temp_folder, $filename, $pdf->output('', 'S'));
     }
 
-    
+
     /**
-     * 
+     *
      * Generar excel
      *
      * @param  string $filename
@@ -350,3 +352,5 @@ trait CashReportTrait
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

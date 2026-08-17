@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('tenant.layouts.app')
 
 @section('content')
@@ -26,12 +27,12 @@
 
         id_payment_account  = id
         price_culqi_payment_account =  Math.round( Number(payment).toFixed(2))
-       
+
         price_payment_account = Math.round((Number(payment).toFixed(2)) * 100)
 
         Culqi.settings({
             title: "Pago de Cuenta Facturador",
-            currency: 'PEN',
+            currency: 'VES',
             description: 'Pago programado facturador',
             amount: price_payment_account
         });
@@ -115,3 +116,5 @@
 
 </script>
 @endpush
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

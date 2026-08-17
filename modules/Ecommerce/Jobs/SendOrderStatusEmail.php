@@ -1,4 +1,6 @@
 <?php
+
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 namespace Modules\Ecommerce\Jobs;
 
 use Illuminate\Bus\Queueable;
@@ -74,7 +76,7 @@ class SendOrderStatusEmail implements ShouldQueue
                 'description'         => $item->description ?? ($item->descripcion ?? 'Producto'),
                 'cantidad'            => $item->cantidad    ?? ($item->quantity    ?? 1),
                 'sub_total'           => $item->sub_total   ?? '',
-                'currency_type_symbol'=> $item->currency_type_symbol ?? 'S/',
+                'currency_type_symbol'=> $item->currency_type_symbol ?? 'Bs.',
             ])->toArray(),
             'route_list' => $this->routeList,
         ];
@@ -86,3 +88,5 @@ class SendOrderStatusEmail implements ShouldQueue
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

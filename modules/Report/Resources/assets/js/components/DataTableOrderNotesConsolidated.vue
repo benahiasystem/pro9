@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="row">
@@ -97,7 +98,7 @@
                         </i>  Exportar Excel</el-button>
                         </template>
                         <template v-if="records.length>0">
-                            
+
                             <el-button class="submit me-2" icon="el-icon-tickets" type="danger"
                                        @click.prevent="clickDownload('pdf')">Exportar PDF
                             </el-button>
@@ -136,7 +137,7 @@
                                 <strong>Total</strong>
                             </td>
                             <td class="text-center">{{ totals }}</td>
-                            <td class="text-center">S/ {{ totals_amount }}</td>
+                            <td class="text-center">Bs. {{ totals_amount }}</td>
                         </tr>
                         </tfoot>
                     </table>
@@ -342,3 +343,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

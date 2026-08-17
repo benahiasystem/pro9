@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <body
@@ -49,7 +50,7 @@
                                                 <th style="color:#846add; padding-left:30px !important;" align="center">Producto</th>
                                                 <th style="color:#846add; padding-left:30px !important;" align="center">Cantidad</th>
                                                 <th style="color:#846add; padding-left:30px !important;" align="center">Tipo Unidad</th>
-                                            </tr> 
+                                            </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($document->items as $item)
@@ -71,7 +72,7 @@
                                         </tbody>
                                     </table>
                                     <br>
-                                    Monto: <b>S/ {{ $document->total }}</b><br>
+                                    Monto: <b>Bs. {{ $document->total }}</b><br>
 
                                     <br><br>
 
@@ -109,3 +110,5 @@
 </body>
 
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

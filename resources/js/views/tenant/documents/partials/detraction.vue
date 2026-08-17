@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :title="title" class="text-left" :visible="showDialog"   @opened="create" @close="close" :close-on-click-modal="false">
         <!-- <p class="text-center">* Se recomienda resoluciones 700x300.</p> -->
@@ -198,9 +199,9 @@
                 if(detraction_type){
 
                     this.detraction.percentage = detraction_type.percentage
-                    // this.detraction.amount = (this.currencyTypeIdActive == 'PEN') ? _.round(parseFloat(this.total) * (detraction_type.percentage/100),2): _.round((parseFloat(this.total) * this.exchangeRateSale) * (detraction_type.percentage/100),2)
+                    // this.detraction.amount = (this.currencyTypeIdActive == 'VES') ? _.round(parseFloat(this.total) * (detraction_type.percentage/100),2): _.round((parseFloat(this.total) * this.exchangeRateSale) * (detraction_type.percentage/100),2)
                     let round = this.config.detraction_amount_rounded_int ? 0 : 2;
-                    if(this.currencyTypeIdActive == 'PEN')
+                    if(this.currencyTypeIdActive == 'VES')
                     {
                         this.detraction.amount = _.round(parseFloat(this.total) * (detraction_type.percentage/100), round)
                     }else
@@ -388,3 +389,5 @@
         display: block;
     }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

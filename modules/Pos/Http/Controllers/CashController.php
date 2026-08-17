@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Pos\Http\Controllers;
 
 use App\Http\Controllers\Tenant\EmailController;
@@ -224,7 +226,7 @@ class CashController extends Controller
             if ($cash_document->sale_note) {
                 $sale_note = $cash_document->sale_note;
                 $pays = [];
-                $document = $sale_note->documents->first(); 
+                $document = $sale_note->documents->first();
                 $description= null;
                 $number_full = null;
                 if ($document) {
@@ -453,7 +455,7 @@ class CashController extends Controller
                 // fin items
             }
             /** Documentos de Tipo Servicio tecnico */
-            elseif ($cash_document->technical_service) 
+            elseif ($cash_document->technical_service)
             {
                 $usado = '<br>Se usan para cash<br>';
                 $technical_service = $cash_document->technical_service;
@@ -489,7 +491,7 @@ class CashController extends Controller
                         'customer_number'           => $technical_service->customer->number,
                         'total'                     => $technical_service->total_record,
                         // 'total'                     => $technical_service->cost,
-                        'currency_type_id'          => 'PEN',
+                        'currency_type_id'          => 'VES',
                         'usado'                     => $usado." ".__LINE__,
                         'tipo'                      => 'technical_service',
                         'total_payments'            => $technical_service->payments->sum('payment'),
@@ -729,7 +731,7 @@ class CashController extends Controller
         }
 
         $incomes=$incomes->get();
-        
+
         if (isset($incomes[0])) {
 
             $data['cash_documents_total'] = (int)$incomes->count();
@@ -975,10 +977,10 @@ class CashController extends Controller
      */
     public static function CalculeTotalOfCurency(
         $total = 0,
-        $currency_type_id = 'PEN',
+        $currency_type_id = 'VES',
         $exchange_rate_sale = 1
     ) {
-        if ($currency_type_id !== 'PEN') {
+        if ($currency_type_id !== 'VES') {
             $total = $total * $exchange_rate_sale;
         }
         return $total;
@@ -1291,3 +1293,5 @@ class CashController extends Controller
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

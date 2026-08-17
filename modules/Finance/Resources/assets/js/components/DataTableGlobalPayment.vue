@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div v-loading="loading">
         <div class="btn-filter-content">
@@ -59,8 +60,8 @@
                                                 :picker-options="pickerOptionsDates"
                                                 value-format="yyyy-MM-dd" format="dd/MM/yyyy" :clearable="false"></el-date-picker>
                             </div>
-                        </template> 
-                    
+                        </template>
+
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label class="control-label">Tipo</label>
@@ -110,16 +111,16 @@
                         </thead>
                         <tbody>
                             <slot v-for="(row, index) in records" :row="row" :index="customIndex(index)"></slot>
-                        </tbody> 
+                        </tbody>
                         <tfoot v-if="resource == 'finances/global-payments'">
                             <tr>
                                 <td colspan="9"></td>
-                                <td ><strong>Totales PEN</strong></td> 
+                                <td ><strong>Totales VES</strong></td>
                                 <td>{{totals.total_pen}}</td>
                             </tr>
                             <tr>
                                 <td colspan="9"></td>
-                                <td ><strong>Totales USD</strong></td> 
+                                <td ><strong>Totales USD</strong></td>
                                 <td>{{totals.total_usd}}</td>
 
                             </tr>
@@ -201,8 +202,8 @@
 
             await this.$http.get(`/${this.resource}/filter`)
                 .then(response => {
-                    this.payment_types = response.data.payment_types; 
-                    this.destination_types = response.data.destination_types; 
+                    this.payment_types = response.data.payment_types;
+                    this.destination_types = response.data.destination_types;
                 });
 
 
@@ -221,10 +222,10 @@
             checkScrollShadows() {
                 const el = this.$refs.scrollContainer;
                 if (!el) return;
-                
+
                 const scrollLeft = el.scrollLeft;
                 const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-                
+
                 this.showLeftShadow = scrollLeft > 1;
                 this.showRightShadow = scrollRight > 1;
             },
@@ -240,7 +241,7 @@
 
             },
             clickDownload(type) {
-                
+
                 const query = queryString.stringify({
                     ...this.form
                 })
@@ -259,7 +260,7 @@
 
                 this.loading = true
                 await this.$http.get(`/${this.resource}/${type}/?${query}`).then((response) => {
-                            
+
                             this.$notify({
                                 // title: '',
                                 message: response.data.message,
@@ -289,7 +290,7 @@
                     month_end: moment().format('YYYY-MM'),
                 }
 
-            }, 
+            },
             customIndex(index) {
                 return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1
             },
@@ -314,9 +315,9 @@
             getTotals(records){
 
                 this.initTotals()
-                this.totals.total_pen = _.round(_.sumBy(_.filter(records, {currency_type_id : 'PEN'}), (row) => { return parseFloat(row.total) }), 2)
+                this.totals.total_pen = _.round(_.sumBy(_.filter(records, {currency_type_id : 'VES'}), (row) => { return parseFloat(row.total) }), 2)
                 this.totals.total_usd = _.round(_.sumBy(_.filter(records, {currency_type_id : 'USD'}), (row) => { return parseFloat(row.total) }), 2)
- 
+
             },
             getQueryParameters() {
                 return queryString.stringify({
@@ -360,3 +361,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

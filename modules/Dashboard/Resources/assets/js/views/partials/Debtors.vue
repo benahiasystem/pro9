@@ -1,15 +1,16 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <section class="card card-dashboard db-panel">
     <div class="card-body">
       <div class="db-head">
         <h5 class="db-title m-0">¿Quién me debe?</h5>
         <small class="text-muted">
-          S/ {{ total | dbMoney }} por cobrar · {{ count }} {{ count === 1 ? "cliente" : "clientes" }}
+          Bs. {{ total | dbMoney }} por cobrar · {{ count }} {{ count === 1 ? "cliente" : "clientes" }}
         </small>
 
         <div v-if="urgentDebts.length" class="db-urgent">
           <span class="db-dot"></span>
-          <span>S/ {{ urgentTotal | dbMoney }} para cobrar ya · {{ urgentDebts.length }} {{ urgentDebts.length === 1 ? "deuda" : "deudas" }}</span>
+          <span>Bs. {{ urgentTotal | dbMoney }} para cobrar ya · {{ urgentDebts.length }} {{ urgentDebts.length === 1 ? "deuda" : "deudas" }}</span>
         </div>
       </div>
 
@@ -32,14 +33,14 @@
               <div class="db-sub text-muted">
                 <span v-if="row.debts_count > 1" class="db-count text-muted">{{ row.debts_count }} deudas</span>
                 <span v-if="row.debts_count > 1">
-                  <b>S/ {{ row.urgent_amount | dbMoney }}</b> {{ row.due_text }}
+                  <b>Bs. {{ row.urgent_amount | dbMoney }}</b> {{ row.due_text }}
                 </span>
                 <span v-else>{{ row.due_text }}</span>
               </div>
             </div>
 
             <div class="db-right">
-              <span class="db-amount">S/ {{ row.total_to_pay | dbMoney }}</span>
+              <span class="db-amount">Bs. {{ row.total_to_pay | dbMoney }}</span>
               <span class="db-badge" :class="badgeClass(row.status)">{{ badgeText(row) }}</span>
             </div>
 
@@ -53,7 +54,7 @@
             <div class="db-detail-inner">
               <div v-for="debt in row.debts" :key="`${debt.id}-${debt.number}`" class="db-debt" :class="debtClass(debt.status)">
                 <div class="db-debt-main">
-                  <strong>S/ {{ debt.total_to_pay | dbMoney }}</strong>
+                  <strong>Bs. {{ debt.total_to_pay | dbMoney }}</strong>
                   <small class="text-muted">{{ debt.number }} · {{ debt.due_text }}</small>
                 </div>
                 <span class="db-badge" :class="badgeClass(debt.status)">{{ badgeText(debt) }}</span>
@@ -67,7 +68,7 @@
         <div v-for="group in dateGroups" :key="group.status" class="db-group">
           <div class="db-group-head text-muted">
             <span><i :class="badgeClass(group.status)"></i>{{ group.label }} · {{ group.items.length }}</span>
-            <strong>S/ {{ group.total | dbMoney }}</strong>
+            <strong>Bs. {{ group.total | dbMoney }}</strong>
           </div>
 
           <div v-for="debt in group.items" :key="`${debt.customer}-${debt.id}-${debt.number}`" class="db-date-row">
@@ -75,7 +76,7 @@
               <span class="db-name text-truncate">{{ debt.customer }}</span>
               <small class="text-muted">{{ debt.number }} · {{ debt.due_text }}</small>
             </div>
-            <strong>S/ {{ debt.total_to_pay | dbMoney }}</strong>
+            <strong>Bs. {{ debt.total_to_pay | dbMoney }}</strong>
           </div>
         </div>
       </div>
@@ -458,3 +459,5 @@ export default {
   padding: 2rem 0;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

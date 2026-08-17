@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="row ">
@@ -12,7 +13,7 @@
                     >
                         {{ isVisible ? "Ocultar filtros" : "Mostrar filtros" }}
                     </el-button>
-                </div>                
+                </div>
                 <div class="row mx-0" v-if="applyFilter && isVisible">
                     <div class="col-12 pb-3">Filtrar por:</div>
                     <div class="col-lg-2 col-md-4 col-sm-12 pb-2">
@@ -94,9 +95,9 @@
                     </table>
 
                     <div class="row mb-5">
-                        <div class="col-md-4 text-center">Total notas de venta en soles S/ {{ formatDecimal(totals.total_pen)}}</div>
-                        <div class="col-md-4 text-center">Total pagado en soles S/ {{ formatDecimal(totals.total_paid_pen)}}</div>
-                        <div class="col-md-4 text-center">Total por cobrar en soles S/ {{ formatDecimal(totals.total_pending_paid_pen)}}</div>
+                        <div class="col-md-4 text-center">Total notas de venta en bolívares Bs. {{ formatDecimal(totals.total_pen)}}</div>
+                        <div class="col-md-4 text-center">Total pagado en bolívares Bs. {{ formatDecimal(totals.total_paid_pen)}}</div>
+                        <div class="col-md-4 text-center">Total por cobrar en bolívares Bs. {{ formatDecimal(totals.total_pending_paid_pen)}}</div>
                     </div>
 
                     <div>
@@ -240,12 +241,12 @@
                         if (typeof row.custom_fields_data === 'object' && row.custom_fields_data !== null) {
                             customFieldsData = row.custom_fields_data;
                         } else if (typeof row.custom_fields_data === 'string') {
-                            try { 
+                            try {
                                 customFieldsData = JSON.parse(row.custom_fields_data) || {};
                             } catch (e) {
                                 customFieldsData = {};
                             }
-                        } 
+                        }
                         return {
                             ...row,
                             custom_fields_data: customFieldsData
@@ -276,3 +277,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

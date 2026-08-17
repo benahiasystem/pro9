@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
 
@@ -242,7 +243,7 @@
         </tr>
         <tr>
             <td class="align-top"><p class="desc">Monto detracción:</p></td>
-            <td><p class="desc">S/ {{ $document->detraction->amount}}</p></td>
+            <td><p class="desc">Bs. {{ $document->detraction->amount}}</p></td>
         </tr>
         @if($document->detraction->pay_constancy)
             <tr>
@@ -306,7 +307,7 @@
         </tr>
         <tr>
             <td><p class="desc">Base imponible de la retención: </p></td>
-            <td><p class="desc">S/ {{ $document->getRetentionTaxBase() }} </p></td>
+            <td><p class="desc">Bs. {{ $document->getRetentionTaxBase() }} </p></td>
         </tr>
         <tr>
             <td><p class="desc">Porcentaje de la retención:</p></td>
@@ -314,7 +315,7 @@
         </tr>
         <tr>
             <td><p class="desc">Monto de la retención:</p></td>
-            <td><p class="desc">S/ {{ $document->retention->amount_pen }}</p></td>
+            <td><p class="desc">Bs. {{ $document->retention->amount_pen }}</p></td>
         </tr>
     @endif
 
@@ -547,7 +548,7 @@
                     @if($row->total_plastic_bag_taxes > 0)
                         <br/>ICBPER : {{ $row->total_plastic_bag_taxes }}
                     @endif
-                    
+
                     @if($showColumns['marca'] && !empty($row->m_item->brand->name))
                         <br/><span style="font-size: 7px; font-weight: normal;">Marca: {{ $row->m_item->brand->name }}</span>
                     @endif
@@ -564,10 +565,10 @@
                     @if($row->attributes)
                         @foreach($row->attributes as $attr)
                             @if(!in_array(strtoupper(trim($attr->description)), [
-                                'PLACA', 
-                                'NRO PLACA', 
-                                'NUMERO DE PLACA', 
-                                'NÚMERO DE PLACA', 
+                                'PLACA',
+                                'NRO PLACA',
+                                'NUMERO DE PLACA',
+                                'NÚMERO DE PLACA',
                                 'N° PLACA',
                                 'NUMERO PLACA',
                                 'NRO DE PLACA'
@@ -616,12 +617,12 @@
                     @if($showColumns['lote'] || $showColumns['fecha_vencimiento'])
                         @if($lot && $showColumns['lote'])
                             <small style="display:block; font-weight: normal; font-size: 7px;">
-                                Lote: {{ ltrim($lot, '/') }}  
+                                Lote: {{ ltrim($lot, '/') }}
                             </small>
                         @endif
                         @if($showColumns['fecha_vencimiento'] && ($date_due != '' || $row->relation_item->date_of_due))
                             <small style="display:block; font-weight: normal; font-size: 7px;">
-                                FV: @if($date_due != '') {{ ltrim($date_due, '/') }} @else {{ $row->relation_item->date_of_due->format('y-m-d') }} @endif 
+                                FV: @if($date_due != '') {{ ltrim($date_due, '/') }} @else {{ $row->relation_item->date_of_due->format('y-m-d') }} @endif
                             </small>
                         @endif
                     @endif
@@ -902,13 +903,13 @@
                     </tr>
                     <tr>
                         <td>Base imponible de la retención:
-                            S/ {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }}</td>
+                            Bs. {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }}</td>
                     </tr>
                     <tr>
                         <td>Porcentaje de la retención {{ $document->retention->percentage * 100 }}%</td>
                     </tr>
                     <tr>
-                        <td>Monto de la retención S/ {{ $document->retention->amount_pen }}</td>
+                        <td>Monto de la retención Bs. {{ $document->retention->amount_pen }}</td>
                     </tr>
                 </table>
             @endif --}}
@@ -943,3 +944,4 @@
 {!! view()->file(app_path('CoreFacturalo/Templates/pdf/default/partials/footer.blade.php'), ['document' => $document])->render() !!}
 </body>
 </html>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

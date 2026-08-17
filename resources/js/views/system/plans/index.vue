@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <header class="page-header">
@@ -11,9 +12,9 @@
                 <button type="button" class="btn btn-custom btn-sm  mt-2 me-2" @click.prevent="clickCreate()"><i class="fa fa-plus-circle"></i> Nuevo</button>
             </div>
         </header>
-        
+
                 <div class="pricing-table row no-gutters mt-3 mb-3 d-flex justify-content-center mx-0">
-					
+
                     <template v-for="(row, index) in records">
 
                         <div  class="col-lg-3 col-sm-6 text-center pb-4" style="padding:10px;" :key="index">
@@ -37,11 +38,11 @@
                                 </div>
                                 <div>
                                     <span class="d-flex justify-content-start fw-bold mt-3">
-                                        S/
+                                        Bs.
                                         <h1 class="m-0" style="font-size: 3rem !important;">{{row.pricing}}</h1>
                                     </span>
                                     <p class="text-start mb-4 mt-0 text-muted">Servicio facturado mensualmente</p>
-                                </div> 
+                                </div>
                                 <div class="price-content pt-3">
                                     <p class="text-start mb-2"><strong>Características:</strong></p>
 
@@ -78,7 +79,7 @@
                                     </p>
                                     <p class="key-features" v-else>
                                         <svg  xmlns="http://www.w3.org/2000/svg"  width="18"  height="18"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check text-success me-1"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
-                                        Total ventas mensuales S/{{row.sales_limit}}
+                                        Total ventas mensuales Bs.{{row.sales_limit}}
                                     </p>
 
                                     <p class="key-features" v-if="row.whatsapp_messages_unlimited">
@@ -92,22 +93,22 @@
 
                                 </div>
 								<!-- <ul>
- 
+
                                     <li v-if="row.limit_users === 0"><strong>Usuarios</strong> ilimitados</li>
                                     <li v-else><strong>{{row.limit_users}}</strong> usuarios</li>
 
-                                    <li v-if="row.limit_documents === 0"><strong>Comprobantes</strong> ilimitados</li>                                
+                                    <li v-if="row.limit_documents === 0"><strong>Comprobantes</strong> ilimitados</li>
                                     <li v-else><strong>{{row.limit_documents}}</strong> comprobantes</li>
-                                
-                                    <li v-if="row.establishments_unlimited"><strong>Sucursales</strong> ilimitados</li>                                
+
+                                    <li v-if="row.establishments_unlimited"><strong>Sucursales</strong> ilimitados</li>
                                     <li v-else><strong>{{row.establishments_limit}}</strong> sucursales</li>
 
-                                    <li v-if="row.sales_unlimited"><strong>Ventas </strong> ilimitadas</li>                                
-                                    <li v-else>Total ventas mensuales <strong> S/{{row.sales_limit}}</strong></li>
+                                    <li v-if="row.sales_unlimited"><strong>Ventas </strong> ilimitadas</li>
+                                    <li v-else>Total ventas mensuales <strong> Bs.{{row.sales_limit}}</strong></li>
 
                                     <template v-for="(plan_document, i) in getDescriptions(row.plan_documents)">
                                         <li :key="i" v-if="plan_document">{{plan_document.description}}</li>
-                                    </template>                                   
+                                    </template>
 								</ul>                                 -->
                                 <div v-if="!row.locked" class="col-12 d-flex justify-content-center mt-auto">
                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-danger col-6 me-1" style="margin-left:6px;" @click.prevent="clickDelete(row.id)">
@@ -121,12 +122,12 @@
                                 </div>
 							</div>
 						</div>
-                        
+
                     </template>
-						
-						  
+
+
                 </div>
-            
+
         <system-plans-form :showDialog.sync="showDialog"
                             :plan_documents="plan_documents"
                              :recordId="recordId"></system-plans-form>
@@ -136,7 +137,7 @@
 <script>
 
     import PlansForm from './form.vue'
-    import {deletable} from "../../../mixins/deletable" 
+    import {deletable} from "../../../mixins/deletable"
 
     export default {
         mixins: [deletable],
@@ -146,14 +147,14 @@
                 showDialog: false,
                 resource: 'plans',
                 recordId: null,
-                records: [],                
+                records: [],
                 plan_documents: [] ,
                 aux:[],
                 loadingPopularPlanId: null
             }
         },
-        created() {            
-                
+        created() {
+
             this.$eventHub.$on('reloadData', () => {
                 this.getData()
             })
@@ -164,27 +165,27 @@
 
             getPlanDocuments(){
                 this.$http.get(`/${this.resource}/tables`).then(response => {
-                            this.plan_documents = response.data.plan_documents 
+                            this.plan_documents = response.data.plan_documents
                         })
             },
             getData() {
                 this.$http.get(`/${this.resource}/records`)
                     .then(response => {
-                        this.records = response.data.data                         
+                        this.records = response.data.data
                     })
             },
             getDescriptions(plan_documents){
 
-                let descriptions = []; 
-                Object.values(plan_documents).forEach((itm, i) => {                    
-                    descriptions.push(this.plan_documents[itm-1]) 
+                let descriptions = [];
+                Object.values(plan_documents).forEach((itm, i) => {
+                    descriptions.push(this.plan_documents[itm-1])
                 });
                 return descriptions
             },
             clickCreate(recordId = null) {
                 this.recordId = recordId
                 this.showDialog = true
-            }, 
+            },
             clickDelete(id) {
                 this.destroy(`/${this.resource}/${id}`).then(() =>
                     this.$eventHub.$emit('reloadData')
@@ -242,3 +243,5 @@
     cursor: wait;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

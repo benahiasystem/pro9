@@ -1,11 +1,12 @@
-<template> 
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
+<template>
     <div v-loading="loading" class="form-group">
         <label class="control-label">Costo Ponderado</label>
-        <el-input 
+        <el-input
             v-model="weighted_cost"
             readonly
         >
-            <!-- <span slot="prepend">S/</span> -->
+            <!-- <span slot="prepend">Bs.</span> -->
         </el-input>
     </div>
 </template>
@@ -27,18 +28,18 @@
             }
         },
         watch: {
-            itemId(newValue) 
+            itemId(newValue)
             {
                 this.getWeightedCost()
             }
         },
         created()
-        { 
+        {
             this.getWeightedCost()
         },
-        methods: 
+        methods:
         {
-            async getWeightedCost() 
+            async getWeightedCost()
             {
                 if(!this.itemId) return
 
@@ -54,3 +55,4 @@
         }
     }
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

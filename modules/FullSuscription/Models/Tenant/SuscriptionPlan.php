@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     /**
      */
 
@@ -439,7 +441,7 @@
         public function getCollectionData()
         {
             $currencyType = $this->currency_type;
-            if (!$currencyType) $currencyType = CurrencyType::find('PEN');
+            if (!$currencyType) $currencyType = CurrencyType::find('VES');
 
             $items = $this->items->transform(function ($item) use ($currencyType) {
                 if (is_array($item))
@@ -986,3 +988,5 @@
         }
 
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
