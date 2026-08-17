@@ -12,10 +12,12 @@ class ExampleTest extends TestCase
      *
      * @return void
      */
+    // ########### INICIO PRUEBA ACCESO RAÍZ PRO9
     public function testBasicTest()
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        $response->assertRedirect('/login');
     }
+    // ########### FIN PRUEBA ACCESO RAÍZ PRO9
 }
