@@ -41,11 +41,11 @@
   "_index-e849b4f5.js": {
     "file": "assets/index-e849b4f5.js"
   },
-  "_vue-clipboard-1a972a81.js": {
+  "_vue-clipboard-5f84af29.js": {
     "css": [
       "assets/vue-clipboard-2b0bc323.css"
     ],
-    "file": "assets/vue-clipboard-1a972a81.js",
+    "file": "assets/vue-clipboard-5f84af29.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-b09e3f6f.js",
@@ -165,9 +165,9 @@
     "css": [
       "assets/app-fb0dc3fc.css"
     ],
-    "file": "assets/app-563ef43e.js",
+    "file": "assets/app-065a6b87.js",
     "imports": [
-      "_vue-clipboard-1a972a81.js",
+      "_vue-clipboard-5f84af29.js",
       "_vue.esm-340a2d96.js",
       "_index-b09e3f6f.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
@@ -185,9 +185,9 @@
     "css": [
       "assets/system-48e6e12a.css"
     ],
-    "file": "assets/system-301ada72.js",
+    "file": "assets/system-09bbbe58.js",
     "imports": [
-      "_vue-clipboard-1a972a81.js",
+      "_vue-clipboard-5f84af29.js",
       "_vue.esm-340a2d96.js",
       "_index-b09e3f6f.js",
       "__plugin-vue2_normalizer-2bbd088e.js",

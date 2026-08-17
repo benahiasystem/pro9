@@ -47,24 +47,6 @@
                     <p>58MM</p>
                 </div>
 
-                <div v-if="ShowTicket50"
-                     class="col text-center font-weight-bold mt-3">
-
-                    <el-popover
-                        placement="top-start"
-                        :open-delay="1000"
-                        width="145"
-                        trigger="hover"
-                        content="Presiona ALT + P">
-                        <el-button slot="reference"
-                                   class="btn btn-lg btn-info waves-effect waves-light"
-                                   type="button"
-                                   @click="clickPrint('ticket_50')">
-                            <i class="fa fa-receipt"></i>
-                        </el-button>
-                    </el-popover>
-                    <p>50MM</p>
-                </div>
             </div>
         </div>
     </el-dialog>
@@ -121,18 +103,6 @@ export default {
                 this.config.show_ticket_80 !== undefined &&
                 this.config.show_ticket_80 !== null) {
                 return this.config.show_ticket_80;
-            }
-            return false;
-        },
-        ShowTicket50: function () {
-            if (this.config === undefined) return false;
-            if (this.config == null) return false;
-            if (this.config.show_ticket_50 === undefined) return false;
-            if (this.config.show_ticket_50 == null) return false;
-            if (
-                this.config.show_ticket_50 !== undefined &&
-                this.config.show_ticket_50 !== null) {
-                return this.config.show_ticket_50;
             }
             return false;
         }

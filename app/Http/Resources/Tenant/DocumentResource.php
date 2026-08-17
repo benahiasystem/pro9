@@ -125,7 +125,6 @@ class DocumentResource extends JsonResource
             'download_pdf' => $document->download_external_pdf,
             'print_ticket' => url('')."/print/document/{$document->external_id}/ticket",
             'print_ticket_58' => url('')."/print/document/{$document->external_id}/ticket_58",
-            'print_ticket_50' => url('')."/print/document/{$document->external_id}/ticket_50",
             'print_a4' => url('')."/print/document/{$document->external_id}/a4",
             'print_a5' => url('')."/print/document/{$document->external_id}/a5",
             'pdf_a4_filename' => url('')."/print/document/{$document->external_id}/a4/{$document->filename}.pdf",

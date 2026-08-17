@@ -1039,9 +1039,6 @@ class SaleNoteController extends Controller
                 case 'ticket_58':
                     $width = 56;
                     break;
-                case 'ticket_50':
-                    $width = 45;
-                    break;
                 default:
                     $width = 78;
                     break;
@@ -1049,23 +1046,6 @@ class SaleNoteController extends Controller
         }
 
         return $width;
-    }
-
-
-    /**
-     *
-     * Modificar valores del pdf para el formato ticket_50 (ancho, altura, margenes)
-     *
-     * @param  float $pdf_margin_right
-     * @param  float $pdf_margin_left
-     * @param  float $base_height
-     * @return void
-     */
-    public function changeValuesPdfTicket50(&$pdf_margin_right, &$pdf_margin_left, &$base_height)
-    {
-        $pdf_margin_right = 2;
-        $pdf_margin_left = 2;
-        $base_height = 90;
     }
 
 
@@ -1081,7 +1061,7 @@ class SaleNoteController extends Controller
         $this->configuration = Configuration::first();
         // $configuration = $this->configuration->formats;
         $base_template = Establishment::find($this->document->establishment_id)->template_pdf;
-        if (in_array($format_pdf, ['ticket', 'ticket_58', 'ticket_50', 'ticket_80'])) {
+        if (in_array($format_pdf, ['ticket', 'ticket_58', 'ticket_80'])) {
             $base_template = Establishment::find($this->document->establishment_id)->template_ticket_pdf;
         }
 
@@ -1093,7 +1073,7 @@ class SaleNoteController extends Controller
         $pdf_margin_left = 5;
 
         // if (($format_pdf === 'ticket') OR ($format_pdf === 'ticket_58'))
-        if(in_array($format_pdf, ['ticket', 'ticket_58', 'ticket_50']))
+        if(in_array($format_pdf, ['ticket', 'ticket_58']))
         {
             // $width = ($format_pdf === 'ticket_58') ? 56 : 78 ;
             // if(config('tenant.enabled_template_ticket_80')) $width = 76;
@@ -1127,8 +1107,6 @@ class SaleNoteController extends Controller
             $legends = $this->document->legends != '' ? '10' : '0';
             $bank_accounts = BankAccount::count() * 6;
             $base_height = 120;
-
-            if($format_pdf === 'ticket_50') $this->changeValuesPdfTicket50($pdf_margin_right, $pdf_margin_left, $base_height);
 
             $pdf = new Mpdf([
                 'mode' => 'utf-8',
@@ -1265,7 +1243,7 @@ class SaleNoteController extends Controller
         $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
 
         if(config('tenant.pdf_template_footer')) {
-            /* if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58') AND ($format_pdf != 'ticket_50')) */
+            /* if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58')) */
                 if ($base_template != 'full_height') {
                     $html_footer = $template->pdfFooter($base_template,$this->document);
                 } else {
@@ -1278,7 +1256,7 @@ class SaleNoteController extends Controller
                     }
                 }
 
-                if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58') || ($format_pdf === 'ticket_50')) {
+                if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58')) {
                     $pdf->WriteHTML($html_footer.$html_footer_legend, HTMLParserMode::HTML_BODY);
                 }else{
                     $pdf->SetHTMLFooter($html_footer.$html_footer_legend);
@@ -1287,7 +1265,7 @@ class SaleNoteController extends Controller
 
         if ($base_template === 'brand') {
 
-            if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58') || ($format_pdf === 'ticket_50')) {
+            if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58')) {
                 $pdf->SetHTMLHeader("");
                 $pdf->SetHTMLFooter("");
             }
