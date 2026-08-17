@@ -17,7 +17,9 @@ class TenancyDatabaseSeeder extends Seeder
      */
     public function run()
     {
+        // ########### INICIO CAMBIO RECONSTRUCCIÓN MIGRACIONES TENANT
         $this->call(TenantMigrationDataSeeder::class);
+        // ########### FIN CAMBIO RECONSTRUCCIÓN MIGRACIONES TENANT
 
         // $this->call([
         //     PolymorphicRelationSeeder::class,

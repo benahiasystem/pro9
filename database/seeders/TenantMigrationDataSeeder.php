@@ -8,6 +8,7 @@ use RuntimeException;
 use Throwable;
 
 /** Restaura los datos iniciales que antes eran insertados por migraciones tenant. */
+// ########### INICIO CAMBIO RECONSTRUCCIÓN MIGRACIONES TENANT
 class TenantMigrationDataSeeder extends Seeder
 {
     public function run(): void
@@ -61,3 +62,4 @@ class TenantMigrationDataSeeder extends Seeder
         }
     }
 }
+// ########### FIN CAMBIO RECONSTRUCCIÓN MIGRACIONES TENANT

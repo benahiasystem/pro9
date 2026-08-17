@@ -12,6 +12,7 @@ description: Consolida y valida las migraciones tenant de Pro9 desde la estructu
 - Conservar literalmente `SHOW CREATE TABLE`: columnas, orden, tipos, defaults, índices, motor, charset, collation, `AUTO_INCREMENT` y comentarios.
 - Reproducir el historial sólo para extraer los datos que inserta o actualiza; no aplicar políticas de otros proyectos ni modificar catálogos.
 - Mantener las migraciones antiguas en una copia temporal hasta completar ambas validaciones.
+- Delimitar cualquier modificación manual de código con comentarios válidos que contengan `########### INICIO` y `########### FIN`; no alterar el DDL capturado sólo para añadir marcas.
 
 ## Flujo
 
