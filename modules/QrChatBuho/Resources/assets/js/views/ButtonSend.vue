@@ -1,7 +1,9 @@
 <template>
     <div :class="colClass?colClass:'col-12'">
         <el-input v-model="wsPhone">
-            <template slot="prepend">+51</template>
+            <!-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA -->
+            <template slot="prepend">+58</template>
+            <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
             <template slot="append">
                 <el-tooltip class="item"
                     content="Requiere configuración de tokens en módulo de empresa"
@@ -103,7 +105,9 @@ export default {
             this.form = {
                 // appkey: this.config.qrchat_app_key,
                 // authkey: this.config.qrchat_auth_key,
-                number: `51${this.wsPhone}`,
+                // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+                number: `58${String(this.wsPhone).replace(/\D/g, '').replace(/^(58|51)/, '')}`,
+                // ########### FIN CAMBIO TELEFONÍA VENEZUELA
                 message: this.wsMessage,
                 file: base64File,
                 filename: 'file.pdf'

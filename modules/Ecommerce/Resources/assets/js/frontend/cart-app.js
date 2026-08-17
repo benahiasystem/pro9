@@ -209,11 +209,10 @@ var app_cart = new Vue({
             return this.enable_whatsapp && !!this.phone_whatsapp;
         },
         whatsappPhone: function () {
+            // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
             const raw = String(this.phone_whatsapp || '').replace(/\D+/g, '');
-            if (raw.length === 9 && raw.startsWith('9')) {
-                return '51' + raw;
-            }
-            return raw;
+            return `58${raw.replace(/^(58|51)/, '').replace(/^0+/, '')}`;
+            // ########### FIN CAMBIO TELEFONÍA VENEZUELA
         },
     },
     watch: {

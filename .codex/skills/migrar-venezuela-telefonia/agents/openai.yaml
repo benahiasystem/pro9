@@ -1,0 +1,4 @@
+interface:
+  display_name: "Telefonía de Venezuela"
+  short_description: "Normalizar teléfonos venezolanos con +58"
+  default_prompt: "Usa $migrar-venezuela-telefonia para migrar prefijos, enlaces tel y envíos de WhatsApp o QR a +58."

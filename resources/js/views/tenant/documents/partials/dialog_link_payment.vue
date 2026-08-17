@@ -39,7 +39,9 @@
                                 <div class="m-3" v-if="show_input_whatsapp || show_input_email">
                                     <template v-if="show_input_whatsapp">
                                         <el-input v-model="form_utilities.customer_telephone">
-                                            <template slot="prepend">+51</template>
+                                            <!-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA -->
+                                            <template slot="prepend">+58</template>
+                                            <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
                                             <el-button slot="append"
                                                     @click="clickSendWhatsapp">Enviar
                                                 <el-tooltip class="item"
@@ -130,7 +132,9 @@
                                         <template v-if="show_input_whatsapp">
 
                                             <el-input v-model="form_utilities.customer_telephone">
-                                                <template slot="prepend">+51</template>
+                                                <!-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA -->
+                                                <template slot="prepend">+58</template>
+                                                <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
                                                 <el-button slot="append"
                                                         @click="clickSendWhatsapp">Enviar
                                                     <el-tooltip class="item"
@@ -339,7 +343,10 @@
 
                 const text = `Su link de pago ha sido generado correctamente, puede revisarlo en: ${this.form.user_payment_link}`
 
-                window.open(`https://wa.me/51${this.form_utilities.customer_telephone}?text=${text}`, '_blank');
+                // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+                const phone = String(this.form_utilities.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
+                window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(text)}`, '_blank');
+                // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 
             },
             showInputEmail(){
