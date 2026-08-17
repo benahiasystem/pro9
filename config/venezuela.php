@@ -1,7 +1,8 @@
 <?php
 
 return [
-    // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+    // ########### INICIO CAMBIO LOCALIZACIÓN VENEZUELA
+    'country_id' => env('APP_COUNTRY_ID', 'VE'),
     'dial_code' => env('APP_DIAL_CODE', '+58'),
-    // ########### FIN CAMBIO TELEFONÍA VENEZUELA
+    // ########### FIN CAMBIO LOCALIZACIÓN VENEZUELA
 ];

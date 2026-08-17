@@ -4,8 +4,14 @@ namespace App\Support\Venezuela;
 
 final class Localization
 {
-    // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+    // ########### INICIO CAMBIO LOCALIZACIÓN VENEZUELA
+    public const COUNTRY_ID = 'VE';
     public const DIAL_CODE = '+58';
+
+    public static function countryId(): string
+    {
+        return (string) config('venezuela.country_id', self::COUNTRY_ID);
+    }
 
     public static function dialCode(): string
     {
@@ -41,5 +47,5 @@ final class Localization
 
         return $normalized === null ? null : ltrim($normalized, '+');
     }
-    // ########### FIN CAMBIO TELEFONÍA VENEZUELA
+    // ########### FIN CAMBIO LOCALIZACIÓN VENEZUELA
 }
