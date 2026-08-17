@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :close-on-click-modal="false"
                :title="titleDialog"
                :visible="showDialog"
@@ -229,30 +230,30 @@
                                      class="form-group">
                                     <label class="control-label">
                                         Ubigeo
-                                        <span v-if="form.country_id === 'PE'" class="text-danger">*</span>
+                                        <span v-if="form.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="form.location_id"
                                                  :clearable="true"
                                                  :options="locations"
                                                  filterable
-                                                 :disabled="form.country_id !== 'PE'"
+                                                 :disabled="form.country_id !== 'VE'"
                                                  :filter-method="customFilterMethod"></el-cascader>
                                     <small v-if="errors.location_id"
                                            class="form-control-feedback"
                                            v-text="errors.location_id[0]"></small>
-                                    <small v-if="form.country_id === 'PE'" class="text-muted">
+                                    <small v-if="form.country_id === 'VE'" class="text-muted">
                                         Campo obligatorio
                                     </small>
-                                    <small v-if="form.country_id !== 'PE'" class="text-muted">
-                                        Ubigeo solo disponible para Perú
+                                    <small v-if="form.country_id !== 'VE'" class="text-muted">
+                                        Ubigeo solo disponible para Venezuela
                                     </small>
                                 </div>
                             </div>
-                            <!-- Departamento -->
+                            <!-- Estado -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.department_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Departamento</label>-->
+<!--                                    <label class="control-label">Estado</label>-->
 <!--                                    <el-select v-model="form.department_id"-->
 <!--                                               dusk="department_id"-->
 <!--                                               filterable-->
@@ -268,11 +269,11 @@
 <!--                                           v-text="errors.department_id[0]"></small>-->
 <!--                                </div>-->
 <!--                            </div>-->
-                            <!-- Provincia -->
+                            <!-- Municipio -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.province_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Provincia</label>-->
+<!--                                    <label class="control-label">Municipio</label>-->
 <!--                                    <el-select v-model="form.province_id"-->
 <!--                                               dusk="province_id"-->
 <!--                                               filterable-->
@@ -288,11 +289,11 @@
 <!--                                           v-text="errors.province_id[0]"></small>-->
 <!--                                </div>-->
 <!--                            </div>-->
-                            <!-- Distrito -->
+                            <!-- Parroquia -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.province_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Distrito</label>-->
+<!--                                    <label class="control-label">Parroquia</label>-->
 <!--                                    <el-select v-model="form.district_id"-->
 <!--                                               dusk="district_id"-->
 <!--                                               filterable-->
@@ -466,21 +467,21 @@
                                      class="form-group">
                                     <label class="control-label">
                                         Ubigeo
-                                        <span v-if="row.country_id === 'PE'" class="text-danger">*</span>
+                                        <span v-if="row.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="row.location_id"
                                                  :clearable="true"
                                                  :options="locations"
-                                                 :disabled="row.country_id !== 'PE'"
+                                                 :disabled="row.country_id !== 'VE'"
                                                  filterable></el-cascader>
                                     <small v-if="errors.location_id"
                                            class="form-control-feedback"
                                            v-text="errors.location_id[0]"></small>
-                                    <small v-if="row.country_id === 'PE'" class="text-muted">
+                                    <small v-if="row.country_id === 'VE'" class="text-muted">
                                         Campo obligatorio
                                     </small>
                                     <small v-else class="text-muted">
-                                        Ubigeo solo disponible para Perú
+                                        Ubigeo solo disponible para Venezuela
                                     </small>
                                 </div>
                             </div>
@@ -820,7 +821,9 @@
 
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../mixins/functions'
@@ -950,7 +953,7 @@ export default {
     },
     watch: {
         'form.country_id': function(newValue) {
-            if (newValue !== 'PE' && this.form.location_id && this.form.location_id.length > 0) {
+            if (newValue !== 'VE' && this.form.location_id && this.form.location_id.length > 0) {
                 this.form.location_id = [];
             }
         }
@@ -1006,8 +1009,8 @@ export default {
                 number: '',
                 name: null,
                 trade_name: null,
-                country_id: 'PE',
-                nationality_id: 'PE',
+                country_id: 'VE',
+                nationality_id: 'VE',
                 location_id: [],
                 password: null,
                 password_confirmation: null,
@@ -1122,7 +1125,7 @@ export default {
 
             this.form.addresses.push({
                 'id': null,
-                'country_id': 'PE',
+                'country_id': 'VE',
                 'location_id': [],
                 'address': null,
                 'email': null,
@@ -1274,7 +1277,7 @@ export default {
             if (this.form.addresses && this.form.addresses.length > 0) {
                 for (let i = 0; i < this.form.addresses.length; i++) {
                     const address = this.form.addresses[i];
-                    if (address.country_id === 'PE' && (!address.location_id || address.location_id.length !== 3)) {
+                    if (address.country_id === 'VE' && (!address.location_id || address.location_id.length !== 3)) {
                         hasErrorInAdditionalAddresses = true;
                         addressWithError = i + 1;
                         break;
@@ -1488,7 +1491,7 @@ export default {
         buildAddressFromEstablishment(est, main) {
             return {
                 id: null,
-                country_id: 'PE',
+                country_id: 'VE',
                 location_id: est.location_id,
                 address: est.direccion,
                 email: null,
@@ -1546,12 +1549,13 @@ export default {
 
         },
         handleCountryChange(row, index) {
-            if (row.country_id !== 'PE' && row.location_id && row.location_id.length > 0) {
+            if (row.country_id !== 'VE' && row.location_id && row.location_id.length > 0) {
                 this.$set(this.form.addresses[index], 'location_id', []);
             }
         },
     }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
 
 <style scoped>

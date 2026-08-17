@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
   <div class="cf-wrapper" :class="{ 'cf-embedded': embedded }">
 
     <!-- Encabezado -->
@@ -274,7 +275,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="8" :xs="24">
-            <el-form-item label="Departamento / Provincia / Distrito">
+            <el-form-item label="Estado / Municipio / Parroquia">
               <el-cascader v-model="form.location_cascade" :options="tables.locations"
                 :props="{ expandTrigger: 'hover', value: 'value', label: 'label', children: 'children' }"
                 placeholder="Seleccione su ubicación" filterable clearable style="width:100%"></el-cascader>
@@ -1093,7 +1094,9 @@
 }
 </style>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import ClaimResultDialog from './partials/ClaimResultDialog.vue'
 
 function hexToOklch(hex) {
@@ -1642,4 +1645,5 @@ export default {
     },
   }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

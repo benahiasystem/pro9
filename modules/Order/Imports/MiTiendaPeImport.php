@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 
     namespace Modules\Order\Imports;
 
@@ -191,13 +193,13 @@
                 /*
                 if (empty($customer)) {
                     $address = [
-                        'country_id'=>'PE',
+                        'country_id'=>'VE',
                     ];
                     $dataCustomer = [
                         'type' => 'customers',
                         'name' => "$lastnames, $names",
                         'number' => $identificationNumber,
-                        'country_id' => 'PE',
+                        'country_id' => 'VE',
                         'address' => $street,
                         'email' => $email,
                         'telephone' => $phone,
@@ -538,13 +540,13 @@
 
             if (empty($customer) ) {
                 $address = [
-                    'country_id' => 'PE',
+                    'country_id' => 'VE',
                 ];
                 $dataCustomer = [
                     'type' => 'customers',
                     'name' => "$lastnames, $names",
                     'number' => $identificationNumber,
-                    'country_id' => 'PE',
+                    'country_id' => 'VE',
                     'address' => $street,
                     'email' => $email,
                     'telephone' => $phone,
@@ -742,3 +744,4 @@
         }
 
     }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

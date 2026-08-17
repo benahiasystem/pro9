@@ -1,3 +1,4 @@
+{{-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA --}}
 @extends('ecommerce::layouts.layout_ecommerce_cart.index')
 @section('content')
 
@@ -481,8 +482,8 @@
                         "codigo_tipo_documento_identidad": "0",
                         "numero_documento": "0",
                         "apellidos_y_nombres_o_razon_social": this.user.name,
-                        "codigo_pais": "PE",
-                        "ubigeo": "150101",
+                        "codigo_pais": "VE",
+                        "ubigeo": "000619",
                         "direccion": "",
                         "correo_electronico": this.user.email,
                         "telefono": ""
@@ -630,8 +631,8 @@
             "codigo_tipo_documento_identidad": "0",
             "numero_documento": "0",
             "apellidos_y_nombres_o_razon_social": user.name,
-            "codigo_pais": "PE",
-            "ubigeo": "150101",
+            "codigo_pais": "VE",
+            "ubigeo": "000619",
             "direccion": "",
             "correo_electronico": user.email,
             "telefono": ""
@@ -645,3 +646,5 @@
 </script>
 
 @endpush
+
+{{-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA --}}

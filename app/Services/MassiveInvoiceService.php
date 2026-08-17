@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace App\Services;
 
 use Illuminate\Support\Collection;
@@ -80,7 +82,7 @@ class MassiveInvoiceService
                     'datos_del_cliente_o_receptor' => array_merge([
                         'codigo_tipo_documento_identidad' => $tipoComprobante === '03' ? '1' : '6',
                         'numero_documento' => $receptorDocNum,
-                        'codigo_pais' => 'PE',
+                        'codigo_pais' => 'VE',
                         'correo_electronico' => $row[6] ?? '',
                         'telefono' => ''
                     ], $receptorData),
@@ -187,7 +189,7 @@ class MassiveInvoiceService
         $data = [
             'apellidos_y_nombres_o_razon_social' => 'CLIENTE GENERAL',
             'direccion' => 'DIRECCION GENERAL',
-            'ubigeo' => '150101'
+            'ubigeo' => '000619'
         ];
         
         try {
@@ -249,3 +251,4 @@ class MassiveInvoiceService
         return true;
     }
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

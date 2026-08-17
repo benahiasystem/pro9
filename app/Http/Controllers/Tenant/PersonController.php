@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Requests\Tenant\PersonRequest;
@@ -123,7 +125,7 @@ class PersonController extends Controller
         // restricción para direcciones secundarias - Perú
         $addresses = $request->input('addresses') ?: [];
         foreach ($addresses as $index => $row) {
-            if (isset($row['country_id']) && $row['country_id'] === 'PE') {
+            if (isset($row['country_id']) && $row['country_id'] === 'VE') {
                 
                 if (empty($row['location_id']) || !is_array($row['location_id']) || count($row['location_id']) !== 3 || 
                     !isset($row['location_id'][0]) || !isset($row['location_id'][1]) || !isset($row['location_id'][2]) || 
@@ -144,7 +146,7 @@ class PersonController extends Controller
         $person->fill($data);
 
         $location_id = $request->input('location_id');
-        if($request->input('country_id') === 'PE' && is_array($location_id) && count($location_id) === 3) {
+        if($request->input('country_id') === 'VE' && is_array($location_id) && count($location_id) === 3) {
             $person->district_id = $location_id[2];
             $person->province_id = $location_id[1];
             $person->department_id = $location_id[0];
@@ -292,7 +294,9 @@ class PersonController extends Controller
                 foreach ($province->districts as $district) {
                     $children_districts[] = [
                         'value' => $district->id,
-                        'label' => $district->id . " - " . $district->description
+                        // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+                        'label' => $district->description
+                        // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
                     ];
                 }
                 $children_provinces[] = [
@@ -511,3 +515,4 @@ class PersonController extends Controller
     }
 
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

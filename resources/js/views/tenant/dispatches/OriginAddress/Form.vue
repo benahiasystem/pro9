@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :close-on-click-modal="false"
                :title="titleDialog"
                :visible="showDialog"
@@ -57,7 +58,9 @@
     </el-dialog>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 
 export default {
     name: 'DispatchOriginAddressForm',
@@ -91,7 +94,7 @@ export default {
             this.errors = {}
             this.form = {
                 id: null,
-                country_id: 'PE',
+                country_id: 'VE',
                 location_id: [],
                 address: null,
                 is_default: 0,
@@ -138,4 +141,5 @@ export default {
         },
     }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

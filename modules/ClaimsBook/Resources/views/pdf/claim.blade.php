@@ -1,3 +1,4 @@
+{{-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA --}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -300,7 +301,7 @@
                         <span class="field-value">{{ $claim->phone ?? '—' }}</span>
                     </td>
                     <td>
-                        <span class="field-label">Distrito</span>
+                        <span class="field-label">Parroquia</span>
                         <span class="field-value">{{ $claim->district ? $claim->district->description : '—' }}</span>
                     </td>
                 </tr>
@@ -494,3 +495,5 @@
 
 </body>
 </html>
+
+{{-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA --}}

@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
     namespace App\Models\Tenant;
 
     use App\Models\Tenant\Catalogs\CurrencyType;
@@ -1357,7 +1359,7 @@ use Modules\Sale\Models\Agent;
 
             $customer = Person::find($this->customer_id);
             if (empty($customer->identity_document_type_id)) $customer->identity_document_type_id = 6;
-            if (empty($customer->country_id)) $customer->country_id = 'PE';
+            if (empty($customer->country_id)) $customer->country_id = 'VE';
             if (empty($customer->district_id)) $customer->district_id = '';
             $customer->codigo_tipo_documento_identidad = $customer->identity_document_type_id;
             $customer->numero_documento = $customer->number;
@@ -2030,3 +2032,4 @@ use Modules\Sale\Models\Agent;
         }
 
     }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

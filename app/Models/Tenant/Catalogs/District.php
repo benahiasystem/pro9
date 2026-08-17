@@ -2,6 +2,10 @@
 
 namespace App\Models\Tenant\Catalogs;
 
+// ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+use App\Support\Venezuela\Localization;
+use InvalidArgumentException;
+// ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 use Hyn\Tenancy\Traits\UsesTenantConnection;
 
 class District extends ModelCatalog
@@ -11,16 +15,27 @@ class District extends ModelCatalog
     public $incrementing = false;
     public $timestamps = false;
 
-    static function idByDescription($description, $province_id)
+    // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+    public static function idByDescription($description, string $provinceId): string
     {
-        $district = District::where('description', $description)
-                            ->where('province_id', $province_id)
-                            ->first();
-        if ($district) {
-            return $district->id;
+        $normalized = Localization::normalizeLocationName($description);
+        $matches = self::query()
+            ->where('active', true)
+            ->where('province_id', $provinceId)
+            ->get()
+            ->filter(static fn (District $district): bool =>
+                Localization::normalizeLocationName($district->description) === $normalized
+            );
+
+        if ($normalized === '' || $matches->count() !== 1) {
+            throw new InvalidArgumentException(
+                'La Parroquia indicada no existe, es ambigua o no pertenece al Municipio.'
+            );
         }
-        return '150101';
+
+        return (string) $matches->first()->id;
     }
+    // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 
     public function province()
     {

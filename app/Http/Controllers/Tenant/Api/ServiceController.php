@@ -63,22 +63,34 @@
             $service = new Sunat();
             $res = $service->get($number);
             if ($res) {
-                $province_id = Province::idByDescription($res->provincia);
-                return [
-                    'success' => true,
-                    'data' => [
-                        'name' => $res->razonSocial,
-                        'trade_name' => $res->nombreComercial,
-                        'address' => $res->direccion,
-                        'phone' => implode(' / ', $res->telefonos),
-                        'department' => ($res->departamento) ?: 'LIMA',
-                        'department_id' => Department::idByDescription($res->departamento),
-                        'province' => ($res->provincia) ?: 'LIMA',
-                        'province_id' => $province_id,
-                        'district' => ($res->distrito) ?: 'LIMA',
-                        'district_id' => District::idByDescription($res->distrito, $province_id),
-                    ]
-                ];
+                // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+                try {
+                    $departmentId = Department::idByDescription($res->departamento);
+                    $provinceId = Province::idByDescription($res->provincia, $departmentId);
+                    $districtId = District::idByDescription($res->distrito, $provinceId);
+
+                    return [
+                        'success' => true,
+                        'data' => [
+                            'name' => $res->razonSocial,
+                            'trade_name' => $res->nombreComercial,
+                            'address' => $res->direccion,
+                            'phone' => implode(' / ', $res->telefonos),
+                            'department' => $res->departamento,
+                            'department_id' => $departmentId,
+                            'province' => $res->provincia,
+                            'province_id' => $provinceId,
+                            'district' => $res->distrito,
+                            'district_id' => $districtId,
+                        ],
+                    ];
+                } catch (\InvalidArgumentException $exception) {
+                    return [
+                        'success' => false,
+                        'message' => $exception->getMessage(),
+                    ];
+                }
+                // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
             } else {
                 return [
                     'success' => false,

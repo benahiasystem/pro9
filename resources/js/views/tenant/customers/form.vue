@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :append-to-body="true"
                :title="titleDialog"
                :visible="showDialog"
@@ -86,7 +87,7 @@
                     <div class="col-md-4">
                         <div :class="{'has-danger': errors.department_id}"
                              class="form-group">
-                            <label class="control-label">Departamento</label>
+                            <label class="control-label">Estado</label>
                             <el-select v-model="form.department_id"
                                        filterable
                                        @change="filterProvince">
@@ -103,7 +104,7 @@
                     <div class="col-md-4">
                         <div :class="{'has-danger': errors.province_id}"
                              class="form-group">
-                            <label class="control-label">Provincia</label>
+                            <label class="control-label">Municipio</label>
                             <el-select v-model="form.province_id"
                                        filterable
                                        @change="filterDistrict">
@@ -122,7 +123,7 @@
                     <div class="col-md-4">
                         <div :class="{'has-danger': errors.province_id}"
                              class="form-group">
-                            <label class="control-label">Distrito</label>
+                            <label class="control-label">Parroquia</label>
                             <el-select v-model="form.district_id"
                                        filterable>
                                 <el-option v-for="option in districts"
@@ -181,7 +182,9 @@
     </el-dialog>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 
 import {serviceNumber} from '../../../mixins/functions'
 
@@ -240,7 +243,7 @@ export default {
                 number: null,
                 name: null,
                 trade_name: null,
-                country_id: 'PE',
+                country_id: 'VE',
                 department_id: null,
                 province_id: null,
                 district_id: null,
@@ -304,4 +307,5 @@ export default {
         }
     }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

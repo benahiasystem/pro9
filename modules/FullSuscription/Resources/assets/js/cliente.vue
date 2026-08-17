@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :append-to-body="true"
                :close-on-click-modal="false"
                :title="titleDialog"
@@ -155,11 +156,11 @@
                                            v-text="errors.country_id[0]"></small>
                                 </div>
                             </div>
-                            <!-- Departamento -->
+                            <!-- Estado -->
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.department_id}"
                                      class="form-group">
-                                    <label class="control-label">Departamento</label>
+                                    <label class="control-label">Estado</label>
                                     <el-select v-model="form.department_id"
                                                dusk="department_id"
                                                filterable
@@ -175,11 +176,11 @@
                                            v-text="errors.department_id[0]"></small>
                                 </div>
                             </div>
-                            <!-- Provincia -->
+                            <!-- Municipio -->
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
-                                    <label class="control-label">Provincia</label>
+                                    <label class="control-label">Municipio</label>
                                     <el-select v-model="form.province_id"
                                                dusk="province_id"
                                                filterable
@@ -195,11 +196,11 @@
                                            v-text="errors.province_id[0]"></small>
                                 </div>
                             </div>
-                            <!-- Distrito -->
+                            <!-- Parroquia -->
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
-                                    <label class="control-label">Distrito</label>
+                                    <label class="control-label">Parroquia</label>
                                     <el-select v-model="form.district_id"
                                                dusk="district_id"
                                                filterable
@@ -658,7 +659,9 @@
     </el-dialog>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../mixins/functions'
@@ -761,8 +764,8 @@ export default {
                 number: '',
                 name: null,
                 trade_name: null,
-                country_id: 'PE',
-                nationality_id: 'PE',
+                country_id: 'VE',
+                nationality_id: 'VE',
                 department_id: null,
                 province_id: null,
                 district_id: null,
@@ -865,7 +868,7 @@ export default {
 
             this.form.addresses.push({
                 'id': null,
-                'country_id': 'PE',
+                'country_id': 'VE',
                 'location_id': [],
                 'address': null,
                 'email': null,
@@ -1086,6 +1089,7 @@ export default {
 
     }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
 
 <style scoped>

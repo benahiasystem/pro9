@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog
         :title="titleDialog"
         :visible="showDialog"
@@ -15,7 +16,7 @@
                     <label class="control-label">NOMBRE DE LA ZONA</label>
                     <el-input
                         v-model="form.name"
-                        placeholder="Ej: Lima Centro, Provincia, Callao..."
+                        placeholder="Ej: Miranda Centro, Municipio, Chacao..."
                         :maxlength="150"
                     ></el-input>
                     <small class="form-control-feedback" v-if="errors.name" v-text="errors.name[0]"></small>
@@ -51,15 +52,15 @@
                 <div class="border rounded p-3 mb-3">
                     <label class="control-label mb-2 d-block">COBERTURA (ubigeo)</label>
                     <small class="text-muted d-block mb-2">
-                        Selecciona Departamento → Provincia (opcional) → Distrito (opcional) y pulsa <strong>+ Agregar</strong>.
-                        Dejar Provincia vacía cubre todo el departamento.
+                        Selecciona Estado → Municipio (opcional) → Parroquia (opcional) y pulsa <strong>+ Agregar</strong>.
+                        Dejar el Municipio vacío cubre todo el Estado.
                     </small>
 
                     <!-- Selectores en cascada -->
                     <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
                         <el-select
                             v-model="locationPicker.department_id"
-                            placeholder="Departamento"
+                            placeholder="Estado"
                             size="small"
                             filterable
                             clearable
@@ -76,7 +77,7 @@
 
                         <el-select
                             v-model="locationPicker.province_id"
-                            placeholder="Provincia"
+                            placeholder="Municipio"
                             size="small"
                             filterable
                             clearable
@@ -94,7 +95,7 @@
 
                         <el-select
                             v-model="locationPicker.district_id"
-                            placeholder="Distrito (opc.)"
+                            placeholder="Parroquia (opc.)"
                             size="small"
                             filterable
                             clearable
@@ -152,7 +153,9 @@
     </el-dialog>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 export default {
     name: 'DeliveryZoneForm',
     props: {
@@ -331,4 +334,5 @@ export default {
         },
     },
 };
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

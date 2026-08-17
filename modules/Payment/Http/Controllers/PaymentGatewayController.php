@@ -1,4 +1,6 @@
 <?php
+
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
 namespace Modules\Payment\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -192,7 +194,7 @@ class PaymentGatewayController extends Controller
             fn ($value) => !is_null($value) && $value !== ''
         );
 
-        $billing['country'] = $billing['country'] ?? 'PE';
+        $billing['country'] = $billing['country'] ?? 'VE';
 
         data_set($payload, 'customer.billingDetails', $billing);
 
@@ -402,3 +404,4 @@ class PaymentGatewayController extends Controller
      }
 
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

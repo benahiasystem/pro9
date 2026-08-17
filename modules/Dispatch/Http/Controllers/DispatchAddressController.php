@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace Modules\Dispatch\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -153,7 +155,7 @@ class DispatchAddressController extends Controller
             return ['success' => false,'id' => 0];
         }
 
-        $data['country_id'] = "PE";
+        $data['country_id'] = "VE";
         $record = PersonAddress::firstOrNew(['id' => $id]);
         $record->fill($data);
         $record->save();
@@ -165,3 +167,4 @@ class DispatchAddressController extends Controller
     }
 
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace Modules\Ecommerce\Http\Controllers;
 
 use App\Http\Controllers\Tenant\EmailController;
@@ -610,8 +612,8 @@ class EcommerceController extends Controller
             $person->identity_document_type_id = $identity_document_type_id;
             $person->number = $request->ruc;
             $person->name = $name;
-            $person->country_id = 'PE';
-            $person->nationality_id = 'PE';
+            $person->country_id = 'VE';
+            $person->nationality_id = 'VE';
             $person->department_id = $department_id;
             $person->province_id = $province_id;
             $person->district_id = $district_id;
@@ -1092,7 +1094,7 @@ class EcommerceController extends Controller
                     'district_id' => $districtId,
                 ],
                 [
-                    'country_id'    => 'PE',
+                    'country_id'    => 'VE',
                     'department_id' => $request->input('department_id'),
                     'province_id'   => $request->input('province_id'),
                     'district_id'   => $districtId,
@@ -1482,3 +1484,4 @@ class EcommerceController extends Controller
         ];
     }
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

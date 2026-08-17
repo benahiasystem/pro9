@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div :class="{ 'content-opacity': isVisible }" @click.self="toggleInformation">
         <MiniTour
             :steps="miniTourSteps"
@@ -4024,7 +4025,9 @@
     }
 }
 </style>
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import DocumentFormItem from "./partials/item.vue";
 import PersonForm from "../persons/form.vue";
 import DocumentOptions from "../documents/partials/options.vue";
@@ -5026,7 +5029,7 @@ export default {
                     department_id: data.location_id[0],
                     province_id: data.location_id[1],
                     district_id: data.location_id[2],
-                    country_id: "PE",
+                    country_id: "VE",
                     telephone: data.telephone
                 }
             }
@@ -8975,4 +8978,5 @@ export default {
         },
     }
 };
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

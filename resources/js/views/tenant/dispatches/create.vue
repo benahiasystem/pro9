@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div>
         <div class="page-header pe-0">
             <h2><a href="/dispatches">
@@ -886,7 +887,9 @@
     </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import PersonForm from '../persons/form.vue';
 import Items from './items.vue';
 import itemForm from '../items/form.vue';
@@ -1295,8 +1298,8 @@ export default {
             this.form.customer_id = isReasonType09 || isReasonType04 ? null : this.form.customer_id;
 
             this.delivery = isReasonType09
-                ? { country_id: 'PE', location_id: [], address: null }
-                : { ...this.delivery, country_id: 'PE' };
+                ? { country_id: 'VE', location_id: [], address: null }
+                : { ...this.delivery, country_id: 'VE' };
 
             isReasonType04 ? this.getAddressesOtherEstablishment(this.form.establishment_id) : this.searchRemoteCustomers('');
 
@@ -2031,4 +2034,5 @@ export default {
         }
     },
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

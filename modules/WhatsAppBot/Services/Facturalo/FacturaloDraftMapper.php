@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace Modules\WhatsAppBot\Services\Facturalo;
 
 use App\Models\Tenant\Item;
@@ -272,7 +274,7 @@ class FacturaloDraftMapper
                 'number' => '00000000',
                 'name' => 'CLIENTES VARIOS',
                 'trade_name' => 'CLIENTES VARIOS',
-                'country_id' => 'PE',
+                'country_id' => 'VE',
                 'address' => '-',
                 'enabled' => true,
             ]);
@@ -306,3 +308,4 @@ class FacturaloDraftMapper
         return $data;
     }
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div class="persons">
         <div class="page-header pe-0">
             <h2>
@@ -173,19 +174,19 @@
                             v-if="columns.department.visible === true"
                             class="text-start"
                         >
-                            Departamento
+                            Estado
                         </th>
                         <th
                             v-if="columns.province.visible === true"
                             class="text-start"
                         >
-                            Provincia
+                            Municipio
                         </th>
                         <th
                             v-if="columns.district.visible === true"
                             class="text-start"
                         >
-                            Distrito
+                            Parroquia
                         </th>
 
                         <th class="text-center" v-if="showAccumulatedPoints">
@@ -373,7 +374,9 @@
         </div>
     </div>
 </template>
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import PersonsForm from "./form.vue";
 import PersonsImport from "./import.vue";
 import PersonsExport from "./partials/export.vue";
@@ -427,15 +430,15 @@ export default {
                     visible: false
                 },
                 department: {
-                    title: "Departamento",
+                    title: "Estado",
                     visible: false
                 },
                 province: {
-                    title: "Provincia",
+                    title: "Municipio",
                     visible: false
                 },
                 district: {
-                    title: "Distrito",
+                    title: "Parroquia",
                     visible: false
                 }
             }
@@ -583,6 +586,7 @@ export default {
         }
     }
 };
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
 
 <style scoped>

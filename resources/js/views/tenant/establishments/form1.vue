@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create" :close-on-click-modal="false">
         <form autocomplete="off" @submit.prevent="submit">
             <div class="form-body">
@@ -33,7 +34,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group" :class="{'has-danger': errors.department_id}">
-                                    <label class="control-label">Departamento</label>
+                                    <label class="control-label">Estado</label>
                                     <el-select v-model="form.department_id" filterable @change="filterProvince">
                                         <el-option v-for="option in all_departments" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
@@ -42,7 +43,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group" :class="{'has-danger': errors.province_id}">
-                                    <label class="control-label">Provincia</label>
+                                    <label class="control-label">Municipio</label>
                                     <el-select v-model="form.province_id" filterable @change="filterDistrict">
                                         <el-option v-for="option in provinces" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
@@ -53,7 +54,7 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group" :class="{'has-danger': errors.province_id}">
-                                    <label class="control-label">Distrito</label>
+                                    <label class="control-label">Parroquia</label>
                                     <el-select v-model="form.district_id" filterable>
                                         <el-option v-for="option in districts" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                     </el-select>
@@ -232,7 +233,9 @@
 
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 
     export default {
         props: ['showDialog', 'recordId'],
@@ -319,7 +322,7 @@
                 this.form = {
                     id: null,
                     description: null,
-                    country_id: 'PE',
+                    country_id: 'VE',
                     department_id: null,
                     province_id: null,
                     district_id: null,
@@ -458,7 +461,7 @@
             clickAddAddress() {
                 this.form.addresses.push({
                     'id': null,
-                    'country_id': 'PE',
+                    'country_id': 'VE',
                     'location_id': [],
                     'address': null,
                     'is_default':0,
@@ -478,4 +481,5 @@
 
         }
     }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
