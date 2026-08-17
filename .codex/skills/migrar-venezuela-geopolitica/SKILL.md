@@ -16,7 +16,7 @@ description: Reemplazar catálogos y referencias geográficas de Perú por Venez
 6. Codificar los identificadores dentro del ancho heredado: estados con 2 dígitos, municipios con 4 y parroquias con 6.
 7. Mostrar sólo la descripción de la Parroquia; conservar el identificador de seis dígitos únicamente como `value`, sin anteponerlo a la etiqueta.
 8. Aplicar la misma etiqueta limpia en clientes, suscripciones y cualquier cascader duplicado.
-9. Filtrar y cachear el árbol por tenant y país con una clave versionada, por ejemplo `locations:v2:{tenant}:{country}`. Cambiar la versión cuando cambie la forma de las opciones.
+9. Filtrar y cachear el árbol por tenant y país con una clave versionada, por ejemplo `locations:v2:{tenant}:{country}`. Evitar una clave global compartida y cambiar la versión cuando cambie la forma de las opciones.
 10. Construir el árbol exclusivamente mediante consultas a base de datos y no leer archivos territoriales en runtime.
 11. Resolver descripciones normalizando mayúsculas, espacios y acentos; exigir una coincidencia única dentro del padre y lanzar error ante inexistencia o ambigüedad.
 12. Configurar `America/Caracas` y usar `000619` como ubigeo inicial de importación.
@@ -28,6 +28,7 @@ description: Reemplazar catálogos y referencias geográficas de Perú por Venez
 - Usar Miranda/Chacao/Chacao como ubicación inicial: `14`, `0229`, `000619`.
 - No dejar registros geográficos PE en la base después de la migración.
 - Resolver nombres junto con su jerarquía; detectar ambigüedades en vez de elegir el primer resultado.
+- Conservar el catálogo internacional de países sólo cuando sea necesario para nacionalidades; la migración territorial final debe eliminar PE del estado efectivo del tenant.
 - Verificar que `TenantMigrationDataSeeder` cargue `database/seeders/data/venezuela_geopolitical_data.php` con los conteos esperados.
 - Mantener migraciones consolidadas independientes para `countries`, `departments`, `provinces` y `districts`, con sus claves foráneas en la migración final.
 
