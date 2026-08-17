@@ -1,0 +1,4 @@
+interface:
+  display_name: "Validar importación Excel de productos"
+  short_description: "Valida, corrige e importa ítems mediante XLSX"
+  default_prompt: "Usa $migrate-product-import-excel-format para mantener y verificar la importación de ítems con validación previa, descarga automática y corrección parcial."
