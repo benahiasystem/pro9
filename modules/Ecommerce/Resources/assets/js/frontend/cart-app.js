@@ -222,6 +222,7 @@ var app_cart = new Vue({
         pickupBranches: window.__ecommerce_config?.pickup_branches || [],
         selectedPickupBranch: null,
         isPickupMode: false,
+        pickupBranchQuery: '',
         // Métodos de pago adicionales
         enableCash: window.__ecommerce_config?.enable_cash || false,
         cashPaymentTitle: window.__ecommerce_config?.cash_payment_title || 'Pago contra entrega',
@@ -506,6 +507,15 @@ var app_cart = new Vue({
         },
         showCheckoutSections() {
             return this.isLoggedIn || this.guestCheckoutAccepted;
+        },
+        filteredPickupBranches() {
+            const query = String(this.pickupBranchQuery || '').trim().toLowerCase();
+            if (!query) return this.pickupBranches;
+
+            return this.pickupBranches.filter(branch => {
+                const haystack = (String(branch.name || '') + ' ' + String(branch.address || '')).toLowerCase();
+                return haystack.indexOf(query) !== -1;
+            });
         },
         isCashPaymentAvailable() {
             return this.enableCash && (!this.cashPaymentPickupOnly || this.isPickupMode);
@@ -5078,8 +5088,8 @@ var app_cart = new Vue({
                     this.selectedPickupBranch = this.pickupBranches[0];
                 }
             } else {
-                // Al desactivar recojo: limpiar sucursal y disparar búsqueda de zona
                 this.selectedPickupBranch = null;
+                this.pickupBranchQuery = '';
                 this.checkDeliveryZone();
             }
             this.calculateSummary();

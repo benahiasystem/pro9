@@ -2311,33 +2311,81 @@
                         </span>
                     </div>
 
-                    <div class="ship-grid">
+                    <div class="ship-grid" :class="{ 'ship-grid--single': isPickupMode }">
                         {{-- Columna izquierda: dirección de entrega o sucursal de recojo --}}
                         <div class="ship-col">
                             {{-- Modo recojo en tienda: radio buttons de sucursales --}}
                             <template v-if="isPickupMode">
-                                <span class="field-label">Selecciona una sucursal</span>
+                                <div class="pickup-head">
+                                    <span class="field-label mb-0">Selecciona una sucursal</span>
+                                    <span class="pickup-count" v-if="pickupBranches.length > 1">
+                                        <template v-if="pickupBranchQuery">@{{ filteredPickupBranches.length }} de @{{ pickupBranches.length }}</template>
+                                    </span>
+                                </div>
+
                                 <div v-if="pickupBranches.length === 0" class="ship-alert ship-alert--info">
                                     No hay sucursales de recojo configuradas.
                                 </div>
-                                <div v-else class="option-list">
-                                    <label
-                                        v-for="branch in pickupBranches"
-                                        :key="branch.id"
-                                        class="option-card"
-                                        :class="{ 'option-card--active': selectedPickupBranch && selectedPickupBranch.id === branch.id }"
-                                    >
+
+                                <template v-else>
+                                    <div class="pickup-search" v-if="pickupBranches.length > 5">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M21 21l-6 -6"/></svg>
                                         <input
-                                            type="radio"
-                                            :value="branch.id"
-                                            :checked="selectedPickupBranch && selectedPickupBranch.id === branch.id"
-                                            @change="selectPickupBranch(branch)"
+                                            type="text"
+                                            class="input pickup-search-input"
+                                            v-model.trim="pickupBranchQuery"
+                                            placeholder="Buscar sucursal por nombre o dirección"
+                                            aria-label="Buscar sucursal de recojo"
                                         >
-                                        <span class="option-card-body">
-                                            <strong>@{{ branch.name }}</strong>
-                                            <span class="option-card-sub" v-if="branch.address">@{{ branch.address }}</span>
-                                        </span>
-                                    </label>
+                                        <button
+                                            v-if="pickupBranchQuery"
+                                            type="button"
+                                            class="pickup-search-clear"
+                                            @click="pickupBranchQuery = ''"
+                                            aria-label="Limpiar búsqueda"
+                                        >&times;</button>
+                                    </div>
+
+                                    <div v-if="filteredPickupBranches.length === 0" class="ship-alert ship-alert--info">
+                                        Ninguna sucursal coincide con <strong>@{{ pickupBranchQuery }}</strong>.
+                                    </div>
+
+                                    <div
+                                        v-else
+                                        class="pickup-list"
+                                        :class="{ 'pickup-list--scroll': filteredPickupBranches.length > 6 }"
+                                        role="radiogroup"
+                                        aria-label="Sucursales de recojo"
+                                    >
+                                        <label
+                                            v-for="branch in filteredPickupBranches"
+                                            :key="branch.id"
+                                            class="option-card pickup-card"
+                                            :class="{ 'option-card--active': selectedPickupBranch && selectedPickupBranch.id === branch.id }"
+                                        >
+                                            <input
+                                                type="radio"
+                                                name="pickup_branch"
+                                                style="margin-top: 6px"
+                                                :value="branch.id"
+                                                :checked="selectedPickupBranch && selectedPickupBranch.id === branch.id"
+                                                @change="selectPickupBranch(branch)"
+                                            >
+                                            <span class="option-card-body">
+                                                <strong>@{{ branch.name }}</strong>
+                                                <span class="option-card-sub" v-if="branch.address">@{{ branch.address }}</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </template>
+
+                                <div v-if="needsBuyerPhoneField && isLoggedIn" class="ship-alert ship-alert--warn ship-alert--icon" role="alert">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
+                                    <div>
+                                        No tienes un teléfono guardado en tu cuenta. Agrégalo desde
+                                        <a href="{{ route('tenant_ecommerce_account') }}" class="ship-alert-link">Mi cuenta</a>
+                                        antes de pagar: lo necesitamos para avisarte cuando tu pedido esté listo.
+                                    </div>
                                 </div>
                             </template>
 
@@ -2404,29 +2452,7 @@
                             </template>
                         </div>
 
-                        <div class="ship-col" style="padding-top: 31px">
-                            <template v-if="isPickupMode">
-                                <span class="field-label">Datos de contacto</span>
-                                <div class="ship-alert ship-alert--info ship-alert--icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01"/><path d="M11 12h1v4h1"/></svg>
-                                    <div>
-                                        En <strong>recojo en tienda</strong> solo necesitas <strong>seleccionar una sucursal</strong>.
-                                        Usaremos los datos que ya ingresaste<template v-if="buyerContactSummary">:
-                                        <strong>@{{ buyerContactSummary }}</strong></template>.
-                                    </div>
-                                </div>
-
-                                <div v-if="needsBuyerPhoneField && isLoggedIn" class="ship-alert ship-alert--warn ship-alert--icon" role="alert">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
-                                    <div>
-                                        No tienes un teléfono guardado en tu cuenta. Agrégalo desde
-                                        <a href="{{ route('tenant_ecommerce_account') }}" class="ship-alert-link">Mi cuenta</a>
-                                        antes de pagar: lo necesitamos para avisarte cuando tu pedido esté listo.
-                                    </div>
-                                </div>
-                            </template>
-
-                            <template v-else>
+                        <div class="ship-col" style="padding-top: 31px" v-if="!isPickupMode">
                                 <template v-if="needsBuyerPhoneField && isLoggedIn">
                                     <div v-if="!deliveryContactOverride" class="ship-alert ship-alert--warn ship-alert--icon mb-1 mt-0" role="alert">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
@@ -2496,7 +2522,6 @@
                                         <p class="hint">Solo se usa para coordinar esta entrega. Tus datos de contacto no cambian.</p>
                                     </div>
                                 </div>
-                            </template>
                         </div>
                     </div>
                 </div>
