@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pr-0">
@@ -214,16 +215,16 @@
                                 <template v-if="row.mi_tienda_pe && row.mi_tienda_pe.order_number">{{ row.mi_tienda_pe.order_number }}</template>
                             </td>
                             <td v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
-                            <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
-                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_unaffected) }}</td>
-                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
-                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
-                            <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
+                            <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
+                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_unaffected) }}</td>
+                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
+                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
+                            <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
                             <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end text-nowrap">
                                 <label v-if="row.documents.length > 0" :key="'doc_payment_' + index" v-text="calculatePayments(row.documents)"></label>
                                 <label v-if="row.sale_notes.length > 0" :key="'sale_note_payment_' + index" v-text="calculatePayments(row.sale_notes)"></label>
                             </td>
-                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}</td>
+                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total) }}</td>
                             <td v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-end">
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickOptionsPdf(row.id)">PDF</button>
                             </td>
@@ -685,3 +686,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

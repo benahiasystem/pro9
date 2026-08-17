@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="es">
     <head>
@@ -21,7 +22,7 @@
                         </td>
                         <td align="center">
                             <p><strong>{{$records[0]->customer->number}} - {{$records[0]->customer->name}}</strong></p>
-                        </td> 
+                        </td>
                     </tr>
                 @endif
                 <tr>
@@ -58,7 +59,7 @@
                         $acum_total_taxed=0;
                         $acum_total_igv=0;
                         $acum_total=0;
-                      
+
                         $serie_affec = '';
                         $acum_total_exonerado=0;
                         $acum_total_inafecto=0;
@@ -85,22 +86,22 @@
                             @foreach($records as $key => $value)
                             <tr>
                                 <td class="celda">{{$loop->iteration}}</td>
-                                <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td> 
+                                <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
                                 <td class="celda">{{$value->document_type->description}}</td>
                                 <td class="celda">{{$value->currency_type_id}}</td>
                                 <td class="celda">{{$value->series}}</td>
                                 <td class="celda">{{$value->number}}</td>
                                 <td class="celda">{{$value->total}}</td>
-                               
+
                                 @php
                                   $signal = $value->document_type_id;
                                   $state = $value->state_type_id;
-                                @endphp 
-                                
-                                
-                                
+                                @endphp
+
+
+
                                 @php
-                                
+
                                     $value->total_exonerated = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_exonerated;
                                     $value->total_unaffected = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_unaffected;
                                     $value->total_free = (in_array($value->document_type_id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_free;
@@ -111,14 +112,14 @@
                                 @endphp
 
                             @php
-                              
+
                                 $serie_affec =  '';
-                              
+
                             @endphp
- 
+
                             </tr>
                             @php
-                            if($value->currency_type_id == 'PEN'){ 
+                            if($value->currency_type_id == 'VES'){
 
 
                                 if(($signal == '07' && $state !== '11')){
@@ -127,7 +128,7 @@
                                     $acum_total_taxed += -$value->total_taxed;
                                     $acum_total_igv += -$value->total_igv;
 
-                                    
+
                                     $acum_total_exonerado += -$value->total_exonerated;
                                     $acum_total_inafecto += -$value->total_unaffected;
                                     $acum_total_free += -$value->total_free;
@@ -155,8 +156,8 @@
                                 }
 
 
-                            }else if($value->currency_type_id == 'USD'){ 
-                                
+                            }else if($value->currency_type_id == 'USD'){
+
                                 if(($signal == '07' && $state !== '11')){
 
                                     $acum_total_usd += -$value->total;
@@ -180,18 +181,18 @@
 
                                 }
 
-                                
+
                             }
                             @endphp
                             @endforeach
                             <tr>
-                                <td colspan="5"></td> 
-                                <td >TOTAL PEN</td>
+                                <td colspan="5"></td>
+                                <td >TOTAL VES</td>
                                 <td>{{$acum_total}}</td>
                             </tr>
                             <tr>
                                 <td colspan="5"></td>
-                                <td >TOTAL USD</td>  
+                                <td >TOTAL USD</td>
                                 <td>{{$acum_total_usd}}</td>
                             </tr>
                         </tbody>
@@ -205,3 +206,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Payment\Traits;
 
 use Exception;
@@ -15,10 +17,10 @@ use App\Models\Tenant\{
 
 
 trait PaymentLinkTrait
-{ 
+{
 
     /**
-     * 
+     *
      * Buscar link de pago y retornar datos publicos
      *
      * @return PaymentLink
@@ -28,7 +30,7 @@ trait PaymentLinkTrait
         return PaymentLink::whereFilterPublicData($payment_link_type_id, $uuid)->firstOrFail()->getFormPublicData();
     }
 
-    
+
     /**
      *
      * @param  PaymentLink $payment_link
@@ -43,7 +45,7 @@ trait PaymentLinkTrait
         {
             $associated_record_payment = $payment_link['associated_record_payment'];
 
-            if($associated_record_payment['currency_type_id'] === 'PEN') return $payment_link['total'];
+            if($associated_record_payment['currency_type_id'] === 'VES') return $payment_link['total'];
 
             $apply_conversion = true;
 
@@ -53,7 +55,7 @@ trait PaymentLinkTrait
         // el monto a cobrar lo define el link, no la url
         return round((float) $payment_link['total'], 2);
     }
-    
+
 
     /**
      *
@@ -64,9 +66,9 @@ trait PaymentLinkTrait
         return Company::select('name', 'number')->first();
     }
 
-    
+
     /**
-     * 
+     *
      * Validar datos
      *
      * @param  string $payment_link_type_id
@@ -104,11 +106,13 @@ trait PaymentLinkTrait
             $validate = [
                 'success' => false,
                 'message' => 'Tipo de link no permitido',
-            ]; 
+            ];
         }
-        
+
         if(!$validate['success']) throw new Exception($validate['message']);
 
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

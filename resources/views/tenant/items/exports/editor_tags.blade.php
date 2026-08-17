@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 
 <!DOCTYPE html>
 <html lang="es">
@@ -12,7 +13,7 @@
 @foreach ($items as $item)
     @for ($i = 0; $i < $quantity_per_item; $i++)
         @foreach ($template->fields as $field)
-        
+
                 @php
                     $width = (float)str_replace("px", "",$field->width);
                     $width = $width / 3.7795275591;
@@ -25,7 +26,7 @@
                     $y = $y / 3.7795275591;
                     $style = $field->style;
                 @endphp
-        
+
             @if ($field->column === 'barcode' && isset($item->barcode))
             <div style='position: absolute; top: {{ $y }}mm; left: {{ $x }}mm; margin-top:20px;margin-bottom:20px '  >
                 @php
@@ -52,7 +53,7 @@
                 @php
                 $size = isset($style['fontSize']) ? ((float)str_replace("px", "",$style['fontSize']) / 3.7795275591 ): (12/3.7795275591);
                 $weight = isset($style['fontWeight']) ? $style['fontWeight'] : 'normal';
-                $align = isset($style['textAlign']) ? $style['textAlign'] : 'left';  
+                $align = isset($style['textAlign']) ? $style['textAlign'] : 'left';
                     $color = isset($style['color']) ? $style['color'] : '#000000';
 
                 @endphp
@@ -60,7 +61,7 @@
 
                     @if ($field->column === 'unit_type')
                         {{ $item->unit_type->description ?? '' }}
-                    
+
                     @elseif (strpos($field->column, 'attribute') !== false)
                         @php
                             $attribute_number = str_replace('attribute_', '', $field->column);
@@ -69,13 +70,13 @@
                         {{ $attribute->value ?? '' }}
                     @else
                         @if ($field->column === 'name')
-                            {{ $item->name ??  
+                            {{ $item->name ??
                             (
                                 $item->description ?? ''
                             ) }}
                         @elseif ($field->column === 'sale_unit_price')
                         <span style="white-space: nowrap;">
-                            S/&nbsp;{{ $item->{$field->column} ?? '' }}
+                            Bs.&nbsp;{{ $item->{$field->column} ?? '' }}
                         </span>
 
                         @elseif(optional($item->{$field->column})->name !== null)
@@ -102,3 +103,4 @@
 @endforeach
 </body>
 </html>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

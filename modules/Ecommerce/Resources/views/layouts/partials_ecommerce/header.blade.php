@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 
 <style>
 #header_bar .header-menu {
@@ -506,8 +507,8 @@ div.cart-dropdown {
                                 image: imageSmall,
                                 // campos que necesita detail.blade.php
                                 sale_affectation_igv_type_id: item.sale_affectation_igv_type_id || '10',
-                                currency_type_id: item.currency_type_id || 'PEN',
-                                currency_type_symbol: item.currency_type_symbol || 'S/',
+                                currency_type_id: item.currency_type_id || 'VES',
+                                currency_type_symbol: item.currency_type_symbol || 'Bs.',
                                 unit_type_id: item.unit_type_id || 'NIU',
                                 internal_id: item.internal_id || '',
                                 quantity: 1
@@ -583,3 +584,5 @@ div.cart-dropdown {
 
 })();
 </script>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

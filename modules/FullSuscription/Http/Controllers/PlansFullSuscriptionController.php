@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO ADAPTACIÓN VENEZUELA
+
     namespace Modules\FullSuscription\Http\Controllers;
 
 use App\Models\Tenant\Catalogs\IdentityDocumentType;
@@ -222,8 +224,8 @@ use Modules\Payment\Models\PaymentConfiguration;
         {
 
             try {
-                DB::connection('tenant')->beginTransaction();   
-                
+                DB::connection('tenant')->beginTransaction();
+
                 $validated = $request->validate([
                     'plan_id' => 'required',
                     'status' => 'required', // va a venir el status del pago del mismo checkout
@@ -243,14 +245,14 @@ use Modules\Payment\Models\PaymentConfiguration;
                 $order = SuscriptionOrder::where('person_number', $validated['customer']['number'])
                                         ->whereNull('suscription_id')
                                         ->where('type', SuscriptionOrder::TYPE_NEW_SUSCRIPTION)->first();
-                
-                
+
+
                 if (!$order) {
                     $_data_order = [
                             'amount' => $plan->total,
                             'date_of_payment' => null,
                             'person_number' => $validated['customer']['number'],
-                            'currency' => 'PEN',
+                            'currency' => 'VES',
                             'status' => $this->returnStatusOrder($validated['status']),
                             'type' => SuscriptionOrder::TYPE_NEW_SUSCRIPTION,
                             'date_of_issue' => $date_of_issue,
@@ -272,7 +274,7 @@ use Modules\Payment\Models\PaymentConfiguration;
                             'amount' => $plan->total,
                             'date_of_payment' => now()->toDateTimeString(),
                             'suscription_id' => $suscription->id,
-                            'currency' => 'PEN',
+                            'currency' => 'VES',
                             'status' => SuscriptionOrder::STATUS_PAID,
                             'type' => SuscriptionOrder::TYPE_SUSCRIPTION_ORDER,
                             'date_of_due' => $suscription->getCurrentDateOfDue(),
@@ -286,7 +288,7 @@ use Modules\Payment\Models\PaymentConfiguration;
                             'date_of_payment' => now()->toDateTimeString(),
                         ]);
                     }
-                    
+
                     SuscriptionOrder::create($_data_order);
 
                 }
@@ -375,8 +377,8 @@ use Modules\Payment\Models\PaymentConfiguration;
                 'name' => $person_data['data']['name'],
                 'email' => $data['email'],
                 'telephone' => $data['phone'],
-                'country_id' => 'PE',
-                'nationality_id' => 'PE',
+                'country_id' => 'VE',
+                'nationality_id' => 'VE',
                 'type' => 'customers',
             ];
 
@@ -410,3 +412,4 @@ use Modules\Payment\Models\PaymentConfiguration;
         }
 
     }
+// ######## FIN ADAPTACIÓN VENEZUELA

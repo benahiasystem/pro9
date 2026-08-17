@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="btn-filter-content mb-3">
@@ -272,7 +273,7 @@
 
 
                             <div class="dropdown d-inline ml-1 mr-1">
-                                
+
                                 <el-button class="submit"
                                         icon="el-icon-tickets"
                                         type="danger"
@@ -281,17 +282,17 @@
                                         >Exportar PDF
                                         <i class="el-icon-arrow-down el-icon--right"></i>
                                 </el-button>
- 
+
                                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                     <button class="dropdown-item" @click.prevent="clickDownload('pdf')">
                                         Formato estándar
                                     </button>
-                                    
+
                                     <el-tooltip class="item"
                                         effect="dark"
                                         content="Columnas dinámicas - Procesamiento asíncrono (bandeja de descargas)"
                                         placement="right">
-                                        
+
                                         <button class="dropdown-item" @click.prevent="clickExport('pdf')">
                                             Formato dinámico
                                         </button>
@@ -316,7 +317,7 @@
 
 
                             <div class="dropdown d-inline ml-1 mr-1">
-                                
+
                                 <el-button class="submit"
                                         type="success"
                                         id="dropdownMenuButton"
@@ -326,13 +327,13 @@
                                         Exportar Excel
                                         <i class="el-icon-arrow-down el-icon--right"></i>
                                 </el-button>
- 
+
                                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                     <button class="dropdown-item" @click.prevent="clickDownload('excel')">
                                         Formato estándar
                                     </button>
 
-                                    
+
                                     <el-tooltip class="item"
                                         effect="dark"
                                         content="Columnas dinámicas - Procesamiento asíncrono (bandeja de descargas)"
@@ -397,7 +398,7 @@
                                     <td v-if="visibleColumns.options.visible"></td>
                                     <td v-if="visibleColumns.web_platforms.visible"></td>
                                     <td v-if="visibleColumns.total_charge.visible"></td>
-                                    <td><strong>Totales PEN</strong></td>
+                                    <td><strong>Totales VES</strong></td>
                                     <td v-if="visibleColumns.total_exonerated.visible">{{ totals.acum_total_exonerated }}</td>
                                     <td v-if="visibleColumns.total_unaffected.visible">{{ totals.acum_total_unaffected }}</td>
                                     <td v-if="visibleColumns.total_free.visible">{{ totals.acum_total_free }}</td>
@@ -425,11 +426,11 @@
 
                             </template>
                             <template v-else>
-                                <!-- mostrar si no se aplica conversion a soles -->
+                                <!-- mostrar si no se aplica conversion a bolívares -->
                                 <template v-if="!applyConversionToPen">
                                 <tr>
                                     <td :colspan="colspanFootPurchase"></td>
-                                    <td><strong>Totales PEN</strong></td>
+                                    <td><strong>Totales VES</strong></td>
                                     <td>{{ totals.acum_total_exonerated }}</td>
                                     <td>{{ totals.acum_total_unaffected }}</td>
                                     <td>{{ totals.acum_total_free }}</td>
@@ -601,10 +602,10 @@ export default {
         checkScrollShadows() {
             const el = this.$refs.scrollContainer;
             if (!el) return;
-            
+
             const scrollLeft = el.scrollLeft;
             const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-            
+
             this.showLeftShadow = scrollLeft > 1;
             this.showRightShadow = scrollRight > 1;
         },
@@ -661,7 +662,7 @@ export default {
                 let signal = row.document_type_id;
                 let state = row.state_type_id;
 
-                if (row.currency_type_id == 'PEN') {
+                if (row.currency_type_id == 'VES') {
 
                     if ((signal == '07' && state != '11')) {
 
@@ -900,7 +901,7 @@ export default {
                     let res = response.data;
                     if (res.success) {
                         // this.$message.success(res.message);
-                        
+
                         this.$notify({
                             message: res.message,
                             type: 'success',
@@ -926,3 +927,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

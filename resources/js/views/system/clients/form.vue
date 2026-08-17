@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :close-on-click-modal="false"
@@ -1049,11 +1050,11 @@ export default {
             this.ensureVisibleBusinessOption();
             const preSelecteds = [];
             const preAppSelecteds = [];
-            
+
             const preSelectedsModules = permissions.modules || [];
             const preSelectedsApps = permissions.apps || [];
             const preSelectedsLevels = permissions.levels || [];
-            
+
             this.modules.map(m => {
                 if (preSelectedsModules.includes(m.id)) {
                     preSelecteds.push(m.id);
@@ -1205,7 +1206,7 @@ export default {
             }
 
             if (this.business === 6 && this.selectedPlan && !this.planMeetsNrusLimits(this.selectedPlan)) {
-                return this.$message.error('El plan seleccionado no cumple los límites NRUS (ventas máx. S/ 8000 y 1 sucursal).')
+                return this.$message.error('El plan seleccionado no cumple los límites NRUS (ventas máx. Bs. 8000 y 1 sucursal).')
             }
 
             if (!this.form.is_update) {
@@ -1382,3 +1383,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

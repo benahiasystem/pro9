@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="es">
 
@@ -11,7 +12,7 @@
     @php($productDescription = data_get($product, 'name') ?: ($restaurantDescription) ?: 'Descripción no disponible')
     @php($productImage = data_get($product, 'image') ? asset('storage/uploads/items/'.data_get($product, 'image')) : asset('logo/tulogo.png'))
     @php($productPrice = number_format(data_get($product, 'sale_unit_price', 0), 2, '.', ''))
-    @php($productCurrency = data_get($product, 'currency_type_symbol', 'S/'))
+    @php($productCurrency = data_get($product, 'currency_type_symbol', 'Bs.'))
     @php($productUrl = url()->current())
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -149,3 +150,5 @@
 <!-- Mirrored from portotheme.com/html/porto_ecommerce/demo-6/product.html by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 07 Sep 2019 03:40:02 GMT -->
 
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

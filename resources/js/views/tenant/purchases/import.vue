@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :title="titleDialog"
@@ -293,7 +294,7 @@ export default {
                         formItem.item.unit_price = unit_price;
                         formItem.item.presentation = {};
                         formItem.affectation_igv_type = affectation_igv_code;
-                        let row = calculateRowItem(formItem, "PEN", 3.393);
+                        let row = calculateRowItem(formItem, "VES", 3.393);
                         row.warehouse_id = 1;
                         row.warehouse_description = "Almacén Oficina Principal";
                         self.form.items.push(row);
@@ -354,7 +355,7 @@ export default {
                         formItem.item.unit_price = unit_price;
                         formItem.item.presentation = {};
                         formItem.affectation_igv_type = affectation_igv_code;
-                        let row = calculateRowItem(formItem, "PEN", 3.393);
+                        let row = calculateRowItem(formItem, "VES", 3.393);
                         row.warehouse_id = 1;
                         row.warehouse_description = "Almacén Oficina Principal";
                         self.form.items.push(row);
@@ -395,7 +396,7 @@ export default {
                 time_of_issue: null,
                 supplier_id: null,
                 payment_method_type_id: "01",
-                currency_type_id: "PEN",
+                currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 3.393,
                 total_prepayment: 0,
@@ -528,3 +529,5 @@ export default {
     },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

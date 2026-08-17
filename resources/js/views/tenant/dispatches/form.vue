@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div class="card mb-0 pt-2 pt-md-0">
         <div class="card-header bg-info">
             <h3 class="my-0">Nueva Guía de Remisión 1</h3>
@@ -464,7 +465,9 @@
     </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import PersonForm from '../persons/form.vue';
 import Items from './items.vue';
 import DispatchOptions from './partials/options.vue'
@@ -662,12 +665,12 @@ export default {
                     license: null,
                 },
                 delivery: {
-                    country_id: 'PE',
+                    country_id: 'VE',
                     location_id: [],
                     address: null,
                 },
                 origin: {
-                    country_id: 'PE',
+                    country_id: 'VE',
                     location_id: [],
                     address: null,
                 },
@@ -853,4 +856,5 @@ export default {
         }
     },
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

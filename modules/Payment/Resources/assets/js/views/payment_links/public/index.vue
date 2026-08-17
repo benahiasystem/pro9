@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="pl-page">
 
@@ -45,7 +46,7 @@
                         <div class="pl-documents">
                             <div class="pl-documents__row" v-for="(document, index) in payment_link.documents" :key="index">
                                 <span>{{ document.number_full }}</span>
-                                <span>S/ {{ formatNumber(document.total) }}</span>
+                                <span>Bs. {{ formatNumber(document.total) }}</span>
                             </div>
                         </div>
                     </dd>
@@ -58,7 +59,7 @@
 
                 <div class="pl-detail__row pl-detail__row--total">
                     <dt>Importe</dt>
-                    <dd>S/ {{ formatNumber(total) }}</dd>
+                    <dd>Bs. {{ formatNumber(total) }}</dd>
                 </div>
 
             </dl>
@@ -148,7 +149,7 @@
 
                 this.form = {
                     amount: Math.round(parseFloat(this.total || 0) * 100),
-                    currency: 'PEN',
+                    currency: 'VES',
                     order_id: `${this.payment_link.number_full}-${Date.now()}`,
                     description: this.description,
                     customer: {
@@ -170,12 +171,12 @@
              * los pagos de los comprobantes asociados
              */
             onPaymentSubmit(response) {
-                
+
 
                 let paid = !!(response && response.data && response.data.paid)
 
                 paid = true
-                
+
                 if (!paid) return this.$message.error('El pago no fue aprobado')
 
                 this.$http.post(`/pagos/${this.payment_link.uuid}/confirmar`, {
@@ -382,3 +383,5 @@
     }
 
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,3 +1,4 @@
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 import state from './state'
 
 function readStorageData(variable, json = false, defaultv = undefined) {
@@ -87,7 +88,7 @@ export default {
                 series_document_id: null,
                 user_id: null,
                 payment_destination_id: null,
-                currency_type_id: 'PEN',
+                currency_type_id: 'VES',
             };
         }
 
@@ -225,3 +226,5 @@ export default {
         }
     },
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

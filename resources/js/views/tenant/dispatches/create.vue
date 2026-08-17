@@ -1,4 +1,6 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div>
         <div class="page-header pe-0">
             <h2><a href="/dispatches">
@@ -540,8 +542,8 @@
                                                         [Lotes]
                                                     </a>
                                                 </td>
-                                                <td class="text-end">S/{{ getFormatQuantity(row.unit_price || row.item?.unit_price || 0) }}</td>
-                                                <td class="text-end">S/{{ getFormatQuantity(row.total || row.item?.total || 0) }}</td>
+                                                <td class="text-end">Bs.{{ getFormatQuantity(row.unit_price || row.item?.unit_price || 0) }}</td>
+                                                <td class="text-end">Bs.{{ getFormatQuantity(row.total || row.item?.total || 0) }}</td>
                                                 <td class="text-end">
                                                     <button class="btn waves-effect waves-light btn-xs btn-danger"
                                                         type="button" @click.prevent="clickRemoveItem(index)">x
@@ -886,7 +888,9 @@
     </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import PersonForm from '../persons/form.vue';
 import Items from './items.vue';
 import itemForm from '../items/form.vue';
@@ -1295,8 +1299,8 @@ export default {
             this.form.customer_id = isReasonType09 || isReasonType04 ? null : this.form.customer_id;
 
             this.delivery = isReasonType09
-                ? { country_id: 'PE', location_id: [], address: null }
-                : { ...this.delivery, country_id: 'PE' };
+                ? { country_id: 'VE', location_id: [], address: null }
+                : { ...this.delivery, country_id: 'VE' };
 
             isReasonType04 ? this.getAddressesOtherEstablishment(this.form.establishment_id) : this.searchRemoteCustomers('');
 
@@ -1588,9 +1592,9 @@ export default {
                     if (attr.attribute_type_id === '5031') {
                         total_weight += parseFloat(attr.value) * qty
                     }
-                }); 
+                });
             }
-            
+
             this.form.total_weight += total_weight
             let exist = this.form.items.find((item) => item.id == it.id);
             let attributes = null
@@ -2031,4 +2035,7 @@ export default {
         }
     },
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

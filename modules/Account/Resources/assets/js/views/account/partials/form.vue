@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :title="titleDialog"
@@ -23,7 +24,7 @@
                         <tr>
                             <th>Tipo</th>
                             <th>Descripción tipo documento</th>
-                            <th>Cuenta Soles</th>
+                            <th>Cuenta Bolívares</th>
                             <th>Cuenta Dolares</th>
                             <th class="text-center" width="60">Acciones</th>
                         </tr>
@@ -111,7 +112,7 @@
                 return this.bank_accounts.filter(el => el.currency_type_id === 'USD')
             },
             bank_accounts_pen() {
-                return this.bank_accounts.filter(el => el.currency_type_id === 'PEN')
+                return this.bank_accounts.filter(el => el.currency_type_id === 'VES')
             },
             canAddRow() {
                 return this.form.records && this.form.records.length < this.document_types.length
@@ -201,3 +202,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

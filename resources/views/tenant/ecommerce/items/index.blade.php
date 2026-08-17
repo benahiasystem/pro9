@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('tenant.layouts.layout_ecommerce_item.index')
 @section('content')
 
@@ -22,8 +23,8 @@
                 <a href="product.html">{{$item->name}}</a>
             </h2>
             <div class="price-box">
-                <span class="old-price">S/ {{ number_format($item->sale_unit_price, 2) }}</span>
-                <span class="product-price">S/ {{ number_format($item->sale_unit_price, 2) }}</span>
+                <span class="old-price">Bs. {{ number_format($item->sale_unit_price, 2) }}</span>
+                <span class="product-price">Bs. {{ number_format($item->sale_unit_price, 2) }}</span>
             </div><!-- End .price-box -->
 
             <div class="product-action">
@@ -47,3 +48,5 @@
 
 
 @endsection
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

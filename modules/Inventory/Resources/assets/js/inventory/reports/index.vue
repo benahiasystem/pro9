@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -28,7 +29,7 @@
                                 </el-dropdown-menu>
                             </el-dropdown>
                         </div>
-    
+
                     </div>
                     <div class="card-body">
                         <div class="row m-b-10 mt-3">
@@ -76,11 +77,11 @@
                                                :label="option.name"
                                                :value="option.id"></el-option>
                                 </el-select>
-    
+
                             </div>
                             <div class="col-md-3 form-modern">
                                 <label class="control-label">Por stock</label>
-    
+
                                 <el-select v-model="form.filter"
                                            placeholder="Seleccionar filtro"
                                            @change="changeFilter">
@@ -104,7 +105,7 @@
                                                value="05"></el-option>
                                 </el-select>
                             </div>
-    
+
                             <div v-if="filters.active.visible"
                                  class="col-md-3 form-modern">
                                 <label class="control-label">Estado del item</label>
@@ -120,7 +121,7 @@
                                                value="00"></el-option>
                                 </el-select>
                             </div>
-    
+
                             <div v-if="filters.range.visible"
                                  class="col-md-3 form-modern">
                                 <label class="control-label">Fecha de vencimiento - inicio</label>
@@ -142,7 +143,7 @@
                                                 value-format="yyyy-MM-dd"
                                                 @change="changeDisabledDates"></el-date-picker>
                             </div>
-    
+
                             <div class="col-12">&nbsp;</div>
                             <div class="col-auto">
                                 <el-button :disabled="records.length <= 0"
@@ -157,7 +158,7 @@
                                 </el-button>
                             </div>
                         </div>
-    
+
                         <div v-if="records.length > 0"
                              class="row">
                             <div class="col-md-12">
@@ -225,11 +226,11 @@
                                         <tr>
                                             <td class="celda"
                                                 colspan="5"></td>
-                                            <td class="celda">S/ {{ totals.sale_unit_price }}</td>
-                                            <td class="celda">S/ {{ totals.purchase_unit_price }}</td>
-    
-                                            <td class="celda">S/ {{ total_profit }}</td>
-                                            <td class="celda">S/ {{ total_all_profit }}</td>
+                                            <td class="celda">Bs. {{ totals.sale_unit_price }}</td>
+                                            <td class="celda">Bs. {{ totals.purchase_unit_price }}</td>
+
+                                            <td class="celda">Bs. {{ total_profit }}</td>
+                                            <td class="celda">Bs. {{ total_all_profit }}</td>
                                         </tr>
                                         </tfoot>
                                     </table>
@@ -479,3 +480,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

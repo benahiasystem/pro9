@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div>
         <div class="page-header pe-0">
             <h2>
@@ -97,19 +98,19 @@
                                 v-if="columns.district.visible"
                                 class="text-end"
                             >
-                                Distrito
+                                Parroquia
                             </th>
                             <th
                                 v-if="columns.department.visible"
                                 class="text-end"
                             >
-                                Departamento
+                                Estado
                             </th>
                             <th
                                 v-if="columns.province.visible"
                                 class="text-end"
                             >
-                                Provincia
+                                Municipio
                             </th>
                             <th
                                 v-if="columns.client_direction.visible"
@@ -438,7 +439,9 @@
     </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import DataTable from "@componentsModuleReport/DataTableReportsDocuments.vue";
 import DocumentOptions from "@views/documents/partials/options.vue";
 import ProductSale from "./partials/product_sale.vue";
@@ -474,15 +477,15 @@ export default {
                     visible: false
                 },
                 district: {
-                    title: "Distrito",
+                    title: "Parroquia",
                     visible: false
                 },
                 department: {
-                    title: "Departamento",
+                    title: "Estado",
                     visible: false
                 },
                 province: {
-                    title: "Provincia",
+                    title: "Municipio",
                     visible: false
                 },
                 client_direction: {
@@ -662,4 +665,5 @@ export default {
         }
     }
 };
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

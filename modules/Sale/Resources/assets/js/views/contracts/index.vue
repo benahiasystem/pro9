@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pr-0">
@@ -62,13 +63,13 @@
                             <td v-if="col.visible && col.key === 'number'" :key="col.key">{{ row.number_full }}</td>
                             <td v-if="col.visible && col.key === 'quotation'" :key="col.key">{{ row.quotation_number_full }}</td>
                             <td v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
-                            <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
-                            <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_free) }}</td>
-                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_unaffected) }}</td>
-                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
-                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
-                            <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
-                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}</td>
+                            <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
+                            <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_free) }}</td>
+                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_unaffected) }}</td>
+                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
+                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
+                            <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
+                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total) }}</td>
                             <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
                                 <el-dropdown trigger="click" @command="(command) => handleRowAction(command, row)">
                                     <el-button class="btn-dropdown">
@@ -210,20 +211,20 @@
 
                 await this.updateStateType(`/${this.resource}/state-type/${row.state_type_id}/${row.id}`).then(() =>
                     this.$eventHub.$emit('reloadData')
-                ) 
+                )
 
             },
             filter(){
                 this.$http.get(`/${this.resource}/filter`)
-                            .then(response => { 
-                                this.state_types = response.data.state_types 
+                            .then(response => {
+                                this.state_types = response.data.state_types
                             })
             },
             clickEdit(id)
             {
                 this.recordId = id
                 this.showDialogFormEdit = true
-            }, 
+            },
             clickOptionsPdf(recordId = null) {
                 this.recordId = recordId
                 this.showDialogOptionsPdf = true
@@ -252,3 +253,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

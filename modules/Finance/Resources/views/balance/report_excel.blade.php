@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="es">
     <head>
@@ -89,39 +90,39 @@
                                     {{$description}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$initial_balance}}
+                                    Bs. {{$initial_balance}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$document_payment}}
+                                    Bs. {{$document_payment}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$sale_note_payment}}
+                                    Bs. {{$sale_note_payment}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$quotation_payment}}
+                                    Bs. {{$quotation_payment}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$contract_payment}}
+                                    Bs. {{$contract_payment}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$technical_service_payment}}
+                                    Bs. {{$technical_service_payment}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$income_payment}}
+                                    Bs. {{$income_payment}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$purchase_payment}}
+                                    Bs. {{$purchase_payment}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$expense_payment}}
+                                    Bs. {{$expense_payment}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$bank_loan}}
+                                    Bs. {{$bank_loan}}
                                 </td>
                                 <td class="celda">
-                                    S/ {{$bank_loan_payment}}
+                                    Bs. {{$bank_loan_payment}}
                                 </td>
-                                <td class="celda">S/ {{$balance}}
+                                <td class="celda">Bs. {{$balance}}
                                 </td>
                             </tr>
                         @endforeach
@@ -129,18 +130,18 @@
                         <tfoot>
                         <tr>
                             <td class="text-center celda" colspan="2">Totales</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_initial_balance'] }}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_documents'] }}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_sale_notes']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_quotations']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_contracts']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_technical_services']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_income']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_purchases']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_expenses']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_bank_loan']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_bank_loan_payment']}}</td>
-                            <td class="text-center celda">S/ {{ $data['totals']['t_balance']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_initial_balance'] }}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_documents'] }}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_sale_notes']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_quotations']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_contracts']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_technical_services']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_income']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_purchases']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_expenses']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_bank_loan']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_bank_loan_payment']}}</td>
+                            <td class="text-center celda">Bs. {{ $data['totals']['t_balance']}}</td>
                         </tr>
                         </tfoot>
                     </table>
@@ -153,3 +154,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

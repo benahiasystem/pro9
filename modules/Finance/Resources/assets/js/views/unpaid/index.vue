@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -454,7 +455,7 @@
                                                 class="item"
                                             >
                                                 <span size="small"
-                                                    >Monto general (PEN)</span
+                                                    >Monto general (VES)</span
                                                 >
                                             </el-badge>
                                         </div>
@@ -464,7 +465,7 @@
                                                 class="item"
                                             >
                                                 <span size="small"
-                                                    >Saldo corriente (PEN)</span
+                                                    >Saldo corriente (VES)</span
                                                 >
                                             </el-badge>
                                         </div>
@@ -488,7 +489,7 @@
                                                 >
                                             </el-badge>
                                         </div>
-                                        
+
                                         <div class="col-md-12 position-relative">
                                         <div class="scroll-shadow shadow-left" v-show="showLeftShadow"></div>
                                         <div class="scroll-shadow shadow-right" v-show="showRightShadow"></div>
@@ -919,7 +920,7 @@
                     </div>
                 </div>
             </div>
-            </div>            
+            </div>
             <document-payments
                 :showDialog.sync="showDialogDocumentPayments"
                 :documentId="recordId"
@@ -991,7 +992,7 @@ export default {
                 estado: {
                     title: "Estado",
                     visible: false    // o false según lo que quieras por defecto
-                }                
+                }
             },
             showLeftShadow: false,
             showRightShadow: false,
@@ -1017,13 +1018,13 @@ export default {
                     return (
                         item.total_to_pay > 0 &&
                         item.customer_id == self.form.customer_id &&
-                        item.currency_type_id == "PEN"
+                        item.currency_type_id == "VES"
                     );
                 });
             } else {
                 source = _.filter(this.records, function(item) {
                     return (
-                        item.total_to_pay > 0 && item.currency_type_id == "PEN"
+                        item.total_to_pay > 0 && item.currency_type_id == "VES"
                     );
                 });
             }
@@ -1079,13 +1080,13 @@ export default {
                     return (
                         item.total_to_pay > 0 &&
                         item.customer_id == self.form.customer_id &&
-                        item.currency_type_id == "PEN"
+                        item.currency_type_id == "VES"
                     );
                 });
             } else {
                 source = _.filter(this.records, function(item) {
                     return (
-                        item.total_to_pay > 0 && item.currency_type_id == "PEN"
+                        item.total_to_pay > 0 && item.currency_type_id == "VES"
                     );
                 });
             }
@@ -1131,10 +1132,10 @@ export default {
         checkScrollShadows() {
             const el = this.$refs.scrollContainer;
             if (!el) return;
-            
+
             const scrollLeft = el.scrollLeft;
             const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-            
+
             this.showLeftShadow = scrollLeft > 1;
             this.showRightShadow = scrollRight > 1;
         },
@@ -1358,3 +1359,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

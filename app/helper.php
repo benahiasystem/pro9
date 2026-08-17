@@ -7,6 +7,9 @@ use App\Models\Tenant\Catalogs\Department;
 use App\Models\Tenant\Catalogs\IdentityDocumentType;
 use App\Models\Tenant\Catalogs\OperationType;
 use Illuminate\Support\Facades\Cache;
+// ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+use Illuminate\Support\Facades\DB;
+// ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 use Illuminate\Support\Facades\File;
 
 
@@ -44,15 +47,27 @@ if (!function_exists('func_filter_items')) {
 }
 
 if (!function_exists('func_get_locations')) {
-    function func_get_locations()
+    // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+    function func_get_locations(?string $countryId = null)
     {
-        if (Cache::has('locations')) {
-            return Cache::get('locations');
+        $countryId = $countryId ?: config('venezuela.country_id', 'VE');
+        $tenantDatabase = (string) DB::connection('tenant')->getDatabaseName();
+        $cacheKey = "locations:v2:{$tenantDatabase}:{$countryId}";
+
+        if (Cache::has($cacheKey)) {
+            return Cache::get($cacheKey);
+        }
+
+        if ($countryId !== config('venezuela.country_id', 'VE')) {
+            Cache::put($cacheKey, [], 1440);
+
+            return [];
         }
 
         $locations = [];
         $departments = Department::query()
             ->with('provinces', 'provinces.districts')
+            ->where('active', true)
             ->get();
         foreach ($departments as $department) {
             $children_provinces = [];
@@ -61,7 +76,7 @@ if (!function_exists('func_get_locations')) {
                 foreach ($province->districts as $district) {
                     $children_districts[] = [
                         'value' => $district->id,
-                        'label' => func_str_to_upper_utf8($district->description . " (" . $district->id . ")")
+                        'label' => func_str_to_upper_utf8($district->description)
                     ];
                 }
                 $children_provinces[] = [
@@ -77,10 +92,11 @@ if (!function_exists('func_get_locations')) {
             ];
         }
 
-        Cache::put('locations', $locations, 1440);
+        Cache::put($cacheKey, $locations, 1440);
 
         return $locations;
     }
+    // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 }
 
 if (!function_exists('func_get_countries')) {

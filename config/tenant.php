@@ -49,5 +49,7 @@ return [
     'socket_server' => env('SOCKET_SERVER', 'http://localhost:8070'),
     'internal_dispatch' => env('INTERNAL_DISPATCH', false),
 
-    'ubigeo_default_invoice_import' => env('UBIGEO_DEFAULT_INVOICE_IMPORT', '150101'),
+    // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+    'ubigeo_default_invoice_import' => env('UBIGEO_DEFAULT_INVOICE_IMPORT', '000619'),
+    // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 ];

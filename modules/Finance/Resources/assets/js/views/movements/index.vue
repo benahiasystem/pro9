@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -107,20 +108,20 @@
                             <td
                                 v-else
                             >{{ row.instance_type_description }}</td>
-    
+
                             <!-- Ingresos -->
                             <td>
-                                <label v-show="row.input > 0 || row.input != '-'">S/ </label
+                                <label v-show="row.input > 0 || row.input != '-'">Bs. </label
                                 >{{ row.input }}
                             </td>
                             <!-- Gastos -->
                             <td>
-                                <label v-show="row.output > 0 || row.output != '-'">S/ </label
+                                <label v-show="row.output > 0 || row.output != '-'">Bs. </label
                                 >{{ row.output }}
                             </td>
                             <!-- Saldo -->
                             <td>
-                                <label v-show="row.balance > 0 || row.balance != '-'">S/ </label
+                                <label v-show="row.balance > 0 || row.balance != '-'">Bs. </label
                                 >{{ row.balance }}
                             </td>
                         </tr>
@@ -198,3 +199,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

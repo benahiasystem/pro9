@@ -1,3 +1,4 @@
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pigv) {
     // console.log(currency_type_id_new, exchange_rate_sale)
 
@@ -10,11 +11,11 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
 
     // console.log(row_old)
 
-    if (currency_type_id_old === 'PEN' && currency_type_id_old !== currency_type_id_new) {
+    if (currency_type_id_old === 'VES' && currency_type_id_old !== currency_type_id_new) {
         unit_price = unit_price / exchange_rate_sale;
     }
 
-    if (currency_type_id_new === 'PEN' && currency_type_id_old !== currency_type_id_new) {
+    if (currency_type_id_new === 'VES' && currency_type_id_old !== currency_type_id_new) {
         unit_price = unit_price * exchange_rate_sale;
     }
 
@@ -118,8 +119,8 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
             let affectation_igv_type_exonerated = ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37']
             console.log("discount calcualte total");
             console.log(discount);
-            
-            
+
+
 
             if (discount.is_amount)
             {
@@ -333,7 +334,7 @@ function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pig
 
         let sum_discount_no_base = 0
         let sum_discount_base = 0
-        
+
         row.discounts.forEach(discount => {
             let amount = discount.amount_exact ? discount.amount_exact : discount.amount
             sum_discount_no_base += (discount.discount_type_id == '01') ? amount : 0
@@ -505,3 +506,5 @@ export {
     calculateRowItem, getUniqueArray, showNamePdfOfDescription,
     sumAmountDiscountsNoBaseByItem, FormatUnitPriceRow, filterWords
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

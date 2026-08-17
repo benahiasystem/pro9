@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="mkt-modal" role="dialog" aria-modal="true" @click="$emit('close')">
         <div class="mkt-modal__box" @click.stop>
@@ -66,7 +67,7 @@ export default {
     props: {
         product: { type: Object, required: true },
         prefix: { type: String, default: 'marketplace' },
-        currency: { type: String, default: 'S/' },
+        currency: { type: String, default: 'Bs.' },
     },
 
     computed: {
@@ -287,3 +288,5 @@ export default {
     padding: 6px;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

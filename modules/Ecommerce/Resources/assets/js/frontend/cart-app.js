@@ -1,3 +1,4 @@
+// ######## INICIO ADAPTACIÓN VENEZUELA
 // Cart Application - Ecommerce Module
 // Main Vue instance for shopping cart detail page
 
@@ -97,15 +98,15 @@ var app_cart = new Vue({
         cashPaymentPickupOnly: window.__ecommerce_config?.cash_payment_pickup_only || false,
         enableYape: window.__ecommerce_config?.enable_yape || false,
         enableTransfer: window.__ecommerce_config?.enable_transfer || false,
-        
+
         enableIzipay: window.__ecommerce_config?.enable_izipay || false,
         titleIzipay: window.__ecommerce_config?.title_izipay || 'Pago con Izipay',
         descriptionIzipay: window.__ecommerce_config?.description_izipay || '',
-        
+
         enableMp: window.__ecommerce_config?.enable_mp || false,
         titleMp: window.__ecommerce_config?.title_mp || 'Mercado Pago',
         descriptionMp: window.__ecommerce_config?.description_mp || '',
-        
+
         enableCulqi: window.__ecommerce_config?.enable_culqi || false,
         titleCulqi: window.__ecommerce_config?.title_culqi || 'Tarjeta (VISA)',
         descriptionCulqi: window.__ecommerce_config?.description_culqi || '',
@@ -115,7 +116,7 @@ var app_cart = new Vue({
         showConfirmModal: false,
         processingPayment: false,
         thankYouUrl: null,
-        
+
         mpScriptLoaded: false,
         mpBrickController: null,
         krScriptLoaded: false,
@@ -209,11 +210,10 @@ var app_cart = new Vue({
             return this.enable_whatsapp && !!this.phone_whatsapp;
         },
         whatsappPhone: function () {
+            // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
             const raw = String(this.phone_whatsapp || '').replace(/\D+/g, '');
-            if (raw.length === 9 && raw.startsWith('9')) {
-                return '51' + raw;
-            }
-            return raw;
+            return `58${raw.replace(/^(58|51)/, '').replace(/^0+/, '')}`;
+            // ########### FIN CAMBIO TELEFONÍA VENEZUELA
         },
     },
     watch: {
@@ -309,7 +309,7 @@ var app_cart = new Vue({
                 // en currency_type.symbol; otros no lo traen. Normalizamos a un campo plano.
                 obj.currency_type_symbol = item.currency_type_symbol
                     || (item.currency_type && item.currency_type.symbol)
-                    || 'S/'
+                    || 'Bs.'
                 return obj
             })
         }
@@ -344,14 +344,14 @@ var app_cart = new Vue({
                 hora_de_emision: moment().format('HH:mm:ss'),
                 codigo_tipo_operacion: '0101',
                 codigo_tipo_documento: '80',
-                codigo_tipo_moneda: 'PEN',
+                codigo_tipo_moneda: 'VES',
                 fecha_de_vencimiento: moment().format('YYYY-MM-DD'),
                 datos_del_cliente_o_receptor: {
                     codigo_tipo_documento_identidad: '0',
                     numero_documento: '0',
                     apellidos_y_nombres_o_razon_social: '',
-                    codigo_pais: 'PE',
-                    ubigeo: '150101',
+                    codigo_pais: 'VE',
+                    ubigeo: '000619',
                     direccion: '',
                     correo_electronico: '',
                     telefono: '',
@@ -893,7 +893,7 @@ var app_cart = new Vue({
         fallbackCopyTextToClipboard(text) {
             var textArea = document.createElement("textarea");
             textArea.value = text;
-            
+
             // Avoid scrolling to bottom
             textArea.style.top = "0";
             textArea.style.left = "0";
@@ -1096,14 +1096,14 @@ var app_cart = new Vue({
             if (this.records.length < 1){
                 return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
             }
-            
+
             this.processingPayment = true;
             try {
                 await this.loadMpScript();
                 const publicKey = window.__ecommerce_config?.public_key_mp || '';
                 const mp = new window.MercadoPago(publicKey, { locale: 'es-PE' });
                 const bricksBuilder = mp.bricks();
-                
+
                 // Limpiar container previo si existe
                 if (this.mpBrickController) {
                     this.mpBrickController.unmount();
@@ -1129,7 +1129,7 @@ var app_cart = new Vue({
                         onSubmit: (formDataRecv) => {
                             return new Promise((resolve, reject) => {
                                 swal({ title: "Estamos hablando con MercadoPago", text: "Procesando pago...", onOpen: () => { Swal.showLoading() } });
-                                
+
                                 const payload = { ...rawFormData, form_data: formDataRecv.formData };
                                 axios.post(window.__routes?.mercadopago_payment || '/ecommerce/mercadopago/payment', payload, this.getHeaderConfig())
                                 .then(response => {
@@ -1156,7 +1156,7 @@ var app_cart = new Vue({
                         },
                     },
                 };
-                
+
                 // Necesitamos tener un wrapper visible, abrimos un sweetalert o modal
                 swal({
                     title: 'Pago Seguro con Mercado Pago',
@@ -1283,12 +1283,12 @@ var app_cart = new Vue({
             if (this.records.length < 1){
                 return this.showSwalMessage('Ocurrió un error!', 'No se han encontrado productos', 'error');
             }
-            
+
             this.processingPayment = true;
             try {
                 await this.loadIzipaySDK();
                 const rawFormData = await this.getFormPaymentCash();
-                
+
                 swal({ title: "Iniciando pago...", text: "Cargando conectividad con el banco", onOpen: () => { Swal.showLoading() } });
 
                 // 1. Get formToken from Backend
@@ -1404,7 +1404,7 @@ var app_cart = new Vue({
                 items: this.records.map(r => ({
                     description: r.description,
                     cantidad: r.cantidad,
-                    symbol: r.currency_type_symbol || 'S/',
+                    symbol: r.currency_type_symbol || 'Bs.',
                     total: (parseFloat(r.sale_unit_price) * r.cantidad).toFixed(2)
                 })),
                 total_taxed: this.summary.total_taxed || '0.00',
@@ -1788,14 +1788,14 @@ var app_cart = new Vue({
                 "hora_de_emision": moment().format('HH:mm:ss'),
                 "codigo_tipo_operacion": "0101",
                 "codigo_tipo_documento": "03",
-                "codigo_tipo_moneda": "PEN",
+                "codigo_tipo_moneda": "VES",
                 "fecha_de_vencimiento": moment().format('YYYY-MM-DD'),
                 "datos_del_cliente_o_receptor": {
                     "codigo_tipo_documento_identidad": "0",
                     "numero_documento": "0",
                     "apellidos_y_nombres_o_razon_social": this.user.name,
-                    "codigo_pais": "PE",
-                    "ubigeo": "150101",
+                    "codigo_pais": "VE",
+                    "ubigeo": "000619",
                     "direccion": this.user.address,
                     "correo_electronico": this.user.email,
                     "telefono": this.user.telephone
@@ -1967,7 +1967,7 @@ var app_cart = new Vue({
                 const lineTotal = (parseFloat(row.sale_unit_price) * parseFloat(row.cantidad)).toFixed(2);
                 return `• ${row.description} x${row.cantidad} - ${row.currency_type_symbol}${lineTotal}`;
             });
-            const text = `Buenas, deseo consultar/finalizar mi pedido:\n\n${lines.join('\n')}\n\n*Total: S/ ${this.summary.total}*\n\n¿Podrían ayudarme a completar la compra?`;
+            const text = `Buenas, deseo consultar/finalizar mi pedido:\n\n${lines.join('\n')}\n\n*Total: Bs. ${this.summary.total}*\n\n¿Podrían ayudarme a completar la compra?`;
             window.open(this.getWhatsappUrl(text), '_blank');
         },
         onAddressInput() {
@@ -2188,3 +2188,5 @@ var app_cart = new Vue({
 
 // Exponer la instancia globalmente para que los scripts inline del blade puedan accederla
 window.app_cart = app_cart;
+
+// ######## FIN ADAPTACIÓN VENEZUELA

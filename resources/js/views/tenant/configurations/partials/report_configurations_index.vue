@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="col-12" v-loading="loading">
         <div class="table-responsive w-100">
@@ -7,7 +8,7 @@
                         <th>#</th>
                         <th>Nombre</th>
                         <th>Ruta</th>
-                        <th class="text-center">Convertir a Soles</th>
+                        <th class="text-center">Convertir a Bolívares</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,7 +42,7 @@
 
 
 export default {
-    props: [ 
+    props: [
     ],
     data() {
         return {
@@ -87,3 +88,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div>
         <div class="page-header pe-0">
             <h2><a href="/order-forms">
@@ -291,7 +292,9 @@
     </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
     import PersonForm from '@views/persons/form.vue';
     import DispatcherForm from '../../../../../../../resources/js/views/tenant/dispatches/dispatchers/form.vue';
     import DriverForm from '../../../../../../../resources/js/views/tenant/dispatches/drivers/form.vue';
@@ -445,12 +448,12 @@
                     packages_number: null,
                     container_number: null,
                     delivery: {
-                        country_id: 'PE',
+                        country_id: 'VE',
                         location_id: [],
                         address: null,
                     },
                     origin: {
-                        country_id: 'PE',
+                        country_id: 'VE',
                         location_id: [],
                         address: null,
                     },
@@ -575,4 +578,5 @@
             }
         }
     }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

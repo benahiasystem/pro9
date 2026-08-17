@@ -2,6 +2,10 @@
 
 namespace App\Models\Tenant\Catalogs;
 
+// ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+use App\Support\Venezuela\Localization;
+use InvalidArgumentException;
+// ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 use Hyn\Tenancy\Traits\UsesTenantConnection;
 
 class Department extends ModelCatalog
@@ -12,14 +16,24 @@ class Department extends ModelCatalog
     public $incrementing = false;
     public $timestamps = false;
 
-    static function idByDescription($description)
+    // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+    public static function idByDescription($description): string
     {
-        $department = Department::where('description', $description)->first();
-        if ($department) {
-            return $department->id;
+        $normalized = Localization::normalizeLocationName($description);
+        $matches = self::query()
+            ->where('active', true)
+            ->get()
+            ->filter(static fn (Department $department): bool =>
+                Localization::normalizeLocationName($department->description) === $normalized
+            );
+
+        if ($normalized === '' || $matches->count() !== 1) {
+            throw new InvalidArgumentException('El Estado indicado no existe o es ambiguo.');
         }
-        return '15';
+
+        return (string) $matches->first()->id;
     }
+    // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 
     public function provinces()
     {

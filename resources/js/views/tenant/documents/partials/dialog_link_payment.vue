@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="pt-2">
         <el-dialog :title="titleDialog" :visible="showDialog" class="" @close="close" @open="create" >
@@ -39,7 +40,9 @@
                                 <div class="m-3" v-if="show_input_whatsapp || show_input_email">
                                     <template v-if="show_input_whatsapp">
                                         <el-input v-model="form_utilities.customer_telephone">
-                                            <template slot="prepend">+51</template>
+                                            <!-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA -->
+                                            <template slot="prepend">+58</template>
+                                            <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
                                             <el-button slot="append"
                                                     @click="clickSendWhatsapp">Enviar
                                                 <el-tooltip class="item"
@@ -130,7 +133,9 @@
                                         <template v-if="show_input_whatsapp">
 
                                             <el-input v-model="form_utilities.customer_telephone">
-                                                <template slot="prepend">+51</template>
+                                                <!-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA -->
+                                                <template slot="prepend">+58</template>
+                                                <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
                                                 <el-button slot="append"
                                                         @click="clickSendWhatsapp">Enviar
                                                     <el-tooltip class="item"
@@ -170,7 +175,7 @@
                                             <div class="col-12 text-center" v-if="form.transaction">
                                                 <h1 class="display-3 color--success pt-5"><i class="fas fa-check"></i></h1>
                                                 <p><b>{{form.transaction.transaction_state_message}}</b></p>
-                                                <p><b>Total pagado: S/ {{form.transaction.transaction_total}}</b></p>
+                                                <p><b>Total pagado: Bs. {{form.transaction.transaction_total}}</b></p>
                                             </div>
                                         </div>
                                     </template>
@@ -195,7 +200,7 @@
 
             <div class="row mt-3">
                 <div class="col-md-12">
-                    <h4 class="text-left"><b>Total a pagar: S/ {{getPayment()}}</b></h4>
+                    <h4 class="text-left"><b>Total a pagar: Bs. {{getPayment()}}</b></h4>
                 </div>
             </div>
         </el-dialog>
@@ -271,7 +276,7 @@
             },
             getPayment(){
 
-                if(this.currencyTypeId === 'PEN') return this.payment
+                if(this.currencyTypeId === 'VES') return this.payment
 
                 return _.round(this.payment * this.exchangeRateSale, 2)
 
@@ -339,7 +344,10 @@
 
                 const text = `Su link de pago ha sido generado correctamente, puede revisarlo en: ${this.form.user_payment_link}`
 
-                window.open(`https://wa.me/51${this.form_utilities.customer_telephone}?text=${text}`, '_blank');
+                // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+                const phone = String(this.form_utilities.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
+                window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(text)}`, '_blank');
+                // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 
             },
             showInputEmail(){
@@ -483,3 +491,5 @@
         background: #5e186c;
     }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

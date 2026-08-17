@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -544,7 +545,7 @@ export default {
         this.form.date_of_issue = moment().format("YYYY-MM-DD");
         await this.getPercentageIgv();
 
-        this.room.item = await calculateRowItem(this.room.item, "PEN", 3, this.percentage_igv);
+        this.room.item = await calculateRowItem(this.room.item, "VES", 3, this.percentage_igv);
 
         this.initForm();
         await this.initDocument();
@@ -558,7 +559,7 @@ export default {
                 if (!i.item.affectation_igv_type || _.isEmpty(i.item.affectation_igv_type)) {
                     i.item.affectation_igv_type = _.find(this.affectationIgvTypes, { id: i.item.affectation_igv_type_id });
                 }
-                return calculateRowItem(i.item, "PEN", 3, this.percentage_igv);
+                return calculateRowItem(i.item, "VES", 3, this.percentage_igv);
             });
 
         await this.onCalculateTotals();
@@ -807,7 +808,7 @@ export default {
                     it.input_unit_price_value = parseFloat(newTotal);
                     it.item.unit_price = parseFloat(newTotal);
                     it.unit_value = parseFloat(newTotal);
-                    const newItem = calculateRowItem(it, "PEN", 3, this.percentage_igv);
+                    const newItem = calculateRowItem(it, "VES", 3, this.percentage_igv);
                     return newItem;
                 }
                 return it;
@@ -859,7 +860,7 @@ export default {
                 number: "#",
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
-                currency_type_id: "PEN",
+                currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 0,
                 total_prepayment: 0,
@@ -980,3 +981,5 @@ export default {
     },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

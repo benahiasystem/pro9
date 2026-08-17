@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Dashboard\Helpers;
 
 use App\Models\Tenant\Document;
@@ -12,7 +14,7 @@ use Carbon\Carbon;
  *
  * Totales de KPI para el nuevo dashboard. Replica las reglas del dashboard
  * anterior (tipos de estado aceptados, tipos de documento de venta, resta de
- * notas de crédito y conversión de moneda PEN/USD) pero calculadas con
+ * notas de crédito y conversión de moneda VES/USD) pero calculadas con
  * agregados SQL ligeros.
  *
  * Por defecto abarca todo el negocio; pasa establishment_id para limitarlo a
@@ -301,12 +303,12 @@ class DashboardKpi
 
     /**
      * Ventas = (documentos de venta - notas de crédito) + notas de venta, con
-     * USD convertido a PEN.
+     * USD convertido a VES.
      * Pasa $hour (0-23) para limitar a una sola hora del día indicado.
      */
     private function salesTotal($establishment_id, $start, $end, $hour = null)
     {
-        $sum_expr = "CASE WHEN currency_type_id = 'PEN' THEN total ELSE total * exchange_rate_sale END";
+        $sum_expr = "CASE WHEN currency_type_id = 'VES' THEN total ELSE total * exchange_rate_sale END";
 
         $document_sales = (float) Document::query()
             ->whereIn('state_type_id', $this->acceptedStates)
@@ -342,12 +344,12 @@ class DashboardKpi
     }
 
     /**
-     * Compras = total + percepción, con USD convertido a PEN.
+     * Compras = total + percepción, con USD convertido a VES.
      * Pasa $hour (0-23) para limitar a una sola hora del día indicado.
      */
     private function purchasesTotal($establishment_id, $start, $end, $hour = null)
     {
-        $sum_expr = "CASE WHEN currency_type_id = 'PEN' THEN (total + COALESCE(total_perception, 0)) "
+        $sum_expr = "CASE WHEN currency_type_id = 'VES' THEN (total + COALESCE(total_perception, 0)) "
             . "ELSE (total + COALESCE(total_perception, 0)) * exchange_rate_sale END";
 
         $total = (float) Purchase::query()
@@ -380,3 +382,5 @@ class DashboardKpi
         return number_format($number, 2, '.', '');
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

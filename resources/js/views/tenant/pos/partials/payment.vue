@@ -86,7 +86,8 @@
                     </div>
                     <div class="row m-0 p-0 bg-white h-17 d-flex align-items-center" v-if="!isNrus">
                         <div class="col-sm-6 py-1">
-                            <p class="font-weight-semibold mb-0">IGV</p>
+                            <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                            <p class="font-weight-semibold mb-0">IVA</p>
                         </div>
                         <div class="col-sm-6 py-1 text-end">
                             <p class="font-weight-semibold mb-0">{{ currencyTypeActive.symbol }}
@@ -127,7 +128,8 @@
 
                         <div class="row justify-content-center m-0" v-if="!isNrus">
                             <div class="col-sm-6">
-                                <p class="mb-0">IGV</p>
+                                <p class="mb-0">IVA</p>
+                                <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                             </div>
                             <div class="col-sm-6 text-end">
                                 <p class="font-weight-semibold mb-0">{{ currencyTypeActive.symbol }}
@@ -240,13 +242,13 @@
                     </div>
 
                     <div>
-                        <el-radio-group v-model="form.document_type_id"
-                                        size="small"
-                                        @change="filterSeries">
-                            <el-radio-button v-if="!isNrus" label="01">FACTURA</el-radio-button>
-                            <el-radio-button label="03">BOLETA</el-radio-button>
-                            <el-radio-button label="80">N. VENTA</el-radio-button>
+                        <!-- ########### INICIO CAMBIO DOCUMENTOS POS VENEZUELA -->
+                        <el-radio-group v-model="form.document_type_id" size="small">
+                            <el-radio-button v-if="!isNrus" label="01" @click.native="selectDocumentType('01')">FACTURA</el-radio-button>
+                            <el-radio-button label="03" @click.native="selectDocumentType('03')">BOLETA</el-radio-button>
+                            <el-radio-button label="80" @click.native="selectDocumentType('80')">N. VENTA</el-radio-button>
                         </el-radio-group>
+                        <!-- ########### FIN CAMBIO DOCUMENTOS POS VENEZUELA -->
                     </div>
                 </div>
                 </div>
@@ -502,10 +504,11 @@
                                     <search-agent @changeAgent="changeAgent"></search-agent>
                                 </div>
 
+                                <!-- ########### INICIO CAMBIO TURNOS POS VENEZUELA -->
                                 <div
                                     :class="{
-                                        'col-md-8 col-lg-8': businessTurns.active,
-                                        'col-md-12 col-lg-12': !businessTurns.active
+                                        'col-md-8 col-lg-8': isBusinessTurnActive,
+                                        'col-md-12 col-lg-12': !isBusinessTurnActive
                                     }"
                                 >
                                     <div class="form-group">
@@ -514,12 +517,13 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-4 col-lg-4" v-if="businessTurns.active">
+                                <div class="col-md-4 col-lg-4" v-if="isBusinessTurnActive">
                                     <div class="form-group">
                                         <label class="control-label">N° Placa</label>
                                         <el-input v-model="form.plate_number" type="text"></el-input>
                                     </div>
                                 </div>
+                                <!-- ########### FIN CAMBIO TURNOS POS VENEZUELA -->
                             </div>
                         </div>
                     </div>
@@ -731,6 +735,12 @@ export default {
 
             return false
         },
+        // ########### INICIO CAMBIO TURNOS POS VENEZUELA
+        isBusinessTurnActive()
+        {
+            return Boolean(this.businessTurns && this.businessTurns.active)
+        },
+        // ########### FIN CAMBIO TURNOS POS VENEZUELA
         disabledDiscountForSeller()
         {
             return this.configuration.restrict_seller_discount && this.typeUser === 'seller';
@@ -766,6 +776,13 @@ export default {
         {
             this.form.agent_id = agent_id
         },
+        // ########### INICIO CAMBIO DOCUMENTOS POS VENEZUELA
+        selectDocumentType(documentTypeId)
+        {
+            this.form.document_type_id = documentTypeId
+            this.filterSeries()
+        },
+        // ########### FIN CAMBIO DOCUMENTOS POS VENEZUELA
         checkUsedPointsByItem()
         {
             this.form.items.forEach(row => {

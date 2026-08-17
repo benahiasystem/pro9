@@ -162,7 +162,9 @@
                 <div class="col-md-12"
                     v-if="chooseServiceApiWsp">
                     <el-input v-model="form.customer_telephone">
-                        <template slot="prepend">+51</template>
+                        <!-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA -->
+                        <template slot="prepend">+58</template>
+                        <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
                         <el-button slot="append"
                                    @click="clickSendWhatsapp">Enviar
                             <el-tooltip class="item"
@@ -333,7 +335,10 @@ export default {
                 return this.$message.error('El número es obligatorio')
             }
 
-            window.open(`https://wa.me/51${this.form.customer_telephone}?text=${this.form.message_text}`, '_blank');
+            // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+            const phone = String(this.form.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')
+            window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
+            // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 
         },
         initForm() {

@@ -89,7 +89,8 @@
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
                     </div>
                     <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
-                        <span class="fp-total-label">IGV (18%)</span>
+                        <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                        <span class="fp-total-label">IVA (18%)</span>
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
                     </div>
                     <div class="fp-total-row d-flex justify-content-between py-1">
@@ -107,7 +108,8 @@
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
                     </div>
                     <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
-                        <span class="fp-total-label">IGV (18%)</span>
+                        <span class="fp-total-label">IVA (18%)</span>
+                        <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
                     </div>
                     <div class="fp-total-row d-flex justify-content-between py-1">

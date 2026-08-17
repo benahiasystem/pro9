@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="supplies-tab">
         <!-- Selector de insumos -->
@@ -68,7 +69,7 @@
                 width="140"
                 align="right">
                 <template slot-scope="scope">
-                    S/ {{ calculateEffectiveCost(scope.row.cost, scope.row.waste_percentage).toFixed(2) }}
+                    Bs. {{ calculateEffectiveCost(scope.row.cost, scope.row.waste_percentage).toFixed(2) }}
                 </template>
             </el-table-column>
             <el-table-column
@@ -76,7 +77,7 @@
                 width="140"
                 align="right">
                 <template slot-scope="scope">
-                    S/ {{ calculateLineCost(scope.row).toFixed(2) }}
+                    Bs. {{ calculateLineCost(scope.row).toFixed(2) }}
                 </template>
             </el-table-column>
             <el-table-column
@@ -307,3 +308,5 @@ h4 {
     color: #67C23A;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

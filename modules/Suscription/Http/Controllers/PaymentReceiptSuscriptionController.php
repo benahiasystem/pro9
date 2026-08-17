@@ -235,7 +235,9 @@
                     foreach ($province->districts as $district) {
                         $children_districts[] = [
                             'value' => $district->id,
-                            'label' => $district->id . " - " . $district->description
+                            // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+                            'label' => $district->description
+                            // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
                         ];
                     }
                     $children_provinces[] = [

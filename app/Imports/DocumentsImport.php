@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO ADAPTACIÓN VENEZUELA
+
 namespace App\Imports;
 
 use App\Models\Tenant\Document;
@@ -52,7 +54,7 @@ class DocumentsImport implements ToCollection
                 $create_date = Carbon::instance(Date::excelToDateTimeObject($row[5]));
                 $date_create = Carbon::parse($create_date)->format('Y-m-d');
 
-                $currency = ($row[11] == 'S') ? 'PEN' : 'Registre nueva moneda' ;
+                $currency = ($row[11] == 'S') ? 'VES' : 'Registre nueva moneda' ;
 
                 //cliente
                 $co_number = rtrim($row[9]);
@@ -130,7 +132,7 @@ class DocumentsImport implements ToCollection
                         "codigo_tipo_documento_identidad" => $client_document_type,
                         "numero_documento" => $company_number,
                         "apellidos_y_nombres_o_razon_social" => rtrim($company_name),
-                        "codigo_pais" => "PE",
+                        "codigo_pais" => "VE",
                         "ubigeo" => config('tenant.ubigeo_default_invoice_import'),
                         "direccion" => rtrim($company_address),
                         "correo_electronico" => "",
@@ -219,3 +221,4 @@ class DocumentsImport implements ToCollection
         return $this->data;
     }
 }
+// ######## FIN ADAPTACIÓN VENEZUELA

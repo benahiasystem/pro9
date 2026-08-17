@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
@@ -151,7 +152,7 @@
                                                                     {{ $it['description'] ?? $it['descripcion'] ?? 'Producto' }}
                                                                 </td>
                                                                 <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6c7a8a;padding:8px 0;white-space:nowrap;text-align:right;">
-                                                                    x{{ $it['cantidad'] ?? $it['quantity'] ?? 1 }}&nbsp;&nbsp;{{ $it['currency_type_symbol'] ?? 'S/' }}&nbsp;{{ $it['sub_total'] ?? '' }}
+                                                                    x{{ $it['cantidad'] ?? $it['quantity'] ?? 1 }}&nbsp;&nbsp;{{ $it['currency_type_symbol'] ?? 'Bs.' }}&nbsp;{{ $it['sub_total'] ?? '' }}
                                                                 </td>
                                                             </tr>
                                                             @endforeach
@@ -224,3 +225,5 @@
 </center>
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

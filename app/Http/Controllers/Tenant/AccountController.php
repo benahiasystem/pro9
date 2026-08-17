@@ -1,4 +1,6 @@
 <?php
+
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
@@ -236,6 +238,12 @@ class AccountController extends Controller
 
     public function paymentCulqui(Request $request)
     {
+            if (\App\Models\Tenant\ModelTenant::NATIONAL_CURRENCY_ID === 'VES') {
+                return [
+                    'success' => false,
+                    'message' => 'Culqi no está habilitado para cobros en bolívares. Seleccione un medio de pago compatible.',
+                ];
+            }
 
 
             $configuration = ConfigurationAdmin::first();
@@ -260,7 +268,7 @@ class AccountController extends Controller
                 $charge = $culqi->Charges->create(
                     array(
                         "amount" => $request->precio,
-                        "currency_code" => "PEN",
+                        "currency_code" => "VES",
                         "email" => $request->email,
                         "description" =>  $request->producto,
                         "source_id" => $request->token,
@@ -332,3 +340,5 @@ class AccountController extends Controller
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

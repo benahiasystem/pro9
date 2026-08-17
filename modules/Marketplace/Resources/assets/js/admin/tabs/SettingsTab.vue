@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div v-loading="loading">
         <!-- El interruptor va arriba y separado: es el control con más
@@ -146,7 +147,7 @@
                             <i class="fa fa-info-circle"></i>
                         </el-tooltip>
                     </label>
-                    <el-input v-model="form.currency_symbol" :maxlength="8" placeholder="S/"/>
+                    <el-input v-model="form.currency_symbol" :maxlength="8" placeholder="Bs."/>
                     <small v-if="errors.currency_symbol" class="form-control-feedback" v-text="errors.currency_symbol[0]"></small>
                 </div>
                 <!-- Estos dos explican lo que hace el valor actual, así que el
@@ -223,7 +224,7 @@ export default {
             form: {
                 is_enabled: false, title: '', description: '', community_name: '',
                 hero_title: '', hero_highlight: '',
-                whatsapp_greeting: '', whatsapp_cart_greeting: '', currency_symbol: 'S/',
+                whatsapp_greeting: '', whatsapp_cart_greeting: '', currency_symbol: 'Bs.',
                 items_per_page: 24, max_items_per_store: 500,
                 auto_block_reports: 100, ranking_threshold: 10, report_reasons: [],
             },
@@ -343,3 +344,5 @@ export default {
 }
 .mkt-hero-preview em { font-style: italic; font-weight: 300; color: #ff006c; }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

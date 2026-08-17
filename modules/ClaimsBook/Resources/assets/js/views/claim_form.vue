@@ -1,4 +1,6 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
   <div class="cf-wrapper" :class="{ 'cf-embedded': embedded }">
 
     <!-- Encabezado -->
@@ -274,7 +276,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="8" :xs="24">
-            <el-form-item label="Departamento / Provincia / Distrito">
+            <el-form-item label="Estado / Municipio / Parroquia">
               <el-cascader v-model="form.location_cascade" :options="tables.locations"
                 :props="{ expandTrigger: 'hover', value: 'value', label: 'label', children: 'children' }"
                 placeholder="Seleccione su ubicación" filterable clearable style="width:100%"></el-cascader>
@@ -332,7 +334,7 @@
                   <el-col :span="5" :xs="24">
                     <el-form-item label="Moneda">
                       <el-select v-model="form.receipt_currency" style="width:100%">
-                        <el-option value="PEN" label="Soles (PEN)"></el-option>
+                        <el-option value="VES" label="Bolívares (VES)"></el-option>
                         <el-option value="USD" label="Dólares (USD)"></el-option>
                       </el-select>
                     </el-form-item>
@@ -1093,7 +1095,9 @@
 }
 </style>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import ClaimResultDialog from './partials/ClaimResultDialog.vue'
 
 function hexToOklch(hex) {
@@ -1183,7 +1187,7 @@ export default {
         asset_date: '',
         has_receipt: false,
         receipt_amount: '',
-        receipt_currency: 'PEN',
+        receipt_currency: 'VES',
         receipt_document_type: '03',
         receipt_series: '',
         receipt_number: '',
@@ -1390,7 +1394,7 @@ export default {
         asset_date: '',
         has_receipt: false,
         receipt_amount: '',
-        receipt_currency: 'PEN',
+        receipt_currency: 'VES',
         receipt_document_type: '03',
         receipt_series: '',
         receipt_number: '',
@@ -1626,7 +1630,7 @@ export default {
         asset_date: '',
         has_receipt: false,
         receipt_amount: '',
-        receipt_currency: 'PEN',
+        receipt_currency: 'VES',
         receipt_document_type: '03',
         receipt_series: '',
         receipt_number: '',
@@ -1642,4 +1646,7 @@ export default {
     },
   }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

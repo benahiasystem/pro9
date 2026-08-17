@@ -1,0 +1,6 @@
+# ######## INICIO AGENTE SKILL GEOPOLITICO VENEZUELA
+interface:
+  display_name: "Migrar geopolítica Venezuela"
+  short_description: "Adapta la jerarquía territorial de Pro9 a Venezuela"
+  default_prompt: "Aplica el contrato geopolítico venezolano de Pro9, conserva el esquema consolidado y valida catálogo, caché y pruebas."
+# ######## FIN AGENTE SKILL GEOPOLITICO VENEZUELA

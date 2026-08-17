@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="payment-page">
         <div class="payment-card">
@@ -126,7 +127,7 @@ export default {
             paid: false,
             form: {
                 amount: 0,
-                currency: 'PEN',
+                currency: 'VES',
                 orderId: '',
                 description: '',
                 customer: {
@@ -151,12 +152,12 @@ export default {
     },
     created() {
         this.form.amount = this.payment_order.amount * 100
-        this.form.currency = "PEN" 
+        this.form.currency = "VES"
         this.form.orderId = this.payment_order.order
         this.form.description = this.payment_order.description
         this.form.customer.name = this.client.client_name || this.client.name
         this.form.customer.email = this.client.contact_email
-        
+
     },
     methods: {
         formatMoney(value) {
@@ -164,7 +165,7 @@ export default {
             return isNaN(val) ? '0.00' : val.toFixed(2)
         },
         async submit(data) {
-            let response = await this.$http.post('/payment-orders/payment-view/pays', 
+            let response = await this.$http.post('/payment-orders/payment-view/pays',
                 {
                     uuid: this.payment_order.uuid,
                     status: data.status
@@ -315,3 +316,5 @@ export default {
     padding: 14px;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

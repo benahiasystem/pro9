@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Account\Http\Controllers;
 
 use Carbon\Carbon;
@@ -125,29 +127,29 @@ class AccountController extends Controller
                 $data = [
                     'records' => $this->getStructureSiscontExcel($records),
                 ];
-                
+
                 return (new GeneralFormatExport)
                         ->data($data)
-                        ->view_name('account::accounting.templates.excel_siscont') 
+                        ->view_name('account::accounting.templates.excel_siscont')
                         ->download($filename.'.xlsx');
-            
+
             case 'ejb_excel':
                 $ejb_records = $this->getDocumentsEjb($d_start, $d_end);
                 $data = [
                     'records' => $this->getStructureEjbExcel($ejb_records),
                 ];
-                            
+
                 return (new ReportAccountingEjbExport)
                         ->data($data)
                         ->download($filename . '.xlsx');
-                            
+
             default:
                 abort(400, 'Formato de exportación no soportado: ' . $type);
-        
+
         }
     }
 
-    
+
     /**
      *
      * @param  Collection $documents
@@ -158,7 +160,7 @@ class AccountController extends Controller
         $company_account = CompanyAccount::first();
 
         return $documents->transform(function($row) use($company_account) {
-            
+
             $income_account = null;
             $igv_account = null;
             $receivable = null;
@@ -320,7 +322,7 @@ class AccountController extends Controller
         return Document::query()
             ->whereBetween('date_of_issue', [$d_start, $d_end])
             ->whereIn('document_type_id', ['01', '03'])
-            ->whereIn('currency_type_id', ['PEN', 'USD'])
+            ->whereIn('currency_type_id', ['VES', 'USD'])
             ->orderBy('series')
             ->orderBy('number')
             ->get();
@@ -331,7 +333,7 @@ class AccountController extends Controller
     {
         return Document::query()
             ->whereBetween('date_of_issue', [$d_start, $d_end])
-            ->whereIn('currency_type_id', ['PEN', 'USD'])
+            ->whereIn('currency_type_id', ['VES', 'USD'])
             ->orderBy('series')
             ->orderBy('number')
             ->get();
@@ -395,7 +397,7 @@ class AccountController extends Controller
             ->with(['invoice', 'items', 'note.affected_document'])
             ->whereBetween('date_of_issue', [$d_start, $d_end])
             ->whereIn('document_type_id', ['01', '03', '07', '08'])
-            ->whereIn('currency_type_id', ['PEN', 'USD'])
+            ->whereIn('currency_type_id', ['VES', 'USD'])
             ->orderBy('series')
             ->orderBy('number')
             ->get();
@@ -412,7 +414,7 @@ class AccountController extends Controller
         return $documents->transform(function ($row) use ($company_account, $account_debit_debit) {
             $ebj_configuration = EjbReportConfiguration::where('document_type_id', $row->document_type_id)->first();
             $income_account = null;
-            $receivable = $ebj_configuration ? ($row->currency_type_id === 'PEN' ? $ebj_configuration->bank_account_pen->number : $ebj_configuration->bank_account_usd->number) : '';
+            $receivable = $ebj_configuration ? ($row->currency_type_id === 'VES' ? $ebj_configuration->bank_account_pen->number : $ebj_configuration->bank_account_usd->number) : '';
 
             if ($row->hasNationalCurrency()) {
                 $income_account = $company_account->subtotal_pen;
@@ -491,7 +493,7 @@ class AccountController extends Controller
                 'number' => $number,
                 'date_of_issue_excel' => $this->toEjbDate($row->date_of_issue),
                 'date_of_due_excel' => $this->toEjbDate($date_of_due),
-                'currency_type_id' => $row->currency_type_id === 'PEN' ? 'MN' : 'US',
+                'currency_type_id' => $row->currency_type_id === 'VES' ? 'MN' : 'US',
                 'total_igv' => $row->total_igv,
                 'total' => $total_value,
                 'total_unaffected' => $total_unaffected,
@@ -550,7 +552,7 @@ class AccountController extends Controller
         $rows = [];
         foreach ($documents as $index => $row) {
             $date_of_issue = Carbon::parse($row->date_of_issue);
-            $currency_type_id = ($row->currency_type_id === 'PEN') ? 'MN' : 'US';
+            $currency_type_id = ($row->currency_type_id === 'VES') ? 'MN' : 'US';
             $document_type_id = $this->getShortDocumentType($row->document_type_id);
             $detail = $row->customer->name . ', ' . $document_type_id . ' ' . $row->number_full;
             $number_index = $date_of_issue->format('m') . str_pad($index + 1, 4, "0", STR_PAD_LEFT);
@@ -590,13 +592,13 @@ class AccountController extends Controller
                         'col_I' => 'S',
                         'col_J' => '',
                         // 'col_K' => '121201',
-                        'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->total_pen : $company_account->total_usd,
+                        'col_K' => ($row->currency_type_id === 'VES') ? $company_account->total_pen : $company_account->total_usd,
                         'col_L' => $row->customer->number,
                         'col_M' => '',
                         'col_N' => 'H',
                         'col_O' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : $item->total,
-                        'col_P' => ($row->state_type_id == 11||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? number_format($item->total / $row->exchange_rate_sale, 2, ".", "") : $item->total),
-                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? $item->total : number_format($item->total * $row->exchange_rate_sale, 2, ".", "")),
+                        'col_P' => ($row->state_type_id == 11||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? number_format($item->total / $row->exchange_rate_sale, 2, ".", "") : $item->total),
+                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? $item->total : number_format($item->total * $row->exchange_rate_sale, 2, ".", "")),
                         'col_R' => $document_type_id,
                         'col_S' => $row->number_full,
                         'col_T' => $row->date_of_issue->format('d/m/Y'),
@@ -636,13 +638,13 @@ class AccountController extends Controller
                         'col_I' => 'S',
                         'col_J' => '',
                         // 'col_K' => '401111',
-                        'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->igv_pen : $company_account->igv_usd,
+                        'col_K' => ($row->currency_type_id === 'VES') ? $company_account->igv_pen : $company_account->igv_usd,
                         'col_L' => $row->customer->number,
                         'col_M' => '',
                         'col_N' => 'D',
                         'col_O' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : $item->total_igv,
-                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? number_format($item->total_igv / $row->exchange_rate_sale, 2, ".", "") : $item->total_igv),
-                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? $item->total_igv : number_format($item->total_igv * $row->exchange_rate_sale, 2, ".", "")),
+                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? number_format($item->total_igv / $row->exchange_rate_sale, 2, ".", "") : $item->total_igv),
+                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? $item->total_igv : number_format($item->total_igv * $row->exchange_rate_sale, 2, ".", "")),
                         'col_R' => $document_type_id,
                         'col_S' => $row->number_full,
                         'col_T' => $row->date_of_issue->format('d/m/Y'),
@@ -681,13 +683,13 @@ class AccountController extends Controller
                         'col_I' => 'S',
                         'col_J' => '',
                         // 'col_K' => '704101',
-                        'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
+                        'col_K' => ($row->currency_type_id === 'VES') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
                         'col_L' => $row->customer->number,
                         'col_M' => '',
                         'col_N' => 'D',
                         'col_O' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : $item->total_value,
-                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? number_format($item->total_value / $row->exchange_rate_sale, 2, ".", "") : $item->total_value),
-                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? $item->total_value : number_format($item->total_value * $row->exchange_rate_sale, 2, ".", "")),
+                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? number_format($item->total_value / $row->exchange_rate_sale, 2, ".", "") : $item->total_value),
+                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? $item->total_value : number_format($item->total_value * $row->exchange_rate_sale, 2, ".", "")),
                         'col_R' => $document_type_id,
                         'col_S' => $row->number_full,
                         'col_T' => $row->date_of_issue->format('d/m/Y'),
@@ -728,13 +730,13 @@ class AccountController extends Controller
                         'col_I' => 'S',
                         'col_J' => '',
                         // 'col_K' => '121201',
-                        'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->total_pen : $company_account->total_usd,
+                        'col_K' => ($row->currency_type_id === 'VES') ? $company_account->total_pen : $company_account->total_usd,
                         'col_L' => $row->customer->number,
                         'col_M' => '',
                         'col_N' => 'D',
                         'col_O' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : $item->total,
-                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? number_format($item->total / $row->exchange_rate_sale, 2, ".", "") : $item->total),
-                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? $item->total : number_format($item->total * $row->exchange_rate_sale, 2, ".", "")),
+                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? number_format($item->total / $row->exchange_rate_sale, 2, ".", "") : $item->total),
+                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? $item->total : number_format($item->total * $row->exchange_rate_sale, 2, ".", "")),
                         'col_R' => $document_type_id,
                         'col_S' => $row->number_full,
                         'col_T' => $row->date_of_issue->format('d/m/Y'),
@@ -774,13 +776,13 @@ class AccountController extends Controller
                         'col_I' => 'S',
                         'col_J' => '',
                         // 'col_K' => '401111',
-                        'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->igv_pen : $company_account->igv_usd,
+                        'col_K' => ($row->currency_type_id === 'VES') ? $company_account->igv_pen : $company_account->igv_usd,
                         'col_L' => $row->customer->number,
                         'col_M' => '',
                         'col_N' => 'H',
                         'col_O' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : $item->total_igv,
-                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? number_format($item->total_igv / $row->exchange_rate_sale, 2, ".", "") : $item->total_igv),
-                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? $item->total_igv : number_format($item->total_igv * $row->exchange_rate_sale, 2, ".", "")),
+                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? number_format($item->total_igv / $row->exchange_rate_sale, 2, ".", "") : $item->total_igv),
+                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? $item->total_igv : number_format($item->total_igv * $row->exchange_rate_sale, 2, ".", "")),
                         'col_R' => $document_type_id,
                         'col_S' => $row->number_full,
                         'col_T' => $row->date_of_issue->format('d/m/Y'),
@@ -819,13 +821,13 @@ class AccountController extends Controller
                         'col_I' => 'S',
                         'col_J' => '',
                         // 'col_K' => '704101',
-                        'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
+                        'col_K' => ($row->currency_type_id === 'VES') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
                         'col_L' => $row->customer->number,
                         'col_M' => '',
                         'col_N' => 'H',
                         'col_O' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : $item->total_value,
-                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? number_format($item->total_value / $row->exchange_rate_sale, 2, ".", "") : $item->total_value),
-                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'PEN') ? $item->total_value : number_format($item->total_value * $row->exchange_rate_sale, 2, ".", "")),
+                        'col_P' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? number_format($item->total_value / $row->exchange_rate_sale, 2, ".", "") : $item->total_value),
+                        'col_Q' => ($row->state_type_id == 11 ||  $row->state_type_id == 9) ? 0 : (($row->currency_type_id === 'VES') ? $item->total_value : number_format($item->total_value * $row->exchange_rate_sale, 2, ".", "")),
                         'col_R' => $document_type_id,
                         'col_S' => $row->number_full,
                         'col_T' => $row->date_of_issue->format('d/m/Y'),
@@ -865,7 +867,7 @@ class AccountController extends Controller
         foreach ($documents as $index => $row) {
             $date_of_issue = Carbon::parse($row->date_of_issue);
             $percentage_igv = $this->getIgv($row->date_of_issue,$row->establishment_id);
-            $currency_type_id = ($row->currency_type_id === 'PEN') ? 'MN' : 'US';
+            $currency_type_id = ($row->currency_type_id === 'VES') ? 'MN' : 'US';
             $document_type_id = $this->getShortDocumentTypeConcarSimple($row->document_type_id);
             $detail = $row->customer->name;
             $number_index = $date_of_issue->format('m') . str_pad($index + 1, 4, "0", STR_PAD_LEFT);
@@ -904,7 +906,7 @@ class AccountController extends Controller
                     'col_I' => 'S',
                     'col_J' => '',
                     // 'col_K' => '121201',
-                    'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->total_pen : $company_account->total_usd,
+                    'col_K' => ($row->currency_type_id === 'VES') ? $company_account->total_pen : $company_account->total_usd,
                     'col_L' => $row->customer->number,
                     'col_M' => '',
                     'col_N' => 'H',
@@ -951,7 +953,7 @@ class AccountController extends Controller
                     'col_I' => 'S',
                     'col_J' => '',
                     // 'col_K' => '401111',
-                    'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->igv_pen : $company_account->igv_usd,
+                    'col_K' => ($row->currency_type_id === 'VES') ? $company_account->igv_pen : $company_account->igv_usd,
                     'col_L' => $row->customer->number,
                     'col_M' => '',
                     'col_N' => 'D',
@@ -998,7 +1000,7 @@ class AccountController extends Controller
                         'col_I' => 'S',
                         'col_J' => '',
                         // 'col_K' => '704101',
-                        'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
+                        'col_K' => ($row->currency_type_id === 'VES') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
                         'col_L' => $row->customer->number,
                         'col_M' => '',
                         'col_N' => 'D',
@@ -1031,7 +1033,7 @@ class AccountController extends Controller
                         'col_AO' => $percentage_igv,
                     ];
                 }
-                
+
 
                 if($row->total_unaffected > 0){
                     $rows[] = [
@@ -1144,7 +1146,7 @@ class AccountController extends Controller
                     'col_I' => 'S',
                     'col_J' => '',
                     // 'col_K' => '121201',
-                    'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->total_pen : $company_account->total_usd,
+                    'col_K' => ($row->currency_type_id === 'VES') ? $company_account->total_pen : $company_account->total_usd,
                     'col_L' => $row->customer->number,
                     'col_M' => '',
                     'col_N' => 'D',
@@ -1191,7 +1193,7 @@ class AccountController extends Controller
                     'col_I' => 'S',
                     'col_J' => '',
                     // 'col_K' => '401111',
-                    'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->igv_pen : $company_account->igv_usd,
+                    'col_K' => ($row->currency_type_id === 'VES') ? $company_account->igv_pen : $company_account->igv_usd,
                     'col_L' => $row->customer->number,
                     'col_M' => '',
                     'col_N' => 'H',
@@ -1238,7 +1240,7 @@ class AccountController extends Controller
                         'col_I' => 'S',
                         'col_J' => '',
                         // 'col_K' => '704101',
-                        'col_K' => ($row->currency_type_id === 'PEN') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
+                        'col_K' => ($row->currency_type_id === 'VES') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
                         'col_L' => $row->customer->number,
                         'col_M' => '',
                         'col_N' => 'H',
@@ -1269,9 +1271,9 @@ class AccountController extends Controller
                         'col_AM' => '',
                         'col_AN' => '',
                         'col_AO' => $percentage_igv,
-                    ];    
+                    ];
                 }
-                
+
                 if($row->total_unaffected > 0){
                     $rows[] = [
                         // 'col_A' => '',
@@ -1367,7 +1369,7 @@ class AccountController extends Controller
                         'col_AO' => $percentage_igv,
                     ];
                 }
-                
+
             }
 
         }
@@ -1421,7 +1423,7 @@ class AccountController extends Controller
         $rows = [];
         foreach ($documents as $index => $row) {
             $date_of_issue = Carbon::parse($row->date_of_issue);
-            $currency_type_id = ($row->currency_type_id === 'PEN') ? 'S' : 'D';
+            $currency_type_id = ($row->currency_type_id === 'VES') ? 'S' : 'D';
             $document_type_id = ($row->document_type_id === '01') ? '01' : '03';
             $detail = substr($row->customer->name . ', ' . $document_type_id . ' ' . $row->number_full, 0, 60);
 
@@ -1435,7 +1437,7 @@ class AccountController extends Controller
                     'col_003_006' => $number_index,
                     'col_007_014' => $date_of_issue->format('d/m/y'),
                     // 'col_015_024' => '12102',
-                    'col_015_024' => ($row->currency_type_id === 'PEN') ? $company_account->total_pen : $company_account->total_usd,
+                    'col_015_024' => ($row->currency_type_id === 'VES') ? $company_account->total_pen : $company_account->total_usd,
                     'col_025_036' => ($row->state_type_id == '11') ? str_pad(0, 12, '0', STR_PAD_LEFT) : str_pad($item->total, 12, '0', STR_PAD_LEFT),
                     'col_037_037' => 'D',
                     'col_038_038' => $currency_type_id,
@@ -1473,7 +1475,7 @@ class AccountController extends Controller
                     'col_003_006' => $number_index,
                     'col_007_014' => $date_of_issue->format('d/m/y'),
                     // 'col_015_024' => '40111',
-                    'col_015_024' => ($row->currency_type_id === 'PEN') ? $company_account->igv_pen : $company_account->igv_usd,
+                    'col_015_024' => ($row->currency_type_id === 'VES') ? $company_account->igv_pen : $company_account->igv_usd,
                     // 'col_025_036' => str_pad($row->total, 12, '0', STR_PAD_LEFT),
                     'col_025_036' => ($row->state_type_id == '11') ? str_pad(0, 12, '0', STR_PAD_LEFT) : str_pad($item->total_igv, 12, '0', STR_PAD_LEFT),
                     'col_037_037' => 'H',
@@ -1515,7 +1517,7 @@ class AccountController extends Controller
                         'col_003_006' => $number_index,
                         'col_007_014' => $date_of_issue->format('d/m/y'),
                         // 'col_015_024' => '70201',
-                        'col_015_024' => ($row->currency_type_id === 'PEN') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
+                        'col_015_024' => ($row->currency_type_id === 'VES') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
                         'col_025_036' => str_pad($item->total_value, 12, '0', STR_PAD_LEFT),
                         'col_037_037' => 'H',
                         'col_038_038' => $currency_type_id,
@@ -1602,12 +1604,12 @@ class AccountController extends Controller
                 'db_document_type_id' => ($document_base) ? $document_base->affected_document->document_type_id : '',
                 'db_series' => ($document_base) ? $document_base->affected_document->series : '',
                 'db_number' => ($document_base) ? str_pad($document_base->affected_document->number, 13, '0', STR_PAD_LEFT) : '',
-                'currency' => ($row->currency_type_id === 'PEN') ? 'S' : 'D',
+                'currency' => ($row->currency_type_id === 'VES') ? 'S' : 'D',
                 'amount_usd' => null,
                 'date_of_due' => $row->invoice->date_of_due->format('d/m/Y'),
                 'payment_condition' => $payment_condition,
-                'account_taxed' => ($row->currency_type_id === 'PEN') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
-                'account_total' => ($row->currency_type_id === 'PEN') ? $company_account->total_pen : $company_account->total_usd,
+                'account_taxed' => ($row->currency_type_id === 'VES') ? $company_account->subtotal_pen : $company_account->subtotal_usd,
+                'account_total' => ($row->currency_type_id === 'VES') ? $company_account->total_pen : $company_account->total_usd,
                 'aditional_information' => $row->aditional_information,
                 'payment_method' => $payment_method,
             ];
@@ -1631,7 +1633,7 @@ class AccountController extends Controller
 
     public function recordConfigurationEjb()
     {
-        
+
     }
 
     public function tablesEjb()
@@ -1675,3 +1677,5 @@ class AccountController extends Controller
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

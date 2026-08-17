@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="row-mx-0">
         <div class="page-header pe-0">
@@ -9,7 +10,7 @@
         </div>
         <template>
             <form autocomplete="off">
-                <el-tabs v-model="activeName" type="border-card" class="rounded advanced-settings">                    
+                <el-tabs v-model="activeName" type="border-card" class="rounded advanced-settings">
                     <el-tab-pane class="mb-3" name="second">
                         <span slot="label">Visual</span>
                         <div class="row switch-configuration-container">
@@ -39,7 +40,7 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Editar precio para todos los vendedores
-                                            
+
                                                 <el-tooltip class="item"
                                                     content="Para habilitarlo solo a algunos usuarios, desactiva esta opción y configúralo en Usuarios."
                                                     effect="dark" placement="top-start">
@@ -244,7 +245,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.add_description_to_document_item }"
                                                 class="form-group">
                                                 <el-switch v-model="form.add_description_to_document_item"
@@ -258,7 +259,7 @@
                                             <label class="control-label">
                                                 Restringir precio de venta inferior a compra
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.condition_sale_purchase_price_to_item }"
                                                 class="form-group">
                                                 <el-switch v-model="form.condition_sale_purchase_price_to_item"
@@ -268,7 +269,7 @@
                                                     v-text="errors.condition_sale_purchase_price_to_item[0]"></small>
                                             </div>
                                         </div>
-                            
+
 
                                         <div class="col-12">
                                             <label class="control-label">
@@ -279,7 +280,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.list_items_by_warehouse }" class="form-group">
                                                 <el-switch v-model="form.list_items_by_warehouse"
                                                             @change="submit"></el-switch>
@@ -296,7 +297,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.restrict_sale_items_cpe }" class="form-group">
                                                 <el-switch v-model="form.restrict_sale_items_cpe"
                                                             @change="submit"></el-switch>
@@ -314,7 +315,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.show_all_item_details }" class="form-group">
                                                 <el-switch v-model="form.show_all_item_details"
                                                     @change="submit"></el-switch>
@@ -332,7 +333,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.show_item_description_pack }" class="form-group">
                                                 <el-switch v-model="form.show_item_description_pack"
                                                             @change="submit"></el-switch>
@@ -448,7 +449,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.show_load_voucher }" class="form-group">
                                                 <el-switch v-model="form.show_load_voucher"
                                                     @change="submit"></el-switch>
@@ -703,7 +704,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Para elementos de farmacia -->
                             <!-- <div class="col-md-6 mt-4">
                                 <label class="control-label">Habilita elementos de farmacia
@@ -1146,7 +1147,7 @@
                                                 <label class="control-label">Tipo de descuento global
                                                     <el-tooltip class="item" effect="dark" placement="top-start">
                                                         <i class="fa fa-info-circle"></i>
-                                                    
+
                                                         <div slot="content">
                                                             <strong>Tipo de descuento predeterminado en POS - Ventas/Comprobante
                                                                 electrónico</strong><br /><br />
@@ -1164,13 +1165,13 @@
                                                 </el-select>
                                                 <small v-if="errors.global_discount_type_id" class="form-control-feedback"
                                                     v-text="errors.global_discount_type_id[0]"></small>
-                                            
+
                                                     <!-- <div class="col-md-12 mt-2">
                                                         <div :class="{ 'has-danger': errors.exact_discoutn }"
                                                         class="form-group" v-if="validateDiscountAffectBase">
                                                         <label class="control-label"> Ajustar descuento automaticamente
                                                             <el-tooltip class="item"
-                                                            content="Recalcula el monto del descuento para que el comprobante refleje el descuento de forma adecuada. Si indicas S/5.00 como descuento, el sistema lo ajustará a S/4.24 en la base imponible."
+                                                            content="Recalcula el monto del descuento para que el comprobante refleje el descuento de forma adecuada. Si indicas Bs.5.00 como descuento, el sistema lo ajustará a Bs.4.24 en la base imponible."
                                                             effect="dark" placement="top-start">
                                                             <i class="fa fa-info-circle"></i>
                                                         </el-tooltip>
@@ -1268,7 +1269,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.legend_forest_to_xml }" class="form-group">
                                                 <el-switch v-model="form.legend_forest_to_xml"
                                                     @change="submit"></el-switch>
@@ -1290,7 +1291,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.register_series_invoice_xml }" class="form-group">
                                                 <el-switch v-model="form.register_series_invoice_xml"
                                                             @change="submit"></el-switch>
@@ -1333,7 +1334,7 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Agrupar productos y cantidades - Generar CPE
-                                            
+
                                                 <el-tooltip class="item"
                                                     content="Agrupar/Sumar productos y cantidades al generar cpe desde múltiples notas de venta"
                                                     effect="dark" placement="top-start">
@@ -1383,7 +1384,7 @@
                                                         v-text="errors.restrict_voided_send[0]"></small>
                                                 </div>
                                             </div>
-                                        
+
                                             <template v-if="form.restrict_voided_send">
                                                 <div class="inputs-column">
                                                     <label class="control-label">
@@ -1463,7 +1464,7 @@
                                                             </div>
                                                             <i class="fa fa-info-circle"></i>
                                                         </el-tooltip>
-                                                    </label> 
+                                                    </label>
                                                 </div>
                                                 <div>
                                                     <span v-if="form.global_igv_handling" class="text-muted small">
@@ -1472,8 +1473,8 @@
                                                     <span v-else class="text-muted small">
                                                         El checkbox "Incluye IGV" se mostrará en el formulario y podrás configurarlo producto por producto.
                                                     </span>
-                                                </div> 
-                                            </div>                              
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1601,7 +1602,7 @@
                                                 </el-input>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Mostrar Logo por sucursal
@@ -1827,7 +1828,7 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Mostrar el nombre del PDF
-                                            
+
                                                 <el-tooltip class="item"
                                                     content="Muestra el nombre del producto que se ingresa en el pdf, en vez del nombre del producto. Disponible para CPE, Cotización, Guía de Remisión, Compra y Nota de venta"
                                                     effect="dark" placement="top-start">
@@ -1993,7 +1994,7 @@
                             </div>
 
                         </div>
-                    </el-tab-pane>                    
+                    </el-tab-pane>
                     <el-tab-pane class="mb-3" name="seven">
                         <span slot="label">Compras</span>
                         <tenant-configurations-form-purchases :errors="errors" :form="form"
@@ -2198,7 +2199,7 @@
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
-                                        
+
                                             <div :class="{ 'has-danger': errors.search_factory_code_items }" class="form-group">
                                                 <el-switch v-model="form.search_factory_code_items"
                                                             @change="submit"></el-switch>
@@ -2715,12 +2716,12 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="fw-semibold m-0 d-flex align-items-center gap-2">
                                                 <span class="dot"></span>
-                                                <span class="text-primary text-uppercase">Reportes con conversión a Soles</span>
+                                                <span class="text-primary text-uppercase">Reportes con conversión a Bolívares</span>
                                             </h5>
                                         </div>
                                         <div>
                                             <span class="text-muted">
-                                                Lista de reportes del sistema con opción para convertir automáticamente sus montos a la moneda local (Soles).
+                                                Lista de reportes del sistema con opción para convertir automáticamente sus montos a la moneda local (Bolívares).
                                             </span>
                                         </div>
                                     </div>
@@ -2736,7 +2737,7 @@
                         <span slot="label">BuhoPrinter</span>
                         <div class="row switch-configuration-container">
                             <div class="col-12 pb-3">
-                                <PrintConfig />  
+                                <PrintConfig />
                             </div>
                         </div>
                     </el-tab-pane>
@@ -3079,7 +3080,7 @@
                                             </div>
                                         </div>
                                         <div class="inputs-column" v-if="form.dashboard_goal_enabled">
-                                            <label class="control-label">Monto de la meta (S/)</label>
+                                            <label class="control-label">Monto de la meta (Bs.)</label>
                                             <div class="form-group w-50"
                                                 :class="{ 'has-danger': errors.dashboard_goal_amount }">
                                                 <el-input v-model="form.dashboard_goal_amount" type="number" min="0"
@@ -3126,8 +3127,8 @@
                                                     <div slot="content">
                                                         <strong>Disponible en Nuevo cpe y POS</strong><br /><br />
                                                         El monto de venta equivale a X N° de puntos<br /><br />
-                                                        Ejemplo: Si tiene configurado como monto S/1, y este es equivalente a 1 punto,
-                                                        al realizar una venta por S/100 a cliente X, este acumularía 100 puntos.<br />
+                                                        Ejemplo: Si tiene configurado como monto Bs.1, y este es equivalente a 1 punto,
+                                                        al realizar una venta por Bs.100 a cliente X, este acumularía 100 puntos.<br />
                                                     </div>
                                                 </el-tooltip>
                                             </label>
@@ -3828,3 +3829,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

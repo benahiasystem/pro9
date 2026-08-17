@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
 
     <div class="card mb-0 pt-2 pt-md-0">
@@ -1483,7 +1484,7 @@ export default {
                 name: null,
                 second_name: null,
                 unit_type_id: 'NIU',
-                currency_type_id: 'PEN',
+                currency_type_id: 'VES',
                 sale_unit_price: 0,
                 purchase_unit_price: 0,
                 has_isc: false,
@@ -1938,3 +1939,5 @@ this.activeName =  'first'
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

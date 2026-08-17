@@ -1,4 +1,6 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div :class="{ 'content-opacity': isVisible }" @click.self="toggleInformation">
         <MiniTour
             :steps="miniTourSteps"
@@ -1892,7 +1894,7 @@
                                                                 M. DETRACCIÓN:
                                                             </td>
                                                             <td>
-                                                                S/
+                                                                Bs.
                                                                 {{
                                                                     form
                                                                         .detraction
@@ -2016,7 +2018,9 @@
                                                             form.total_igv > 0 && !isNrus
                                                         "
                                                     >
-                                                        <td>IGV:</td>
+                                                        <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                                                        <td>IVA:</td>
+                                                        <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                                                         <td>
                                                             {{
                                                                 currency_type.symbol
@@ -2932,7 +2936,7 @@
                                         <tr v-if="form.detraction.amount > 0">
                                             <td width="60%">M. DETRACCIÓN:</td>
                                             <td>
-                                                S/ {{ form.detraction.amount }}
+                                                Bs. {{ form.detraction.amount }}
                                             </td>
                                         </tr>
                                     </template>
@@ -3001,7 +3005,9 @@
                                         </td>
                                     </tr>
                                     <tr v-if="form.total_igv > 0 && !isNrus">
-                                        <td>IGV:</td>
+                                        <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                                        <td>IVA:</td>
+                                        <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                                         <td>
                                             {{ currency_type.symbol }}
                                             {{ form.total_igv }}
@@ -4024,7 +4030,9 @@
     }
 }
 </style>
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import DocumentFormItem from "./partials/item.vue";
 import PersonForm from "../persons/form.vue";
 import DocumentOptions from "../documents/partials/options.vue";
@@ -4598,7 +4606,7 @@ export default {
     async created() {
         await this.initComponent();
         await this.getPercentageIgv();
-         
+
         this.loading_form = true;
         this.$eventHub.$on("reloadDataPersons", customer_id => {
             this.reloadDataCustomers(customer_id);
@@ -4925,8 +4933,8 @@ export default {
                 dt => dt.id === this.form.document_type_id
             );
             console.log(documentType);
-            
-            
+
+
             let filtered;
             if (documentType && documentType.id === "03") {
                 filtered = this.operation_types.filter(
@@ -5026,7 +5034,7 @@ export default {
                     department_id: data.location_id[0],
                     province_id: data.location_id[1],
                     district_id: data.location_id[2],
-                    country_id: "PE",
+                    country_id: "VE",
                     telephone: data.telephone
                 }
             }
@@ -6027,12 +6035,12 @@ export default {
             this.showDialogAddItem = true;
         },
         getFormatUnitPriceRow(unit_price, row) {
-            // El precio base siempre está guardado en Soles (PEN).
+            // El precio base siempre está guardado en Bolívares (VES).
             // Si el comprobante está en Dólares (USD) se convierte usando el tipo de cambio.
             let price = parseFloat(unit_price) || 0;
             const exchange_rate =
                     parseFloat(this.form.exchange_rate_sale) || 0;
-                    
+
 
             if (this.form.currency_type_id === row.item.currency_type_id) return price
 
@@ -6041,7 +6049,7 @@ export default {
                 if (exchange_rate > 0) {
                     price = price / exchange_rate;
                 }
-            } else if (this.form.currency_type_id === 'PEN' && row.item.currency_type_id === 'USD') {
+            } else if (this.form.currency_type_id === 'VES' && row.item.currency_type_id === 'USD') {
                 price = price * exchange_rate;
             }
 
@@ -6561,7 +6569,7 @@ export default {
                 let round = this.config.detraction_amount_rounded_int ? 0 : 2;
                 let total = this.form.total;
 
-                if (this.form.currency_type_id == "PEN") {
+                if (this.form.currency_type_id == "VES") {
                     total =
                         this.form.detraction.reference_value_service >
                             this.form.total &&
@@ -6618,7 +6626,7 @@ export default {
                 let detraction = this.form.detraction;
 
                 let tot =
-                    this.form.currency_type_id == "PEN"
+                    this.form.currency_type_id == "VES"
                         ? this.form.total
                         : this.form.total * this.form.exchange_rate_sale;
 
@@ -6633,7 +6641,7 @@ export default {
                 if (tot <= total_restriction && !is_residues)
                     return {
                         success: false,
-                        message: `El importe de la operación debe ser mayor a S/ ${total_restriction}.00 o equivalente en USD`
+                        message: `El importe de la operación debe ser mayor a Bs. ${total_restriction}.00 o equivalente en USD`
                     };
 
                 if (!detraction.detraction_type_id)
@@ -7060,7 +7068,7 @@ export default {
             });
             this.form.items = items;
 
-            if (this.form.currency_type_id === 'PEN') {
+            if (this.form.currency_type_id === 'VES') {
                 this.total_global_discount = _.round(this.total_global_discount  * this.form.exchange_rate_sale,2)
             } else {
                 this.total_global_discount = _.round(this.total_global_discount / this.form.exchange_rate_sale,2)
@@ -7306,7 +7314,7 @@ export default {
 
             }
 
-            
+
             // this.form.subtotal = _.round(total + this.form.total_plastic_bag_taxes, 2)
             // this.form.total = _.round(total + this.form.total_plastic_bag_taxes - this.total_discount_no_base, 2)
 
@@ -7505,7 +7513,7 @@ export default {
                 this.form.discounts.splice(index, 1);
                 if (this.form.total_discount_item > 0 ) {
                     this.form.total_discount = this.form.total_discount_item;
-                    
+
                 } else {
                     this.form.total_discount = 0;
                 }
@@ -7603,7 +7611,7 @@ export default {
                         this.$message.error(
                             "El total debe ser mayor a 0, verifique el tipo de descuento asignado (Configuración/Avanzado/Contable)"
                         );
-                    
+
                     this.form.total_discount += _.round(amount, 2);
                 }
                 // descuentos que no afectan la bi
@@ -7733,7 +7741,7 @@ export default {
             let description = this.recordDiscountsGlobal
                 ? this.recordDiscountsGlobal.description
                 : this.global_discount_type.description;
-            
+
             this.form.items.forEach((item, index) => {
                 let item_value = item.total_value_without_rounding
                     ? parseFloat(item.total_value_without_rounding)
@@ -7742,22 +7750,22 @@ export default {
                 if (item_value <= 0) return;
 
                 // [(valor del item) / suma de todo los items] * descuento global
-                let item_discount_amount = 
+                let item_discount_amount =
                     (item_value / sum_items_value) * global_amount
 
                 if (item_discount_amount <= 0) return;
 
                 total_discounts_item += item_discount_amount;
-                
+
                 let factor = _.round(item_discount_amount / item_value, 5);
 
                 item.discounts = item.discounts || [];
-                
+
                 let $_discount_type_id  = discount_type_id === "02" ? "00" : "01"
-                
+
                 item.discounts.push({
-                    discount_type_id: $_discount_type_id, 
-                    discount_type : _.find(this.discount_types, { id: $_discount_type_id }), 
+                    discount_type_id: $_discount_type_id,
+                    discount_type : _.find(this.discount_types, { id: $_discount_type_id }),
                     description: description,
                     factor: factor,
                     percentage: _.round(factor * 100, 5),
@@ -7822,7 +7830,7 @@ export default {
                         this.$message.error(
                             "El total debe ser mayor a 0, verifique el tipo de descuento asignado (Configuración/Avanzado/Contable)"
                         );
-                    
+
                     this.form.total_discount += _.round(amount, 2);
                 }
                 // descuentos que no afectan la bi
@@ -8069,7 +8077,7 @@ export default {
             if (customer) {
                 // Si monto > 700 y cliente_id = 1 (Clientes varios)
                 if (monto > 700 && (customer.number === "99999999" && customer.identity_document_type_id === "0")) {
-                    this.$alert('Ventas mayores a S/ 700 requieren un cliente con DNI registrado.', 'Cliente Requerido', {
+                    this.$alert('Ventas mayores a Bs. 700 requieren un cliente con DNI registrado.', 'Cliente Requerido', {
                         confirmButtonText: 'Entendido',
                         type: 'error'
                     });
@@ -8176,7 +8184,7 @@ export default {
             }
 
             if (this.config.enabled_guarantee_fund) {
-                let fund_obj = Object.keys(this.form.detraction).length > 0 ? this.form.detraction : this.form.retention 
+                let fund_obj = Object.keys(this.form.detraction).length > 0 ? this.form.detraction : this.form.retention
 
                 if(parseFloat(fund_obj.guarantee_fund) > this.form.total_pending_payment) {
                     return this.$message.error('El fondo de garantía no puede ser mayor al monto pendiente')
@@ -8440,9 +8448,9 @@ export default {
 
             if (customer.price_label_id) {
                 this.selected_option_price = `price_label_${customer.price_label_id}`;
-            } 
+            }
             // retencion para clientes con ruc
-            
+
 
             this.validateCustomerRetention(customer.identity_document_type_id);
         },
@@ -8975,4 +8983,7 @@ export default {
         },
     }
 };
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

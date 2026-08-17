@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog   :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" @close="close" @open="create" append-to-body top="7vh">
         <form autocomplete="off" @submit.prevent="submit">
@@ -322,7 +323,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     igv = price * IGV_RATE
                     total = price + igv
                 }
-                return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = S/ ${total.toFixed(2)}`
+                return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = Bs. ${total.toFixed(2)}`
             },
             purchaseUnitPriceBreakdown() {
                 const price = parseFloat(this.form.purchase_unit_price)
@@ -341,7 +342,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     igv = price * IGV_RATE
                     total = price + igv
                 }
-                return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = S/ ${total.toFixed(2)}`
+                return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = Bs. ${total.toFixed(2)}`
             },
         },
         data() {
@@ -422,7 +423,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     name:null,
                     category_id: null,
                     unit_type_id: 'NIU',
-                    currency_type_id: 'PEN',
+                    currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
                     has_isc: false,
@@ -601,3 +602,5 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

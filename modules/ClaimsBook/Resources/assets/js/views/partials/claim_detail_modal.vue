@@ -56,7 +56,9 @@
                     </el-col>
                     <el-col :span="12">
                         <div class="cd-field">
-                            <label>Distrito</label>
+                            <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
+                            <label>Parroquia</label>
+                            <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
                             <span>{{ record.district_name || '—' }}</span>
                         </div>
                     </el-col>

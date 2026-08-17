@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <!-- Basado en resources/js/views/tenant/sale_notes/index.vue -->
@@ -66,7 +67,7 @@
                     </div>
                     <div class="stat-card__body">
                         <span class="stat-card__label">Total cobrado</span>
-                        <span class="stat-card__value">S/ {{ formatAmount(statistics.total_collected) }}</span>
+                        <span class="stat-card__value">Bs. {{ formatAmount(statistics.total_collected) }}</span>
                     </div>
                 </div>
             </div>
@@ -617,3 +618,5 @@ export default {
   color: #d97706;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,18 +107,18 @@
         </tr>
         <tr>
             <td class="td-custom">
-                <p><strong>Saldo inicial: </strong>S/ {{$data['cash_beginning_balance']}}</p>
+                <p><strong>Saldo inicial: </strong>Bs. {{$data['cash_beginning_balance']}}</p>
             </td>
             <td class="td-custom">
-                <p><strong>Ingreso: </strong>S/ {{$data['cash_income']}} </p>
+                <p><strong>Ingreso: </strong>Bs. {{$data['cash_income']}} </p>
             </td>
         </tr>
         <tr>
             <td class="td-custom">
-                <p><strong>Saldo final: </strong>S/ {{$data['cash_final_balance']}} </p>
+                <p><strong>Saldo final: </strong>Bs. {{$data['cash_final_balance']}} </p>
             </td>
             <td class="td-custom">
-                <p><strong>Egreso: </strong>S/ {{$data['cash_egress']}} </p>
+                <p><strong>Egreso: </strong>Bs. {{$data['cash_egress']}} </p>
             </td>
         </tr>
 
@@ -127,14 +128,14 @@
                     <strong>
                         Total caja:
                     </strong>
-                    S/ {{$data['total_cash_payment_method_type_01']}} 
+                    Bs. {{$data['total_cash_payment_method_type_01']}}
                     {{-- (Saldo inicial + Efectivo) --}}
                 </p>
             </td>
             <td class="td-custom">
             </td>
         </tr>
-        
+
         <tr>
             <td>&nbsp;</td>
             <td>&nbsp;</td>
@@ -142,7 +143,7 @@
         <tr>
             <td class="td-custom">
                 <p>
-                    <strong> Notas de Débito: </strong> S/ {{$data['nota_debito']}}
+                    <strong> Notas de Débito: </strong> Bs. {{$data['nota_debito']}}
                 </p>
             </td>
             <td class="td-custom">
@@ -150,16 +151,16 @@
                     <strong>
                         Notas de Crédito:
                     </strong>
-                    S/ {{ $data['nota_credito'] }}
+                    Bs. {{ $data['nota_credito'] }}
                 </p>
             </td>
         </tr>
         <tr>
             <td class="td-custom">
-                <p><strong>Por cobrar: </strong>S/ {{$data['credit']}} </p>
+                <p><strong>Por cobrar: </strong>Bs. {{$data['credit']}} </p>
             </td>
             <td class="td-custom">
-                {{--<p><strong>Egreso: </strong>S/ {{$data['cash_egress']}} </p>--}}
+                {{--<p><strong>Egreso: </strong>Bs. {{$data['cash_egress']}} </p>--}}
             </td>
         </tr>
     </table>
@@ -250,3 +251,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

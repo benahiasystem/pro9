@@ -1,4 +1,6 @@
 <?php
+
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 namespace App\Http\Controllers\Tenant;
 
 use Illuminate\Support\Facades\DB;
@@ -75,6 +77,10 @@ use Modules\Item\Http\Controllers\EditorTagController;
 use Modules\Item\Models\TagTemplate;
 use App\Models\Tenant\ItemUnitTypePrice;
 use App\Models\Tenant\PriceLabel;
+// ########### INICIO CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
+use App\Support\ItemImport\ItemImportValidationWorkbook;
+use App\Support\ItemImport\ItemImportWorkbookValidator;
+// ########### FIN CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
 
 class ItemController extends Controller
 {
@@ -1013,33 +1019,85 @@ class ItemController extends Controller
     }
 
 
-    public function import(Request $request)
+    // ########### INICIO CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
+    public function import(
+        Request $request,
+        ItemImportWorkbookValidator $workbookValidator,
+        ItemImportValidationWorkbook $validationWorkbook
+    )
     {
         $request->validate([
-            'warehouse_id' => 'required|numeric|min:1'
+            'warehouse_id' => 'required|numeric|min:1|exists:tenant.warehouses,id',
+            'file' => 'required|file|mimes:xlsx|max:10240',
         ]);
-        if ($request->hasFile('file')) {
+
+        $file = $request->file('file');
+        $validation = $workbookValidator->validate($file->getRealPath());
+
+        if (!$validation->passes()) {
             try {
-                $import = new ItemsImport();
-                $import->import($request->file('file'), null, Excel::XLSX);
-                $data = $import->getData();
-                return [
-                    'success' => true,
-                    'message' =>  __('app.actions.upload.success'),
-                    'data' => $data
-                ];
-            } catch (Throwable $e) {
-                return [
-                    'success' => false,
-                    'message' =>  $this->importErrorMessage($e),
-                ];
+                $token = $validationWorkbook->store($file, $validation->errors(), (int) auth()->id());
+                $validationUrl = route('tenant.items.import.validation', ['token' => $token], false);
+            } catch (Throwable $exception) {
+                Log::error('No se pudo generar el Excel de validación de productos.', [
+                    'exception' => $exception,
+                    'user_id' => auth()->id(),
+                ]);
+                $validationUrl = null;
             }
+
+            return [
+                'success' => false,
+                'validation_failed' => true,
+                'message' => 'Se encontraron errores en el archivo. Corríjalos antes de importar.',
+                'validation_url' => $validationUrl,
+                'errors_count' => count($validation->errors()),
+                'rows_count' => $validation->totalRows(),
+            ];
         }
-        return [
-            'success' => false,
-            'message' =>  __('app.actions.upload.error'),
-        ];
+
+        try {
+            $data = DB::connection('tenant')->transaction(function () use ($file) {
+                $import = new ItemsImport();
+                $import->import($file, null, Excel::XLSX);
+
+                return $import->getData();
+            });
+
+            return [
+                'success' => true,
+                'message' => __('app.actions.upload.success'),
+                'data' => $data,
+            ];
+        } catch (Throwable $exception) {
+            Log::error('Error al importar productos después de validar el archivo.', [
+                'exception' => $exception,
+                'user_id' => auth()->id(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => $this->importErrorMessage($exception),
+            ];
+        }
     }
+
+    public function downloadImportValidation(Request $request, string $token)
+    {
+        abort_unless(Str::isUuid($token), 404);
+
+        $path = ItemImportValidationWorkbook::pathFor((int) $request->user()->id, $token);
+        $disk = Storage::disk('local');
+        abort_unless($disk->exists($path), 404);
+
+        return response()
+            ->download(
+                $disk->path($path),
+                sprintf('VALIDACION_ITEMS_%s.xlsx', $token)
+            )
+            ->deleteFileAfterSend(true);
+    }
+    // ########### FIN CAMBIO VALIDACIÓN PREVIA IMPORTACIÓN ITEMS
 
     public function importRestaurant(Request $request)
     {
@@ -1083,7 +1141,7 @@ class ItemController extends Controller
             }
 
             if (str_contains($sqlMessage, "Column 'currency_type_id' cannot be null")) {
-                return 'Uno o más productos no tienen moneda. Revise la columna F del archivo Excel (PEN o USD).';
+                return 'Uno o más productos no tienen moneda. Revise la columna F del archivo Excel (VES o USD).';
             }
 
             if (str_contains($sqlMessage, "Column 'description' cannot be null")) {
@@ -1511,7 +1569,7 @@ class ItemController extends Controller
 
         $records = $items->with('item_unit_types.prices')->get();
         $price_labels = PriceLabel::active()->ordered()->get();
-        
+
         return (new ItemExport())
             ->setExtraData($extradata)
             ->records($records)
@@ -2070,3 +2128,5 @@ class ItemController extends Controller
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

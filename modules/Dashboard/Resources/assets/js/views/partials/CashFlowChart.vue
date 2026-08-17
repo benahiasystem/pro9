@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <section class="card card-dashboard cf-panel">
     <div class="card-body">
@@ -79,7 +80,7 @@ export default {
         tooltip: {
           y: {
             formatter: (val) =>
-              "S/ " +
+              "Bs. " +
               Number(val).toLocaleString("es-PE", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -153,3 +154,5 @@ export default {
   background: var(--warning);
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

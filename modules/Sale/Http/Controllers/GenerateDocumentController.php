@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace Modules\Sale\Http\Controllers;
 
     use App\CoreFacturalo\Requests\Inputs\DocumentInput;
@@ -147,7 +149,7 @@
             $second_name = $row['second_name'] ?? ($row['item']['second_name'] ?? null);
             $name = $row['name'] ?? ($row['item']['name'] ?? null);
             $unit_type_id = $row['unit_type_id'] ?? ($row['item']['unit_type_id'] ?? 'ZZ');
-            $currency_type_id = $row['currency_type_id'] ?? ($row['item']['currency_type_id'] ?? 'PEN');
+            $currency_type_id = $row['currency_type_id'] ?? ($row['item']['currency_type_id'] ?? 'VES');
             $unit_price = $row['unit_price'] ?? ($row['item']['unit_price'] ?? null);
             $affectation_igv_type_id = $row['affectation_igv_type_id'] ?? ($row['item']['affectation_igv_type_id'] ?? null);
             if(empty($unit_type_id)) $unit_type_id = 'ZZ';
@@ -205,3 +207,5 @@
 //        });
 //    }
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

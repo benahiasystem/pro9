@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :close-on-click-modal="false"
                :title="titleDialog"
@@ -906,7 +907,7 @@ export default {
 
                 if (this.isEditItemNote) {
                     this.form.item.currency_type_id = this.currencyTypeIdActive
-                    this.form.item.currency_type_symbol = (this.currencyTypeIdActive == 'PEN') ? 'S/' : '$'
+                    this.form.item.currency_type_symbol = (this.currencyTypeIdActive == 'VES') ? 'Bs.' : '$'
 
                     if (this.documentTypeId == '07' && this.noteCreditOrDebitTypeId == '07') {
 
@@ -1279,3 +1280,5 @@ export default {
 }
 
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Adaptar Pro9 a Venezuela"
+  short_description: "Coordina la adaptación integral y verificable de Pro9 a Venezuela."
+  default_prompt: "Usa $adaptar-sistema-venezuela para coordinar cambios venezolanos integrales en Pro9 con migraciones consolidadas, marcadores ######## y pruebas."

@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO ADAPTACIÓN VENEZUELA
+
     namespace App\Models\Tenant;
 
     use App\Models\Tenant\Catalogs\CurrencyType;
@@ -1357,7 +1359,7 @@ use Modules\Sale\Models\Agent;
 
             $customer = Person::find($this->customer_id);
             if (empty($customer->identity_document_type_id)) $customer->identity_document_type_id = 6;
-            if (empty($customer->country_id)) $customer->country_id = 'PE';
+            if (empty($customer->country_id)) $customer->country_id = 'VE';
             if (empty($customer->district_id)) $customer->district_id = '';
             $customer->codigo_tipo_documento_identidad = $customer->identity_document_type_id;
             $customer->numero_documento = $customer->number;
@@ -1625,7 +1627,7 @@ use Modules\Sale\Models\Agent;
          */
         public function getTransformTotal()
         {
-            return ($this->currency_type_id === 'PEN') ? $this->total : ($this->total * $this->exchange_rate_sale);
+            return ($this->currency_type_id === 'VES') ? $this->total : ($this->total * $this->exchange_rate_sale);
         }
 
 
@@ -2030,3 +2032,4 @@ use Modules\Sale\Models\Agent;
         }
 
     }
+// ######## FIN ADAPTACIÓN VENEZUELA

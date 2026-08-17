@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,21 +73,21 @@
     <p><strong>Estado de caja: </strong>{{($data['cash_state']) ? 'Aperturada':'Cerrada'}}</p>
     <p><strong>Fecha y hora cierre: </strong>{{$data['cash_date_closed']}} {{$data['cash_time_closed']}}</p>
     <p><strong>Montos de operación </strong></p>
-    <p><strong>Saldo inicial: </strong>S/ {{$data['cash_beginning_balance']}}</p>
-    <p><strong>Ingreso: </strong>S/ {{ $data['cash_income'] }} </p>
-    <p><strong>Saldo final: </strong>S/ {{$data['cash_final_balance']}} </p>
-    <p><strong>Egreso: </strong>S/ {{$data['cash_egress']}} </p>
+    <p><strong>Saldo inicial: </strong>Bs. {{$data['cash_beginning_balance']}}</p>
+    <p><strong>Ingreso: </strong>Bs. {{ $data['cash_income'] }} </p>
+    <p><strong>Saldo final: </strong>Bs. {{$data['cash_final_balance']}} </p>
+    <p><strong>Egreso: </strong>Bs. {{$data['cash_egress']}} </p>
 
-    <p><strong>Total caja: </strong>S/ {{$data['total_cash_payment_method_type_01']}} </p>
+    <p><strong>Total caja: </strong>Bs. {{$data['total_cash_payment_method_type_01']}} </p>
 
     <p>&nbsp;</p>
-    <p><strong>Por cobrar: </strong>S/ {{$data['credit']}} </p>
-    <p><strong>Notas de Débito:</strong>S/ {{$data['nota_debito']}}</p>
-    <p><strong>Notas de Crédito: </strong> S/ {{ $data['nota_credito'] }}</p>
+    <p><strong>Por cobrar: </strong>Bs. {{$data['credit']}} </p>
+    <p><strong>Notas de Débito:</strong>Bs. {{$data['nota_debito']}}</p>
+    <p><strong>Notas de Crédito: </strong> Bs. {{ $data['nota_credito'] }}</p>
 
-    <p><strong>Total propinas: </strong>S/ {{$data['total_tips'] ?? 0}} </p>
-    <p><strong>Total efectivo CPE: </strong>S/ {{$data['total_payment_cash_01_document'] ?? 0}} </p>
-    <p><strong>Total efectivo NOTA DE VENTA: </strong>S/ {{$data['total_payment_cash_01_sale_note'] ?? 0}} </p>
+    <p><strong>Total propinas: </strong>Bs. {{$data['total_tips'] ?? 0}} </p>
+    <p><strong>Total efectivo CPE: </strong>Bs. {{$data['total_payment_cash_01_document'] ?? 0}} </p>
+    <p><strong>Total efectivo NOTA DE VENTA: </strong>Bs. {{$data['total_payment_cash_01_sale_note'] ?? 0}} </p>
 </div>
 @if($data['cash_documents_total']>0)
     <div class="" style="width:100% !important">
@@ -176,3 +177,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

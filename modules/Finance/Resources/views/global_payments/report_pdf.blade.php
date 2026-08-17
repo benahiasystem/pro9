@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -191,8 +192,8 @@
                         <tfoot>
                             <tr>
                                 <td class="celda" colspan="12"></td>
-                                <td class="celda"><strong>Totales PEN</strong></td>
-                                <td class="celda">{{ $records->where('payment.associated_record_payment.currency_type_id', 'PEN')->sum('payment.payment') }}</td>
+                                <td class="celda"><strong>Totales VES</strong></td>
+                                <td class="celda">{{ $records->where('payment.associated_record_payment.currency_type_id', 'VES')->sum('payment.payment') }}</td>
                             </tr>
                             <tr>
                     <td colspan="12"></td>
@@ -211,3 +212,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

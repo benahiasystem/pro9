@@ -1,3 +1,4 @@
+{{-- ######## INICIO ADAPTACIÓN VENEZUELA --}}
 @extends('restaurant::layouts.cart.index')
 @section('content')
 
@@ -40,7 +41,7 @@
                             <input class="vertical-quantity form-control input_quantity" :data-product="row.id"
                                 type="text">
                         </td>
-                        <td>S/ @{{ row.sub_total }}</td>
+                        <td>Bs. @{{ row.sub_total }}</td>
                         <td>
                             <button type="button" @click="deleteItem(row.id, index)"
                                 class="btn btn-outline-danger btn-sm"><i class="icon-cancel"></i></button>
@@ -82,7 +83,7 @@
                         <td class="text-left">
                             @{{ row.order_id }}
                         </td>
-                        <td>S/ @{{ row.total }}</td>
+                        <td>Bs. @{{ row.total }}</td>
                         <td>@{{ row.status_order_description }}</td>
                         <td>
                             <div v-if="row.status_order_id < 4">
@@ -125,7 +126,7 @@
                     <option value="6">Factura</option>
                     <option value="80">Nota de venta</option>
                 </select> --}}
-                
+
                 <select v-model="form_document.codigo_tipo_documento" class="form-control" @change="optionDocument">
                     <option value="" disabled>Tipo de comprobante</option>
                     <option value="01">Factura</option>
@@ -161,21 +162,21 @@
 
                     <tr v-if="summary.total_exonerated > 0">
                         <td>OP.EXONERADAS</td>
-                        <td>S/ @{{ summary.total_exonerated }}</td>
+                        <td>Bs. @{{ summary.total_exonerated }}</td>
                     </tr>
                     <tr v-if="summary.total_taxed > 0">
                         <td>OP.GRAVADA</td>
-                        <td>S/ @{{ summary.total_taxed }}</td>
+                        <td>Bs. @{{ summary.total_taxed }}</td>
                     </tr>
                     <tr v-if="summary.total_igv > 0">
                         <td>IGV</td>
-                        <td>S/ @{{ summary.total_igv }}</td>
+                        <td>Bs. @{{ summary.total_igv }}</td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
                         <td>Orden Total</td>
-                        <td>S/ @{{summary.total}}</td>
+                        <td>Bs. @{{summary.total}}</td>
                     </tr>
                 </tfoot>
             </table>
@@ -200,7 +201,7 @@
                 <div v-show="payment_cash.clicked" style="margin: 3%" class="form-group">
                     <div class="input-group mb-3">
                         <div class="input-group-prepend">
-                            <span class="input-group-text">S/</span>
+                            <span class="input-group-text">Bs.</span>
                         </div>
                         <input readonly placeholder="0.0" v-model="payment_cash.amount" type="text"
                             onkeypress="return isNumberKey(event)" maxlength="14" class="form-control"
@@ -222,9 +223,9 @@
             </div><!-- End .checkout-methods -->
         </div><!-- End .cart-summary -->
 
-        
 
-        
+
+
     </div><!-- End .col-lg-4 -->
 </div><!-- End .row -->
 
@@ -388,14 +389,14 @@
                 {
                     this.typeDocumentList = this.getIdentityDocumentTypes(['6'])
                 }
-                else if (this.form_document.codigo_tipo_documento == '03' && this.payment_cash.amount >= 700) 
+                else if (this.form_document.codigo_tipo_documento == '03' && this.payment_cash.amount >= 700)
                 {
                     this.typeDocumentList = this.getIdentityDocumentTypes(['1'])
                 }
-                else if (this.form_document.codigo_tipo_documento == '80') 
+                else if (this.form_document.codigo_tipo_documento == '80')
                 {
                     this.typeDocumentList = (this.payment_cash.amount >= 700) ? this.getIdentityDocumentTypes(['6', '1']) : this.getIdentityDocumentTypes()
-                } 
+                }
                 else {
                     this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '4'])
                 }
@@ -419,7 +420,7 @@
                 this.form_document.datos_del_cliente_o_receptor.identity_document_type_id = this.typeDocuments
             },
             async getFormPaymentCash() {
-                
+
                 this.refreshSetDataCustomer()
 
                 let precio = Math.round(Number(this.summary.total) * 100).toFixed(2);
@@ -513,7 +514,7 @@
                 if (this.form_document.codigo_tipo_documento == '01')
                 {
                     this.form_document.serie_documento = 'F001'
-                }else if (this.form_document.codigo_tipo_documento == '03') 
+                }else if (this.form_document.codigo_tipo_documento == '03')
                 {
                     this.form_document.serie_documento = 'B001'
                 }else
@@ -646,14 +647,14 @@
                     "hora_de_emision": moment().format('HH:mm:ss'),
                     "codigo_tipo_operacion": "0101",
                     "codigo_tipo_documento": "03",
-                    "codigo_tipo_moneda": "PEN",
+                    "codigo_tipo_moneda": "VES",
                     "fecha_de_vencimiento": moment().format('YYYY-MM-DD'),
                     "datos_del_cliente_o_receptor": {
                         "codigo_tipo_documento_identidad": "0",
                         "numero_documento": "0",
                         "apellidos_y_nombres_o_razon_social": this.user.name,
-                        "codigo_pais": "PE",
-                        "ubigeo": "150101",
+                        "codigo_pais": "VE",
+                        "ubigeo": "000619",
                         "direccion": this.user.address,
                         "correo_electronico": this.user.email,
                         "telefono": this.user.telephone
@@ -764,7 +765,10 @@
             },
             clickSendWhatsapp(order_id) {
 
-                window.open(`https://wa.me/51${this.phone_whatsapp}?text=Se ha generado un nuevo pedido con código nro. ${order_id}`, '_blank');
+                // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+                const phone = String(this.phone_whatsapp).replace(/\D/g, '').replace(/^(58|51)/, '').replace(/^0+/, '')
+                window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(`Se ha generado un nuevo pedido con código nro. ${order_id}`)}`, '_blank');
+                // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 
             }
         }
@@ -793,7 +797,7 @@
         if (precio > 0) {
             Culqi.settings({
                 title: "Productos Ecommerce",
-                currency: 'PEN',
+                currency: 'VES',
                 description: 'Compras Ecommerce Facturador Pro',
                 amount: precio
             });
@@ -882,8 +886,8 @@
             "codigo_tipo_documento_identidad": "0",
             "numero_documento": "0",
             "apellidos_y_nombres_o_razon_social": user.name,
-            "codigo_pais": "PE",
-            "ubigeo": "150101",
+            "codigo_pais": "VE",
+            "ubigeo": "000619",
             "direccion": app_cart.user.address,
             "correo_electronico": user.email,
             "telefono": app_cart.user.telephone
@@ -905,3 +909,5 @@
 </script>
 
 @endpush
+
+{{-- ######## FIN ADAPTACIÓN VENEZUELA --}}

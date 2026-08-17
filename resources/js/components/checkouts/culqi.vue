@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="checkout-pay">
         <button
@@ -18,14 +19,14 @@
 
 /**
  * Culqi Checkout Integration Example
- * cfg -> { 
+ * cfg -> {
  *  publicKey: Clave pública de Culqi
  *  rsa: Clave RSA para encriptar datos sensibles (opcional)
  *  idrsa: Identificador de la clave RSA (opcional)
  * }
  * Form -> [
  *  amount: Monto a cobrar (en centavos)
- *  currency: Moneda (PEN o USD) 
+ *  currency: Moneda (VES o USD)
  *  email: Correo del cliente
  *  description: Descripción del cargo
  * ]
@@ -80,7 +81,7 @@ export default {
         },
         formattedAmount() {
             const amount = Number(this.form.amount || 0) / 100;
-            const symbol = this.form.currency === 'USD' ? '$' : 'S/';
+            const symbol = this.form.currency === 'USD' ? '$' : 'Bs.';
             return `${symbol} ${amount.toLocaleString('es-PE', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -136,7 +137,7 @@ export default {
                         // billetera: true,
                         bancaMovil: true,
                         agente: true,
-                        // cuotealo: true,	
+                        // cuotealo: true,
                     },
                 paymentMethodsSort: Object.keys({
                 tarjeta: true,
@@ -144,9 +145,9 @@ export default {
                 // billetera: true,
                 bancaMovil: true,
                 agente: true,
-                // cuotealo: true,	
+                // cuotealo: true,
             })
-                }, 
+                },
                 appearance : {
                     menuType: "sidebar",
                 }
@@ -155,7 +156,7 @@ export default {
             const Culqi = new CulqiCheckout(this.publicKey, config);
 
             Culqi.culqi = () =>  {
-                
+
                 if (Culqi.token) {
                     this.form.email = Culqi.token.email ? Culqi.token.email : this.form.email;
 
@@ -320,3 +321,4 @@ export default {
     white-space: nowrap;
 }
 </style>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

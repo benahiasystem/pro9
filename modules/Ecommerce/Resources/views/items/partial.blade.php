@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $configurationModel = \App\Models\Tenant\Configuration::first();
     $phoneWhatsapp = $ecommerceConfiguration->phone_whatsapp ?? $configurationModel->phone_whatsapp ?? null;
@@ -125,8 +126,9 @@
                         $stockQv = $record->getStockByWarehouseMain();
                         $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
                         if ($showWhatsapp) {
-                            $waPhoneRaw = preg_replace('/\D+/', '', $phoneWhatsapp);
-                            $waPhone = (strlen($waPhoneRaw) == 9 && str_starts_with($waPhoneRaw, '9')) ? '51'.$waPhoneRaw : $waPhoneRaw;
+                            // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+                            $waPhone = \App\Support\Venezuela\Localization::whatsappNumber($phoneWhatsapp);
+                            // ########### FIN CAMBIO TELEFONÍA VENEZUELA
                             $waText = rawurlencode("Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?");
                             $waLink = "https://wa.me/{$waPhone}?text={$waText}";
                         }
@@ -192,7 +194,7 @@
 .price-box.preview .product-price,
 .price-box.preview .old-price,
 .price-box.preview .tag-ecommerce{
-    white-space: nowrap; /* evita S/ arriba y el monto abajo */
+    white-space: nowrap; /* evita Bs. arriba y el monto abajo */
 }
 @media (max-width: 576px){
     .price-box.preview{
@@ -236,3 +238,4 @@
     }
 }
 </style>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $invoice = $document->invoice;
     $establishment = $document->establishment;
@@ -177,7 +178,7 @@
             <cbc:ID>Detraccion</cbc:ID>
             <cbc:PaymentMeansID>{{ $detraction->detraction_type_id }}</cbc:PaymentMeansID>
             <cbc:PaymentPercent>{{ $detraction->percentage }}</cbc:PaymentPercent>
-            <cbc:Amount currencyID="PEN">{{ $detraction->amount }}</cbc:Amount>
+            <cbc:Amount currencyID="VES">{{ $detraction->amount }}</cbc:Amount>
         </cac:PaymentTerms>
     @endif
     @if($document->payment_condition_id === '01')
@@ -205,7 +206,7 @@
     @php($perception = $document->perception)
     <cac:PaymentTerms>
         <cbc:ID>Percepcion</cbc:ID>
-        <cbc:Amount currencyID="PEN">{{ $perception->amount }}</cbc:Amount>
+        <cbc:Amount currencyID="VES">{{ $perception->amount }}</cbc:Amount>
     </cac:PaymentTerms>
     @endif
     @if($document->prepayments)
@@ -245,8 +246,8 @@
         <cbc:ChargeIndicator>true</cbc:ChargeIndicator>
         <cbc:AllowanceChargeReasonCode>{{ $perception->code }}</cbc:AllowanceChargeReasonCode>
         <cbc:MultiplierFactorNumeric>{{ $perception->percentage }}</cbc:MultiplierFactorNumeric>
-        <cbc:Amount currencyID="PEN">{{ $perception->amount }}</cbc:Amount>
-        <cbc:BaseAmount currencyID="PEN">{{ $perception->base }}</cbc:BaseAmount>
+        <cbc:Amount currencyID="VES">{{ $perception->amount }}</cbc:Amount>
+        <cbc:BaseAmount currencyID="VES">{{ $perception->base }}</cbc:BaseAmount>
     </cac:AllowanceCharge>
     @endif
     @if($document->retention)
@@ -468,15 +469,15 @@
             </cac:Despatch>
             <cac:DeliveryTerms>
                 <cbc:ID>01</cbc:ID>
-                <cbc:Amount currencyID="PEN">{{$document->detraction->reference_value_service}}</cbc:Amount>
+                <cbc:Amount currencyID="VES">{{$document->detraction->reference_value_service}}</cbc:Amount>
             </cac:DeliveryTerms>
             <cac:DeliveryTerms>
                 <cbc:ID>02</cbc:ID>
-                <cbc:Amount currencyID="PEN">{{$document->detraction->reference_value_effective_load}}</cbc:Amount>
+                <cbc:Amount currencyID="VES">{{$document->detraction->reference_value_effective_load}}</cbc:Amount>
             </cac:DeliveryTerms>
             <cac:DeliveryTerms>
                 <cbc:ID>03</cbc:ID>
-                <cbc:Amount currencyID="PEN">{{$document->detraction->reference_value_payload}}</cbc:Amount>
+                <cbc:Amount currencyID="VES">{{$document->detraction->reference_value_payload}}</cbc:Amount>
             </cac:DeliveryTerms>
         </cac:Delivery>
         @endif
@@ -614,3 +615,5 @@
     </cac:InvoiceLine>
     @endforeach
 </Invoice>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

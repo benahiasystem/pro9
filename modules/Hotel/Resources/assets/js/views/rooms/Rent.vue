@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -100,7 +101,7 @@
                                         </div>
                                         <!-- afectación igv -->
                                         <h3 class="col-12 text-center m-0" v-if="Number(rate_unit_value) > 0">
-                                            <span class="text-muted text-xs">Tarifa de alojamiento: </span> <b>S/ {{ Number(rate_unit_value).toFixed(2) }}</b> <span class="text-muted text-xs">por noche</span>
+                                            <span class="text-muted text-xs">Tarifa de alojamiento: </span> <b>Bs. {{ Number(rate_unit_value).toFixed(2) }}</b> <span class="text-muted text-xs">por noche</span>
                                         </h3>
                                     </div>
                                 </div>
@@ -731,7 +732,7 @@ export default {
                 payload.unit_price = unit_price;
                 payload.item.unit_price = unit_price;
 
-                const currencyTypeIdActive = "PEN";
+                const currencyTypeIdActive = "VES";
                 const exchangeRateSale = 0;
                 const product = calculateRowItem(
                     payload,
@@ -937,7 +938,7 @@ export default {
                 number: "#",
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
-                currency_type_id: "PEN",
+                currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 0,
                 total_prepayment: 0,
@@ -1039,7 +1040,7 @@ export default {
                     it.item.unit_price = newTotal;
                     it.unit_value = newTotal;
 
-                    const newItem = calculateRowItem(it, "PEN", 3, this.percentage_igv);
+                    const newItem = calculateRowItem(it, "VES", 3, this.percentage_igv);
                     return newItem;
                 });
 
@@ -1169,3 +1170,4 @@ export default {
 <style>
 
 </style>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

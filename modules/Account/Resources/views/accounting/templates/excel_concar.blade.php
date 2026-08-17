@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 
 <table>
     <thead>
@@ -17,7 +18,7 @@
             <td>Debe / Haber</td>
             <td>Importe Original</td>
             <td>Importe en Dólares</td>
-            <td> Importe en Soles</td>
+            <td> Importe en Bolívares</td>
             <td>Tipo de Documento</td>
             <td>Número de Documento</td>
             <td>Fecha de Documento</td>
@@ -38,9 +39,9 @@
             <td>Tipo de Tasa</td>
             <td>Tasa Detracción/Percepción</td>
             <td>Importe Base Detracción/Percepción Dólares</td>
-            <td>Importe Base Detracción/Percepción Soles</td>
+            <td>Importe Base Detracción/Percepción Bolívares</td>
             <td>Tipo Cambio para 'F'</td>
-            <td>Importe de IGV sin derecho crédito fiscal</td> 
+            <td>Importe de IGV sin derecho crédito fiscal</td>
         </tr>
         {{-- <tr>
             <td>Restricciones</td>
@@ -59,7 +60,7 @@
             <td>'D' ó 'H'</td>
             <td>Importe original de la cuenta contable. Obligatorio, debe estar entre >=0 y <=99999999999.99</td>
             <td>Importe de la Cuenta Contable en Dólares. Obligatorio si Flag de Conversión de Moneda esta en 'N', debe estar entre >=0 y <=99999999999.99</td>
-            <td>Importe de la Cuenta Contable en Soles. Obligatorio si Flag de Conversión de Moneda esta en 'N', debe estra entre >=0 y <=99999999999.99</td>
+            <td>Importe de la Cuenta Contable en Bolívares. Obligatorio si Flag de Conversión de Moneda esta en 'N', debe estra entre >=0 y <=99999999999.99</td>
             <td>Si Cuenta Contable tiene habilitado el Documento Referencia Ver T.G. 06</td>
             <td>Si Cuenta Contable tiene habilitado el Documento Referencia Incluye Serie y Número</td>
             <td>Si Cuenta Contable tiene habilitado el Documento Referencia</td>
@@ -129,7 +130,7 @@
         </tr> --}}
     </thead>
 
-    <tbody> 
+    <tbody>
         @foreach($records as $row)
         <tr>
             @foreach ($row as $item)
@@ -139,3 +140,5 @@
         @endforeach
     </tbody>
 </table>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

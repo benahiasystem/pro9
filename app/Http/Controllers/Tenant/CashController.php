@@ -1,4 +1,6 @@
 <?php
+
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 namespace App\Http\Controllers\Tenant;
 
 use App\Exports\CashProductExport;
@@ -58,15 +60,15 @@ class CashController extends Controller
     {
         $query = Cash::withOut(['cash_documents'])
                 ->whereTypeUser();
-                
-        if ($request->column == 'user') {   
+
+        if ($request->column == 'user') {
             $query->whereHas('user', function($q) use($request) {
                 $q->where('name', 'like', "%{$request->value}%");
             });
         } else {
             $query->where($request->column, 'like', "%{$request->value}%");
         }
-    
+
         $query->orderBy('date_opening', 'DESC')
                 ->orderBy('time_opening','desc');
 
@@ -105,9 +107,9 @@ class CashController extends Controller
 
         return compact('cash');
     }
-    
+
     /**
-     * 
+     *
      * Usado en:
      * CashController - App
      *
@@ -120,9 +122,9 @@ class CashController extends Controller
         return compact('cash');
     }
 
-    
+
     /**
-     * 
+     *
      * Usado en:
      * CashController - App
      *
@@ -135,10 +137,10 @@ class CashController extends Controller
 
         return $record;
     }
-    
-    
+
+
     /**
-     * 
+     *
      * Usado en:
      * CashController - App
      *
@@ -230,9 +232,9 @@ class CashController extends Controller
 
     }
 
-    
+
     /**
-     * 
+     *
      * Usado en:
      * CashController - App
      *
@@ -279,8 +281,8 @@ class CashController extends Controller
                     })
                     ->sum('payment');
 
-                    $final_balance += ($cash_document->sale_note->currency_type_id == 'PEN') 
-                    ? $balance 
+                    $final_balance += ($cash_document->sale_note->currency_type_id == 'VES')
+                    ? $balance
                     : ($balance * $cash_document->sale_note->exchange_rate_sale);
                 }
 
@@ -298,20 +300,20 @@ class CashController extends Controller
                             $query->where('cash_id', $id);
                         })
                         ->sum('payment');
-                        $final_balance += ($cash_document->document->currency_type_id == 'PEN') 
-                            ? $balance 
+                        $final_balance += ($cash_document->document->currency_type_id == 'VES')
+                            ? $balance
                             : ($balance * $cash_document->document->exchange_rate_sale);
                     }
                 } else {
                     foreach ($note as $n) {
                         $sum = $n->isDebit();
                         if ($sum) {
-                            $final_balance += ($n->currency_type_id == 'PEN') 
-                                ? $n->total 
+                            $final_balance += ($n->currency_type_id == 'VES')
+                                ? $n->total
                                 : ($n->total * $n->exchange_rate_sale);
                         } else {
-                            $final_balance -= ($n->currency_type_id == 'PEN') 
-                                ? $n->total 
+                            $final_balance -= ($n->currency_type_id == 'VES')
+                                ? $n->total
                                 : ($n->total * $n->exchange_rate_sale);
                         }
                     }
@@ -322,12 +324,12 @@ class CashController extends Controller
 
             }
             else if($cash_document->expense_payment){
-                
+
                 $expense = $cash_document->expense_payment->expense;
                 if($expense->state_type_id == '05'){
-    
-                    $final_balance -= ($expense->currency_type_id == 'PEN') 
-                        ? $cash_document->expense_payment->payment 
+
+                    $final_balance -= ($expense->currency_type_id == 'VES')
+                        ? $cash_document->expense_payment->payment
                         : ($cash_document->expense_payment->payment * $expense->exchange_rate_sale);
                 }
 
@@ -336,8 +338,8 @@ class CashController extends Controller
             else if($cash_document->purchase){
                 if(in_array($cash_document->purchase->state_type_id, ['01','03','05','07','13'])){
                     if($cash_document->purchase->total_canceled == 1) {
-                        $final_balance -= ($cash_document->purchase->currency_type_id == 'PEN') 
-                            ? $cash_document->purchase->total 
+                        $final_balance -= ($cash_document->purchase->currency_type_id == 'VES')
+                            ? $cash_document->purchase->total
                             : ($cash_document->purchase->total * $cash_document->purchase->exchange_rate_sale);
                     }
                 }
@@ -345,8 +347,8 @@ class CashController extends Controller
             // cotizacion
             else if($cash_document->quotation)
             {
-                $final_balance += ($cash_document->quotation->applyQuotationToCash()) 
-                    ? $cash_document->quotation->getTransformTotal() 
+                $final_balance += ($cash_document->quotation->applyQuotationToCash())
+                    ? $cash_document->quotation->getTransformTotal()
                     : 0;
             }
 
@@ -361,7 +363,7 @@ class CashController extends Controller
         if (isset($incomes[0])) {
             foreach ($incomes as $income) {
                 if (in_array($income->state_type_id, ['01','03','05','07','13'])) {
-                    $final_balance += ($income->currency_type_id == 'PEN')
+                    $final_balance += ($income->currency_type_id == 'VES')
                         ? $income->total
                         : ($income->total * $income->exchange_rate_sale);
                 }
@@ -382,10 +384,10 @@ class CashController extends Controller
     }
 
     /**
-     * 
+     *
      * Usado en:
      * CashController - App
-     * 
+     *
      * @param \Illuminate\Http\Request $request
      *
      * @return array
@@ -412,7 +414,7 @@ class CashController extends Controller
             'cash_id' => $cash->id,
             $documentField => $document->id,
         ]) : null;
-        
+
         // NOTA: Se esta colocando dentro de los eventos de los modelos para poder registrarlo en caja
         // Gracias al updateOrCreate la información que primero se creo dentro de evento del modelo, no duplicara la información sino solo
         // lo actualiza
@@ -421,7 +423,7 @@ class CashController extends Controller
             'sale_note_id' => $request->sale_note_id,
             'quotation_id' => $request->quotation_id,
         ]);
-        
+
         $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
             CashDocumentPayment::updateOrCreate([
                 'cash_id' => $cash->id,
@@ -436,9 +438,9 @@ class CashController extends Controller
         ]);
     }
 
-    
+
     /**
-     * 
+     *
      * Usado en:
      * CashController - App
      *
@@ -486,7 +488,7 @@ class CashController extends Controller
 
 
     public function report($cash) {
-        
+
 
         $cash = Cash::query()->findOrFail($cash);
         $company = Company::query()->first();
@@ -522,10 +524,10 @@ class CashController extends Controller
         return $pdf->download($filename.'.pdf');
 
     }
-    
+
 
     /**
-     * 
+     *
      * Usado en:
      * CashController - App
      *
@@ -622,7 +624,7 @@ class CashController extends Controller
             $data['description'] = $row->item->description;
             $data['unit_type_id'] = $this->getUnitTypeId($row);
             $data['record_type'] = 'sale_note_item';
-            
+
             $data['total'] = $row->total;
             $data['item_id'] = $row->item_id;
 
@@ -668,8 +670,8 @@ class CashController extends Controller
         });
 
     }
-    
-    
+
+
     /**
      * @param  array $row
      * @return string
@@ -682,7 +684,7 @@ class CashController extends Controller
 
     public function report_cash_excel($cash_id)
     {
-        
+
 
         set_time_limit(0);
         $data = [];
@@ -749,7 +751,7 @@ class CashController extends Controller
             $temp = [];
             $notes = [];
             $usado = '';
-            
+
             /** Documentos de Tipo Nota de venta */
             if ($cash_document->sale_note) {
                 $sale_note = $cash_document->sale_note;
@@ -790,12 +792,12 @@ class CashController extends Controller
                                 }
                             }
                         }
-                    
+
                 }
-              
-            } 
+
+            }
             /** Documentos de Tipo Document */
-            
+
             else if ($cash_document->document) {
                 $record_total = 0;
                 $document = $cash_document->document;
@@ -836,7 +838,7 @@ class CashController extends Controller
                                                     : $document->total,
                                                 'currency_type_id'          => $document->currency_type_id,
                                                 'usado'                     => $usado." ".__LINE__,
-                            
+
                                                 'tipo' => 'document',
                                                 'total_payments'            => (!in_array($document->state_type_id, $status_type_id)) ? 0 : $document->payments->sum('payment'),
                                             ];
@@ -847,13 +849,13 @@ class CashController extends Controller
                         }
                     }
                 }
-                
+
                 /* Notas de credito o debito*/
                 $notes = $document->getNotes();
-            } 
+            }
             /** Documentos de Tipo Servicio tecnico */
             else if ($cash_document->technical_service) {
-                
+
                     $usado = '<br>Se usan para cash<br>';
                     $technical_service = $cash_document->technical_service;
                     $cash_income += $technical_service->cost;
@@ -868,7 +870,7 @@ class CashController extends Controller
                                 }
                             }
                         }
-                    
+
                 $temp = [
                     'type_transaction'          => 'Venta',
                     'document_type_description' => 'Servicio técnico',
@@ -878,13 +880,13 @@ class CashController extends Controller
                     'customer_name'             => $technical_service->customer->name,
                     'customer_number'           => $technical_service->customer->number,
                     'total'                     => $technical_service->cost,
-                    'currency_type_id'          => 'PEN',
+                    'currency_type_id'          => 'VES',
                     'usado'                     => $usado." ".__LINE__,
                     'tipo'                      => 'technical_service',
                     'total_payments'            => $technical_service->payments->sum('payment'),
                 ];
             }
-            
+
             /** Documentos de Tipo compras */
             else if ($cash_document->purchase) {
 
@@ -896,7 +898,7 @@ class CashController extends Controller
                 $purchase = $cash_document->purchase;
 
                 if (in_array($purchase->state_type_id, $status_type_id)) {
-                    
+
                     $payments = $purchase->purchase_payments;
                     /* dd($payments[0]['payment_method_type_id']); */
                     $record_total = 0;
@@ -925,23 +927,23 @@ class CashController extends Controller
                                         'currency_type_id'          => $purchase->currency_type_id,
                                         'usado'                     => $usado." ".__LINE__,
                                         'tipo'                      => 'purchase',
-                                        'total_payments'            => (!in_array($purchase->state_type_id, $status_type_id)) ? 0 : $purchase->payments->sum('payment'),                        
+                                        'total_payments'            => (!in_array($purchase->state_type_id, $status_type_id)) ? 0 : $purchase->payments->sum('payment'),
                                     ];
                                 }
                             }
                         }
                     }
                 }
-                
+
             }
 
             /** Documentos de Tipo Gastos */
-            elseif ($cash_document->expense_payment) 
+            elseif ($cash_document->expense_payment)
             {
                 $expense_payment = $cash_document->expense_payment;
                 $total_expense_payment = 0;
 
-                if ($expense_payment->expense->state_type_id == '05') 
+                if ($expense_payment->expense->state_type_id == '05')
                 {
                     $total_expense_payment = self::CalculeTotalOfCurency(
                         $expense_payment->payment,
@@ -981,27 +983,27 @@ class CashController extends Controller
             }
 
             /** Cotizaciones */
-            else if ($cash_document->quotation) 
+            else if ($cash_document->quotation)
             {
                 $quotation = $cash_document->quotation;
 
                 // validar si cumple condiciones para usar registro en reporte
                 if($quotation->applyQuotationToCash())
                 {
-                        if (in_array($quotation->state_type_id, $status_type_id)) 
+                        if (in_array($quotation->state_type_id, $status_type_id))
                         {
                             $record_total = 0;
-        
+
                             $total = self::CalculeTotalOfCurency(
                                 $quotation->total,
                                 $quotation->currency_type_id,
                                 $quotation->exchange_rate_sale
                             );
-        
+
                             $cash_income += $total;
                             $final_balance += $total;
-        
-                            if (count($quotation->payments) > 0) 
+
+                            if (count($quotation->payments) > 0)
                             {
                                 $pays = $quotation->payments;
                                 foreach ($methods_payment as $record) {
@@ -1029,15 +1031,15 @@ class CashController extends Controller
                                 }
                             }
                     }
-    
-                    
+
+
 
                 }
                 /** Cotizaciones */
 
             }
 
-            
+
 
             if (!empty($temp)) {
                 $temp['usado'] = isset($temp['usado']) ? $temp['usado'] : '--';
@@ -1109,29 +1111,29 @@ class CashController extends Controller
         }
 
         $incomes=$incomes->get();
-        
+
         if (isset($incomes[0])) {
 
             $data['cash_documents_total'] = (int)$incomes->count();
             /* dd(isset($incomes[0])); */
             foreach ($incomes as $income) {
-                
-                $usado = '';                
+
+                $usado = '';
                 if( $income->payments[0]['payment_method_type']['id'] == "01"){
                     if (in_array($income->state_type_id, $status_type_id)){
                         $payments=$income->payments;
                             $record_total = 0;
-        
+
                             $total = self::CalculeTotalOfCurency(
                                 $income->total,
                                 $income->currency_type_id,
                                 $income->exchange_rate_sale
                             );
-        
+
                             $cash_income += $total;
                             $final_balance += $total;
 
-                            if (count($income->payments) > 0) 
+                            if (count($income->payments) > 0)
                             {
                                 $pays = $income->payments;
                                 foreach ($methods_payment as $record) {
@@ -1159,9 +1161,9 @@ class CashController extends Controller
                 } else {
                     $temp = [];
                 }
-            
-                /* dd((!in_array($income->state_type_id, $status_type_id)) ? 0 : $income->payments->sum('payment')); */                
-                
+
+                /* dd((!in_array($income->state_type_id, $status_type_id)) ? 0 : $income->payments->sum('payment')); */
+
                 if (!empty($temp)) {
                     $temp['usado'] = isset($temp['usado']) ? $temp['usado'] : '--';
                     $temp['total_string'] = self::FormatNumber($temp['total']);
@@ -1171,14 +1173,14 @@ class CashController extends Controller
             }
         }
 
-        
+
 
 //        $all_documents = collect($all_documents)->sortBy('date_sort')->all();
         /************************/
         /************************/
         $data['all_documents'] = $all_documents;
         $temp = [];
-        
+
         foreach ($methods_payment as $index => $item) {
             $temp[] = [
                 'iteracion' => $index + 1,
@@ -1211,10 +1213,10 @@ class CashController extends Controller
                 ->download($filename.'.xlsx');
 
     }
-    
+
 
     /**
-     * 
+     *
      * Descripcion de los items
      *
      * @param  $record
@@ -1225,7 +1227,7 @@ class CashController extends Controller
         $data = $record->items->pluck('description')->toArray();
         $full_description = "";
 
-        foreach ($data as $value) 
+        foreach ($data as $value)
         {
             $full_description .= "- {$value}<br>";
         }
@@ -1236,10 +1238,10 @@ class CashController extends Controller
 
     public static function CalculeTotalOfCurency(
         $total = 0,
-        $currency_type_id = 'PEN',
+        $currency_type_id = 'VES',
         $exchange_rate_sale = 1
     ) {
-        if ($currency_type_id !== 'PEN') {
+        if ($currency_type_id !== 'VES') {
             $total = $total * $exchange_rate_sale;
         }
         return $total;
@@ -1268,3 +1270,5 @@ class CashController extends Controller
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

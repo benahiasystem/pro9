@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
     namespace App\Imports;
 
     use App\Models\Tenant\Person;
@@ -31,7 +33,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
                 $number = $row[2];
                 $name = $row[3];
                 $trade_name = $row[4];
-                $country_id = ($row[5]) ?: 'PE';
+                $country_id = ($row[5]) ?: 'VE';
                 $location_id = $row[6];
                 $department_id = null;
                 $province_id = null;
@@ -85,3 +87,4 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
             return $this->data;
         }
     }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

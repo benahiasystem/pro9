@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="nd-chart">
         <button
@@ -171,7 +172,7 @@ export default {
                         return (
                             '<div style="padding:6px 10px;font-size:12px;">' +
                             '<strong>' + label + '</strong><br/>' +
-                            name + ': S/ ' + value +
+                            name + ': Bs. ' + value +
                             '</div>'
                         );
                     },
@@ -238,3 +239,5 @@ export default {
     cursor: default;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

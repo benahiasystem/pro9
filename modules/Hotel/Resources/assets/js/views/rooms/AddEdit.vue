@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <el-dialog
     :title="title"
@@ -101,7 +102,7 @@
               >Guardar</el-button
             >
           </div>
-          
+
         </div>
       </div>
     </form>
@@ -169,7 +170,7 @@ export default {
         brand_id: null,
         calculate_quantity: false,
         category_id: null,
-        currency_type_id: "PEN",
+        currency_type_id: "VES",
         date_of_due: null,
         description: "Habitación " + this.form.name,
         has_igv: true,
@@ -267,3 +268,5 @@ export default {
   },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

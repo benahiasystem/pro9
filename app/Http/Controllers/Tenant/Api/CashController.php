@@ -1,4 +1,6 @@
 <?php
+
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 namespace App\Http\Controllers\Tenant\Api;
 
 use App\Http\Controllers\Controller;
@@ -102,13 +104,13 @@ class CashController extends Controller
             'cash_id' => $cash->id,
             $documentField => $document->id,
         ]) : null;
-        
+
         $cashDocument = $cash->cash_documents()->updateOrCreate([
             'document_id' => $request->document_id,
             'sale_note_id' => $request->sale_note_id,
             'quotation_id' => $request->quotation_id,
         ]);
-        
+
         $document->payments->each(function($payment) use($cash,$isDocument,$cashDocument){
             CashDocumentPayment::create([
                 'cash_id' => $cash->id,
@@ -157,13 +159,13 @@ class CashController extends Controller
         $cash = Cash::where('state', true)
             ->with('user')
             ->get()
-            ->map(function($cash) { 
+            ->map(function($cash) {
                 return [
                     'id' => $cash->id,
                     'description' => $cash->reference_number . " " . $cash->date_opening . " (" . $cash->user->name . ")",
                 ];
             });
-        
+
         return [
             'success' => true,
             'message' => 'Cajas disponibles',
@@ -195,7 +197,7 @@ class CashController extends Controller
             if($cash_document->sale_note){
 
                 if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
-                    $final_balance += ($cash_document->sale_note->currency_type_id == 'PEN') ? $cash_document->sale_note->total : ($cash_document->sale_note->total * $cash_document->sale_note->exchange_rate_sale);
+                    $final_balance += ($cash_document->sale_note->currency_type_id == 'VES') ? $cash_document->sale_note->total : ($cash_document->sale_note->total * $cash_document->sale_note->exchange_rate_sale);
                 }
 
                 // $final_balance += $cash_document->sale_note->total;
@@ -204,7 +206,7 @@ class CashController extends Controller
             else if($cash_document->document){
 
                 if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
-                    $final_balance += ($cash_document->document->currency_type_id == 'PEN') ? $cash_document->document->total : ($cash_document->document->total * $cash_document->document->exchange_rate_sale);
+                    $final_balance += ($cash_document->document->currency_type_id == 'VES') ? $cash_document->document->total : ($cash_document->document->total * $cash_document->document->exchange_rate_sale);
                 }
 
                 // $final_balance += $cash_document->document->total;
@@ -213,7 +215,7 @@ class CashController extends Controller
             else if($cash_document->expense_payment){
 
                 if($cash_document->expense_payment->expense->state_type_id == '05'){
-                    $final_balance -= ($cash_document->expense_payment->expense->currency_type_id == 'PEN') ? $cash_document->expense_payment->payment:($cash_document->expense_payment->payment  * $cash_document->expense_payment->expense->exchange_rate_sale);
+                    $final_balance -= ($cash_document->expense_payment->expense->currency_type_id == 'VES') ? $cash_document->expense_payment->payment:($cash_document->expense_payment->payment  * $cash_document->expense_payment->expense->exchange_rate_sale);
                 }
 
                 // $final_balance -= $cash_document->expense_payment->payment;
@@ -222,7 +224,7 @@ class CashController extends Controller
             else if($cash_document->purchase){
                 if(in_array($cash_document->purchase->state_type_id, ['01','03','05','07','13'])){
                     if($cash_document->purchase->total_canceled == 1) {
-                        $final_balance -= ($cash_document->purchase->currency_type_id == 'PEN') ? $cash_document->purchase->total : ($cash_document->purchase->total * $cash_document->purchase->exchange_rate_sale);
+                        $final_balance -= ($cash_document->purchase->currency_type_id == 'VES') ? $cash_document->purchase->total : ($cash_document->purchase->total * $cash_document->purchase->exchange_rate_sale);
                     }
                 }
             }
@@ -247,3 +249,5 @@ class CashController extends Controller
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

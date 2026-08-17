@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO ADAPTACIÓN VENEZUELA
+
 
     namespace Modules\Order\Imports;
 
@@ -191,13 +193,13 @@
                 /*
                 if (empty($customer)) {
                     $address = [
-                        'country_id'=>'PE',
+                        'country_id'=>'VE',
                     ];
                     $dataCustomer = [
                         'type' => 'customers',
                         'name' => "$lastnames, $names",
                         'number' => $identificationNumber,
-                        'country_id' => 'PE',
+                        'country_id' => 'VE',
                         'address' => $street,
                         'email' => $email,
                         'telephone' => $phone,
@@ -271,7 +273,7 @@
                     "reference_payment" => empty($payment_method_types) ? 'Contado' : $payment_method_types->description,
                     'establishment_id' => $this->configuration->establishment_id,
                     'user_id' => $this->user->id,
-                    'currency_type_id' => $this->configuration->currency_type_id ?? 'PEN',
+                    'currency_type_id' => $this->configuration->currency_type_id ?? 'VES',
                     "purchase_order" => $miTiendaPeOrder,
                     'date_of_issue' => $saleDate,
                     'time_of_issue' => Carbon::now()->format('H:i:s'),
@@ -337,7 +339,7 @@
                         'item' => (array)$cItem,
                         'observation' => $observation,
                         'quantity' => $quantity,
-                        'currency_type_id' => 'PEN',
+                        'currency_type_id' => 'VES',
                         'affectation_igv_type_id' => $item->sale_affectation_igv_type_id,
                         'affectation_igv_type' => $item->sale_affectation_igv_type,
                         'total_base_isc' => 0,
@@ -538,13 +540,13 @@
 
             if (empty($customer) ) {
                 $address = [
-                    'country_id' => 'PE',
+                    'country_id' => 'VE',
                 ];
                 $dataCustomer = [
                     'type' => 'customers',
                     'name' => "$lastnames, $names",
                     'number' => $identificationNumber,
-                    'country_id' => 'PE',
+                    'country_id' => 'VE',
                     'address' => $street,
                     'email' => $email,
                     'telephone' => $phone,
@@ -742,3 +744,4 @@
         }
 
     }
+// ######## FIN ADAPTACIÓN VENEZUELA

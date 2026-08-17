@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div v-loading="loading">
         <!-- Botón toggle filtros -->
@@ -51,7 +52,7 @@
                 >
                     <el-option label="Todos los tipos" value=""></el-option>
                     <el-option label="% Porcentaje" value="percentage"></el-option>
-                    <el-option label="S/ Fijo" value="fixed"></el-option>
+                    <el-option label="Bs. Fijo" value="fixed"></el-option>
                 </el-select>
             </div>
         </div>
@@ -164,3 +165,4 @@ export default {
     },
 };
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

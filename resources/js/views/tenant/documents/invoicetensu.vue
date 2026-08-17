@@ -1,4 +1,6 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div class="card mb-0 pt-2 pt-md-0">
         <!-- <div class="card-header bg-info">
             <h3 class="my-0">Nuevo Comprobante</h3>
@@ -82,8 +84,8 @@
                                         Cliente
                                         <a href="#" @click.prevent="showDialogNewPerson = true">[+ Nuevo]</a>
                                     </label>
-                                    <el-select v-model="form.customer_id" filterable remote class="border-left rounded-left border-info" popper-class="el-select-customers" 
-                                        dusk="customer_id"                                    
+                                    <el-select v-model="form.customer_id" filterable remote class="border-left rounded-left border-info" popper-class="el-select-customers"
+                                        dusk="customer_id"
                                         placeholder="Escriba el nombre o número de documento del cliente"
                                         :remote-method="searchRemoteCustomers"
                                         :loading="loading_search">
@@ -123,10 +125,10 @@
                                 </div>
                             </div>
                             <div class="col-lg-2 mt-2 mb-2">
-                                <div class="form-group" > 
+                                <div class="form-group" >
                                     <el-checkbox v-model="is_receivable" v-if="form.document_type_id=='03'" class=" font-weight-bold">¿Es venta por cobrar?</el-checkbox>
                                 </div>
-                            </div> 
+                            </div>
                         </div>
                         <div class="row mt-1">
                             <div class="col-md-12">
@@ -205,7 +207,7 @@
                                                 <td>{{index + 1}}</td>
                                                 <td>{{row.item.description}} {{row.item.presentation.hasOwnProperty('description') ? row.item.presentation.description : ''}}<br/><small>{{row.affectation_igv_type.description}}</small></td>
                                                 <td class="text-center">{{row.item.unit_type_id}}</td>
-                                                
+
                                                 <td class="text-right">{{row.quantity}}</td>
                                                 <!--<td class="text-right" v-else ><el-input-number :min="0.01" v-model="row.quantity"></el-input-number> </td> -->
 
@@ -219,7 +221,7 @@
                                                 <td class="text-right">
                                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickRemoveItem(index)">x</button>
                                                     <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click="ediItem(row, index)" ><span style='font-size:10px;'>&#9998;</span> </button>
-                                                    
+
                                                 </td>
                                             </tr>
                                             <tr><td colspan="8"></td></tr>
@@ -232,7 +234,7 @@
                                     <button type="button" class="btn waves-effect waves-light btn-primary" @click.prevent="showDialogAddItem = true">+ Agregar Producto</button>
                                 </div>
                             </div>
- 
+
                             <div class="col-md-8 mt-3">
 
                             </div>
@@ -243,15 +245,17 @@
                                 <p class="text-right" v-if="form.total_unaffected > 0">OP.INAFECTAS: {{ currency_type.symbol }} {{ form.total_unaffected }}</p>
                                 <p class="text-right" v-if="form.total_exonerated > 0">OP.EXONERADAS: {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
                                 <p class="text-right" v-if="form.total_taxed > 0">OP.GRAVADA: {{ currency_type.symbol }} {{ form.total_taxed }}</p>
-                                <p class="text-right" v-if="form.total_igv > 0">IGV: {{ currency_type.symbol }} {{ form.total_igv }}</p>
+                                <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                                <p class="text-right" v-if="form.total_igv > 0">IVA: {{ currency_type.symbol }} {{ form.total_igv }}</p>
+                                <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                                 <h3 class="text-right" v-if="form.total > 0"><b>TOTAL A PAGAR: </b>{{ currency_type.symbol }} {{ form.total }}</h3>
-                            </div> 
-                            
+                            </div>
+
                         </div>
 
                     </div>
 
-                    
+
                     <div class="form-actions text-right mt-4">
                         <el-button @click.prevent="close()">Cancelar</el-button>
                         <el-button class="submit" type="primary" native-type="submit" :loading="loading_submit" v-if="form.items.length > 0">Generar</el-button>
@@ -281,7 +285,9 @@
     </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
     import DocumentFormItem from './partials/item.vue'
     import PersonForm from '../persons/form.vue'
     import DocumentOptions from '../documents/partials/options.vue'
@@ -295,7 +301,7 @@
         mixins: [functions, exchangeRate],
         data() {
             return {
-                formStage: { customer: { username: "Homata02", password: "87654321*" }, 
+                formStage: { customer: { username: "Homata02", password: "87654321*" },
                 fileName: '20100070031-01-FQA1-00000002.json', fileContent: ''},
                 recordItem: null,
                 resource: 'documents',
@@ -310,7 +316,7 @@
                 currency_types: [],
                 discount_types: [],
                 charges_types: [],
-                all_customers: [],                
+                all_customers: [],
                 form_payment: {},
                 document_types_guide: [],
                 customers: [],
@@ -346,7 +352,7 @@
                     this.charges_types = response.data.charges_types
                     this.company = response.data.company;
                     this.user = response.data.user;
-                    this.document_type_03_filter = response.data.document_type_03_filter 
+                    this.document_type_03_filter = response.data.document_type_03_filter
                     this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null
                     this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
                     this.form.document_type_id = (this.document_types.length > 0)?this.document_types[0].id:null
@@ -370,9 +376,9 @@
                          fechaEmision: "2018-10-30",
                          horaEmision: "10:41:23",
                          codTipoDocumento: "03",
-                         tipoMoneda: "PEN",
+                         tipoMoneda: "VES",
                          numeroOrdenCompra: "5220141",
-                         fechaVencimiento: "2018-04-13" 
+                         fechaVencimiento: "2018-04-13"
                         }
             },
             getEmi()
@@ -382,13 +388,13 @@
                     numeroDocId: "20100070031",
                     nombreComercial: "ASBANC",
                     razonSocial: "ASOCIACION DE BANCOS DEL PERU",
-                    ubigeo: "150131",
+                    ubigeo: "000619",
                     direccion: "CAL.41 NRO. 975",
                     urbanizacion: "URB. CORPAC",
-                    provincia: "LIMA",
-                    departamento: "LIMA",
-                    distrito: "SAN ISIDRO",
-                    codigoPais: "PE",
+                    provincia: "Miranda",
+                    departamento: "Miranda",
+                    distrito: "Chacao",
+                    codigoPais: "VE",
                     telefono: "9999-9999",
                     correoElectronico: "informes@dominio.com",
                     codigoAsigSUNAT: "0000"
@@ -400,8 +406,8 @@
                             tipoDocId: "1",
                             numeroDocId: "35226658",
                             razonSocial: "PEREZ QUIROZ JAIME",
-                            direccion: "AV. LARCO 1522, DPTO. 505, MIRAFLORES - LIMA",
-                            codigoPais: "PE"
+                            direccion: "CHACAO, MIRANDA",
+                            codigoPais: "VE"
                         }
             },
             getDrf()
@@ -423,7 +429,7 @@
                         "idImpuesto":"1000",
                         "montoImpuesto": "381.36"
                         }
-                    ],      
+                    ],
                     "importeTotal": "2500.00",
                     "tipoOperacion": "0101",
                     "leyenda":[
@@ -438,10 +444,10 @@
             getDetalle()
             {
                 let items = this.form.items
-                
+
                 let result = items.map(( obj, index ) => {
 
-                   return { 
+                   return {
                             numeroItem : index + 1,
                             codigoProducto : 'code_' + obj.item_id, //obj.item.item_code,
                             descripcionProducto: obj.item.description,
@@ -449,11 +455,11 @@
                             unidad: obj.item.unit_type_id,
                             valorUnitario: obj.unit_price,
                             precioVentaUnitario: obj.item.sale_unit_price,
-                            totalImpuestos : [ 
-                                {   
-                                    idImpuesto:"9996", "montoImpuesto":"0.00", 
+                            totalImpuestos : [
+                                {
+                                    idImpuesto:"9996", "montoImpuesto":"0.00",
                                     tipoAfectacion:"21", "montoBase":"1000.00",
-                                    porcentaje:"0.00" 
+                                    porcentaje:"0.00"
                                 }
                              ],
                             valorVenta:"1000.00",
@@ -498,11 +504,11 @@
                 let fileCont = btoa(JSON.stringify(fact))
                 this.formStage.fileContent = fileCont
 
-                
+
                 console.log(this.formStage)
 
             },
-           
+
 
 
             ediItem(row, index)
@@ -513,8 +519,8 @@
 
             },
 
-              searchRemoteCustomers(input) {  
-                  
+              searchRemoteCustomers(input) {
+
                 if (input.length > 0) {
                 // if (input!="") {
 
@@ -522,11 +528,11 @@
                     let parameters = `input=${input}&document_type_id=${this.form.document_type_id}`
 
                     this.$http.get(`/${this.resource}/search/customers?${parameters}`)
-                            .then(response => { 
+                            .then(response => {
                                 this.customers = response.data.customers
                                 this.loading_search = false
                                 if(this.customers.length == 0){this.filterCustomers()}
-                            })  
+                            })
                 } else {
                     // this.customers = []
                     this.filterCustomers()
@@ -609,8 +615,8 @@
                 this.filterSeries()
                 this.cleanCustomer()
                 this.filterCustomers()
-            }, 
-            cleanCustomer(){                
+            },
+            cleanCustomer(){
                 this.form.customer_id = null
                 // this.customers = []
             },
@@ -630,7 +636,7 @@
                 this.form.series_id = (this.series.length > 0)?this.series[0].id:null
             },
             filterCustomers() {
-                
+
                 // this.form.customer_id = null
                 if(this.form.document_type_id === '01') {
                     this.customers = _.filter(this.all_customers, {'identity_document_type_id': '6'})
@@ -661,7 +667,7 @@
                 else{
                       this.form.items.push(JSON.parse(JSON.stringify(row)));
                 }
-              
+
                 this.calculateTotal();
             },
             clickRemoveItem(index) {
@@ -761,7 +767,7 @@
 
                     this.$http.post(`/document_payments`, this.form_payment)
                     .then(response => {
-                        if (response.data.success) { 
+                        if (response.data.success) {
                         } else {
                             this.$message.error(response.data.message);
                         }
@@ -775,7 +781,7 @@
                     })
 
                 }
-                
+
 
             },
             close() {
@@ -785,12 +791,14 @@
                 // this.$http.get(`/${this.resource}/table/customers`).then((response) => {
                 //     this.customers = response.data
                 //     this.form.customer_id = customer_id
-                // }) 
+                // })
                 this.$http.get(`/${this.resource}/search/customer/${customer_id}`).then((response) => {
                     this.customers = response.data.customers
                     this.form.customer_id = customer_id
-                })                  
+                })
             },
         }
     }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

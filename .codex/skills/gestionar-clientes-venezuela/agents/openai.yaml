@@ -1,0 +1,4 @@
+interface:
+  display_name: "Clientes de Venezuela"
+  short_description: "Adaptar clientes, RIF y direcciones venezolanas"
+  default_prompt: "Usa $gestionar-clientes-venezuela para adaptar y validar clientes de Venezuela en Pro9."

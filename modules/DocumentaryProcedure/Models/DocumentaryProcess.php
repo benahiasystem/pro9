@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace Modules\DocumentaryProcedure\Models;
 
     use App\Models\Tenant\ModelTenant;
@@ -83,7 +85,7 @@
                 'description'   => $this->getDescription(),
                 'price'         => $this->getPrice(),
                 'name'          => $this->getName(),
-                'name_price'    => $this->getName().' - S/ '.$this->priceWithDecimal(),
+                'name_price'    => $this->getName().' - Bs. '.$this->priceWithDecimal(),
                 'active'        => (bool)$this->active,
                 'disable'       => !((bool)$this->active),
                 'stages'        => $this->getDocumentaryOffices(),
@@ -114,7 +116,7 @@
             $data['requirements_id'] = $req->pluck('requirement_id');
 
             $data['documentary_terms']=[];
-            $data['documentary_terms'][]=['term_name'=>'Capital hasta S/5,000.00'];
+            $data['documentary_terms'][]=['term_name'=>'Capital hasta Bs.5,000.00'];
             $data['documentary_terms'][]=['term_name'=>'2 Socios'];
             $data['documentary_terms'][]=['term_name'=>'Hasta 4 rubros o actividades'];
             $data['documentary_terms'][]=['term_name'=>'1 Gerente'];
@@ -291,3 +293,5 @@
 
 
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

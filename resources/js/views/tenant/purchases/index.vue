@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="purchases">
         <div class="page-header pe-0">
@@ -122,13 +123,13 @@
                             <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key" class="text-end">
                                 <span v-if="row.purchase_order">{{ row.purchase_order.prefix }}-{{ row.purchase_order.id }}</span>
                             </td>
-                            <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_free) }}</td>
-                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_unaffected) }}</td>
-                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
-                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
-                            <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
-                            <td v-if="col.visible && col.key === 'total_perception'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ row.total_perception ? formatDecimal(row.total_perception) : formatDecimal(0) }}</td>
-                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}</td>
+                            <td v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_free) }}</td>
+                            <td v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_unaffected) }}</td>
+                            <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
+                            <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
+                            <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
+                            <td v-if="col.visible && col.key === 'total_perception'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ row.total_perception ? formatDecimal(row.total_perception) : formatDecimal(0) }}</td>
+                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total) }}</td>
                             <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
                                 <el-dropdown trigger="click" @command="handleCommand($event, row)">
                                     <el-button class="btn-dropdown">
@@ -395,3 +396,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

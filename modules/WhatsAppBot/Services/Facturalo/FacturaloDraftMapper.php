@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO ADAPTACIÓN VENEZUELA
+
 namespace Modules\WhatsAppBot\Services\Facturalo;
 
 use App\Models\Tenant\Item;
@@ -103,7 +105,7 @@ class FacturaloDraftMapper
             'time_of_issue' => $today->format('H:i:s'),
             'customer_id' => $customer?->id,
             'customer' => $this->customerSnapshot($customer),
-            'currency_type_id' => 'PEN',
+            'currency_type_id' => 'VES',
             'exchange_rate_sale' => 1,
             'total_prepayment' => 0,
             'total_discount' => $totalDiscount,
@@ -176,7 +178,7 @@ class FacturaloDraftMapper
         // Multiplicar primero con el precio unitario CON IGV completo, y recien
         // ahi separar base/IGV. Redondear el unit_value sin IGV antes de
         // multiplicar (como se hacia antes) arrastra el error de redondeo x
-        // cantidad (ver bug: S/3.00 x 15 daba S/44.96 en vez de S/45.00 exacto).
+        // cantidad (ver bug: Bs.3.00 x 15 daba Bs.44.96 en vez de Bs.45.00 exacto).
         $total = round($unitPriceWithIgv * $quantity, 2);
         $totalValue = round($total / (1 + self::IGV_RATE), 2);
         $totalIgv = round($total - $totalValue, 2);
@@ -192,7 +194,7 @@ class FacturaloDraftMapper
             'item' => array_merge($item->toArray(), [
                 'description' => $item->name,
                 'unit_type_id' => $item->unit_type_id ?: 'NIU',
-                'currency_type_id' => $item->currency_type_id ?: 'PEN',
+                'currency_type_id' => $item->currency_type_id ?: 'VES',
                 'has_igv' => (bool) $item->has_igv,
                 'calculate_quantity' => false,
                 'percentage_igv' => self::IGV_RATE * 100,
@@ -272,7 +274,7 @@ class FacturaloDraftMapper
                 'number' => '00000000',
                 'name' => 'CLIENTES VARIOS',
                 'trade_name' => 'CLIENTES VARIOS',
-                'country_id' => 'PE',
+                'country_id' => 'VE',
                 'address' => '-',
                 'enabled' => true,
             ]);
@@ -306,3 +308,4 @@ class FacturaloDraftMapper
         return $data;
     }
 }
+// ######## FIN ADAPTACIÓN VENEZUELA

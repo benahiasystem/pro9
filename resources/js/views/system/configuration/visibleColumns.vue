@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="card">
         <div class="card-header bg-info bg-info-customer-admin">
@@ -217,7 +218,7 @@ const SAMPLE_BY_TYPE = {
     customer: ['Juan Pérez García', 'Empresa SAC', 'María López'],
     sunat:    ['43211503', '43211706', '81112100'],
     status:   ['Pendiente', 'En proceso', 'Cerrado'],
-    currency: ['PEN', 'USD', 'PEN'],
+    currency: ['VES', 'USD', 'VES'],
     exchange: ['3.75', '3.80', '3.72'],
     action:   ['···', '···', '···'],
 };
@@ -509,14 +510,14 @@ export default {
                     color: '#10b981',
                     svg: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt-2"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2l-3 2" /><path d="M14 8h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5m2 0v1.5m0 -9v1.5" /></svg>',
                     modules: ['document_index', 'sale_notes_index'],
-                }, 
+                },
                 {
                     key: 'purchases',
                     label: 'Compras',
                     color: '#f59e0b',
                     svg: '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304" /><path d="M9 11v-5a3 3 0 0 1 6 0v5" /></svg>',
                     modules: ['purchases_index'],
-                },               
+                },
                 {
                     key: 'products',
                     label: 'Productos / Servicios',
@@ -973,3 +974,5 @@ export default {
     color: #888;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

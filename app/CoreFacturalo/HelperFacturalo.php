@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\CoreFacturalo;
 
 use App\Models\Tenant\Bank;
@@ -24,7 +26,7 @@ class HelperFacturalo
     {
         $height = 0;
         $establishment = Establishment::find($establishment_id);
-        if (!is_null($company->logo)   || 
+        if (!is_null($company->logo)   ||
             !is_null($establishment->logo) ) {
             $height = 32;
         }
@@ -57,7 +59,7 @@ class HelperFacturalo
                 ];
             }
 
-            $bank_accounts_pen = BankAccount::query()->where('bank_id', $bank->id)->where('currency_type_id', 'PEN')->get();
+            $bank_accounts_pen = BankAccount::query()->where('bank_id', $bank->id)->where('currency_type_id', 'VES')->get();
             $bank_accounts_pen_array = [];
             foreach ($bank_accounts_pen as $row) {
                 $bank_accounts_pen_array[] = [
@@ -139,11 +141,11 @@ class HelperFacturalo
 
                 $count = (int) $chunk->first()->quantity;
 
-                for ($i = 0; $i < $count; $i++) { 
+                for ($i = 0; $i < $count; $i++) {
                     $document->itemChunk = $chunk->first();
                     $base_height = 15;
                     $this->addPage($pdf, $additional_data, $document, $company, 'document_dispatch_ticket_individual', $base_height);
-                } 
+                }
             }
         } else {
             $base_height = 40;
@@ -190,3 +192,5 @@ class HelperFacturalo
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

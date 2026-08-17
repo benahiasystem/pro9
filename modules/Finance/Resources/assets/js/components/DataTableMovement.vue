@@ -1,10 +1,11 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="row">
 
             <div class="col-md-12 col-lg-12 col-xl-12 ">
 
-                
+
                 <div class="row mt-2">
                     <div class="col-md-3">
                         <label class="control-label">Periodo
@@ -218,9 +219,9 @@
                         <tfoot>
                         <tr>
                             <td colspan="7"></td>
-                            <td>S/{{ totals.total_input }}</td>
-                            <td>S/{{ totals.total_output }}</td>
-                            <td>S/{{ totals.total_balance }}</td>
+                            <td>Bs.{{ totals.total_input }}</td>
+                            <td>Bs.{{ totals.total_output }}</td>
+                            <td>Bs.{{ totals.total_balance }}</td>
                         </tr>
                         </tfoot>
 
@@ -394,7 +395,7 @@ export default {
                         }
                     }, 0);
 
-                    sums[index] = 'S/ ' + valor.toLocaleString('es')
+                    sums[index] = 'Bs. ' + valor.toLocaleString('es')
                 } else {
                     sums[index] = 'N/A';
                 }
@@ -402,7 +403,7 @@ export default {
 
             let inputSum = sums[6].split(" ").length > 1 ? parseFloat(sums[6].split(" ")[1].replace(',', '.')) : 0
             let outputSum = sums[7].split(" ").length > 1 ? parseFloat(sums[7].split(" ")[1].replace(',', '.')) : 0
-            sums[8] = 'S/ ' + (inputSum - outputSum).toLocaleString('es')
+            sums[8] = 'Bs. ' + (inputSum - outputSum).toLocaleString('es')
 
             return sums;
         },
@@ -425,7 +426,7 @@ export default {
         MonedaFormater: (row, col, value, index) => {
             if (value === null) return '-';
             if (isNaN(parseFloat(value))) return '-';
-            return `S/ ${value}`
+            return `Bs. ${value}`
         },
         handleCurrentChange() {
             this.currentTableData = this.records.slice(
@@ -691,3 +692,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

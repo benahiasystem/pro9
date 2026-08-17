@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -24,42 +25,43 @@
                                 <th  class="text-center">Monto</th>
                             <tr>
                             <tr slot-scope="{ index, row }">
-                                <td>{{ index }}</td> 
+                                <td>{{ index }}</td>
                                 <td  class="text-start">{{row.user}}</td>
                                 <td  class="text-start">{{row.customer}}</td>
                                 <td  class="text-start">{{row.item_description}}</td>
                                 <td  class="text-center">{{row.item_quantity}}</td>
-                                <td  class="text-center">S/ {{row.total}}</td>
+                                <td  class="text-center">Bs. {{row.total}}</td>
                             </tr>
-                            
+
                         </data-table>
-                         
-                        
-                    </div> 
+
+
+                    </div>
             </div>
-     
+
         </div>
     </div>
 </template>
 
 <script>
- 
+
     import DataTable from '../../components/DataTableOrderNotesConsolidated.vue'
 
-    export default { 
+    export default {
         components: {DataTable},
         data() {
             return {
-                resource: 'reports/order-notes-consolidated',                 
-                form: {}, 
+                resource: 'reports/order-notes-consolidated',
+                form: {},
 
             }
         },
-        async created() { 
+        async created() {
         },
-        methods: { 
-             
-            
+        methods: {
+
+
         }
     }
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

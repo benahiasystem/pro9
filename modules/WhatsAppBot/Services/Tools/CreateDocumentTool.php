@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\WhatsAppBot\Services\Tools;
 
 use App\Models\Tenant\Item;
@@ -53,7 +55,7 @@ class CreateDocumentTool implements ToolInterface
                         ],
                         'discount_amount' => [
                             'type' => 'number',
-                            'description' => 'Descuento global en soles (monto fijo). Se aplica al total y reduce la base del IGV. Solo úsalo si el vendedor pidió un descuento explícito (ej. "con S/ 9 de descuento", "descuéntale 10 soles"). Debe ser menor al subtotal antes de IGV.',
+                            'description' => 'Descuento global en bolívares (monto fijo). Se aplica al total y reduce la base del IGV. Solo úsalo si el vendedor pidió un descuento explícito (ej. "con Bs. 9 de descuento", "descuéntale 10 bolívares"). Debe ser menor al subtotal antes de IGV.',
                         ],
                     ],
                     'required' => ['document_type', 'items'],
@@ -95,8 +97,8 @@ class CreateDocumentTool implements ToolInterface
         // se calcula multiplicando el precio unitario CON IGV completo por la
         // cantidad, y recien ahi se separa base/IGV. Redondear el unit_value
         // sin IGV antes de multiplicar (como se hacia antes) arrastra el error
-        // de redondeo x cantidad (ver bug: S/3.00 x 15 daba S/44.96 en vez de
-        // S/45.00 exacto).
+        // de redondeo x cantidad (ver bug: Bs.3.00 x 15 daba Bs.44.96 en vez de
+        // Bs.45.00 exacto).
         foreach ($items as $line) {
             $item = Item::find($line['item_id'] ?? null);
             if (!$item) {
@@ -143,7 +145,7 @@ class CreateDocumentTool implements ToolInterface
                 // Mismo fallback que SearchItemsTool: algunos catálogos tienen
                 // populated solo `description` (lo que ve el cliente) y `name`
                 // vacío o solo el código. Sin este fallback el summary sale
-                // con el item sin nombre ("- 1 x  (S/ 5.90)").
+                // con el item sin nombre ("- 1 x  (Bs. 5.90)").
                 'item_name' => $item->description ?: $item->name,
                 'item_code' => $item->item_code ?: $item->internal_id,
                 'quantity' => $qty,
@@ -168,7 +170,7 @@ class CreateDocumentTool implements ToolInterface
             if ($discountAmount >= $discountBase) {
                 return [
                     'status' => 'error',
-                    'error' => "El descuento (S/ {$discountAmount}) no puede ser mayor o igual al subtotal sin IGV (S/ {$discountBase}).",
+                    'error' => "El descuento (Bs. {$discountAmount}) no puede ser mayor o igual al subtotal sin IGV (Bs. {$discountBase}).",
                 ];
             }
             $subtotal = round($discountBase - $discountAmount, 2);
@@ -213,17 +215,17 @@ class CreateDocumentTool implements ToolInterface
         $lines[] = 'Items:';
         foreach ($draft['items'] as $line) {
             $lines[] = '  - ' . $line['quantity'] . ' x ' . $line['item_name']
-                . ' (S/ ' . number_format($line['unit_price_with_igv'], 2) . ')'
-                . ' = S/ ' . number_format($line['line_total'], 2);
+                . ' (Bs. ' . number_format($line['unit_price_with_igv'], 2) . ')'
+                . ' = Bs. ' . number_format($line['line_total'], 2);
         }
         $lines[] = '';
         if (!empty($draft['discount_amount']) && $draft['discount_amount'] > 0) {
-            $lines[] = 'Subtotal sin descuento: S/ ' . number_format($draft['discount_base'], 2);
-            $lines[] = 'Descuento: -S/ ' . number_format($draft['discount_amount'], 2);
+            $lines[] = 'Subtotal sin descuento: Bs. ' . number_format($draft['discount_base'], 2);
+            $lines[] = 'Descuento: -Bs. ' . number_format($draft['discount_amount'], 2);
         }
-        $lines[] = 'Subtotal: S/ ' . number_format($draft['subtotal'], 2);
-        $lines[] = 'IGV: S/ ' . number_format($draft['igv'], 2);
-        $lines[] = 'Total: S/ ' . number_format($draft['total'], 2);
+        $lines[] = 'Subtotal: Bs. ' . number_format($draft['subtotal'], 2);
+        $lines[] = 'IGV: Bs. ' . number_format($draft['igv'], 2);
+        $lines[] = 'Total: Bs. ' . number_format($draft['total'], 2);
         if ($draft['observations']) {
             $lines[] = '';
             $lines[] = 'Obs: ' . $draft['observations'];
@@ -232,3 +234,5 @@ class CreateDocumentTool implements ToolInterface
         return implode("\n", $lines);
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

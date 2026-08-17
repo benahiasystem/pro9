@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="dialog-modal">
         <el-dialog :close-on-click-modal="false"
@@ -351,7 +352,7 @@ export default {
                 date_of_due: moment().format("YYYY-MM-DD"),
                 customer_id: null,
                 is_receivable: false,
-                currency_type_id: 'PEN',
+                currency_type_id: 'VES',
                 exchange_rate_sale: this.exchange_rate_sale,
                 total_taxed: 0,
                 total_igv: 0,
@@ -405,7 +406,7 @@ export default {
                         'affectation_igv_type_id': '10',
                         'description': item_description,
                         'percentage_igv': this.percentage_igv * 100,
-                        'currency_type_id': 'PEN',
+                        'currency_type_id': 'VES',
                         'unit_value': unit_value,
                         'unit_price': total,
                         'total_base_igv': total_taxed,
@@ -471,7 +472,7 @@ export default {
                 new_item = {};
             }
             if (this.form.currency_type_id === undefined) {
-                this.form.currency_type_id = 'PEN'
+                this.form.currency_type_id = 'VES'
             }
             let currency_type = _.find(this.currency_types, {'id': this.form.currency_type_id})
 
@@ -480,8 +481,8 @@ export default {
                 new_item.currency_type_id = currency_type.id
                 new_item.currency_type_symbol = currency_type.symbol
             }else{
-                new_item.currency_type_id = 'PEN'
-                new_item.currency_type_symbol  = "S/";
+                new_item.currency_type_id = 'VES'
+                new_item.currency_type_symbol  = "Bs.";
             }
 
             new_item.sale_affectation_igv_type_id = data.affectation_igv_type_id
@@ -625,7 +626,7 @@ export default {
 
             if (customer.identity_document_type_id == '6' && this.form.document_type_id === "03") {
                 return this.$message.error('Los clientes con RUC no pueden generar boleta');
-            } 
+            }
             if ((customer.identity_document_type_id == '1' || customer.identity_document_type_id == '0' ) && this.form.document_type_id === "01") {
                 return this.$message.error('Los clientes con DNI no pueden generar factura');
             }
@@ -830,3 +831,5 @@ export default {
     },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

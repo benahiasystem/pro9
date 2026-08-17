@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Report\Models;
 
 use App\Models\Tenant\ModelTenant;
@@ -19,15 +21,15 @@ class ReportConfiguration extends ModelTenant
         'convert_pen' => 'bool',
     ];
 
-    
+
     /**
-     * 
-     * Filtro por ruta para validar si aplica conversión a soles
+     *
+     * Filtro por ruta para validar si aplica conversión a bolívares
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @param  string $route_name
      * @return \Illuminate\Database\Eloquent\Builder
-     * 
+     *
      */
     public function scopeWhereApplyConversion($query, $route_name)
     {
@@ -48,3 +50,5 @@ class ReportConfiguration extends ModelTenant
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

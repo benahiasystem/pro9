@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace App\CoreFacturalo\Requests\Inputs;
 
 use App\CoreFacturalo\Requests\Inputs\Common\ActionInput;
@@ -164,7 +166,7 @@ class DispatchInput
         if($inputs['document_type_id'] == '09') {
             if (array_key_exists('origin', $inputs)) {
                 $origin = $inputs['origin'];
-                $country_id = key_exists('country_id', $origin) ? $origin['country_id'] : 'PE';
+                $country_id = key_exists('country_id', $origin) ? $origin['country_id'] : 'VE';
                 $address = $origin['address'];
                 $location_id = $origin['location_id'][2] == '0' ? $origin['location_id'] : $origin['location_id'][2];
                 $code = key_exists('code', $origin) ? $origin['code'] : '0000';
@@ -185,7 +187,7 @@ class DispatchInput
         if($inputs['document_type_id'] == '09') {
             if (array_key_exists('delivery', $inputs)) {
                 $delivery = $inputs['delivery'];
-                $country_id = key_exists('country_id', $delivery) ? $delivery['country_id'] : 'PE';
+                $country_id = key_exists('country_id', $delivery) ? $delivery['country_id'] : 'VE';
                 $address = $delivery['address'];
                 $location_id = is_array($delivery['location_id']) ? $delivery['location_id'][2] : $delivery['location_id'];
                 $code = key_exists('code', $delivery) ? $delivery['code'] : '0000';
@@ -680,3 +682,4 @@ class DispatchInput
     }
 
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :close-on-click-modal="false"
                :title="titleDialog"
                :visible="showDialog"
@@ -88,7 +89,9 @@
     </el-dialog>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 
 import {serviceNumber} from '../../../../mixins/functions'
 
@@ -130,7 +133,7 @@ export default {
             this.form = {
                 id: null,
                 type: 'customers',
-                country_id: 'PE',
+                country_id: 'VE',
                 identity_document_type_id: '6',
                 number: '',
                 name: null,
@@ -230,4 +233,5 @@ export default {
         },
     }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

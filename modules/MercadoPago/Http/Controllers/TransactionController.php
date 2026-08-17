@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\MercadoPago\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -20,8 +22,8 @@ use Modules\Payment\Models\{
 
 
 class TransactionController extends Controller
-{ 
-   
+{
+
     use UtilityTrait;
 
     protected $payment_link;
@@ -31,19 +33,19 @@ class TransactionController extends Controller
 
     public function store(TransactionRequest $request)
     {
-        
+
         try {
-            
+
             $access_token_mp = PaymentConfiguration::getAccessTokenMp();
             $validator = $this->validateStore($request, $access_token_mp);
-            
+
             if(!$validator['success']){
                 return $validator;
             }
 
             $record = DB::connection()->transaction(function () use ($request, $access_token_mp) {
-                
-                $this->payment_link = PaymentLink::findOrFail($request->payment_link_id); 
+
+                $this->payment_link = PaymentLink::findOrFail($request->payment_link_id);
 
                 SDK::setAccessToken($access_token_mp);
 
@@ -76,9 +78,9 @@ class TransactionController extends Controller
                 $this->transaction = $this->saveTransaction($transaction_query, $request);
 
                 return $this->setResponse($payment);
-                
+
             });
-            
+
             return $record;
 
         } catch (Exception $e) {
@@ -89,7 +91,7 @@ class TransactionController extends Controller
         }
 
     }
-     
+
 
     public function validateStore($request, $access_token_mp)
     {
@@ -103,30 +105,30 @@ class TransactionController extends Controller
         }
 
         // if($request->transaction_amount > 2000){
-        //     return $this->getErrorMessage('No puede realizar transacciones con montos mayores a 2000 soles');
+        //     return $this->getErrorMessage('No puede realizar transacciones con montos mayores a 2000 bolívares');
         // }
 
         return [
             'success' => true
         ];
-        
+
     }
 
 
     private function setResponse($payment)
     {
 
-        $success_operation = false; 
-        $transaction_state_id = null; 
-        $transaction_state_message = null; 
+        $success_operation = false;
+        $transaction_state_id = null;
+        $transaction_state_message = null;
 
         if($this->transaction)
         {
-            $success_operation = (bool) $this->transaction->transaction_state->success; 
-            $transaction_state_id = $this->transaction->transaction_state_id; 
+            $success_operation = (bool) $this->transaction->transaction_state->success;
+            $transaction_state_id = $this->transaction->transaction_state_id;
             $message = $success_operation ? 'Transacción registrada correctamente' : 'Transacción registrada con errores';
             $transaction_state_message = $this->transaction->transaction_state->user_message;
-            
+
         }else
         {
             $message = $this->getTransactionState($payment->status, $payment->status_detail)->user_message;
@@ -186,13 +188,13 @@ class TransactionController extends Controller
 
     public function transactionQuery($paymentId, $access_token_mp)
     {
-        return $this->searchPayment($paymentId, $access_token_mp); 
+        return $this->searchPayment($paymentId, $access_token_mp);
     }
 
 
     // public function records(Request $request)
     // {
-        
+
     //     $transactions = Transaction::whereUserCustomer()->latest()
     //                                 ->paginate(config('system_configuration.items_per_page'));
 
@@ -201,3 +203,5 @@ class TransactionController extends Controller
     // }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

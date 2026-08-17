@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :title="titleDialog"
@@ -114,14 +115,14 @@
                     <template v-if="form.with_document">
                         <div class="pl-total__summary">
                             <span class="pl-total__label">Total a cobrar</span>
-                            <span class="pl-total__value">S/ {{ formattedTotal }}</span>
+                            <span class="pl-total__value">Bs. {{ formattedTotal }}</span>
                         </div>
                         <p class="pl-total__hint">Se calcula con los montos a pagar de los comprobantes</p>
                     </template>
                     <template v-else>
                         <label class="control-label">Total a cobrar</label>
                         <el-input v-model="form.total">
-                            <template slot="prepend">S/</template>
+                            <template slot="prepend">Bs.</template>
                         </el-input>
                     </template>
                     <small class="form-control-feedback" v-if="errors.total" v-text="errors.total[0]"></small>
@@ -331,9 +332,9 @@
                         })
                 }
             },
-            submit() {   
+            submit() {
 
-                this.loading_submit = true  
+                this.loading_submit = true
                 this.$http.post(`${this.resource}/store`, this.form)
 
                     .then(response => {
@@ -355,7 +356,7 @@
                     .then(() => {
                         this.loading_submit = false
                     })
-                    
+
             },
             close() {
                 this.$emit('update:showDialog', false)
@@ -523,3 +524,4 @@
     opacity: 0.6;
 }
 </style>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

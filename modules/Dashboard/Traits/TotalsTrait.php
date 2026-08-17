@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Dashboard\Traits;
 
 use App\Models\Tenant\Document;
@@ -34,7 +36,7 @@ trait TotalsTrait
         }
 
 
-        $purchases_total = $purchases->where('currency_type_id', 'PEN')->sum('total') + $purchases->where('currency_type_id', 'PEN')->sum('total_perception');
+        $purchases_total = $purchases->where('currency_type_id', 'VES')->sum('total') + $purchases->where('currency_type_id', 'VES')->sum('total_perception');
         $purchases_total_usd = 0;
 
 
@@ -45,7 +47,7 @@ trait TotalsTrait
         foreach ($purchases as $purchase)
         {
 
-            if($purchase->currency_type_id == 'PEN'){
+            if($purchase->currency_type_id == 'VES'){
 
                 $purchase_total_payment += collect($purchase->purchase_payments)->sum('payment');
 
@@ -85,7 +87,7 @@ trait TotalsTrait
                                         ->get();
         }
 
-        $expenses_total = $expenses->where('currency_type_id', 'PEN')->sum('total');
+        $expenses_total = $expenses->where('currency_type_id', 'VES')->sum('total');
 
         $expense_dolla = $expenses->where('currency_type_id', 'USD');
 
@@ -125,11 +127,11 @@ trait TotalsTrait
         }
 
 
-        //PEN
+        //VES
         $sale_note_total_pen = 0;
         $sale_note_total_payment_pen = 0;
 
-        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'PEN'))->sum('total');
+        $sale_note_total_pen = collect($sale_notes->where('currency_type_id', 'VES'))->sum('total');
 
         //USD
         $sale_note_total_usd = 0;
@@ -139,7 +141,7 @@ trait TotalsTrait
         foreach ($sale_notes as $sale_note)
         {
 
-            if($sale_note->currency_type_id == 'PEN'){
+            if($sale_note->currency_type_id == 'VES'){
 
                 $sale_note_total_payment_pen += collect($sale_note->payments)->sum('payment');
 
@@ -174,12 +176,12 @@ trait TotalsTrait
             $documents = Document::query()->where('establishment_id', $establishment_id)->get();
         }
 
-        //PEN
+        //VES
         $document_total_pen = 0;
         $document_total_payment_pen = 0;
         $document_total_note_credit_pen = 0;
 
-        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'PEN')->sum('total');
+        $document_total_pen = collect($documents->whereIn('state_type_id', ['01','03','05','07','13'])->whereIn('document_type_id', ['01','03','08']))->where('currency_type_id', 'VES')->sum('total');
 
         //USD
         $document_total_usd = 0;
@@ -198,7 +200,7 @@ trait TotalsTrait
 
         foreach ($documents as $document)
         {
-            if($document->currency_type_id == 'PEN'){
+            if($document->currency_type_id == 'VES'){
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
 
@@ -211,10 +213,10 @@ trait TotalsTrait
             }else{
 
                 if(in_array($document->state_type_id,['01','03','05','07','13'])){
-                    
+
                     $document_total_payment_usd += collect($document->payments)->sum('payment') * $document->exchange_rate_sale;
                     $document_total_note_credit_usd += ($document->document_type_id == '07') ? $document->total * $document->exchange_rate_sale:0; //nota de credito
-                
+
                 }
 
             }
@@ -236,9 +238,9 @@ trait TotalsTrait
         ];
     }
 
-        
+
     /**
-     * 
+     *
      * Obtener suma total de pedidos
      *
      * @param  int $establishment_id
@@ -254,8 +256,8 @@ trait TotalsTrait
             return $row->getTransformTotal();
         });
     }
-    
-    
+
+
     /**
      * Redondear número
      *
@@ -269,3 +271,5 @@ trait TotalsTrait
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -11,14 +11,15 @@
                     </div>
                     <div>
                         <span class="text-muted">
-                            Reglas y valores por defecto al registrar una compra: IGV global, precio y moneda aplicados a los items.
+                            <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                            Reglas y valores por defecto al registrar una compra: IVA global, precio y moneda aplicados a los ítems.
                         </span>
                     </div>
                 </div>
                 <div class="row mx-0 adv-conf-container">
                     <div class="col-md-6 col-12">
                         <label class="control-label">
-                            Poder cambiar el IGV global de los items en la compra.
+                            Poder cambiar el IVA global de los ítems en la compra.
                         </label>
                         <div :class="{'has-danger': errors.enabled_global_igv_to_purchase}"
                              class="form-group">
@@ -33,13 +34,14 @@
 
                     <div class="col-md-6 col-12">
                         <label class="control-label">
-                            Seleccionar por defecto <b>Poder cambiar el IGV global de los items en la compra</b>
+                            Seleccionar por defecto <b>Poder cambiar el IVA global de los ítems en la compra</b>
                             <el-tooltip class="item"
-                                        content="Solo aplica si la configuración 'Poder cambiar el IGV global de los items en la compra' se encuentra habilitada"
+                                        content="Solo aplica si la configuración 'Poder cambiar el IVA global de los ítems en la compra' se encuentra habilitada"
                                         effect="dark"
                                         placement="top-start">
                                 <i class="fa fa-info-circle"></i>
                             </el-tooltip>
+                            <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                         </label>
                         <div :class="{'has-danger': errors.checked_global_igv_to_purchase}"
                              class="form-group">

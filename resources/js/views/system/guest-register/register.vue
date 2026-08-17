@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <article class="auth__form side">
         <div class="auth__form-content">
@@ -373,7 +374,7 @@
                                             color: #8492a6;
                                             font-size: 13px;
                                         "
-                                        >S/ {{ plan.pricing }}</span
+                                        >Bs. {{ plan.pricing }}</span
                                     >
                                 </el-option>
                             </el-select>
@@ -495,7 +496,7 @@
                                 </span>
                             </div>
                             <div class="payment-summary__price">
-                                S/ {{ selectedPlan.pricing }}
+                                Bs. {{ selectedPlan.pricing }}
                                 <small>/ mes</small>
                             </div>
                         </div>
@@ -763,7 +764,7 @@ export default {
             if (this.selectedPlan) {
                 return {
                     amount: this.selectedPlan.pricing * 100,
-                    currency: 'PEN',
+                    currency: 'VES',
                     description: 'Pagos de Registro',
                     customer: {
                         name: '',
@@ -1306,3 +1307,5 @@ export default {
     transform: translateX(3px);
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

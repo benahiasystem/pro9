@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Finance\Jobs;
 
 use Illuminate\Bus\Queueable;
@@ -69,7 +71,7 @@ class ProcessMovementsReport implements ShouldQueue
             $calculateResiduary = $this->calculateResiduary($this->params);
 
             $transformRecords = $this->transformRecords($records, (object)$calculateResiduary);
-            
+
             $company = Company::first();
             $establishment = Establishment::findOrFail($this->params->establishment_id);
 
@@ -93,7 +95,7 @@ class ProcessMovementsReport implements ShouldQueue
             $path = 'download_tray_xlsx';
 
 
-            
+
             $tray->date_end = date('Y-m-d H:i:s');
             $tray->status = 'FINISHED';
             $tray->path = $path;
@@ -163,7 +165,7 @@ class ProcessMovementsReport implements ShouldQueue
             $document_type = '';
             $payments = $payment->payment;
 
-            // Convirtiendo el documento que esta hecho en dolares a soles
+            // Convirtiendo el documento que esta hecho en dolares a bolívares
             if ($document) {
                 if ($document->currency_type_id === 'USD') {
                     $amount *= $document->exchange_rate_sale;
@@ -255,7 +257,7 @@ class ProcessMovementsReport implements ShouldQueue
                 'reference' => $payment->reference,
                 'total' => $amount,
                 'number_full' => $numberFull,
-                'currency_type_id' => $payment->associated_record_payment->currency_type_id ?? 'PEN',
+                'currency_type_id' => $payment->associated_record_payment->currency_type_id ?? 'VES',
                 // 'document_type_description' => ($payment->associated_record_payment->document_type) ? $payment->associated_record_payment->document_type->description:'NV',
                 'document_type_description' => $this->getDocumentTypeDescription($row),
                 'person_name' => $person_name,
@@ -350,3 +352,5 @@ class ProcessMovementsReport implements ShouldQueue
             return [];
         }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

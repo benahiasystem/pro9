@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\CoreFacturalo\Requests\Inputs;
 
 use App\CoreFacturalo\Requests\Inputs\Common\ActionInput;
@@ -16,7 +18,7 @@ class RetentionInput
 {
     public static function set($inputs)
     {
-        
+
         $document_type_id = $inputs['document_type_id'];
         $series = $inputs['series'];
         $number = $inputs['number'];
@@ -27,7 +29,7 @@ class RetentionInput
 
         Functions::validateUniqueDocument($soap_type_id, $document_type_id, $series, $number, Retention::class);
 
-        $currency_type_id = 'PEN';
+        $currency_type_id = 'VES';
         $filename = Functions::filename($company, $document_type_id, $series, $number);
         $establishment = EstablishmentInput::set($inputs['establishment_id']);
         $supplier = PersonInput::set($inputs['supplier_id']);
@@ -99,3 +101,4 @@ class RetentionInput
         return null;
     }
 }
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

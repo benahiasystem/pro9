@@ -6,7 +6,7 @@
   "codigo_tipo_documento":"07",
   "codigo_tipo_nota": "01",
   "motivo_o_sustento_de_nota": "Error al emitir comprobante",
-  "codigo_tipo_moneda": "PEN",
+  "codigo_tipo_moneda": "VES",
   "numero_orden_de_compra": "0045467898",
   "documento_afectado": {
     "serie_documento": "F001",

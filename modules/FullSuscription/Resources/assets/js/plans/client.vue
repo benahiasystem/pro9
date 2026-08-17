@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <!-- Vista pública de suscripción al plan -->
 <template>
   <div class="sub-page">
@@ -41,7 +42,7 @@
         <!-- Precio -->
         <div class="pricing-price">
           <div class="pricing-amount-row">
-            <span class="pricing-currency">S/</span>
+            <span class="pricing-currency">Bs.</span>
             <span class="pricing-amount">{{ plan.total }}</span>
           </div>
           <span class="pricing-period">
@@ -205,7 +206,7 @@ export default {
       form: {
         amount: this.initialPlan.total * 100,
         order_id: this.initialPlan.id + '-' + Date.now(),
-        currency: 'PEN',
+        currency: 'VES',
         description: this.initialPlan.name,
         customer: {
           name: '',
@@ -229,7 +230,7 @@ export default {
   },
   methods: {
     /**
-     * 
+     *
      * @param data -> {
      *  status: 0,
      * }
@@ -556,3 +557,5 @@ html {
   max-width: 340px;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

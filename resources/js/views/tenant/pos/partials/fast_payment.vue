@@ -117,7 +117,8 @@
                         </div>
                         <div class="row m-0 p-0 bg-white h-17 d-flex align-items-center">
                             <div class="col-sm-6 py-1">
-                                <p class="font-weight-semibold mb-0">IGV</p>
+                                <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                                <p class="font-weight-semibold mb-0">IVA</p>
                             </div>
                             <div class="col-sm-6 py-1 text-right">
                                 <p class="font-weight-semibold mb-0">
@@ -151,7 +152,8 @@
                         </div>
                         <div class="row m-0 p-0 bg-white h-25 d-flex align-items-center">
                             <div class="col-sm-6 py-1">
-                                <p class="font-weight-semibold mb-0">IGV</p>
+                                <p class="font-weight-semibold mb-0">IVA</p>
+                                <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                             </div>
                             <div class="col-sm-6 py-1 text-right">
                                 <p class="font-weight-semibold mb-0">

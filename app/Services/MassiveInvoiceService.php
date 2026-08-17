@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO ADAPTACIÓN VENEZUELA
+
 namespace App\Services;
 
 use Illuminate\Support\Collection;
@@ -22,9 +24,9 @@ class MassiveInvoiceService
         $spreadsheet = IOFactory::load($file->getPathname());
         $worksheet = $spreadsheet->getActiveSheet();
         $rows = $worksheet->toArray();
-        
+
         array_shift($rows); // Eliminar encabezados
-        
+
         return $this->transformToJsonRequests($rows);
     }
 
@@ -40,7 +42,7 @@ class MassiveInvoiceService
 
             $rucEmisor = $row[2];
             $client = Client::where('number', $rucEmisor)->first();
-            
+
             if (!$client || empty($client->token)) {
                 throw new \Exception("Cliente no encontrado o sin token: {$rucEmisor}");
             }
@@ -51,7 +53,7 @@ class MassiveInvoiceService
             $cantidad = floatval($row[17] ?? 1);
             $precio = floatval($row[20] ?? 0);
             $incluyeIgv = strtolower(trim($row[11] ?? '')) === 'si';
-            
+
             // Cálculos de montos según tipo de afectación e IGV incluido
             $montos = $this->calcularMontos($precio, $cantidad, $tipoAfectacion, $incluyeIgv);
 
@@ -73,18 +75,18 @@ class MassiveInvoiceService
                     'hora_de_emision' => Carbon::now()->format('H:i:s'),
                     'codigo_tipo_operacion' => '0101',
                     'codigo_tipo_documento' => $tipoComprobante,
-                    'codigo_tipo_moneda' => $row[7] ?? 'PEN',
+                    'codigo_tipo_moneda' => $row[7] ?? 'VES',
                     'fecha_de_vencimiento' => Carbon::parse($row[1])->format('Y-m-d'),
                     'numero_orden_de_compra' => $row[10] ?? '',
-                    
+
                     'datos_del_cliente_o_receptor' => array_merge([
                         'codigo_tipo_documento_identidad' => $tipoComprobante === '03' ? '1' : '6',
                         'numero_documento' => $receptorDocNum,
-                        'codigo_pais' => 'PE',
+                        'codigo_pais' => 'VE',
                         'correo_electronico' => $row[6] ?? '',
                         'telefono' => ''
                     ], $receptorData),
-                    
+
                     'totales' => [
                         'total_exportacion' => 0,
                         'total_operaciones_gravadas' => $tipoAfectacion == '10' ? $montos['baseImponible'] : 0,
@@ -96,7 +98,7 @@ class MassiveInvoiceService
                         'total_valor' => $montos['baseImponible'],
                         'total_venta' => $montos['total']
                     ],
-                    
+
                     'items' => [[
                         'codigo_interno' => $row[15] ?? '',
                         'descripcion' => $row[16] ?? '',
@@ -120,7 +122,7 @@ class MassiveInvoiceService
                         'total_valor_item' => $montos['baseImponible'],
                         'total_item' => $montos['total']
                     ]],
-                    
+
                     'informacion_adicional' => "Forma de pago:{$row[8]}|{$row[9]}",
                 ]
             ];
@@ -178,18 +180,18 @@ class MassiveInvoiceService
             'UNIDAD' => 'NIU',
             'SERVICIO' => 'ZZ'
         ];
-        
+
         return $unidades[strtoupper($unidad)] ?? 'NIU';
     }
 
-    private function getReceptorData($numero, $tipoComprobante) 
+    private function getReceptorData($numero, $tipoComprobante)
     {
         $data = [
             'apellidos_y_nombres_o_razon_social' => 'CLIENTE GENERAL',
             'direccion' => 'DIRECCION GENERAL',
-            'ubigeo' => '150101'
+            'ubigeo' => '000619'
         ];
-        
+
         try {
             $serviceData = new \Modules\ApiPeruDev\Data\ServiceData();
             $response = $serviceData->service($tipoComprobante === '03' ? 'dni' : 'ruc', $numero);
@@ -199,12 +201,12 @@ class MassiveInvoiceService
                 $data['direccion'] = $response['data']['address'] ?? 'DIRECCION GENERAL';
 
                 // Solo para RUC y si location_id existe y es array
-                if ($tipoComprobante === '01' && 
-                    isset($response['data']['location_id']) && 
-                    is_array($response['data']['location_id']) && 
+                if ($tipoComprobante === '01' &&
+                    isset($response['data']['location_id']) &&
+                    is_array($response['data']['location_id']) &&
                     count($response['data']['location_id']) === 3 &&
                     !empty($response['data']['location_id'][2])) {
-                    
+
                     $data['ubigeo'] = $response['data']['location_id'][2];
 
                     \Log::debug("Ubigeo construido:", [
@@ -225,11 +227,11 @@ class MassiveInvoiceService
         return $data;
     }
 
-    private function getTipoAfectacion($tipo) 
+    private function getTipoAfectacion($tipo)
     {
         $tipos = [
             'GRAVADO_OPERACION_ONEROSA' => '10',
-            'INAFECTO_OPERACION_ONEROSA' => '30', 
+            'INAFECTO_OPERACION_ONEROSA' => '30',
             'EXONERADO_OPERACION_ONEROSA' => '20'
         ];
 
@@ -249,3 +251,4 @@ class MassiveInvoiceService
         return true;
     }
 }
+// ######## FIN ADAPTACIÓN VENEZUELA

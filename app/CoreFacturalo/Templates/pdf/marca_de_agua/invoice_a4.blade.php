@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
 
@@ -24,7 +25,7 @@
     $payments = $document->payments;
 
     $document->load('reference_guides');
-    
+
     $total_payment = $document->payments->sum('payment');
     $balance = ($document->total - $total_payment) - $document->payments->sum('change');
 
@@ -86,9 +87,9 @@
 
 @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top: 30%; left: 0; right: 0;">
-        <img 
-            src="data:{{ mime_content_type(public_path('status_images/anulado.png')) }};base64,{{ base64_encode(file_get_contents(public_path('status_images/anulado.png'))) }}" 
-            alt="anulado" 
+        <img
+            src="data:{{ mime_content_type(public_path('status_images/anulado.png')) }};base64,{{ base64_encode(file_get_contents(public_path('status_images/anulado.png'))) }}"
+            alt="anulado"
             style="opacity: 0.6; max-width: 300px; width: auto; height: auto;"
         >
     </div>
@@ -102,9 +103,9 @@
         text-align: center;
     ">
     @if (isset($logo))
-        <img 
-            src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}" 
-            alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" 
+        <img
+            src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}"
+            alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
             style="width: 100%; height: auto; object-fit: contain; opacity: 0.1;"
         >
     @endif
@@ -152,19 +153,19 @@
                         {{ ($establishment->province_id !== '-')? ', '.$establishment->province->description : '' }}
                         {{ ($establishment->department_id !== '-')? '- '.$establishment->department->description : '' }}
                     </h6>
-                
+
                     @isset($establishment->trade_address)
                         <h6>{{ ($establishment->trade_address !== '-')? 'D. Comercial: '.$establishment->trade_address : '' }}</h6>
                     @endisset
-                
+
                     <h6>{{ ($establishment->telephone !== '-')? 'Central telefónica: '.$establishment->telephone : '' }}</h6>
-                
+
                     <h6>{{ ($establishment->email !== '-')? 'Email: '.$establishment->email : '' }}</h6>
-                
+
                     @isset($establishment->web_address)
                         <h6>{{ ($establishment->web_address !== '-')? 'Web: '.$establishment->web_address : '' }}</h6>
                     @endisset
-                
+
                     @isset($establishment->aditional_information)
                         <h6>{{ ($establishment->aditional_information !== '-')? $establishment->aditional_information : '' }}</h6>
                     @endisset
@@ -211,7 +212,7 @@
                 <br>
                 <h3 class="text-center font-bold">{{ $document_number }}</h3>
             </td>
-        @endif        
+        @endif
     </tr>
 </table>
 <table class="full-width mt-3">
@@ -242,19 +243,19 @@
                     if (!empty($customer->address)) {
                         $addressParts[] = $customer->address;
                     }
-                
+
                     if (!empty($customer->district_id) && $customer->district_id !== '-' && isset($customer->district) && !empty($customer->district->description)) {
                         $addressParts[] = $customer->district->description;
                     }
-                
+
                     if (!empty($customer->province_id) && $customer->province_id !== '-' && isset($customer->province) && !empty($customer->province->description)) {
                         $addressParts[] = $customer->province->description;
                     }
-                
+
                     if (!empty($customer->department_id) && $customer->department_id !== '-' && isset($customer->department) && !empty($customer->department->description)) {
                         $addressParts[] = $customer->department->description;
                     }
-                
+
                     $fullAddress = implode(', ', $addressParts);
                 @endphp
 
@@ -424,7 +425,7 @@
         if ($showModelColumn && $showBrandColumn) break;
     }
 @endphp
-    
+
 <table class="full-width mt-0 mb-0" >
     <thead >
         <tr class="">
@@ -568,7 +569,7 @@
                                 ? ltrim($date_due, '/')
                                 : ($row->relation_item->date_of_due ? $row->relation_item->date_of_due->format('Y-m-d') : '');
                         @endphp
-                
+
                         {{ $cleanedDate }}
                     </td>
                 @endif
@@ -591,7 +592,7 @@
             <td class="p-1 text-right align-top desc cell-solid-rl">
             </td>
             <td class="p-1 text-right align-top desc cell-solid-rl"></td>
-            
+
             @empty($showSerieColumn) @else
             <td class="p-1 text-right align-top desc cell-solid-rl"></td>
             @endempty
@@ -610,7 +611,7 @@
         <tr>
             @if(isset($configurationInPdf) && $configurationInPdf->show_seller_in_pdf)
                 <td class="p-1 text-left align-top desc cell-solid" colspan="3"><strong> VENDEDOR:</strong> {{ $document->user->name }}</td>
-            
+
             @else
                 <td class="p-1 text-left align-top desc cell-solid" colspan="3"></td>
             @endif
@@ -678,9 +679,9 @@
                     <br><span class="">Valor total del comprobante: </span>{{$document->currency_type->symbol}}
                     {{ $document->currency_type->id == 'USD' ? number_format(($document->getRetentionTaxBase()/$document->exchange_rate_sale), 2) : $document->getRetentionTaxBase() }}
                     <br><span class="">Porcentaje de la retención: </span>{{ $document->retention->percentage * 100 }}%
-                    <br><span class="">Monto de la retención {{ $document->currency_type->id == 'USD' ? 'soles' : '' }}:</span> 
+                    <br><span class="">Monto de la retención {{ $document->currency_type->id == 'USD' ? 'bolívares' : '' }}:</span>
 
-                    S/ {{ $document->retention->amount_pen}}
+                    Bs. {{ $document->retention->amount_pen}}
                     @if ($document->currency_type->id == 'USD')
                         <br><span class="">Monto de la retención dólares:</span>
                         {{$document->currency_type->symbol}} {{ number_format(($document->retention->amount_pen/$document->exchange_rate_sale), 2)}}
@@ -694,7 +695,7 @@
                     <br><span class="font-bold">B/S sujeto a detracción:</span> {{$document->detraction->detraction_type_id}} - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}
                     <br><span class="font-bold">Método de pago:</span> {{ $detractionType->getPaymentMethodTypeDescription($document->detraction->payment_method_id ) }}
                     <br><span class="font-bold">Porcentaje detracción:</span> {{ $document->detraction->percentage}}%
-                    <br><span class="font-bold">Monto detracción {{ $document->currency_type->id == 'USD' ? 'soles' : ''  }}:</span> S/ {{ $document->detraction->amount}}
+                    <br><span class="font-bold">Monto detracción {{ $document->currency_type->id == 'USD' ? 'bolívares' : ''  }}:</span> Bs. {{ $document->detraction->amount}}
 
                     @if ($document->currency_type->id == 'USD')
                         <br><span class="font-bold">Monto detracción dólares:</span>
@@ -842,3 +843,4 @@
 @endif
 </body>
 </html>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

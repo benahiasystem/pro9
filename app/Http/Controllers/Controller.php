@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace App\Http\Controllers;
 
     use App\Models\Tenant\Person;
@@ -236,7 +238,7 @@ $string = var_export($header,true);
 
         /**
          *
-         * Determinar si aplica conversión a soles en reportes registrados en ReportConfiguration
+         * Determinar si aplica conversión a bolívares en reportes registrados en ReportConfiguration
          *
          * Usado en:
          * ReportGeneralItemController
@@ -475,7 +477,9 @@ $string = var_export($header,true);
 
         protected function pingCache()
         {
-            return true; 
+            return true;
         }
 
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

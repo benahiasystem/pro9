@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <apexchart
     type="area"
@@ -36,7 +37,7 @@ export default {
           x: { show: this.labels.length > 0 },
           y: {
             formatter: (val) =>
-              "S/ " +
+              "Bs. " +
               Number(val).toLocaleString("es-PE", {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -51,3 +52,5 @@ export default {
   },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

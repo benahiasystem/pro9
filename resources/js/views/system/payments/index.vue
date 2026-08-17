@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <header class="page-header">
@@ -14,16 +15,16 @@
         <!-- Cards -->
         <div class="col-md-12 container">
             <div class="row">
-                
+
                 <template v-for="pay in sortedPayments">
                 <div class="col-12 col-sm-6 col-lg-3 mb-3 mb-md-2">
                     <div class="status-container p-3 d-flex align-items-center justify-content-between" :style="{backgroundColor: getClassStatePay(pay.id)}">
                         <div>
-                            <span class="status-price">S/ {{ parseFloat(pay.total).toFixed(2) }}</span>
+                            <span class="status-price">Bs. {{ parseFloat(pay.total).toFixed(2) }}</span>
                             <p class="m-0">{{ pay.name }}</p>
                         </div>
                         <div v-html="getIconPay(pay.id)"></div>
-                    </div>                    
+                    </div>
                 </div>
 
                 </template>
@@ -46,10 +47,10 @@
                     <el-button v-if="isFiltersVisible" @click="getRecords()" type="secondary" icon="el-icon-search">
                         Aplicar filtros
                     </el-button>
-                    <el-button 
-                      v-if="filtersChanged" 
-                      @click="initFilters(); getRecords()" 
-                      type="secondary" 
+                    <el-button
+                      v-if="filtersChanged"
+                      @click="initFilters(); getRecords()"
+                      type="secondary"
                       icon="el-icon-refresh">
                       Limpiar filtros
                     </el-button>
@@ -58,7 +59,7 @@
                    <div class="row">
                        <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2">
                            <label class="control-label">Buscar cliente</label>
-                           <el-select v-model="filters.client_id" 
+                           <el-select v-model="filters.client_id"
                                filterable
                                remote
                                :remote-method="searchRemoteCustomers"
@@ -100,7 +101,7 @@
                                placeholder="Fecha de fin"
                                class="w-100">
                            </el-date-picker>
-                       </div>                       
+                       </div>
                    </div>
                 </div>
                 <div class="col-md-12 mt-3 card-filters-client px-0" v-if="filters.client_id">
@@ -119,7 +120,7 @@
                                  >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                                  </button>
-                               
+
                                  <button
                                    type="button"
                                    class="btn btn-light btn-sm d-flex align-items-center justify-content-center"
@@ -129,7 +130,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                                  </button>
                                </div>
-                           </div>                           
+                           </div>
                        </div>
                        <div class="row mt-3 d-flex justify-content-center">
                            <div class="col-md-4 text-center" v-if="getClient.client_name || getClient.contact_email">
@@ -174,9 +175,9 @@
                                      class="text-center price-pay"
                                      :class="getTextClassPay(pay.id)"
                                    >
-                                     S/ {{ parseFloat(pay.total).toFixed(2) }}
+                                     Bs. {{ parseFloat(pay.total).toFixed(2) }}
                                    </strong>
-                               </div>                           
+                               </div>
                            </template>
                            </div>
                        </div>
@@ -197,7 +198,7 @@
                                    </span>
                                    <br>
                                    <strong class="text-center price-pay">
-                                       S/ {{ parseFloat(getClient.plan.price).toFixed(2) }}
+                                       Bs. {{ parseFloat(getClient.plan.price).toFixed(2) }}
                                    </strong>
                                </div>
                                <div class="col text-center p-3">
@@ -228,8 +229,8 @@
                                    </strong>
                                </div>
                            </div>
-                       
-                       
+
+
                        </div>
                    </article>
                 </div>
@@ -266,7 +267,7 @@
                         </thead>
                         <tbody>
                             <tr v-for="record in records" :key="record.id">
-                                <td class="text-start fw-bold"> 
+                                <td class="text-start fw-bold">
                                     <span>
                                         #{{ record.order }}
                                     </span>
@@ -305,7 +306,7 @@
                                     <el-date-picker
                                         :disabled="record.order_state_id == 4 || record.order_state_id == 2"
                                         v-model="record.due_date"
-                                        @change="updateTable(record.id)"    
+                                        @change="updateTable(record.id)"
                                         value-format="yyyy-MM-dd"
                                         default-time="00:00:00"
                                         placeholder="Elija la fecha de vencimiento de la orden">
@@ -348,15 +349,15 @@
                                       </el-button>
                                       <el-dropdown-menu slot="dropdown">
                                         <el-dropdown-item @click.native="actionsPaymentOrder('notify', record.id)">
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" /><path d="M3 7l9 6l9 -6" /></svg> 
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" /><path d="M3 7l9 6l9 -6" /></svg>
                                           Notificar
                                         </el-dropdown-item>
                                         <el-dropdown-item v-if="viewButtonPay(record)" @click.native="actionsPaymentOrder('pays', record.id)">
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg> 
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 15h-3a1 1 0 0 1 -1 -1v-8a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v3" /><path d="M7 9m0 1a1 1 0 0 1 1 -1h12a1 1 0 0 1 1 1v8a1 1 0 0 1 -1 1h-12a1 1 0 0 1 -1 -1z" /><path d="M12 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /></svg>
                                           Pagar
                                         </el-dropdown-item>
                                         <el-dropdown-item v-if="viewButtonCancel(record)" @click.native="actionsPaymentOrder('cancel', record.id)">
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-ban me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M5.7 5.7l12.6 12.6" /></svg> 
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-ban me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M5.7 5.7l12.6 12.6" /></svg>
                                           Anular
                                         </el-dropdown-item>
                                       </el-dropdown-menu>
@@ -373,9 +374,9 @@
                     </table>
                 </div>
             </div>
-        </div>                  
-        
-            
+        </div>
+
+
         <create-order
             :showDialogOrder.sync="showDialogOrder"
             :clients="clients"
@@ -412,7 +413,7 @@ import EditClient from './partials/edit-client.vue'
                 resource: 'payment-orders',
                 clients: [],
                 clientPlans: [],
-                records: [],                
+                records: [],
                 filters: {},
                 status: [],
                 payments_records: [],
@@ -429,7 +430,7 @@ import EditClient from './partials/edit-client.vue'
             CreateOrder,
             EditClient
         },
-       async created() {            
+       async created() {
             await this.getTables()
             this.initFilters();
             await this.getRecords()
@@ -475,7 +476,7 @@ import EditClient from './partials/edit-client.vue'
             },
             viewButtonCancel(record)
             {
-                return record.order_state_id != 4 || record.order_state_id == 1 
+                return record.order_state_id != 4 || record.order_state_id == 1
             },
             viewButtonPay(record)
             {
@@ -522,7 +523,7 @@ import EditClient from './partials/edit-client.vue'
             async getTables() {
                 await this.$http.get(`/${this.resource}/tables`)
                     .then(response => {
-                        this.clients = response.data.clients                         
+                        this.clients = response.data.clients
                         this.clientPlans = response.data.clientPlans
                         this.status = response.data.status
                         this.check_active_cron = response.data.active_cron
@@ -622,3 +623,5 @@ import EditClient from './partials/edit-client.vue'
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="pos container-fluid p-0">
         <span class="module-title-marker" data-page-title="Punto de Venta"></span>
@@ -157,14 +158,14 @@
                 <div class="pull-right h-100 d-flex align-items-center" v-if="currency_types.length > 1">
                     <p class="pe-3 exchange-currency m-0">
                         T.C.
-                        <span>S/ {{ form.exchange_rate_sale }}</span> Cambiar
+                        <span>Bs. {{ form.exchange_rate_sale }}</span> Cambiar
                         Moneda
                         <a
                             class="btn btn-sm btn-default"
                             @click="selectCurrencyType"
                         >
-                            <template v-if="form.currency_type_id == 'PEN'">
-                                <strong>S/</strong>
+                            <template v-if="form.currency_type_id == 'VES'">
+                                <strong>Bs.</strong>
                             </template>
                             <template v-else>
                                 <strong>$</strong>
@@ -389,7 +390,7 @@
                                             v-model="item.edit_sale_unit_price"
                                             class="mt-1 mb-2"
                                             size="mini"
-                                        >                                            
+                                        >
                                         </el-input>
                                         <div class="btn-edit-price-container d-flex">
                                             <button
@@ -527,7 +528,7 @@
                                                 placement="bottom-end"
                                             >
                                                 <el-popover
-                                                    placement="top"                                                    
+                                                    placement="top"
                                                     width="370"
                                                     trigger="click"
                                                 >
@@ -641,7 +642,7 @@
 
 
                                                         </tbody>
-                                                    </table>                                                    
+                                                    </table>
                                                     <!-- <el-table
                                                         v-if="item.item_unit_types"
                                                         :data="item.item_unit_types"
@@ -750,11 +751,12 @@
                     </div>
                 </div>
             </div>
+            <!-- ########### INICIO CAMBIO POS VENEZUELA -->
             <div
-                class="col-lg-4 col-md-6 bg-white m-0 p-0"
+                class="col-lg-4 col-md-6 bg-white m-0 p-0 d-flex flex-column pos-checkout-column"
                 style="height: calc(100vh - 110px)"
             >
-                <div class="h-60" style="overflow-y: auto">
+                <div class="flex-grow-1 pos-cart-items" style="overflow-y: auto; min-height: 0">
                     <div class="row py-1 m-0 p-0">
                         <div class="col-12">
                             <table
@@ -835,7 +837,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="h-40 bg-light border-top-dashed" style="overflow-y: auto">
+                <div
+                    class="bg-light border-top-dashed d-flex flex-column pos-checkout-summary"
+                    style="flex: 0 0 44%; min-height: 0"
+                >
+                    <div class="flex-grow-1 pos-checkout-details" style="overflow-y: auto; min-height: 0">
                     <div class="row py-3 border-bottom m-0 p-0">
                         <div class="col-10">
                             <el-select
@@ -908,7 +914,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="form.total_igv > 0 && !isNrus" class="m-0">
-                                    <td>IGV</td>
+                                    <td>IVA</td>
                                     <td class="text-end font-weight-semibold">
                                         {{ currency_type.symbol }}
                                         {{ form.total_igv }}
@@ -982,9 +988,12 @@
               </h4>
             </div> -->
                     </div>
+                    </div>
 
-                    <div class="m-2 ">
-                        <div
+                    <div class="m-2 flex-shrink-0">
+                        <button
+                            type="button"
+                            data-testid="pos-open-payment"
                             class="btn py-3 col-12"
                             @click="clickPayment"
                             v-bind:class="[
@@ -999,10 +1008,11 @@
                                 {{ form.total.toFixed(2) }}</b
                             >
                             <i class="fas fa-arrow-right ms-2"></i>
-                        </div>
+                        </button>
                     </div>
                 </div>
             </div>
+            <!-- ########### FIN CAMBIO POS VENEZUELA -->
 
             <person-form
                 :showDialog.sync="showDialogNewPerson"
@@ -1481,9 +1491,9 @@ export default {
                     validated = true
                     newTotal = item.item.sale_unit_price_original
                 }
-                    
+
             }
-            
+
             if (item.item.calculate_quantity) {
                 this.blurCalculateQuantity(index);
                 return;
@@ -1515,9 +1525,9 @@ export default {
                 return this.$message.error(
                     "El Precio Unitario debe ser mayor o igual al costo de compra"
                 );
-                
+
             }
-            
+
 
         },
         ...mapActions(["loadConfiguration"]),
@@ -1746,7 +1756,7 @@ export default {
                 index
             ].edit_sale_unit_price;
             let product = this.items[index];
-            
+
             if (this.config.condition_sale_purchase_price_to_item) {
 
                 if (edit_sale_unit_price < product.purchase_unit_price) {
@@ -1914,10 +1924,10 @@ export default {
             let customer = _.find(this.all_customers, {
                 id: this.form.customer_id
             });
-            
+
             this.customer = customer;
             this.form.has_retention = customer.is_agent_retention
-            
+
             this.validateCustomerRetention(customer.identity_document_type_id);
 
             if (this.configuration.default_document_type_80) {
@@ -1984,7 +1994,7 @@ export default {
             }
         },
         validateCustomerRetention(identity_document_type_id) {
-            
+
             if (identity_document_type_id != "6" || !this.form.has_retention) {
                 if (this.form.has_retention) {
                     this.form.has_retention = false;
@@ -2073,7 +2083,7 @@ export default {
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
                 customer_id: null,
-                currency_type_id: "PEN",
+                currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 1,
                 total_prepayment: 0,
@@ -2261,7 +2271,7 @@ export default {
         },
         async clickAddItem(item, index, input = false) {
             //Validar precio mínimo
-            
+
             if (parseFloat(item.sale_unit_price) < 0.1) {
                 this.$message.error(
                     "El precio del producto debe ser mayor a 0.1"
@@ -2296,20 +2306,20 @@ export default {
                     price = Number(price_list) == 0 ? item.sale_unit_price : price_list
 
                 }
-                
+
                 exist_item = _.find(this.form.items, i => {
                     return i.item_id === item.item_id &&
                         i.unit_type_id === item.unit_type_id &&
-                        i.item.sale_unit_price == price 
+                        i.item.sale_unit_price == price
                 });
-                
+
             }
             else if (presentation === undefined) {
                 exist_item = _.find(this.form.items, {
                     item_id: item.item_id,
                     unit_type_id: item.unit_type_id
                 });
-            } 
+            }
             else {
                 // Se evalua si existe presentation de item
                 exist_item = _.find(this.form.items, {
@@ -2412,7 +2422,7 @@ export default {
                 this.row["unit_type_id"] = item.unit_type_id;
 
                 this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
-                
+
                 // Preservar la presentation (calculateRowItem no la copia)
                 this.row.presentation = exist_item.presentation;
 
@@ -2731,7 +2741,7 @@ export default {
                 this.form.customer_id = this.establishment.customer_id;
             }
             this.changeCustomer();
-            
+
         },
         renderCategories(source) {
             const contex = this;
@@ -3022,7 +3032,7 @@ export default {
         },
         selectCurrencyType() {
             this.form.currency_type_id =
-                this.form.currency_type_id === "PEN" ? "USD" : "PEN";
+                this.form.currency_type_id === "VES" ? "USD" : "VES";
             this.changeCurrencyType();
         },
         async changeCurrencyType() {
@@ -3098,7 +3108,7 @@ export default {
         },
         async ChangeSelectedPrice() {
             // recorrer items
-            
+
             this.items.forEach(row => {
                     if(row.item_unit_types && row.item_unit_types.length > 0) {
                         let first_list = row.item_unit_types[0];
@@ -3113,30 +3123,30 @@ export default {
                         if (!row.affected_list_price) { // funcion candado, para colocar el valor original ya que sale_unit_price se ve modificado al cambiar la lista de precios
                             row.original_sale_unit_price = original_price;
                         }
-                        
+
                         // Buscar y asignar el precio correspondiente usando 'id'
                         if(priceLabelId && first_list.prices && first_list.prices.length > 0) {
-                            
+
                             const priceObj = first_list.prices.find(p => p.price_label_id == priceLabelId);
-                            
+
                             if(priceObj && Number(priceObj.price) > 0) {
                                 row.sale_unit_price = parseFloat(priceObj.price);
                                 row.affected_list_price = true;
                             } else {
                                 row.sale_unit_price = row.original_sale_unit_price
                             }
-                            
+
                             // Si no se encuentra o es 0, mantener el sale_unit_price original
                         } else {
                             row.sale_unit_price = row.original_sale_unit_price
                         }
                     }
-                
+
             });
         },
             itemSetSaleUnitPrice(row)
             {
-                
+
                 if(!this.configuration.enable_list_product && this.selected_option_price !== 1) {
                     if(Array.isArray( row.item_unit_types) &&  row.item_unit_types.length) {
                         let first_list = row.item_unit_types[0];
@@ -3150,7 +3160,7 @@ export default {
                         // Buscar el precio correspondiente en el array prices usando 'id'
                         if(priceLabelId && first_list.prices && first_list.prices.length > 0) {
                             const priceObj = first_list.prices.find(p => p.price_label_id === priceLabelId);
-                            
+
                             if(priceObj) {
                                 return row.unit_price_value = parseFloat(priceObj.price).toFixed(2);
                             } else {
@@ -3202,3 +3212,4 @@ export default {
   text-overflow: ellipsis;
 }
 </style>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

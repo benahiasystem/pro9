@@ -1,16 +1,17 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <section class="card card-dashboard mg-panel">
     <div class="card-body">
       <div class="mg-head">
         <h5 class="mg-title m-0">Meta del mes</h5>
-        <small class="text-muted">Faltan S/ {{ remaining | mgMoney }}</small>
+        <small class="text-muted">Faltan Bs. {{ remaining | mgMoney }}</small>
       </div>
 
       <apexchart type="radialBar" height="260" :options="chartOptions" :series="[chartPercent]"></apexchart>
 
       <div class="mg-foot text-center">
-        <div class="mg-detail">S/ {{ sales | mgMoney }} de S/ {{ goal | mgMoney }}</div>
-        <small class="text-muted">A este ritmo cierras el mes en ~S/ {{ projected | mgMoney }}</small>
+        <div class="mg-detail">Bs. {{ sales | mgMoney }} de Bs. {{ goal | mgMoney }}</div>
+        <small class="text-muted">A este ritmo cierras el mes en ~Bs. {{ projected | mgMoney }}</small>
       </div>
     </div>
   </section>
@@ -154,3 +155,5 @@ export default {
   font-weight: 600;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

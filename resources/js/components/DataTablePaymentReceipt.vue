@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="row ">
@@ -12,7 +13,7 @@
                     >
                         {{ isVisible ? "Ocultar filtros" : "Mostrar filtros" }}
                     </el-button>
-                </div>                
+                </div>
                 <div v-if="applyFilter && isVisible"
                      class="row mx-0">
                     <div class="col-12 pb-3">Filtrar por:</div>
@@ -100,9 +101,9 @@
                     </table>
 
                     <div class="row mb-5">
-                        <div class="col-md-4 text-center">Total recibo de pagos en soles S/ {{ totals.total_pen }}</div>
-                        <div class="col-md-4 text-center">Total pagado en soles S/ {{ totals.total_paid_pen }}</div>
-                        <div class="col-md-4 text-center">Total por cobrar en soles S/
+                        <div class="col-md-4 text-center">Total recibo de pagos en bolívares Bs. {{ totals.total_pen }}</div>
+                        <div class="col-md-4 text-center">Total pagado en bolívares Bs. {{ totals.total_paid_pen }}</div>
+                        <div class="col-md-4 text-center">Total por cobrar en bolívares Bs.
                                                           {{ totals.total_pending_paid_pen }}
                         </div>
                     </div>
@@ -200,10 +201,10 @@ export default {
         checkScrollShadows() {
             const el = this.$refs.scrollContainer;
             if (!el) return;
-            
+
             const scrollLeft = el.scrollLeft;
             const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-            
+
             this.showLeftShadow = scrollLeft > 1;
             this.showRightShadow = scrollRight > 1;
         },
@@ -249,3 +250,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

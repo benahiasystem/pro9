@@ -67,7 +67,9 @@ return [
     |
     */
 
-    'timezone' => 'America/Lima',
+    // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+    'timezone' => 'America/Caracas',
+    // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 
     /*
     |--------------------------------------------------------------------------

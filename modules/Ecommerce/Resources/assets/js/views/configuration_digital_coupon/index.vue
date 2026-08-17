@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="coupon-list">
 
@@ -34,14 +35,14 @@
                         <!-- Compra mínima -->
                         <td class="text-end">
                             <template v-if="row.has_purchase_limits && row.min_amount">
-                                S/ {{ row.min_amount | toDecimals(2) }}
+                                Bs. {{ row.min_amount | toDecimals(2) }}
                             </template>
                             <template v-else>&mdash;</template>
                         </td>
                         <!-- Compra máxima -->
                         <td class="text-end">
                             <template v-if="row.has_purchase_limits && row.max_amount">
-                                S/ {{ row.max_amount | toDecimals(2) }}
+                                Bs. {{ row.max_amount | toDecimals(2) }}
                             </template>
                             <template v-else>&mdash;</template>
                         </td>
@@ -178,3 +179,5 @@ export default {
 .usage-fill{height:100%;background:#0b5ed7;width:0%;transition:width .3s ease}
 .usage-text{font-size:0.85rem;color:#6c757d;margin-left:6px}
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

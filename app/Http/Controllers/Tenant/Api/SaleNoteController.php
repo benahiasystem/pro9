@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace App\Http\Controllers\Tenant\Api;
 
 use App\Http\Controllers\Tenant\EmailController;
@@ -218,7 +220,7 @@ class SaleNoteController extends Controller
                     'number' => $client_number,
                     'identity_document_type_id' => $client_data['codigo_tipo_documento_identidad'] ?? '6',
                     'name' => $client_data['apellidos_y_nombres_o_razon_social'] ?? '',
-                    'country_id' => $client_data['codigo_pais'] ?? 'PE',
+                    'country_id' => $client_data['codigo_pais'] ?? 'VE',
                     'district_id' => $client_data['ubigeo'] ?? '',
                     'address' => $client_data['direccion'] ?? '',
                     'email' => $client_data['correo_electronico'] ?? '',
@@ -841,3 +843,4 @@ class SaleNoteController extends Controller
         return StateType::find($id)->description;
     }
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

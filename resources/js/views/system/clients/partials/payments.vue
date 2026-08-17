@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog width="60%" :title="title" :visible="showDialog" @close="close" @open="getData">
         <div class="form-body">
@@ -25,13 +26,13 @@
                                         {{ row.order_state }}
                                     </span>
                                 </td>
-                                <td class="text-right">S/ {{ row.amount }}</td>
+                                <td class="text-right">Bs. {{ row.amount }}</td>
                             </tr>
                             </tbody>
                             <tfoot>
                             <tr>
                                 <td colspan="4" class="text-right">TOTAL PENDIENTE</td>
-                                <td class="text-right">S/ {{ total_pending }}</td>
+                                <td class="text-right">Bs. {{ total_pending }}</td>
                             </tr>
                             </tfoot>
                         </table>
@@ -82,3 +83,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

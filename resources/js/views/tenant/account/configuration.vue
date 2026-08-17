@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <div>
     <div class="page-header pr-0">
@@ -34,7 +35,7 @@
             <div class="plan-card__head">
               <h5 class="plan-card__name">{{ plan.name }}</h5>
               <div class="plan-card__price">
-                <span class="plan-card__currency">S/.</span>
+                <span class="plan-card__currency">Bs..</span>
                 <span class="plan-card__amount">{{ plan.pricing }}</span>
                 <span class="plan-card__period">/mes</span>
               </div>
@@ -55,7 +56,7 @@
               </li>
               <li>
                 <span>Ventas mensuales</span>
-                <strong>{{ plan.sales_unlimited ? 'Ilimitado' : 'S/. ' + plan.sales_limit }}</strong>
+                <strong>{{ plan.sales_unlimited ? 'Ilimitado' : 'Bs.. ' + plan.sales_limit }}</strong>
               </li>
             </ul>
 
@@ -130,7 +131,7 @@ export default {
     },
     async selectPlan(plan) {
       const confirmed = await this.$confirm(
-        `¿Confirmas el cambio al plan ${plan.name} por S/. ${plan.pricing}/mes? Serás redirigido al checkout para completar el pago.`,
+        `¿Confirmas el cambio al plan ${plan.name} por Bs.. ${plan.pricing}/mes? Serás redirigido al checkout para completar el pago.`,
         'Confirmar cambio de plan',
         {
           confirmButtonText: 'Continuar al pago',
@@ -343,3 +344,5 @@ export default {
   font-style: italic;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

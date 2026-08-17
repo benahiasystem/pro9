@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Http\Controllers\Tenant;
 
 use App\CoreFacturalo\Facturalo;
@@ -48,6 +50,7 @@ use App\Models\Tenant\Person;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
+use App\Support\Venezuela\Localization;
 use App\Models\Tenant\StateType;
 use App\Models\Tenant\User;
 use App\Traits\OfflineTrait;
@@ -132,7 +135,7 @@ class DocumentController extends Controller
             'customer_id' => $request->customer_id,
             'd_end' => $request->d_end,
             'd_start' => $request->d_start,
-            'date_of_issue' => $request->date_of_issue, 
+            'date_of_issue' => $request->date_of_issue,
             'document_type_id' => $request->document_type_id,
             'item_id' => $request->item_id,
             'number' => $request->number,
@@ -157,7 +160,7 @@ class DocumentController extends Controller
             return new DocumentCollection($this->getRecords($request)->paginate(config('tenant.items_per_page')));
         }
         // $records = $this->getRecords($request);
-        
+
 
         // return new DocumentCollection($records->paginate(config('tenant.items_per_page')));
     }
@@ -177,28 +180,30 @@ class DocumentController extends Controller
         $BV_t = DocumentType::find('03');
         $NC_t = DocumentType::find('07');
         $ND_t = DocumentType::find('08');
+        $currencyTypeId = Localization::nationalCurrencyId();
+        $currencySymbol = Localization::currencySymbol($currencyTypeId);
 
-        $BV = $this->getRecords($request)->where('document_type_id', $BV_t->id)->where('currency_type_id', 'PEN')->sum('total');
-        $FT = $this->getRecords($request)->where('document_type_id', $FT_t->id)->where('currency_type_id', 'PEN')->sum('total');
-        $NC = $this->getRecords($request)->where('document_type_id', $NC_t->id)->where('currency_type_id', 'PEN')->sum('total');
-        $ND = $this->getRecords($request)->where('document_type_id', $ND_t->id)->where('currency_type_id', 'PEN')->sum('total');
+        $BV = $this->getRecords($request)->where('document_type_id', $BV_t->id)->where('currency_type_id', $currencyTypeId)->sum('total');
+        $FT = $this->getRecords($request)->where('document_type_id', $FT_t->id)->where('currency_type_id', $currencyTypeId)->sum('total');
+        $NC = $this->getRecords($request)->where('document_type_id', $NC_t->id)->where('currency_type_id', $currencyTypeId)->sum('total');
+        $ND = $this->getRecords($request)->where('document_type_id', $ND_t->id)->where('currency_type_id', $currencyTypeId)->sum('total');
         return [
             [
                 'name' => $FT_t->description,
-                'total' => "S/ " . ReportHelper::setNumber($FT),
+                'total' => "{$currencySymbol} " . ReportHelper::setNumber($FT),
             ],
             [
                 'name' => $BV_t->description,
-                'total' => "S/ " . ReportHelper::setNumber($BV),
+                'total' => "{$currencySymbol} " . ReportHelper::setNumber($BV),
 
             ],
             [
                 'name' => $NC_t->description,
-                'total' => "S/ " . ReportHelper::setNumber($NC),
+                'total' => "{$currencySymbol} " . ReportHelper::setNumber($NC),
             ],
             [
                 'name' => $ND_t->description,
-                'total' => "S/ " . ReportHelper::setNumber($ND),
+                'total' => "{$currencySymbol} " . ReportHelper::setNumber($ND),
             ],
         ];
     }
@@ -230,7 +235,7 @@ class DocumentController extends Controller
                 ->whereIn('state_type_id', $valid_states)
                 ->where('document_type_id', $document_type_id)
                 ->whereBetween('date_of_issue', [$start, $end])
-                ->selectRaw("COALESCE(SUM(CASE WHEN currency_type_id = 'PEN' THEN total ELSE total * exchange_rate_sale END), 0) as s")
+                ->selectRaw("COALESCE(SUM(CASE WHEN currency_type_id = 'VES' THEN total ELSE total * exchange_rate_sale END), 0) as s")
                 ->value('s');
         };
 
@@ -269,7 +274,7 @@ class DocumentController extends Controller
                     return;
                 }
 
-                $balance_pen = ($row->currency_type_id === 'PEN')
+                $balance_pen = ($row->currency_type_id === 'VES')
                     ? $balance
                     : $balance * $row->exchange_rate_sale;
 
@@ -285,16 +290,16 @@ class DocumentController extends Controller
 
         return [
             'sales' => [
-                'total'        => 'S/ ' . number_format($sales_now, 2, '.', ','),
-                'facturas'     => 'S/ ' . number_format($facturas_now, 2, '.', ','),
-                'boletas'      => 'S/ ' . number_format($boletas_now, 2, '.', ','),
+                'total'        => 'Bs. ' . number_format($sales_now, 2, '.', ','),
+                'facturas'     => 'Bs. ' . number_format($facturas_now, 2, '.', ','),
+                'boletas'      => 'Bs. ' . number_format($boletas_now, 2, '.', ','),
                 'variation'    => ($variation >= 0 ? '+' : '') . number_format($variation, 1, '.', ',') . '% vs mes anterior',
                 'variation_up' => $variation >= 0,
             ],
             'receivable' => [
-                'total'   => 'S/ ' . number_format($receivable_total, 2, '.', ','),
-                'current' => 'S/ ' . number_format($por_cobrar_30, 2, '.', ','),
-                'overdue' => 'S/ ' . number_format($vencidas, 2, '.', ','),
+                'total'   => 'Bs. ' . number_format($receivable_total, 2, '.', ','),
+                'current' => 'Bs. ' . number_format($por_cobrar_30, 2, '.', ','),
+                'overdue' => 'Bs. ' . number_format($vencidas, 2, '.', ','),
             ],
         ];
     }
@@ -1913,3 +1918,5 @@ class DocumentController extends Controller
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

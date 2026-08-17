@@ -10,7 +10,9 @@
  * - `location_id`: json; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `is_default`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `is_active`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
- * - `country_id`: char(2); NOT NULL; DEFAULT PE; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+ * - `country_id`: char(2); NOT NULL; DEFAULT VE; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * ######## FIN CAMBIO GEOPOLITICO VENEZUELA
  * - `establishment_id`: int(11); NULL — Sin comentario definido en el esquema fuente.
  * - `establishment_code`: varchar(4); NOT NULL; DEFAULT 0000; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
@@ -31,7 +33,9 @@ CREATE TABLE `origin_addresses` (
   `location_id` json NOT NULL,
   `is_default` tinyint(1) NOT NULL DEFAULT '0',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `country_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'PE',
+  /* ######## INICIO CAMBIO GEOPOLITICO VENEZUELA */
+  `country_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'VE',
+  /* ######## FIN CAMBIO GEOPOLITICO VENEZUELA */
   `establishment_id` int(11) DEFAULT NULL,
   `establishment_code` varchar(4) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '0000',
   `created_at` timestamp NULL DEFAULT NULL,

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create">
         <form autocomplete="off" @submit.prevent="submit">
@@ -37,7 +38,7 @@
                             <el-input v-model="limit_users" @input="validateLUsers"  :disabled="users_unlimited"></el-input>
                             <el-checkbox v-model="users_unlimited" @change="setUnlimitUsers">Ilimitado</el-checkbox><br>
                             <small class="form-control-feedback d-block" v-if="errors.limit_users" v-text="errors.limit_users[0]"></small>
-                            <small class="form-control-feedback" v-if="errorLUser.limit_users" v-text="errorLUser.limit_users[0]"></small> 
+                            <small class="form-control-feedback" v-if="errorLUser.limit_users" v-text="errorLUser.limit_users[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -70,7 +71,7 @@
                         </div>
                     </div>
 
-                    
+
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.sales_limit}">
                             <label class="control-label">
@@ -181,16 +182,16 @@
                 <!-- <div class="row">
                     <div class="col-md-12 mt-3">
                         <div class="form-group" :class="{'has-danger': (errors.plan_documents)}">
-                            <label class="control-label font-weight-bold mb-0">Habilitar documentos electrónicos</label> 
+                            <label class="control-label font-weight-bold mb-0">Habilitar documentos electrónicos</label>
 
                             <el-checkbox-group v-model="form.plan_documents"  >
                                 <el-checkbox v-for="(city,ind) in plan_documents" class="plan_documents" :label="city.id"  :key="ind">{{city.description}}</el-checkbox>
                             </el-checkbox-group>
 
-                            <small class="form-control-feedback" v-if="errors.plan_documents" v-text="errors.plan_documents[0]"></small> 
+                            <small class="form-control-feedback" v-if="errors.plan_documents" v-text="errors.plan_documents[0]"></small>
                         </div>
                     </div>
-                   
+
                 </div> -->
             </div>
             <div class="form-actions text-right pt-2">
@@ -278,7 +279,7 @@
                 return this.apps;
             }
         },
-        created() 
+        created()
         {
             this.initForm()
             this.$http.get(`/${this.resource}/tables`).then(response => {
@@ -307,7 +308,7 @@
                 this.errors = {}
                 this.errorLDocument = {}
                 this.errorLUser = {}
-                
+
                 this.form = {
                     id: null,
                     name: null,
@@ -352,7 +353,7 @@
                 const salesLimit = Number(this.form.sales_limit);
                 if (!isNaN(salesLimit) && salesLimit > 8000) {
                     this.form.sales_limit = 8000;
-                    this.$message.warning('NRUS permite ventas mensuales hasta S/ 8000.');
+                    this.$message.warning('NRUS permite ventas mensuales hasta Bs. 8000.');
                 }
             },
             applyNrusLimits(showMessages = false) {
@@ -363,7 +364,7 @@
 
                 if (!isNaN(salesLimit) && salesLimit > 8000) {
                     this.form.sales_limit = 8000;
-                    messages.push('las ventas mensuales se ajustaron a S/ 8000');
+                    messages.push('las ventas mensuales se ajustaron a Bs. 8000');
                 }
 
                 if (wasEstablishmentsUnlimited || isNaN(establishmentsLimit) || establishmentsLimit !== 1) {
@@ -385,7 +386,7 @@
                 if(!this.form.establishments_unlimited)
                 {
                     if(isNaN(this.form.establishments_limit)) return this.getResponseValidations(false, 'Límite de sucursales no es un número válido.')
-                } 
+                }
 
                 if(!this.form.sales_unlimited)
                 {
@@ -401,14 +402,14 @@
 
                 return this.getResponseValidations()
             },
-            submit() {   
+            submit() {
 
                 if(this.validateLUsers().limit_users || this.validateLDocuments().limit_documents)
                     return
-                    
+
                 const validate_inputs = this.validateInputs()
                 if(!validate_inputs.success) return this.$message.error(validate_inputs.message)
-                
+
                 const modulesAndLevelsSelecteds = this.$refs.tree.getCheckedNodes();
                 const appsAndLevelsSelecteds = this.$refs.Apptree.getCheckedNodes();
                 const selModules = [];
@@ -446,7 +447,7 @@
 
                 this.transform()
 
-                this.loading_submit = true  
+                this.loading_submit = true
                 this.$http.post(`${this.resource}`, this.form)
                     .then(response => {
                         if (response.data.success) {
@@ -459,7 +460,7 @@
                     })
                     .catch(error => {
                         if (error.response.status === 422) {
-                            this.errors = error.response.data 
+                            this.errors = error.response.data
                         } else {
                             console.log(error.response)
                         }
@@ -467,7 +468,7 @@
                     .then(() => {
                         this.loading_submit = false
                     })
-                    
+
             },
             setData(data){
 
@@ -490,7 +491,7 @@
                     const preSelectedsModules = this.form.module_permissions.modules || [];
                     const preSelectedsApps = this.form.module_permissions.apps || [];
                     const preSelectedsLevels = this.form.module_permissions.levels || [];
-                    
+
                     this.modules.map(m => {
                         if (preSelectedsModules.includes(m.id)) {
                             preSelecteds.push(m.id);
@@ -515,7 +516,7 @@
                         })
                     });
                 }
-                
+
                 this.applyingBusinessModules = true;
                 setTimeout(() => {
                     if(this.$refs.tree) this.$refs.tree.setCheckedKeys(preSelecteds);
@@ -544,27 +545,27 @@
             },
             validateLDocuments(){
 
-                this.errorLDocument = {} 
+                this.errorLDocument = {}
 
                 if(!this.documents_unlimited){
                     if(this.limit_documents < 1)
                         this.$set(this.errorLDocument, 'limit_documents', ['limite de documentos debe ser mayor a cero']);
-                } 
+                }
 
-                return this.errorLDocument 
-            },            
-            
+                return this.errorLDocument
+            },
+
             validateLUsers(){
 
-                this.errorLUser = {}  
-                 
+                this.errorLUser = {}
+
                 if(!this.users_unlimited){
                     if(this.limit_users < 1)
                         this.$set(this.errorLUser, 'limit_users', ['limite de usuarios debe ser mayor a cero']);
                 }
 
-                return this.errorLUser 
-            },            
+                return this.errorLUser
+            },
             setUnlimitDocuments(){
                 this.limit_documents = (this.documents_unlimited) ? "∞" : null
                 this.form.limit_documents = (this.limit_documents == "∞") ? 0 : this.limit_documents
@@ -649,7 +650,7 @@
                     const appKeys = this.buildNrusKeys(this.apps, this.nrusSpec.apps);
                     if (this.$refs.tree) this.$refs.tree.setCheckedKeys(treeKeys);
                     if (this.$refs.Apptree) this.$refs.Apptree.setCheckedKeys(appKeys);
-                    
+
                     this.applyingBusinessModules = false;
                 });
                 return;
@@ -681,3 +682,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

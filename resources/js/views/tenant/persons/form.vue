@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :close-on-click-modal="false"
                :title="titleDialog"
                :visible="showDialog"
@@ -41,21 +42,26 @@
                                            v-text="errors.identity_document_type_id[0]"></small>
                                 </div>
                             </div>
-                            <div class="col-md-2">
-                                <div :class="{'has-danger': errors.country_id}"
+                            <!-- ########### INICIO CAMBIO CLIENTES VENEZUELA -->
+                            <div v-if="type !== 'customers' || isForeignDocument" class="col-md-2">
+                                <div :class="{'has-danger': errors.nationality_id}"
                                      class="form-group">
-                                    <label class="control-label">Nacionalidad</label>
+                                    <label class="control-label">
+                                        Nacionalidad
+                                        <span v-if="type === 'customers'" class="text-danger">*</span>
+                                    </label>
                                     <el-select v-model="form.nationality_id"
-                                               dusk="country_id"
+                                               dusk="nationality_id"
+                                               clearable
                                                filterable>
-                                        <el-option v-for="option in countries"
+                                        <el-option v-for="option in nationalityOptions"
                                                    :key="option.id"
                                                    :label="option.description"
                                                    :value="option.id"></el-option>
                                     </el-select>
-                                    <small v-if="errors.country_id"
+                                    <small v-if="errors.nationality_id"
                                            class="form-control-feedback"
-                                           v-text="errors.country_id[0]"></small>
+                                           v-text="errors.nationality_id[0]"></small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -63,7 +69,7 @@
                                      class="form-group">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
 
-                                    <div v-if="api_service_token != false">
+                                    <div v-if="api_service_token != false && form.country_id !== 'VE'">
                                         <x-input-service ref="input_service"
                                                          v-model="form.number"
                                                          :identity_document_type_id="form.identity_document_type_id"
@@ -74,7 +80,7 @@
                                                   :maxlength="maxLength"
                                                   dusk="number"></el-input>
 
-                                        <el-button v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'"
+                                        <el-button v-if="form.country_id !== 'VE' && (form.identity_document_type_id === '6' || form.identity_document_type_id === '1')"
                                                    class="sunat-service-button"
                                                    :loading="loading_search"
                                                    icon="el-icon-search"
@@ -82,6 +88,9 @@
                                                    @click.prevent="searchCustomer">
                                             {{ form.identity_document_type_id === '6' ? 'SUNAT' : 'RENIEC' }}
                                         </el-button>
+                                        <small v-else-if="form.country_id === 'VE'" class="text-muted">
+                                            Validar RIF o cédula con la fuente oficial autorizada.
+                                        </small>
                                     </div>
 
                                     <small v-if="errors.number"
@@ -89,6 +98,7 @@
                                            v-text="errors.number[0]"></small>
                                 </div>
                             </div>
+                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
                         </div>
 
                         <!-- Establecimientos SUNAT (solo con token ApiPeru y RUC consultado) -->
@@ -207,12 +217,14 @@
                                 <!-- Nacionalidad -->
                             <!-- País -->
 
+                            <!-- ########### INICIO CAMBIO CLIENTES VENEZUELA -->
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.country_id}"
                                      class="form-group">
                                     <label class="control-label">País</label>
                                     <el-select v-model="form.country_id"
-                                               filterable>
+                                               filterable
+                                               :disabled="type === 'customers'">
                                         <el-option v-for="option in countries"
                                                    :key="option.id"
                                                    :label="option.description"
@@ -228,31 +240,35 @@
                                 <div :class="{'has-danger': errors.location_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Ubigeo
-                                        <span v-if="form.country_id === 'PE'" class="text-danger">*</span>
+                                        Estado / Municipio / Parroquia
+                                        <span v-if="form.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="form.location_id"
                                                  :clearable="true"
                                                  :options="locations"
                                                  filterable
-                                                 :disabled="form.country_id !== 'PE'"
+                                                 :disabled="form.country_id !== 'VE'"
                                                  :filter-method="customFilterMethod"></el-cascader>
                                     <small v-if="errors.location_id"
                                            class="form-control-feedback"
                                            v-text="errors.location_id[0]"></small>
-                                    <small v-if="form.country_id === 'PE'" class="text-muted">
+                                    <small v-if="form.country_id === 'VE'" class="text-muted">
                                         Campo obligatorio
-                                    </small>
-                                    <small v-if="form.country_id !== 'PE'" class="text-muted">
-                                        Ubigeo solo disponible para Perú
                                     </small>
                                 </div>
                             </div>
-                            <!-- Departamento -->
+                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
+                                    <small v-if="form.country_id !== 'VE'" class="text-muted">
+                                        Estado/Municipio/Parroquia solo disponible para Venezuela
+                                    </small>
+                                </div>
+                            </div>
+                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
+                            <!-- Estado -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.department_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Departamento</label>-->
+<!--                                    <label class="control-label">Estado</label>-->
 <!--                                    <el-select v-model="form.department_id"-->
 <!--                                               dusk="department_id"-->
 <!--                                               filterable-->
@@ -268,11 +284,11 @@
 <!--                                           v-text="errors.department_id[0]"></small>-->
 <!--                                </div>-->
 <!--                            </div>-->
-                            <!-- Provincia -->
+                            <!-- Municipio -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.province_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Provincia</label>-->
+<!--                                    <label class="control-label">Municipio</label>-->
 <!--                                    <el-select v-model="form.province_id"-->
 <!--                                               dusk="province_id"-->
 <!--                                               filterable-->
@@ -288,11 +304,11 @@
 <!--                                           v-text="errors.province_id[0]"></small>-->
 <!--                                </div>-->
 <!--                            </div>-->
-                            <!-- Distrito -->
+                            <!-- Parroquia -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.province_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Distrito</label>-->
+<!--                                    <label class="control-label">Parroquia</label>-->
 <!--                                    <el-select v-model="form.district_id"-->
 <!--                                               dusk="district_id"-->
 <!--                                               filterable-->
@@ -444,13 +460,14 @@
                                     </el-button>
                                 </label>
                             </div>
+                            <!-- ########### INICIO CAMBIO CLIENTES VENEZUELA -->
                             <div class="col-md-4">
                                 <div :class="{'has-danger': errors.country_id}"
                                      class="form-group">
                                     <label class="control-label">País</label>
                                     <el-select v-model="row.country_id"
                                                filterable
-                                               @change="handleCountryChange(row, index)">
+                                               :disabled="type === 'customers'">
                                         <el-option v-for="option in countries"
                                                    :key="option.id"
                                                    :label="option.description"
@@ -465,25 +482,26 @@
                                 <div :class="{'has-danger': errors.location_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Ubigeo
-                                        <span v-if="row.country_id === 'PE'" class="text-danger">*</span>
+                                        Estado / Municipio / Parroquia
+                                        <span v-if="row.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="row.location_id"
                                                  :clearable="true"
                                                  :options="locations"
-                                                 :disabled="row.country_id !== 'PE'"
+                                                 :disabled="row.country_id !== 'VE'"
                                                  filterable></el-cascader>
                                     <small v-if="errors.location_id"
                                            class="form-control-feedback"
                                            v-text="errors.location_id[0]"></small>
-                                    <small v-if="row.country_id === 'PE'" class="text-muted">
+                                    <small v-if="row.country_id === 'VE'" class="text-muted">
                                         Campo obligatorio
                                     </small>
                                     <small v-else class="text-muted">
-                                        Ubigeo solo disponible para Perú
+                                        Estado/Municipio/Parroquia solo disponible para Venezuela
                                     </small>
                                 </div>
                             </div>
+                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
                             <div class="col-md-6">
                                 <div :class="{'has-danger': errors.address}"
                                      class="form-group">
@@ -820,7 +838,9 @@
 
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../mixins/functions'
@@ -915,21 +935,33 @@ export default {
             'person',
             'parentPerson',
         ]),
+        // ########### INICIO CAMBIO CLIENTES VENEZUELA
         maxLength: function () {
             if (this.form.identity_document_type_id === '6') {
-                return 11
+                return 10
             }
             if (this.form.identity_document_type_id === '1') {
                 return 8
             }
+            return 20
+        },
+        isForeignDocument() {
+            return this.form.identity_document_type_id === '4'
+        },
+        nationalityOptions() {
+            return this.isForeignDocument
+                ? this.countries.filter(country => country.id !== 'VE')
+                : this.countries
         },
         canQueryEstablishments() {
             return this.api_service_token != false
+                && this.form.country_id !== 'VE'
                 && this.form.identity_document_type_id === '6'
                 && !!this.form.name
                 && !!this.form.number
                 && this.form.number.length === 11
         },
+        // ########### FIN CAMBIO CLIENTES VENEZUELA
         establishmentsNote() {
             const selected = this.establishments.filter(e => e.selected).length
             const principal = this.establishments.find(e => e.codigo === this.principal_establishment_code)
@@ -950,9 +982,11 @@ export default {
     },
     watch: {
         'form.country_id': function(newValue) {
-            if (newValue !== 'PE' && this.form.location_id && this.form.location_id.length > 0) {
+            // ########### INICIO CAMBIO CLIENTES VENEZUELA
+            if (newValue !== 'VE' && this.form.location_id && this.form.location_id.length > 0) {
                 this.form.location_id = [];
             }
+            // ########### FIN CAMBIO CLIENTES VENEZUELA
         }
     },
     methods: {
@@ -1006,8 +1040,10 @@ export default {
                 number: '',
                 name: null,
                 trade_name: null,
-                country_id: 'PE',
-                nationality_id: 'PE',
+                // ########### INICIO CAMBIO CLIENTES VENEZUELA
+                country_id: 'VE',
+                nationality_id: 'VE',
+                // ########### FIN CAMBIO CLIENTES VENEZUELA
                 location_id: [],
                 password: null,
                 password_confirmation: null,
@@ -1122,7 +1158,9 @@ export default {
 
             this.form.addresses.push({
                 'id': null,
-                'country_id': 'PE',
+                // ########### INICIO CAMBIO CLIENTES VENEZUELA
+                'country_id': 'VE',
+                // ########### FIN CAMBIO CLIENTES VENEZUELA
                 'location_id': [],
                 'address': null,
                 'email': null,
@@ -1188,41 +1226,21 @@ export default {
 
         },
         validateDigits() {
-
-            const pattern_number = new RegExp('^[0-9]+$', 'i');
-
+            // ########### INICIO CAMBIO CLIENTES VENEZUELA
             if (this.form.identity_document_type_id === '6') {
-
-                if (this.form.number.length !== 11) {
+                if (!/^[VEJGP][0-9]{9}$/i.test(this.form.number)) {
                     return {
                         success: false,
-                        message: `El campo número debe tener 11 dígitos.`
+                        message: `El RIF debe contener una letra (V, E, J, G o P) y 9 dígitos.`
                     }
                 }
-
-                if (!pattern_number.test(this.form.number)) {
-                    return {
-                        success: false,
-                        message: `El campo número debe contener solo números`
-                    }
-                }
-
             }
 
-
             if (this.form.identity_document_type_id === '1') {
-
-                if (this.form.number.length !== 8) {
+                if (!/^[0-9]{6,8}$/.test(this.form.number)) {
                     return {
                         success: false,
-                        message: `El campo número debe tener 8 dígitos.`
-                    }
-                }
-
-                if (!pattern_number.test(this.form.number)) {
-                    return {
-                        success: false,
-                        message: `El campo número debe contener solo números`
+                        message: `La cédula debe contener entre 6 y 8 dígitos.`
                     }
                 }
             }
@@ -1245,6 +1263,7 @@ export default {
             return {
                 success: true
             }
+            // ########### FIN CAMBIO CLIENTES VENEZUELA
         },
         async submit() {
 
@@ -1274,16 +1293,18 @@ export default {
             if (this.form.addresses && this.form.addresses.length > 0) {
                 for (let i = 0; i < this.form.addresses.length; i++) {
                     const address = this.form.addresses[i];
-                    if (address.country_id === 'PE' && (!address.location_id || address.location_id.length !== 3)) {
+                    // ########### INICIO CAMBIO CLIENTES VENEZUELA
+                    if (address.country_id === 'VE' && (!address.location_id || address.location_id.length !== 3)) {
                         hasErrorInAdditionalAddresses = true;
                         addressWithError = i + 1;
                         break;
                     }
+                    // ########### FIN CAMBIO CLIENTES VENEZUELA
                 }
             }
 
             if (hasErrorInAdditionalAddresses) {
-                return this.$message.error(`Falta registrar el ubigeo en la Dirección secundaria #${addressWithError}`);
+                return this.$message.error(`Falta registrar Estado / Municipio / Parroquia en la Dirección secundaria #${addressWithError}`);
             }
 
             // if(this.form.location_id.length===3 && this.form.identity_document_type_id === '6'){
@@ -1324,6 +1345,12 @@ export default {
                 })
         },
         changeIdentityDocType() {
+            // ########### INICIO CAMBIO CLIENTES VENEZUELA
+            if (this.type === 'customers') {
+                this.form.country_id = 'VE'
+                this.form.nationality_id = this.isForeignDocument ? null : 'VE'
+            }
+            // ########### FIN CAMBIO CLIENTES VENEZUELA
             (this.recordId == null) ? this.setDataDefaultCustomer() : null
         },
         setDataDefaultCustomer() {
@@ -1488,7 +1515,9 @@ export default {
         buildAddressFromEstablishment(est, main) {
             return {
                 id: null,
-                country_id: 'PE',
+                // ########### INICIO CAMBIO CLIENTES VENEZUELA
+                country_id: 'VE',
+                // ########### FIN CAMBIO CLIENTES VENEZUELA
                 location_id: est.location_id,
                 address: est.direccion,
                 email: null,
@@ -1545,13 +1574,16 @@ export default {
 
 
         },
+        // ########### INICIO CAMBIO CLIENTES VENEZUELA
         handleCountryChange(row, index) {
-            if (row.country_id !== 'PE' && row.location_id && row.location_id.length > 0) {
+            if (row.country_id !== 'VE' && row.location_id && row.location_id.length > 0) {
                 this.$set(this.form.addresses[index], 'location_id', []);
             }
         },
+        // ########### FIN CAMBIO CLIENTES VENEZUELA
     }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
 
 <style scoped>
