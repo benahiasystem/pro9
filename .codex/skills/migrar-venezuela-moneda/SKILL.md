@@ -30,6 +30,7 @@ description: Reemplazar PEN o VED por VES y adaptar símbolos, POS, caja, finanz
 10. Conservar la estructura final de `cat_currency_types` y todas las columnas monetarias en las migraciones consolidadas; sembrar VES/Bs./Bolívares y USD mediante `TenantMigrationDataSeeder`.
 11. Mantener intacto `CodeErrors.xml` cuando contenga mensajes canónicos de un proveedor externo; no tratar esas descripciones como valores iniciales del sistema.
 12. Delimitar toda modificación de código con comentarios válidos que contengan `######## INICIO` y `######## FIN`; no agregar comentarios a JSON ni binarios.
+13. En un tenant histórico, respaldar y ejecutar `tenant:migrate-venezuela {uuid}` para que la migración incremental `000329` convierta el catálogo, configuración y todas las referencias reales; el build frontend por sí solo no cambia PEN/Soles persistidos.
 
 ## Validación
 
@@ -40,3 +41,4 @@ description: Reemplazar PEN o VED por VES y adaptar símbolos, POS, caja, finanz
 - Auditar fuentes activas y bundle generado por separado, excluyendo respaldos, vendor y catálogos canónicos de errores.
 - Verificar que Culqi responda con un error legible antes de intentar un cobro en VES.
 - Confirmar idempotencia y documentar que la decisión de negocio cambia el código monetario sin recalcular importes.
+- Después de limpiar cachés, comprobar visualmente que el POS del hostname real muestra `Bs.`/Bolívares y alterna únicamente entre VES y USD.

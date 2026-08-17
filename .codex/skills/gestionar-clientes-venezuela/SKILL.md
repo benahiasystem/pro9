@@ -19,3 +19,9 @@ description: Adaptar, corregir y validar el alta y edición de clientes venezola
 ## Validación
 
 Ejecutar `PersonRequestVenezuelaTest`, lint, build frontend y pruebas de alta/edición. Comprobar RIF, cédula, extranjero, proveedor, direcciones, Sitio Web y Observaciones.
+
+<!-- ######## INICIO VALIDACIÓN DOCUMENTAL EN TENANT HISTÓRICO ######## -->
+
+En tenants existentes, ejecutar el puente `tenant:migrate-venezuela {uuid}` y confirmar directamente en `cat_identity_document_types` los valores activos `Cédula de Identidad (V)`, `Extranjero` y `RIF (V/E/J/G/P)`. La fuente Vue correcta no basta si el catálogo persistido continúa en DNI/CE/RUC.
+
+<!-- ######## FIN VALIDACIÓN DOCUMENTAL EN TENANT HISTÓRICO ######## -->

@@ -32,6 +32,21 @@ description: Coordinar y documentar una adaptación funcional integral de Pro9 a
 4. Actualizar el archivo de datos iniciales de forma reproducible cuando cambien país, territorio, documentos o monedas.
 5. Validar migración, seed, esquema exacto, datos exactos, integridad referencial y rollback en una base temporal.
 
+## Tenants históricos existentes
+
+<!-- ######## INICIO PUENTE DE COMPATIBILIDAD TENANT HISTÓRICO ######## -->
+
+Las migraciones consolidadas no deben ejecutarse directamente sobre un tenant cuyo esquema ya existe con nombres de migración históricos. Antes de afirmar que la adaptación está completa:
+
+1. Crear y comprobar un respaldo SQL recuperable del tenant.
+2. Ejecutar primero `php artisan tenant:migrate-venezuela {uuid} --dry-run`.
+3. Reconciliar únicamente la línea base consolidada `000001` a `000328`; nunca marcar `000329` ni `000330` como ejecutadas por adelantado.
+4. Ejecutar `php artisan tenant:migrate-venezuela {uuid}` para transformar datos monetarios, territoriales y documentales existentes.
+5. Verificar en la base real, no sólo en una base temporal: `VE`, 25/335/1138, RIF/Cédula/Extranjero, VES/Bs./Bolívares, USD activa y ausencia de PE/PEN/VED.
+6. Limpiar cachés y comprobar en navegador el POS y los formularios del hostname del tenant.
+
+<!-- ######## FIN PUENTE DE COMPATIBILIDAD TENANT HISTÓRICO ######## -->
+
 ## Pruebas mínimas
 
 - `PersonRequestVenezuelaTest`

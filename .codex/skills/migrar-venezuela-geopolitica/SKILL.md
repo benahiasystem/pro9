@@ -20,6 +20,7 @@ description: Reemplazar catálogos y referencias geográficas de Perú por Venez
 10. Construir el árbol exclusivamente mediante consultas a base de datos y no leer archivos territoriales en runtime.
 11. Resolver descripciones normalizando mayúsculas, espacios y acentos; exigir una coincidencia única dentro del padre y lanzar error ante inexistencia o ambigüedad.
 12. Configurar `America/Caracas` y usar `000619` como ubigeo inicial de importación.
+13. Para tenants con historial anterior a la consolidación, respaldar y ejecutar `tenant:migrate-venezuela {uuid}`; sembrar sólo una instalación limpia no actualiza bases existentes.
 
 ## Contrato de datos
 
@@ -38,4 +39,5 @@ description: Reemplazar catálogos y referencias geográficas de Perú por Venez
 - Probar resolución jerárquica Estado/Municipio/Parroquia con nombres acentuados y casos ambiguos.
 - Confirmar aislamiento y renovación de caché entre tenants.
 - Ejecutar migraciones y pruebas dentro del contenedor PHP del proyecto.
+- Verificar el tenant servido: 239 países sin PE, 25/335/1138, default `VE` en `origin_addresses` y referencias existentes convertidas a `14/0229/000619`.
 <!-- ######## FIN SKILL GEOPOLITICO VENEZUELA -->

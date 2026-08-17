@@ -145,9 +145,15 @@ class VenezuelaGeopoliticalContractTest extends TestCase
                 }
 
                 $path = $file->getPathname();
-                if (str_contains($path, '/views_bk/') || str_contains($path, '_bk.')) {
+                // ######## INICIO EXCLUSIÓN DEL PUENTE HISTÓRICO PE A VE ########
+                if (
+                    str_contains($path, '/views_bk/')
+                    || str_contains($path, '_bk.')
+                    || str_ends_with($path, '/Support/Venezuela/ExistingTenantMigrator.php')
+                ) {
                     continue;
                 }
+                // ######## FIN EXCLUSIÓN DEL PUENTE HISTÓRICO PE A VE ########
 
                 $source = (string) file_get_contents($path);
                 foreach ($patterns as $pattern) {
