@@ -768,8 +768,6 @@ class DocumentController extends Controller
             'user',
             'seller',
             'person.identity_document_type',
-            'retention',
-            'detraction',
         ])->findOrFail($id);
 
         return new DocumentResource($document);

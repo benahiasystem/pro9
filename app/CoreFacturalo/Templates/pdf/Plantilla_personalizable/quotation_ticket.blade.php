@@ -16,9 +16,21 @@
     }
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
-    extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns($document->establishment_id));
-    $colspan_total = $show_codigo ? 6 : 5;
-    $colspan_label = $colspan_total - 1;
+    extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns(
+        $document->establishment_id,
+        ['codigo', 'cantidad', 'unidad', 'descripcion', 'precio_unitario', 'total']
+    ));
+
+    $person_type = $document->person?->person_type;
+
+    $total_weight = 0;
+    $show_weight_attribute = $document->items->some(function($row) {
+        $at = (array)$row->attributes;
+        if (isset($row->attributes) && count(($at)) > 0) {
+            $attributes = (array)(($at)[0]);
+            return collect($attributes)->where('attribute_type_id', '5031');
+        }
+    });
 
 @endphp
 <html>
@@ -244,11 +256,11 @@
     <thead class="">
     <tr>
         @if($show_codigo) <th class="border-top-bottom desc-9 text-left">COD.</th> @endif
-        <th class="border-top-bottom desc-9 text-left">CANT.</th>
-        <th class="border-top-bottom desc-9 text-left">UNIDAD</th>
-        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
-        <th class="border-top-bottom desc-9 text-left">P.UNIT</th>
-        <th class="border-top-bottom desc-9 text-left">TOTAL</th>
+        @if($show_cantidad) <th class="border-top-bottom desc-9 text-left">CANT.</th> @endif
+        @if($show_unidad) <th class="border-top-bottom desc-9 text-left">UNIDAD</th> @endif
+        @if($show_descripcion) <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th> @endif
+        @if($show_precio_unitario) <th class="border-top-bottom desc-9 text-left">P.UNIT</th> @endif
+        @if($show_total) <th class="border-top-bottom desc-9 text-left">TOTAL</th> @endif
     </tr>
     </thead>
     <tbody>
@@ -256,8 +268,14 @@
         <tr>
             @php
                 $internal_id = optional($row->item)->internal_id;
+                $at = (array)$row->attributes;
+                if (isset($row->attributes) && count(($at)) > 0) {
+                    $attributes = (array)(($at)[0]);
+                    $total_weight += (float)($attributes['value'] ?? 0) * (float)$row->quantity;
+                }
             @endphp
             @if($show_codigo) <td class="text-center desc-9 align-top font-bold">{{ $internal_id }}</td> @endif
+            @if($show_cantidad)
             <td class="text-center desc-9 align-top">
                 @if(((int)$row->quantity != $row->quantity))
                     {{ $row->quantity }}
@@ -265,7 +283,9 @@
                     {{ number_format($row->quantity, 0) }}
                 @endif
             </td>
-            <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
+            @endif
+            @if($show_unidad) <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td> @endif
+            @if($show_descripcion)
             <td class="text-left desc-9 align-top">
                 @if($row->item->name_product_pdf ?? false)
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->item->name_product_pdf ?? '') !!}
@@ -273,12 +293,18 @@
                     {!!$row->item->description!!}
                 @endif
                 @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
+                @if($show_marca && $show_brand && !empty($row->item->brand))
+                    <br/><small>Marca: {{ $row->item->brand }}</small>
+                @endif
+                @if($show_modelo && $show_model && !empty($row->item->model))
+                    <br/><small>Modelo: {{ $row->item->model }}</small>
+                @endif
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
                         <br/>{!! $attr->description !!} : {{ $attr->value }}
                     @endforeach
                 @endif
-                @if($row->discounts)
+                @if($show_descuento && $row->discounts)
                     @foreach($row->discounts as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
                             <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
@@ -296,22 +322,25 @@
                     <br/><span style="font-size: 9px">{{$row->item->extra_attr_name}}: {{ $row->item->extra_attr_value }}</span>
                 @endif
 
-                @if($show_lot)
+                @if($show_lote && $show_lot)
                 <small style="display:block; font-weight: normal; font-size: 7px;">
                     Lote: {{ $row->getSaleLotGroupCodeDescription() }}
-                    <br>
-                    FV: 
+                </small>
+                @endif
+                @if($show_fecha_vencimiento && $show_due)
+                <small style="display:block; font-weight: normal; font-size: 7px;">
+                    FV:
                     @if(isset($row->relation_item->date_of_due))
                         {{ $row->relation_item->date_of_due->format('Y-m-d') }}
                     @else
                         -
                     @endif
-                    <br>
                 </small>
                 @endif
             </td>
-            <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td>
-            <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td>
+            @endif
+            @if($show_precio_unitario) <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td> @endif
+            @if($show_total) <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td> @endif
         </tr>
         <tr>
             <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
@@ -361,6 +390,23 @@
             <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total, 2) }}</td>
         </tr>
+        @if($show_nro_producto)
+            <tr>
+                <td colspan="{{ $colspan_total }}" class="text-left font-bold desc">N° DE PRODUCTOS: {{ $document->items->count() }}</td>
+            </tr>
+        @endif
+        @if($show_peso_total && $show_weight_attribute)
+            <tr>
+                <td colspan="{{ $colspan_total }}" class="text-left font-bold desc">Peso estimado: {{ number_format($total_weight, 2) }} Kg</td>
+            </tr>
+        @endif
+        @if($show_tipo_persona && $person_type && $person_type->enabled_description_person_type)
+            <tr>
+                <td colspan="{{ $colspan_total }}" class="text-left desc">
+                    <span class="font-bold">{{ $person_type->description }}:</span> {{ $person_type->description_person_type }}
+                </td>
+            </tr>
+        @endif
     </tbody>
 </table>
 <table class="full-width">

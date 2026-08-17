@@ -539,7 +539,12 @@
             $filename = ($filename != null) ? $filename : $this->order_note->filename;
 
             // $base_template = config('tenant.pdf_template');
-            $base_template = Establishment::find($document->establishment_id)->template_pdf;
+            $establishment_pdf = Establishment::find($document->establishment_id);
+            $base_template = $establishment_pdf->template_pdf;
+
+            if (in_array($format_pdf, ['ticket', 'ticket_80', 'ticket_58'], true)) {
+                $base_template = $establishment_pdf->template_ticket_pdf;
+            }
 
             $html = $template->pdf($base_template, "order_note", $company, $document, $format_pdf);
 

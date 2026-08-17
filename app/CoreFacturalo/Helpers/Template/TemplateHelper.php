@@ -477,56 +477,107 @@ use Illuminate\Support\Str;
         }
 
         /**
+         * Columnas reales (celdas <td>) que puede tener la tabla de items de un ticket.
+         * El orden es el mismo en el que se dibujan en todas las plantillas de ticket.
+         */
+        const PERSONALIZABLE_TICKET_TABLE_COLUMNS = [
+            'codigo',
+            'cantidad',
+            'unidad',
+            'descripcion',
+            'precio_unitario',
+            'descuento',
+            'total',
+        ];
+
+        /**
          * Columnas visibles del ticket Plantilla_personalizable (config por sucursal).
-         * Usa la config de Plantilla_personalizable (PDF) como fuente principal, ya que
-         * el usuario la define desde Configuración > Plantilla PDF. Si no existe, usa
-         * Plantilla_personalizable_ticket.
+         * La fuente principal es Plantilla_personalizable_ticket (Configuración > Plantilla
+         * Ticket PDF); si esa sucursal no la tiene definida se usa la de Plantilla_personalizable
+         * (Configuración > Plantilla PDF) y, en último caso, los valores por defecto.
+         *
+         * El resultado está pensado para usarse con extract() dentro de la plantilla:
+         * expone $showColumns, un $show_{columna} por cada llave y los colspan ya calculados.
          *
          * @param  int|string $establishmentId
-         * @return array{showColumns: array, colspan_total: int}
+         * @param  array|null $tableColumns   Columnas reales que dibuja la plantilla, en caso de
+         *                                    que no las dibuje todas (p. ej. los tickets que no
+         *                                    tienen columna de descuento). Sirve para calcular
+         *                                    bien los colspan.
+         * @param  array      $nativeDefaults Valores por defecto propios de la plantilla, para
+         *                                    conservar su aspecto original cuando la sucursal
+         *                                    todavía no configuró columnas.
+         * @return array{showColumns: array, colspan_total: int, colspan_label: int}
          */
-        public static function getPersonalizableTicketShowColumns($establishmentId): array
+        public static function getPersonalizableTicketShowColumns($establishmentId, ?array $tableColumns = null, array $nativeDefaults = []): array
         {
-            $defaults = [
+            $defaults = array_merge([
                 'codigo' => true,
+                'descripcion' => true,
                 'cantidad' => true,
                 'unidad' => true,
-                'descripcion' => true,
                 'serie' => false,
                 'modelo' => false,
                 'marca' => false,
                 'lote' => false,
                 'fecha_vencimiento' => false,
                 'precio_unitario' => true,
-                'descuento' => false,
+                'descuento' => true,
                 'total' => true,
                 'tipo_persona' => false,
                 'peso_total' => false,
                 'nro_producto' => true,
-            ];
-
-            $pdfConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $establishmentId)
-                ->where('template_name', 'Plantilla_personalizable')
-                ->first();
+            ], $nativeDefaults);
 
             $ticketConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $establishmentId)
                 ->where('template_name', 'Plantilla_personalizable_ticket')
                 ->first();
 
-            $pdfColumns = $pdfConfig ? ($pdfConfig->columns_config ?? []) : [];
-            $ticketColumns = $ticketConfig ? ($ticketConfig->columns_config ?? []) : [];
+            $pdfConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $establishmentId)
+                ->where('template_name', 'Plantilla_personalizable')
+                ->first();
 
-            if (!empty($pdfColumns)) {
-                $showColumns = array_merge($defaults, $pdfColumns);
-            } elseif (!empty($ticketColumns)) {
+            $ticketColumns = $ticketConfig ? ($ticketConfig->columns_config ?? []) : [];
+            $pdfColumns = $pdfConfig ? ($pdfConfig->columns_config ?? []) : [];
+
+            if (!empty($ticketColumns)) {
                 $showColumns = array_merge($defaults, $ticketColumns);
+            } elseif (!empty($pdfColumns)) {
+                $showColumns = array_merge($defaults, $pdfColumns);
             } else {
                 $showColumns = $defaults;
             }
 
-            return [
+            $showColumns = array_map(function ($value) {
+                return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+            }, $showColumns);
+
+            $tableColumns = array_values(array_intersect(
+                self::PERSONALIZABLE_TICKET_TABLE_COLUMNS,
+                $tableColumns ?: self::PERSONALIZABLE_TICKET_TABLE_COLUMNS
+            ));
+
+            $visible = array_filter($tableColumns, function ($column) use ($showColumns) {
+                return !empty($showColumns[$column]);
+            });
+
+            if (count($visible) === 0) {
+                $showColumns['descripcion'] = true;
+                $visible = ['descripcion'];
+            }
+
+            $colspan_total = count($visible);
+
+            $data = [
                 'showColumns' => $showColumns,
-                'show_codigo' => !empty($showColumns['codigo']),
+                'colspan_total' => $colspan_total,
+                'colspan_label' => max(1, $colspan_total - 1),
             ];
+
+            foreach ($showColumns as $column => $value) {
+                $data['show_'.$column] = $value;
+            }
+
+            return $data;
         }
     }

@@ -31,6 +31,17 @@
 
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
+    extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns(
+        $document->establishment_id,
+        ['codigo', 'cantidad', 'unidad', 'descripcion', 'precio_unitario', 'total'],
+        ['codigo' => false]
+    ));
+
+    $person_type = $document->person?->person_type;
+
+    $colspan_amount = $colspan_total >= 3 ? 2 : 1;
+    $colspan_desc = max(1, $colspan_total - $colspan_amount);
+
 @endphp
 <html>
 <head></head>
@@ -331,14 +342,17 @@
 
     <tbody>
     <tr>
-        <td class="ticket-58 border-top-bottom desc text-left"></td>
-        <td class="ticket-58 border-top-bottom desc text-left">UM</td>
-        <td class="ticket-58 border-top-bottom desc text-left">DESCRIP.</td>
-        <td class="ticket-58 border-top-bottom desc text-right" style="padding-right:5px;">P.UNIT</td>
-        <td class="ticket-58 border-top-bottom desc text-right">TOTAL</td>
+        @if($show_codigo) <td class="ticket-58 border-top-bottom desc text-left">COD.</td> @endif
+        @if($show_cantidad) <td class="ticket-58 border-top-bottom desc text-left"></td> @endif
+        @if($show_unidad) <td class="ticket-58 border-top-bottom desc text-left">UM</td> @endif
+        @if($show_descripcion) <td class="ticket-58 border-top-bottom desc text-left">DESCRIP.</td> @endif
+        @if($show_precio_unitario) <td class="ticket-58 border-top-bottom desc text-right" style="padding-right:5px;">P.UNIT</td> @endif
+        @if($show_total) <td class="ticket-58 border-top-bottom desc text-right">TOTAL</td> @endif
     </tr>
     @foreach($document->items as $row)
         <tr>
+            @if($show_codigo) <td class="text-left desc align-top">{{ $row->item->internal_id }}</td> @endif
+            @if($show_cantidad)
             <td class="text-left desc align-top">
                 @if(((int)$row->quantity != $row->quantity))
                     {{ $row->quantity }}
@@ -346,7 +360,9 @@
                     {{ number_format($row->quantity, 0) }}
                 @endif
             </td>
-            <td class="text-left desc align-top">{{ $row->item->unit_type_id }}</td>
+            @endif
+            @if($show_unidad) <td class="text-left desc align-top">{{ $row->item->unit_type_id }}</td> @endif
+            @if($show_descripcion)
             <td class="text-left desc align-top text-uppercase">
                 @if($row->name_product_pdf)
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
@@ -362,6 +378,13 @@
 
                 @if($row->total_plastic_bag_taxes > 0)
                     <br/>ICBPER : {{ $row->total_plastic_bag_taxes }}
+                @endif
+
+                @if($show_marca && !empty($row->m_item->brand->name ?? null))
+                    <br/><span style="font-size: 7px; font-weight: normal;">Marca: {{ $row->m_item->brand->name }}</span>
+                @endif
+                @if($show_modelo && !empty($row->item->model ?? null))
+                    <br/><span style="font-size: 7px; font-weight: normal;">Modelo: {{ $row->item->model }}</span>
                 @endif
 
                 @foreach($row->additional_information as $information)
@@ -386,7 +409,7 @@
                         @endif
                     @endforeach
                 @endif
-                @if($row->discounts)
+                @if($show_descuento && $row->discounts)
                     @foreach($row->discounts as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
                             <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
@@ -410,19 +433,22 @@
                     $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
                     $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
-                @if($lot)
+                @if($lot && $show_lote)
                     <small style="display:block; font-weight: normal; font-size: 7px;">
-                        Lote: {{ ltrim($lot, '/') }}  
-                        <br>
-                        FV: 
-                        @if($date_due != '')
-                            {{ ltrim($date_due, '/') }}
-                        @elseif($row->relation_item->date_of_due)
-                            {{ $row->relation_item->date_of_due->format('y-m-d') }}
-                        @endif 
-                        <br>
+                        Lote: {{ ltrim($lot, '/') }}
                     </small>
                 @endif
+                @if($show_fecha_vencimiento && ($date_due != '' || $row->relation_item->date_of_due))
+                    <small style="display:block; font-weight: normal; font-size: 7px;">
+                        FV:
+                        @if($date_due != '')
+                            {{ ltrim($date_due, '/') }}
+                        @else
+                            {{ $row->relation_item->date_of_due->format('y-m-d') }}
+                        @endif
+                    </small>
+                @endif
+                @if($show_serie)
                 <small style="display:block; font-weight: normal; font-size: 7px;">
                     @isset($row->item->lots)
                         @foreach($row->item->lots as $lot)
@@ -432,74 +458,78 @@
                         @endforeach
                     @endisset
                 </small>
+                @endif
             </td>
+            @endif
+            @if($show_precio_unitario)
             <td class="text-right desc align-top"
                 style="padding-right:5px;">{{ number_format($row->unit_price, 2) }}</td>
-            <td class="text-right desc align-top">{{ number_format($row->total, 2) }}</td>
+            @endif
+            @if($show_total) <td class="text-right desc align-top">{{ number_format($row->total, 2) }}</td> @endif
         </tr>
         <tr>
-            <td colspan="5" class="ticket-58 border-bottom"></td>
+            <td colspan="{{ $colspan_total }}" class="ticket-58 border-bottom"></td>
         </tr>
     @endforeach
     @if($document->total_exportation > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">OP. EXPORTACIÓN:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">OP. EXPORTACIÓN:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_exportation, 2) }}</td>
         </tr>
     @endif
     @if($document->total_free > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">OP. GRATUITAS:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">OP. GRATUITAS:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_free, 2) }}</td>
         </tr>
     @endif
     @if($document->total_unaffected > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">OP. INAFECTAS:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">OP. INAFECTAS:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_unaffected, 2) }}</td>
         </tr>
     @endif
     @if($document->total_exonerated > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">OP. EXONERADAS:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">OP. EXONERADAS:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_exonerated, 2) }}</td>
         </tr>
     @endif
     @if($document->total_taxed > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">OP. GRAVADAS:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">OP. GRAVADAS:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_taxed, 2) }}</td>
         </tr>
     @endif
     @if($document->total_plastic_bag_taxes > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">ICBPER:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">ICBPER:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_plastic_bag_taxes, 2) }}</td>
         </tr>
     @endif
     <tr>
-        <td colspan="3" class="desc-ticket text-uppercase">IGV:
+        <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">IGV:
             {{ $document->currency_type->symbol }}</td>
-        <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_igv, 2) }}</td>
+        <td colspan="{{ $colspan_amount }}" class="text-right desc-ticket text-uppercase">{{ number_format($document->total_igv, 2) }}</td>
     </tr>
 
     @if($document->total_isc > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">ISC:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">ISC:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_isc, 2) }}</td>
         </tr>
     @endif
@@ -510,20 +540,20 @@
             $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
         @endphp
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">{{ $labelSubtotal }}:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">{{ $labelSubtotal }}:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($subtotal, 2) }}</td>
         </tr>
     @endif
 
     @if($document->total_discount_with_igv > 0)
         <tr>
-            <td colspan="3"
+            <td colspan="{{ $colspan_desc }}"
                 class="desc-ticket text-uppercase">{{(($document->total_prepayment > 0) ? 'ANTICIPO':'DESCUENTO TOTAL')}}
                 :
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_discount_with_igv, 2) }}</td>
         </tr>
     @endif
@@ -537,44 +567,56 @@
                 }
             @endphp
             <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">CARGOS ({{$total_factor}}%):
+                <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">CARGOS ({{$total_factor}}%):
                     {{ $document->currency_type->symbol }}</td>
-                <td colspan="2"
+                <td colspan="{{ $colspan_amount }}"
                     class="text-right desc-ticket text-uppercase">{{ number_format($document->total_charge, 2) }}</td>
             </tr>
         @else
             <tr>
-                <td colspan="3" class="desc-ticket text-uppercase">CARGOS:
+                <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">CARGOS:
                     {{ $document->currency_type->symbol }}</td>
-                <td colspan="2"
+                <td colspan="{{ $colspan_amount }}"
                     class="text-right desc-ticket text-uppercase">{{ number_format($document->total_charge, 2) }}</td>
             </tr>
         @endif
     @endif
 
     <tr>
-        <td colspan="3" class="desc-ticket text-uppercase">TOTAL A PAGAR:
+        <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">TOTAL A PAGAR:
             {{ $document->currency_type->symbol }}</td>
-        <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total, 2) }}</td>
+        <td colspan="{{ $colspan_amount }}" class="text-right desc-ticket text-uppercase">{{ number_format($document->total, 2) }}</td>
     </tr>
 
     @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">M. PENDIENTE:
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">M. PENDIENTE:
                 {{ $document->currency_type->symbol }}</td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format($document->total_pending_payment, 2) }}</td>
         </tr>
     @endif
 
     @if($balance < 0)
         <tr>
-            <td colspan="3" class="desc-ticket text-uppercase">
+            <td colspan="{{ $colspan_desc }}" class="desc-ticket text-uppercase">
                 VUELTO:
                 <span class="text-right">{{ $document->currency_type->symbol }}</span>
             </td>
-            <td colspan="2"
+            <td colspan="{{ $colspan_amount }}"
                 class="text-right desc-ticket text-uppercase">{{ number_format(abs($balance),2, ".", "") }}</td>
+        </tr>
+    @endif
+
+    @if($show_nro_producto)
+        <tr>
+            <td colspan="{{ $colspan_total }}" class="desc-ticket text-uppercase">N° DE PRODUCTOS: {{ $document->items->count() }}</td>
+        </tr>
+    @endif
+
+    @if($show_tipo_persona && $person_type && $person_type->enabled_description_person_type)
+        <tr>
+            <td colspan="{{ $colspan_total }}" class="desc-ticket">{{ $person_type->description }}: {{ $person_type->description_person_type }}</td>
         </tr>
     @endif
     </tbody>

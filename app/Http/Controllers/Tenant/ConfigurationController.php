@@ -318,9 +318,8 @@ class ConfigurationController extends Controller
             ]
         );
 
-        // Mantener ticket sincronizado con la config PDF (misma pantalla de columnas en A4)
         if ($formatType !== 'ticket') {
-            TemplateColumnsConfig::updateOrCreate(
+            TemplateColumnsConfig::firstOrCreate(
                 [
                     'establishment_id' => $request->establishment,
                     'template_name' => 'Plantilla_personalizable_ticket',
