@@ -1122,7 +1122,9 @@ export default {
             if (this.form.document_type_id === '01') {
                 const customer = _.find(this.all_customers, { id: this.form.customer_id });
                 if (customer && customer.identity_document_type_id !== '6') {
-                    return this.$message.warning('Para emitir factura el cliente debe tener RUC');
+                    // ######## INICIO DOCUMENTO FISCAL VENEZUELA ########
+                    return this.$message.warning('Para emitir factura el cliente debe tener RIF');
+                    // ######## FIN DOCUMENTO FISCAL VENEZUELA ########
                 }
             }
 

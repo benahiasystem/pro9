@@ -123,6 +123,10 @@ class VenezuelaSourceContractTest extends TestCase
     {
         $pos = (string) file_get_contents(resource_path('js/views/tenant/pos/index.vue'));
         $payment = (string) file_get_contents(resource_path('js/views/tenant/pos/partials/payment.vue'));
+        // ######## INICIO CONTRATO VISUAL POS VENEZUELA ########
+        $itemForm = (string) file_get_contents(resource_path('js/views/tenant/pos/partials/form.vue'));
+        $garagePayment = (string) file_get_contents(resource_path('js/views/tenant/pos/partials/fast_payment_garage.vue'));
+        // ######## FIN CONTRATO VISUAL POS VENEZUELA ########
 
         self::assertStringContainsString('d-flex flex-column pos-checkout-column', $pos);
         self::assertStringContainsString('flex-grow-1 pos-checkout-details', $pos);
@@ -132,6 +136,13 @@ class VenezuelaSourceContractTest extends TestCase
         self::assertStringContainsString('this.form.document_type_id = documentTypeId', $payment);
         self::assertStringContainsString('return Boolean(this.businessTurns && this.businessTurns.active)', $payment);
         self::assertStringNotContainsString('qz.websocket.isActive()', $payment);
+        // ######## INICIO CONTRATO VISUAL POS VENEZUELA ########
+        self::assertStringContainsString('(con IVA)', $itemForm);
+        self::assertStringContainsString('Incluye IVA', $itemForm);
+        self::assertStringContainsString(' IVA = Bs.', $itemForm);
+        self::assertStringContainsString('cliente debe tener RIF', $garagePayment);
+        self::assertStringNotContainsString('cliente debe tener RUC', $garagePayment);
+        // ######## FIN CONTRATO VISUAL POS VENEZUELA ########
     }
 
     /** @test */

@@ -180,7 +180,9 @@
 
                                     <div class="col-md-4">
                                         <div class="form-group" :class="{'has-danger': errors.sale_unit_price}">
-                                            <label class="control-label">Precio Unitario (Venta) <small v-if="form.has_igv">(con IGV)</small> <small v-else>(sin IGV)</small><span class="text-danger">*</span></label>
+                                            <!-- ######## INICIO ETIQUETA FISCAL VENEZUELA ######## -->
+                                            <label class="control-label">Precio Unitario (Venta) <small v-if="form.has_igv">(con IVA)</small> <small v-else>(sin IVA)</small><span class="text-danger">*</span></label>
+                                            <!-- ######## FIN ETIQUETA FISCAL VENEZUELA ######## -->
                                             <el-input v-model="form.sale_unit_price" dusk="sale_unit_price" @input="calculatePercentageOfProfitBySale"></el-input>
                                             <small v-if="saleUnitPriceBreakdown" class="text-muted">{{ saleUnitPriceBreakdown }}</small>
                                             <small class="form-control-feedback" v-if="errors.sale_unit_price" v-text="errors.sale_unit_price[0]"></small>
@@ -212,7 +214,9 @@
                                     </div>
                                     <div class="col-md-4 center-el-checkbox" v-show="show_has_igv && !globalIgvHandling">
                                         <div class="form-group" :class="{'has-danger': errors.has_igv}">
-                                            <el-checkbox v-model="form.has_igv">Incluye Igv</el-checkbox><br>
+                                            <!-- ######## INICIO ETIQUETA FISCAL VENEZUELA ######## -->
+                                            <el-checkbox v-model="form.has_igv">Incluye IVA</el-checkbox><br>
+                                            <!-- ######## FIN ETIQUETA FISCAL VENEZUELA ######## -->
                                             <small class="form-control-feedback" v-if="errors.has_igv" v-text="errors.has_igv[0]"></small>
                                         </div>
                                     </div>
@@ -232,7 +236,9 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group" :class="{'has-danger': errors.purchase_unit_price}">
-                                            <label class="control-label">Precio Unitario (Compra) <small v-if="form.has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></label>
+                                            <!-- ######## INICIO ETIQUETA FISCAL VENEZUELA ######## -->
+                                            <label class="control-label">Precio Unitario (Compra) <small v-if="form.has_igv">(con IVA)</small> <small v-else>(sin IVA)</small></label>
+                                            <!-- ######## FIN ETIQUETA FISCAL VENEZUELA ######## -->
                                             <el-input v-model="form.purchase_unit_price" dusk="purchase_unit_price" @input="calculatePercentageOfProfitByPurchase"></el-input>
                                             <small v-if="purchaseUnitPriceBreakdown" class="text-muted">{{ purchaseUnitPriceBreakdown }}</small>
                                             <small class="form-control-feedback" v-if="errors.purchase_unit_price" v-text="errors.purchase_unit_price[0]"></small>
@@ -323,7 +329,9 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     igv = price * IGV_RATE
                     total = price + igv
                 }
-                return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = Bs. ${total.toFixed(2)}`
+                // ######## INICIO ETIQUETA FISCAL VENEZUELA ########
+                return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = Bs. ${total.toFixed(2)}`
+                // ######## FIN ETIQUETA FISCAL VENEZUELA ########
             },
             purchaseUnitPriceBreakdown() {
                 const price = parseFloat(this.form.purchase_unit_price)
@@ -342,7 +350,9 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     igv = price * IGV_RATE
                     total = price + igv
                 }
-                return `${base.toFixed(2)} + ${igv.toFixed(2)} IGV = Bs. ${total.toFixed(2)}`
+                // ######## INICIO ETIQUETA FISCAL VENEZUELA ########
+                return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = Bs. ${total.toFixed(2)}`
+                // ######## FIN ETIQUETA FISCAL VENEZUELA ########
             },
         },
         data() {
