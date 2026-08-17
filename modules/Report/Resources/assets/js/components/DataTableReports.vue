@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="btn-filter-content">
@@ -187,7 +188,7 @@
                             </div>
                         </template>
                     </template>
-                    
+
 
 
                     <div v-if="resource == 'reports/sales' || resource === 'reports/sale-notes' || resource !='reports/state-account'|| resource!=='reports/state-account'"
@@ -323,7 +324,7 @@
                                     <td v-if="visibleColumns.options.visible"></td>
                                     <td v-if="visibleColumns.web_platforms.visible"></td>
                                     <td v-if="visibleColumns.total_charge.visible"></td>
-                                    <td><strong>Totales PEN</strong></td>
+                                    <td><strong>Totales VES</strong></td>
                                     <td>{{ totals.acum_total_exonerated }}</td>
                                     <td>{{ totals.acum_total_unaffected }}</td>
                                     <td>{{ totals.acum_total_free }}</td>
@@ -351,11 +352,11 @@
 
                             </template>
                             <template v-else>
-                                <!-- mostrar si no se aplica conversion a soles -->
+                                <!-- mostrar si no se aplica conversion a bolívares -->
                                 <template v-if="!applyConversionToPen">
                                 <tr>
                                     <td :colspan="colspanFootPurchase"></td>
-                                    <td><strong>Totales PEN</strong></td>
+                                    <td><strong>Totales VES</strong></td>
                                     <td>{{ totals.acum_total_exonerated }}</td>
                                     <td>{{ totals.acum_total_unaffected }}</td>
                                     <td>{{ totals.acum_total_free }}</td>
@@ -514,10 +515,10 @@ export default {
         checkScrollShadows() {
             const el = this.$refs.scrollContainer;
             if (!el) return;
-            
+
             const scrollLeft = el.scrollLeft;
             const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-            
+
             this.showLeftShadow = scrollLeft > 1;
             this.showRightShadow = scrollRight > 1;
         },
@@ -574,7 +575,7 @@ export default {
                 let signal = row.document_type_id;
                 let state = row.state_type_id;
 
-                if (row.currency_type_id == 'PEN') {
+                if (row.currency_type_id == 'VES') {
 
                     if ((signal == '07' && state != '11')) {
 
@@ -722,7 +723,7 @@ export default {
             if(this.users.length  > 0){
                 // delete(this.form.type_person)
             }
-            
+
             let parameters = queryString.stringify({
                 page: this.pagination.current_page,
                 limit: this.limit,
@@ -794,3 +795,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

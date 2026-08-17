@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Models\Tenant;
 use App\Models\Tenant\Catalogs\AffectationIgvType;
 use App\Models\Tenant\Catalogs\CatColorsItem;
@@ -1666,7 +1668,7 @@ class Item extends ModelTenant
             ->setInArray('lots_enabled',true)
             ->setInArray('stock',0)
             ->setInArray('stock_min',0)
-            ->setInArray('currency_type_id','PEN')
+            ->setInArray('currency_type_id','VES')
             ->setInArray('unit_type_id','NIU')
             ->setInArray('active',$active)
             ->setInArray('sale_unit_price',1)
@@ -3269,3 +3271,5 @@ class Item extends ModelTenant
 
 }
 
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

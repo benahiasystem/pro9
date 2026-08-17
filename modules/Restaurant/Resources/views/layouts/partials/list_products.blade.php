@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @foreach ($dataPaginate as $item)
     @php
         $configuration = \App\Models\Tenant\Configuration::first();
@@ -57,7 +58,7 @@
 
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="price-box-restaurant">
-                            <!-- <span class="old-price">S/ {{ number_format( ($item->sale_unit_price * 1.2 ) , 2 )}}</span> -->
+                            <!-- <span class="old-price">Bs. {{ number_format( ($item->sale_unit_price * 1.2 ) , 2 )}}</span> -->
                             <span class="product-price-restaurant">{{ $item->currency_type['symbol'] }} {{ number_format($item->sale_unit_price, 2) }}</span>
                         </div>
                         <div class="product-action">
@@ -117,3 +118,5 @@
         content: none
     }
 </style>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

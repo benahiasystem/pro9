@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
 @endphp
@@ -69,8 +70,8 @@
     @if($document->observations)
         <cbc:Note><![CDATA[{{ $document->observations }}]]></cbc:Note>
     @endif
-    <cbc:TotalInvoiceAmount currencyID="PEN">{{ $document->total_retention }}</cbc:TotalInvoiceAmount>
-    <sac:SUNATTotalPaid currencyID="PEN">{{ $document->total }}</sac:SUNATTotalPaid>
+    <cbc:TotalInvoiceAmount currencyID="VES">{{ $document->total_retention }}</cbc:TotalInvoiceAmount>
+    <sac:SUNATTotalPaid currencyID="VES">{{ $document->total }}</sac:SUNATTotalPaid>
     @foreach($document->documents as $doc)
     <sac:SUNATRetentionDocumentReference>
         <cbc:ID schemeID="{{ $doc->document_type_id }}">{{ $doc->series }}-{{ $doc->number }}</cbc:ID>
@@ -87,9 +88,9 @@
         @endif
         @if($doc->total_retention && $doc->total_payment && $doc->date_of_retention)
         <sac:SUNATRetentionInformation>
-            <sac:SUNATRetentionAmount currencyID="PEN">{{ $doc->total_retention }}</sac:SUNATRetentionAmount>
+            <sac:SUNATRetentionAmount currencyID="VES">{{ $doc->total_retention }}</sac:SUNATRetentionAmount>
             <sac:SUNATRetentionDate>{{ $doc->date_of_retention->format('Y-m-d') }}</sac:SUNATRetentionDate>
-            <sac:SUNATNetTotalPaid currencyID="PEN">{{ $doc->total_payment }}</sac:SUNATNetTotalPaid>
+            <sac:SUNATNetTotalPaid currencyID="VES">{{ $doc->total_payment }}</sac:SUNATNetTotalPaid>
             @if($doc->exchange_rate)
             <cac:ExchangeRate>
                 <cbc:SourceCurrencyCode>{{ $doc->exchange_rate->currency_type_id_source }}</cbc:SourceCurrencyCode>
@@ -103,3 +104,4 @@
     </sac:SUNATRetentionDocumentReference>
     @endforeach
 </Retention>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

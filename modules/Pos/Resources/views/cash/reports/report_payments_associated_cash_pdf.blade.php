@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -116,7 +117,7 @@
                     <strong>
                         Total Ingresos:
                     </strong>
-                    S/ {{$data['total_income']}}
+                    Bs. {{$data['total_income']}}
                 </p>
             </td>
         </tr>
@@ -202,3 +203,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -5,6 +5,9 @@ namespace App\Http\Controllers\System;
 use App\Http\Controllers\Controller;
 use App\Models\System\Configuration;
 use App\Models\System\PaymentOrder;
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+use App\Support\Venezuela\Localization;
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -55,6 +58,15 @@ class PaymentOrderPublicController extends Controller
     {
         $this->resolveOrder($uuid);
 
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        if (Localization::nationalCurrencyId() === 'VES') {
+            return [
+                'checkout' => null,
+                'message' => 'Las pasarelas configuradas no admiten cobros en bolívares.',
+            ];
+        }
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
+
         $config = Configuration::select('enabled_culqi', 'enabled_izipay')->first();
 
         $checkout = null;
@@ -91,6 +103,16 @@ class PaymentOrderPublicController extends Controller
             'email' => 'nullable|email',
             'source_id' => 'required|string',
         ]);
+
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        if (Localization::isNationalCurrency($validated['currency_code'])) {
+            return response()->json([
+                'success' => false,
+                'paid' => false,
+                'user_message' => 'Culqi no está habilitado para cobros en bolívares.',
+            ], 422);
+        }
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 
         $privateKey = optional(Configuration::select('token_private_culqui')->first())->token_private_culqui;
 
@@ -167,6 +189,16 @@ class PaymentOrderPublicController extends Controller
             'customer.billingDetails.lastName' => 'nullable|string',
             'customer.billingDetails.phoneNumber' => 'nullable',
         ]);
+
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        if (Localization::isNationalCurrency($validated['currency'])) {
+            return [
+                'success' => false,
+                'formToken' => null,
+                'message' => 'Izipay no está habilitado para cobros en bolívares.',
+            ];
+        }
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 
         $credentials = Configuration::accessIzipay();
         $result = $this->createPayment($credentials, $validated, $error);

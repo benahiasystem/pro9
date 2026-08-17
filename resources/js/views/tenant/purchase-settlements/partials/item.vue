@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :title="titleDialog"
                :visible="showDialog"
@@ -111,8 +112,8 @@
                                     <el-select slot="prepend"
                                                v-model="form.item.currency_type_id"
                                                class="el-select-currency">
-                                        <el-option label="S/"
-                                                   value="PEN"></el-option>
+                                        <el-option label="Bs."
+                                                   value="VES"></el-option>
                                         <el-option label="$"
                                                    value="USD"></el-option>
                                     </el-select>
@@ -120,7 +121,7 @@
                                               v-model="form.unit_price"
                                               class="input-with-select"
                                               :filterable="false"
-                                    >                                        
+                                    >
                                     </el-input>
                                 </div>
                                 <small v-if="errors.unit_price"
@@ -891,7 +892,7 @@ export default {
             this.form.has_isc = this.form.item.purchase_has_isc
             this.form.percentage_isc = this.form.item.purchase_percentage_isc
             this.form.system_isc_type_id = this.form.item.purchase_system_isc_type_id
-            
+
         },
         setGlobalPurchaseCurrencyToItem(){
 
@@ -899,14 +900,14 @@ export default {
             {
                 this.form.item.currency_type_id = this.currencyTypeIdActive
             }
-            
+
         },
         setGlobalIgvToItem() {
             if (this.config.enabled_global_igv_to_purchase === true) {
                 // Ajusta el igv, si es global, se lo añade o quita al precio del item directamente
                 // this.form.purchase_has_igv = this.hasGlobalIgv
                 this.form.purchase_has_igv = this.localHasGlobalIgv
-                
+
             }
         },
 
@@ -1166,3 +1167,5 @@ export default {
 }
 
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

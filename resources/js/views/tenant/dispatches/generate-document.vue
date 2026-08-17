@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <el-dialog
@@ -480,7 +481,7 @@ export default {
             items: [],
             affectation_igv_types: [],
             affectation_igv_type: null,
-            currencyTypeIdActive: "PEN",
+            currencyTypeIdActive: "VES",
             exchangeRateSale: 1,
             show_has_retention: true,
             currency_type: {},
@@ -688,7 +689,7 @@ export default {
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: null,
                 customer_id: null,
-                currency_type_id: "PEN",
+                currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 0,
                 total_prepayment: 0,
@@ -1101,3 +1102,5 @@ export default {
     },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

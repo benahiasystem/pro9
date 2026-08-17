@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
 
@@ -34,7 +35,7 @@
 <html>
 <head></head>
 <body>
-    @if($document->state_type->id == '11') 
+    @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
         <img
             src="data:{{mime_content_type(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png"))}};base64, {{base64_encode(file_get_contents(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png")))}}"
@@ -151,7 +152,7 @@
         </tr>
         <tr>
             <td class="align-top"><p class="desc-ticket text-uppercase">Monto detracción:</p></td>
-            <td><p class="desc-ticket text-uppercase">S/ {{ $document->detraction->amount}}</p></td>
+            <td><p class="desc-ticket text-uppercase">Bs. {{ $document->detraction->amount}}</p></td>
         </tr>
         @if($document->detraction->pay_constancy)
             <tr>
@@ -220,7 +221,7 @@
         <tr>
             <td><p class="desc-ticket text-uppercase">Base imponible de la retención: </p></td>
             <td>
-                <p class="desc-ticket text-uppercase">S/ {{ $document->getRetentionTaxBase() }} </p>
+                <p class="desc-ticket text-uppercase">Bs. {{ $document->getRetentionTaxBase() }} </p>
             </td>
         </tr>
         <tr>
@@ -230,7 +231,7 @@
         <tr>
             <td><p class="desc-ticket text-uppercase">Monto de la retención:</p></td>
             <td>
-                <p class="desc-ticket text-uppercase">S/ {{ $document->retention->amount_pen }}</p>
+                <p class="desc-ticket text-uppercase">Bs. {{ $document->retention->amount_pen }}</p>
             </td>
         </tr>
     @endif
@@ -637,13 +638,13 @@
                     </tr>
                     <tr>
                         <td>Base imponible de la retención:
-                            S/ {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }}</td>
+                            Bs. {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }}</td>
                     </tr>
                     <tr>
                         <td>Porcentaje de la retención {{ $document->retention->percentage * 100 }}%</td>
                     </tr>
                     <tr>
-                        <td>Monto de la retención S/ {{ $document->retention->amount_pen }}</td>
+                        <td>Monto de la retención Bs. {{ $document->retention->amount_pen }}</td>
                     </tr>
                 </table>
             @endif --}}
@@ -706,3 +707,5 @@
 
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

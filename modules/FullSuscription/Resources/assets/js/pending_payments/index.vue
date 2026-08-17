@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <div>
 
@@ -178,7 +179,7 @@
         <!-- Total -->
         <el-table-column label="Total" width="105" align="right">
           <template slot-scope="{ row }">
-            <span class="total-amount">S/ {{ row.total }}</span>
+            <span class="total-amount">Bs. {{ row.total }}</span>
           </template>
         </el-table-column>
 
@@ -462,3 +463,5 @@ export default {
   white-space: nowrap;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -114,18 +115,18 @@
         </tr>
         <tr>
             <td class="td-custom">
-                <p><strong>Saldo inicial efectivo:</strong>&nbsp; S/ {{$data['cash_beginning_balance']}}</p>
+                <p><strong>Saldo inicial efectivo:</strong>&nbsp; Bs. {{$data['cash_beginning_balance']}}</p>
             </td>
             <td class="td-custom">
-                <p><strong>Ingreso efectivo:</strong>&nbsp; S/ {{ $totalIngresoEfectivo }}</p>
+                <p><strong>Ingreso efectivo:</strong>&nbsp; Bs. {{ $totalIngresoEfectivo }}</p>
             </td>
         </tr>
         <tr>
             <td class="td-custom">
-                <p><strong>Saldo final efectivo:</strong>&nbsp; S/ {{ $data['cash_beginning_balance'] + $totalIngresoEfectivo - $data['cash_egress'] }} </p>
+                <p><strong>Saldo final efectivo:</strong>&nbsp; Bs. {{ $data['cash_beginning_balance'] + $totalIngresoEfectivo - $data['cash_egress'] }} </p>
             </td>
             <td class="td-custom">
-                <p><strong>Egreso efectivo:</strong>&nbsp; S/ {{$data['cash_egress']}} </p>
+                <p><strong>Egreso efectivo:</strong>&nbsp; Bs. {{$data['cash_egress']}} </p>
             </td>
         </tr>
 
@@ -164,7 +165,7 @@
                         <td class="celda">
                             {{ $value['type_transaction'] }}
                         </td>
-                        
+
                         <td class="celda">
                             {!! $value['document_items_description'] ?? '' !!}
                         </td>
@@ -206,3 +207,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('tenant.layouts.layout_ecommerce_item.record')
 
 @section('content')
@@ -8,7 +9,7 @@
             <div class="product-slider-container product-item">
                 <div class="product-single-carousel owl-carousel owl-theme">
                     <div class="product-item">
-                       
+
                     </div>
                     <!--<div class="product-item">
                         <img class="product-single-image" src="assets/images/products/zoom/product-2.jpg"
@@ -44,8 +45,8 @@
                 </div><!-- End .product-container -->
 
                 <div class="price-box">
-                    <span class="old-price">S/ {{ number_format( ($record->sale_unit_price * 1.2 ) , 2 )}}</span>
-                    <span class="product-price">S/ {{ number_format($record->sale_unit_price, 2 )}}</span>
+                    <span class="old-price">Bs. {{ number_format( ($record->sale_unit_price * 1.2 ) , 2 )}}</span>
+                    <span class="product-price">Bs. {{ number_format($record->sale_unit_price, 2 )}}</span>
                 </div><!-- End .price-box -->
 
                 <div class="product-desc">
@@ -62,7 +63,7 @@
                     </div>-->
                     <!-- End .product-single-qty -->
 
-                   
+
                     <!-- <a href="#" class="paction add-wishlist" title="Add to Wishlist">
                         <span>Add to Wishlist</span>
                     </a>
@@ -192,3 +193,5 @@
 </div>
 
 @endsection
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

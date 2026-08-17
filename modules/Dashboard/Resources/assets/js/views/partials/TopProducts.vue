@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <section class="card card-dashboard tp-panel">
     <div class="card-body">
@@ -17,7 +18,7 @@
           <div class="tp-body">
             <div class="tp-row">
               <span class="tp-name text-truncate">{{ row.description }}</span>
-              <span class="tp-total">S/ {{ row.total | tpMoney }}</span>
+              <span class="tp-total">Bs. {{ row.total | tpMoney }}</span>
             </div>
             <div class="tp-bar">
               <span class="tp-bar-fill" :style="{ width: barWidth(row.total) }"></span>
@@ -177,3 +178,5 @@ export default {
   margin-top: 0.75rem;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

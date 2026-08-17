@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div :class="{ 'content-opacity': isVisible }" class="" @click.self="toggleInformation">
         <span class="module-title-marker" data-page-title="Nueva Nota de Venta"></span>
@@ -2868,7 +2869,7 @@ export default {
 
             if (customer.price_label_id) {
                 this.selected_option_price = `price_label_${customer.price_label_id}`;
-            } 
+            }
 
 
             this.getConsigneds();
@@ -3099,7 +3100,7 @@ export default {
             this.form.items = items;
 
             /*
-            if (this.form.currency_type_id === 'PEN') {
+            if (this.form.currency_type_id === 'VES') {
                 this.total_global_discount = _.round(this.total_global_discount * this.form.exchange_rate_sale, 2)
             } else {
                 this.total_global_discount = _.round(this.total_global_discount / this.form.exchange_rate_sale, 2)
@@ -3623,7 +3624,7 @@ export default {
                     this.selected_option_price = alt.price_label_id
                     ? `price_label_${alt.price_label_id}`
                     : 1;
-                    
+
                     let seller = this.sellers.find(
                         element => element.id == alt.seller_id
                     );
@@ -3747,3 +3748,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

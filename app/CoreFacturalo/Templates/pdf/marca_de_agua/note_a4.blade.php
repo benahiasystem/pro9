@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
     $customer = $document->customer;
@@ -34,7 +35,7 @@
     {{--<link href="{{ $path_style }}" rel="stylesheet" />--}}
 </head>
 <body>
-@if($document->state_type->id == '11') 
+@if($document->state_type->id == '11')
 <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
     <img
         src="data:{{mime_content_type(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png"))}};base64, {{base64_encode(file_get_contents(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png")))}}"
@@ -49,9 +50,9 @@
         height: 300px;
         text-align: center;
     ">
-        <img 
-            src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}" 
-            alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" 
+        <img
+            src="data:{{ mime_content_type(public_path("{$logo}")) }};base64,{{ base64_encode(file_get_contents(public_path("{$logo}"))) }}"
+            alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}"
             style="width: 100%; height: auto; object-fit: contain; opacity: 0.1;"
         >
     </div>
@@ -109,7 +110,7 @@
                 <h5 class="text-center">{{ $document->document_type->description }}</h5>
                 <h3 class="text-center">{{ $document_number }}</h3>
             </td>
-        @endif        
+        @endif
     </tr>
 </table>
 
@@ -292,7 +293,7 @@
     </tbody>
     <tfoot style="border-top: 1px solid #333;">
 
-        
+
     @if ($document->payment_condition_id === '02' && $document->isCreditNoteAndType13())
         @foreach($document->fee as $key => $quote)
             <tr>
@@ -327,3 +328,5 @@
 </table>
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('tenant.layouts.app')
 
 @push('styles')
@@ -17,80 +18,80 @@
             <div class="h-75 bg-light" style="overflow-y: auto">
                 <div class="row py-1 border-bottom m-0 p-0">
                     <div class="col-2 p-r-0 m-l-2">
-                        <p class="font-weight-semibold m-b-0">5</p> 
+                        <p class="font-weight-semibold m-b-0">5</p>
                     </div>
                     <div class="col-6 px-0">
                         <p class="m-b-0">Descripción del producto</p>
                         <p class="text-muted m-b-0"><small>Descuento 2%</small></p>
                     </div>
                     <div class="col-4 p-l-0">
-                        <p class="font-weight-semibold m-b-0">S/ 240.00</p>
+                        <p class="font-weight-semibold m-b-0">Bs. 240.00</p>
                     </div>
                 </div><div class="row py-1 border-bottom m-0 p-0">
                     <div class="col-2 p-r-0 m-l-2">
-                        <p class="font-weight-semibold m-b-0">5</p> 
+                        <p class="font-weight-semibold m-b-0">5</p>
                     </div>
                     <div class="col-6 px-0">
                         <p class="m-b-0">Descripción del producto</p>
                         <p class="text-muted m-b-0"><small>Descuento 2%</small></p>
                     </div>
                     <div class="col-4 p-l-0">
-                        <p class="font-weight-semibold m-b-0">S/ 240.00</p>
+                        <p class="font-weight-semibold m-b-0">Bs. 240.00</p>
                     </div>
                 </div><div class="row py-1 border-bottom m-0 p-0">
                     <div class="col-2 p-r-0 m-l-2">
-                        <p class="font-weight-semibold m-b-0">5</p> 
+                        <p class="font-weight-semibold m-b-0">5</p>
                     </div>
                     <div class="col-6 px-0">
                         <p class="m-b-0">Descripción del producto</p>
                         <p class="text-muted m-b-0"><small>Descuento 2%</small></p>
                     </div>
                     <div class="col-4 p-l-0">
-                        <p class="font-weight-semibold m-b-0">S/ 240.00</p>
+                        <p class="font-weight-semibold m-b-0">Bs. 240.00</p>
                     </div>
                 </div><div class="row py-1 border-bottom m-0 p-0">
                     <div class="col-2 p-r-0 m-l-2">
-                        <p class="font-weight-semibold m-b-0">5</p> 
+                        <p class="font-weight-semibold m-b-0">5</p>
                     </div>
                     <div class="col-6 px-0">
                         <p class="m-b-0">Descripción del producto</p>
                         <p class="text-muted m-b-0"><small>Descuento 2%</small></p>
                     </div>
                     <div class="col-4 p-l-0">
-                        <p class="font-weight-semibold m-b-0">S/ 240.00</p>
+                        <p class="font-weight-semibold m-b-0">Bs. 240.00</p>
                     </div>
                 </div><div class="row py-1 border-bottom m-0 p-0">
                     <div class="col-2 p-r-0 m-l-2">
-                        <p class="font-weight-semibold m-b-0">5</p> 
+                        <p class="font-weight-semibold m-b-0">5</p>
                     </div>
                     <div class="col-6 px-0">
                         <p class="m-b-0">Descripción del producto</p>
                         <p class="text-muted m-b-0"><small>Descuento 2%</small></p>
                     </div>
                     <div class="col-4 p-l-0">
-                        <p class="font-weight-semibold m-b-0">S/ 240.00</p>
+                        <p class="font-weight-semibold m-b-0">Bs. 240.00</p>
                     </div>
                 </div><div class="row py-1 border-bottom m-0 p-0">
                     <div class="col-2 p-r-0 m-l-2">
-                        <p class="font-weight-semibold m-b-0">5</p> 
+                        <p class="font-weight-semibold m-b-0">5</p>
                     </div>
                     <div class="col-6 px-0">
                         <p class="m-b-0">Descripción del producto</p>
                         <p class="text-muted m-b-0"><small>Descuento 2%</small></p>
                     </div>
                     <div class="col-4 p-l-0">
-                        <p class="font-weight-semibold m-b-0">S/ 240.00</p>
+                        <p class="font-weight-semibold m-b-0">Bs. 240.00</p>
                     </div>
                 </div><div class="row py-1 border-bottom m-0 p-0">
                     <div class="col-2 p-r-0 m-l-2">
-                        <p class="font-weight-semibold m-b-0">5</p> 
+                        <p class="font-weight-semibold m-b-0">5</p>
                     </div>
                     <div class="col-6 px-0">
                         <p class="m-b-0">Descripción del producto</p>
                         <p class="text-muted m-b-0"><small>Descuento 2%</small></p>
                     </div>
                     <div class="col-4 p-l-0">
-                        <p class="font-weight-semibold m-b-0">S/ 240.00</p>
+                        <p class="font-weight-semibold m-b-0">Bs. 240.00</p>
                     </div>
                 </div>
             </div>
@@ -100,7 +101,7 @@
                         <p class="font-weight-semibold mb-0">SUBTOTAL</p>
                     </div>
                     <div class="col-sm-6 py-1 text-right">
-                        <p class="font-weight-semibold mb-0">S/ 458.00</p>
+                        <p class="font-weight-semibold mb-0">Bs. 458.00</p>
                     </div>
                 </div>
                 <div class="row m-0 p-0 bg-white">
@@ -108,7 +109,7 @@
                         <p class="font-weight-semibold mb-0">DESCUENTO</p>
                     </div>
                     <div class="col-sm-6 py-1 text-right">
-                        <p class="font-weight-semibold mb-0">S/ 4.00</p>
+                        <p class="font-weight-semibold mb-0">Bs. 4.00</p>
                     </div>
                 </div>
                 <div class="row m-0 p-0 bg-white">
@@ -116,7 +117,7 @@
                         <p class="font-weight-semibold mb-0">IGV</p>
                     </div>
                     <div class="col-sm-6 py-1 text-right">
-                        <p class="font-weight-semibold mb-0">S/ 0.00</p>
+                        <p class="font-weight-semibold mb-0">Bs. 0.00</p>
                     </div>
                 </div>
                 <div class="row m-0 p-0 ">
@@ -124,7 +125,7 @@
                         <p class="font-weight-semibold mb-0 text-white">TOTAL</p>
                     </div>
                     <div class="col-sm-6 py-2 text-right">
-                        <p class="font-weight-semibold mb-0 text-white">S/ 454.00</p>
+                        <p class="font-weight-semibold mb-0 text-white">Bs. 454.00</p>
                     </div>
                 </div>
             </div>
@@ -135,7 +136,7 @@
                     <div class="card card-default">
                         <div class="card-body text-center">
                                 <p class="my-0"><small>Monto a cobrar</small></p>
-                                <h1 class="mb-2 mt-0">S/ 454.00</h1>
+                                <h1 class="mb-2 mt-0">Bs. 454.00</h1>
                         </div>
                     </div>
                 </div>
@@ -179,3 +180,4 @@
 @push('scripts')
     <script></script>
 @endpush
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

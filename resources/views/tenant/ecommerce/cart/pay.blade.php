@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('tenant.layouts.layout_ecommerce_cart.index')
 @section('content')
 
@@ -138,7 +139,7 @@
                                         <span class="product-qty">Cantidad: 1</span>
                                     </div>
                                 </td>
-                                <td class="price-col">S/ @{{ row.sale_unit_price }}</td>
+                                <td class="price-col">Bs. @{{ row.sale_unit_price }}</td>
                             </tr>
 
 
@@ -243,3 +244,5 @@
 
 </script>
 @endpush
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

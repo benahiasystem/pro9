@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Template\Helpers;
 
 use Modules\Sale\Helpers\SaleStore;
@@ -88,7 +90,7 @@ class TemplatePreview
 //            $sale->number = 'F001-00000001';
 //            $sale->date_of_issue = date('d/m/Y');
 //            $sale->date_of_due = date('d/m/Y');
-//            $sale->currency_type_symbol = 'S/';
+//            $sale->currency_type_symbol = 'Bs.';
 //            $sale->currency_type_name = 'SOL';
 //            $sale->guides = 'T001-1124456<br/>T001-1797456';
 //            $sale->seller_name = 'JUAN';
@@ -97,7 +99,7 @@ class TemplatePreview
 //            $sale->person = $person;
 //            $sale->person_address = $person_address;
 //
-//            $sale->total_to_letter = 'SON: MIL CIENTO OCHENTA CON 00/100 SOLES';
+//            $sale->total_to_letter = 'SON: MIL CIENTO OCHENTA CON 00/100 BOLÍVARES';
 //            $sale->qr_image = '<img src="'.asset('images/qr.jpg').'" class="qr"/>';
 //            $sale->hash = 'FjBdyLmiPhvdtPBgaTVtl3OdP18';
 //
@@ -106,7 +108,7 @@ class TemplatePreview
 //            $sale->total = '1180.00';
 //
 //            $sale->observations = ['1. Observación 1', '2. Observación 2', '3. Observación 3'];
-//            $sale->bank_accounts = 'BCP S/ 3432 423 / CCI: 4 23432<br/>BBVA S/ 757567567 / CCI: 7657567567567';
+//            $sale->bank_accounts = 'BCP Bs. 3432 423 / CCI: 4 23432<br/>BBVA Bs. 757567567 / CCI: 7657567567567';
 //
 //            $sale->has_detraction = true;
 //            $sale->detraction_message = 'SUJETO A DETRACCIÓN';
@@ -174,3 +176,5 @@ class TemplatePreview
         return asset($file_name);
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

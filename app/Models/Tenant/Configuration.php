@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace App\Models\Tenant;
 
 use App\Models\System\Configuration as SystemConfiguration;
@@ -1008,7 +1010,7 @@ use Illuminate\Support\Facades\Log;
          */
         public function getCurrencyTypeId(): ?string
         {
-            return empty($this->currency_type_id) ? 'PEN' : $this->currency_type_id;
+            return empty($this->currency_type_id) ? 'VES' : $this->currency_type_id;
         }
 
         /**
@@ -1318,9 +1320,9 @@ use Illuminate\Support\Facades\Log;
         /**
          * @param string|null $currency_type_id
          */
-        public function setCurrencyTypeId(?string $currency_type_id = 'PEN'): Configuration
+        public function setCurrencyTypeId(?string $currency_type_id = 'VES'): Configuration
         {
-            $this->currency_type_id = empty($currency_type_id) ? 'PEN' : $currency_type_id;
+            $this->currency_type_id = empty($currency_type_id) ? 'VES' : $currency_type_id;
             return $this;
         }
 
@@ -2819,3 +2821,5 @@ use Illuminate\Support\Facades\Log;
                 ->lessThanOrEqualTo(Carbon::now()->startOfDay());
         }
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

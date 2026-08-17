@@ -113,8 +113,9 @@ class VenezuelaSourceContractTest extends TestCase
         self::assertStringContainsString('{{ row.currency_type_symbol }}', $list);
         self::assertStringContainsString('Localization::nationalCurrencyId()', $controller);
         self::assertStringContainsString('Localization::currencySymbol($currencyTypeId)', $controller);
-        self::assertStringContainsString('label="Bs."', $purchaseItem);
-        self::assertStringContainsString('value="VES"', $purchaseItem);
+        self::assertStringContainsString('v-for="option in availableCurrencyTypes"', $purchaseItem);
+        self::assertStringContainsString(':label="option.symbol"', $purchaseItem);
+        self::assertStringContainsString(':value="option.id"', $purchaseItem);
     }
 
     /** @test */

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -150,7 +151,7 @@
                                     </td>
 
                                     @if ($apply_conversion_to_pen && $value->isCurrencyTypeUsd())
-                                        
+
                                         <td class="celda">{{$value->currency_type_id}} (Conv.)</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalIscToPen() }}</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalTaxedToPen() }}</td>
@@ -158,7 +159,7 @@
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->getConvertTotalToPen() }}</td>
 
                                     @else
-                                        
+
                                         <td class="celda">{{$value->currency_type_id}}</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->total_isc}}</td>
                                         <td class="celda">{{ $value->state_type_id == '11' ? 0 : $value->total_taxed}}</td>
@@ -179,7 +180,7 @@
 
                                 @php
 
-                                    if($value->currency_type_id == 'PEN'){
+                                    if($value->currency_type_id == 'VES'){
 
                                         if($state == '11'){
 
@@ -219,7 +220,7 @@
                             @if (!$apply_conversion_to_pen)
                                 <tr>
                                     <td class="celda" colspan="10"></td>
-                                    <td class="celda" >Totales PEN</td>
+                                    <td class="celda" >Totales VES</td>
                                     <td class="celda">{{$acum_total_taxed}}</td>
                                     <td class="celda">{{$acum_total_igv}}</td>
                                     <td class="celda">{{$acum_total}}</td>
@@ -243,3 +244,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

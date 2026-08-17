@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="checkout-guest">
         <div v-if="loading" class="checkout-guest__loading">
@@ -46,7 +47,7 @@ export default {
         },
         currency: {
             type: String,
-            default: 'PEN'
+            default: 'VES'
         },
         orderNumber: {
             type: String,
@@ -142,3 +143,5 @@ export default {
     color: #c53030;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

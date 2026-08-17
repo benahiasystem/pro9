@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\FullSuscription\Services;
 
 use App\CoreFacturalo\Requests\Inputs\Common\ActionInput;
@@ -85,7 +87,7 @@ trait SuscriptionDocumentService
                 'date_of_due'       => now()->format('Y-m-d'),
             ],
             'exchange_rate_sale'      => $service['sale'],
-            'currency_type_id'        => 'PEN',
+            'currency_type_id'        => 'VES',
             'items'                   => $items,
             'charges'                 => $values['charges'] ?? [],
             'discounts'               => $values['discounts'] ?? [],
@@ -203,3 +205,5 @@ trait SuscriptionDocumentService
         ]];
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

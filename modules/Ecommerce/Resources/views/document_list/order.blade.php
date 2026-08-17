@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('ecommerce::layouts.layout_account')
 @section('account_content')
 <style>
@@ -147,7 +148,7 @@
                         <td class="text-left">
                             @{{ row.order_id }}
                         </td>
-                        <td class="text-success">S/ @{{ row.total }}</td>
+                        <td class="text-success">Bs. @{{ row.total }}</td>
                         <td>
                             @{{ formatDateOnly(row.created_at) }}
                         </td>
@@ -339,3 +340,5 @@
 
 
 @endpush
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

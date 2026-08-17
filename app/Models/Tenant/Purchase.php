@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Models\Tenant;
 
 use App\Models\Tenant\GuideFile;
@@ -306,7 +308,7 @@ class Purchase extends ModelTenant
 
     /**
      * Relación con supplies (insumos)
-     * 
+     *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
     public function purchaseSupplies()
@@ -391,7 +393,7 @@ class Purchase extends ModelTenant
                 $user = new User();
             }
         }
-        else { 
+        else {
             $user = auth()->user();
         }
         return ($user->type === 'seller') ? $query->where('user_id', $user->id) : null;
@@ -457,8 +459,8 @@ class Purchase extends ModelTenant
         $query->select(
             'id', 'state_type_id', 'establishment_id', 'currency_type_id', 'total', 'exchange_rate_sale',
             'total_perception', 'date_of_issue',
-            \DB::raw( "(CASE WHEN currency_type_id = 'PEN' THEN total ELSE (exchange_rate_sale * total) END) as total_purchase"),
-            \DB::raw( "(CASE WHEN currency_type_id = 'PEN' THEN total_perception ELSE (exchange_rate_sale * total_perception) END) as total_perception_purchase")
+            \DB::raw( "(CASE WHEN currency_type_id = 'VES' THEN total ELSE (exchange_rate_sale * total) END) as total_purchase"),
+            \DB::raw( "(CASE WHEN currency_type_id = 'VES' THEN total_perception ELSE (exchange_rate_sale * total_perception) END) as total_perception_purchase")
         );
 
         return $query;
@@ -644,7 +646,7 @@ class Purchase extends ModelTenant
     {
         return $this->hasMany(GuideFile::class);
     }
-    
+
     /**
      * Validar si es compra en dolares
      *
@@ -661,8 +663,8 @@ class Purchase extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener total y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -672,8 +674,8 @@ class Purchase extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener total isc y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total isc y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -681,10 +683,10 @@ class Purchase extends ModelTenant
     {
         return $this->convertValueToPen($this->total_isc);
     }
-    
+
     /**
-     * 
-     * Obtener total igv y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total igv y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -693,8 +695,8 @@ class Purchase extends ModelTenant
         return $this->convertValueToPen($this->total_igv);
     }
     /**
-     * 
-     * Obtener total base y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total base y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -702,10 +704,10 @@ class Purchase extends ModelTenant
     {
         return $this->convertValueToPen($this->total_taxed);
     }
-    
+
     /**
-     * 
-     * Obtener total exonerado y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total exonerado y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -715,8 +717,8 @@ class Purchase extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener total inafecto y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total inafecto y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -726,8 +728,8 @@ class Purchase extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener total gratuito y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total gratuito y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -735,10 +737,10 @@ class Purchase extends ModelTenant
     {
         return $this->convertValueToPen($this->total_free);
     }
-    
+
     /**
-     * 
-     * Obtener total exportacion y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total exportacion y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -749,7 +751,7 @@ class Purchase extends ModelTenant
 
 
     /**
-     * 
+     *
      * Obtener pagos en efectivo
      *
      * @return Collection
@@ -761,11 +763,11 @@ class Purchase extends ModelTenant
         }});
     }
 
-    
+
     /**
-     * 
+     *
      * Validar si el registro esta rechazado o anulado
-     * 
+     *
      * @return bool
      */
     public function isVoidedOrRejected()
@@ -773,9 +775,9 @@ class Purchase extends ModelTenant
         return in_array($this->state_type_id, self::VOIDED_REJECTED_IDS);
     }
 
-        
+
     /**
-     * 
+     *
      * Obtener url para impresión
      *
      * @param  string $format
@@ -785,15 +787,15 @@ class Purchase extends ModelTenant
     {
         return url("purchases/print/{$this->external_id}/{$format}");
     }
-        
+
 
     /**
-     * 
+     *
      * Filtro para no incluir relaciones en consulta
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
-     */  
+     */
     public function scopeWhereFilterWithOutRelations($query)
     {
         return $query->withOut(['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments']);
@@ -801,7 +803,7 @@ class Purchase extends ModelTenant
 
 
     /**
-     * 
+     *
      * Obtener relaciones necesarias o aplicar filtros para reporte pagos - finanzas
      *
      * @param  Builder $query
@@ -813,13 +815,13 @@ class Purchase extends ModelTenant
                     ->with([
                         'document_type'=> function($q){
                             $q->select('id', 'description');
-                        }, 
+                        },
                     ]);
     }
-    
+
 
     /**
-     * 
+     *
      * Tipo de transaccion para caja
      *
      * @return string
@@ -831,7 +833,7 @@ class Purchase extends ModelTenant
 
 
     /**
-     * 
+     *
      * Tipo de documento para caja
      *
      * @return string
@@ -841,9 +843,9 @@ class Purchase extends ModelTenant
         return $this->getTable();
     }
 
-    
+
     /**
-     * 
+     *
      * Datos para resumen diario de operaciones
      *
      * @return array
@@ -869,7 +871,7 @@ class Purchase extends ModelTenant
         return $this->payments()->filterCashPaymentWithoutDestination()->sum('payment');
     }
 
-    
+
     /**
      *
      * Obtener total de pagos en transferencia
@@ -883,7 +885,7 @@ class Purchase extends ModelTenant
 
 
     /**
-     * 
+     *
      * Validar si tiene estado permitido para calculos/etc
      *
      * @return bool
@@ -893,9 +895,9 @@ class Purchase extends ModelTenant
         return in_array($this->state_type_id, self::STATE_TYPES_ACCEPTED, true);
     }
 
-        
+
     /**
-     * 
+     *
      * Es compra por pagar
      *
      * @return bool
@@ -906,3 +908,5 @@ class Purchase extends ModelTenant
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

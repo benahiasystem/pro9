@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :title="titleDialog"
@@ -49,11 +50,11 @@
                                     <p v-if="loading_search" class="el-select-dropdown__empty">
                                         Cargando...
                                     </p>
-                                
+
                                     <p v-else class="el-select-dropdown__empty">
                                         No se encontraron resultados
                                     </p>
-                                
+
                                     <div
                                         v-if="!loading_search"
                                         class="el-select-dropdown__item new-option"
@@ -1353,7 +1354,7 @@ export default {
             /* Extraido de resources/js/views/tenant/documents/invoice.vue */
             if (this.form.detraction) {
                 this.form.detraction.amount =
-                    this.form.currency_type_id == "PEN"
+                    this.form.currency_type_id == "VES"
                         ? _.round(
                               parseFloat(this.form.total) *
                                   (parseFloat(this.form.detraction.percentage) /
@@ -2433,7 +2434,7 @@ export default {
                 let detraction = this.form.detraction;
 
                 let tot =
-                    this.form.currency_type_id == "PEN"
+                    this.form.currency_type_id == "VES"
                         ? this.form.total
                         : this.form.total * this.form.exchange_rate_sale;
                 let total_restriction =
@@ -2442,7 +2443,7 @@ export default {
                 if (tot <= total_restriction)
                     return {
                         success: false,
-                        message: `El importe de la operación debe ser mayor a S/ ${total_restriction}.00 o equivalente en USD`
+                        message: `El importe de la operación debe ser mayor a Bs. ${total_restriction}.00 o equivalente en USD`
                     };
 
                 if (!detraction.detraction_type_id)
@@ -2718,3 +2719,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

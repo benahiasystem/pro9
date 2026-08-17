@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Http\Controllers\System;
 
 use App\Http\Controllers\Controller;
@@ -42,7 +44,7 @@ class PaymentOrderController extends Controller
                     'total' => $total ? $total->total : 0,
                 ];
             });
-            $ending = Carbon::now()->diffAsCarbonInterval(Carbon::parse($row->ending_billing_cycle));           
+            $ending = Carbon::now()->diffAsCarbonInterval(Carbon::parse($row->ending_billing_cycle));
             $result = [];
             if ($ending->y) $result[] = $ending->y . ' años';
             if ($ending->m) $result[] = $ending->m . ' meses';
@@ -72,7 +74,7 @@ class PaymentOrderController extends Controller
                     'diff_date_of_ending' => $ending,
                 ],
                 'phone_ws' => $row->phone_ws,
-                'created_at' => $row->created_at->format('Y-m-d'),  
+                'created_at' => $row->created_at->format('Y-m-d'),
                 'diff_time_creation' => Carbon::parse($row->created_at)->diffForHumans(),
                 'pays' => $payments
             ];
@@ -109,7 +111,7 @@ class PaymentOrderController extends Controller
             $date_start = $request->date_start ? Carbon::parse($request->date_start)->format('Y-m-d') : now()->format('Y-m-d');
             $date_end = $request->date_end ? Carbon::parse($request->date_end)->format('Y-m-d') : now()->format('Y-m-d');
             $paymen_orders->whereBetween('date_of_due', [$date_start, $date_end]);
-            
+
         }
 
         return (new PaymentOrderCollection($paymen_orders->paginate(config('tenant.items_per_page'))))->additional([
@@ -120,11 +122,11 @@ class PaymentOrderController extends Controller
 
     public function record($id, Request $request)
     {
-        
-        
+
+
     }
 
-    public function create(Request $request) 
+    public function create(Request $request)
     {
         $validated = $request->validate([
             'client_id' => 'required',
@@ -135,7 +137,7 @@ class PaymentOrderController extends Controller
         ]);
 
         $order = PaymentOrder::where('client_id', $validated['client_id'])
-                    ->where('order_state_id', 1) // Pendiente   
+                    ->where('order_state_id', 1) // Pendiente
                     ->first();
 
         if ($order) {
@@ -156,9 +158,9 @@ class PaymentOrderController extends Controller
             'description' => $validated['description'] ?? null,
             'order_state_id' => 1,
             'notifications' => 0,
-            'created_by' => 'Manual' 
+            'created_by' => 'Manual'
         ]);
-        
+
         DB::commit();
 
         if ($validated['notify'] && $or) {
@@ -166,7 +168,7 @@ class PaymentOrderController extends Controller
         }
 
         return [
-            'success' => true,  
+            'success' => true,
             'message' => 'Orden de pago creada con éxito',
         ];
 
@@ -306,7 +308,7 @@ class PaymentOrderController extends Controller
             'ending_billing_cycle' => isset($validated['ending_billing_cycle']) ? $validated['ending_billing_cycle'] : null,
             'start_billing_cycle' => isset($validated['start_billing_cycle']) ? $validated['start_billing_cycle'] : null,
         ]);
-        
+
         return [
             'success' => true,
             'message' => 'Cliente actualizado con éxito',
@@ -356,7 +358,7 @@ class PaymentOrderController extends Controller
             'state' => $order->order_state ? $order->order_state->name : '',
             'state_id' => $order->order_state_id,
             'is_paid' => $order->order_state_id == 2,
-            'currency' => 'S/',
+            'currency' => 'Bs.',
         ];
 
         $client_data = [
@@ -382,7 +384,7 @@ class PaymentOrderController extends Controller
         ]);
     }
 
-    public function paymentViewPay(Request $request) 
+    public function paymentViewPay(Request $request)
     {
         $request->validate([
             'status' => 'required',
@@ -416,3 +418,5 @@ class PaymentOrderController extends Controller
             };
         }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

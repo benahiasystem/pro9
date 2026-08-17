@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
   <div>
@@ -22,7 +23,7 @@
           <tr>
             <th class="text-center">Activo</th>
             <th style="min-width: 150px;" class="text-start">Nombre</th>
-            <th style="width: 120px;" class="text-start">Precio (S/)</th>
+            <th style="width: 120px;" class="text-start">Precio (Bs.)</th>
             <th style="width: 260px;" class="text-end">Cobertura</th>
             <th style="width: 100px;" class="text-end">Opciones</th>
           </tr>
@@ -594,3 +595,5 @@ export default {
 };
 // ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

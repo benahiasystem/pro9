@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="garage container-fluid p-0">
         <span class="module-title-marker" data-page-title="Venta Rápida"></span>
@@ -98,14 +99,14 @@
                 <div class="pull-right h-100 d-flex align-items-center">
                     <p class="pr-3 m-0 exchange-currency">
                         T.C.
-                        <span>S/ {{ form.exchange_rate_sale }}</span> Cambiar
+                        <span>Bs. {{ form.exchange_rate_sale }}</span> Cambiar
                         Moneda
                         <a
                             class="btn btn-sm btn-default"
                             @click="selectCurrencyType"
                         >
-                            <template v-if="form.currency_type_id == 'PEN'">
-                                <strong>S/</strong>
+                            <template v-if="form.currency_type_id == 'VES'">
+                                <strong>Bs.</strong>
                             </template>
                             <template v-else>
                                 <strong>$</strong>
@@ -953,9 +954,9 @@
     white-space: pre-line;
 }
 .internal-code-small {
-    width: 45%; 
+    width: 45%;
     white-space: nowrap;
-    overflow: hidden; 
+    overflow: hidden;
     text-overflow: ellipsis;
 }
 /* ── POS · Venta Rápida — Panel lateral ──────────────────────
@@ -1372,11 +1373,11 @@ export default {
                 cat: this.category_selected,
                 limit: this.limit
             };
-            
+
             if (this.businessTurns && [true, 1, "1"].includes(this.businessTurns.active)) {
                 p.garage = 1;
             }
-            
+
             return queryString.stringify(p);
         },
         getColor(i) {
@@ -1438,7 +1439,7 @@ export default {
                 index
             ].edit_sale_unit_price;
             let product = this.items[index];
-            
+
             if (this.config.condition_sale_purchase_price_to_item) {
 
                 if (edit_sale_unit_price < product.purchase_unit_price) {
@@ -1604,15 +1605,15 @@ export default {
 
 
             if (this.config.condition_sale_purchase_price_to_item) {
-                
+
                 if (newTotal < current.item.purchase_unit_price) {
-                   validated = true 
+                   validated = true
                    newTotal = current.item.sale_unit_price_original
-                    
-                } 
+
+                }
 
             }
-            
+
 
             if (!current.item.calculate_quantity) {
                 if (quantity > 0 && !isNaN(newTotal) && newTotal >= 0) {
@@ -1776,7 +1777,7 @@ export default {
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
                 customer_id: null,
-                currency_type_id: "PEN",
+                currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 1,
                 total_prepayment: 0,
@@ -2248,7 +2249,7 @@ export default {
                 let parameters = `input_item=${this.input_item}&cat=${
                     this.category_selected
                 }`;
-                
+
                 if (this.businessTurns && [true, 1, "1"].includes(this.businessTurns.active)) {
                     parameters += '&garage=1';
                 }
@@ -2368,7 +2369,7 @@ export default {
         },
         selectCurrencyType() {
             this.form.currency_type_id =
-                this.form.currency_type_id === "PEN" ? "USD" : "PEN";
+                this.form.currency_type_id === "VES" ? "USD" : "VES";
             this.changeCurrencyType();
         },
         async changeCurrencyType() {
@@ -2436,3 +2437,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

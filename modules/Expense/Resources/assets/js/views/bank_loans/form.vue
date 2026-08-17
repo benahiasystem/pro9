@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
 <div>
     <div class="page-header pe-0">
@@ -362,7 +363,7 @@
                 </div>
             </form>
         </div>
-        </div>        
+        </div>
 
         <loan-form-item :currency-type="currency_type"
                         :exchange-rate-sale="form.exchange_rate_sale"
@@ -639,11 +640,11 @@ export default {
 
             row.total = row.total_original
 
-            if (currency_type_id_old === 'PEN' && currency_type_id_old !== currency_type_id) {
+            if (currency_type_id_old === 'VES' && currency_type_id_old !== currency_type_id) {
                 row.total = row.total_original / exchange_rate_sale;
             }
 
-            if (currency_type_id === 'PEN' && currency_type_id_old !== currency_type_id) {
+            if (currency_type_id === 'VES' && currency_type_id_old !== currency_type_id) {
                 row.total = row.total_original * exchange_rate_sale;
             }
 
@@ -785,3 +786,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

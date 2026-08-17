@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="plan-panel">
         <!-- ============ VISTA: PLAN SELECCIONADO ============ -->
@@ -34,7 +35,7 @@
                 <span
                     class="plan-panel__currency"
                     :class="{ 'text-success': isFree }"
-                    >S/</span
+                    >Bs.</span
                 >
                 <span
                     class="plan-panel__amount"
@@ -354,7 +355,7 @@ export default {
             list.push(
                 this.plan.sales_unlimited
                     ? "Ventas ilimitadas"
-                    : `Total ventas mensuales S/${this.plan.sales_limit}`
+                    : `Total ventas mensuales Bs.${this.plan.sales_limit}`
             );
 
             return list;
@@ -472,3 +473,5 @@ export default {
     },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

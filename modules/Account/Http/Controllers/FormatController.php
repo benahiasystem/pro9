@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Account\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -56,7 +58,7 @@ use App\Models\Tenant\{
                 'params' => $request->all(),
             ];
 
-            if ($type === 'sale') 
+            if ($type === 'sale')
             {
                 $filename = 'Reporte_Formato_Ventas_'.date('YmdHis');
                 $data['records'] = $this->getSaleDocuments($d_start, $d_end);
@@ -68,7 +70,7 @@ use App\Models\Tenant\{
             }
             else if($type === 'garage-gll')
             {
-                
+
                 $data['records'] = $this->getSaleGarageGll($d_start, $d_end);
                 return (new ReportFormatSaleGarageGllExport())->data($data)->download('Reporte_Formato_Ventas_Grifo'.date('YmdHis').'.xlsx');
             }
@@ -94,9 +96,9 @@ use App\Models\Tenant\{
         ];
     }
 
-        
+
         /**
-         * 
+         *
          * Datos para reporte grifo
          *
          * @param $d_start
@@ -119,7 +121,7 @@ use App\Models\Tenant\{
             $data = Document::query()
                             ->whereBetween('date_of_issue', [$d_start, $d_end])
                 // ->whereIn('document_type_id', ['01', '03'])
-                // ->whereIn('currency_type_id', ['PEN', 'USD'])
+                // ->whereIn('currency_type_id', ['VES', 'USD'])
                             ->orderBy('series')
                             ->orderBy('number')
                             ->get()
@@ -162,7 +164,7 @@ use App\Models\Tenant\{
                                 $format_currency_type_id = $row->currency_type_id;
 
                                 // aplicar conversion al tipo de cambio
-                                if ($row->currency_type_id === 'USD') 
+                                if ($row->currency_type_id === 'USD')
                                 {
                                     $total = round($row->generalConvertValueToPen($total, $exchange_rate_sale), 2);
                                     $total_taxed = round($row->generalConvertValueToPen($total_taxed, $exchange_rate_sale), 2);
@@ -171,8 +173,8 @@ use App\Models\Tenant\{
                                     $total_unaffected = round($row->generalConvertValueToPen($total_unaffected, $exchange_rate_sale), 2);
                                     $total_exportation = round($row->generalConvertValueToPen($total_exportation, $exchange_rate_sale), 2);
                                     $total_isc = round($row->generalConvertValueToPen($total_isc, $exchange_rate_sale), 2);
-                                    $symbol = 'S/';
-                                    $format_currency_type_id = 'PEN';
+                                    $symbol = 'Bs.';
+                                    $format_currency_type_id = 'VES';
                                 }
 
 
@@ -290,7 +292,7 @@ use App\Models\Tenant\{
             $data = Purchase::query()
             ->whereBetween('date_of_issue', [$d_start, $d_end])
             ->whereIn('document_type_id', ['01', '03', '14'])
-                // ->whereIn('currency_type_id', ['PEN','USD'])
+                // ->whereIn('currency_type_id', ['VES','USD'])
             ->orderBy('series')
             ->orderBy('number')
                             ->get()
@@ -335,3 +337,5 @@ use App\Models\Tenant\{
 
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

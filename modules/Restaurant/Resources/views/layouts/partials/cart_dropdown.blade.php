@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $configurationModel = \App\Models\Tenant\Configuration::first();
     $defaultImage = $configurationModel->product_default_image ?? 'imagen-no-disponible.jpg';
@@ -21,7 +22,7 @@
             <div class="dropdown-cart-total">
                 <span>Total</span>
 
-                <span class="cart-total-price">S/ 0</span>
+                <span class="cart-total-price">Bs. 0</span>
             </div><!-- End .dropdown-cart-total -->
 
             <div class="dropdown-cart-action">
@@ -38,7 +39,7 @@
 
 	function remove(id)
 	{
-		
+
 		let array = localStorage.getItem('products_cart');
 		array = JSON.parse(array);
 		let indexFound = array.findIndex( x=> x.id == id)
@@ -46,7 +47,7 @@
 		localStorage.setItem('products_cart', JSON.stringify( array ) );
 		populate();
 		calculatetotal();
-	
+
 	}
 
 	function calculatetotal()
@@ -72,14 +73,14 @@
 			let array = localStorage.getItem('products_cart');
 			array = JSON.parse(array)
 			count = array.length;
-			
+
 			const defaultImagePath = '{{ $defaultImagePath }}';
-				
+
 			array.forEach(element => {
-				const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg') 
-					? `/storage/uploads/items/${element.image_small}` 
+				const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
+					? `/storage/uploads/items/${element.image_small}`
 					: defaultImagePath;
-				
+
 				$(".dropdown-cart-products").append( `
 						<div class="product cart-product-row">
 							<div class="product-details">
@@ -98,14 +99,14 @@
 									<i class="icon-cancel"></i>
 								</a>
 							</figure>
-						</div>` 
+						</div>`
 					);
 			});
-			
+
 			$(".cart-count").append(count);
 	}
 
-	
+
 	$(function(){
     'use strict';
 		populate();
@@ -113,3 +114,4 @@
     });
 </script>
 @endpush
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

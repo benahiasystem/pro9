@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <article class="mkt-card">
         <div class="mkt-card__media" role="button" tabindex="0" :aria-label="product.name"
@@ -51,7 +52,7 @@ export default {
     props: {
         product: { type: Object, required: true },
         prefix: { type: String, default: 'marketplace' },
-        currency: { type: String, default: 'S/' },
+        currency: { type: String, default: 'Bs.' },
     },
     computed: {
         // null cuando la tienda no muestra precios; el backend ya lo omite.
@@ -230,3 +231,5 @@ export default {
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

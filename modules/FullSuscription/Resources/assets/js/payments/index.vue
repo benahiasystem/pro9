@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -365,13 +366,15 @@ export default {
             return dateStr < today;
         },
 
-        // Formatea el monto como "S/ X,XXX.XX" o "–"
+        // Formatea el monto como "Bs. X,XXX.XX" o "–"
         formatAmount(total) {
             if (!total || parseFloat(total) === 0) return '–';
-            return 'S/ ' + parseFloat(total)
+            return 'Bs. ' + parseFloat(total)
                 .toFixed(2)
                 .replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         },
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

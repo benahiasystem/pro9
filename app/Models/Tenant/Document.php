@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Models\Tenant;
 
 use App\CoreFacturalo\Helpers\QrCode\QrCodeGenerate;
@@ -358,7 +360,7 @@ class Document extends ModelTenant
             $factor = ($this->total_value + $this->total_taxes) / $this->total_value;
             return round($this->total_discount * $factor, 2);
         }
-        
+
         // $factor = ($this->total_value + $this->total_taxes) / $this->total_value;
         return round($total_discount_global + $total_discount_item, 2);
     }
@@ -1995,12 +1997,12 @@ class Document extends ModelTenant
 
 
     /**
-     * 
+     *
      * Documento afectado por la nota
      *
      * @param  int $affected_document_id
      * @return Document
-     * 
+     *
      */
     public static function getAffectedDocumentSingleShipment($affected_document_id)
     {
@@ -2102,7 +2104,7 @@ class Document extends ModelTenant
 
     /**
      *
-     * Obtener base imponible de la retencion en soles
+     * Obtener base imponible de la retencion en bolívares
      *
      * @return float
      */
@@ -2137,3 +2139,5 @@ class Document extends ModelTenant
         return $this->payments->contains('is_cash', true);
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

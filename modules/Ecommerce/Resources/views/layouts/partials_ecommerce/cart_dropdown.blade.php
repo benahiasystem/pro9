@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $configurationModel = \App\Models\Tenant\Configuration::first();
     $defaultImage = $configurationModel->product_default_image ?? 'imagen-no-disponible.jpg';
@@ -69,7 +70,7 @@
             {{-- Total --}}
             <div class="dropdown-cart-total m-0">
                 <span>Total</span>
-                <span class="cart-total-price">S/ 0.00</span>
+                <span class="cart-total-price">Bs. 0.00</span>
             </div>
 
             {{-- Acción --}}
@@ -104,7 +105,7 @@
             let price = parseFloat(element.sale_unit_price) || 0;
             total += price * qty;
         });
-        $(".cart-total-price").text('S/ ' + total.toFixed(2));
+        $(".cart-total-price").text('Bs. ' + total.toFixed(2));
     }
 
     function populate() {
@@ -157,7 +158,7 @@
                                 <a href="#">${element.description}</a>
                             </h4>
                             <span class="cart-product-info">
-                                <span class="cart-product-qty">${qty}</span> × S/ ${parseFloat(element.sale_unit_price).toFixed(2)}
+                                <span class="cart-product-qty">${qty}</span> × Bs. ${parseFloat(element.sale_unit_price).toFixed(2)}
                             </span>
                         </div>
                     </div>
@@ -184,3 +185,5 @@
     });
 </script>
 @endpush
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

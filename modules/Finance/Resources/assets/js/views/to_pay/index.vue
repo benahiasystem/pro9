@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -160,12 +161,12 @@
                                     </div>
                                     <div class="col-md-2 text-end">
                                         <el-badge :value="getTotalAmountUnpaid" class="item">
-                                        <span size="small">Monto general (PEN)</span>
+                                        <span size="small">Monto general (VES)</span>
                                         </el-badge>
                                     </div>
                                     <div class="col-md-2 text-end">
                                         <el-badge :value="getCurrentBalance" class="item">
-                                        <span size="small">Saldo corriente (PEN)</span>
+                                        <span size="small">Saldo corriente (VES)</span>
                                         </el-badge>
                                     </div>
                                     <div class="col-md-2 text-end">
@@ -346,12 +347,12 @@
                 if (self.form.supplier_id) {
                     source = _.filter(self.records, function(item) {
                     return (
-                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id && item.currency_type_id == 'PEN'
+                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id && item.currency_type_id == 'VES'
                     );
                     });
                 } else {
                     source = _.filter(this.records, function(item) {
-                    return item.total_to_pay > 0 && item.currency_type_id == 'PEN';
+                    return item.total_to_pay > 0 && item.currency_type_id == 'VES';
                     });
                 }
 
@@ -400,12 +401,12 @@
                 if (self.form.supplier_id) {
                     source = _.filter(self.records, function(item) {
                     return (
-                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id && item.currency_type_id == 'PEN'
+                        item.total_to_pay > 0 && item.supplier_id == self.form.supplier_id && item.currency_type_id == 'VES'
                     );
                     });
                 } else {
                     source = _.filter(this.records, function(item) {
-                    return item.total_to_pay > 0 &&  item.currency_type_id == 'PEN';
+                    return item.total_to_pay > 0 &&  item.currency_type_id == 'VES';
                     });
                 }
 
@@ -548,3 +549,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog title="Nuevo Modificador" :visible.sync="showDialog" :close-on-click-modal="false" @close="close">
         <div>
@@ -22,7 +23,7 @@
                     <div class="form-group">
                         <label class="control-label d-flex control-label-modifier">Buscar Producto <span class="text-danger">*</span>
                             <el-checkbox class="ms-auto" v-model="addManual" size="small">Manual</el-checkbox>
-                        </label>                    
+                        </label>
                         <div class="">
                             <el-input v-if="addManual" v-model="addName" placeholder="Nombre..." size="small"></el-input>
                             <el-autocomplete
@@ -35,7 +36,7 @@
                                 size="small"
                                 class="w-100"
                                 prefix-icon="el-icon-search"
-                            >                                
+                            >
                             </el-autocomplete>
                         </div>
                     </div>
@@ -221,8 +222,8 @@ export default {
             try {
                 const res = await this.$http.get(`/documents/search-items/`, { params: { input: q } })
                 if (res.data && Array.isArray(res.data.items)) {
-                    const suggestions = res.data.items.map(it => ({ 
-                        value: `${it.description || it.name}`, 
+                    const suggestions = res.data.items.map(it => ({
+                        value: `${it.description || it.name}`,
                         id: it.id,
                         sale_unit_price: it.sale_unit_price || it.amount_sale_unit_price || 0
                     }))
@@ -236,8 +237,8 @@ export default {
                 const res2 = await this.$http.get(`/restaurant/orders/tables/item/${encodeURIComponent(q)}`)
                 if (res2.data && res2.data.item) {
                     const it = res2.data.item
-                    cb([{ 
-                        value: `${it.description || it.name || it.internal_id}`, 
+                    cb([{
+                        value: `${it.description || it.name || it.internal_id}`,
                         id: it.id,
                         sale_unit_price: it.sale_unit_price || it.amount_sale_unit_price || 0
                     }])
@@ -266,12 +267,12 @@ export default {
         },
         formatPrice(price) {
             const p = Number(price) || 0
-            return p === 0 ? 'Gratuito' : `S/ ${p.toFixed(2)}`
+            return p === 0 ? 'Gratuito' : `Bs. ${p.toFixed(2)}`
         },
         priceLabel(opt) {
             const p = Number(opt.price) || 0
             const isManual = opt.type === 'manual'
-            const base = p === 0 ? 'Gratuito' : `S/ ${p}`
+            const base = p === 0 ? 'Gratuito' : `Bs. ${p}`
             return isManual ? `${base} · Manual` : `${base} · Item`
         },
         async save() {
@@ -349,3 +350,5 @@ export default {
     text-align: right;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

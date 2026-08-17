@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -16,7 +17,7 @@
                 <div class="invoice p-3">
                 <form autocomplete="off" @submit.prevent="submit">
                     <div class="form-body">
-    
+
                         <div class="row">
                              <div class="col-lg-4">
                                 <div class="form-group" :class="{'has-danger': errors.income_type_id}">
@@ -27,12 +28,12 @@
                                     <small class="form-control-feedback" v-if="errors.income_type_id" v-text="errors.income_type_id[0]"></small>
                                 </div>
                             </div>
-    
+
                             <!-- <div class="col-lg-2">
                                 <div class="form-group" :class="{'has-danger': errors.number}">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
                                     <el-input v-model="form.number"></el-input>
-    
+
                                     <small class="form-control-feedback" v-if="errors.number" v-text="errors.number[0]"></small>
                                 </div>
                             </div> -->
@@ -45,8 +46,8 @@
                                     <small class="form-control-feedback" v-if="errors.currency_type_id" v-text="errors.currency_type_id[0]"></small>
                                 </div>
                             </div>
-    
-    
+
+
                             <div class="col-lg-2">
                                 <div class="form-group" :class="{'has-danger': errors.date_of_issue}">
                                     <label class="control-label">Fec Emisión</label>
@@ -85,11 +86,11 @@
                                     <small class="form-control-feedback" v-if="errors.customer" v-text="errors.customer[0]"></small>
                                 </div>
                             </div>
-    
-    
+
+
                         </div>
                         <div class="row col-lg-8 mt-3">
-    
+
                             <table>
                                 <thead>
                                     <tr width="100%">
@@ -135,7 +136,7 @@
                                     </tr>
                                 </tbody>
                             </table>
-    
+
                         </div>
                         <div class="row">
                             <div class="col-lg-2 col-md-6 mt-4">
@@ -181,13 +182,13 @@
                 </form>
                 </div>
             </div>
-    
+
             <income-form-item :showDialog.sync="showDialogAddItem"
                                :currency-type="currency_type"
                                :exchange-rate-sale="form.exchange_rate_sale"
                                @add="addRow"></income-form-item>
-    
-    
+
+
             <income-options :showDialog.sync="showDialogOptions"
                               :recordId="incomeNewId"
                               :showClose="false"></income-options>
@@ -328,12 +329,12 @@
 
                 row.total = row.total_original
 
-                if (currency_type_id_old === 'PEN' && currency_type_id_old !== currency_type_id)
+                if (currency_type_id_old === 'VES' && currency_type_id_old !== currency_type_id)
                 {
                     row.total = row.total_original / exchange_rate_sale;
                 }
 
-                if (currency_type_id === 'PEN' && currency_type_id_old !== currency_type_id)
+                if (currency_type_id === 'VES' && currency_type_id_old !== currency_type_id)
                 {
                     row.total = row.total_original * exchange_rate_sale;
                 }
@@ -421,3 +422,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

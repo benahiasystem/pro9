@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Ecommerce\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -32,7 +34,7 @@ class DiscountCouponController extends Controller
         return [
             'types' => [
                 ['value' => 'percentage', 'label' => '% Porcentaje'],
-                ['value' => 'fixed',      'label' => 'S/ Fijo'],
+                ['value' => 'fixed',      'label' => 'Bs. Fijo'],
             ],
         ];
     }
@@ -151,3 +153,5 @@ class DiscountCouponController extends Controller
         return ['success' => true, 'message' => 'Cupón eliminado correctamente'];
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -3,6 +3,9 @@
 namespace App\Http\Resources\Tenant;
 
 use App\Models\Tenant\EmailSendLog;
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+use App\Support\Venezuela\Localization;
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class DocumentCollection extends ResourceCollection
@@ -166,6 +169,10 @@ class DocumentCollection extends ResourceCollection
                 'customer_email' => optional($row->customer)->email,
                 'custom_fields_data' => $custom_fields_data,
                 'currency_type_id' => $row->currency_type_id,
+                // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+                'currency_type_symbol' => optional($row->currency_type)->symbol
+                    ?: Localization::currencySymbol($row->currency_type_id),
+                // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
                 'exchange_rate_sale' => $row->exchange_rate_sale,
                 'total_exportation' => $row->total_exportation,
                 'total_free' => $row->total_free,

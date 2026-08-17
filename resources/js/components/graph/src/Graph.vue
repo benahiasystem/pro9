@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="chart-container">
         <canvas ref="canvas"></canvas>
@@ -175,9 +176,9 @@ export default {
       }
     },
     getTotal() {
-      if (!this.allData || !this.allData.datasets || !this.allData.datasets[0]) return 'S/ 0.00';
+      if (!this.allData || !this.allData.datasets || !this.allData.datasets[0]) return 'Bs. 0.00';
       const total = this.allData.datasets[0].data.reduce((a, b) => a + b, 0);
-      return (total < 0 ? 'S/ -' : 'S/ ') + Math.abs(total).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+      return (total < 0 ? 'Bs. -' : 'Bs. ') + Math.abs(total).toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
     },
     getTextColor() {
       const isDarkMode = document.documentElement.classList.contains('dark');
@@ -252,3 +253,4 @@ export default {
   }
 }
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

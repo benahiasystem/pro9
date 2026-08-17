@@ -1,16 +1,17 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog width="65%" :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" @close="close" @open="create" append-to-body top="7vh">
         <form autocomplete="off" @submit.prevent="submit">
             <div class="form-body">
                 <div class="row">
- 
+
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.name}">
                             <label class="control-label">Nombre<span class="text-danger">*</span></label>
                             <el-input v-model="form.name" dusk="name"></el-input>
                             <small class="form-control-feedback" v-if="errors.name" v-text="errors.name[0]"></small>
                         </div>
-                    </div> 
+                    </div>
 
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.purchase_affectation_igv_type_id}">
@@ -41,7 +42,7 @@
                             <small class="form-control-feedback" v-if="errors.unit_type_id" v-text="errors.unit_type_id[0]"></small>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.internal_id}">
                             <label class="control-label">Código Interno
@@ -60,7 +61,7 @@
                             <el-input v-model="form.purchase_unit_price" dusk="purchase_unit_price"></el-input>
                             <small class="form-control-feedback" v-if="errors.purchase_unit_price" v-text="errors.purchase_unit_price[0]"></small>
                         </div>
-                    </div> 
+                    </div>
 
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.currency_type_id}">
@@ -70,18 +71,18 @@
                             </el-select>
                             <small class="form-control-feedback" v-if="errors.currency_type_id" v-text="errors.currency_type_id[0]"></small>
                         </div>
-                    </div> 
- 
-                      
-  
- 
+                    </div>
+
+
+
+
                 </div>
             </div>
             <div class="form-actions text-end pt-2">
                 <el-button class="second-buton me-2" @click.prevent="close()">Cancelar</el-button>
                 <el-button type="primary" native-type="submit" :loading="loading_submit">Guardar</el-button>
             </div>
-        </form> 
+        </form>
     </el-dialog>
 </template>
 
@@ -116,7 +117,7 @@
             await this.initForm()
             await this.loadDecimalQuantity()
             await this.reloadTables()
- 
+
             this.$eventHub.$on('reloadTables', ()=>{
                 this.reloadTables()
             })
@@ -155,7 +156,7 @@
                         this.affectation_igv_types = response.data.affectation_igv_types
                         this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0)?this.affectation_igv_types[0].id:null
                     })
-            }, 
+            },
             initForm() {
                 this.loading_submit = false,
                 this.errors = {}
@@ -166,11 +167,11 @@
                     description: null,
                     name: null,
                     unit_type_id: 'NIU',
-                    currency_type_id: 'PEN',
+                    currency_type_id: 'VES',
                     purchase_unit_price: 0,
                     purchase_affectation_igv_type_id: null,
                 }
-            }, 
+            },
             resetForm() {
                 this.initForm()
                 this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0)?this.affectation_igv_types[0].id:null
@@ -197,9 +198,9 @@
                             this.form.purchase_unit_price = this.form.purchase_unit_price ? this.formatDecimal(this.form.purchase_unit_price) : 0
                         })
                 }
-            }, 
-            async submit() { 
- 
+            },
+            async submit() {
+
                 this.loading_submit = true
                 await this.$http.post(`/${this.resource}`, this.form)
                     .then(response => {
@@ -229,7 +230,9 @@
             close() {
                 this.$emit('update:showDialog', false)
                 this.resetForm()
-            }, 
+            },
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

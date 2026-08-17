@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Payment\Traits;
 
 use App\Http\Controllers\Tenant\DocumentPaymentController;
@@ -280,7 +282,7 @@ trait PaymentLinkPaymentTrait
             'income_type_id' => $income_type->id,
             'income_reason_id' => $income_reason->id,
             'customer' => optional($payment_link->person)->name ?? 'Clientes varios',
-            'currency_type_id' => 'PEN',
+            'currency_type_id' => 'VES',
             'date_of_issue' => $date_of_issue,
             'time_of_issue' => Carbon::now()->format('H:i:s'),
             'exchange_rate_sale' => 1,
@@ -343,3 +345,5 @@ trait PaymentLinkPaymentTrait
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

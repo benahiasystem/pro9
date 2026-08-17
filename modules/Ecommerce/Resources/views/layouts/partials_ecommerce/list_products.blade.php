@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @foreach ($dataPaginate as $item)
     @php
         $configuration = \App\Models\Tenant\Configuration::first();
@@ -55,7 +56,7 @@
                 </div>
                 <div class="product-price-ecommerce mt-auto">
                     <div class="price-box-ecommerce">
-                        <span class="old-price">S/ {{ number_format(round($item->sale_unit_price * 1.25), 2) }}</span>
+                        <span class="old-price">Bs. {{ number_format(round($item->sale_unit_price * 1.25), 2) }}</span>
 
 
                         <span class="product-price-ecommerce">{{ $item->currency_type['symbol'] }} {{ number_format($item->sale_unit_price, 2) }}</span>
@@ -119,7 +120,7 @@
     }
 
     .price-box-ecommerce{
-        white-space: nowrap; /* evita que S/ y el monto se separen */
+        white-space: nowrap; /* evita que Bs. y el monto se separen */
     }
 
     .product-price-ecommerce{
@@ -130,3 +131,5 @@
         flex-wrap: nowrap;
     }
 </style>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

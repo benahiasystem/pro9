@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
 
 $establishment = $cash->user->establishment;
@@ -15,7 +16,7 @@ $cash_documents = $cash->cash_documents;
 foreach ($cash_documents as $cash_document) {
     if($cash_document->sale_note){
 
-        if($cash_document->sale_note->currency_type_id == 'PEN'){
+        if($cash_document->sale_note->currency_type_id == 'VES'){
 
             if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
 
@@ -53,7 +54,7 @@ foreach ($cash_documents as $cash_document) {
 
     }
     else if($cash_document->document){
-        if($cash_document->document->currency_type_id == 'PEN'){
+        if($cash_document->document->currency_type_id == 'VES'){
 
             if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
 
@@ -98,7 +99,7 @@ foreach ($cash_documents as $cash_document) {
 
         if($cash_document->expense_payment->expense->state_type_id == '05'){
 
-            if($cash_document->expense_payment->expense->currency_type_id == 'PEN'){
+            if($cash_document->expense_payment->expense->currency_type_id == 'VES'){
 
                 $cash_egress += $cash_document->expense_payment->payment;
                 $final_balance -= $cash_document->expense_payment->payment;
@@ -224,18 +225,18 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
                 </tr>
                 <tr>
                     <td class="td-custom">
-                        <p><strong>Saldo inicial: </strong>S/ {{number_format($cash->beginning_balance, 2, ".", "")}}</p>
+                        <p><strong>Saldo inicial: </strong>Bs. {{number_format($cash->beginning_balance, 2, ".", "")}}</p>
                     </td>
                     <td  class="td-custom">
-                        <p><strong>Ingreso: </strong>S/ {{number_format($cash_income, 2, ".", "")}} </p>
+                        <p><strong>Ingreso: </strong>Bs. {{number_format($cash_income, 2, ".", "")}} </p>
                     </td>
                 </tr>
                 <tr>
                     <td  class="td-custom">
-                        <p><strong>Saldo final: </strong>S/ {{number_format($cash_final_balance, 2, ".", "")}} </p>
+                        <p><strong>Saldo final: </strong>Bs. {{number_format($cash_final_balance, 2, ".", "")}} </p>
                     </td>
                     <td  class="td-custom">
-                        <p><strong>Egreso: </strong>S/ {{number_format($cash_egress, 2, ".", "")}} </p>
+                        <p><strong>Egreso: </strong>Bs. {{number_format($cash_egress, 2, ".", "")}} </p>
                     </td>
                 </tr>
             </table>
@@ -385,3 +386,5 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Ecommerce\Models\Tenant;
 
 use App\Models\Tenant\ModelTenant;
@@ -66,11 +68,11 @@ class DiscountCoupon extends ModelTenant
             'id'                   => $this->id,
             'code'                 => $this->code,
             'type'                 => $this->type,
-            'type_label'           => $this->type === 'percentage' ? '% Porcentaje' : 'S/ Fijo',
+            'type_label'           => $this->type === 'percentage' ? '% Porcentaje' : 'Bs. Fijo',
             'amount'               => $this->amount,
             'amount_formatted'     => $this->type === 'percentage'
                 ? number_format($this->amount, 0) . '%'
-                : 'S/ ' . number_format($this->amount, 2),
+                : 'Bs. ' . number_format($this->amount, 2),
             'has_purchase_limits'  => $this->has_purchase_limits,
             'min_amount'           => $this->min_amount,
             'max_amount'           => $this->max_amount,
@@ -155,3 +157,5 @@ class DiscountCoupon extends ModelTenant
         return round(min($discount, max(0, (float) $total)), 2);
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

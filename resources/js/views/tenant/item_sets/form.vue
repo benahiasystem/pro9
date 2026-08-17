@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog width="65%" :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" @close="close" @open="create" append-to-body top="7vh">
         <form autocomplete="off" @submit.prevent="submit">
@@ -268,15 +269,15 @@
                                                 <p v-if="loading_search" class="el-select-dropdown__empty">
                                                     Cargando...
                                                 </p>
-                                            
+
                                                 <p v-else-if="categorySearchQuery" class="el-select-dropdown__empty">
                                                     No se encontraron resultados
                                                 </p>
-                                            
+
                                                 <p v-else class="el-select-dropdown__empty">
                                                     No hay categorías. <br> Escriba el nombre y presione Enter para crear
                                                 </p>
-                                            
+
                                                 <div
                                                     v-if="!loading_search && categorySearchQuery"
                                                     class="el-select-dropdown__item new-option"
@@ -330,15 +331,15 @@
                                                 <p v-if="loading_search" class="el-select-dropdown__empty">
                                                     Cargando...
                                                 </p>
-                                            
+
                                                 <p v-else-if="brandSearchQuery" class="el-select-dropdown__empty">
                                                     No se encontraron resultados
                                                 </p>
-                                                
+
                                                 <p v-else class="el-select-dropdown__empty">
                                                     No hay marcas. <br> Escriba el nombre y presione Enter para crear
                                                 </p>
-                                            
+
                                                 <div
                                                     v-if="!loading_search && brandSearchQuery"
                                                     class="el-select-dropdown__item new-option"
@@ -454,7 +455,7 @@ import ItemSetFormItem from './partials/item.vue'
         },
         methods: {
             changeQuantity(){
-                
+
                 this.calculateTotal()
                 this.setTotalPurchase()
 
@@ -529,7 +530,7 @@ import ItemSetFormItem from './partials/item.vue'
                     name: null,
                     second_name: null,
                     unit_type_id: 'NIU',
-                    currency_type_id: 'PEN',
+                    currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
                     has_isc: false,
@@ -752,7 +753,7 @@ import ItemSetFormItem from './partials/item.vue'
             },
             filterCategories(query) {
                 this.categorySearchQuery = query
-                
+
                 if (query) {
                     this.filteredCategories = this.categories.filter(category => {
                         return category.name.toLowerCase().includes(query.toLowerCase())
@@ -787,7 +788,7 @@ import ItemSetFormItem from './partials/item.vue'
                             this.categories.push(response.data.data)
                             this.form_category.name = null
                             this.categorySearchQuery = ''
-                            
+
                             this.$nextTick(() => {
                                 this.filteredCategories = [...this.categories]
                                 this.$nextTick(() => {
@@ -830,7 +831,7 @@ import ItemSetFormItem from './partials/item.vue'
             },
             filterBrands(query) {
                 this.brandSearchQuery = query
-                
+
                 if (query) {
                     this.filteredBrands = this.brands.filter(brand => {
                         return brand.name.toLowerCase().includes(query.toLowerCase())
@@ -850,14 +851,14 @@ import ItemSetFormItem from './partials/item.vue'
             },
             createBrandFromSearch() {
                 const brandName = this.brandSearchQuery
-                
+
                 if (!brandName || brandName.trim() === '') {
                     this.$message.warning('Ingrese un nombre para la marca')
                     return
                 }
-            
+
                 this.form_brand.name = brandName
-                
+
                 this.$http.post(`/brands`, this.form_brand)
                     .then(response => {
                         if (response.data.success) {
@@ -865,7 +866,7 @@ import ItemSetFormItem from './partials/item.vue'
                             this.brands.push(response.data.data)
                             this.form_brand.name = null
                             this.brandSearchQuery = ''
-                            
+
                             this.$nextTick(() => {
                                 this.filteredBrands = [...this.brands]
                                 this.$nextTick(() => {
@@ -890,3 +891,5 @@ import ItemSetFormItem from './partials/item.vue'
 // Se puede usar datos de la siguiente direccion.
 // resources/js/views/tenant/items/form.vue
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

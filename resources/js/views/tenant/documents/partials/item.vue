@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :append-to-body="true"
@@ -1661,7 +1662,7 @@ export default {
                 if (this.isEditItemNote) {
                     this.form.item.currency_type_id = this.currencyTypeIdActive;
                     this.form.item.currency_type_symbol =
-                        this.currencyTypeIdActive == "PEN" ? "S/" : "$";
+                        this.currencyTypeIdActive == "VES" ? "Bs." : "$";
 
                     if (
                         this.documentTypeId == "07" &&
@@ -2130,9 +2131,9 @@ export default {
             let doc_factor = 1;
             if (item_currency !== this.currencyTypeIdActive && this.exchangeRateSale) {
                 doc_factor =
-                    item_currency === "PEN"
-                        ? 1 / this.exchangeRateSale // item en Soles -> documento en Dólares
-                        : this.exchangeRateSale; // item en Dólares -> documento en Soles
+                    item_currency === "VES"
+                        ? 1 / this.exchangeRateSale // item en Bolívares -> documento en Dólares
+                        : this.exchangeRateSale; // item en Dólares -> documento en Bolívares
             }
 
             this.form.discounts.forEach(discount => {
@@ -2144,7 +2145,7 @@ export default {
                     // Monto fijo ingresado por el usuario (en la moneda del item) -> documento
                     const amount = (parseFloat(discount.amount) || 0) * doc_factor;
                     const factor = base > 0 ? amount / base : 0;
-                    
+
                     discount.base = _.round(base, 2);
                     let amount_base = affects_base ?  amount / igv_factor : amount;
                     discount.amount = Number((amount_base).toFixed(2));
@@ -2166,7 +2167,7 @@ export default {
                 }
 
             });
-            
+
             this.row = calculateRowItem(
                 this.form,
                 this.currencyTypeIdActive,
@@ -2223,7 +2224,7 @@ export default {
         },
         showMessageDetraction() {
             let total =
-                this.currencyTypeIdActive === "PEN"
+                this.currencyTypeIdActive === "VES"
                     ? this.row.total
                     : this.row.total * this.exchangeRateSale;
             let total_restriction = 700;
@@ -2628,3 +2629,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

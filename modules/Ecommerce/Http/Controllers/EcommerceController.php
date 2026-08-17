@@ -1,6 +1,6 @@
 <?php
 
-// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+// ######## INICIO ADAPTACIÓN VENEZUELA
 
 namespace Modules\Ecommerce\Http\Controllers;
 
@@ -273,7 +273,7 @@ class EcommerceController extends Controller
             'technical_specifications' => $row->technical_specifications,
             'name' => $row->name,
             'second_name' => $row->second_name,
-            'sale_unit_price' => ($row->currency_type_id === 'PEN') ? $sale_unit_price : ($sale_unit_price * $exchange_rate_sale),
+            'sale_unit_price' => ($row->currency_type_id === 'VES') ? $sale_unit_price : ($sale_unit_price * $exchange_rate_sale),
             'currency_type' => $row->currency_type,
             'has_igv' => (bool) $row->has_igv,
             'sale_unit' => $row->sale_unit_price,
@@ -1038,7 +1038,7 @@ class EcommerceController extends Controller
     public function saveDataUser(Request $request)
     {
         $user = auth('ecommerce')->user();
-        
+
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'first_name' => 'required|string|max:255',
@@ -1378,7 +1378,7 @@ class EcommerceController extends Controller
         $paymentReq = new Request([
             'isTenant' => true,
             'amount' => round((float)$request->precio_culqi * 100),
-            'currency' => 'PEN',
+            'currency' => 'VES',
             'orderId' => $order->external_id,
             'customer' => [
                 'email' => $customer['correo_electronico'] ?? null,
@@ -1388,10 +1388,10 @@ class EcommerceController extends Controller
                 ]
             ]
         ]);
-        
+
         $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
         $result = $izipayController->izipayCreatePayment($paymentReq);
-        
+
         return [
             'success' => $result['success'],
             'formToken' => $result['formToken'] ?? null,
@@ -1416,12 +1416,12 @@ class EcommerceController extends Controller
 
         $paymentReq = new Request([
             'isTenant' => true,
-            'form_data' => $request->form_data, 
+            'form_data' => $request->form_data,
         ]);
-        
+
         $mpController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
         $result = $mpController->mercadoPagoCreatePayment($paymentReq);
-        
+
         if (!empty($result['paid']) || !empty($result['pending'])) {
             $order = Order::create([
                 'external_id' => Str::uuid()->toString(),
@@ -1434,7 +1434,7 @@ class EcommerceController extends Controller
             ]);
             $result['order'] = $order;
         }
-        
+
         return $result;
     }
 
@@ -1484,4 +1484,4 @@ class EcommerceController extends Controller
         ];
     }
 }
-// ######## FIN CONTRATO GEOPOLITICO VENEZUELA
+// ######## FIN ADAPTACIÓN VENEZUELA

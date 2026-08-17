@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -148,7 +149,7 @@
                     <strong>
                         Total Ingresos:
                     </strong>
-                    S/ {{$data['total_income']}}
+                    Bs. {{$data['total_income']}}
                 </p>
             </td>
             <td class="td-custom">
@@ -156,7 +157,7 @@
                     <strong>
                         Total Egresos:
                     </strong>
-                    S/ {{ $data['total_egress'] }}
+                    Bs. {{ $data['total_egress'] }}
                 </p>
             </td>
         </tr>
@@ -166,7 +167,7 @@
                     <strong>
                         Saldo final:
                     </strong>
-                    S/ {{$data['total_balance']}}
+                    Bs. {{$data['total_balance']}}
                 </p>
             </td>
         </tr>
@@ -252,3 +253,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Imports;
 
 use App\Models\Tenant\Item;
@@ -363,7 +365,7 @@ class ItemsImport implements ToCollection
         }
 
         if ($this->isBlank($currency_type_id)) {
-            throw new Exception("Fila {$rowNumber}: la moneda es obligatoria (columna F). Use PEN o USD.");
+            throw new Exception("Fila {$rowNumber}: la moneda es obligatoria (columna F). Use VES o USD.");
         }
 
         if ($this->isBlank($sale_unit_price)) {
@@ -400,3 +402,5 @@ class ItemsImport implements ToCollection
         return false;
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -16,21 +17,21 @@
                     <div class="form-body">
                         <div class="row mx-0">
                             <div class="col-md-4 form-modern">
-                                <label class="control-label">Total Soles</label>
+                                <label class="control-label">Total Bolívares</label>
                                 <div class="form-group" :class="{'has-danger': errors.total_pen}">
                                     <el-input v-model="form.total_pen" ></el-input>
                                     <small class="form-control-feedback" v-if="errors.total_pen" v-text="errors.total_pen[0]"></small>
                                 </div>
                             </div>
                             <div class="col-md-4 form-modern">
-                                <label class="control-label">IGV Soles</label>
+                                <label class="control-label">IGV Bolívares</label>
                                 <div class="form-group" :class="{'has-danger': errors.igv_pen}">
                                     <el-input v-model="form.igv_pen" ></el-input>
                                     <small class="form-control-feedback" v-if="errors.igv_pen" v-text="errors.igv_pen[0]"></small>
                                 </div>
                             </div>
                             <div class="col-md-4 form-modern">
-                                <label class="control-label">Subtotal Soles</label>
+                                <label class="control-label">Subtotal Bolívares</label>
                                 <div class="form-group" :class="{'has-danger': errors.subtotal_pen}">
                                     <el-input v-model="form.subtotal_pen" ></el-input>
                                     <small class="form-control-feedback" v-if="errors.subtotal_pen" v-text="errors.subtotal_pen[0]"></small>
@@ -110,7 +111,7 @@
                     cron: true,
                     id: null,
                     subtotal_account:null
-                    
+
                 };
             },
             submit() {
@@ -134,3 +135,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

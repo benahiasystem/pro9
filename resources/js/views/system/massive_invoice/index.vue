@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <header class="page-header">
@@ -8,12 +9,12 @@
                 <li class="active"><span class="text-white">Facturas Masivas</span></li>
             </ol>
         </header>
-        
+
         <div class="card">
             <div class="card-header bg-teal">
                 <div>
                     <button @click="showUploadModal = true" class="btn btn-primary me-2 float-right">
-                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-upload" style="margin-top: -3px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg> 
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-upload" style="margin-top: -3px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 9l5 -5l5 5" /><path d="M12 4l0 12" /></svg>
                         Subir Facturas
                     </button>
                     <button @click="exportExcel" class="btn btn-success me-2 float-right">
@@ -21,7 +22,7 @@
                         Exportar Excel
                     </button>
                     <button @click="showFilterModal = true" class="btn btn-info me-2 float-right">
-                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-filter" style="margin-top: -3px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227z" /></svg> 
+                        <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-filter" style="margin-top: -3px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227z" /></svg>
                         Filtros
                     </button>
                 </div>
@@ -34,7 +35,7 @@
                                 <th>Emisión</th>
                                 <th>Emisor</th>
                                 <th>Cliente</th>
-                                <th>Número</th> 
+                                <th>Número</th>
                                 <th>Estado</th>
                                 <th>T.Gravado</th>
                                 <th>T.IGV</th>
@@ -66,17 +67,17 @@
                                         {{ record.estado_sunat || record.status }}
                                     </span>
                                 </td>
-                                <td>S/ {{ record.total_gravado }}</td>
-                                <td>S/ {{ record.total_igv }}</td>
-                                <td>S/ {{ record.total_venta }}</td>
+                                <td>Bs. {{ record.total_gravado }}</td>
+                                <td>Bs. {{ record.total_igv }}</td>
+                                <td>Bs. {{ record.total_venta }}</td>
                                 <td>
-                                    <button @click="downloadFile(record.id, 'pdf')" 
-                                        class="btn btn-sm btn-info me-1" 
+                                    <button @click="downloadFile(record.id, 'pdf')"
+                                        class="btn btn-sm btn-info me-1"
                                         title="Descargar PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </button>
-                                    <button @click="downloadFile(record.id, 'xml')" 
-                                        class="btn btn-sm btn-secondary" 
+                                    <button @click="downloadFile(record.id, 'xml')"
+                                        class="btn btn-sm btn-secondary"
                                         title="Descargar XML">
                                         <i class="fas fa-file-code"></i>
                                     </button>
@@ -180,12 +181,12 @@
             width="500px"
             :close-on-click-modal="false"
             :before-close="closeModal">
-            
+
             <div class="text-center">
                 <button @click="downloadFormat" class="btn btn-primary mb-4 w-100">
                     <i class="fas fa-download"></i> Descargar Formato Excel
                 </button>
-                
+
                 <div class="upload-area p-4 border rounded" v-if="!fileSelected">
                     <input
                         type="file"
@@ -200,7 +201,7 @@
 
                 <div v-if="fileSelected" class="mt-3">
                     <p class="mb-2">
-                        <i class="fas fa-file-excel text-success"></i> 
+                        <i class="fas fa-file-excel text-success"></i>
                         {{ selectedFileName }}
                     </p>
                     <button @click="processFile" class="btn btn-success" :disabled="processing">
@@ -209,8 +210,8 @@
                     </button>
                 </div>
 
-                <el-progress 
-                    v-if="processing" 
+                <el-progress
+                    v-if="processing"
                     :percentage="progressPercentage"
                     :format="format"
                     class="mt-3">
@@ -270,7 +271,7 @@ export default {
                 }
 
                 const response = await this.$http.get(`/${this.resource}/records`, { params })
-                
+
                 if (response.data.success) {
                     this.records = response.data.data.data
                     this.paginationInfo = {
@@ -338,7 +339,7 @@ export default {
         },
         async processFile() {
             if (!this.selectedFile) return
-            
+
             this.processing = true
             const formData = new FormData()
             formData.append('file', this.selectedFile)
@@ -346,7 +347,7 @@ export default {
             try {
                 // Primer paso: Validar y procesar Excel
                 const uploadResponse = await this.$http.post(`/${this.resource}/upload`, formData)
-                
+
                 if (!uploadResponse.data.success) {
                     throw new Error(uploadResponse.data.message)
                 }
@@ -370,7 +371,7 @@ export default {
                 }
             } catch (error) {
                 console.error('Error:', error)
-                const errorMessage = error.response && error.response.data ? 
+                const errorMessage = error.response && error.response.data ?
                     error.response.data.message : (error.message || 'Error al procesar el archivo')
                 this.$message.error(errorMessage)
             } finally {
@@ -491,3 +492,4 @@ export default {
     color: #666;
 }
 </style>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

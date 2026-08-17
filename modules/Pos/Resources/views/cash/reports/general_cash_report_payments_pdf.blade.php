@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     use App\CoreFacturalo\Helpers\Functions\GeneralPdfHelper;
 @endphp
@@ -152,7 +153,7 @@
                     <strong>
                         Total Ingresos:
                     </strong>
-                    S/ {{ GeneralPdfHelper::setNumberFormat($data['total_income']) }}
+                    Bs. {{ GeneralPdfHelper::setNumberFormat($data['total_income']) }}
                 </p>
             </td>
             <td class="td-custom">
@@ -160,7 +161,7 @@
                     <strong>
                         Total Egresos:
                     </strong>
-                    S/ {{ GeneralPdfHelper::setNumberFormat($data['total_egress']) }}
+                    Bs. {{ GeneralPdfHelper::setNumberFormat($data['total_egress']) }}
                 </p>
             </td>
         </tr>
@@ -170,7 +171,7 @@
                     <strong>
                         Saldo inicial:
                     </strong>
-                    S/ {{ GeneralPdfHelper::setNumberFormat($data['cash_beginning_balance']) }}
+                    Bs. {{ GeneralPdfHelper::setNumberFormat($data['cash_beginning_balance']) }}
                 </p>
             </td>
             <td class="td-custom">
@@ -178,7 +179,7 @@
                     <strong>
                         Saldo final:
                     </strong>
-                    S/ {{ GeneralPdfHelper::setNumberFormat($data['total_balance']) }}
+                    Bs. {{ GeneralPdfHelper::setNumberFormat($data['total_balance']) }}
                 </p>
             </td>
         </tr>
@@ -267,7 +268,7 @@
                     @endforeach
 
                     {{-- para pago en efectivo se agrega gastos --}}
-                    @if ($payment_method_type_id === '01') 
+                    @if ($payment_method_type_id === '01')
                         @foreach($expense_payments as $key => $value)
                             <tr>
                                 {{-- <td class="celda">
@@ -315,3 +316,5 @@
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

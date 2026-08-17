@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <div class="row top px-2 kpi-row">
     <div class="kpi-col col">
@@ -6,7 +7,7 @@
           <small class="text-muted">{{ salesTitle }}</small>
           <div class="kpi-main">
             <div class="kpi-values">
-              <h3 class="font-weight-bold m-0 text-nowrap">S/ {{ monthly_sales | formatNumber }}</h3>
+              <h3 class="font-weight-bold m-0 text-nowrap">Bs. {{ monthly_sales | formatNumber }}</h3>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.monthly_sales" :labels="trend.labels" color="#0f766e"></kpi-sparkline>
           </div>
@@ -27,7 +28,7 @@
           <small class="text-muted">Ticket promedio</small>
           <div class="kpi-main">
             <div class="kpi-values">
-              <h3 class="font-weight-bold m-0 text-nowrap">S/ {{ average_ticket | formatNumber }}</h3>
+              <h3 class="font-weight-bold m-0 text-nowrap">Bs. {{ average_ticket | formatNumber }}</h3>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.average_ticket" :labels="trend.labels" color="#0d9488"></kpi-sparkline>
           </div>
@@ -48,7 +49,7 @@
           <small class="text-muted">Por cobrar</small>
           <div class="kpi-main">
             <div class="kpi-values">
-              <h3 class="font-weight-bold m-0 text-nowrap">S/ {{ accounts_receivable | formatNumber }}</h3>
+              <h3 class="font-weight-bold m-0 text-nowrap">Bs. {{ accounts_receivable | formatNumber }}</h3>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.accounts_receivable" :labels="trend.labels" color="#f59e0b"></kpi-sparkline>
           </div>
@@ -69,7 +70,7 @@
           <small class="text-muted">Utilidad neta</small>
           <div class="kpi-main">
             <div class="kpi-values">
-              <h3 class="font-weight-bold m-0 text-nowrap">S/ {{ net_utility | formatNumber }}</h3>
+              <h3 class="font-weight-bold m-0 text-nowrap">Bs. {{ net_utility | formatNumber }}</h3>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.net_utility" :labels="trend.labels" color="#16a34a"></kpi-sparkline>
           </div>
@@ -297,3 +298,5 @@ export default {
   margin-left: 4px;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

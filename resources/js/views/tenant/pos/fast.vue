@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="fast container-fluid p-0">
         <div class="row page-header pr-0 no-gutters" style="height:auto">
@@ -563,9 +564,9 @@
                                     @click="selectCurrencyType"
                                 >
                                     <template
-                                        v-if="form.currency_type_id == 'PEN'"
+                                        v-if="form.currency_type_id == 'VES'"
                                     >
-                                        <strong>S/</strong>
+                                        <strong>Bs.</strong>
                                     </template>
                                     <template v-else>
                                         <strong>$</strong>
@@ -1331,7 +1332,7 @@ export default {
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
                 customer_id: null,
-                currency_type_id: "PEN",
+                currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 1,
                 total_prepayment: 0,
@@ -1829,7 +1830,7 @@ export default {
         filterItems() {
             let filtered_items = this.all_items;
             console.log("🔄 Evaluando filtro de Grifos. businessTurns:", this.businessTurns);
-            
+
             if (this.businessTurns && [true, 1, "1"].includes(this.businessTurns.active)) {
                 filtered_items = filtered_items.filter(i => [true, 1, "1"].includes(i.calculate_quantity));
             }
@@ -1867,7 +1868,7 @@ export default {
         },
         selectCurrencyType() {
             this.form.currency_type_id =
-                this.form.currency_type_id === "PEN" ? "USD" : "PEN";
+                this.form.currency_type_id === "VES" ? "USD" : "VES";
             this.changeCurrencyType();
         },
         async changeCurrencyType() {
@@ -1931,3 +1932,5 @@ export default {
     }
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

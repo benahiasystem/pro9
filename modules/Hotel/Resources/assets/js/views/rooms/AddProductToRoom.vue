@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -261,7 +262,7 @@
             :showDialog.sync="showDialogAddItem"
             :typeUser="typeUser"
             :percentageIgv="percentage_igv"
-            currency-type-id-active="PEN"
+            currency-type-id-active="VES"
             operation-type-id="0101"
             @add="onAddItem"
 
@@ -592,7 +593,7 @@ export default {
                 number: "#",
                 date_of_issue: moment().format("YYYY-MM-DD"),
                 time_of_issue: moment().format("HH:mm:ss"),
-                currency_type_id: "PEN",
+                currency_type_id: "VES",
                 purchase_order: null,
                 exchange_rate_sale: 0,
                 total_prepayment: 0,
@@ -788,3 +789,5 @@ export default {
     },
 };
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

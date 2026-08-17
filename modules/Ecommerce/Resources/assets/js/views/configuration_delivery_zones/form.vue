@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog
@@ -26,7 +27,7 @@
                 <div class="row">
                     <div class="col-6">
                         <div class="form-group" :class="{'has-danger': errors.price}">
-                            <label class="control-label">PRECIO DE ENVÍO (S/)</label>
+                            <label class="control-label">PRECIO DE ENVÍO (Bs.)</label>
                             <el-input-number
                                 v-model="form.price"
                                 :min="0"
@@ -336,3 +337,5 @@ export default {
 };
 // ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

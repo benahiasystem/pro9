@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :title="title"
                :visible="showDialog"
@@ -28,7 +29,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group mb-0" :class="{'has-danger': errors.amount}">
-                        <label class="control-label">Monto de retención (PEN)</label>
+                        <label class="control-label">Monto de retención (VES)</label>
                         <el-input v-model="form.amount"
                                   :readonly="true"></el-input>
                         <small class="form-control-feedback" v-if="errors.amount"
@@ -37,7 +38,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group mb-0" :class="{'has-danger': errors.voucher_amount}">
-                        <label class="control-label">Monto pagado (PEN)</label>
+                        <label class="control-label">Monto pagado (VES)</label>
                         <el-input v-model="form.voucher_amount"></el-input>
                         <small class="form-control-feedback" v-if="errors.voucher_amount"
                                v-text="errors.voucher_amount[0]"></small>
@@ -261,3 +262,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

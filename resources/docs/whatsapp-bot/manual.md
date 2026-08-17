@@ -39,7 +39,7 @@ Cada sesión expira automáticamente tras **30 minutos sin actividad**. Los coma
 - Buscar clientes registrados por nombre o documento.
 - Registrar clientes nuevos consultando RENIEC/SUNAT.
 - Preparar y emitir boletas y facturas.
-- Aplicar descuentos globales en soles.
+- Aplicar descuentos globales en bolívares.
 - Listar comprobantes recientes y reenviar sus PDFs.
 - Consultar el estado SUNAT de un comprobante.
 

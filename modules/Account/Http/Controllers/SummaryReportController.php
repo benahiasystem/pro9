@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Account\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -122,7 +124,7 @@ class SummaryReportController extends Controller
                         $start_number = $series->documents->min('number') ?? 0;
                         $end_number = $series->documents->max('number') ?? 0;
 
-                        $total_igv +=  $series->documents->where('currency_type_id', 'PEN')->sum('total_igv');
+                        $total_igv +=  $series->documents->where('currency_type_id', 'VES')->sum('total_igv');
 
                         $doc_dollar = collect($series->documents->where('currency_type_id', 'USD'));
                         foreach ($doc_dollar as $doc) {
@@ -133,12 +135,12 @@ class SummaryReportController extends Controller
 
 
 
-                        $total_value +=  $series->documents->where('currency_type_id', 'PEN')->sum('total_value');
+                        $total_value +=  $series->documents->where('currency_type_id', 'VES')->sum('total_value');
                         foreach ($doc_dollar as $doc) {
                             $total_value +=  $doc->total_value * $doc->exchange_rate_sale;
                         }
 
-                        $total +=  $series->documents->where('currency_type_id', 'PEN')->sum('total');
+                        $total +=  $series->documents->where('currency_type_id', 'VES')->sum('total');
                         foreach ($doc_dollar as $doc) {
                             $total +=  $doc->total * $doc->exchange_rate_sale;
                         }
@@ -186,7 +188,7 @@ class SummaryReportController extends Controller
                 // Eliminando esta linea porque esta volviendo a llamar a la base de datos y no esta filtrando por fechas
                 // $voided = (count($series->documents) > 0) ? $series->documents()->where('state_type_id', '11')->pluck('number')->toArray() : [];
                 $voided = $series->documents->pluck('number')->toArray();
-                $total +=  $series->documents->where('currency_type_id', 'PEN')->sum('total');
+                $total +=  $series->documents->where('currency_type_id', 'VES')->sum('total');
                 $doc_dollar = collect($series->documents->where('currency_type_id', 'USD'));
                 foreach ($doc_dollar as $doc) {
                     $total +=  $doc->total * $doc->exchange_rate_sale;
@@ -204,3 +206,5 @@ class SummaryReportController extends Controller
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

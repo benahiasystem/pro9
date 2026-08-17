@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
   <div class="cf-wrapper" :class="{ 'cf-embedded': embedded }">
@@ -333,7 +334,7 @@
                   <el-col :span="5" :xs="24">
                     <el-form-item label="Moneda">
                       <el-select v-model="form.receipt_currency" style="width:100%">
-                        <el-option value="PEN" label="Soles (PEN)"></el-option>
+                        <el-option value="VES" label="Bolívares (VES)"></el-option>
                         <el-option value="USD" label="Dólares (USD)"></el-option>
                       </el-select>
                     </el-form-item>
@@ -1186,7 +1187,7 @@ export default {
         asset_date: '',
         has_receipt: false,
         receipt_amount: '',
-        receipt_currency: 'PEN',
+        receipt_currency: 'VES',
         receipt_document_type: '03',
         receipt_series: '',
         receipt_number: '',
@@ -1393,7 +1394,7 @@ export default {
         asset_date: '',
         has_receipt: false,
         receipt_amount: '',
-        receipt_currency: 'PEN',
+        receipt_currency: 'VES',
         receipt_document_type: '03',
         receipt_series: '',
         receipt_number: '',
@@ -1629,7 +1630,7 @@ export default {
         asset_date: '',
         has_receipt: false,
         receipt_amount: '',
-        receipt_currency: 'PEN',
+        receipt_currency: 'VES',
         receipt_document_type: '03',
         receipt_series: '',
         receipt_number: '',
@@ -1647,3 +1648,5 @@ export default {
 }
 // ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

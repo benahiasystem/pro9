@@ -1,9 +1,10 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog  :title="title" :visible="showDialog" @close="close" @open="getData">
         <div class="form-body">
             <div class="row">
-                <div class="col-md-6"> 
-                    
+                <div class="col-md-6">
+
                     <div class="form-group" >
                         <label class="control-label d-block">Nombre</label>
                         <!-- <label class="d-block"  v-text="client.client.name" ></label> -->
@@ -19,13 +20,13 @@
                         <!-- <label  class="d-block"  v-text="client.email" ></label> -->
                         <el-input  v-model="client.email" readonly></el-input>
                     </div>
-                </div> 
-                <div class="col-md-6"> 
+                </div>
+                <div class="col-md-6">
 
                     <div class="form-group" >
                         <label class="control-label d-block">Total deuda</label>
                         <el-input  v-model="totals.total_due" readonly>
-                            <template slot="prepend">S/ </template>
+                            <template slot="prepend">Bs. </template>
                         </el-input>
                     </div>
                     <center class="mt-4">
@@ -38,8 +39,8 @@
                         </label>
                     </center>
 
-                </div> 
-            </div> 
+                </div>
+            </div>
 
             <div class="row mt-4">
                 <div class="col-md-12" v-if="records.length > 0">
@@ -63,31 +64,31 @@
                                 <td v-else>-</td>
                                 <td>{{ row.reference }}</td>
                                 <td class="text-right">{{ row.state_description }}</td>
-                                <td class="text-right">S/ {{ row.payment }}</td>
-                               
-                                 
+                                <td class="text-right">Bs. {{ row.payment }}</td>
+
+
                             </tr>
                             </tbody>
                             <tfoot>
                             <tr>
                                 <td colspan="5" class="text-right">TOTAL PAGADO</td>
-                                <td class="text-right">S/ {{ totals.total_paid }}</td>
+                                <td class="text-right">Bs. {{ totals.total_paid }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right">TOTAL A PAGAR</td>
-                                <td class="text-right">S/ {{ totals.total }}</td>
+                                <td class="text-right">Bs. {{ totals.total }}</td>
                                 <td></td>
                             </tr>
                             <tr>
                                 <td colspan="5" class="text-right">PENDIENTE DE PAGO</td>
-                                <td class="text-right">S/ {{ totals.total_difference }}</td>
+                                <td class="text-right">Bs. {{ totals.total_difference }}</td>
                                 <td></td>
                             </tr>
                             </tfoot>
                         </table>
                     </div>
-                </div> 
+                </div>
             </div>
 
         </div>
@@ -117,9 +118,9 @@
             }
         },
         async created() {
-            await this.initForm(); 
+            await this.initForm();
         },
-        methods: { 
+        methods: {
             initForm() {
                 this.records = [];
                 this.showAddButton = true;
@@ -155,10 +156,11 @@
             clickCancel(index) {
                 this.records.splice(index, 1);
                 this.showAddButton = true;
-            }, 
+            },
             close() {
-                this.$emit('update:showDialog', false); 
-            } 
+                this.$emit('update:showDialog', false);
+            }
         }
     }
 </script>
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

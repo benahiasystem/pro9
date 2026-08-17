@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 
 <!doctype html>
 <html lang="es">
@@ -15,14 +16,14 @@
     </style>
 </head>
 <body>
-<p>Estimad@: 
+<p>Estimad@:
     {{ $order->client->name }}
 @if ($order->order_state_id == 1)
     <br>Le informamos que su orden de pago Nro. {{ $order->order }} se encuentra pendiente de pago.
 @endif
 </p>
 <p>
-    El total de su orden de pago es S/. {{ $order->amount}}
+    El total de su orden de pago es Bs.. {{ $order->amount}}
 </p>
 <ul>
     <li>Estado de la orden: {{ $order->order_state->name }}</li>
@@ -31,3 +32,4 @@
 </ul>
 </body>
 </html>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

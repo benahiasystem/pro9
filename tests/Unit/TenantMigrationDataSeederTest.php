@@ -35,10 +35,12 @@ class TenantMigrationDataSeederTest extends TestCase
     {
         $createMigrations = glob(database_path('migrations/tenant/*_create_*_table.php')) ?: [];
         $foreignKeyMigrations = glob(database_path('migrations/tenant/*_add_tenant_foreign_keys.php')) ?: [];
+        $currencyMigrations = glob(database_path('migrations/tenant/*_migrate_currency_code_to_ves.php')) ?: [];
 
         self::assertCount(327, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
-        self::assertCount(328, glob(database_path('migrations/tenant/*.php')) ?: []);
+        self::assertCount(1, $currencyMigrations);
+        self::assertCount(329, glob(database_path('migrations/tenant/*.php')) ?: []);
     }
 
     /** @test */

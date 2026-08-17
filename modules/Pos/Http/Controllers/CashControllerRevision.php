@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Pos\Http\Controllers;
 
 use App\Http\Controllers\Tenant\EmailController;
@@ -189,7 +191,7 @@ class CashControllerRevision extends Controller
             if ($cash_document->sale_note) {
                 if (in_array($cash_document->sale_note->state_type_id, ['01', '03', '05', '07', '13'])) {
                     if (count($cash_document->sale_note->payments) > 0) {
-                        if ($cash_document->sale_note->currency_type_id == 'PEN') {
+                        if ($cash_document->sale_note->currency_type_id == 'VES') {
                             $cash_income += $cash_document->sale_note->total;
                             $final_balance += $cash_document->sale_note->total;
                         } else {
@@ -215,7 +217,7 @@ class CashControllerRevision extends Controller
             }
             if ($cash_document->document) {
                 if (in_array($cash_document->document->state_type_id, ['01', '03', '05', '07', '13'])) {
-                    if ($cash_document->document->currency_type_id == 'PEN') {
+                    if ($cash_document->document->currency_type_id == 'VES') {
                         $cash_income += $cash_document->document->total;
                         $final_balance += $cash_document->document->total;
                     } else {
@@ -253,14 +255,14 @@ class CashControllerRevision extends Controller
                         'date_of_issue' => $cash_document->technical_service->date_of_issue->format('Y-m-d'),
                         'customer_name' => $cash_document->technical_service->customer->name,
                         'customer_number' => $cash_document->technical_service->customer->number,
-                        'currency_type_id' => 'PEN',
+                        'currency_type_id' => 'VES',
                         'total' => $cash_document->technical_service->cost
                     ];
                 }
             }
             if ($cash_document->expense_payment) {
                 if ($cash_document->expense_payment->expense->state_type_id == '05') {
-                    if ($cash_document->expense_payment->expense->currency_type_id == 'PEN') {
+                    if ($cash_document->expense_payment->expense->currency_type_id == 'VES') {
                         $cash_egress += $cash_document->expense_payment->payment;
                         $final_balance -= $cash_document->expense_payment->payment;
                     } else {
@@ -273,7 +275,7 @@ class CashControllerRevision extends Controller
                         'date_of_issue' => $cash_document->technical_service->date_of_issue->format('Y-m-d'),
                         'customer_name' => $cash_document->technical_service->customer->name,
                         'customer_number' => $cash_document->technical_service->customer->number,
-                        'currency_type_id' => 'PEN',
+                        'currency_type_id' => 'VES',
                         'total' => $cash_document->technical_service->cost
                     ];
                 }
@@ -292,3 +294,5 @@ class CashControllerRevision extends Controller
 //        $cash_final_balance = $final_balance + $cash->beginning_balance;
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

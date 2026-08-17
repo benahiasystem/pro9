@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\WhatsAppBot\Services\Waha;
 
 use Illuminate\Http\Client\PendingRequest;
@@ -204,3 +206,5 @@ class WahaClient implements WhatsAppProviderClientInterface
         return ($response['state'] ?? null) === 'open';
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

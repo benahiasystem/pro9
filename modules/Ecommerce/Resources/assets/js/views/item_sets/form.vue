@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog width="65%" :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" @close="close" @open="create" append-to-body top="7vh">
         <form autocomplete="off" @submit.prevent="submit">
@@ -121,7 +122,7 @@
                             </table>
                         </div>
                     </div>
-                   
+
                     <div class="col-md-12">
                         <h5 class="separator-title">Campos adicionales</h5>
                     </div>
@@ -374,7 +375,7 @@ import ItemSetFormItem from './partials/item.vue'
             },
             changeIndividualItems(){
                 this.calculateTotal();
-            
+
 
             },
             initForm() {
@@ -390,7 +391,7 @@ import ItemSetFormItem from './partials/item.vue'
                     name: null,
                     second_name: null,
                     unit_type_id: 'NIU',
-                    currency_type_id: 'PEN',
+                    currency_type_id: 'VES',
                     sale_unit_price: 0,
                     purchase_unit_price: 0,
                     has_isc: false,
@@ -630,3 +631,5 @@ import ItemSetFormItem from './partials/item.vue'
 // Se puede usar datos de la siguiente direccion.
 // resources/js/views/tenant/items/form.vue
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

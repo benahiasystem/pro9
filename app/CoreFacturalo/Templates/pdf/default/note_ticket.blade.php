@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $establishment = $document->establishment;
     $customer = $document->customer;
@@ -17,7 +18,7 @@
         '6' => 'RUC',
     ];
     $currency_type_description_array = [
-        'PEN' => 'S/D',
+        'VES' => 'S/D',
         '0' => 'S/D',
         '1' => 'DNI',
         '6' => 'RUC',
@@ -35,7 +36,7 @@
     {{--<link href="{{ $path_style }}" rel="stylesheet" />--}}
 </head>
 <body>
-@if($document->state_type->id == '11') 
+@if($document->state_type->id == '11')
 <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
     <img
         src="data:{{mime_content_type(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png"))}};base64, {{base64_encode(file_get_contents(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png")))}}"
@@ -294,3 +295,5 @@
 </table>
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

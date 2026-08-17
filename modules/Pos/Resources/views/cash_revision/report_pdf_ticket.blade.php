@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
 
 $establishment = $cash->user->establishment;
@@ -18,7 +19,7 @@ foreach ($cash_documents as $cash_document) {
 
     if($cash_document->sale_note){
 
-        if($cash_document->sale_note->currency_type_id == 'PEN'){
+        if($cash_document->sale_note->currency_type_id == 'VES'){
 
             if(in_array($cash_document->sale_note->state_type_id, ['01','03','05','07','13'])){
 
@@ -56,7 +57,7 @@ foreach ($cash_documents as $cash_document) {
 
     else if($cash_document->document){
 
-        if($cash_document->document->currency_type_id == 'PEN'){
+        if($cash_document->document->currency_type_id == 'VES'){
 
             if(in_array($cash_document->document->state_type_id, ['01','03','05','07','13'])){
 
@@ -109,7 +110,7 @@ foreach ($cash_documents as $cash_document) {
 
         if($cash_document->expense_payment->expense->state_type_id == '05'){
 
-            if($cash_document->expense_payment->expense->currency_type_id == 'PEN'){
+            if($cash_document->expense_payment->expense->currency_type_id == 'VES'){
 
                 $cash_egress += $cash_document->expense_payment->payment;
                 $final_balance -= $cash_document->expense_payment->payment;
@@ -200,10 +201,10 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
             <p><strong>Estado de caja: </strong>{{($cash->state) ? 'Aperturada':'Cerrada'}}</p>
             <p><strong>Fecha y hora cierre: </strong>{{$cash->date_closed}} {{$cash->time_closed}}</p>
             <p><strong>Montos de operación </strong></p>
-            <p><strong>Saldo inicial: </strong>S/ {{number_format($cash->beginning_balance, 2, ".", "")}}</p>
-            <p><strong>Ingreso: </strong>S/ {{number_format($cash_income, 2, ".", "")}} </p>
-            <p><strong>Saldo final: </strong>S/ {{number_format($cash_final_balance, 2, ".", "")}} </p>
-            <p><strong>Egreso: </strong>S/ {{number_format($cash_egress, 2, ".", "")}} </p>
+            <p><strong>Saldo inicial: </strong>Bs. {{number_format($cash->beginning_balance, 2, ".", "")}}</p>
+            <p><strong>Ingreso: </strong>Bs. {{number_format($cash_income, 2, ".", "")}} </p>
+            <p><strong>Saldo final: </strong>Bs. {{number_format($cash_final_balance, 2, ".", "")}} </p>
+            <p><strong>Egreso: </strong>Bs. {{number_format($cash_egress, 2, ".", "")}} </p>
 
         </div>
 
@@ -324,7 +325,7 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
                                             $customer_number = $value->technical_service->customer->number;
                                             $total = $value->technical_service->cost;
 
-                                            $currency_type_id = 'PEN';
+                                            $currency_type_id = 'VES';
 
                                         }
                                         else if($value->expense_payment){
@@ -366,3 +367,5 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

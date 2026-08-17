@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('ecommerce::layouts.layout_ecommerce_item.record')
 
 @section('content')
@@ -23,7 +24,7 @@
                     <div class="product-item">
                         <img class="product-single-image" src="{{ $mainImagePath }}"
                             data-zoom-image="{{ $mainImagePath }}" />
-                            
+
                     </div>
                     @foreach($record->images as $row)
 
@@ -91,7 +92,7 @@
                 @php
                     // Genera rating random entre 4.1 y 4.9
                     $rating = ($record->id % 9 + 41) / 10;
-                
+
                     // Convierte a porcentaje para pintar estrellas
                     $percentage = ($rating / 5) * 100;
                 @endphp
@@ -139,13 +140,13 @@
                 <p class="product-stock">Disponible: <span>{{number_format(($record->stock), 0)}} </span>
                 <?php
                 if($record->stock > 0){?>
-                    <span 
+                    <span
                     class="alert-stock" role="alert">En stock</span>
                 <?php
                 }else{?>
-                    <span 
-                    class="alert-sin-stock" 
-                    role="alert">Sin stock</span> 
+                    <span
+                    class="alert-sin-stock"
+                    role="alert">Sin stock</span>
                 <?php
                 }
                 ?>
@@ -154,8 +155,8 @@
                         {!! $record->name !!}
                     </div>
 
-                    <a href="javascript:void(0);" 
-                       id="toggleProductDescription" 
+                    <a href="javascript:void(0);"
+                       id="toggleProductDescription"
                        class="product-description-toggle"
                        style="display:none;">
                         Ver todo
@@ -175,11 +176,11 @@
                             <button v-if="quantity <= 1 && getCartQuantity(product.id)" @click.stop.prevent="removeFromCart(product)" title="Quitar del carrito">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
                             </button>
-                            <button 
-                                @click.stop.prevent="decrementQuantity(product)" 
+                            <button
+                                @click.stop.prevent="decrementQuantity(product)"
                                 v-if="!getCartQuantity(product.id) || quantity > 1"
                                 title="Disminuir cantidad">
-                                
+
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                     <path d="M5 12l14 0" />
@@ -195,7 +196,7 @@
                             <span v-else>Agregar a Carrito</span>
                         </button>
                     </div>
-                    
+
 
                     @php
                         $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
@@ -213,7 +214,7 @@
                             <span>Consultar por WhatsApp</span>
                         </a>
                     @endif
-                    
+
                     <!-- <a href="#" class="paction add-wishlist" title="Add to Wishlist">
                         <span>Add to Wishlist</span>
                     </a>
@@ -339,8 +340,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     image_small: @json($record->image ?? 'imagen-no-disponible.jpg'),
                     image: @json($record->image ?? 'imagen-no-disponible.jpg'),
                     sale_affectation_igv_type_id: @json($record->sale_affectation_igv_type_id ?? '10'),
-                    currency_type_id: @json($record->currency_type_id ?? 'PEN'),
-                    currency_type_symbol: @json($record->currency_type['symbol'] ?? 'S/'),
+                    currency_type_id: @json($record->currency_type_id ?? 'VES'),
+                    currency_type_symbol: @json($record->currency_type['symbol'] ?? 'Bs.'),
                     unit_type_id: @json($record->unit_type_id ?? 'NIU'),
                     internal_id: @json($record->internal_id ?? ''),
                 },
@@ -435,3 +436,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

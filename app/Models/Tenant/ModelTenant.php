@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace App\Models\Tenant;
 
     use Hyn\Tenancy\Traits\UsesTenantConnection;
@@ -34,7 +36,7 @@
 
         public const SOAP_TYPE_PRODUCTION = '02';
 
-        public const NATIONAL_CURRENCY_ID = 'PEN';
+        public const NATIONAL_CURRENCY_ID = 'VES';
 
         public const DOLAR_CURRENCY_ID = 'USD';
 
@@ -273,3 +275,5 @@
         }
 
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

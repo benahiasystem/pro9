@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Finance\Http\Resources;
 
 use App\Models\Tenant\TransferAccountPayment;
@@ -46,7 +48,7 @@ class MovementCollection extends ResourceCollection
             $document_type = '';
             $payments = $payment->payment;
 
-            // Convirtiendo el documento que esta hecho en dolares a soles
+            // Convirtiendo el documento que esta hecho en dolares a bolívares
             if ($document) {
                 if ($document->currency_type_id === 'USD') {
                     $amount *= $document->exchange_rate_sale;
@@ -139,7 +141,7 @@ class MovementCollection extends ResourceCollection
                 'reference' => $payment->reference,
                 'total' => $amount,
                 'number_full' => $numberFull,
-                'currency_type_id' => $payment->associated_record_payment->currency_type_id ?? 'PEN',
+                'currency_type_id' => $payment->associated_record_payment->currency_type_id ?? 'VES',
                 // 'document_type_description' => ($payment->associated_record_payment->document_type) ? $payment->associated_record_payment->document_type->description:'NV',
                 'document_type_description' => $this->getDocumentTypeDescription($row),
                 'person_name' => $person_name,
@@ -235,3 +237,5 @@ class MovementCollection extends ResourceCollection
 
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

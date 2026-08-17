@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Report\Http\Resources;
 
 use App\Models\Tenant\Purchase;
@@ -35,12 +37,12 @@ class GeneralItemCollection extends ResourceCollection
             {
                 $row_total = $row->getConvertTotalToPen();
                 $row_unit_value = $row->getConvertUnitValueToPen();
-                $description_apply_conversion_to_pen = 'Se aplicó conversión a soles';
+                $description_apply_conversion_to_pen = 'Se aplicó conversión a bolívares';
             }
 
             $utility_item = $row_total - $total_item_purchase;
             // $utility_item = $row->total - $total_item_purchase;
-            
+
             $item = $row->getModelItem();
             $model = $item->model;
             $platform = $item->getWebPlatformModel();
@@ -142,13 +144,13 @@ class GeneralItemCollection extends ResourceCollection
             $purchase_unit_price = $purchase_item->unit_price;
             $purchase = Purchase::find($purchase_item->purchase_id);
             $exchange_rate_sale = $purchase->exchange_rate_sale * 1;
-            // Si la venta es en soles, y la compra del producto es en dolares, se hace la transformcaion
-            if ($currency_type_id === 'PEN') {
+            // Si la venta es en bolívares, y la compra del producto es en dolares, se hace la transformcaion
+            if ($currency_type_id === 'VES') {
                 if ($purchase->currency_type_id !== $currency_type_id) {
                     $purchase_unit_price = $purchase_unit_price * $exchange_rate_sale;
                 }
             } else {
-                // Si la venta es en dolares, y la compra del producto es en soles, se hace la transformcaion
+                // Si la venta es en dolares, y la compra del producto es en bolívares, se hace la transformcaion
                 if ($purchase->currency_type_id !== $currency_type_id && $exchange_rate_sale !== 0) {
                     $purchase_unit_price = $purchase_unit_price / $exchange_rate_sale;
                 }
@@ -241,3 +243,5 @@ class GeneralItemCollection extends ResourceCollection
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

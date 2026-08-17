@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pr-0">
@@ -158,7 +159,7 @@ export default {
         },
         formatPrice(price) {
             const p = Number(price) || 0
-            return p === 0 ? 'Gratis' : `S/ ${p.toFixed(2)}`
+            return p === 0 ? 'Gratis' : `Bs. ${p.toFixed(2)}`
         }
     }
 }
@@ -173,3 +174,5 @@ export default {
     gap: 4px;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

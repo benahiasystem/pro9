@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
     namespace Modules\Order\Models;
 
     use App\Models\Tenant\Catalogs\CurrencyType;
@@ -890,7 +892,7 @@
          */
         public function getTransformTotal()
         {
-            return ($this->currency_type_id === 'PEN') ? $this->total : ($this->total * $this->exchange_rate_sale);
+            return ($this->currency_type_id === 'VES') ? $this->total : ($this->total * $this->exchange_rate_sale);
         }
 
 
@@ -918,9 +920,9 @@
             return $query;
         }
 
-        
+
         /**
-         * 
+         *
          * Obtener pagos referenciales para el pdf
          *
          * @return array
@@ -940,10 +942,10 @@
                 ];
             });
         }
-        
+
 
         /**
-         * 
+         *
          * Validar si tiene pagos y retornar coleccion
          *
          * @return Collection
@@ -958,3 +960,5 @@
         }
 
     }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

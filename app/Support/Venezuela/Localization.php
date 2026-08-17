@@ -7,9 +7,13 @@ use InvalidArgumentException;
 
 final class Localization
 {
-    // ########### INICIO CAMBIO LOCALIZACIÓN VENEZUELA
+    // ########### INICIO CONTRATO LOCALIZACIÓN VENEZUELA
     public const COUNTRY_ID = 'VE';
     public const DIAL_CODE = '+58';
+    public const NATIONAL_CURRENCY_ID = 'VES';
+    public const NATIONAL_CURRENCY_SYMBOL = 'Bs.';
+    public const NATIONAL_CURRENCY_DESCRIPTION = 'Bolívares';
+    public const SECONDARY_CURRENCY_ID = 'USD';
 
     public static function countryId(): string
     {
@@ -21,6 +25,28 @@ final class Localization
         return (string) config('venezuela.dial_code', self::DIAL_CODE);
     }
 
+    public static function nationalCurrencyId(): string
+    {
+        return (string) config('venezuela.currency.id', self::NATIONAL_CURRENCY_ID);
+    }
+
+    public static function secondaryCurrencyId(): string
+    {
+        return (string) config('venezuela.currency.secondary_id', self::SECONDARY_CURRENCY_ID);
+    }
+
+    public static function currencySymbol(?string $currencyId): string
+    {
+        return $currencyId === self::SECONDARY_CURRENCY_ID
+            ? '$'
+            : self::NATIONAL_CURRENCY_SYMBOL;
+    }
+
+    public static function isNationalCurrency(?string $currencyId): bool
+    {
+        return $currencyId === self::nationalCurrencyId();
+    }
+
     public static function normalizePhone(?string $phone): ?string
     {
         if ($phone === null || trim($phone) === '') {
@@ -28,7 +54,6 @@ final class Localization
         }
 
         $digits = preg_replace('/\D+/', '', $phone);
-
         if ($digits === null || $digits === '') {
             return null;
         }
@@ -60,7 +85,7 @@ final class Localization
         ];
 
         if (!isset($lengths[$level])) {
-            throw new InvalidArgumentException("Nivel geopolitico no soportado: {$level}");
+            throw new InvalidArgumentException("Nivel geopolítico no soportado: {$level}");
         }
 
         return str_pad((string) $legacyId, $lengths[$level], '0', STR_PAD_LEFT);
@@ -73,5 +98,5 @@ final class Localization
             ->lower()
             ->squish();
     }
-    // ########### FIN CAMBIO LOCALIZACIÓN VENEZUELA
+    // ########### FIN CONTRATO LOCALIZACIÓN VENEZUELA
 }

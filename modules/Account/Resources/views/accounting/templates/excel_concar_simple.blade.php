@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 
 <table>
     <thead>
@@ -17,7 +18,7 @@
             <td>Debe / Haber</td>
             <td>Importe Original</td>
             <td>Importe en Dólares</td>
-            <td> Importe en Soles</td>
+            <td> Importe en Bolívares</td>
             <td>Tipo de Documento</td>
             <td>Número de Documento</td>
             <td>Fecha de Documento</td>
@@ -38,15 +39,15 @@
             <td>Tipo de Tasa</td>
             <td>Tasa Detracción/Percepción</td>
             <td>Importe Base Detracción/Percepción Dólares</td>
-            <td>Importe Base Detracción/Percepción Soles</td>
+            <td>Importe Base Detracción/Percepción Bolívares</td>
             <td>Tipo Cambio para 'F'</td>
             <td>Importe de IGV sin derecho crédito fiscal</td>
-            <td>Tasa IGV</td> 
-            
+            <td>Tasa IGV</td>
+
         </tr>
     </thead>
 
-    <tbody> 
+    <tbody>
         @foreach($records as $row)
         <tr>
             @foreach ($row as $item)
@@ -56,3 +57,5 @@
         @endforeach
     </tbody>
 </table>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

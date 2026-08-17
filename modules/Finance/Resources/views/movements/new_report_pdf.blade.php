@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <?php
 $balance = 0;
 $final_balance = 0;
@@ -157,9 +158,9 @@ $i = 0
                         <td class="celda"> {{$destination_array['cci'] . " "}} &nbsp;</td>
                         <td class="celda">{{$value['instance_type_description']}}</td>
 
-                        <td class="celda"> {{ ($type_movement == 'input') ? "S/".number_format($payments, 2, ".", "") : '-' }}</td>
-                        <td class="celda"> {{ ($type_movement == 'output') ? "S/".number_format($payments, 2, ".", "") : '-' }}</td>
-                        <td class="celda">S/{{ $balance }}</td>
+                        <td class="celda"> {{ ($type_movement == 'input') ? "Bs.".number_format($payments, 2, ".", "") : '-' }}</td>
+                        <td class="celda"> {{ ($type_movement == 'output') ? "Bs.".number_format($payments, 2, ".", "") : '-' }}</td>
+                        <td class="celda">Bs.{{ $balance }}</td>
                     </tr>
 
 
@@ -169,9 +170,9 @@ $i = 0
                 <tr>
                     <td colspan="8"
                         class="celda"></td>
-                    <td class="celda">S/{{$total_input}}</td>
-                    <td class="celda">S/{{$total_output}}</td>
-                    <td class="celda">S/{{$total_input - $total_output}}</td>
+                    <td class="celda">Bs.{{$total_input}}</td>
+                    <td class="celda">Bs.{{$total_output}}</td>
+                    <td class="celda">Bs.{{$total_input - $total_output}}</td>
                 </tr>
                 </tfoot>
             </table>
@@ -184,3 +185,5 @@ $i = 0
 @endif
 </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

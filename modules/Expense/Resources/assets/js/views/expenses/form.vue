@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pe-0">
@@ -15,7 +16,7 @@
             <div class="invoice p-1 p-md-3">
                 <form autocomplete="off" @submit.prevent="submit">
                     <div class="form-body">
-    
+
                         <div class="row mx-0">
                              <div class="col-6" :class="{'col-lg-4': currency_types.length > 1, 'col-lg-5': currency_types.length <= 1}">
                                 <div class="form-group" :class="{'has-danger': errors.expense_type_id}">
@@ -26,12 +27,12 @@
                                     <small class="form-control-feedback" v-if="errors.expense_type_id" v-text="errors.expense_type_id[0]"></small>
                                 </div>
                             </div>
-    
+
                             <div class="col-3" :class="{'col-lg-2': currency_types.length > 1, 'col-lg-3': currency_types.length <= 1}">
                                 <div class="form-group" :class="{'has-danger': errors.number}">
                                     <label class="control-label">Número <span class="text-danger" v-if="form.expense_type_id != 4">*</span></label>
                                     <el-input v-model="form.number"></el-input>
-    
+
                                     <small class="form-control-feedback" v-if="errors.number" v-text="errors.number[0]"></small>
                                 </div>
                             </div>
@@ -44,8 +45,8 @@
                                     <small class="form-control-feedback" v-if="errors.currency_type_id" v-text="errors.currency_type_id[0]"></small>
                                 </div>
                             </div>
-    
-    
+
+
                             <div class="col-6" :class="{'col-lg-2': currency_types.length > 1, 'col-lg-4': currency_types.length <= 1}">
                                 <div class="form-group" :class="{'has-danger': errors.date_of_issue}">
                                     <label class="control-label">Fec Emisión</label>
@@ -78,11 +79,11 @@
                                             <p v-if="loading_search" class="el-select-dropdown__empty">
                                                 Cargando...
                                             </p>
-                                        
+
                                             <p v-else class="el-select-dropdown__empty">
                                                 No se encontraron resultados
                                             </p>
-                                        
+
                                             <div
                                                 v-if="!loading_search"
                                                 class="el-select-dropdown__item new-option"
@@ -103,7 +104,7 @@
                                     <small class="form-control-feedback" v-if="errors.supplier_id" v-text="errors.supplier_id[0]"></small>
                                 </div>
                             </div>
-    
+
                             <div class="col-sm-6 col-12">
                                 <div class="form-group" :class="{'has-danger': errors.expense_reason_id}">
                                     <label class="control-label">Motivo</label>
@@ -113,10 +114,10 @@
                                     <small class="form-control-feedback" v-if="errors.expense_reason_id" v-text="errors.expense_reason_id[0]"></small>
                                 </div>
                             </div>
-    
+
                         </div>
                         <div class="row col-lg-8 mt-3 mx-0">
-    
+
                             <table>
                                 <thead>
                                     <tr width="100%">
@@ -162,7 +163,7 @@
                                     </tr>
                                 </tbody>
                             </table>
-    
+
                         </div>
                         <div class="row mx-0">
                             <div class="col-12 mt-4">
@@ -208,20 +209,20 @@
                         <el-button type="primary" native-type="submit" class="btn btn-primary btn-submit-default" :loading="loading_submit" v-if="form.items.length > 0">{{ (id) ? 'Actualizar':'Generar'}}</el-button>
                     </div>
                 </form>
-            </div>           
-    
+            </div>
+
             <expense-form-item :showDialog.sync="showDialogAddItem"
                                :currency-type="currency_type"
                                :exchange-rate-sale="form.exchange_rate_sale"
                                :decimal-quantity="decimal_quantity"
                                @add="addRow"></expense-form-item>
-    
+
             <person-form :showDialog.sync="showDialogNewPerson"
                            type="suppliers"
                            :external="true"
                            :recordId="personRecordId"
                            :input_person="personFormInput"></person-form>
-    
+
             <expense-options :showDialog.sync="showDialogOptions"
                               :recordId="expenseNewId"
                               :isUpdate="id ? true:false"
@@ -391,7 +392,7 @@
             },
             searchRemoteSuppliers(input) {
                 this.supplierSearchTerm = input;
-                
+
                 if (input.length > 1) {
                     this.loading_search = true
                     let parameters = `input=${input}`
@@ -461,12 +462,12 @@
 
                 row.total = row.total_original
 
-                if (currency_type_id_old === 'PEN' && currency_type_id_old !== currency_type_id)
+                if (currency_type_id_old === 'VES' && currency_type_id_old !== currency_type_id)
                 {
                     row.total = row.total_original / exchange_rate_sale;
                 }
 
-                if (currency_type_id === 'PEN' && currency_type_id_old !== currency_type_id)
+                if (currency_type_id === 'VES' && currency_type_id_old !== currency_type_id)
                 {
                     row.total = row.total_original * exchange_rate_sale;
                 }
@@ -554,7 +555,7 @@
                     this.suppliers = response.data
 
                 })
-            },            
+            },
             openNewPersonDialog() {
                 this.personRecordId = null
                 this.showDialogNewPerson = true
@@ -562,3 +563,5 @@
         }
     }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

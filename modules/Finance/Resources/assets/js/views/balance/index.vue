@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pr-0">
@@ -75,7 +76,7 @@ export default {
             resource: 'finances/balance',
             form: {},
             seller_can_view_balance: false,
-            currency: 'PEN'
+            currency: 'VES'
         }
     },
 
@@ -92,7 +93,7 @@ export default {
             'config',
         ]),
         cuurencySymbol() {
-            return this.currency == 'PEN' ? 'S/': '$'
+            return this.currency == 'VES' ? 'Bs.': '$'
         }
     },
     methods: {
@@ -122,3 +123,5 @@ export default {
     }
 }
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

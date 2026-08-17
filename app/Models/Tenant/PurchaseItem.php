@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace App\Models\Tenant;
 
 use App\Models\Tenant\Catalogs\AffectationIgvType;
@@ -279,7 +281,7 @@ class PurchaseItem extends ModelTenant
      */
     public function getModelItem(){ return Item::find($this->item_id);}
 
-    
+
     /**
      * Validar si es compra en dolares
      *
@@ -291,8 +293,8 @@ class PurchaseItem extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener total y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -302,8 +304,8 @@ class PurchaseItem extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener valor unitario y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener valor unitario y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -311,10 +313,10 @@ class PurchaseItem extends ModelTenant
     {
         return $this->generalConvertValueToPen($this->unit_value, $this->purchase->exchange_rate_sale);
     }
-    
+
     /**
-     * 
-     * Obtener precio unitario y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener precio unitario y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -324,8 +326,8 @@ class PurchaseItem extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener total valor y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total valor y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -335,8 +337,8 @@ class PurchaseItem extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener total igv y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total igv y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -346,8 +348,8 @@ class PurchaseItem extends ModelTenant
     }
 
     /**
-     * 
-     * Obtener total isc y realizar conversión a soles de acuerdo al tipo de cambio
+     *
+     * Obtener total isc y realizar conversión a bolívares de acuerdo al tipo de cambio
      *
      * @return float
      */
@@ -357,3 +359,5 @@ class PurchaseItem extends ModelTenant
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

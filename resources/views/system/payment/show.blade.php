@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @extends('system.guest-register.layouts.main')
 
 @push('styles')
@@ -151,7 +152,7 @@
 
             <div class="payment-card__amount-row">
                 <div class="payment-card__amount">
-                    <span class="payment-card__currency">S/</span>
+                    <span class="payment-card__currency">Bs.</span>
                     <span class="payment-card__value">{{ number_format($order['amount'], 0) }}</span>
                 </div>
                 <span class="payment-card__state payment-card__state--{{ $order['is_paid'] ? 'paid' : 'pending' }}">
@@ -196,3 +197,5 @@
 </section>
 
 @endsection
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

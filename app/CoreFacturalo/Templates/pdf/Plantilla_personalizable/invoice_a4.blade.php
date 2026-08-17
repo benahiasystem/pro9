@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
 use Modules\Template\Helpers\TemplatePdf;
 
@@ -5,7 +6,7 @@ $establishment = $document->establishment;
 $customer = $document->customer;
 $invoice = $document->invoice;
 $document_base = ($document->note) ? $document->note : null;
-$itinerant = $document->itinerant;  
+$itinerant = $document->itinerant;
 // dd($itinerant->description);
 
 //$path_style = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'.DIRECTORY_SEPARATOR.'pdf'.DIRECTORY_SEPARATOR.'style.css');
@@ -82,7 +83,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
         </tr>
     </table>
     @endif
-    @if($document->state_type->id == '11') 
+    @if($document->state_type->id == '11')
     <div class="company_logo_box" style="position: absolute; text-align: center; top:30%;">
         <img
             src="data:{{mime_content_type(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png"))}};base64, {{base64_encode(file_get_contents(public_path("status_images".DIRECTORY_SEPARATOR."anulado.png")))}}"
@@ -238,19 +239,19 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             if (!empty($customer->address)) {
                 $addressParts[] = $customer->address;
             }
-        
+
             if (!empty($customer->district_id) && $customer->district_id !== '-' && isset($customer->district) && !empty($customer->district->description)) {
                 $addressParts[] = $customer->district->description;
             }
-        
+
             if (!empty($customer->province_id) && $customer->province_id !== '-' && isset($customer->province) && !empty($customer->province->description)) {
                 $addressParts[] = $customer->province->description;
             }
-        
+
             if (!empty($customer->department_id) && $customer->department_id !== '-' && isset($customer->department) && !empty($customer->department->description)) {
                 $addressParts[] = $customer->department->description;
             }
-        
+
             $fullAddress = implode(', ', $addressParts);
         @endphp
 
@@ -266,7 +267,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 @endif
             </td>
         </tr>
-            
+
         @else
         <tr>
             <td class="align-top">DIRECCIÓN</td>
@@ -284,18 +285,18 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 dd($document->currency_type->toArray());
             @endphp --}}
             @if ($document->detraction)
-            <td width="120px">MONTO DETRACCIÓN {{ $document->currency_type->id == 'USD' ? 'SOLES' : ''  }}
+            <td width="120px">MONTO DETRACCIÓN {{ $document->currency_type->id == 'USD' ? 'BOLÍVARES' : ''  }}
             </td>
             <td width="8px">:</td>
-            <td> S/ {{ $document->detraction->amount}}</td>
+            <td> Bs. {{ $document->detraction->amount}}</td>
             @endif
         </tr>
         <tr>
             <td class="align-top">MONEDA</td>
             <td>:</td>
             <td>
-                @if($document->currency_type_id == 'PEN')
-                Soles
+                @if($document->currency_type_id == 'VES')
+                Bolívares
                 @elseif($document->currency_type_id == 'USD')
                 Dolares
                 @endif
@@ -311,7 +312,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 ->where('address', $document->consigned_address)
                 ->where('consigned_id', $document->consigned_id)
                 ->first();
-                
+
             if($district){
                 $department = $district->province->department;
                 $province = $district->province;
@@ -692,7 +693,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
         <tbody>
             @php
                 $colspan_total = 0;
-                
+
                 if($showColumns['codigo']) $colspan_total++;
                 if($showColumns['cantidad']) $colspan_total++;
                 if($showColumns['unidad']) $colspan_total++;
@@ -780,7 +781,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                     @endif
                 </td>
                 @endif
-                
+
                 @if($showColumns['serie'] && $showSerieColumn)
                 <td class="text-left align-top">
                     @isset($row->item->lots)
@@ -825,7 +826,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                                 ? ltrim($date_due, '/')
                                 : ($row->relation_item->date_of_due ? $row->relation_item->date_of_due->format('Y-m-d') : '');
                         @endphp
-                
+
                         {{ $cleanedDate }}
                     </td>
                 @endif
@@ -1200,15 +1201,15 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             <td>Valor total del comprobante:
                 {{$document->currency_type->symbol}}
                 {{ $document->currency_type->id == 'USD' ? number_format(($document->getRetentionTaxBase()/$document->exchange_rate_sale), 2) : $document->getRetentionTaxBase() }}
-                {{-- S/ {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }} --}}
+                {{-- Bs. {{ round($document->retention->amount_pen / $document->retention->percentage, 2) }} --}}
             </td>
         </tr>
         <tr>
             <td>Porcentaje de la retención: {{ $document->retention->percentage * 100 }}%</td>
         </tr>
         <tr>
-            <td>Monto de la retención {{ $document->currency_type->id == 'USD' ? 'soles' : '' }}:
-                S/ {{ $document->retention->amount_pen}}
+            <td>Monto de la retención {{ $document->currency_type->id == 'USD' ? 'bolívares' : '' }}:
+                Bs. {{ $document->retention->amount_pen}}
             </td>
         </tr>
         @if ($document->currency_type->id == 'USD')
@@ -1254,7 +1255,8 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             </td>
         </tr>
     </table>
-    @endif    
+    @endif
 </body>
 
 </html>
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

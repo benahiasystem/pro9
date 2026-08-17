@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Ecommerce\Models\Tenant;
 
 use App\Models\Tenant\ModelTenant;
@@ -59,7 +61,7 @@ class DeliveryZone extends ModelTenant
             'id'           => $this->id,
             'name'         => $this->name,
             'price'        => $this->price,
-            'price_formatted' => 'S/ ' . number_format($this->price, 2),
+            'price_formatted' => 'Bs. ' . number_format($this->price, 2),
             'specify_zone' => $this->specify_zone,
             'active'       => $this->active,
             'locations'    => $this->locations->map(fn ($loc) => $loc->getCollectionData())->values()->toArray(),
@@ -67,3 +69,5 @@ class DeliveryZone extends ModelTenant
         ];
     }
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

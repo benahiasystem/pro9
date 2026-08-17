@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Ecommerce\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -31,7 +33,7 @@ class ItemBarCollection extends ResourceCollection
             }else{
 
                 $has_igv_description = ((bool) $row->has_igv) ? 'Si':'No';
-                
+
             }
 
             $sale_unit_price = ($row->has_igv) ? $row->sale_unit_price : $row->sale_unit_price*1.18;
@@ -56,7 +58,7 @@ class ItemBarCollection extends ResourceCollection
                 'calculate_quantity' => (bool) $row->calculate_quantity,
                 'has_igv' => (bool) $row->has_igv,
                 'has_igv_description' => $has_igv_description,
-                'sale_unit_price' => ($row->currency_type_id === 'PEN') ? 'S/ '.round($sale_unit_price,2) : 'S/ '.round(($sale_unit_price*$exchange_rate_sale),2),
+                'sale_unit_price' => ($row->currency_type_id === 'VES') ? 'Bs. '.round($sale_unit_price,2) : 'Bs. '.round(($sale_unit_price*$exchange_rate_sale),2),
                 // 'sale_unit_price' => "{$row->currency_type->symbol} {$row->sale_unit_price}",
                 'purchase_unit_price' => "{$row->currency_type->symbol} {$row->purchase_unit_price}",
                 'created_at' => ($row->created_at) ? $row->created_at->format('Y-m-d H:i:s') : '',
@@ -73,14 +75,14 @@ class ItemBarCollection extends ResourceCollection
                 'image_url_small' => ($row->image_small !== 'imagen-no-disponible.jpg') ? asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image_small) : asset("/logo/{$row->image_small}"),
                 'tags' => $row->tags,
                 'tags_id' => $row->tags->pluck('tag_id'),
-                 
+
 
 
             ];
         });
     }
 
-    
+
     private function getExchangeRateSale(){
 
         $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
@@ -89,3 +91,4 @@ class ItemBarCollection extends ResourceCollection
 
     }
 }
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

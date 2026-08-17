@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="whatsapp-bot-manual">
         <div class="page-header pe-0">
@@ -69,7 +70,7 @@
                                     <li>Emitir un comprobante sin que el vendedor confirme con un mensaje afirmativo.</li>
                                     <li>Emitir si el vendedor no tiene una caja abierta (debe aperturarla primero).</li>
                                     <li>Emitir factura si el cliente no tiene RUC.</li>
-                                    <li>Emitir boleta a consumidor final si el monto supera S/ 700 sin DNI del cliente.</li>
+                                    <li>Emitir boleta a consumidor final si el monto supera Bs. 700 sin DNI del cliente.</li>
                                     <li>Procesar mensajes en ráfaga del mismo usuario: solo atiende uno a la vez por número.</li>
                                     <li>Detectar automáticamente cuando el dueño responde manualmente desde otra app: el vendedor debe escribir <code>{{ pauseCmd }}</code> para pausar.</li>
                                     <li>Modificar un comprobante después de emitido.</li>
@@ -181,3 +182,5 @@ export default {
     font-size: 1rem;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

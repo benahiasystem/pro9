@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+
 namespace Modules\Report\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -40,7 +42,7 @@ class PurchaseCollection extends ResourceCollection
                 $data['total_igv'] = $row->getConvertTotalIgvToPen();
                 $data['total_isc'] = $row->getConvertTotalIscToPen();
                 $data['total'] = $row->getConvertTotalToPen();
-                $data['description_apply_conversion_to_pen'] = 'Se aplicó conversión a soles';
+                $data['description_apply_conversion_to_pen'] = 'Se aplicó conversión a bolívares';
             }
 
             return $data;
@@ -49,3 +51,5 @@ class PurchaseCollection extends ResourceCollection
     }
 
 }
+
+// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

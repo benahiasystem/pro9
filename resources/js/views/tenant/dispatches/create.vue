@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div>
@@ -541,8 +542,8 @@
                                                         [Lotes]
                                                     </a>
                                                 </td>
-                                                <td class="text-end">S/{{ getFormatQuantity(row.unit_price || row.item?.unit_price || 0) }}</td>
-                                                <td class="text-end">S/{{ getFormatQuantity(row.total || row.item?.total || 0) }}</td>
+                                                <td class="text-end">Bs.{{ getFormatQuantity(row.unit_price || row.item?.unit_price || 0) }}</td>
+                                                <td class="text-end">Bs.{{ getFormatQuantity(row.total || row.item?.total || 0) }}</td>
                                                 <td class="text-end">
                                                     <button class="btn waves-effect waves-light btn-xs btn-danger"
                                                         type="button" @click.prevent="clickRemoveItem(index)">x
@@ -1591,9 +1592,9 @@ export default {
                     if (attr.attribute_type_id === '5031') {
                         total_weight += parseFloat(attr.value) * qty
                     }
-                }); 
+                });
             }
-            
+
             this.form.total_weight += total_weight
             let exist = this.form.items.find((item) => item.id == it.id);
             let attributes = null
@@ -2036,3 +2037,5 @@ export default {
 }
 // ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

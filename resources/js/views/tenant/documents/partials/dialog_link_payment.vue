@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="pt-2">
         <el-dialog :title="titleDialog" :visible="showDialog" class="" @close="close" @open="create" >
@@ -174,7 +175,7 @@
                                             <div class="col-12 text-center" v-if="form.transaction">
                                                 <h1 class="display-3 color--success pt-5"><i class="fas fa-check"></i></h1>
                                                 <p><b>{{form.transaction.transaction_state_message}}</b></p>
-                                                <p><b>Total pagado: S/ {{form.transaction.transaction_total}}</b></p>
+                                                <p><b>Total pagado: Bs. {{form.transaction.transaction_total}}</b></p>
                                             </div>
                                         </div>
                                     </template>
@@ -199,7 +200,7 @@
 
             <div class="row mt-3">
                 <div class="col-md-12">
-                    <h4 class="text-left"><b>Total a pagar: S/ {{getPayment()}}</b></h4>
+                    <h4 class="text-left"><b>Total a pagar: Bs. {{getPayment()}}</b></h4>
                 </div>
             </div>
         </el-dialog>
@@ -275,7 +276,7 @@
             },
             getPayment(){
 
-                if(this.currencyTypeId === 'PEN') return this.payment
+                if(this.currencyTypeId === 'VES') return this.payment
 
                 return _.round(this.payment * this.exchangeRateSale, 2)
 
@@ -490,3 +491,5 @@
         background: #5e186c;
     }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

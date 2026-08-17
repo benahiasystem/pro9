@@ -1,3 +1,4 @@
+{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -11,38 +12,38 @@
                 font-family: sans-serif;
                 font-size: 12px;
             }
-            
+
             table {
                 width: 100%;
                 border-spacing: 0;
                 border: 1px solid black;
             }
-            
+
             .celda {
                 text-align: center;
                 padding: 5px;
                 border: 0.1px solid black;
             }
-            
+
             th {
                 padding: 5px;
                 text-align: center;
                 border-color: #0088cc;
                 border: 0.1px solid black;
             }
-            
+
             .title {
                 font-weight: bold;
                 padding: 5px;
                 font-size: 20px !important;
                 text-decoration: underline;
             }
-            
+
             p>strong {
                 margin-left: 5px;
                 font-size: 13px;
             }
-            
+
             thead {
                 font-weight: bold;
                 background: #0088cc;
@@ -77,7 +78,7 @@
         </div>
         @if(!empty($records))
             <div class="">
-                <div class=" "> 
+                <div class=" ">
                     <table class="">
                         <thead>
                             <tr>
@@ -104,7 +105,7 @@
                             @endphp
                             @foreach($records as $key => $value)
                                 <tr>
-                                    @php 
+                                    @php
                                         $data_person = $value->data_person;
                                         $document_type = '';
                                         $items = [];
@@ -112,9 +113,9 @@
                                         if($value->payment->associated_record_payment->document_type){
 
                                             $document_type = $value->payment->associated_record_payment->document_type->description;
-                                        
+
                                         }elseif(isset($value->payment->associated_record_payment->prefix)){
-                                            
+
                                             $document_type = $value->payment->associated_record_payment->prefix;
 
                                         }
@@ -137,7 +138,7 @@
 
                                             $items = $value->payment->associated_record_payment->items->transform(function($row, $key) {
                                                 return [
-                                                    'description' => $row->description 
+                                                    'description' => $row->description
                                                 ];
                                             });
                                         }
@@ -145,7 +146,7 @@
 
                                     @endphp
                                     <td class="celda">{{$loop->iteration}}</td>
-                                    <td class="celda">{{$value->payment->date_of_payment->format('Y-m-d')}}</td> 
+                                    <td class="celda">{{$value->payment->date_of_payment->format('Y-m-d')}}</td>
                                     <td class="celda">{{$data_person->name}}</td>
                                     <td class="celda">{{$data_person->number}}</td>
                                     <td class="celda">{{ $document_type }}</td>
@@ -158,21 +159,21 @@
                                     <td class="celda">{{$value->payment->associated_record_payment->currency_type_id}}</td>
                                     <td class="celda">{{$value->instance_type_description}}</td>
 
-                                    <td class="celda"> {{ ($value->type_movement == 'input') ? "S/".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
-                                    <td class="celda"> {{ ($value->type_movement == 'output') ? "S/".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
-                                    <td class="celda">S/{{ $balance }}</td>
+                                    <td class="celda"> {{ ($value->type_movement == 'input') ? "Bs.".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
+                                    <td class="celda"> {{ ($value->type_movement == 'output') ? "Bs.".number_format($value->payment->payment, 2, ".", "") : '-' }}</td>
+                                    <td class="celda">Bs.{{ $balance }}</td>
                                 </tr>
 
-                                 
-                            @endforeach 
-                        </tbody>                      
+
+                            @endforeach
+                        </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="9" class="celda"></td>
-                                <td class="celda">S/{{$total_input}}</td>
-                                <td class="celda">S/{{$total_output}}</td>
-                                <td class="celda">S/{{$total_input - $total_output}}</td>
-                            </tr> 
+                                <td class="celda">Bs.{{$total_input}}</td>
+                                <td class="celda">Bs.{{$total_output}}</td>
+                                <td class="celda">Bs.{{$total_input - $total_output}}</td>
+                            </tr>
                         </tfoot>
                     </table>
                 </div>
@@ -184,3 +185,5 @@
         @endif
     </body>
 </html>
+
+{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

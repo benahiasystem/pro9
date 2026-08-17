@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="checkout-pay">
         <button
@@ -44,7 +45,7 @@
  *
  * form -> {
  *  amount: Monto a cobrar (en centavos)
- *  currency: Moneda (PEN o USD)
+ *  currency: Moneda (VES o USD)
  *  description: Descripción del pago
  *  orderId: Referencia externa (opcional)
  *  customer: { name, email }
@@ -98,7 +99,7 @@ export default {
             return Number(this.form.amount || 0) / 100;
         },
         formattedAmount() {
-            const symbol = this.form.currency === 'USD' ? '$' : 'S/';
+            const symbol = this.form.currency === 'USD' ? '$' : 'Bs.';
             return `${symbol} ${this.amountInUnits.toLocaleString('es-PE', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -305,3 +306,5 @@ export default {
     min-height: 200px;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

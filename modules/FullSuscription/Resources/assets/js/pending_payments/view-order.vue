@@ -1,3 +1,4 @@
+<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
   <div class="order-page">
 
@@ -30,7 +31,7 @@
       <!-- Monto + estado -->
       <div class="order-amount-section">
         <div class="order-amount">
-          <span class="order-amount__currency">S/</span>
+          <span class="order-amount__currency">Bs.</span>
           <span class="order-amount__value">{{ order.amount }}</span>
         </div>
         <span :class="['order-status', statusClass(order.status)]">
@@ -127,12 +128,12 @@ export default {
     }
   },
   created() {
-    
+
     this.form = {
       order_id: this.order.id + '-' + Date.now(),
       amount: this.order.amount * 100,
-      currency: 'PEN',
-      description: this.order.number, 
+      currency: 'VES',
+      description: this.order.number,
       customer: {
         email: this.person.email
       }
@@ -419,3 +420,5 @@ export default {
   background: #f2f5f7;
 }
 </style>
+
+<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->
