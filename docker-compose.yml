@@ -1,0 +1,64 @@
+name: pro9
+
+services:
+  nginx:
+    container_name: pro9-nginx
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./:/var/www/pro9:ro
+    depends_on:
+      php:
+        condition: service_healthy
+    restart: unless-stopped
+
+  php:
+    # Misma imagen PHP 8.2 y extensiones que usa la instalación local de pro8.
+    image: pruebas-php
+    container_name: pro9-php
+    working_dir: /var/www/pro9
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+    volumes:
+      - ./:/var/www/pro9
+      - ./docker/custom-php.ini:/usr/local/etc/php/conf.d/custom-php.ini:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pidof php-fpm > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  mysql:
+    container_name: pro9-mysql
+    image: mysql:5.7.33
+    # ######## INICIO PUBLICACIÓN MYSQL PARA MYSQL WORKBENCH ########
+    ports:
+      - "3306:3306"
+    # ######## FIN PUBLICACIÓN MYSQL PARA MYSQL WORKBENCH ########
+    environment:
+      MYSQL_DATABASE: tenancy
+      MYSQL_ROOT_PASSWORD: admin.root
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -padmin.root --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+  redis:
+    container_name: pro9-redis
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  redis_data:
