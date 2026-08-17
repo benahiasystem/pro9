@@ -764,7 +764,10 @@
             },
             clickSendWhatsapp(order_id) {
 
-                window.open(`https://wa.me/51${this.phone_whatsapp}?text=Se ha generado un nuevo pedido con código nro. ${order_id}`, '_blank');
+                // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+                const phone = String(this.phone_whatsapp).replace(/\D/g, '').replace(/^(58|51)/, '').replace(/^0+/, '')
+                window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(`Se ha generado un nuevo pedido con código nro. ${order_id}`)}`, '_blank');
+                // ########### FIN CAMBIO TELEFONÍA VENEZUELA
 
             }
         }

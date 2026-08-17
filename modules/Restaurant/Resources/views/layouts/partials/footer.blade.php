@@ -14,7 +14,9 @@
                                     </g>
                                 </g>
                             </svg>
-                            <a href="tel:{{$information->information_contact_phone}}" target="blank" style="font-size: 25px;">{{$information->information_contact_phone}}</a>
+                            {{-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA --}}
+                            <a href="tel:{{ \App\Support\Venezuela\Localization::normalizePhone($information->information_contact_phone) }}" target="blank" style="font-size: 25px;">{{$information->information_contact_phone}}</a>
+                            {{-- ########### FIN CAMBIO TELEFONÍA VENEZUELA --}}
                         </li>
                         @if($information->information_contact_address)
                         <li>

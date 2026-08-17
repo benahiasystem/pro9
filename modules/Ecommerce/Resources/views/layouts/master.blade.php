@@ -40,7 +40,9 @@
         $ecommerceConfiguration = \App\Models\Tenant\ConfigurationEcommerce::first();
         $phoneWhatsapp = $ecommerceConfiguration->phone_whatsapp ?? $configurationModel->phone_whatsapp ?? null;
         $showWhatsapp = ($configurationModel && ($configurationModel->enable_whatsapp ?? false)) && !empty($phoneWhatsapp);
-        $waPhone = $phoneWhatsapp ? preg_replace('/\D+/', '', $phoneWhatsapp) : '';
+        // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+        $waPhone = \App\Support\Venezuela\Localization::whatsappNumber($phoneWhatsapp) ?? '';
+        // ########### FIN CAMBIO TELEFONÍA VENEZUELA
         $waText = rawurlencode('Hola, tengo una consulta desde la tienda online');
         $waLink = $waPhone ? "https://wa.me/{$waPhone}?text={$waText}" : '';
     ?>

@@ -193,11 +193,13 @@
                         v-if="!config.qr_api_enable_ws"
                     >
                         <div class="code-number-container">
-                            <span>+51</span>
+                            <!-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA -->
+                            <span>+58</span>
+                            <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
                         </div>
                         <el-input v-model="form.customer_telephone">
                             <template slot="prepend"
-                                >+51</template
+                                >+58</template
                             >
                             <el-button slot="append" @click="clickSendWhatsapp"
                                 >Enviar
@@ -334,9 +336,11 @@ export default {
             }
 
             window.open(
-                `https://wa.me/51${this.form.customer_telephone}?text=${
-                    this.form.message_text
+                // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+                `https://wa.me/58${String(this.form.customer_telephone).replace(/\D/g, '').replace(/^(58|51)/, '')}?text=${
+                    encodeURIComponent(this.form.message_text)
                 }`,
+                // ########### FIN CAMBIO TELEFONÍA VENEZUELA
                 "_blank"
             );
         },

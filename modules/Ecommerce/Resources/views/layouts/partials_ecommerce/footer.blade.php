@@ -307,7 +307,9 @@
                             <div class="fci-body">
                                 <span class="fci-label">WhatsApp</span>
                                 <span class="fci-value">
-                                    <a href="https://wa.me/{{ $information->phone_whatsapp }}" target="_blank">
+                                    {{-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA --}}
+                                    <a href="https://wa.me/{{ \App\Support\Venezuela\Localization::whatsappNumber($information->phone_whatsapp) }}" target="_blank">
+                                    {{-- ########### FIN CAMBIO TELEFONÍA VENEZUELA --}}
                                         {{ $information->phone_whatsapp }}
                                     </a>
                                 </span>
@@ -320,7 +322,9 @@
                             <div class="fci-body">
                                 <span class="fci-label">Teléfono</span>
                                 <span class="fci-value">
-                                    <a href="tel:{{ $information->information_contact_phone }}">
+                                    {{-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA --}}
+                                    <a href="tel:{{ \App\Support\Venezuela\Localization::normalizePhone($information->information_contact_phone) }}">
+                                    {{-- ########### FIN CAMBIO TELEFONÍA VENEZUELA --}}
                                         {{ $information->information_contact_phone }}
                                     </a>
                                 </span>
@@ -379,7 +383,9 @@
     </div>
 
     @if(strlen($information->phone_whatsapp) > 0)
-    <a class='ws-flotante-ecommerce d-flex align-items-center justify-content-center' href='https://wa.me/{{$information->phone_whatsapp}}' target="BLANK" style="color: #fff !important;">
+    {{-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA --}}
+    <a class='ws-flotante-ecommerce d-flex align-items-center justify-content-center' href='https://wa.me/{{ \App\Support\Venezuela\Localization::whatsappNumber($information->phone_whatsapp) }}' target="BLANK" style="color: #fff !important;">
+    {{-- ########### FIN CAMBIO TELEFONÍA VENEZUELA --}}
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-whatsapp"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
     </a>
     @endif

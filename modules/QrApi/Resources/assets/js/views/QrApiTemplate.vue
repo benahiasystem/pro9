@@ -1,7 +1,9 @@
 <template>
     <div :class="colClass?colClass:'col-12'">
         <el-input v-model="wsPhone">
-            <template slot="prepend">+51</template>
+            <!-- ########### INICIO CAMBIO TELEFONÍA VENEZUELA -->
+            <template slot="prepend">+58</template>
+            <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
             <template slot="append">
                 <el-tooltip class="item"
                     :content="disabledReason"
@@ -107,7 +109,9 @@ export default {
         setForm(base64file, full_filename) {
             this.form = {
                 file: base64file,
-                number: `51${this.wsPhone}`,
+                // ########### INICIO CAMBIO TELEFONÍA VENEZUELA
+                number: `58${String(this.wsPhone).replace(/\D/g, '').replace(/^(58|51)/, '')}`,
+                // ########### FIN CAMBIO TELEFONÍA VENEZUELA
                 message: this.resolvedWsMessage,
                 filename: full_filename
             }
