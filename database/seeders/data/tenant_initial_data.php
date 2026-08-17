@@ -1856,24 +1856,26 @@ return array (
           'active' => 1,
           'description' => 'Doc.trib.no.dom.sin.ruc',
         ),
+        // ########### INICIO CAMBIO CLIENTES VENEZUELA
         1 => 
         array (
           'id' => '1',
           'active' => 1,
-          'description' => 'DNI',
+          'description' => 'Cédula de Identidad',
         ),
         2 => 
         array (
           'id' => '4',
           'active' => 1,
-          'description' => 'CE',
+          'description' => 'Extranjero',
         ),
         3 => 
         array (
           'id' => '6',
           'active' => 1,
-          'description' => 'RUC',
+          'description' => 'RIF',
         ),
+        // ########### FIN CAMBIO CLIENTES VENEZUELA
         4 => 
         array (
           'id' => '7',

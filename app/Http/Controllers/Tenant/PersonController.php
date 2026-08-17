@@ -120,10 +120,11 @@ class PersonController extends Controller
         }
 
     
-        // restricción para direcciones secundarias - Perú
+        // ########### INICIO CAMBIO CLIENTES VENEZUELA
+        // Restricción para direcciones secundarias de Venezuela.
         $addresses = $request->input('addresses') ?: [];
         foreach ($addresses as $index => $row) {
-            if (isset($row['country_id']) && $row['country_id'] === 'PE') {
+            if (isset($row['country_id']) && $row['country_id'] === 'VE') {
                 
                 if (empty($row['location_id']) || !is_array($row['location_id']) || count($row['location_id']) !== 3 || 
                     !isset($row['location_id'][0]) || !isset($row['location_id'][1]) || !isset($row['location_id'][2]) || 
@@ -131,7 +132,7 @@ class PersonController extends Controller
             
                     return [
                         'success' => false,
-                        'message' => 'Falta registrar el ubigeo en la dirección secundaria #' . ($index + 1)
+                        'message' => 'Falta registrar Estado / Municipio / Parroquia en la dirección secundaria #' . ($index + 1)
                     ];
                 }
             }
@@ -144,7 +145,7 @@ class PersonController extends Controller
         $person->fill($data);
 
         $location_id = $request->input('location_id');
-        if($request->input('country_id') === 'PE' && is_array($location_id) && count($location_id) === 3) {
+        if($request->input('country_id') === 'VE' && is_array($location_id) && count($location_id) === 3) {
             $person->district_id = $location_id[2];
             $person->province_id = $location_id[1];
             $person->department_id = $location_id[0];
@@ -161,6 +162,7 @@ class PersonController extends Controller
         $person->save();
 
         $this->syncPersonAddresses($person, $addresses);
+        // ########### FIN CAMBIO CLIENTES VENEZUELA
 
         $optional_email = $request->optional_email;
         if (!empty($optional_email)) {
@@ -194,6 +196,7 @@ class PersonController extends Controller
      */
     private function syncPersonAddresses(Person $person, $addresses)
     {
+        // ########### INICIO CAMBIO CLIENTES VENEZUELA
         $addresses = is_array($addresses) ? $addresses : [];
         $keepIds = [];
 
@@ -208,6 +211,10 @@ class PersonController extends Controller
                 $row['department_id'] = $row['location_id'][0] ?: null;
                 $row['province_id'] = $row['location_id'][1] ?: null;
                 $row['district_id'] = $row['location_id'][2] ?: null;
+            } else {
+                $row['department_id'] = null;
+                $row['province_id'] = null;
+                $row['district_id'] = null;
             }
 
             unset(
@@ -233,6 +240,7 @@ class PersonController extends Controller
         } else {
             $query->whereNotIn('id', $keepIds)->delete();
         }
+        // ########### FIN CAMBIO CLIENTES VENEZUELA
     }
 
     public function destroy($id)
