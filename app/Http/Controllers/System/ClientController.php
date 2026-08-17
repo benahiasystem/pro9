@@ -30,12 +30,15 @@
     use App\Helpers\GuestRegisterHelper;
     use App\Models\System\PlanPeriod;
     use App\Models\System\User as SystemUser;
-    use Illuminate\Support\Facades\Config;
+use App\Traits\StorageManagementTrait;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
     class ClientController extends Controller
     {
+        use StorageManagementTrait;
+
         public function index()
         {
             return view('system.clients.index');
@@ -1375,8 +1378,21 @@ use Illuminate\Support\Facades\Mail;
             $hostname = Hostname::find($client->hostname_id);
             $website = Website::find($hostname->website_id);
 
+            $uuid = $website->uuid;
+            // la ruta se resuelve antes de borrar el website, despues el uuid ya no
+            // esta en la tabla y la validacion fallaria
+            $tenant_path = $this->getValidatedTenantPath($uuid);
+
             app(HostnameRepository::class)->delete($hostname, true);
             app(WebsiteRepository::class)->delete($website, true);
+
+            // recien aca se tocan los archivos: si algo de arriba falla, el cliente
+            // y sus archivos quedan intactos
+            $storage = $this->deleteDirectory($tenant_path);
+
+            if (!$storage['removed']) {
+                Log::warning("No se pudo eliminar la carpeta del tenant {$uuid}", $storage);
+            }
 
             return [
                 'success' => true,
