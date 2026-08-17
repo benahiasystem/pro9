@@ -1,3 +1,4 @@
+// ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
 // Cart Application - Ecommerce Module
 // Main Vue instance for shopping cart detail page
 
@@ -349,8 +350,8 @@ var app_cart = new Vue({
                     codigo_tipo_documento_identidad: '0',
                     numero_documento: '0',
                     apellidos_y_nombres_o_razon_social: '',
-                    codigo_pais: 'PE',
-                    ubigeo: '150101',
+                    codigo_pais: 'VE',
+                    ubigeo: '000619',
                     direccion: '',
                     correo_electronico: '',
                     telefono: '',
@@ -1793,8 +1794,8 @@ var app_cart = new Vue({
                     "codigo_tipo_documento_identidad": "0",
                     "numero_documento": "0",
                     "apellidos_y_nombres_o_razon_social": this.user.name,
-                    "codigo_pais": "PE",
-                    "ubigeo": "150101",
+                    "codigo_pais": "VE",
+                    "ubigeo": "000619",
                     "direccion": this.user.address,
                     "correo_electronico": this.user.email,
                     "telefono": this.user.telephone
@@ -2187,3 +2188,5 @@ var app_cart = new Vue({
 
 // Exponer la instancia globalmente para que los scripts inline del blade puedan accederla
 window.app_cart = app_cart;
+
+// ######## FIN CAMBIO GEOPOLITICO VENEZUELA

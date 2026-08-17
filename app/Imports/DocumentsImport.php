@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace App\Imports;
 
 use App\Models\Tenant\Document;
@@ -130,7 +132,7 @@ class DocumentsImport implements ToCollection
                         "codigo_tipo_documento_identidad" => $client_document_type,
                         "numero_documento" => $company_number,
                         "apellidos_y_nombres_o_razon_social" => rtrim($company_name),
-                        "codigo_pais" => "PE",
+                        "codigo_pais" => "VE",
                         "ubigeo" => config('tenant.ubigeo_default_invoice_import'),
                         "direccion" => rtrim($company_address),
                         "correo_electronico" => "",
@@ -219,3 +221,4 @@ class DocumentsImport implements ToCollection
         return $this->data;
     }
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

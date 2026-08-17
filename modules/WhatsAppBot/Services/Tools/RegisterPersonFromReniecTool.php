@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
 namespace Modules\WhatsAppBot\Services\Tools;
 
 use App\Models\Tenant\Person;
@@ -97,7 +99,7 @@ class RegisterPersonFromReniecTool implements ToolInterface
             'number' => $number,
             'name' => $data['name'],
             'trade_name' => $data['trade_name'] ?? $data['name'],
-            'country_id' => 'PE',
+            'country_id' => 'VE',
             'department_id' => $data['department_id'] ?? null,
             'province_id' => $data['province_id'] ?? null,
             'district_id' => $data['district_id'] ?? null,
@@ -130,3 +132,4 @@ class RegisterPersonFromReniecTool implements ToolInterface
         ];
     }
 }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

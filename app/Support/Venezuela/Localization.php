@@ -2,6 +2,9 @@
 
 namespace App\Support\Venezuela;
 
+use Illuminate\Support\Str;
+use InvalidArgumentException;
+
 final class Localization
 {
     // ########### INICIO CAMBIO LOCALIZACIÓN VENEZUELA
@@ -46,6 +49,29 @@ final class Localization
         $normalized = self::normalizePhone($phone);
 
         return $normalized === null ? null : ltrim($normalized, '+');
+    }
+
+    public static function locationId(string $level, int $legacyId): string
+    {
+        $lengths = [
+            'department' => 2,
+            'province' => 4,
+            'district' => 6,
+        ];
+
+        if (!isset($lengths[$level])) {
+            throw new InvalidArgumentException("Nivel geopolitico no soportado: {$level}");
+        }
+
+        return str_pad((string) $legacyId, $lengths[$level], '0', STR_PAD_LEFT);
+    }
+
+    public static function normalizeLocationName(?string $name): string
+    {
+        return (string) Str::of((string) $name)
+            ->ascii()
+            ->lower()
+            ->squish();
     }
     // ########### FIN CAMBIO LOCALIZACIÓN VENEZUELA
 }

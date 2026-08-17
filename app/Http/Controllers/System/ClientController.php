@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
     namespace App\Http\Controllers\System;
 
     use App\CoreFacturalo\Helpers\Certificate\GenerateCertificate;
@@ -1067,10 +1069,10 @@ use Illuminate\Support\Facades\Mail;
             \Log::info('Insertando establishment...');
             $establishment_id = DB::connection('tenant')->table('establishments')->insertGetId([
                 'description' => 'Oficina Principal',
-                'country_id' => 'PE',
-                'department_id' => '15',
-                'province_id' => '1501',
-                'district_id' => '150101',
+                'country_id' => 'VE',
+                'department_id' => '14',
+                'province_id' => '0229',
+                'district_id' => '000619',
                 'address' => '-',
                 'email' => $request->input('email'),
                 'telephone' => '-',
@@ -1591,3 +1593,4 @@ use Illuminate\Support\Facades\Mail;
             }
         }
     }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA

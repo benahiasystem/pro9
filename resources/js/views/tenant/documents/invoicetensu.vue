@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div class="card mb-0 pt-2 pt-md-0">
         <!-- <div class="card-header bg-info">
             <h3 class="my-0">Nuevo Comprobante</h3>
@@ -283,7 +284,9 @@
     </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
     import DocumentFormItem from './partials/item.vue'
     import PersonForm from '../persons/form.vue'
     import DocumentOptions from '../documents/partials/options.vue'
@@ -384,13 +387,13 @@
                     numeroDocId: "20100070031",
                     nombreComercial: "ASBANC",
                     razonSocial: "ASOCIACION DE BANCOS DEL PERU",
-                    ubigeo: "150131",
+                    ubigeo: "000619",
                     direccion: "CAL.41 NRO. 975",
                     urbanizacion: "URB. CORPAC",
-                    provincia: "LIMA",
-                    departamento: "LIMA",
-                    distrito: "SAN ISIDRO",
-                    codigoPais: "PE",
+                    provincia: "Miranda",
+                    departamento: "Miranda",
+                    distrito: "Chacao",
+                    codigoPais: "VE",
                     telefono: "9999-9999",
                     correoElectronico: "informes@dominio.com",
                     codigoAsigSUNAT: "0000"
@@ -402,8 +405,8 @@
                             tipoDocId: "1",
                             numeroDocId: "35226658",
                             razonSocial: "PEREZ QUIROZ JAIME",
-                            direccion: "AV. LARCO 1522, DPTO. 505, MIRAFLORES - LIMA",
-                            codigoPais: "PE"
+                            direccion: "CHACAO, MIRANDA",
+                            codigoPais: "VE"
                         }
             },
             getDrf()
@@ -795,4 +798,5 @@
             },
         }
     }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

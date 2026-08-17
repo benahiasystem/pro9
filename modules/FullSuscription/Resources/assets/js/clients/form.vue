@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog
         :title="titleDialog"
         :visible="showDialog"
@@ -327,9 +328,9 @@
                     </div>
                 </el-tab-pane>
                 <!-- País -->
-                <!-- Departamento -->
-                <!-- Provincia -->
-                <!-- Distrito -->
+                <!-- Estado -->
+                <!-- Municipio -->
+                <!-- Parroquia -->
                 <!-- Direccion -->
                 <!-- Telefono -->
                 <!-- Correo electronico contacto -->
@@ -339,9 +340,9 @@
                              name="second">
                     <span slot="label">Dirección</span>
                     <!-- País -->
-                    <!-- Departamento -->
-                    <!-- Provincia -->
-                    <!-- Distrito -->
+                    <!-- Estado -->
+                    <!-- Municipio -->
+                    <!-- Parroquia -->
                     <!-- Direccion -->
                     <div class="row">
                         <!-- País -->
@@ -371,14 +372,14 @@
                                 ></small>
                             </div>
                         </div>
-                        <!-- Departamento -->
+                        <!-- Estado -->
                         <div class="col-md-3">
                             <div
                                 :class="{ 'has-danger': errors.department_id }"
                                 class="form-group"
                             >
                                 <label class="control-label"
-                                >Departamento</label
+                                >Estado</label
                                 >
                                 <el-select
                                     v-model="form.department_id"
@@ -401,13 +402,13 @@
                                 ></small>
                             </div>
                         </div>
-                        <!-- Provincia -->
+                        <!-- Municipio -->
                         <div class="col-md-3">
                             <div
                                 :class="{ 'has-danger': errors.province_id }"
                                 class="form-group"
                             >
-                                <label class="control-label">Provincia</label>
+                                <label class="control-label">Municipio</label>
                                 <el-select
                                     v-model="form.province_id"
                                     dusk="province_id"
@@ -429,13 +430,13 @@
                                 ></small>
                             </div>
                         </div>
-                        <!-- Distrito -->
+                        <!-- Parroquia -->
                         <div class="col-md-3">
                             <div
                                 :class="{ 'has-danger': errors.province_id }"
                                 class="form-group"
                             >
-                                <label class="control-label">Distrito</label>
+                                <label class="control-label">Parroquia</label>
                                 <el-select
                                     v-model="form.district_id"
                                     dusk="district_id"
@@ -922,7 +923,7 @@
                                 <div :class="{'has-danger': errors.department_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Departamento
+                                        Estado
                                     </label>
                                     <el-select
                                         v-model="form.department_id"
@@ -946,7 +947,7 @@
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Provincia
+                                        Municipio
                                     </label>
                                     <el-select
                                         v-model="form.province_id"
@@ -972,7 +973,7 @@
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Distrito
+                                        Parroquia
                                     </label>
                                     <el-select
                                         v-model="form.district_id"
@@ -1260,7 +1261,9 @@
     </el-dialog>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import PersonForm from "./person.vue";
 import {serviceNumber} from "../../../../../../resources/js/mixins/functions";
@@ -1381,7 +1384,7 @@ export default {
                 number: "",
                 name: null,
                 trade_name: null,
-                country_id: "PE",
+                country_id: "VE",
                 department_id: null,
                 province_id: null,
                 district_id: null,
@@ -1568,7 +1571,7 @@ export default {
 
             this.form.addresses.push({
                 id: null,
-                country_id: "PE",
+                country_id: "VE",
                 location_id: [],
                 address: null,
                 email: null,
@@ -1702,4 +1705,5 @@ export default {
         }
     }
 };
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

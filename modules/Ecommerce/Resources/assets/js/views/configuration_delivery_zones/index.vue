@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
   <div>
     <!-- Filtros -->
     <!-- <div class="mb-1">
@@ -90,18 +91,18 @@
             <td colspan="5" class="pt-2 pb-4">
               <div class="d-flex flex-wrap gap-1 mb-1">
                 <span class="d-flex align-items-center text-muted me-1">Añadir zonas</span>
-                <el-select v-model="newRow._picker.depts" multiple collapse-tags filterable placeholder="Departamento"
+                <el-select v-model="newRow._picker.depts" multiple collapse-tags filterable placeholder="Estado"
                   size="small" style="min-width: 80px; flex: 1;" @change="onPickerDeptChange(newRow._picker)">
                   <el-option v-for="d in getPickerAvailableDepts(newRow)" :key="d.value" :label="d.label" :value="d.value"></el-option>
                 </el-select>
-                <el-select v-if="newRow._picker.depts.length === 1" v-model="newRow._picker.provs" multiple collapse-tags filterable placeholder="Provincia (opc.)"
+                <el-select v-if="newRow._picker.depts.length === 1" v-model="newRow._picker.provs" multiple collapse-tags filterable placeholder="Municipio (opc.)"
                   size="small" style="min-width: 80px; flex: 1;"
                   @change="onPickerProvChange(newRow._picker)">
                   <el-option v-for="p in getPickerProvinces(newRow._picker)" :key="p.value" :label="p.label"
                     :value="p.value"></el-option>
                 </el-select>
                 <el-select v-if="newRow._picker.depts.length === 1 && newRow._picker.provs.length === 1" v-model="newRow._picker.dists" multiple collapse-tags filterable
-                  placeholder="Distrito (opc.)" size="small" style="min-width: 80px; flex: 1;">
+                  placeholder="Parroquia (opc.)" size="small" style="min-width: 80px; flex: 1;">
                   <el-option v-for="d in getPickerDistricts(newRow._picker)" :key="d.value" :label="d.label"
                     :value="d.value"></el-option>
                 </el-select>
@@ -188,17 +189,17 @@
               <td colspan="5" class="pt-2 pb-4">
                 <div class="d-flex flex-wrap gap-1 mb-1">
                   <span class="d-flex align-items-center text-muted me-1">Añadir zonas</span>
-                  <el-select v-model="row._picker.depts" multiple collapse-tags filterable placeholder="Departamento"
+                  <el-select v-model="row._picker.depts" multiple collapse-tags filterable placeholder="Estado"
                     size="small" style="min-width: 80px; flex: 1;" @change="onPickerDeptChange(row._picker)">
                     <el-option v-for="d in getPickerAvailableDepts(row)" :key="d.value" :label="d.label" :value="d.value"></el-option>
                   </el-select>
-                  <el-select v-if="row._picker.depts.length === 1" v-model="row._picker.provs" multiple collapse-tags filterable placeholder="Provincia (opc.)"
+                  <el-select v-if="row._picker.depts.length === 1" v-model="row._picker.provs" multiple collapse-tags filterable placeholder="Municipio (opc.)"
                     size="small" style="min-width: 80px; flex: 1;"
                     @change="onPickerProvChange(row._picker)">
                     <el-option v-for="p in getPickerProvinces(row._picker)" :key="p.value" :label="p.label"
                       :value="p.value"></el-option>
                   </el-select>
-                  <el-select v-if="row._picker.depts.length === 1 && row._picker.provs.length === 1" v-model="row._picker.dists" multiple collapse-tags filterable placeholder="Distrito (opc.)"
+                  <el-select v-if="row._picker.depts.length === 1 && row._picker.provs.length === 1" v-model="row._picker.dists" multiple collapse-tags filterable placeholder="Parroquia (opc.)"
                     size="small" style="min-width: 80px; flex: 1;">
                     <el-option v-for="d in getPickerDistricts(row._picker)" :key="d.value" :label="d.label"
                       :value="d.value"></el-option>
@@ -248,7 +249,9 @@
   </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import { deletable } from '@mixins/deletable';
 
 export default {
@@ -566,11 +569,11 @@ export default {
       const deptCount = uniqueDepts.length;
       const hasDetail = locs.some(l => l.province_id || l.district_id);
       if (!hasDetail) {
-        return deptCount === 1 ? '1 departamento' : `${deptCount} departamentos`;
+        return deptCount === 1 ? '1 estado' : `${deptCount} estados`;
       }
       return deptCount === 1
-        ? `1 departamento (${locs.length} ${locs.length === 1 ? 'zona' : 'zonas'})`
-        : `${deptCount} departamentos (${locs.length} ${locs.length === 1 ? 'zona' : 'zonas'})`;
+        ? `1 estado (${locs.length} ${locs.length === 1 ? 'zona' : 'zonas'})`
+        : `${deptCount} estados (${locs.length} ${locs.length === 1 ? 'zona' : 'zonas'})`;
     },
     coverageLabelClass(row) {
       const locs = row.locations || [];
@@ -589,4 +592,5 @@ export default {
     },
   },
 };
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

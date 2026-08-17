@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :close-on-click-modal="false"
                :title="titleDialog"
                :visible="showDialog"
@@ -257,11 +258,17 @@
                                 </div>
                             </div>
                             <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
-                            <!-- Departamento -->
+                                    <small v-if="form.country_id !== 'VE'" class="text-muted">
+                                        Estado/Municipio/Parroquia solo disponible para Venezuela
+                                    </small>
+                                </div>
+                            </div>
+                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
+                            <!-- Estado -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.department_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Departamento</label>-->
+<!--                                    <label class="control-label">Estado</label>-->
 <!--                                    <el-select v-model="form.department_id"-->
 <!--                                               dusk="department_id"-->
 <!--                                               filterable-->
@@ -277,11 +284,11 @@
 <!--                                           v-text="errors.department_id[0]"></small>-->
 <!--                                </div>-->
 <!--                            </div>-->
-                            <!-- Provincia -->
+                            <!-- Municipio -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.province_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Provincia</label>-->
+<!--                                    <label class="control-label">Municipio</label>-->
 <!--                                    <el-select v-model="form.province_id"-->
 <!--                                               dusk="province_id"-->
 <!--                                               filterable-->
@@ -297,11 +304,11 @@
 <!--                                           v-text="errors.province_id[0]"></small>-->
 <!--                                </div>-->
 <!--                            </div>-->
-                            <!-- Distrito -->
+                            <!-- Parroquia -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.province_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Distrito</label>-->
+<!--                                    <label class="control-label">Parroquia</label>-->
 <!--                                    <el-select v-model="form.district_id"-->
 <!--                                               dusk="district_id"-->
 <!--                                               filterable-->
@@ -488,6 +495,9 @@
                                            v-text="errors.location_id[0]"></small>
                                     <small v-if="row.country_id === 'VE'" class="text-muted">
                                         Campo obligatorio
+                                    </small>
+                                    <small v-else class="text-muted">
+                                        Estado/Municipio/Parroquia solo disponible para Venezuela
                                     </small>
                                 </div>
                             </div>
@@ -828,7 +838,9 @@
 
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../mixins/functions'
@@ -1562,8 +1574,16 @@ export default {
 
 
         },
+        // ########### INICIO CAMBIO CLIENTES VENEZUELA
+        handleCountryChange(row, index) {
+            if (row.country_id !== 'VE' && row.location_id && row.location_id.length > 0) {
+                this.$set(this.form.addresses[index], 'location_id', []);
+            }
+        },
+        // ########### FIN CAMBIO CLIENTES VENEZUELA
     }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
 
 <style scoped>

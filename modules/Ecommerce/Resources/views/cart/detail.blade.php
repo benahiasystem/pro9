@@ -1,3 +1,4 @@
+{{-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA --}}
 @extends('ecommerce::layouts.layout_ecommerce_cart.index')
 
 @push('styles')
@@ -1098,27 +1099,27 @@
                         @if(empty($googleMapsApiKey))
                             <div class="form-row mb-2">
                                 <div class="col-12 col-md-4 mb-2 mb-md-0">
-                                    <label class="field-label" for="department">Departamento</label>
+                                    <label class="field-label" for="department">Estado</label>
                                     <select v-model="selectedDepartment" @change="updateProvinces" name="department" id="department" class="input">
-                                        <option value="">Seleccione departamento</option>
+                                        <option value="">Seleccione estado</option>
                                         <option v-for="department in departments" :key="department.value" :value="department.value">
                                             @{{ department.label }}
                                         </option>
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-4 mb-2 mb-md-0">
-                                    <label class="field-label" for="province">Provincia</label>
+                                    <label class="field-label" for="province">Municipio</label>
                                     <select v-model="selectedProvince" @change="updateDistricts" name="province" id="province" class="input">
-                                        <option value="">Seleccione provincia</option>
+                                        <option value="">Seleccione municipio</option>
                                         <option v-for="province in provinces" :key="province.value" :value="province.value">
                                             @{{ province.label }}
                                         </option>
                                     </select>
                                 </div>
                                 <div class="col-12 col-md-4">
-                                    <label class="field-label" for="district">Distrito</label>
+                                    <label class="field-label" for="district">Parroquia</label>
                                     <select v-model="selectedDistrict" @change="checkDeliveryZone" name="district" id="district" class="input">
-                                        <option value="">Seleccione distrito</option>
+                                        <option value="">Seleccione parroquia</option>
                                         <option v-for="district in districts" :key="district.value" :value="district.value">
                                             @{{ district.label }}
                                         </option>
@@ -1550,8 +1551,8 @@
             "codigo_tipo_documento_identidad": "0",
             "numero_documento": "0",
             "apellidos_y_nombres_o_razon_social": user.name,
-            "codigo_pais": "PE",
-            "ubigeo": "150101",
+            "codigo_pais": "VE",
+            "ubigeo": "000619",
             "direccion": app_cart.user.address,
             "correo_electronico": user.email,
             "telefono": app_cart.user.telephone
@@ -1575,3 +1576,5 @@
 <script src="{{ route('google_maps_script') }}"></script>
 
 @endpush
+
+{{-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA --}}

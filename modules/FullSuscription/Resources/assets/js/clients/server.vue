@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :append-to-body="true"
                :close-on-click-modal="false"
                :title="titleDialog"
@@ -235,7 +236,9 @@
     </el-dialog>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../../../../resources/js/mixins/functions'
@@ -355,7 +358,7 @@ export default {
                 number: '',
                 name: null,
                 trade_name: null,
-                country_id: 'PE',
+                country_id: 'VE',
                 department_id: null,
                 province_id: null,
                 district_id: null,
@@ -482,7 +485,7 @@ this.loading_data = true;
 
             this.form.addresses.push({
                 'id': null,
-                'country_id': 'PE',
+                'country_id': 'VE',
                 'location_id': [],
                 'address': null,
                 'email': null,
@@ -694,4 +697,5 @@ this.loading_data = true;
         }
     }
 }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

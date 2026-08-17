@@ -1,4 +1,5 @@
 <template>
+    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div class="card mb-0 pt-2 pt-md-0">
         <div class="card-header bg-info">
             <h3 class="my-0">Nueva Guía de Remisión</h3>
@@ -152,7 +153,7 @@
                         </div>
                         <div class="col-lg-2">
                             <div class="form-group" :class="{'has-danger': errors.origin}">
-                                <label class="control-label">Departamento</label>
+                                <label class="control-label">Estado</label>
                                 <el-select v-model="form.origin.department_id" filterable @change="filterProvince">
                                     <el-option v-for="option in departments" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
@@ -161,7 +162,7 @@
                         </div>
                         <div class="col-lg-2">
                             <div class="form-group" :class="{'has-danger': errors.origin}">
-                                <label class="control-label">Provincia</label>
+                                <label class="control-label">Municipio</label>
                                 <el-select v-model="form.origin.province_id" filterable @change="filterDistrict">
                                     <el-option v-for="option in provincesOrigin" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
@@ -170,7 +171,7 @@
                         </div>
                         <div class="col-lg-2">
                             <div class="form-group" :class="{'has-danger': errors.origin}">
-                                <label class="control-label">Distrito</label>
+                                <label class="control-label">Parroquia</label>
                                 <el-select v-model="form.origin.location_id" filterable>
                                     <el-option v-for="option in districtsOrigin" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
@@ -198,7 +199,7 @@
                         </div>
                         <div class="col-lg-2">
                             <div class="form-group" :class="{'has-danger': errors.delivery}">
-                                <label class="control-label">Departamento</label>
+                                <label class="control-label">Estado</label>
                                 <el-select v-model="form.delivery.department_id" filterable @change="filterProvince(false)">
                                     <el-option v-for="option in departments" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
@@ -207,7 +208,7 @@
                         </div>
                         <div class="col-lg-2">
                             <div class="form-group" :class="{'has-danger': errors.delivery}">
-                                <label class="control-label">Provincia</label>
+                                <label class="control-label">Municipio</label>
                                 <el-select v-model="form.delivery.province_id" filterable @change="filterDistrict(false)">
                                     <el-option v-for="option in provincesDelivery" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
@@ -216,7 +217,7 @@
                         </div>
                         <div class="col-lg-2">
                             <div class="form-group" :class="{'has-danger': errors.delivery}">
-                                <label class="control-label">Distrito</label>
+                                <label class="control-label">Parroquia</label>
                                 <el-select v-model="form.delivery.location_id" filterable>
                                     <el-option v-for="option in districtsDelivery" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                 </el-select>
@@ -328,7 +329,9 @@
     </div>
 </template>
 
+    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
+// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
     import PersonForm from '../persons/form.vue';
     import Items from './items.vue';
     
@@ -482,10 +485,10 @@
                     },
                     document_type_id: '09',
                     delivery: {
-                        country_id: 'PE'
+                        country_id: 'VE'
                     },
                     origin: {
-                        country_id: 'PE'
+                        country_id: 'VE'
                     },
                     number: '#',
                     items: [],
@@ -499,4 +502,5 @@
             },
         }
     }
+// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

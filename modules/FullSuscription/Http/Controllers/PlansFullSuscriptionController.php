@@ -1,5 +1,7 @@
 <?php
 
+// ######## INICIO CONTRATO GEOPOLITICO VENEZUELA
+
     namespace Modules\FullSuscription\Http\Controllers;
 
 use App\Models\Tenant\Catalogs\IdentityDocumentType;
@@ -375,8 +377,8 @@ use Modules\Payment\Models\PaymentConfiguration;
                 'name' => $person_data['data']['name'],
                 'email' => $data['email'],
                 'telephone' => $data['phone'],
-                'country_id' => 'PE',
-                'nationality_id' => 'PE',
+                'country_id' => 'VE',
+                'nationality_id' => 'VE',
                 'type' => 'customers',
             ];
 
@@ -410,3 +412,4 @@ use Modules\Payment\Models\PaymentConfiguration;
         }
 
     }
+// ######## FIN CONTRATO GEOPOLITICO VENEZUELA
