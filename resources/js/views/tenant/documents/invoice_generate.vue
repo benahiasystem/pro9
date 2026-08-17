@@ -2016,7 +2016,9 @@
                                                             form.total_igv > 0 && !isNrus
                                                         "
                                                     >
-                                                        <td>IGV:</td>
+                                                        <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                                                        <td>IVA:</td>
+                                                        <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                                                         <td>
                                                             {{
                                                                 currency_type.symbol
@@ -3001,7 +3003,9 @@
                                         </td>
                                     </tr>
                                     <tr v-if="form.total_igv > 0 && !isNrus">
-                                        <td>IGV:</td>
+                                        <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                                        <td>IVA:</td>
+                                        <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                                         <td>
                                             {{ currency_type.symbol }}
                                             {{ form.total_igv }}

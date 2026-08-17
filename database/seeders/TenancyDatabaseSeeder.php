@@ -21,6 +21,10 @@ class TenancyDatabaseSeeder extends Seeder
         $this->call(TenantMigrationDataSeeder::class);
         // ########### FIN CAMBIO RECONSTRUCCIÓN MIGRACIONES TENANT
 
+        // ########### INICIO DATOS MOCK VENEZUELA
+        $this->call(TenancyMockDataSeeder::class);
+        // ########### FIN DATOS MOCK VENEZUELA
+
         // $this->call([
         //     PolymorphicRelationSeeder::class,
         // ]);

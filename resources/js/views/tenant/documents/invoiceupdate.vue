@@ -395,7 +395,9 @@
                                                     <!-- <td>{{ currency_type.symbol }} {{ form.total_prepayment }}</td> -->
                                                 </tr>
                                                 <tr v-if="form.total_igv > 0">
-                                                    <td>IGV:</td>
+                                                    <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                                                    <td>IVA:</td>
+                                                    <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                                                     <td>{{ currency_type.symbol }} {{ form.total_igv }}</td>
                                                 </tr>
                                                 <tr v-if="form.total_isc > 0">
@@ -761,7 +763,9 @@
                                         <td>{{ currency_type.symbol }} {{ form.total_discount }}</td>
                                     </tr>
                                     <tr v-if="form.total_igv > 0">
-                                        <td>IGV:</td>
+                                        <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
+                                        <td>IVA:</td>
+                                        <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                                         <td>{{ currency_type.symbol }} {{ form.total_igv }}</td>
                                     </tr>
                                     <tr v-if="form.total_isc > 0">

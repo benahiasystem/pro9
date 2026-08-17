@@ -750,11 +750,12 @@
                     </div>
                 </div>
             </div>
+            <!-- ########### INICIO CAMBIO POS VENEZUELA -->
             <div
-                class="col-lg-4 col-md-6 bg-white m-0 p-0"
+                class="col-lg-4 col-md-6 bg-white m-0 p-0 d-flex flex-column pos-checkout-column"
                 style="height: calc(100vh - 110px)"
             >
-                <div class="h-60" style="overflow-y: auto">
+                <div class="flex-grow-1 pos-cart-items" style="overflow-y: auto; min-height: 0">
                     <div class="row py-1 m-0 p-0">
                         <div class="col-12">
                             <table
@@ -835,7 +836,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="h-40 bg-light border-top-dashed" style="overflow-y: auto">
+                <div
+                    class="bg-light border-top-dashed d-flex flex-column pos-checkout-summary"
+                    style="flex: 0 0 44%; min-height: 0"
+                >
+                    <div class="flex-grow-1 pos-checkout-details" style="overflow-y: auto; min-height: 0">
                     <div class="row py-3 border-bottom m-0 p-0">
                         <div class="col-10">
                             <el-select
@@ -908,7 +913,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="form.total_igv > 0 && !isNrus" class="m-0">
-                                    <td>IGV</td>
+                                    <td>IVA</td>
                                     <td class="text-end font-weight-semibold">
                                         {{ currency_type.symbol }}
                                         {{ form.total_igv }}
@@ -982,9 +987,12 @@
               </h4>
             </div> -->
                     </div>
+                    </div>
 
-                    <div class="m-2 ">
-                        <div
+                    <div class="m-2 flex-shrink-0">
+                        <button
+                            type="button"
+                            data-testid="pos-open-payment"
                             class="btn py-3 col-12"
                             @click="clickPayment"
                             v-bind:class="[
@@ -999,10 +1007,11 @@
                                 {{ form.total.toFixed(2) }}</b
                             >
                             <i class="fas fa-arrow-right ms-2"></i>
-                        </div>
+                        </button>
                     </div>
                 </div>
             </div>
+            <!-- ########### FIN CAMBIO POS VENEZUELA -->
 
             <person-form
                 :showDialog.sync="showDialogNewPerson"
