@@ -7493,7 +7493,6 @@ const _hoisted_2$7 = { class: "column container-payment-all is-6" };
 const _hoisted_3$6 = { class: "is-flex is-justify-content-space-between is-align-items-center p-0" };
 const _hoisted_4$6 = { class: "is-flex is-justify-content-center p-0 content-buttons-payment-all" };
 const _hoisted_5$5 = /* @__PURE__ */ createTextVNode(" N. Venta ");
-const _hoisted_6$5 = /* @__PURE__ */ createTextVNode(" Boleta ");
 const _hoisted_7$5 = /* @__PURE__ */ createTextVNode(" Factura ");
 const _hoisted_8$4 = { class: "column pl-5 pr-0 type-document" };
 const _hoisted_9$4 = {
@@ -8006,7 +8005,7 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
         searchQuery.value = findCustomer.apellidos_y_nombres_o_razon_social;
         dropdownOpen.value = false;
         if (findCustomer.codigo_tipo_documento_identidad == "1") {
-          state.documentSelected = "BOLETA";
+          state.documentSelected = "NOTA";
         } else if (findCustomer.codigo_tipo_documento_identidad == "6") {
           state.documentSelected = "FACTURA";
         }
@@ -8156,22 +8155,6 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
                                 }, {
                                   default: withCtx(() => [
                                     _hoisted_5$5
-                                  ]),
-                                  _: 1
-                                }, 8, ["disabled", "color"])
-                              ]),
-                              _: 1
-                            }),
-                            createVNode(_component_VControl, { class: "btn-container" }, {
-                              default: withCtx(() => [
-                                createVNode(_component_VButton, {
-                                  class: "btn-state",
-                                  disabled: !visibleButton.value,
-                                  color: unref(state).documentSelected == "BOLETA" ? "primary" : "light",
-                                  onClick: _cache[1] || (_cache[1] = ($event) => unref(state).documentSelected = "BOLETA")
-                                }, {
-                                  default: withCtx(() => [
-                                    _hoisted_6$5
                                   ]),
                                   _: 1
                                 }, 8, ["disabled", "color"])

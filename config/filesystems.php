@@ -46,6 +46,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app'),
+            // Los archivos bajo storage/app/public se sirven mediante
+            // public/storage; Nginx necesita poder atravesar sus carpetas.
+            'directory_visibility' => 'public',
         ],
 
         'public' => [
