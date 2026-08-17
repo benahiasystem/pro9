@@ -45,6 +45,13 @@ description: Coordinar y documentar una adaptación funcional integral de Pro9 a
 
 Ejecutar además lint PHP, validación de skills, `git diff --check`, auditoría de PE/PEN/VED/+51, suite unitaria, build Vite y validación real de migrate/seed/rollback.
 
+Para la comprobación integrada y destructiva únicamente sobre una base temporal cuyo nombre termine en `_data_test`, ejecutar:
+
+```bash
+php .codex/skills/adaptar-sistema-venezuela/scripts/validate_venezuela_tenant.php \
+  --target=pro9_venezuela_data_test
+```
+
 ## Entrega
 
 - Mantener una rama y un worktree por skill, basados en `develop`.
