@@ -17,6 +17,8 @@ class TenancyDatabaseSeeder extends Seeder
      */
     public function run()
     {
+        $this->call(TenantMigrationDataSeeder::class);
+
         // $this->call([
         //     PolymorphicRelationSeeder::class,
         // ]);

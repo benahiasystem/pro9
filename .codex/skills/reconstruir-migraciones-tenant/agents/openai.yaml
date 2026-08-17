@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reconstruir migraciones tenant"
+  short_description: "Consolida y valida migraciones tenant de Pro9."
+  default_prompt: "Reconstruye y valida las migraciones tenant de Pro9 contra su base fuente."
