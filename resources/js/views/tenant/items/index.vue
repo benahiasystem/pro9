@@ -97,8 +97,6 @@
                             >
                         </div>
                     </div>
-                </template>
-                <template v-if="typeUser === 'admin'">
                     <div class="btn-group flex-wrap dropdown">
                         <button
                             aria-expanded="false"
