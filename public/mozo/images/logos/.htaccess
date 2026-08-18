@@ -1,0 +1,9 @@
+# Los logos del Mozo se reemplazan en caliente desde el admin (mismo nombre de archivo).
+# Forzamos revalidacion para que el navegador y el service worker no sirvan una copia vieja.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(svg|png|jpe?g|gif|webp)$">
+        Header set Cache-Control "no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>
