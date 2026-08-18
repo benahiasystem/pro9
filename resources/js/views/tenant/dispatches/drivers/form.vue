@@ -63,8 +63,10 @@
                         <div :class="{'has-danger': errors.license}"
                              class="form-group">
                             <label class="control-label">Licencia</label>
-                            <el-input v-model="form.license"
-                                      @keyup.native="keyUpLicense"></el-input>
+                            <x-input-service v-model="form.license"
+                                             service_type="licencia"
+                                             @keyup.native="keyUpLicense"
+                                             @search="searchLicense"></x-input-service>
                             <small v-if="errors.license"
                                    class="form-control-feedback"
                                    v-text="errors.license[0]"></small>
@@ -133,9 +135,23 @@ export default {
     },
     methods: {
         keyUpLicense(e) {
+            if (!this.form.license) return
+
             if (this.form.license.length == 1 && e.keyCode !== 8 && this.form.number) {
                 this.form.license = this.form.license.concat(this.form.number)
             }
+        },
+        // Consulta MTC. El nombre y el número solo se completan si están
+        // vacíos: lo consultado a RENIEC manda sobre lo que devuelve el MTC.
+        searchLicense(data) {
+            if (!data) return
+
+            if (data.license) this.form.license = data.license
+            if (data.name && !this.form.name) this.form.name = data.name
+            if (data.number && !this.form.number) this.form.number = data.number
+
+            const detail = [data.category, data.state].filter(v => v).join(' - ')
+            if (detail) this.$message.success(`Licencia: ${detail}`)
         },
         initForm() {
             this.errors = {}

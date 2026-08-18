@@ -363,8 +363,9 @@
                             <div :class="{'has-danger': errors.license_plate}" class="form-group">
                                 <label class="control-label">Número de placa del vehiculo
                                 </label>
-                                <el-input v-model="form.license_plate" :maxlength="8"
-                                          placeholder="Numero de placa del vehiculo..."></el-input>
+                                <x-input-service v-model="form.license_plate"
+                                                 service_type="placa"
+                                                 @search="searchLicensePlate"></x-input-service>
                                 <small v-if="errors.license_plate" class="form-control-feedback"
                                        v-text="errors.license_plate[0]"></small>
                             </div>
@@ -372,14 +373,17 @@
                         <div class="col-lg-4">
                             <div class="form-group">
                                 <label class="control-label">Licencia del conductor</label>
-                                <el-input v-model="form.driver.license"
-                                ></el-input>
+                                <x-input-service v-model="form.driver.license"
+                                                 service_type="licencia"
+                                                 @search="searchDriverLicense"></x-input-service>
                             </div>
                         </div>
                         <div class="col-lg-4">
                             <div class="form-group">
                                 <label class="control-label">N° placa semirremolque</label>
-                                <el-input v-model="form.secondary_license_plates.semitrailer"></el-input>
+                                <x-input-service v-model="form.secondary_license_plates.semitrailer"
+                                                 service_type="placa"
+                                                 @search="searchSemitrailerPlate"></x-input-service>
                             </div>
                         </div>
                     </div>
@@ -731,6 +735,36 @@ export default {
         },
         searchDriver(data) {
             this.form.driver.name = (this.form.driver.identity_document_type_id === '1') ? data.nombre_completo : data.nombre_o_razon_social
+        },
+        // Consulta MTC de la licencia del conductor. El nombre y el número solo
+        // se completan si están vacíos, para no pisar lo consultado a RENIEC.
+        searchDriverLicense(data) {
+            if (!data) return
+
+            if (data.license) this.form.driver.license = data.license
+            if (data.name && !this.form.driver.name) this.form.driver.name = data.name
+            if (data.number && !this.form.driver.number) this.form.driver.number = data.number
+
+            const detail = [data.category, data.state].filter(v => v).join(' - ')
+            if (detail) this.$message.success(`Licencia: ${detail}`)
+        },
+        // Consulta de placa: normaliza el número y avisa marca/modelo hallados.
+        searchLicensePlate(data) {
+            if (!data) return
+
+            if (data.plate_number) this.form.license_plate = data.plate_number
+
+            const detail = [data.brand, data.model].filter(v => v).join(' ')
+            if (detail) this.$message.success(`Vehículo: ${detail}`)
+        },
+        // Consulta de placa del semirremolque.
+        searchSemitrailerPlate(data) {
+            if (!data) return
+
+            if (data.plate_number) this.form.secondary_license_plates.semitrailer = data.plate_number
+
+            const detail = [data.brand, data.model].filter(v => v).join(' ')
+            if (detail) this.$message.success(`Semirremolque: ${detail}`)
         },
         changeDriver() {
             let v = _.find(this.drivers, {'id': this.driver})
