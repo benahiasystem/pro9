@@ -8,6 +8,8 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Skin;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class LoginController extends Controller
 {
@@ -46,6 +48,21 @@ class LoginController extends Controller
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
+    }
+
+    /**
+     * Keep the browser on its current public origin after authentication.
+     *
+     * The tenant is resolved with the rewritten local Host, so an intended
+     * URL saved by Laravel may contain local.pro9.test. A relative Location
+     * lets browsers accessing the application through ngrok retain the
+     * public tunnel host.
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        $request->session()->forget('url.intended');
+
+        return new RedirectResponse('/dashboard');
     }
 
     /**

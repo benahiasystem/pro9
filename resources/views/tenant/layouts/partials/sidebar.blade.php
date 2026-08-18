@@ -211,16 +211,14 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                             <button id="sidebar-search-trigger" type="button" class="sidebar-search-trigger" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
                                 <i class="fas fa-search" aria-hidden="true"></i>
                             </button>
+                            <button id="sidebar-menu-config-quick-trigger" type="button" class="sidebar-menu-config-quick-trigger" title="Configurar menú" aria-label="Abrir configuración del menú">
+                                <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+                            </button>
                         </span>
-                        <label class="sidebar-compact-toggle" title="Ocultar el menú principal y mostrar solo favoritos">
-                            <input id="sidebar-show-only-active" type="checkbox">
-                            <span class="sidebar-switch" aria-hidden="true"></span>
-                            <span>Mostrar solo activos</span>
-                        </label>
                     </div>
                     <ul id="sidebar-pinned-items" class="nav nav-main sidebar-pinned-items"></ul>
                     <p id="sidebar-pinned-empty" class="sidebar-pinned-empty mb-0">
-                        Pasa el cursor por una opción y pulsa el pin para agregarla.
+                        Usa “Configurar menú” para agregar tus accesos favoritos.
                     </p>
                     <small id="sidebar-preferences-status" class="sidebar-preferences-status" role="status" aria-live="polite"></small>
                     <button id="sidebar-preferences-retry" type="button" class="sidebar-preferences-retry">
@@ -1910,7 +1908,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             <label class="sidebar-menu-config-compact">
                 <input id="sidebar-menu-config-filter-favorites" type="checkbox">
                 <span class="sidebar-switch" aria-hidden="true"></span>
-                <span>Mostrar únicamente los favoritos</span>
+                <span>Mostrar únicamente los favoritos en el menú lateral</span>
             </label>
             <div class="sidebar-menu-config-search">
                 <i class="fas fa-search" aria-hidden="true"></i>
@@ -1918,19 +1916,19 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             </div>
         </div>
         <div id="sidebar-menu-config-content" class="sidebar-menu-config-content">
-            <section class="sidebar-menu-config-section">
-                <div class="sidebar-menu-config-section-title">
-                    <strong>Favoritos fijados</strong>
-                    <small>Usa las flechas para cambiar la prioridad.</small>
-                </div>
-                <div id="sidebar-menu-config-pinned" class="sidebar-menu-config-list"></div>
-            </section>
-            <section class="sidebar-menu-config-section">
+            <section class="sidebar-menu-config-section sidebar-menu-config-section-available">
                 <div class="sidebar-menu-config-section-title">
                     <strong>Opciones disponibles</strong>
-                    <small>Solo aparecen los módulos permitidos para tu usuario.</small>
+                    <small>Selecciona los módulos que quieres mantener visibles.</small>
                 </div>
                 <div id="sidebar-menu-config-available" class="sidebar-menu-config-list sidebar-menu-config-available"></div>
+            </section>
+            <section class="sidebar-menu-config-section sidebar-menu-config-section-selected">
+                <div class="sidebar-menu-config-section-title">
+                    <strong>Elementos seleccionados / activos</strong>
+                    <small>Arrastra desde los tres puntos para cambiar la prioridad.</small>
+                </div>
+                <div id="sidebar-menu-config-pinned" class="sidebar-menu-config-list"></div>
             </section>
         </div>
         <footer class="sidebar-menu-config-footer">
@@ -1941,16 +1939,57 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 </div>
 
 <style>
+    #sidebar-left,
+    .sidebar-menu-config-overlay,
+    .sidebar-search-overlay {
+        --menu-primary: var(--primary-color, var(--bs-primary, LinkText));
+        --menu-surface: var(--bs-body-bg, Canvas);
+        --menu-surface-muted: var(--bs-tertiary-bg, var(--bs-light, Canvas));
+        --menu-text: var(--bs-body-color, CanvasText);
+        --menu-text-muted: var(--bs-secondary-color, GrayText);
+        --menu-border: var(--bs-border-color, color-mix(in srgb, GrayText 24%, transparent));
+        --menu-hover: color-mix(in srgb, var(--menu-primary) 10%, transparent);
+        --menu-focus: color-mix(in srgb, var(--menu-primary) 18%, transparent);
+        --menu-overlay: color-mix(in srgb, CanvasText 52%, transparent);
+        --menu-shadow: color-mix(in srgb, CanvasText 30%, transparent);
+        --menu-danger: var(--bs-danger, Mark);
+        --menu-on-primary: var(--bs-white, Canvas);
+    }
+    html.dark #sidebar-left,
+    html.dark .sidebar-menu-config-overlay,
+    html.dark .sidebar-search-overlay,
+    html.sidebarMode-dark #sidebar-left,
+    html.sidebarMode-dark .sidebar-menu-config-overlay,
+    html.sidebarMode-dark .sidebar-search-overlay {
+        --menu-surface: var(--bs-dark, Canvas);
+        --menu-surface-muted: color-mix(in srgb, var(--bs-dark, Canvas) 84%, var(--bs-white, CanvasText));
+        --menu-text: var(--bs-white, CanvasText);
+        --menu-text-muted: color-mix(in srgb, var(--bs-white, CanvasText) 66%, var(--bs-secondary, GrayText));
+        --menu-border: color-mix(in srgb, var(--bs-white, CanvasText) 18%, transparent);
+        --menu-shadow: color-mix(in srgb, var(--bs-dark, Canvas) 55%, transparent);
+    }
     .sidebar-favorites {
-        margin: 0 10px 8px;
+        margin: 0 10px 6px;
         padding: 8px;
-        border: 1px solid rgba(127, 127, 127, .2);
-        border-radius: 10px;
-        background: rgba(127, 127, 127, .06);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-sm);
+        background: var(--accent-color);
+        box-shadow: none;
+        transition: padding .18s ease, border-color .18s ease, background-color .18s ease;
+    }
+    html.dark .sidebar-favorites,
+    html.sidebarMode-dark .sidebar-favorites {
+        border-color: var(--borders-dark);
+        background: var(--contents-dark);
+    }
+    #sidebar-left.sidebar-only-active .sidebar-favorites {
+        padding: 4px 0 6px;
+        border-color: transparent;
+        border-radius: 0;
+        background: transparent;
     }
     .sidebar-favorites-header,
-    .sidebar-favorites-title,
-    .sidebar-compact-toggle {
+    .sidebar-favorites-title {
         display: flex;
         align-items: center;
     }
@@ -1958,13 +1997,21 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         justify-content: space-between;
         gap: 8px;
         margin-bottom: 5px;
+        padding: 0 4px;
+        min-width: 0;
     }
     .sidebar-favorites-title {
+        flex: 1;
+        min-width: 0;
         gap: 6px;
+        overflow: hidden;
         font-weight: 600;
         font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
-    .sidebar-search-trigger {
+    .sidebar-search-trigger,
+    .sidebar-menu-config-quick-trigger {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -1974,25 +2021,18 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         border: 0;
         border-radius: 6px;
         color: inherit;
-        background: rgba(127, 127, 127, .12);
+        background: var(--menu-border);
+    }
+    .sidebar-menu-config-quick-trigger {
+        color: var(--menu-primary);
+        background: var(--menu-hover);
     }
     .sidebar-search-trigger:hover,
-    .sidebar-search-trigger:focus {
-        color: var(--primary-color, #635bff);
-        background: rgba(99, 91, 255, .12);
-    }
-    .sidebar-compact-toggle {
-        gap: 5px;
-        margin: 0;
-        font-size: 10px;
-        line-height: 1.15;
-        cursor: pointer;
-        user-select: none;
-    }
-    .sidebar-compact-toggle input {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
+    .sidebar-search-trigger:focus,
+    .sidebar-menu-config-quick-trigger:hover,
+    .sidebar-menu-config-quick-trigger:focus {
+        color: var(--menu-primary);
+        background: var(--menu-hover);
     }
     .sidebar-switch {
         position: relative;
@@ -2000,7 +2040,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         width: 28px;
         height: 16px;
         border-radius: 10px;
-        background: #adb5bd;
+        background: var(--bs-secondary, GrayText);
         transition: background-color .2s ease;
     }
     .sidebar-switch::after {
@@ -2011,33 +2051,60 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         width: 12px;
         height: 12px;
         border-radius: 50%;
-        background: #fff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+        background: var(--menu-on-primary);
+        box-shadow: 0 1px 3px var(--menu-shadow);
         transition: transform .2s ease;
     }
-    .sidebar-compact-toggle input:checked + .sidebar-switch {
-        background: var(--primary-color, #635bff);
-    }
-    .sidebar-compact-toggle input:checked + .sidebar-switch::after {
-        transform: translateX(12px);
+    .sidebar-pinned-items {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
     }
     .sidebar-pinned-items > li {
-        cursor: grab;
+        min-width: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: default;
         border-radius: 7px;
         transition: transform .18s ease, background-color .18s ease, opacity .18s ease;
+    }
+    body.sidebar-menu-config-open .sidebar-pinned-items > li {
+        cursor: grab;
     }
     .sidebar-pinned-items > li.is-dragging {
         opacity: .45;
     }
     .sidebar-pinned-items > li.drag-before {
-        box-shadow: inset 0 2px 0 var(--primary-color, #635bff);
+        box-shadow: inset 0 2px 0 var(--menu-primary);
     }
     .sidebar-pinned-items > li.drag-after {
-        box-shadow: inset 0 -2px 0 var(--primary-color, #635bff);
+        box-shadow: inset 0 -2px 0 var(--menu-primary);
+    }
+    .sidebar-pinned-items li > .nav-link {
+        display: flex;
+        align-items: center;
+        min-height: 40px;
+        min-width: 0;
+        margin: 0 !important;
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sidebar-pinned-items li > .nav-link > svg,
+    .sidebar-pinned-items li > .nav-link > i,
+    .sidebar-pinned-items li > .nav-link::after {
+        flex: 0 0 auto;
     }
     .sidebar-pinned-items .nav-children {
         display: block !important;
         max-height: 0;
+        margin: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
         overflow: hidden;
         opacity: 0;
         transition: max-height .28s ease, opacity .2s ease;
@@ -2046,13 +2113,22 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         max-height: 900px;
         opacity: 1;
     }
+    .sidebar-pinned-items .nav-children > li {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .sidebar-pinned-items .nav-children > li + li {
+        margin-top: 4px !important;
+    }
     .sidebar-pinned-empty,
     .sidebar-preferences-status {
         display: block;
         padding: 6px 5px;
-        color: #8a8f98;
-        font-size: 10px;
+        color: var(--menu-text-muted);
         line-height: 1.3;
+    }
+    .sidebar-preferences-status {
+        font-size: 10px;
     }
     .sidebar-preferences-status:empty {
         display: none;
@@ -2062,30 +2138,33 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         width: 100%;
         margin-top: 4px;
         padding: 5px 8px;
-        border: 1px solid #dc3545;
+        border: 1px solid var(--menu-danger);
         border-radius: 6px;
-        color: #dc3545;
+        color: var(--menu-danger);
         background: transparent;
         font-size: 10px;
         transition: color .16s ease, background-color .16s ease;
     }
     .sidebar-preferences-retry:hover,
     .sidebar-preferences-retry:focus {
-        color: #fff;
-        background: #dc3545;
+        color: var(--menu-on-primary);
+        background: var(--menu-danger);
     }
     .sidebar-preferences-retry.is-visible {
         display: block;
     }
     .sidebar-menu-config-overlay {
-        position: fixed;
-        z-index: 10000;
-        inset: 0;
+        position: fixed !important;
+        z-index: 2147483000 !important;
+        inset: 0 !important;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
         display: none;
         align-items: center;
         justify-content: center;
         padding: 18px;
-        background: rgba(15, 23, 42, .52);
+        background: var(--menu-overlay);
         backdrop-filter: blur(3px);
     }
     .sidebar-menu-config-overlay.is-open {
@@ -2095,13 +2174,14 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         display: flex;
         flex-direction: column;
         width: min(920px, 100%);
+        height: min(720px, 88vh);
         max-height: 88vh;
         overflow: hidden;
-        border: 1px solid rgba(127, 127, 127, .2);
+        border: 1px solid var(--menu-border);
         border-radius: 14px;
-        color: #263238;
-        background: #fff;
-        box-shadow: 0 28px 80px rgba(15, 23, 42, .3);
+        color: var(--menu-text);
+        background: var(--menu-surface);
+        box-shadow: 0 28px 80px var(--menu-shadow);
     }
     .sidebar-menu-config-header,
     .sidebar-menu-config-toolbar,
@@ -2117,27 +2197,28 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         justify-content: space-between;
         gap: 16px;
         padding: 18px 20px;
-        border-bottom: 1px solid #e8ebf1;
+        border-bottom: 1px solid var(--menu-border);
     }
     .sidebar-menu-config-header p,
     .sidebar-menu-config-section-title small,
     .sidebar-menu-config-footer small,
     .sidebar-menu-config-row-path {
-        color: #7b8494;
+        color: var(--menu-text-muted);
     }
     .sidebar-menu-config-header > button {
         width: 32px;
         height: 32px;
         border: 0;
         border-radius: 8px;
-        background: #f0f2f6;
+        color: var(--menu-text);
+        background: var(--menu-surface-muted);
     }
     .sidebar-menu-config-toolbar {
         justify-content: space-between;
         gap: 14px;
         padding: 12px 20px;
-        border-bottom: 1px solid #eef0f4;
-        background: #fafbfc;
+        border-bottom: 1px solid var(--menu-border);
+        background: var(--menu-surface-muted);
     }
     .sidebar-menu-config-compact {
         gap: 8px;
@@ -2148,8 +2229,12 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         position: absolute;
         opacity: 0;
     }
+    .sidebar-menu-config-compact.is-disabled {
+        opacity: .55;
+        cursor: not-allowed;
+    }
     .sidebar-menu-config-compact input:checked + .sidebar-switch {
-        background: var(--primary-color, #4267ef);
+        background: var(--menu-primary);
     }
     .sidebar-menu-config-compact input:checked + .sidebar-switch::after {
         transform: translateX(12px);
@@ -2158,13 +2243,13 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         gap: 8px;
         width: min(360px, 100%);
         padding: 0 11px;
-        border: 1px solid #dce1ea;
+        border: 1px solid var(--menu-border);
         border-radius: 9px;
-        background: #fff;
+        background: var(--menu-surface);
     }
     .sidebar-menu-config-search:focus-within {
-        border-color: var(--primary-color, #4267ef);
-        box-shadow: 0 0 0 3px rgba(66, 103, 239, .1);
+        border-color: var(--menu-primary);
+        box-shadow: 0 0 0 3px var(--menu-focus);
     }
     .sidebar-menu-config-search input {
         flex: 1;
@@ -2178,28 +2263,23 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 16px;
+        flex: 1;
         min-height: 0;
         padding: 16px 20px;
         overflow: hidden;
-    }
-    .sidebar-menu-config-content.is-showing-only-pinned {
-        grid-template-columns: minmax(0, 1fr);
-    }
-    .sidebar-menu-config-content.is-showing-only-pinned .sidebar-menu-config-section:last-child {
-        display: none;
     }
     .sidebar-menu-config-section {
         display: flex;
         flex-direction: column;
         min-height: 0;
-        border: 1px solid #e5e9f0;
+        border: 1px solid var(--menu-border);
         border-radius: 10px;
         overflow: hidden;
     }
     .sidebar-menu-config-section-title {
         padding: 11px 13px;
-        border-bottom: 1px solid #edf0f4;
-        background: #f8f9fb;
+        border-bottom: 1px solid var(--menu-border);
+        background: var(--menu-surface-muted);
     }
     .sidebar-menu-config-section-title strong,
     .sidebar-menu-config-section-title small,
@@ -2208,21 +2288,133 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         display: block;
     }
     .sidebar-menu-config-list {
+        flex: 1;
         min-height: 180px;
         overflow-y: auto;
+        overscroll-behavior: contain;
         padding: 7px;
+    }
+    .sidebar-menu-config-group {
+        margin-bottom: 7px;
+        border: 1px solid var(--menu-border);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .sidebar-menu-config-group:last-child {
+        margin-bottom: 0;
+    }
+    .sidebar-menu-config-group-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        min-width: 0;
+        min-height: 42px;
+        padding: 7px 9px;
+        border: 0;
+        color: inherit;
+        background: var(--menu-surface-muted);
+        text-align: left;
+    }
+    .sidebar-menu-config-group-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 24px;
+        width: 24px;
+        height: 24px;
+        border: 0;
+        color: var(--menu-text-muted);
+        background: transparent;
+    }
+    .sidebar-menu-config-group-toggle i {
+        transition: transform .18s ease;
+    }
+    .sidebar-menu-config-group.is-expanded .sidebar-menu-config-group-toggle i {
+        transform: rotate(90deg);
+    }
+    .sidebar-menu-config-group-copy {
+        flex: 1;
+        width: 0;
+        min-width: 0;
+    }
+    .sidebar-menu-config-group-name,
+    .sidebar-menu-config-group-count {
+        display: block;
+    }
+    .sidebar-menu-config-group-name {
+        overflow: hidden;
+        font-weight: 600;
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sidebar-menu-config-group-count {
+        color: var(--menu-text-muted);
+        font-size: 10px;
+    }
+    .sidebar-menu-config-group-select {
+        display: inline-flex;
+        align-items: center;
+        flex: 0 0 auto;
+        gap: 6px;
+        margin: 0;
+        font-size: 10px;
+        cursor: pointer;
+    }
+    .sidebar-menu-config-group-select input {
+        accent-color: var(--menu-primary);
+    }
+    .sidebar-menu-config-group-items {
+        display: none;
+        padding: 4px;
+        border-top: 1px solid var(--menu-border);
+    }
+    .sidebar-menu-config-group.is-expanded .sidebar-menu-config-group-items {
+        display: block;
     }
     .sidebar-menu-config-row {
         gap: 9px;
+        width: 100%;
         min-height: 48px;
+        min-width: 0;
         padding: 7px 8px;
         border-radius: 8px;
+        overflow: hidden;
     }
     .sidebar-menu-config-row:hover {
-        background: rgba(66, 103, 239, .07);
+        background: var(--menu-hover);
+    }
+    .sidebar-menu-config-row.is-dragging {
+        opacity: .45;
+    }
+    .sidebar-menu-config-row.drag-before {
+        box-shadow: inset 0 2px 0 var(--menu-primary);
+    }
+    .sidebar-menu-config-row.drag-after {
+        box-shadow: inset 0 -2px 0 var(--menu-primary);
+    }
+    .sidebar-menu-config-list.is-drop-target {
+        box-shadow: inset 0 0 0 2px var(--menu-primary);
+    }
+    .sidebar-menu-config-drag-handle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 24px;
+        width: 24px;
+        height: 28px;
+        border-radius: 6px;
+        color: var(--menu-text-muted);
+        cursor: grab;
+        touch-action: none;
+    }
+    .sidebar-menu-config-drag-handle:active {
+        cursor: grabbing;
     }
     .sidebar-menu-config-row-copy {
         flex: 1;
+        width: 0;
         min-width: 0;
     }
     .sidebar-menu-config-row-name,
@@ -2240,30 +2432,33 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         font-size: 10px;
     }
     .sidebar-menu-config-row-actions {
+        flex: 0 0 auto;
         gap: 4px;
+        white-space: nowrap;
     }
     .sidebar-menu-config-row-actions button {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        flex: 0 0 28px;
         width: 28px;
         height: 28px;
         padding: 0;
         border: 0;
         border-radius: 6px;
-        color: #657184;
-        background: #edf0f5;
+        color: var(--menu-text-muted);
+        background: var(--menu-surface-muted);
     }
     .sidebar-menu-config-row-actions button:hover:not(:disabled) {
-        color: #fff;
-        background: var(--primary-color, #4267ef);
+        color: var(--menu-on-primary);
+        background: var(--menu-primary);
     }
     .sidebar-menu-config-row-actions button:disabled {
         opacity: .35;
     }
     .sidebar-menu-config-empty {
         padding: 28px 12px;
-        color: #8992a1;
+        color: var(--menu-text-muted);
         text-align: center;
         font-size: 12px;
     }
@@ -2271,28 +2466,28 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         justify-content: space-between;
         gap: 12px;
         padding: 12px 20px;
-        border-top: 1px solid #e8ebf1;
-    }
-    html.dark .sidebar-menu-config-dialog,
-    html.sidebarMode-dark .sidebar-menu-config-dialog {
-        color: #eef2f7;
-        background: #202938;
+        border-top: 1px solid var(--menu-border);
     }
     @media (max-width: 767px) {
+        .sidebar-menu-config-dialog { height: min(760px, 92vh); max-height: 92vh; }
         .sidebar-menu-config-toolbar { align-items: stretch; flex-direction: column; }
         .sidebar-menu-config-search { width: 100%; }
         .sidebar-menu-config-content { grid-template-columns: 1fr; overflow-y: auto; }
-        .sidebar-menu-config-list { max-height: 260px; }
+        .sidebar-menu-config-section { min-height: 220px; }
+        .sidebar-menu-config-list { min-height: 0; max-height: 260px; }
     }
     .sidebar-search-overlay {
-        position: fixed;
-        z-index: 9999;
-        inset: 0;
+        position: fixed !important;
+        z-index: 2147483000 !important;
+        inset: 0 !important;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
         display: none;
         align-items: flex-start;
         justify-content: center;
         padding: 9vh 16px 20px;
-        background: rgba(15, 23, 42, .5);
+        background: var(--menu-overlay);
         backdrop-filter: blur(3px);
     }
     .sidebar-search-overlay.is-open {
@@ -2302,11 +2497,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         width: min(680px, 100%);
         max-height: 78vh;
         overflow: hidden;
-        border: 1px solid rgba(127, 127, 127, .22);
+        border: 1px solid var(--menu-border);
         border-radius: 14px;
-        color: #263238;
-        background: #fff;
-        box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
+        color: var(--menu-text);
+        background: var(--menu-surface);
+        box-shadow: 0 24px 70px var(--menu-shadow);
     }
     .sidebar-search-heading {
         display: flex;
@@ -2322,14 +2517,15 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-search-heading small,
     .sidebar-search-summary,
     .sidebar-search-path {
-        color: #7b8494;
+        color: var(--menu-text-muted);
     }
     .sidebar-search-heading button {
         width: 30px;
         height: 30px;
         border: 0;
         border-radius: 7px;
-        background: #f1f3f7;
+        color: var(--menu-text);
+        background: var(--menu-surface-muted);
     }
     .sidebar-search-input-wrap {
         display: flex;
@@ -2337,13 +2533,13 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         gap: 10px;
         margin: 0 18px;
         padding: 0 12px;
-        border: 2px solid rgba(99, 91, 255, .25);
+        border: 2px solid var(--menu-focus);
         border-radius: 10px;
-        background: #fff;
+        background: var(--menu-surface);
     }
     .sidebar-search-input-wrap:focus-within {
-        border-color: var(--primary-color, #635bff);
-        box-shadow: 0 0 0 3px rgba(99, 91, 255, .1);
+        border-color: var(--menu-primary);
+        box-shadow: 0 0 0 3px var(--menu-focus);
     }
     .sidebar-search-input-wrap input {
         flex: 1;
@@ -2357,10 +2553,10 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     }
     .sidebar-search-input-wrap kbd {
         padding: 2px 6px;
-        border: 1px solid #d8dde7;
+        border: 1px solid var(--menu-border);
         border-radius: 5px;
-        color: #7b8494;
-        background: #f7f8fa;
+        color: var(--menu-text-muted);
+        background: var(--menu-surface-muted);
         font-size: 10px;
     }
     .sidebar-search-summary {
@@ -2387,7 +2583,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-search-result:hover,
     .sidebar-search-result.is-selected {
         color: inherit;
-        background: rgba(99, 91, 255, .1);
+        background: var(--menu-hover);
     }
     .sidebar-search-result-icon {
         display: inline-flex;
@@ -2397,8 +2593,8 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         width: 34px;
         height: 34px;
         border-radius: 8px;
-        color: var(--primary-color, #635bff);
-        background: rgba(99, 91, 255, .1);
+        color: var(--menu-primary);
+        background: var(--menu-hover);
     }
     .sidebar-search-result-copy {
         min-width: 0;
@@ -2419,85 +2615,8 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     }
     .sidebar-search-empty {
         padding: 32px 16px;
-        color: #7b8494;
+        color: var(--menu-text-muted);
         text-align: center;
-    }
-    html.dark .sidebar-search-dialog,
-    html.sidebarMode-dark .sidebar-search-dialog {
-        color: #edf0f5;
-        background: #1f2937;
-    }
-    html.dark .sidebar-search-input-wrap,
-    html.sidebarMode-dark .sidebar-search-input-wrap {
-        background: #111827;
-    }
-    #menu > .nav-main-mobile li {
-        position: relative;
-    }
-    .menu-pin-action {
-        position: absolute;
-        z-index: 5;
-        top: 7px;
-        right: 42px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        box-sizing: border-box;
-        width: 25px;
-        height: 25px;
-        padding: 0;
-        border: 0;
-        border-radius: 6px;
-        color: inherit;
-        background: rgba(127, 127, 127, .14);
-        opacity: 0;
-        transform: translateX(4px);
-        pointer-events: none;
-        transition: opacity .16s ease, transform .16s ease, background-color .16s ease;
-    }
-    .menu-pin-action > i,
-    .menu-pin-action > .fas,
-    .menu-pin-action > .fa {
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-        width: 14px !important;
-        height: 14px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        font-size: 12px;
-        line-height: 14px !important;
-        text-align: center;
-        transform: none !important;
-    }
-    .menu-pin-action > i::before,
-    .menu-pin-action > .fas::before,
-    .menu-pin-action > .fa::before {
-        display: block;
-        width: 100%;
-        margin: 0;
-        line-height: 14px;
-        text-align: center;
-    }
-    #menu > .nav-main-mobile li.nav-item-with-action > .menu-pin-action {
-        right: 66px;
-    }
-    #menu > .nav-main-mobile .nav-children > li:not(.nav-item-with-action) > .menu-pin-action {
-        right: 12px;
-    }
-    #menu > .nav-main-mobile li:hover > .menu-pin-action,
-    #menu > .nav-main-mobile li:focus-within > .menu-pin-action,
-    .menu-pin-action.is-pinned {
-        opacity: 1;
-        transform: translateX(0);
-        pointer-events: auto;
-    }
-    #menu > .nav-main-mobile li:hover > .menu-pin-action,
-    #menu > .nav-main-mobile li:focus-within > .menu-pin-action {
-        pointer-events: auto;
-    }
-    .menu-pin-action.is-pinned {
-        color: var(--primary-color, #635bff);
     }
     .sidebar-only-active #menu > .nav-main-mobile {
         display: none !important;
@@ -2516,9 +2635,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         border-color: transparent;
         background: transparent;
     }
-    @media (max-width: 767px) {
-        .menu-pin-action { opacity: .75; transform: none; pointer-events: auto; }
-    }
 </style>
 
 <script>
@@ -2528,10 +2644,10 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         const originalList = menu ? menu.querySelector(':scope > .nav-main-mobile') : null;
         const pinnedList = document.getElementById('sidebar-pinned-items');
         const emptyState = document.getElementById('sidebar-pinned-empty');
-        const compactToggle = document.getElementById('sidebar-show-only-active');
         const status = document.getElementById('sidebar-preferences-status');
         const retryButton = document.getElementById('sidebar-preferences-retry');
         const searchTrigger = document.getElementById('sidebar-search-trigger');
+        const menuConfigQuickTrigger = document.getElementById('sidebar-menu-config-quick-trigger');
         const searchOverlay = document.getElementById('sidebar-advanced-search');
         const searchClose = document.getElementById('sidebar-search-close');
         const searchInput = document.getElementById('sidebar-search-input');
@@ -2550,7 +2666,19 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         const storageKey = @json('menu-preferences:' . request()->getHost() . ':' . auth()->id());
         const expansionStorageKey = @json('sidebar-menu-state:' . request()->getHost() . ':' . auth()->id());
 
-        if (!sidebar || !originalList || !pinnedList || !compactToggle) return;
+        if (!sidebar || !originalList || !pinnedList) return;
+
+        // Los overlays nacen dentro de .inner-wrapper junto al sidebar. Ese
+        // contenedor y el header crean contextos de apilamiento independientes,
+        // por lo que aumentar z-index no basta para cubrir la barra superior.
+        // Al montarlos directamente en body comparten el contexto raíz y cubren
+        // de forma consistente toda la interfaz.
+        if (searchOverlay && searchOverlay.parentElement !== document.body) {
+            document.body.appendChild(searchOverlay);
+        }
+        if (menuConfigModal && menuConfigModal.parentElement !== document.body) {
+            document.body.appendChild(menuConfigModal);
+        }
 
         let preferences = { pinned_items: [], menu_order: [], show_only_active_menu: false };
         let saveTimer = null;
@@ -2561,7 +2689,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         let selectedSearchIndex = -1;
         let menuExpansionState = {};
         let menuConfigurationEntries = [];
-        let menuConfigShowOnlyPinned = false;
+        let menuConfigExpandedGroups = new Set();
+        let menuConfigDraggedKey = null;
+        let menuConfigDragSource = null;
+        let configMode = false;
+        let menuConfigReturnFocus = menuConfigTrigger;
 
         const synonymGroups = [
             ['sucursal', 'sede', 'establecimiento', 'local', 'tienda', 'agencia', 'punto de venta', 'almacen'],
@@ -2740,31 +2872,29 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
             validKeys.forEach(function (key) {
                 const clone = items.get(key).cloneNode(true);
-                clone.querySelectorAll('.menu-pin-action').forEach(function (button) { button.remove(); });
                 clone.dataset.menuPreferenceKey = key;
                 clone.classList.add('sidebar-pinned-item');
-                clone.setAttribute('draggable', 'true');
+                clone.setAttribute('draggable', configMode ? 'true' : 'false');
                 pinnedList.appendChild(clone);
             });
             restoreMenuExpansionState(pinnedList);
 
             emptyState.style.display = validKeys.length ? 'none' : 'block';
-            originalList.querySelectorAll('.menu-pin-action').forEach(function (button) {
-                const active = preferences.pinned_items.includes(button.dataset.key);
-                button.classList.toggle('is-pinned', active);
-                button.title = active ? 'Quitar de favoritos' : 'Fijar en favoritos';
-                button.setAttribute('aria-pressed', active ? 'true' : 'false');
-            });
         }
 
         function applyCompactMode() {
-            compactToggle.checked = !!preferences.show_only_active_menu;
-            sidebar.classList.toggle('sidebar-only-active', !!preferences.show_only_active_menu);
+            const hasFavorites = preferences.pinned_items.length > 0;
+            if (!hasFavorites) preferences.show_only_active_menu = false;
+            const showOnlyFavorites = hasFavorites && !!preferences.show_only_active_menu;
+            menuConfigFilterFavorites.checked = showOnlyFavorites;
+            menuConfigFilterFavorites.disabled = !hasFavorites;
+            menuConfigFilterFavorites.closest('.sidebar-menu-config-compact').classList.toggle('is-disabled', !hasFavorites);
+            sidebar.classList.toggle('sidebar-only-active', showOnlyFavorites);
         }
 
         function showStatus(message, isError) {
             status.textContent = message;
-            status.style.color = isError ? '#dc3545' : '';
+            status.style.color = isError ? 'var(--menu-danger)' : '';
             window.setTimeout(function () {
                 if (status.textContent === message) status.textContent = '';
             }, 2500);
@@ -3048,7 +3178,10 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                     key: key,
                     name: hierarchy[hierarchy.length - 1],
                     path: hierarchy.join(' > '),
-                    normalized: normalizeSearchText(hierarchy.join(' '))
+                    group: hierarchy[0],
+                    groupKey: normalizeSearchText(hierarchy[0]),
+                    normalizedName: normalizeSearchText(hierarchy[hierarchy.length - 1]),
+                    normalizedPath: normalizeSearchText(hierarchy.join(' '))
                 });
             });
             menuConfigurationEntries.sort(function (left, right) {
@@ -3059,20 +3192,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         function updateMenuConfiguration() {
             renderPinnedItems();
             renderMenuConfiguration();
+            applyCompactMode();
             saveLocalBackup(true);
             persistPreferences();
-        }
-
-        function moveConfiguredFavorite(index, direction) {
-            const order = orderedPinnedKeys();
-            const target = index + direction;
-            if (target < 0 || target >= order.length) return;
-            const moving = order[index];
-            order[index] = order[target];
-            order[target] = moving;
-            preferences.menu_order = order.slice();
-            preferences.pinned_items = order.slice();
-            updateMenuConfiguration();
         }
 
         function toggleConfiguredFavorite(key) {
@@ -3087,9 +3209,88 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             updateMenuConfiguration();
         }
 
-        function createMenuConfigurationRow(entry, pinned, index, total) {
+        function setConfiguredGroupSelection(entries, selected) {
+            const keys = entries.map(function (entry) { return entry.key; });
+            if (selected) {
+                keys.forEach(function (key) {
+                    if (!preferences.pinned_items.includes(key)) preferences.pinned_items.push(key);
+                    if (!preferences.menu_order.includes(key)) preferences.menu_order.push(key);
+                });
+            } else {
+                preferences.pinned_items = preferences.pinned_items.filter(function (key) { return !keys.includes(key); });
+                preferences.menu_order = preferences.menu_order.filter(function (key) { return !keys.includes(key); });
+            }
+            updateMenuConfiguration();
+            window.requestAnimationFrame(function () {
+                menuConfigSearch.focus({ preventScroll: true });
+            });
+        }
+
+        function menuConfigurationTermVariants(term) {
+            const variants = new Set([term]);
+            synonymGroups.forEach(function (group) {
+                const normalizedGroup = group.map(normalizeSearchText);
+                if (normalizedGroup.some(function (synonym) {
+                    return synonym === term || synonym.startsWith(term) || term.startsWith(synonym);
+                })) {
+                    normalizedGroup.forEach(function (synonym) { variants.add(synonym); });
+                }
+            });
+            return Array.from(variants);
+        }
+
+        function scoreMenuConfigurationEntry(entry, query) {
+            if (!query) return 1;
+            const queryTerms = query.split(' ').filter(function (term) {
+                return term.length > 2 || query.split(' ').length === 1;
+            });
+            let score = 0;
+
+            if (entry.normalizedName === query) score += 300;
+            else if (entry.normalizedName.startsWith(query)) score += 220;
+            else if (entry.normalizedName.includes(query)) score += 170;
+            if (entry.normalizedPath.includes(query)) score += 100;
+
+            const everyTermMatches = queryTerms.every(function (term) {
+                const variants = menuConfigurationTermVariants(term);
+                let bestTermScore = 0;
+                variants.forEach(function (variant, variantIndex) {
+                    const relevance = variantIndex === 0 ? 1 : .45;
+                    const nameWords = entry.normalizedName.split(' ');
+                    const pathWords = entry.normalizedPath.split(' ');
+                    if (nameWords.includes(variant)) bestTermScore = Math.max(bestTermScore, 70 * relevance);
+                    else if (nameWords.some(function (word) { return word.startsWith(variant); })) bestTermScore = Math.max(bestTermScore, 55 * relevance);
+                    else if (entry.normalizedName.includes(variant)) bestTermScore = Math.max(bestTermScore, 42 * relevance);
+                    else if (pathWords.includes(variant)) bestTermScore = Math.max(bestTermScore, 30 * relevance);
+                    else if (pathWords.some(function (word) { return word.startsWith(variant); })) bestTermScore = Math.max(bestTermScore, 20 * relevance);
+                });
+                score += bestTermScore;
+                return bestTermScore > 0;
+            });
+
+            return everyTermMatches ? score : 0;
+        }
+
+        function createMenuConfigurationRow(entry, pinned) {
             const row = document.createElement('div');
             row.className = 'sidebar-menu-config-row';
+            row.dataset.menuConfigKey = entry.key;
+            row.dataset.menuConfigSource = pinned ? 'selected' : 'available';
+
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'sidebar-menu-config-drag-handle';
+            dragHandle.draggable = true;
+            dragHandle.tabIndex = 0;
+            dragHandle.title = pinned ? 'Arrastrar para reordenar o quitar' : 'Arrastrar a elementos seleccionados';
+            dragHandle.setAttribute('aria-label', dragHandle.title);
+            dragHandle.innerHTML = '<i class="fas fa-ellipsis-v" aria-hidden="true"></i>';
+            dragHandle.addEventListener('dragstart', function (event) {
+                menuConfigDraggedKey = entry.key;
+                menuConfigDragSource = pinned ? 'selected' : 'available';
+                row.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', entry.key);
+            });
 
             const copy = document.createElement('div');
             copy.className = 'sidebar-menu-config-row-copy';
@@ -3104,115 +3305,216 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
             const actions = document.createElement('div');
             actions.className = 'sidebar-menu-config-row-actions';
-            if (pinned) {
-                const up = document.createElement('button');
-                up.type = 'button';
-                up.title = 'Subir prioridad';
-                up.disabled = index === 0;
-                up.innerHTML = '<i class="fas fa-arrow-up" aria-hidden="true"></i>';
-                up.addEventListener('click', function () { moveConfiguredFavorite(index, -1); });
-                const down = document.createElement('button');
-                down.type = 'button';
-                down.title = 'Bajar prioridad';
-                down.disabled = index === total - 1;
-                down.innerHTML = '<i class="fas fa-arrow-down" aria-hidden="true"></i>';
-                down.addEventListener('click', function () { moveConfiguredFavorite(index, 1); });
-                actions.appendChild(up);
-                actions.appendChild(down);
-            }
-
             const toggle = document.createElement('button');
             toggle.type = 'button';
-            toggle.title = pinned ? 'Quitar de favoritos' : 'Fijar en favoritos';
+            toggle.title = pinned ? 'Mover a opciones disponibles' : 'Mover a elementos seleccionados';
+            toggle.setAttribute(
+                'aria-label',
+                pinned ? 'Mover a opciones disponibles' : 'Mover a elementos seleccionados'
+            );
             toggle.innerHTML = pinned
-                ? '<i class="fas fa-times" aria-hidden="true"></i>'
-                : '<i class="fas fa-thumbtack" aria-hidden="true"></i>';
-            toggle.addEventListener('click', function () { toggleConfiguredFavorite(entry.key); });
+                ? '<i class="fas fa-arrow-left" aria-hidden="true"></i>'
+                : '<i class="fas fa-plus" aria-hidden="true"></i>';
+            toggle.addEventListener('click', function () {
+                toggleConfiguredFavorite(entry.key);
+                if (!pinned) {
+                    window.requestAnimationFrame(function () {
+                        menuConfigSearch.focus({ preventScroll: true });
+                    });
+                }
+            });
             actions.appendChild(toggle);
+            row.appendChild(dragHandle);
             row.appendChild(copy);
             row.appendChild(actions);
             return row;
         }
 
+        function createMenuConfigurationGroup(groupName, entries, visibleEntries, forceExpanded) {
+            const group = document.createElement('section');
+            const groupKey = entries[0].groupKey;
+            const isExpanded = forceExpanded || menuConfigExpandedGroups.has(groupKey);
+            group.className = 'sidebar-menu-config-group' + (isExpanded ? ' is-expanded' : '');
+
+            const header = document.createElement('div');
+            header.className = 'sidebar-menu-config-group-header';
+            const expand = document.createElement('button');
+            expand.type = 'button';
+            expand.className = 'sidebar-menu-config-group-toggle';
+            expand.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+            expand.setAttribute('aria-label', (isExpanded ? 'Contraer ' : 'Expandir ') + groupName);
+            expand.innerHTML = '<i class="fas fa-chevron-right" aria-hidden="true"></i>';
+            expand.addEventListener('click', function () {
+                const expanded = group.classList.toggle('is-expanded');
+                expand.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                expand.setAttribute('aria-label', (expanded ? 'Contraer ' : 'Expandir ') + groupName);
+                if (expanded) menuConfigExpandedGroups.add(groupKey);
+                else menuConfigExpandedGroups.delete(groupKey);
+            });
+
+            const copy = document.createElement('div');
+            copy.className = 'sidebar-menu-config-group-copy';
+            const name = document.createElement('span');
+            name.className = 'sidebar-menu-config-group-name';
+            name.textContent = groupName;
+            const count = document.createElement('span');
+            count.className = 'sidebar-menu-config-group-count';
+            const selectedCount = entries.filter(function (entry) {
+                return preferences.pinned_items.includes(entry.key);
+            }).length;
+            count.textContent = selectedCount + ' de ' + entries.length + ' seleccionados';
+            copy.appendChild(name);
+            copy.appendChild(count);
+
+            const selectLabel = document.createElement('label');
+            selectLabel.className = 'sidebar-menu-config-group-select';
+            const select = document.createElement('input');
+            select.type = 'checkbox';
+            select.checked = selectedCount === entries.length;
+            select.indeterminate = selectedCount > 0 && selectedCount < entries.length;
+            select.setAttribute('aria-label', 'Seleccionar todo el módulo ' + groupName);
+            select.addEventListener('change', function () {
+                setConfiguredGroupSelection(entries, select.checked);
+            });
+            const selectText = document.createElement('span');
+            selectText.textContent = 'Todo';
+            selectLabel.appendChild(select);
+            selectLabel.appendChild(selectText);
+
+            const items = document.createElement('div');
+            items.className = 'sidebar-menu-config-group-items';
+            visibleEntries.forEach(function (entry) {
+                items.appendChild(createMenuConfigurationRow(entry, false));
+            });
+            if (!visibleEntries.length) {
+                items.innerHTML = '<div class="sidebar-menu-config-empty">Todos los elementos de este bloque están seleccionados.</div>';
+            }
+
+            header.appendChild(expand);
+            header.appendChild(copy);
+            header.appendChild(selectLabel);
+            group.appendChild(header);
+            group.appendChild(items);
+            return group;
+        }
+
         function renderMenuConfiguration() {
             if (!menuConfigPinned || !menuConfigAvailable) return;
+            if (!configMode) {
+                menuConfigPinned.innerHTML = '';
+                menuConfigAvailable.innerHTML = '';
+                return;
+            }
             const entries = new Map(menuConfigurationEntries.map(function (entry) { return [entry.key, entry]; }));
             const ordered = orderedPinnedKeys().filter(function (key) { return entries.has(key); });
             const query = normalizeSearchText(menuConfigSearch.value);
             menuConfigPinned.innerHTML = '';
             menuConfigAvailable.innerHTML = '';
 
-            ordered.forEach(function (key, index) {
-                menuConfigPinned.appendChild(createMenuConfigurationRow(entries.get(key), true, index, ordered.length));
+            ordered.forEach(function (key) {
+                menuConfigPinned.appendChild(createMenuConfigurationRow(entries.get(key), true));
             });
             if (!ordered.length) {
                 menuConfigPinned.innerHTML = '<div class="sidebar-menu-config-empty">Todavía no fijaste ningún acceso.</div>';
             }
 
-            const available = menuConfigurationEntries.filter(function (entry) {
-                return !preferences.pinned_items.includes(entry.key) && (!query || entry.normalized.includes(query));
+            const matchingEntries = menuConfigurationEntries.map(function (entry) {
+                return { entry: entry, score: scoreMenuConfigurationEntry(entry, query) };
+            }).filter(function (result) {
+                return result.score > 0;
+            }).sort(function (left, right) {
+                return right.score - left.score || left.entry.path.localeCompare(right.entry.path);
+            }).map(function (result) {
+                return result.entry;
             });
-            available.forEach(function (entry) {
-                menuConfigAvailable.appendChild(createMenuConfigurationRow(entry, false, -1, available.length));
+
+            const groupedEntries = new Map();
+            matchingEntries.forEach(function (entry) {
+                if (!groupedEntries.has(entry.group)) groupedEntries.set(entry.group, []);
+                groupedEntries.get(entry.group).push(entry);
             });
-            if (!available.length) {
+            groupedEntries.forEach(function (matchedGroupEntries, groupName) {
+                const allGroupEntries = menuConfigurationEntries.filter(function (entry) {
+                    return entry.group === groupName;
+                });
+                const visibleEntries = matchedGroupEntries.filter(function (entry) {
+                    return !preferences.pinned_items.includes(entry.key);
+                });
+                menuConfigAvailable.appendChild(
+                    createMenuConfigurationGroup(groupName, allGroupEntries, visibleEntries, !!query)
+                );
+            });
+            if (!matchingEntries.length) {
                 menuConfigAvailable.innerHTML = '<div class="sidebar-menu-config-empty">No hay opciones que coincidan con la búsqueda.</div>';
             }
-            applyMenuConfigurationFilter();
         }
 
-        function applyMenuConfigurationFilter() {
-            menuConfigFilterFavorites.checked = menuConfigShowOnlyPinned;
-            menuConfigContent.classList.toggle('is-showing-only-pinned', menuConfigShowOnlyPinned);
-            menuConfigAvailable.closest('.sidebar-menu-config-section').setAttribute(
-                'aria-hidden',
-                menuConfigShowOnlyPinned ? 'true' : 'false'
-            );
-        }
-
-        function openMenuConfiguration() {
+        function openMenuConfiguration(returnFocus) {
+            menuConfigReturnFocus = returnFocus || menuConfigTrigger;
+            configMode = true;
+            pinnedList.querySelectorAll('.sidebar-pinned-item').forEach(function (item) {
+                item.setAttribute('draggable', 'true');
+            });
             buildMenuConfigurationEntries();
             menuConfigSearch.value = '';
-            menuConfigShowOnlyPinned = false;
+            menuConfigExpandedGroups = new Set();
+            if (menuConfigurationEntries.length) menuConfigExpandedGroups.add(menuConfigurationEntries[0].groupKey);
             renderMenuConfiguration();
+            applyCompactMode();
             menuConfigModal.classList.add('is-open');
             menuConfigModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('sidebar-menu-config-open');
             document.body.style.overflow = 'hidden';
             window.setTimeout(function () { menuConfigSearch.focus(); }, 20);
         }
 
         function closeMenuConfiguration() {
+            configMode = false;
+            clearMenuConfigurationDragState();
             menuConfigModal.classList.remove('is-open');
             menuConfigModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('sidebar-menu-config-open');
             document.body.style.overflow = '';
-            menuConfigTrigger.focus();
+            menuConfigPinned.innerHTML = '';
+            menuConfigAvailable.innerHTML = '';
+            pinnedList.querySelectorAll('.sidebar-pinned-item').forEach(function (item) {
+                item.setAttribute('draggable', 'false');
+            });
+            if (menuConfigReturnFocus && document.body.contains(menuConfigReturnFocus)) {
+                menuConfigReturnFocus.focus();
+            }
         }
 
-        function installPinButtons() {
-            availableItems().forEach(function (item, key) {
-                if (Array.from(item.children).some(function (child) { return child.classList && child.classList.contains('menu-pin-action'); })) return;
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'menu-pin-action';
-                button.dataset.key = key;
-                button.setAttribute('aria-label', 'Fijar opción en favoritos');
-                button.innerHTML = '<i class="fas fa-thumbtack" aria-hidden="true"></i>';
-                button.addEventListener('click', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const index = preferences.pinned_items.indexOf(key);
-                    if (index >= 0) {
-                        preferences.pinned_items.splice(index, 1);
-                        preferences.menu_order = preferences.menu_order.filter(function (value) { return value !== key; });
-                    } else {
-                        preferences.pinned_items.push(key);
-                        preferences.menu_order.push(key);
-                    }
-                    renderPinnedItems();
-                    persistPreferences();
-                });
-                item.appendChild(button);
+        function clearMenuConfigurationDragState() {
+            menuConfigContent.querySelectorAll('.is-dragging, .drag-before, .drag-after, .is-drop-target').forEach(function (element) {
+                element.classList.remove('is-dragging', 'drag-before', 'drag-after', 'is-drop-target');
             });
+            menuConfigDraggedKey = null;
+            menuConfigDragSource = null;
+        }
+
+        function dropMenuConfigurationItemInSelected(event) {
+            if (!menuConfigDraggedKey) return;
+            event.preventDefault();
+            const targetRow = event.target.closest('.sidebar-menu-config-row[data-menu-config-source="selected"]');
+            const order = orderedPinnedKeys().filter(function (key) { return key !== menuConfigDraggedKey; });
+            let targetIndex = targetRow ? order.indexOf(targetRow.dataset.menuConfigKey) : order.length;
+            if (targetIndex < 0) targetIndex = order.length;
+            if (targetRow && event.clientY > targetRow.getBoundingClientRect().top + targetRow.offsetHeight / 2) targetIndex++;
+            order.splice(targetIndex, 0, menuConfigDraggedKey);
+            preferences.pinned_items = order.slice();
+            preferences.menu_order = order.slice();
+            clearMenuConfigurationDragState();
+            updateMenuConfiguration();
+        }
+
+        function dropMenuConfigurationItemInAvailable(event) {
+            if (!menuConfigDraggedKey || menuConfigDragSource !== 'selected') return;
+            event.preventDefault();
+            preferences.pinned_items = preferences.pinned_items.filter(function (key) { return key !== menuConfigDraggedKey; });
+            preferences.menu_order = preferences.menu_order.filter(function (key) { return key !== menuConfigDraggedKey; });
+            clearMenuConfigurationDragState();
+            updateMenuConfiguration();
         }
 
         pinnedList.addEventListener('click', function (event) {
@@ -3241,6 +3543,10 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         });
 
         pinnedList.addEventListener('dragstart', function (event) {
+            if (!configMode) {
+                event.preventDefault();
+                return;
+            }
             draggedItem = closestPinnedItem(event.target);
             if (!draggedItem) return;
             draggedItem.classList.add('is-dragging');
@@ -3248,6 +3554,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             event.dataTransfer.setData('text/plain', draggedItem.dataset.menuPreferenceKey || '');
         });
         pinnedList.addEventListener('dragover', function (event) {
+            if (!configMode) return;
             const target = closestPinnedItem(event.target);
             if (!draggedItem || !target || target === draggedItem) return;
             event.preventDefault();
@@ -3258,6 +3565,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             target.classList.add(after ? 'drag-after' : 'drag-before');
         });
         pinnedList.addEventListener('drop', function (event) {
+            if (!configMode) return;
             const target = closestPinnedItem(event.target);
             if (!draggedItem || !target || target === draggedItem) return;
             event.preventDefault();
@@ -3276,12 +3584,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             draggedItem = null;
         });
 
-        compactToggle.addEventListener('change', function () {
-            preferences.show_only_active_menu = compactToggle.checked;
-            applyCompactMode();
-            persistPreferences();
-        });
-
         retryButton.addEventListener('click', function () {
             showStatus('Sincronizando...');
             persistPreferences(true);
@@ -3298,7 +3600,12 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         menuConfigTrigger.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            openMenuConfiguration();
+            openMenuConfiguration(menuConfigTrigger);
+        });
+        menuConfigQuickTrigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            openMenuConfiguration(menuConfigQuickTrigger);
         });
         menuConfigClose.addEventListener('click', closeMenuConfiguration);
         menuConfigDone.addEventListener('click', closeMenuConfiguration);
@@ -3306,9 +3613,39 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             if (event.target === menuConfigModal) closeMenuConfiguration();
         });
         menuConfigSearch.addEventListener('input', renderMenuConfiguration);
+        menuConfigPinned.addEventListener('dragover', function (event) {
+            if (!menuConfigDraggedKey) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            menuConfigPinned.classList.add('is-drop-target');
+            menuConfigPinned.querySelectorAll('.drag-before, .drag-after').forEach(function (row) {
+                row.classList.remove('drag-before', 'drag-after');
+            });
+            const targetRow = event.target.closest('.sidebar-menu-config-row[data-menu-config-source="selected"]');
+            if (targetRow && targetRow.dataset.menuConfigKey !== menuConfigDraggedKey) {
+                const after = event.clientY > targetRow.getBoundingClientRect().top + targetRow.offsetHeight / 2;
+                targetRow.classList.add(after ? 'drag-after' : 'drag-before');
+            }
+        });
+        menuConfigPinned.addEventListener('dragleave', function (event) {
+            if (!menuConfigPinned.contains(event.relatedTarget)) menuConfigPinned.classList.remove('is-drop-target');
+        });
+        menuConfigPinned.addEventListener('drop', dropMenuConfigurationItemInSelected);
+        menuConfigAvailable.addEventListener('dragover', function (event) {
+            if (!menuConfigDraggedKey || menuConfigDragSource !== 'selected') return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'move';
+            menuConfigAvailable.classList.add('is-drop-target');
+        });
+        menuConfigAvailable.addEventListener('dragleave', function (event) {
+            if (!menuConfigAvailable.contains(event.relatedTarget)) menuConfigAvailable.classList.remove('is-drop-target');
+        });
+        menuConfigAvailable.addEventListener('drop', dropMenuConfigurationItemInAvailable);
+        menuConfigContent.addEventListener('dragend', clearMenuConfigurationDragState);
         menuConfigFilterFavorites.addEventListener('change', function () {
-            menuConfigShowOnlyPinned = menuConfigFilterFavorites.checked;
-            applyMenuConfigurationFilter();
+            preferences.show_only_active_menu = menuConfigFilterFavorites.checked;
+            applyCompactMode();
+            persistPreferences();
         });
         document.addEventListener('keydown', function (event) {
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
@@ -3340,7 +3677,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         });
 
         readMenuExpansionState();
-        installPinButtons();
         restoreMenuExpansionState(originalList);
         buildSearchIndex();
         const localBackup = readLocalBackup();
@@ -3690,19 +4026,21 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
     .list-config {
         position: absolute;
-        z-index: 1;
+        z-index: 100;
+        isolation: isolate;
         display: none;
-        background-color: #fff;
+        color: var(--menu-text);
+        background-color: var(--menu-surface);
         min-width: 230px;
-        border: 1px solid #e0e6f8;
-        box-shadow: 0 0 16px 0px rgb(0 36 96 / 12%);
+        border: 1px solid var(--menu-border);
+        box-shadow: 0 0 16px var(--menu-shadow);
         bottom: 116px;
         left: 15px;
         border-radius: 8px;
         padding: 15px;
     }
 
-    .more-config .nano-content:hover~.list-config,
+    .more-config .nano-content:hover ~ .list-config,
     .list-config:hover {
         display: block;
     }
@@ -3713,7 +4051,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     }
 
     ul.nav.list-config li:hover {
-        background: #f3f4fb;
+        background: var(--menu-hover);
         border-radius: 5px;
     }
 
@@ -3725,27 +4063,46 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-blue .more-config a,
     .sidebar-green .more-config a,
     .sidebar-dark .sidebar-left .more-config a {
-        color: #60769a !important;
+        color: var(--menu-text) !important;
     }
 
     .sidebar-red .more-config a:hover,
     .sidebar-blue .more-config a:hover,
     .sidebar-green .more-config a:hover {
-        color: #fff !important;
+        color: var(--menu-primary) !important;
     }
 
-    .nav-main .nav-children li.nav-item-with-action {
+    .nav-main li.nav-item-with-action {
         position: relative;
+        display: block;
+        min-width: 0;
+        overflow: hidden;
     }
 
-    .nav-main .nav-children li.nav-item-with-action > .nav-action {
+    .nav-main li.nav-item-with-action > .nav-link {
+        display: block;
+        min-width: 0;
+        padding-right: 82px !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .nav-main li.nav-item-with-action > .nav-action {
         position: absolute;
-        right: 12px;
+        right: 8px;
         top: 50%;
         transform: translateY(-50%);
         z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        max-width: 70px;
         padding: 2px 6px;
         line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .nav-item-with-action button{
         padding: 0 4px !important;
@@ -3768,10 +4125,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         left: 50px;
         top: 94px;
         transform: translateY(-50%);
-        background-color: #fff;
-        border: 1px solid #e0e6f8;
+        color: var(--menu-text);
+        background-color: var(--menu-surface);
+        border: 1px solid var(--menu-border);
         border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 20px var(--menu-shadow);
         min-width: 250px;
         opacity: 0;
         visibility: hidden;
@@ -3786,11 +4144,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
     .establishment-dropdown-header {
         padding: 12px 15px;
-        border-bottom: 1px solid #e0e6f8;
+        border-bottom: 1px solid var(--menu-border);
         font-weight: 600;
         font-size: 13px;
-        color: #333;
-        background-color: #f8f9fa;
+        color: var(--menu-text);
+        background-color: var(--menu-surface-muted);
         border-radius: 8px 8px 0 0;
     }
 
@@ -3803,8 +4161,8 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         left: calc(100% + 0px);
         top: 50%;
         transform: translateY(-50%);
-        background-color: #000;
-        color: #fff;
+        background-color: var(--menu-text);
+        color: var(--menu-surface);
         font-size: 12px;
         padding: 4px 7px;
         border-radius: 6px;
@@ -3824,7 +4182,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         transform: translateY(-50%);
         border-width: 8px;
         border-style: solid;
-        border-color: transparent #000 transparent transparent;
+        border-color: transparent var(--menu-text) transparent transparent;
     }
 
     .contain-icon-establishment-wrapper:hover .tooltip-right,
