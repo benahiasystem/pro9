@@ -12,6 +12,7 @@ import lang from 'element-ui/lib/locale/lang/es'
 import locale from 'element-ui/lib/locale'
 
 import '../sass/element-ui.scss';
+import '../sass/pages/system-update.scss';
 import 'element-ui/lib/theme-chalk/index.css';
 import CheckoutIzipay from './components/checkouts/izipay.vue'
 import CheckoutCulqi from './components/checkouts/culqi.vue'
