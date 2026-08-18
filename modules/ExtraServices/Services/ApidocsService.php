@@ -33,7 +33,7 @@ class ApidocsService
     // Constructor para inicializar las propiedades del servicio
     public function __construct()
     {
-        $this->hostname = $this->getMainHostname();
+        $this->hostname = env('APP_URL_BASE');
         $this->resellerId = $this->getResellerId();
         $this->secret = config('app.url_base');
         $this->baseUrl = $this->getBaseUrl();
@@ -68,21 +68,15 @@ class ApidocsService
      */
     protected function getResellerId(): string
     {
-
         $hostname = $this->hostname;
-
         $prefix = env('PREFIX_URL', null);
-        if (!empty($prefix) && strpos($hostname, $prefix . '.') === 0) {
+
+        // Quitar unicamente el subdominio de prefijo (ej: app.factivo.pe -> factivo.pe)
+        if (!empty($prefix) && str_starts_with($hostname, $prefix . '.')) {
             $hostname = substr($hostname, strlen($prefix) + 1);
         }
 
-        $parts = explode('.', $hostname);
-
-        if (count($parts) === 1) {
-            return $parts[0];
-        }
-
-        return $parts[0];
+        return $hostname;
     }
 
     /**
@@ -287,7 +281,7 @@ class ApidocsService
     public function isActiveService(): bool
     {
         try {
-            $resellerId = $this->getResellerId();
+            $resellerId = $this->resellerId;
             $url = $this->baseUrl . '/admin/resellers/' . $resellerId . '/exists';
 
             $response = Http::withoutVerifying()
@@ -315,7 +309,7 @@ class ApidocsService
     public function getQuota(): array
     {
         try {
-            $resellerId = $this->getResellerId();
+            $resellerId = $this->resellerId;
             $url = $this->baseUrl . '/admin/resellers/' . $resellerId . '/quota';
 
             $response = Http::withoutVerifying()
@@ -334,7 +328,7 @@ class ApidocsService
                 'data' => $response->json(),
             ];
         } catch (Exception $e) {
-            Log::error('ApiDocsService isActiveService Error: ' . $e->getMessage(), [
+            Log::error('ApiDocsService getQuota Error: ' . $e->getMessage(), [
                 'resellerId' => $this->resellerId ?? null,
             ]);
 
