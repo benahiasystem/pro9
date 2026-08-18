@@ -1034,7 +1034,8 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
             @php
                 $value_ob = $document->detraction ? $document->detraction : $document->retention;
-                $total_pending_payment = $document->total_pending_payment - $value_ob->guarantee_fund;
+                $guarantee_fund = $value_ob->guarantee_fund ?? 0;
+                $total_pending_payment = $document->total_pending_payment - $guarantee_fund;
             @endphp
 
             <tr>
@@ -1044,7 +1045,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 @if ($configurationEnableGuaranteeFund->enabled_guarantee_fund)
                     <tr>
                         <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">FONDO DE GARANTIA: {{ $document->currency_type->symbol }}</td>
-                        <td class="text-right font-bold">{{ number_format($value_ob->guarantee_fund, 2) }}</td>
+                        <td class="text-right font-bold">{{ number_format($guarantee_fund, 2) }}</td>
                     </tr>
                 @endif
             @endif

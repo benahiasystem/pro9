@@ -204,7 +204,7 @@
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end">Saldo</th>
                             <th v-if="col.visible && col.key === 'purchase_order'" :key="col.key" class="text-center" style="min-width: 95px;">Orden de compra</th>
-                            <th v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center"></th>
+                            <th v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads"></th>
                             <th v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end"></th>
                         </template>
                     </tr>
@@ -314,7 +314,7 @@
                             <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IGV {{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</small></template></td>
                             <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.balance) }}</td>
                             <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
-                            <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center">
+                            <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads">
                                 <button v-if="row.has_xml" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_xml)">XML</button>
                                 <button v-if="row.has_pdf" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_pdf)">PDF</button>
                                 <button v-if="row.has_cdr" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_cdr)">CDR</button>
@@ -326,6 +326,35 @@
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </el-button>
                                 <el-dropdown-menu slot="dropdown">
+                                  <!-- Descargas: en celular la columna XML/PDF/CDR se oculta
+                                       (hacía filas de ~300px) y sus acciones viven aquí -->
+                                  <el-dropdown-item
+                                    v-if="row.has_xml"
+                                    class="mobile-item-only"
+                                    @click.native="clickDownload(row.download_xml)"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-code me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M10 13l-1 2l1 2" /><path d="M14 13l1 2l-1 2" /></svg>
+                                    Descargar XML
+                                  </el-dropdown-item>
+
+                                  <el-dropdown-item
+                                    v-if="row.has_pdf"
+                                    class="mobile-item-only"
+                                    @click.native="clickDownload(row.download_pdf)"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-type-pdf me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" /><path d="M17 18h2" /><path d="M20 15h-3v6" /><path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1z" /></svg>
+                                    Descargar PDF
+                                  </el-dropdown-item>
+
+                                  <el-dropdown-item
+                                    v-if="row.has_cdr"
+                                    class="mobile-item-only"
+                                    @click.native="clickDownload(row.download_cdr)"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-check me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 15l2 2l4 -4" /></svg>
+                                    Descargar CDR
+                                  </el-dropdown-item>
+
                                   <el-dropdown-item
                                     v-if="configuration.permission_to_edit_cpe && row.state_type_id === '01' && userPermissionEditCpe && row.is_editable"
                                   >
@@ -1121,8 +1150,10 @@ export default {
             this.showDialogRetention = true;
         },
         isDateWarning(date_due) {
-            let today = Date.now();
-            return moment(date_due).isBefore(today);
+            if (!date_due) return false;
+            const due = moment(date_due, ["DD-MM-YYYY", "YYYY-MM-DD", "DD/MM/YYYY", moment.ISO_8601], true);
+            if (!due.isValid()) return false;
+            return due.startOf("day").isBefore(moment().startOf("day"));
         },
         go(url) {
           window.location.href = url;

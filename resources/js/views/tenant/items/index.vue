@@ -30,7 +30,7 @@
                 </li>
             </ol>
             <div class="right-wrapper pull-right">
-                <template v-if="can_add_new_product">
+                <template v-if="typeUser === 'admin'">
                     <div class="btn-group flex-wrap dropdown">
                         <!-- <button
                             aria-expanded="false"
@@ -98,7 +98,7 @@
                         </div>
                     </div>
                 </template>
-                <template v-if="typeUser === 'admin'">
+                <template v-if="can_add_new_product">
                     <div class="btn-group flex-wrap dropdown">
                         <button
                             aria-expanded="false"
