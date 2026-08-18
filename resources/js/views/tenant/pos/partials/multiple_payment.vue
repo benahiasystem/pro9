@@ -37,12 +37,16 @@
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2"  >
-                                        <el-input v-model="row.reference"></el-input>
+                                        <el-input v-model="row.reference"
+                                                  @focus="valueInputSelect"
+                                                  @click.native="valueInputSelect"></el-input>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2" >
-                                        <el-input v-model="row.payment"></el-input>
+                                        <el-input v-model="row.payment"
+                                                  @focus="valueInputSelect"
+                                                  @click.native="valueInputSelect"></el-input>
                                     </div>
                                 </td>
                                 <td class="series-table-actions text-center">
@@ -127,6 +131,15 @@
             create(){
 
 
+            },
+            valueInputSelect(event) {
+                const target = event && event.target
+                if (!target) return
+                const input = (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
+                    ? target
+                    : (target.querySelector && target.querySelector('input'))
+                if (!input || typeof input.select !== 'function') return
+                this.$nextTick(() => input.select())
             },
             clickAddPayment(total = 0) {
 
