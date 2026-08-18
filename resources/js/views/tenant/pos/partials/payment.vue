@@ -182,6 +182,8 @@
                                           inputmode="decimal"
                                           v-model="enter_amount"
                                           @input="enterAmount()"
+                                          @focus="valueInputSelect"
+                                          @click.native="valueInputSelect"
                                           @keyup.enter.native="keyupEnterAmount()">
                                 </el-input>
                             </div>
@@ -242,6 +244,8 @@
                                 <el-input v-model="discount_amount"
                                           inputmode="decimal"
                                           :disabled="!enabled_discount"
+                                          @focus="valueInputSelect"
+                                          @click.native="valueInputSelect"
                                           @change="inputDiscountAmount()">
                                 </el-input>
                             </div>
@@ -284,6 +288,8 @@
                                 <span class="pos-money-input__symbol">{{ currencyTypeActive.symbol }}</span>
                                 <el-input v-model="form.total_tips"
                                           inputmode="decimal"
+                                          @focus="valueInputSelect"
+                                          @click.native="valueInputSelect"
                                           @input="sanitizeTipAmount"></el-input>
                             </div>
                         </div>
@@ -678,6 +684,15 @@ export default {
             await this.$refs.enter_amount.$el.getElementsByTagName('input')[0].focus()
             await this.$refs.enter_amount.$el.getElementsByTagName('input')[0].select()
             // console.log(this.$refs.enter_amount.$el.getElementsByTagName('input')[0])
+        },
+        valueInputSelect(event) {
+            const target = event && event.target
+            if (!target) return
+            const input = (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
+                ? target
+                : (target.querySelector && target.querySelector('input'))
+            if (!input || typeof input.select !== 'function') return
+            this.$nextTick(() => input.select())
         },
         changeEnabledDiscount() {
 

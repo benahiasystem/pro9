@@ -411,6 +411,8 @@
                                                 v-model="item.edit_sale_unit_price"
                                                 class="pos-price-edit__input"
                                                 size="mini"
+                                                @focus="valueInputSelect"
+                                                @click.native="valueInputSelect"
                                             >
                                             </el-input>
                                             <button
@@ -853,6 +855,8 @@
                                         class="pos-qty__input"
                                         inputmode="decimal"
                                         v-model="item.item.aux_quantity"
+                                        @focus="valueInputSelect"
+                                        @click.native="valueInputSelect"
                                         @input="
                                                 clickAddItem(
                                                     item,
@@ -884,6 +888,8 @@
                                                 v-model="item.total"
                                                 size="mini"
                                                 inputmode="decimal"
+                                                @focus="valueInputSelect"
+                                                @click.native="valueInputSelect"
                                                 @blur="changeRowTotal(index)"
                                                 :readonly="!edit_unit_price && !item.item.calculate_quantity"
                                             ></el-input>

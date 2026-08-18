@@ -778,6 +778,8 @@
                                     <el-input
                                         v-model="item.item.aux_quantity"
                                         inputmode="decimal"
+                                        @focus="valueInputSelect"
+                                        @click.native="valueInputSelect"
                                         @input="clickAddItem(item, index, true)"
                                         @keyup.enter.native="keyupEnterQuantity"
                                         class="pos-qty-field"
