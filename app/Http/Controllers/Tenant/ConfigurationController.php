@@ -259,6 +259,13 @@ class ConfigurationController extends Controller
 
     public function changeFormat(Request $request)
     {
+        if (in_array($request->formats, $this->getTicketOnlyPdfTemplates(), true)) {
+            return [
+                'success' => false,
+                'message' => "La plantilla {$request->formats} solo está disponible para ticket"
+            ];
+        }
+
         $establishment = Establishment::find($request->establishment);
         $establishment->template_pdf = $request->formats;
         $establishment->save();
@@ -364,13 +371,18 @@ class ConfigurationController extends Controller
 
     public function getFormats()
     {
-        $formats = FormatTemplate::get()->transform(function($row) {
-                return $row->getCollectionData();
-        });
+        $formats = FormatTemplate::whereNotIn('formats', $this->getTicketOnlyPdfTemplates())
+                        ->get()
+                        ->transform(function($row) {
+                            return $row->getCollectionData();
+                        });
 
         return compact('formats');
+    }
 
-        return $formats;
+    private function getTicketOnlyPdfTemplates()
+    {
+        return (array) config('tenant.ticket_only_pdf_templates', []);
     }
 
     public function getPreprintedFormats()

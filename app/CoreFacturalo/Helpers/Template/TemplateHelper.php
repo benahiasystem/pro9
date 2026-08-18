@@ -292,6 +292,21 @@ use Illuminate\Support\Str;
             return $str;
         }
 
+        public static function stripLeadingItemCode(?string $description, $code): string
+        {
+            $description = (string) $description;
+            $code = trim((string) $code);
+
+            if ($code === '' || $description === '') {
+                return $description;
+            }
+
+            $pattern = '/^\s*' . preg_quote($code, '/') . '\s*(?:[-–—:|.]\s*)?/u';
+            $stripped = preg_replace($pattern, '', $description, 1);
+
+            return trim((string) $stripped) === '' ? $description : ltrim((string) $stripped);
+        }
+
         /**
          * Normaliza el nombre personalizado del producto para tickets térmicos.
          * mPDF suele colapsar párrafos/listas HTML en una sola línea en columnas estrechas.
