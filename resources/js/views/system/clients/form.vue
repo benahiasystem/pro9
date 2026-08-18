@@ -299,7 +299,7 @@
                         <div :class="{'has-danger': errors.phone_ws}"
                                 class="form-group">
                             <label class="control-label">
-                                Nümero de WhatsApp
+                                Número de WhatsApp
                             </label>
                             <el-input
                                 v-model="form.phone_ws">
