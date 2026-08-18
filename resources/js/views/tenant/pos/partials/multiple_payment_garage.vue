@@ -131,7 +131,24 @@
                     payment: total,
                 });
 
+                this.calculatePayments();
                 this.$emit('add', this.payments);
+            },
+            calculatePayments() {
+                let payment_count = this.payments.length;
+                if (payment_count === 0) return;
+
+                let total = parseFloat(this.total) || 0;
+                let payment = 0;
+                let amount = _.round(total / payment_count, 2);
+
+                _.forEach(this.payments, row => {
+                    payment += amount;
+                    if (total - payment < 0) {
+                        amount = _.round(total - payment + amount, 2);
+                    }
+                    this.$set(row, 'payment', amount);
+                });
             },
 
             close() {
@@ -140,6 +157,7 @@
             },
             clickCancel(index) {
                 this.payments.splice(index, 1);
+                this.calculatePayments();
                 this.$emit('add', this.payments);
             },
             async events() {
