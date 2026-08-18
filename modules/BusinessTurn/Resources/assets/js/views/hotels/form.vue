@@ -35,18 +35,7 @@
                         <div class="form-group" :class="{'has-danger': errors.number}">
                             <label class="control-label">Número <span class="text-danger">*</span></label>
 
-                            <div v-if="api_service_token != false">
-                                <x-input-service :identity_document_type_id="identity_document_type_id" v-model="hotel.number" @search="searchNumber"></x-input-service>
-                            </div>
-                            <div v-else>
-                                <el-input v-model="hotel.number" :maxlength="maxLength" dusk="number">
-                                    <template v-if="identity_document_type_id === '1'">
-                                        <el-button type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="searchCustomer">
-                                            RENIEC
-                                        </el-button>
-                                    </template>
-                                </el-input>
-                            </div>
+                            <x-input-service :identity_document_type_id="identity_document_type_id" v-model="hotel.number" @search="searchNumber"></x-input-service>
 
                             <small class="form-control-feedback" v-if="errors.number" v-text="errors.number[0]"></small>
                         </div>
