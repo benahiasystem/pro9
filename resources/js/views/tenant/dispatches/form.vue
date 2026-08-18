@@ -288,8 +288,8 @@
                                  class="form-group">
                                 <label class="control-label">Tipo Doc. Identidad<span
                                     class="text-danger"> *</span></label>
-                                <el-select v-model="form.dispatcher.identity_document_type_id" filterable>
-                                    <el-option v-for="option in identityDocumentTypes" :key="option.id"
+                                <el-select v-model="form.dispatcher.identity_document_type_id" filterable disabled>
+                                    <el-option v-for="option in identityDocumentTypes.filter(o => o.id === '6')" :key="option.id"
                                                :label="option.description" :value="option.id"></el-option>
                                 </el-select>
                                 <small v-if="errors['dispatcher.identity_document_type_id']"
@@ -525,7 +525,7 @@ export default {
                 dispatcher: {
                     number: null,
                     name: null,
-                    identity_document_type_id: null,
+                    identity_document_type_id: '6',
                 }
             },
             showEditQuantity:[],

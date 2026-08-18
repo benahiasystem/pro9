@@ -1785,8 +1785,8 @@ export default {
                     this.form.dispatcher.name = v.name;
                     this.form.dispatcher.number_mtc = v.number_mtc;
 
-                    if (this.form.dispatcher.identity_document_type_id === '' || _.isNull(this.form.dispatcher.identity_document_type_id)) {
-                        return this.$message.error('El tipo de documento del transportista es requerido')
+                    if (this.form.dispatcher.identity_document_type_id !== '6') {
+                        return this.$message.error('El transportista debe tener RUC')
                     }
                     if (this.form.dispatcher.number === '' || _.isNull(this.form.dispatcher.number)) {
                         return this.$message.error('El número del transportista es requerido')
