@@ -3,10 +3,13 @@
 namespace App\Services\System;
 
 use Illuminate\Support\Facades\Http;
-use Symfony\Component\Process\Process;
 
 class GitVersionService
 {
+    public function __construct(private GitProcessRunner $git)
+    {
+    }
+
     public function resolve(): string
     {
         $fromGit = $this->fromGitDescribe();
@@ -24,44 +27,27 @@ class GitVersionService
             return '';
         }
 
-        foreach (['safe.directory='.base_path(), 'safe.directory=*'] as $safeDirectory) {
-            $version = $this->runGitDescribe($safeDirectory);
+        $result = $this->git->run(['describe', '--tags']);
 
-            if ($version !== '') {
-                return $version;
-            }
-        }
-
-        return '';
-    }
-
-    private function runGitDescribe(string $safeDirectory): string
-    {
-        $process = new Process(
-            ['git', '-c', $safeDirectory, 'describe', '--tags'],
-            base_path()
-        );
-        $process->setTimeout(15);
-        $process->run();
-
-        if (! $process->isSuccessful()) {
+        if (! $result->successful) {
             return '';
         }
 
-        return trim($process->getOutput());
+        return $result->outputTrimmed();
     }
 
     private function fromGitLabTagsApi(): ?string
     {
         $token = config('git.token');
+        $tagsUrl = config('git.project_tags_url');
 
-        if (! $token) {
+        if (! $token || ! $tagsUrl) {
             return null;
         }
 
         $response = Http::withHeaders([
             'PRIVATE-TOKEN' => $token,
-        ])->get(config('git.project_tags_url'), [
+        ])->get($tagsUrl, [
             'per_page' => 1,
         ]);
 
@@ -86,40 +72,87 @@ class GitVersionService
 
     /**
      * Cuando git describe no corre (p. ej. PHP-FPM como www-data), arma una cadena
-     * similar usando el último commit de la rama actual vía API.
+     * tipo git describe usando HEAD local (.git) y la API compare de GitLab.
      */
     private function enrichTagWithCommit(string $tag): ?string
     {
         $token = config('git.token');
+        $tagsUrl = config('git.project_tags_url');
 
-        if (! $token) {
+        if (! $token || ! $tagsUrl) {
             return null;
         }
 
-        $projectUrl = preg_replace('#/repository/tags.*$#', '', config('git.project_tags_url'));
+        $projectUrl = preg_replace('#/repository/tags.*$#', '', $tagsUrl);
+        $headers = ['PRIVATE-TOKEN' => $token];
 
-        $response = Http::withHeaders([
-            'PRIVATE-TOKEN' => $token,
-        ])->get($projectUrl.'/repository/commits', [
-            'per_page' => 1,
+        $headSha = $this->readHeadCommitSha();
+        $shortId = $headSha ? substr($headSha, 0, 8) : null;
+
+        if ($headSha === null) {
+            $response = Http::withHeaders($headers)->get($projectUrl.'/repository/commits', [
+                'per_page' => 1,
+            ]);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $commits = $response->json();
+
+            if (! is_array($commits) || count($commits) === 0) {
+                return null;
+            }
+
+            $headSha = $commits[0]['id'] ?? null;
+            $shortId = $commits[0]['short_id'] ?? ($headSha ? substr($headSha, 0, 8) : null);
+        }
+
+        if (! $headSha || ! $shortId) {
+            return null;
+        }
+
+        $compare = Http::withHeaders($headers)->get($projectUrl.'/repository/compare', [
+            'from' => $tag,
+            'to' => $headSha,
         ]);
 
-        if (! $response->successful()) {
-            return null;
-        }
+        if ($compare->successful()) {
+            $data = $compare->json();
+            $count = $data['commits_count'] ?? null;
 
-        $commits = $response->json();
+            if ($count === null && is_array($data['commits'] ?? null)) {
+                $count = count($data['commits']);
+            }
 
-        if (! is_array($commits) || count($commits) === 0) {
-            return null;
-        }
-
-        $shortId = $commits[0]['short_id'] ?? null;
-
-        if (! $shortId) {
-            return null;
+            if (is_numeric($count) && (int) $count > 0) {
+                return $tag.'-'.(int) $count.'-g'.$shortId;
+            }
         }
 
         return $tag.'-g'.$shortId;
+    }
+
+    private function readHeadCommitSha(): ?string
+    {
+        $headFile = base_path('.git/HEAD');
+
+        if (! is_readable($headFile)) {
+            return null;
+        }
+
+        $head = trim((string) file_get_contents($headFile));
+
+        if (str_starts_with($head, 'ref: ')) {
+            $refFile = base_path('.git/'.trim(substr($head, 5)));
+
+            if (! is_readable($refFile)) {
+                return null;
+            }
+
+            return trim((string) file_get_contents($refFile));
+        }
+
+        return $head !== '' ? $head : null;
     }
 }

@@ -1135,10 +1135,14 @@ if ($hostname) {
 
             // auto-update
             Route::get('auto-update', 'System\UpdateController@index')->name('system.update');
+            Route::get('auto-update/pre-check', 'System\UpdateController@preCheck')->name('system.update.pre-check');
+            Route::get('auto-update/branches', 'System\UpdateController@branches')->name('system.update.branches');
             Route::get('auto-update/branch', 'System\UpdateController@branch')->name('system.update.branch');
             Route::get('auto-update/pull/{branch}', 'System\UpdateController@pull')->name('system.update.pull');
             Route::get('auto-update/artisan/migrate', 'System\UpdateController@artisanMigrate')->name('system.update.artisan.migrate');
             Route::get('auto-update/artisan/migrate/tenant', 'System\UpdateController@artisanTenancyMigrate')->name('system.update.artisan.tenancy.migrate');
+            Route::get('auto-update/artisan/config-cache', 'System\UpdateController@artisanConfigCache')->name('system.update.artisan.config-cache');
+            Route::get('auto-update/artisan/cache-clear', 'System\UpdateController@artisanCacheClear')->name('system.update.artisan.cache-clear');
             Route::get('auto-update/artisan/clear', 'System\UpdateController@artisanClear')->name('system.update.artisan.clear');
             Route::get('auto-update/composer/install', 'System\UpdateController@composerInstall')->name('system.update.composer.install');
             Route::get('auto-update/keygen', 'System\UpdateController@keygen')->name('system.update.keygen');
