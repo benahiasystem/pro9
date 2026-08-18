@@ -63,8 +63,9 @@
             </div>
         </div>
 
-        <div class="form-actions text-right pt-2">
+        <div class="form-actions pt-2 d-flex justify-content-between">
             <el-button @click.prevent="close()">Cerrar</el-button>
+            <el-button type="primary" @click.prevent="close()">Aceptar</el-button>
         </div>
     </el-dialog>
 </template>
