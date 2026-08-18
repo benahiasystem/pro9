@@ -44,6 +44,14 @@
                 type: String,
                 default: null
             },
+            // Consulta ademas la licencia de conducir junto con el DNI. El MTC
+            // resuelve la licencia a partir del numero de documento, no a
+            // partir del numero de licencia, por eso se engancha aqui.
+            search_license: {
+                required: false,
+                type: Boolean,
+                default: false
+            },
             // Sin restriccion de tipo: varios formularios inicializan el campo
             // en null y Vue avisaria por cada uno.
             value: {
@@ -80,6 +88,10 @@
             // normalizados. El resto (placa, licencia) se emite tal cual.
             isIdentityType() {
                 return ['dni', 'ruc', 'ce'].includes(this.current_type)
+            },
+            // La licencia solo se puede resolver desde un DNI.
+            shouldSearchLicense() {
+                return this.search_license && this.current_type === 'dni'
             }
         },
         created() {
@@ -118,6 +130,29 @@
             },
             handleInput (value) {
                 this.$emit('input', value)
+            },
+            // Consulta la licencia con el numero de documento ya validado. Es
+            // una consulta complementaria: si falla, la busqueda principal
+            // igual devuelve sus datos.
+            searchLicenseByNumber(number) {
+                return this.$http.get(`/${this.resource_base}/licencia/${encodeURIComponent(number)}`)
+                    .then(response => {
+                        const res = response.data
+
+                        // Es una consulta secundaria: no se avisa al usuario
+                        // para no ensuciar la busqueda de DNI cuando el
+                        // servicio de licencias no esta disponible.
+                        if (!res.success) {
+                            console.log(res.message)
+                            return null
+                        }
+
+                        return res.data
+                    })
+                    .catch(error => {
+                        console.log(error.response)
+                        return null
+                    })
             },
             clickSearch() {
                 if (!this.resource) return
@@ -183,6 +218,17 @@
                             if (data_return.province_id !== undefined) {
                                 data_return.ubigeo[1] = data_return.province_id
                             }
+
+                            if (this.shouldSearchLicense) {
+                                return this.searchLicenseByNumber(number).then(license => {
+                                    if (license) {
+                                        data_return.license = license.license
+                                        data_return.license_data = license
+                                    }
+                                    this.$emit('search', data_return)
+                                })
+                            }
+
                             this.$emit('search', data_return)
                         } else {
                             this.$message.error(res.message)

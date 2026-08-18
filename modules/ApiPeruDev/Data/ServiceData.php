@@ -238,9 +238,18 @@ class ServiceData
     protected function firstOf($data, array $keys, $default = '')
     {
         foreach ($keys as $key) {
-            if (isset($data[$key]) && $data[$key] !== '' && $data[$key] !== null) {
-                return $data[$key];
+            if (!isset($data[$key]) || $data[$key] === '' || $data[$key] === null) {
+                continue;
             }
+
+            // Un proveedor puede devolver un bloque anidado con el mismo
+            // nombre que un campo simple (data.licencia es un array en
+            // 'alpha'). No es un valor utilizable, se sigue buscando.
+            if (is_array($data[$key]) || is_object($data[$key])) {
+                continue;
+            }
+
+            return $data[$key];
         }
 
         return $default;
@@ -257,7 +266,7 @@ class ServiceData
     protected function transformPlaca($data)
     {
         return [
-            'plate_number' => strtoupper($this->firstOf($data, ['placa', 'numero_de_placa', 'plate_number', 'plate'])),
+            'plate_number' => strtoupper((string) $this->firstOf($data, ['placa', 'numero_de_placa', 'plate_number', 'plate'])),
             'brand' => $this->firstOf($data, ['marca', 'brand']),
             'model' => $this->firstOf($data, ['modelo', 'model']),
             'year' => $this->firstOf($data, ['anio_fabricacion', 'anio', 'ano_fabricacion', 'year']),
@@ -280,14 +289,26 @@ class ServiceData
      */
     protected function transformLicencia($data)
     {
+        // 'alpha' anida los datos de la licencia en data.licencia y deja el
+        // documento y el nombre al mismo nivel; 'beta' los devuelve planos.
+        // Se lee primero el bloque anidado y se cae al nivel superior.
+        $licencia = (isset($data['licencia']) && is_array($data['licencia'])) ? $data['licencia'] : [];
+
+        $license = $this->firstOf(
+            $licencia,
+            ['numero', 'numero_licencia', 'licencia', 'license'],
+            $this->firstOf($data, ['numero_licencia', 'licencia', 'license'])
+        );
+
         return [
-            'license' => strtoupper($this->firstOf($data, ['licencia', 'numero_licencia', 'license'])),
+            'license' => strtoupper((string) $license),
             'number' => $this->firstOf($data, ['dni', 'numero_documento', 'number']),
             'name' => $this->firstOf($data, ['nombre_completo', 'nombre_o_razon_social', 'name']),
-            'category' => $this->firstOf($data, ['categoria', 'clase_categoria', 'category']),
-            'state' => $this->firstOf($data, ['estado', 'state']),
-            'restrictions' => $this->firstOf($data, ['restricciones', 'restrictions']),
-            'expiration_date' => $this->firstOf($data, ['fecha_hasta', 'fecha_vencimiento', 'expiration_date']),
+            'category' => $this->firstOf($licencia, ['categoria', 'clase_categoria', 'category'], $this->firstOf($data, ['categoria', 'clase_categoria', 'category'])),
+            'state' => $this->firstOf($licencia, ['estado', 'state'], $this->firstOf($data, ['estado', 'state'])),
+            'restrictions' => $this->firstOf($licencia, ['restricciones', 'restrictions'], $this->firstOf($data, ['restricciones', 'restrictions'])),
+            'expiration_date' => $this->firstOf($licencia, ['fecha_vencimiento', 'fecha_hasta', 'expiration_date'], $this->firstOf($data, ['fecha_vencimiento', 'fecha_hasta', 'expiration_date'])),
+            'issue_date' => $this->firstOf($licencia, ['fecha_expedicion', 'fecha_desde', 'issue_date'], $this->firstOf($data, ['fecha_expedicion', 'fecha_desde', 'issue_date'])),
             'raw' => $data,
         ];
     }

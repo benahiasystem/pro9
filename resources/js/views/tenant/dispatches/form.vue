@@ -354,6 +354,7 @@
                                 <label class="control-label">Número</label>
                                 <x-input-service v-model="form.driver.number"
                                                  :identity_document_type_id="form.driver.identity_document_type_id"
+                                                 :search_license="true"
                                                  @search="searchDriver"></x-input-service>
                                 <small v-if="errors['driver.number']" class="form-control-feedback"
                                        v-text="errors['driver.number'][0]"></small>
@@ -735,6 +736,16 @@ export default {
         },
         searchDriver(data) {
             this.form.driver.name = (this.form.driver.identity_document_type_id === '1') ? data.nombre_completo : data.nombre_o_razon_social
+
+            // La licencia llega junto con el DNI (search_license): el MTC la
+            // resuelve por número de documento.
+            if (data.license) this.form.driver.license = data.license
+
+            const license_data = data.license_data
+            if (license_data) {
+                const detail = [license_data.category, license_data.state].filter(v => v).join(' - ')
+                if (detail) this.$message.success(`Licencia: ${detail}`)
+            }
         },
         // Consulta MTC de la licencia del conductor. El nombre y el número solo
         // se completan si están vacíos, para no pisar lo consultado a RENIEC.

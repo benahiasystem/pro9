@@ -39,6 +39,7 @@
 
                             <x-input-service v-model="form.number"
                                              :identity_document_type_id="form.identity_document_type_id"
+                                             :search_license="true"
                                              @search="searchNumber"></x-input-service>
 
                             <small v-if="errors.number"
@@ -226,6 +227,16 @@ export default {
         searchNumber(data) {
 
             this.form.name = (this.form.identity_document_type_id === '1') ? data.nombre_completo : data.nombre_o_razon_social;
+
+            // La licencia llega junto con el DNI (search_license): el MTC la
+            // resuelve por numero de documento.
+            if (data.license) this.form.license = data.license
+
+            const license_data = data.license_data
+            if (license_data) {
+                const detail = [license_data.category, license_data.state].filter(v => v).join(' - ')
+                if (detail) this.$message.success(`Licencia: ${detail}`)
+            }
 
         },
     }
