@@ -34,7 +34,7 @@ class ApidocsService
     public function __construct()
     {
         $this->hostname = $this->getMainHostname();
-        $this->resellerId = $this->getResellerId();
+        $this->resellerId = $this->getMainHostname();
         $this->secret = config('app.url_base');
         $this->baseUrl = $this->getBaseUrl();
     }
@@ -287,7 +287,7 @@ class ApidocsService
     public function isActiveService(): bool
     {
         try {
-            $resellerId = $this->getResellerId();
+            $resellerId = $this->hostname;
             $url = $this->baseUrl . '/admin/resellers/' . $resellerId . '/exists';
 
             $response = Http::withoutVerifying()
@@ -301,7 +301,7 @@ class ApidocsService
             return (bool) ($response->json('exists') ?? false);
         } catch (Exception $e) {
             Log::error('ApiDocsService isActiveService Error: ' . $e->getMessage(), [
-                'resellerId' => $this->resellerId ?? null,
+                'resellerId' => $this->hostname ?? null,
             ]);
 
             return false;
@@ -315,7 +315,7 @@ class ApidocsService
     public function getQuota(): array
     {
         try {
-            $resellerId = $this->getResellerId();
+            $resellerId = $this->hostname;
             $url = $this->baseUrl . '/admin/resellers/' . $resellerId . '/quota';
 
             $response = Http::withoutVerifying()
@@ -334,8 +334,8 @@ class ApidocsService
                 'data' => $response->json(),
             ];
         } catch (Exception $e) {
-            Log::error('ApiDocsService isActiveService Error: ' . $e->getMessage(), [
-                'resellerId' => $this->resellerId ?? null,
+            Log::error('ApiDocsService getQuota Error: ' . $e->getMessage(), [
+                'resellerId' => $this->hostname ?? null,
             ]);
 
             return [
