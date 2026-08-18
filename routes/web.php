@@ -39,6 +39,10 @@ if ($hostname) {
             Route::get('keep-alive', function () {
                 return response()->noContent(); // 204
             });
+            Route::get('api/user/menu-preferences', 'Tenant\UserMenuPreferenceController@show')
+                ->name('tenant.user.menu-preferences.show');
+            Route::post('api/user/menu-preferences', 'Tenant\UserMenuPreferenceController@update')
+                ->name('tenant.user.menu-preferences.update');
             // Route::get('catalogs', 'Tenant\CatalogController@index')->name('tenant.catalogs.index');
             Route::get('list-reports', 'Tenant\SettingController@listReports');
             Route::get('list-extras', 'Tenant\SettingController@listExtras');

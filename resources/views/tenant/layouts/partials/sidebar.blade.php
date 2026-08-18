@@ -203,6 +203,51 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         </div>
         <div class="nano-content nano-content-mobile pt-0">
             <nav id="menu" class="nav-main" role="navigation">
+                <section id="sidebar-favorites" class="sidebar-favorites" aria-label="Accesos favoritos">
+                    <div class="sidebar-favorites-header">
+                        <span class="sidebar-favorites-title">
+                            <i class="fas fa-thumbtack" aria-hidden="true"></i>
+                            <span>Favoritos</span>
+                            <button id="sidebar-search-trigger" type="button" class="sidebar-search-trigger" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
+                                <i class="fas fa-search" aria-hidden="true"></i>
+                            </button>
+                        </span>
+                        <label class="sidebar-compact-toggle" title="Ocultar el menú principal y mostrar solo favoritos">
+                            <input id="sidebar-show-only-active" type="checkbox">
+                            <span class="sidebar-switch" aria-hidden="true"></span>
+                            <span>Mostrar solo activos</span>
+                        </label>
+                    </div>
+                    <ul id="sidebar-pinned-items" class="nav nav-main sidebar-pinned-items"></ul>
+                    <p id="sidebar-pinned-empty" class="sidebar-pinned-empty mb-0">
+                        Pasa el cursor por una opción y pulsa el pin para agregarla.
+                    </p>
+                    <small id="sidebar-preferences-status" class="sidebar-preferences-status" role="status" aria-live="polite"></small>
+                    <button id="sidebar-preferences-retry" type="button" class="sidebar-preferences-retry">
+                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                        Reintentar sincronización
+                    </button>
+                </section>
+                <div id="sidebar-advanced-search" class="sidebar-search-overlay" aria-hidden="true">
+                    <div class="sidebar-search-dialog" role="dialog" aria-modal="true" aria-labelledby="sidebar-search-title">
+                        <div class="sidebar-search-heading">
+                            <div>
+                                <strong id="sidebar-search-title">Buscar en el sistema</strong>
+                                <small>Encuentra módulos, opciones y acciones por nombre o sinónimos.</small>
+                            </div>
+                            <button id="sidebar-search-close" type="button" aria-label="Cerrar buscador">
+                                <i class="fas fa-times" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <div class="sidebar-search-input-wrap">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                            <input id="sidebar-search-input" type="search" autocomplete="off" placeholder="Ej. sucursal, almacén, ventas..." aria-controls="sidebar-search-results">
+                            <kbd>Esc</kbd>
+                        </div>
+                        <div id="sidebar-search-summary" class="sidebar-search-summary">Escribe para buscar entre las opciones disponibles.</div>
+                        <div id="sidebar-search-results" class="sidebar-search-results" role="listbox"></div>
+                    </div>
+                </div>
                 <ul class="nav nav-main nav-main-mobile">
                     @if(in_array('dashboard', $vc_modules))
                         <li class="{{ ($firstLevel === 'dashboard') ? 'nav-active' : '' }}">
@@ -1715,7 +1760,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         </script>
     </div>
 
-    @if(in_array('users_establishments', $vc_module_levels) || in_array('users', $vc_module_levels) || in_array('configuration', $vc_modules) || in_array('app_2_generator', $vc_modules) || in_array('apps', $vc_modules))
+    @if(auth()->check() || in_array('users_establishments', $vc_module_levels) || in_array('users', $vc_module_levels) || in_array('configuration', $vc_modules) || in_array('app_2_generator', $vc_modules) || in_array('apps', $vc_modules))
         <div class="more-config more-config-mobile">
             <div class="nano-content nano-content-config pt-0">
                 <ul class="nav nav-main">
@@ -1737,6 +1782,29 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             </div>
 
             <ul class="nav list-config">
+
+                <li>
+                    <a id="sidebar-menu-config-trigger" class="nav-link" href="#">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-adjustments-horizontal">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M14 6l7 0" />
+                            <path d="M3 6l2 0" />
+                            <path d="M9 6l1 0" />
+                            <path d="M5 3l0 6" />
+                            <path d="M10 3l0 6" />
+                            <path d="M3 12l6 0" />
+                            <path d="M13 12l8 0" />
+                            <path d="M9 9l0 6" />
+                            <path d="M13 9l0 6" />
+                            <path d="M14 18l7 0" />
+                            <path d="M3 18l2 0" />
+                            <path d="M9 18l1 0" />
+                            <path d="M5 15l0 6" />
+                            <path d="M10 15l0 6" />
+                        </svg>
+                        Configurar menú
+                    </a>
+                </li>
 
                 @if(in_array('users', $vc_module_levels))
                     <li>
@@ -1826,6 +1894,1491 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         </div>
     @endif
 </aside>
+
+<div id="sidebar-menu-config-modal" class="sidebar-menu-config-overlay" aria-hidden="true">
+    <div class="sidebar-menu-config-dialog" role="dialog" aria-modal="true" aria-labelledby="sidebar-menu-config-title">
+        <header class="sidebar-menu-config-header">
+            <div>
+                <h4 id="sidebar-menu-config-title" class="mb-1">Configurar menú</h4>
+                <p class="mb-0">Organiza tus favoritos y elige qué accesos mantener a la vista.</p>
+            </div>
+            <button id="sidebar-menu-config-close" type="button" aria-label="Cerrar configuración del menú">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </header>
+        <div class="sidebar-menu-config-toolbar">
+            <label class="sidebar-menu-config-compact">
+                <input id="sidebar-menu-config-filter-favorites" type="checkbox">
+                <span class="sidebar-switch" aria-hidden="true"></span>
+                <span>Mostrar únicamente los favoritos</span>
+            </label>
+            <div class="sidebar-menu-config-search">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input id="sidebar-menu-config-search" type="search" autocomplete="off" placeholder="Buscar una opción del menú...">
+            </div>
+        </div>
+        <div id="sidebar-menu-config-content" class="sidebar-menu-config-content">
+            <section class="sidebar-menu-config-section">
+                <div class="sidebar-menu-config-section-title">
+                    <strong>Favoritos fijados</strong>
+                    <small>Usa las flechas para cambiar la prioridad.</small>
+                </div>
+                <div id="sidebar-menu-config-pinned" class="sidebar-menu-config-list"></div>
+            </section>
+            <section class="sidebar-menu-config-section">
+                <div class="sidebar-menu-config-section-title">
+                    <strong>Opciones disponibles</strong>
+                    <small>Solo aparecen los módulos permitidos para tu usuario.</small>
+                </div>
+                <div id="sidebar-menu-config-available" class="sidebar-menu-config-list sidebar-menu-config-available"></div>
+            </section>
+        </div>
+        <footer class="sidebar-menu-config-footer">
+            <small>Los cambios se guardan automáticamente.</small>
+            <button id="sidebar-menu-config-done" type="button" class="btn btn-primary">Listo</button>
+        </footer>
+    </div>
+</div>
+
+<style>
+    .sidebar-favorites {
+        margin: 0 10px 8px;
+        padding: 8px;
+        border: 1px solid rgba(127, 127, 127, .2);
+        border-radius: 10px;
+        background: rgba(127, 127, 127, .06);
+    }
+    .sidebar-favorites-header,
+    .sidebar-favorites-title,
+    .sidebar-compact-toggle {
+        display: flex;
+        align-items: center;
+    }
+    .sidebar-favorites-header {
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 5px;
+    }
+    .sidebar-favorites-title {
+        gap: 6px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+    .sidebar-search-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        color: inherit;
+        background: rgba(127, 127, 127, .12);
+    }
+    .sidebar-search-trigger:hover,
+    .sidebar-search-trigger:focus {
+        color: var(--primary-color, #635bff);
+        background: rgba(99, 91, 255, .12);
+    }
+    .sidebar-compact-toggle {
+        gap: 5px;
+        margin: 0;
+        font-size: 10px;
+        line-height: 1.15;
+        cursor: pointer;
+        user-select: none;
+    }
+    .sidebar-compact-toggle input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .sidebar-switch {
+        position: relative;
+        flex: 0 0 28px;
+        width: 28px;
+        height: 16px;
+        border-radius: 10px;
+        background: #adb5bd;
+        transition: background-color .2s ease;
+    }
+    .sidebar-switch::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+        transition: transform .2s ease;
+    }
+    .sidebar-compact-toggle input:checked + .sidebar-switch {
+        background: var(--primary-color, #635bff);
+    }
+    .sidebar-compact-toggle input:checked + .sidebar-switch::after {
+        transform: translateX(12px);
+    }
+    .sidebar-pinned-items > li {
+        cursor: grab;
+        border-radius: 7px;
+        transition: transform .18s ease, background-color .18s ease, opacity .18s ease;
+    }
+    .sidebar-pinned-items > li.is-dragging {
+        opacity: .45;
+    }
+    .sidebar-pinned-items > li.drag-before {
+        box-shadow: inset 0 2px 0 var(--primary-color, #635bff);
+    }
+    .sidebar-pinned-items > li.drag-after {
+        box-shadow: inset 0 -2px 0 var(--primary-color, #635bff);
+    }
+    .sidebar-pinned-items .nav-children {
+        display: block !important;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height .28s ease, opacity .2s ease;
+    }
+    .sidebar-pinned-items .nav-parent.nav-expanded > .nav-children {
+        max-height: 900px;
+        opacity: 1;
+    }
+    .sidebar-pinned-empty,
+    .sidebar-preferences-status {
+        display: block;
+        padding: 6px 5px;
+        color: #8a8f98;
+        font-size: 10px;
+        line-height: 1.3;
+    }
+    .sidebar-preferences-status:empty {
+        display: none;
+    }
+    .sidebar-preferences-retry {
+        display: none;
+        width: 100%;
+        margin-top: 4px;
+        padding: 5px 8px;
+        border: 1px solid #dc3545;
+        border-radius: 6px;
+        color: #dc3545;
+        background: transparent;
+        font-size: 10px;
+        transition: color .16s ease, background-color .16s ease;
+    }
+    .sidebar-preferences-retry:hover,
+    .sidebar-preferences-retry:focus {
+        color: #fff;
+        background: #dc3545;
+    }
+    .sidebar-preferences-retry.is-visible {
+        display: block;
+    }
+    .sidebar-menu-config-overlay {
+        position: fixed;
+        z-index: 10000;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+        background: rgba(15, 23, 42, .52);
+        backdrop-filter: blur(3px);
+    }
+    .sidebar-menu-config-overlay.is-open {
+        display: flex;
+    }
+    .sidebar-menu-config-dialog {
+        display: flex;
+        flex-direction: column;
+        width: min(920px, 100%);
+        max-height: 88vh;
+        overflow: hidden;
+        border: 1px solid rgba(127, 127, 127, .2);
+        border-radius: 14px;
+        color: #263238;
+        background: #fff;
+        box-shadow: 0 28px 80px rgba(15, 23, 42, .3);
+    }
+    .sidebar-menu-config-header,
+    .sidebar-menu-config-toolbar,
+    .sidebar-menu-config-footer,
+    .sidebar-menu-config-row,
+    .sidebar-menu-config-row-actions,
+    .sidebar-menu-config-compact,
+    .sidebar-menu-config-search {
+        display: flex;
+        align-items: center;
+    }
+    .sidebar-menu-config-header {
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border-bottom: 1px solid #e8ebf1;
+    }
+    .sidebar-menu-config-header p,
+    .sidebar-menu-config-section-title small,
+    .sidebar-menu-config-footer small,
+    .sidebar-menu-config-row-path {
+        color: #7b8494;
+    }
+    .sidebar-menu-config-header > button {
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 8px;
+        background: #f0f2f6;
+    }
+    .sidebar-menu-config-toolbar {
+        justify-content: space-between;
+        gap: 14px;
+        padding: 12px 20px;
+        border-bottom: 1px solid #eef0f4;
+        background: #fafbfc;
+    }
+    .sidebar-menu-config-compact {
+        gap: 8px;
+        margin: 0;
+        cursor: pointer;
+    }
+    .sidebar-menu-config-compact input {
+        position: absolute;
+        opacity: 0;
+    }
+    .sidebar-menu-config-compact input:checked + .sidebar-switch {
+        background: var(--primary-color, #4267ef);
+    }
+    .sidebar-menu-config-compact input:checked + .sidebar-switch::after {
+        transform: translateX(12px);
+    }
+    .sidebar-menu-config-search {
+        gap: 8px;
+        width: min(360px, 100%);
+        padding: 0 11px;
+        border: 1px solid #dce1ea;
+        border-radius: 9px;
+        background: #fff;
+    }
+    .sidebar-menu-config-search:focus-within {
+        border-color: var(--primary-color, #4267ef);
+        box-shadow: 0 0 0 3px rgba(66, 103, 239, .1);
+    }
+    .sidebar-menu-config-search input {
+        flex: 1;
+        min-width: 0;
+        height: 38px;
+        border: 0;
+        outline: 0;
+        background: transparent;
+    }
+    .sidebar-menu-config-content {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+        min-height: 0;
+        padding: 16px 20px;
+        overflow: hidden;
+    }
+    .sidebar-menu-config-content.is-showing-only-pinned {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .sidebar-menu-config-content.is-showing-only-pinned .sidebar-menu-config-section:last-child {
+        display: none;
+    }
+    .sidebar-menu-config-section {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border: 1px solid #e5e9f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .sidebar-menu-config-section-title {
+        padding: 11px 13px;
+        border-bottom: 1px solid #edf0f4;
+        background: #f8f9fb;
+    }
+    .sidebar-menu-config-section-title strong,
+    .sidebar-menu-config-section-title small,
+    .sidebar-menu-config-row-name,
+    .sidebar-menu-config-row-path {
+        display: block;
+    }
+    .sidebar-menu-config-list {
+        min-height: 180px;
+        overflow-y: auto;
+        padding: 7px;
+    }
+    .sidebar-menu-config-row {
+        gap: 9px;
+        min-height: 48px;
+        padding: 7px 8px;
+        border-radius: 8px;
+    }
+    .sidebar-menu-config-row:hover {
+        background: rgba(66, 103, 239, .07);
+    }
+    .sidebar-menu-config-row-copy {
+        flex: 1;
+        min-width: 0;
+    }
+    .sidebar-menu-config-row-name,
+    .sidebar-menu-config-row-path {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .sidebar-menu-config-row-name {
+        font-weight: 600;
+        font-size: 12px;
+    }
+    .sidebar-menu-config-row-path {
+        margin-top: 2px;
+        font-size: 10px;
+    }
+    .sidebar-menu-config-row-actions {
+        gap: 4px;
+    }
+    .sidebar-menu-config-row-actions button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        color: #657184;
+        background: #edf0f5;
+    }
+    .sidebar-menu-config-row-actions button:hover:not(:disabled) {
+        color: #fff;
+        background: var(--primary-color, #4267ef);
+    }
+    .sidebar-menu-config-row-actions button:disabled {
+        opacity: .35;
+    }
+    .sidebar-menu-config-empty {
+        padding: 28px 12px;
+        color: #8992a1;
+        text-align: center;
+        font-size: 12px;
+    }
+    .sidebar-menu-config-footer {
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 20px;
+        border-top: 1px solid #e8ebf1;
+    }
+    html.dark .sidebar-menu-config-dialog,
+    html.sidebarMode-dark .sidebar-menu-config-dialog {
+        color: #eef2f7;
+        background: #202938;
+    }
+    @media (max-width: 767px) {
+        .sidebar-menu-config-toolbar { align-items: stretch; flex-direction: column; }
+        .sidebar-menu-config-search { width: 100%; }
+        .sidebar-menu-config-content { grid-template-columns: 1fr; overflow-y: auto; }
+        .sidebar-menu-config-list { max-height: 260px; }
+    }
+    .sidebar-search-overlay {
+        position: fixed;
+        z-index: 9999;
+        inset: 0;
+        display: none;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 9vh 16px 20px;
+        background: rgba(15, 23, 42, .5);
+        backdrop-filter: blur(3px);
+    }
+    .sidebar-search-overlay.is-open {
+        display: flex;
+    }
+    .sidebar-search-dialog {
+        width: min(680px, 100%);
+        max-height: 78vh;
+        overflow: hidden;
+        border: 1px solid rgba(127, 127, 127, .22);
+        border-radius: 14px;
+        color: #263238;
+        background: #fff;
+        box-shadow: 0 24px 70px rgba(15, 23, 42, .28);
+    }
+    .sidebar-search-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 18px 10px;
+    }
+    .sidebar-search-heading strong,
+    .sidebar-search-heading small {
+        display: block;
+    }
+    .sidebar-search-heading small,
+    .sidebar-search-summary,
+    .sidebar-search-path {
+        color: #7b8494;
+    }
+    .sidebar-search-heading button {
+        width: 30px;
+        height: 30px;
+        border: 0;
+        border-radius: 7px;
+        background: #f1f3f7;
+    }
+    .sidebar-search-input-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 18px;
+        padding: 0 12px;
+        border: 2px solid rgba(99, 91, 255, .25);
+        border-radius: 10px;
+        background: #fff;
+    }
+    .sidebar-search-input-wrap:focus-within {
+        border-color: var(--primary-color, #635bff);
+        box-shadow: 0 0 0 3px rgba(99, 91, 255, .1);
+    }
+    .sidebar-search-input-wrap input {
+        flex: 1;
+        min-width: 0;
+        height: 46px;
+        border: 0;
+        outline: 0;
+        color: inherit;
+        background: transparent;
+        font-size: 15px;
+    }
+    .sidebar-search-input-wrap kbd {
+        padding: 2px 6px;
+        border: 1px solid #d8dde7;
+        border-radius: 5px;
+        color: #7b8494;
+        background: #f7f8fa;
+        font-size: 10px;
+    }
+    .sidebar-search-summary {
+        padding: 10px 19px 7px;
+        font-size: 11px;
+    }
+    .sidebar-search-results {
+        max-height: calc(78vh - 150px);
+        overflow-y: auto;
+        padding: 0 10px 12px;
+    }
+    .sidebar-search-result {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 10px;
+        border: 0;
+        border-radius: 9px;
+        color: inherit;
+        text-align: left;
+        background: transparent;
+    }
+    .sidebar-search-result:hover,
+    .sidebar-search-result.is-selected {
+        color: inherit;
+        background: rgba(99, 91, 255, .1);
+    }
+    .sidebar-search-result-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 34px;
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        color: var(--primary-color, #635bff);
+        background: rgba(99, 91, 255, .1);
+    }
+    .sidebar-search-result-copy {
+        min-width: 0;
+    }
+    .sidebar-search-result-name,
+    .sidebar-search-path {
+        display: block;
+    }
+    .sidebar-search-result-name {
+        font-weight: 600;
+    }
+    .sidebar-search-path {
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11px;
+    }
+    .sidebar-search-empty {
+        padding: 32px 16px;
+        color: #7b8494;
+        text-align: center;
+    }
+    html.dark .sidebar-search-dialog,
+    html.sidebarMode-dark .sidebar-search-dialog {
+        color: #edf0f5;
+        background: #1f2937;
+    }
+    html.dark .sidebar-search-input-wrap,
+    html.sidebarMode-dark .sidebar-search-input-wrap {
+        background: #111827;
+    }
+    #menu > .nav-main-mobile li {
+        position: relative;
+    }
+    .menu-pin-action {
+        position: absolute;
+        z-index: 5;
+        top: 7px;
+        right: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 25px;
+        height: 25px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        color: inherit;
+        background: rgba(127, 127, 127, .14);
+        opacity: 0;
+        transform: translateX(4px);
+        pointer-events: none;
+        transition: opacity .16s ease, transform .16s ease, background-color .16s ease;
+    }
+    .menu-pin-action > i,
+    .menu-pin-action > .fas,
+    .menu-pin-action > .fa {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        font-size: 12px;
+        line-height: 14px !important;
+        text-align: center;
+        transform: none !important;
+    }
+    .menu-pin-action > i::before,
+    .menu-pin-action > .fas::before,
+    .menu-pin-action > .fa::before {
+        display: block;
+        width: 100%;
+        margin: 0;
+        line-height: 14px;
+        text-align: center;
+    }
+    #menu > .nav-main-mobile li.nav-item-with-action > .menu-pin-action {
+        right: 66px;
+    }
+    #menu > .nav-main-mobile .nav-children > li:not(.nav-item-with-action) > .menu-pin-action {
+        right: 12px;
+    }
+    #menu > .nav-main-mobile li:hover > .menu-pin-action,
+    #menu > .nav-main-mobile li:focus-within > .menu-pin-action,
+    .menu-pin-action.is-pinned {
+        opacity: 1;
+        transform: translateX(0);
+        pointer-events: auto;
+    }
+    #menu > .nav-main-mobile li:hover > .menu-pin-action,
+    #menu > .nav-main-mobile li:focus-within > .menu-pin-action {
+        pointer-events: auto;
+    }
+    .menu-pin-action.is-pinned {
+        color: var(--primary-color, #635bff);
+    }
+    .sidebar-only-active #menu > .nav-main-mobile {
+        display: none !important;
+    }
+    html.sidebar-left-collapsed .sidebar-favorites-header,
+    html.sidebar-left-collapsed .sidebar-pinned-empty,
+    html.sidebar-left-collapsed .sidebar-preferences-status {
+        display: none;
+    }
+    html.sidebar-left-collapsed .sidebar-preferences-retry {
+        display: none;
+    }
+    html.sidebar-left-collapsed .sidebar-favorites {
+        margin: 5px;
+        padding: 3px;
+        border-color: transparent;
+        background: transparent;
+    }
+    @media (max-width: 767px) {
+        .menu-pin-action { opacity: .75; transform: none; pointer-events: auto; }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar-left');
+        const menu = document.getElementById('menu');
+        const originalList = menu ? menu.querySelector(':scope > .nav-main-mobile') : null;
+        const pinnedList = document.getElementById('sidebar-pinned-items');
+        const emptyState = document.getElementById('sidebar-pinned-empty');
+        const compactToggle = document.getElementById('sidebar-show-only-active');
+        const status = document.getElementById('sidebar-preferences-status');
+        const retryButton = document.getElementById('sidebar-preferences-retry');
+        const searchTrigger = document.getElementById('sidebar-search-trigger');
+        const searchOverlay = document.getElementById('sidebar-advanced-search');
+        const searchClose = document.getElementById('sidebar-search-close');
+        const searchInput = document.getElementById('sidebar-search-input');
+        const searchResults = document.getElementById('sidebar-search-results');
+        const searchSummary = document.getElementById('sidebar-search-summary');
+        const menuConfigTrigger = document.getElementById('sidebar-menu-config-trigger');
+        const menuConfigModal = document.getElementById('sidebar-menu-config-modal');
+        const menuConfigClose = document.getElementById('sidebar-menu-config-close');
+        const menuConfigDone = document.getElementById('sidebar-menu-config-done');
+        const menuConfigFilterFavorites = document.getElementById('sidebar-menu-config-filter-favorites');
+        const menuConfigContent = document.getElementById('sidebar-menu-config-content');
+        const menuConfigSearch = document.getElementById('sidebar-menu-config-search');
+        const menuConfigPinned = document.getElementById('sidebar-menu-config-pinned');
+        const menuConfigAvailable = document.getElementById('sidebar-menu-config-available');
+        const endpoint = @json(url('api/user/menu-preferences'));
+        const storageKey = @json('menu-preferences:' . request()->getHost() . ':' . auth()->id());
+        const expansionStorageKey = @json('sidebar-menu-state:' . request()->getHost() . ':' . auth()->id());
+
+        if (!sidebar || !originalList || !pinnedList || !compactToggle) return;
+
+        let preferences = { pinned_items: [], menu_order: [], show_only_active_menu: false };
+        let saveTimer = null;
+        let draggedItem = null;
+        let syncInProgress = false;
+        let syncQueued = false;
+        let searchIndex = [];
+        let selectedSearchIndex = -1;
+        let menuExpansionState = {};
+        let menuConfigurationEntries = [];
+        let menuConfigShowOnlyPinned = false;
+
+        const synonymGroups = [
+            ['sucursal', 'sede', 'establecimiento', 'local', 'tienda', 'agencia', 'punto de venta', 'almacen'],
+            ['inventario', 'stock', 'existencia', 'existencias', 'kardex', 'almacen', 'bodega', 'deposito', 'disponibilidad', 'saldo', 'ubicacion', 'lote'],
+            ['producto', 'articulo', 'item', 'mercaderia', 'mercancia', 'genero', 'bien', 'catalogo'],
+            ['venta', 'facturacion', 'comercializacion', 'transaccion', 'operacion', 'transferencia', 'ingreso', 'pedido'],
+            ['comprobante', 'documento', 'factura', 'boleta', 'ticket', 'recibo', 'cpe', 'nota de credito', 'nota de debito'],
+            ['cliente', 'comprador', 'consumidor', 'adquirente', 'contacto'],
+            ['compra', 'adquisicion', 'abastecimiento', 'aprovisionamiento', 'pedido de compra'],
+            ['proveedor', 'suministrador', 'abastecedor', 'acreedor'],
+            ['usuario', 'cuenta', 'operador', 'perfil', 'acceso', 'credencial'],
+            ['vendedor', 'asesor', 'comercial', 'ejecutivo de ventas', 'representante'],
+            ['pago', 'abono', 'paga', 'cobro', 'reembolso', 'reintegro', 'amortizacion', 'cancelacion'],
+            ['caja', 'efectivo', 'dinero', 'tesoreria', 'arqueo', 'apertura', 'cierre', 'turno'],
+            ['reporte', 'informe', 'estadistica', 'resumen', 'consulta', 'listado', 'analisis'],
+            ['cotizacion', 'presupuesto', 'proforma', 'propuesta', 'oferta', 'estimacion'],
+            ['guia', 'guia de remision', 'despacho', 'envio', 'traslado', 'transporte', 'transportista', 'remitente'],
+            ['devolucion', 'retorno', 'reintegro', 'nota de credito', 'anulacion', 'reversion'],
+            ['serie', 'numeracion', 'correlativo', 'secuencia', 'folio'],
+            ['moneda', 'divisa', 'tipo de cambio', 'cambio', 'conversion'],
+            ['banco', 'entidad financiera', 'cuenta bancaria', 'banca'],
+            ['credito', 'financiamiento', 'cuota', 'pago diferido', 'dias de credito', 'plazo'],
+            ['trabajador', 'empleado', 'personal', 'colaborador'],
+            ['configuracion', 'ajuste', 'preferencia', 'parametro', 'opcion', 'personalizacion']
+        ];
+
+        function normalizedPreferences(value) {
+            const source = value && typeof value === 'object' ? value : {};
+            return {
+                pinned_items: Array.isArray(source.pinned_items) ? source.pinned_items.filter(function (item) { return typeof item === 'string'; }) : [],
+                menu_order: Array.isArray(source.menu_order) ? source.menu_order.filter(function (item) { return typeof item === 'string'; }) : [],
+                show_only_active_menu: source.show_only_active_menu === true
+            };
+        }
+
+        function readLocalBackup() {
+            try {
+                const backup = JSON.parse(localStorage.getItem(storageKey) || 'null');
+                if (!backup || !backup.preferences) return null;
+                return {
+                    preferences: normalizedPreferences(backup.preferences),
+                    pending: backup.pending === true
+                };
+            } catch (error) {
+                console.error('Error al leer respaldo local de preferencias:', error);
+                return null;
+            }
+        }
+
+        function saveLocalBackup(pending) {
+            try {
+                localStorage.setItem(storageKey, JSON.stringify({
+                    preferences: normalizedPreferences(preferences),
+                    pending: pending === true,
+                    updated_at: new Date().toISOString()
+                }));
+            } catch (error) {
+                console.error('Error al guardar respaldo local de preferencias:', error);
+            }
+        }
+
+        function setRetryVisible(visible) {
+            retryButton.classList.toggle('is-visible', !!visible);
+        }
+
+        function readMenuExpansionState() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(expansionStorageKey) || '{}');
+                menuExpansionState = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+            } catch (error) {
+                menuExpansionState = {};
+                console.error('Error al leer el estado de los menús laterales:', error);
+            }
+        }
+
+        function saveMenuExpansionState() {
+            try {
+                localStorage.setItem(expansionStorageKey, JSON.stringify(menuExpansionState));
+            } catch (error) {
+                console.error('Error al guardar el estado de los menús laterales:', error);
+            }
+        }
+
+        function setMenuExpanded(key, expanded, persist) {
+            if (!key) return;
+            menuExpansionState[key] = !!expanded;
+            document.querySelectorAll('[data-menu-preference-key]').forEach(function (item) {
+                if (item.dataset.menuPreferenceKey === key && item.classList.contains('nav-parent')) {
+                    item.classList.toggle('nav-expanded', !!expanded);
+                }
+            });
+            if (persist !== false) saveMenuExpansionState();
+        }
+
+        function restoreMenuExpansionState(root) {
+            const scope = root || originalList;
+            scope.querySelectorAll('li.nav-parent[data-menu-preference-key]').forEach(function (item) {
+                const key = item.dataset.menuPreferenceKey;
+                if (Object.prototype.hasOwnProperty.call(menuExpansionState, key)) {
+                    item.classList.toggle('nav-expanded', menuExpansionState[key] === true);
+                }
+            });
+        }
+
+        function normalizeLabel(value) {
+            return (value || '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-');
+        }
+
+        function directAnchor(item) {
+            return Array.from(item.children).find(function (child) {
+                return child.matches && child.matches('a.nav-link');
+            });
+        }
+
+        function closestPinnedItem(target) {
+            const item = target && target.closest ? target.closest('li.sidebar-pinned-item') : null;
+            return item && item.parentElement === pinnedList ? item : null;
+        }
+
+        function itemKey(item) {
+            const anchor = directAnchor(item);
+            if (!anchor) return null;
+            const href = anchor.getAttribute('href') || '';
+            if (href && href !== '#') {
+                try {
+                    const parsed = new URL(href, window.location.origin);
+                    return 'route:' + parsed.pathname.replace(/\/$/, '') + parsed.search;
+                } catch (error) {
+                    return 'route:' + href;
+                }
+            }
+
+            const labels = [];
+            let current = item;
+            while (current && current !== originalList) {
+                const currentAnchor = directAnchor(current);
+                if (currentAnchor) labels.unshift(normalizeLabel(currentAnchor.textContent));
+                current = current.parentElement ? current.parentElement.closest('li') : null;
+            }
+            return 'group:' + labels.filter(Boolean).join('/');
+        }
+
+        function availableItems() {
+            const items = new Map();
+            originalList.querySelectorAll('li').forEach(function (item) {
+                const key = itemKey(item);
+                if (key && !items.has(key)) {
+                    item.dataset.menuPreferenceKey = key;
+                    items.set(key, item);
+                }
+            });
+            return items;
+        }
+
+        function orderedPinnedKeys() {
+            const pinned = preferences.pinned_items || [];
+            const order = (preferences.menu_order || []).filter(function (key) { return pinned.includes(key); });
+            pinned.forEach(function (key) {
+                if (!order.includes(key)) order.push(key);
+            });
+            return order;
+        }
+
+        function renderPinnedItems() {
+            const items = availableItems();
+            const validKeys = orderedPinnedKeys().filter(function (key) { return items.has(key); });
+            preferences.pinned_items = validKeys.slice();
+            preferences.menu_order = validKeys.slice();
+            pinnedList.innerHTML = '';
+
+            validKeys.forEach(function (key) {
+                const clone = items.get(key).cloneNode(true);
+                clone.querySelectorAll('.menu-pin-action').forEach(function (button) { button.remove(); });
+                clone.dataset.menuPreferenceKey = key;
+                clone.classList.add('sidebar-pinned-item');
+                clone.setAttribute('draggable', 'true');
+                pinnedList.appendChild(clone);
+            });
+            restoreMenuExpansionState(pinnedList);
+
+            emptyState.style.display = validKeys.length ? 'none' : 'block';
+            originalList.querySelectorAll('.menu-pin-action').forEach(function (button) {
+                const active = preferences.pinned_items.includes(button.dataset.key);
+                button.classList.toggle('is-pinned', active);
+                button.title = active ? 'Quitar de favoritos' : 'Fijar en favoritos';
+                button.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        }
+
+        function applyCompactMode() {
+            compactToggle.checked = !!preferences.show_only_active_menu;
+            sidebar.classList.toggle('sidebar-only-active', !!preferences.show_only_active_menu);
+        }
+
+        function showStatus(message, isError) {
+            status.textContent = message;
+            status.style.color = isError ? '#dc3545' : '';
+            window.setTimeout(function () {
+                if (status.textContent === message) status.textContent = '';
+            }, 2500);
+        }
+
+        function persistPreferences(immediate) {
+            saveLocalBackup(true);
+            setRetryVisible(false);
+            window.clearTimeout(saveTimer);
+            saveTimer = window.setTimeout(function () {
+                if (syncInProgress) {
+                    syncQueued = true;
+                    return;
+                }
+
+                syncInProgress = true;
+                const snapshot = normalizedPreferences(preferences);
+                const serializedSnapshot = JSON.stringify(snapshot);
+                const csrf = document.querySelector('meta[name="csrf-token"]');
+                fetch(endpoint, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: serializedSnapshot
+                }).then(function (response) {
+                    return response.text().then(function (body) {
+                        let payload = null;
+                        try { payload = body ? JSON.parse(body) : null; } catch (parseError) { payload = body; }
+                        if (!response.ok) {
+                            const error = new Error('No se pudieron guardar las preferencias');
+                            error.response = { status: response.status, statusText: response.statusText, data: payload };
+                            throw error;
+                        }
+                        return payload || {};
+                    });
+                }).then(function (payload) {
+                    // Una respuesta de una petición anterior nunca debe reemplazar
+                    // cambios que el usuario haya realizado mientras se guardaba.
+                    if (JSON.stringify(normalizedPreferences(preferences)) === serializedSnapshot) {
+                        preferences = normalizedPreferences(payload.preferences || snapshot);
+                        saveLocalBackup(false);
+                        setRetryVisible(false);
+                        showStatus('Preferencias guardadas');
+                    } else {
+                        syncQueued = true;
+                    }
+                }).catch(function (error) {
+                    console.error('Error al guardar preferencias:', error.response || error);
+                    saveLocalBackup(true);
+                    setRetryVisible(true);
+                    showStatus('No se pudieron guardar los cambios', true);
+                }).finally(function () {
+                    syncInProgress = false;
+                    if (syncQueued) {
+                        syncQueued = false;
+                        persistPreferences(true);
+                    }
+                });
+            }, immediate ? 0 : 180);
+        }
+
+        function normalizeSearchText(value) {
+            return (value || '')
+                .toString()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function menuItemLabel(item) {
+            const anchor = directAnchor(item);
+            return anchor ? anchor.textContent.replace(/\s+/g, ' ').trim() : '';
+        }
+
+        function buildSearchIndex() {
+            searchIndex = [];
+            availableItems().forEach(function (item, key) {
+                const anchor = directAnchor(item);
+                if (!anchor) return;
+                const href = anchor.getAttribute('href') || '';
+                if (!href || href === '#') return;
+
+                const hierarchy = [];
+                let current = item;
+                while (current && current !== originalList) {
+                    const label = menuItemLabel(current);
+                    if (label) hierarchy.unshift(label);
+                    const parentList = current.parentElement;
+                    current = parentList ? parentList.closest('li') : null;
+                }
+
+                const name = hierarchy[hierarchy.length - 1] || menuItemLabel(item);
+                const path = hierarchy.join(' > ');
+                const icon = anchor.querySelector('svg, i');
+                searchIndex.push({
+                    key: key,
+                    name: name,
+                    path: path,
+                    normalizedName: normalizeSearchText(name),
+                    normalizedPath: normalizeSearchText(path),
+                    href: href,
+                    icon: icon ? icon.cloneNode(true) : null
+                });
+            });
+        }
+
+        function expandedSearchTerms(query) {
+            const terms = normalizeSearchText(query).split(' ').filter(Boolean);
+            const expanded = new Set(terms);
+            synonymGroups.forEach(function (group) {
+                const normalizedGroup = group.map(normalizeSearchText);
+                const matches = terms.some(function (term) {
+                    return normalizedGroup.some(function (synonym) {
+                        return synonym.includes(term) || term.includes(synonym);
+                    });
+                });
+                if (matches) normalizedGroup.forEach(function (synonym) { expanded.add(synonym); });
+            });
+            return Array.from(expanded);
+        }
+
+        function textSimilarity(left, right) {
+            if (!left || !right) return 0;
+            if (left === right) return 1;
+            if (left.length < 2 || right.length < 2) return 0;
+            const pairs = new Map();
+            for (let index = 0; index < left.length - 1; index++) {
+                const pair = left.slice(index, index + 2);
+                pairs.set(pair, (pairs.get(pair) || 0) + 1);
+            }
+            let intersection = 0;
+            for (let index = 0; index < right.length - 1; index++) {
+                const pair = right.slice(index, index + 2);
+                const count = pairs.get(pair) || 0;
+                if (count > 0) {
+                    pairs.set(pair, count - 1);
+                    intersection++;
+                }
+            }
+            return (2 * intersection) / (left.length + right.length - 2);
+        }
+
+        function searchMenu(query) {
+            const normalizedQuery = normalizeSearchText(query);
+            if (!normalizedQuery) return [];
+            const terms = expandedSearchTerms(normalizedQuery);
+
+            return searchIndex.map(function (entry) {
+                let score = 0;
+                if (entry.normalizedName === normalizedQuery) score += 140;
+                else if (entry.normalizedName.startsWith(normalizedQuery)) score += 110;
+                else if (entry.normalizedName.includes(normalizedQuery)) score += 90;
+                if (entry.normalizedPath.includes(normalizedQuery)) score += 55;
+
+                terms.forEach(function (term) {
+                    if (entry.normalizedName.includes(term)) score += 35;
+                    else if (entry.normalizedPath.includes(term)) score += 20;
+                });
+
+                const similarity = textSimilarity(normalizedQuery, entry.normalizedName);
+                if (similarity >= .42) score += Math.round(similarity * 35);
+                return { entry: entry, score: score };
+            }).filter(function (result) {
+                return result.score > 0;
+            }).sort(function (left, right) {
+                return right.score - left.score || left.entry.path.localeCompare(right.entry.path);
+            }).slice(0, 15).map(function (result) {
+                return result.entry;
+            });
+        }
+
+        function selectSearchResult(index) {
+            const results = Array.from(searchResults.querySelectorAll('.sidebar-search-result'));
+            if (!results.length) {
+                selectedSearchIndex = -1;
+                return;
+            }
+            selectedSearchIndex = Math.max(0, Math.min(index, results.length - 1));
+            results.forEach(function (result, resultIndex) {
+                result.classList.toggle('is-selected', resultIndex === selectedSearchIndex);
+                result.setAttribute('aria-selected', resultIndex === selectedSearchIndex ? 'true' : 'false');
+            });
+            results[selectedSearchIndex].scrollIntoView({ block: 'nearest' });
+        }
+
+        function navigateToSearchResult(entry) {
+            closeAdvancedSearch();
+            window.location.href = entry.href;
+        }
+
+        function renderSearchResults(query) {
+            const matches = searchMenu(query);
+            searchResults.innerHTML = '';
+            selectedSearchIndex = -1;
+
+            if (!normalizeSearchText(query)) {
+                searchSummary.textContent = 'Escribe para buscar entre ' + searchIndex.length + ' opciones disponibles.';
+                return;
+            }
+            searchSummary.textContent = matches.length
+                ? matches.length + ' resultado(s) ordenados por relevancia.'
+                : 'No encontramos opciones relacionadas con “' + query.trim() + '”.';
+
+            if (!matches.length) {
+                const empty = document.createElement('div');
+                empty.className = 'sidebar-search-empty';
+                empty.innerHTML = '<i class="fas fa-search" aria-hidden="true"></i><br>No hay coincidencias disponibles para tu usuario.';
+                searchResults.appendChild(empty);
+                return;
+            }
+
+            matches.forEach(function (entry, index) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'sidebar-search-result';
+                button.setAttribute('role', 'option');
+                button.setAttribute('aria-selected', 'false');
+
+                const icon = document.createElement('span');
+                icon.className = 'sidebar-search-result-icon';
+                if (entry.icon) icon.appendChild(entry.icon.cloneNode(true));
+                else icon.innerHTML = '<i class="fas fa-arrow-right" aria-hidden="true"></i>';
+
+                const copy = document.createElement('span');
+                copy.className = 'sidebar-search-result-copy';
+                const name = document.createElement('span');
+                name.className = 'sidebar-search-result-name';
+                name.textContent = entry.name;
+                const path = document.createElement('span');
+                path.className = 'sidebar-search-path';
+                path.textContent = entry.path;
+                copy.appendChild(name);
+                copy.appendChild(path);
+                button.appendChild(icon);
+                button.appendChild(copy);
+                button.addEventListener('mouseenter', function () { selectSearchResult(index); });
+                button.addEventListener('click', function () { navigateToSearchResult(entry); });
+                searchResults.appendChild(button);
+            });
+            selectSearchResult(0);
+        }
+
+        function openAdvancedSearch() {
+            buildSearchIndex();
+            searchOverlay.classList.add('is-open');
+            searchOverlay.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            searchInput.value = '';
+            renderSearchResults('');
+            window.setTimeout(function () { searchInput.focus(); }, 20);
+        }
+
+        function closeAdvancedSearch() {
+            searchOverlay.classList.remove('is-open');
+            searchOverlay.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            searchTrigger.focus();
+        }
+
+        function buildMenuConfigurationEntries() {
+            menuConfigurationEntries = [];
+            availableItems().forEach(function (item, key) {
+                const hierarchy = [];
+                let current = item;
+                while (current && current !== originalList) {
+                    const label = menuItemLabel(current);
+                    if (label) hierarchy.unshift(label);
+                    const parentList = current.parentElement;
+                    current = parentList ? parentList.closest('li') : null;
+                }
+                if (!hierarchy.length) return;
+                menuConfigurationEntries.push({
+                    key: key,
+                    name: hierarchy[hierarchy.length - 1],
+                    path: hierarchy.join(' > '),
+                    normalized: normalizeSearchText(hierarchy.join(' '))
+                });
+            });
+            menuConfigurationEntries.sort(function (left, right) {
+                return left.path.localeCompare(right.path);
+            });
+        }
+
+        function updateMenuConfiguration() {
+            renderPinnedItems();
+            renderMenuConfiguration();
+            saveLocalBackup(true);
+            persistPreferences();
+        }
+
+        function moveConfiguredFavorite(index, direction) {
+            const order = orderedPinnedKeys();
+            const target = index + direction;
+            if (target < 0 || target >= order.length) return;
+            const moving = order[index];
+            order[index] = order[target];
+            order[target] = moving;
+            preferences.menu_order = order.slice();
+            preferences.pinned_items = order.slice();
+            updateMenuConfiguration();
+        }
+
+        function toggleConfiguredFavorite(key) {
+            const pinnedIndex = preferences.pinned_items.indexOf(key);
+            if (pinnedIndex >= 0) {
+                preferences.pinned_items.splice(pinnedIndex, 1);
+                preferences.menu_order = preferences.menu_order.filter(function (value) { return value !== key; });
+            } else {
+                preferences.pinned_items.push(key);
+                preferences.menu_order.push(key);
+            }
+            updateMenuConfiguration();
+        }
+
+        function createMenuConfigurationRow(entry, pinned, index, total) {
+            const row = document.createElement('div');
+            row.className = 'sidebar-menu-config-row';
+
+            const copy = document.createElement('div');
+            copy.className = 'sidebar-menu-config-row-copy';
+            const name = document.createElement('span');
+            name.className = 'sidebar-menu-config-row-name';
+            name.textContent = entry.name;
+            const path = document.createElement('span');
+            path.className = 'sidebar-menu-config-row-path';
+            path.textContent = entry.path;
+            copy.appendChild(name);
+            copy.appendChild(path);
+
+            const actions = document.createElement('div');
+            actions.className = 'sidebar-menu-config-row-actions';
+            if (pinned) {
+                const up = document.createElement('button');
+                up.type = 'button';
+                up.title = 'Subir prioridad';
+                up.disabled = index === 0;
+                up.innerHTML = '<i class="fas fa-arrow-up" aria-hidden="true"></i>';
+                up.addEventListener('click', function () { moveConfiguredFavorite(index, -1); });
+                const down = document.createElement('button');
+                down.type = 'button';
+                down.title = 'Bajar prioridad';
+                down.disabled = index === total - 1;
+                down.innerHTML = '<i class="fas fa-arrow-down" aria-hidden="true"></i>';
+                down.addEventListener('click', function () { moveConfiguredFavorite(index, 1); });
+                actions.appendChild(up);
+                actions.appendChild(down);
+            }
+
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.title = pinned ? 'Quitar de favoritos' : 'Fijar en favoritos';
+            toggle.innerHTML = pinned
+                ? '<i class="fas fa-times" aria-hidden="true"></i>'
+                : '<i class="fas fa-thumbtack" aria-hidden="true"></i>';
+            toggle.addEventListener('click', function () { toggleConfiguredFavorite(entry.key); });
+            actions.appendChild(toggle);
+            row.appendChild(copy);
+            row.appendChild(actions);
+            return row;
+        }
+
+        function renderMenuConfiguration() {
+            if (!menuConfigPinned || !menuConfigAvailable) return;
+            const entries = new Map(menuConfigurationEntries.map(function (entry) { return [entry.key, entry]; }));
+            const ordered = orderedPinnedKeys().filter(function (key) { return entries.has(key); });
+            const query = normalizeSearchText(menuConfigSearch.value);
+            menuConfigPinned.innerHTML = '';
+            menuConfigAvailable.innerHTML = '';
+
+            ordered.forEach(function (key, index) {
+                menuConfigPinned.appendChild(createMenuConfigurationRow(entries.get(key), true, index, ordered.length));
+            });
+            if (!ordered.length) {
+                menuConfigPinned.innerHTML = '<div class="sidebar-menu-config-empty">Todavía no fijaste ningún acceso.</div>';
+            }
+
+            const available = menuConfigurationEntries.filter(function (entry) {
+                return !preferences.pinned_items.includes(entry.key) && (!query || entry.normalized.includes(query));
+            });
+            available.forEach(function (entry) {
+                menuConfigAvailable.appendChild(createMenuConfigurationRow(entry, false, -1, available.length));
+            });
+            if (!available.length) {
+                menuConfigAvailable.innerHTML = '<div class="sidebar-menu-config-empty">No hay opciones que coincidan con la búsqueda.</div>';
+            }
+            applyMenuConfigurationFilter();
+        }
+
+        function applyMenuConfigurationFilter() {
+            menuConfigFilterFavorites.checked = menuConfigShowOnlyPinned;
+            menuConfigContent.classList.toggle('is-showing-only-pinned', menuConfigShowOnlyPinned);
+            menuConfigAvailable.closest('.sidebar-menu-config-section').setAttribute(
+                'aria-hidden',
+                menuConfigShowOnlyPinned ? 'true' : 'false'
+            );
+        }
+
+        function openMenuConfiguration() {
+            buildMenuConfigurationEntries();
+            menuConfigSearch.value = '';
+            menuConfigShowOnlyPinned = false;
+            renderMenuConfiguration();
+            menuConfigModal.classList.add('is-open');
+            menuConfigModal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            window.setTimeout(function () { menuConfigSearch.focus(); }, 20);
+        }
+
+        function closeMenuConfiguration() {
+            menuConfigModal.classList.remove('is-open');
+            menuConfigModal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            menuConfigTrigger.focus();
+        }
+
+        function installPinButtons() {
+            availableItems().forEach(function (item, key) {
+                if (Array.from(item.children).some(function (child) { return child.classList && child.classList.contains('menu-pin-action'); })) return;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'menu-pin-action';
+                button.dataset.key = key;
+                button.setAttribute('aria-label', 'Fijar opción en favoritos');
+                button.innerHTML = '<i class="fas fa-thumbtack" aria-hidden="true"></i>';
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const index = preferences.pinned_items.indexOf(key);
+                    if (index >= 0) {
+                        preferences.pinned_items.splice(index, 1);
+                        preferences.menu_order = preferences.menu_order.filter(function (value) { return value !== key; });
+                    } else {
+                        preferences.pinned_items.push(key);
+                        preferences.menu_order.push(key);
+                    }
+                    renderPinnedItems();
+                    persistPreferences();
+                });
+                item.appendChild(button);
+            });
+        }
+
+        pinnedList.addEventListener('click', function (event) {
+            const anchor = event.target.closest('a.nav-link');
+            const item = anchor ? anchor.parentElement : null;
+            if (!item || !item.classList.contains('nav-parent') || anchor.getAttribute('href') !== '#') return;
+            event.preventDefault();
+            event.stopPropagation();
+            const expanded = !item.classList.contains('nav-expanded');
+            setMenuExpanded(item.dataset.menuPreferenceKey, expanded);
+        });
+
+        originalList.addEventListener('click', function (event) {
+            const anchor = event.target.closest('a.nav-link');
+            const item = anchor ? anchor.parentElement : null;
+            if (!item || !item.classList.contains('nav-parent') || anchor.getAttribute('href') !== '#') return;
+
+            // El plugin histórico del sidebar alterna la clase en su propio
+            // listener. Esperamos al siguiente ciclo para persistir el estado final.
+            window.setTimeout(function () {
+                setMenuExpanded(
+                    item.dataset.menuPreferenceKey,
+                    item.classList.contains('nav-expanded')
+                );
+            }, 0);
+        });
+
+        pinnedList.addEventListener('dragstart', function (event) {
+            draggedItem = closestPinnedItem(event.target);
+            if (!draggedItem) return;
+            draggedItem.classList.add('is-dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', draggedItem.dataset.menuPreferenceKey || '');
+        });
+        pinnedList.addEventListener('dragover', function (event) {
+            const target = closestPinnedItem(event.target);
+            if (!draggedItem || !target || target === draggedItem) return;
+            event.preventDefault();
+            pinnedList.querySelectorAll('.drag-before, .drag-after').forEach(function (item) {
+                item.classList.remove('drag-before', 'drag-after');
+            });
+            const after = event.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
+            target.classList.add(after ? 'drag-after' : 'drag-before');
+        });
+        pinnedList.addEventListener('drop', function (event) {
+            const target = closestPinnedItem(event.target);
+            if (!draggedItem || !target || target === draggedItem) return;
+            event.preventDefault();
+            const after = event.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
+            pinnedList.insertBefore(draggedItem, after ? target.nextSibling : target);
+            preferences.menu_order = Array.from(pinnedList.children).map(function (item) {
+                return item.dataset.menuPreferenceKey;
+            });
+            preferences.pinned_items = preferences.menu_order.slice();
+            persistPreferences();
+        });
+        pinnedList.addEventListener('dragend', function () {
+            pinnedList.querySelectorAll('.is-dragging, .drag-before, .drag-after').forEach(function (item) {
+                item.classList.remove('is-dragging', 'drag-before', 'drag-after');
+            });
+            draggedItem = null;
+        });
+
+        compactToggle.addEventListener('change', function () {
+            preferences.show_only_active_menu = compactToggle.checked;
+            applyCompactMode();
+            persistPreferences();
+        });
+
+        retryButton.addEventListener('click', function () {
+            showStatus('Sincronizando...');
+            persistPreferences(true);
+        });
+
+        searchTrigger.addEventListener('click', openAdvancedSearch);
+        searchClose.addEventListener('click', closeAdvancedSearch);
+        searchOverlay.addEventListener('mousedown', function (event) {
+            if (event.target === searchOverlay) closeAdvancedSearch();
+        });
+        searchInput.addEventListener('input', function () {
+            renderSearchResults(searchInput.value);
+        });
+        menuConfigTrigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            openMenuConfiguration();
+        });
+        menuConfigClose.addEventListener('click', closeMenuConfiguration);
+        menuConfigDone.addEventListener('click', closeMenuConfiguration);
+        menuConfigModal.addEventListener('mousedown', function (event) {
+            if (event.target === menuConfigModal) closeMenuConfiguration();
+        });
+        menuConfigSearch.addEventListener('input', renderMenuConfiguration);
+        menuConfigFilterFavorites.addEventListener('change', function () {
+            menuConfigShowOnlyPinned = menuConfigFilterFavorites.checked;
+            applyMenuConfigurationFilter();
+        });
+        document.addEventListener('keydown', function (event) {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                if (searchOverlay.classList.contains('is-open')) closeAdvancedSearch();
+                else openAdvancedSearch();
+                return;
+            }
+            if (menuConfigModal.classList.contains('is-open') && event.key === 'Escape') {
+                event.preventDefault();
+                closeMenuConfiguration();
+                return;
+            }
+            if (!searchOverlay.classList.contains('is-open')) return;
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeAdvancedSearch();
+            } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                selectSearchResult(selectedSearchIndex + 1);
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                selectSearchResult(selectedSearchIndex - 1);
+            } else if (event.key === 'Enter' && selectedSearchIndex >= 0) {
+                event.preventDefault();
+                const selected = searchResults.querySelectorAll('.sidebar-search-result')[selectedSearchIndex];
+                if (selected) selected.click();
+            }
+        });
+
+        readMenuExpansionState();
+        installPinButtons();
+        restoreMenuExpansionState(originalList);
+        buildSearchIndex();
+        const localBackup = readLocalBackup();
+        if (localBackup) {
+            preferences = localBackup.preferences;
+            renderPinnedItems();
+            applyCompactMode();
+            setRetryVisible(localBackup.pending);
+        }
+        fetch(endpoint, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (response) {
+            if (!response.ok) throw new Error('No se pudieron cargar las preferencias');
+            return response.json();
+        }).then(function (payload) {
+            // Si hay cambios locales pendientes, tienen prioridad hasta que el
+            // usuario pueda sincronizarlos nuevamente.
+            if (!localBackup || !localBackup.pending) {
+                preferences = normalizedPreferences(payload || {});
+                saveLocalBackup(false);
+                setRetryVisible(false);
+            }
+            renderPinnedItems();
+            applyCompactMode();
+            if (localBackup && localBackup.pending) {
+                showStatus('Sincronizando cambios pendientes...');
+                persistPreferences(true);
+            }
+        }).catch(function (error) {
+            console.error('Error al cargar preferencias:', error.response || error);
+            renderPinnedItems();
+            applyCompactMode();
+            setRetryVisible(true);
+            showStatus('No se pudieron cargar las preferencias', true);
+        });
+    });
+</script>
 
 <script>
     // Función para cambiar establecimiento desde el sidebar
