@@ -5,7 +5,7 @@
         <div class="col-md-5">
             <h2 class="title mb-2">Login</h2>
 
-            <form method="POST" action="{{ route('login') }}" class="mb-1">
+            <form method="POST" action="{{ route('login', [], false) }}" class="mb-1">
                 @csrf
                 <label for="login-email">Email address <span class="required">*</span></label>
                 <input id="email" type="email" name="email" class="form-input form-wide mb-2" id="login-email"

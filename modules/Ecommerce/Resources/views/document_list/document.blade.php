@@ -44,6 +44,31 @@
     border-bottom: 1px solid var(--line);
     border-radius: 0 !important;
 }
+@media (max-width: 575.98px) {
+    .document-filters,
+    .document-date-filters {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100%;
+    }
+    .document-date-field,
+    .document-date-picker,
+    .document-filter-search,
+    .document-filter-toggle {
+        width: 100% !important;
+    }
+    .document-date-field + .document-date-field {
+        margin-top: 12px;
+    }
+    .document-date-field > span,
+    .document-date-picker {
+        margin-left: 0 !important;
+    }
+    .document-filter-search,
+    .document-filter-toggle {
+        margin: 12px 0 0 !important;
+    }
+}
 </style>
 <div id="app">
     <div class="panel-head">
@@ -57,10 +82,10 @@
     </div>
     <div class="">
         <div>
-            <div class="dropdown dropdown-table d-flex justify-content-between align-items-center filters">
-                <div class="d-flex align-items-end">                    
+            <div class="dropdown dropdown-table d-flex justify-content-between align-items-center filters document-filters">
+                <div class="d-flex align-items-end document-date-filters">
                     <template v-if="filterId == 1">
-                        <div class="d-flex flex-column">
+                        <div class="d-flex flex-column document-date-field">
                             <span>
                                 Fecha de inicio
                             </span>
@@ -69,13 +94,14 @@
                                 type="date"
                                 placeholder="Seleccionar fecha"
                                 size="small"
+                                class="document-date-picker"
                                 style="width: 200px;"
                                 format="dd/MM/yyyy"
                                 value-format="yyyy-MM-dd"
                                 clearable>
                             </el-date-picker>
                         </div>
-                        <div class="d-flex flex-column">
+                        <div class="d-flex flex-column document-date-field">
                             <span style="margin-left: 10px">
                                 Fecha de fin
                             </span>
@@ -84,6 +110,7 @@
                                 type="date"
                                 placeholder="Seleccionar fecha"
                                 size="small"
+                                class="document-date-picker"
                                 style="width: 200px; margin-left: 8px;"
                                 format="dd/MM/yyyy"
                                 value-format="yyyy-MM-dd"
@@ -91,7 +118,7 @@
                             </el-date-picker>
                         </div>
                         <button
-                            class="btn-filter-search ml-2 p-0"
+                            class="btn-filter-search ml-2 p-0 document-filter-search"
                             @click="getRecords()"
                             type="button"
                             aria-label="Buscar">
@@ -132,7 +159,7 @@
                     </template>                
                 </div>
 
-                <button class="btn btn-default dropdown-toggle mr-2 mt-1" style="height: 35px" type="button" id="dropdownFilter" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                <button class="btn btn-default dropdown-toggle mr-2 mt-1 document-filter-toggle" style="height: 35px" type="button" id="dropdownFilter" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
                   Filtros <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-table" aria-labelledby="dropdownFilter">

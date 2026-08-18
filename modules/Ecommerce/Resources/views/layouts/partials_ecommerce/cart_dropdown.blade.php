@@ -8,10 +8,26 @@
 
 <style>
 /* ── Dropdown panel ── */
+@media (max-width: 575.98px) {
+    .header .header-right {
+        position: relative;
+    }
+
+    .header .header-right .minicart-dropdown {
+        position: static;
+    }
+
+    .header .header-right .minicart-dropdown > .dropdown-menu {
+        right: 0 !important;
+        left: auto !important;
+        width: calc(100vw - 30px);
+        max-width: 340px;
+    }
+}
 
 </style>
 
-<div class="dropdown cart-dropdown">
+<div class="dropdown cart-dropdown minicart-dropdown">
     <a href="#"
        class="dropdown-toggle"
        role="button"

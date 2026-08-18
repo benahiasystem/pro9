@@ -986,9 +986,24 @@
     }
 
     @media (max-width: 576px) {
+        .payment-success-overlay {
+            padding: 15px;
+        }
+
         .payment-process-dialog,
         .payment-success-dialog {
             padding: 28px 18px 22px;
+        }
+
+        .payment-success-dialog {
+            width: 100%;
+            max-width: 520px;
+            max-height: calc(100vh - 30px);
+            max-height: calc(100dvh - 30px);
+            margin-right: auto;
+            margin-left: auto;
+            box-sizing: border-box;
+            overflow-y: auto;
         }
     }
 
@@ -1110,14 +1125,36 @@
 
     @media (max-width: 576px) {
         .swal2-popup.mp-payment-swal {
-            width: 94vw !important;
+            width: calc(100% - 30px) !important;
+            max-width: 560px !important;
+            margin-right: auto !important;
+            margin-left: auto !important;
             padding: 0 0.85rem 1.25rem !important;
+            box-sizing: border-box;
         }
 
         .swal2-popup.mp-payment-swal .swal2-title {
             width: calc(100% + 1.7rem);
             margin-right: -0.85rem !important;
             margin-left: -0.85rem !important;
+        }
+
+        .swal2-popup.mp-payment-swal .swal2-content,
+        .swal2-popup.mp-payment-swal #swal2-content,
+        .swal2-popup.mp-payment-swal .mp-swal-brick,
+        #mp-brick-container,
+        #mp-brick-container form {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        #mp-brick-container input,
+        #mp-brick-container select,
+        #mp-brick-container iframe,
+        #mp-brick-container button {
+            max-width: 100% !important;
+            box-sizing: border-box;
         }
 
         .gateway-payment-overlay {
@@ -1613,6 +1650,19 @@
             grid-template-areas:
                 "thumb info info info info"
                 "thumb quantity quantity total delete";
+        }
+
+        .items-cart .modern-quantity-container.input-group {
+            display: inline-flex;
+            flex-flow: row nowrap;
+            align-items: center;
+            width: auto;
+        }
+
+        .items-cart .modern-quantity-container .input-group-prepend,
+        .items-cart .modern-quantity-container .input-group-append,
+        .items-cart .modern-quantity-container .btn-input-group {
+            flex: 0 0 auto;
         }
     }
 

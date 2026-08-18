@@ -3116,6 +3116,42 @@ input::-webkit-inner-spin-button {
         max-width: 90px;
     }
 }
+@media (max-width: 575.98px) {
+    .btn[aria-expanded="false"] .card-cart-header {
+        display: grid !important;
+        grid-template-columns: 34px minmax(0, 1fr) 20px;
+        grid-template-areas:
+            "icon title arrow"
+            "icon summary arrow";
+        column-gap: 11px;
+        row-gap: 4px;
+    }
+    .btn[aria-expanded="false"] .card-cart-header > .icon-card {
+        grid-area: icon;
+    }
+    .btn[aria-expanded="false"] .card-cart-header > .title-card {
+        grid-area: title;
+        margin-left: 0 !important;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .btn[aria-expanded="false"] .card-cart-header > .head-summary {
+        grid-area: summary;
+        flex-wrap: wrap;
+        margin-left: 0;
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+    .btn[aria-expanded="false"] .card-cart-header > .collapse-arrow {
+        grid-area: arrow;
+        align-self: center;
+        margin-left: 0;
+    }
+}
 .items-cart {
     display: flex;
     gap: 16px;
@@ -4715,6 +4751,18 @@ html:has(#app.checkout-page-root) .container {
     height: 52px;
     font-weight: 500;
 }
+@media (max-width: 575.98px) {
+    .ty-btns {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+    .ty-btns .pay-btn {
+        width: 100%;
+        min-width: 0;
+        white-space: normal;
+    }
+}
 /* =====================================================================
    Modal (.app-modal)
    ===================================================================== */
@@ -4935,7 +4983,12 @@ html:has(#app.checkout-page-root) .container {
 
 @media (max-width: 991px) {
     .category-dropdown {
-        margin-left: 12px !important;
+        display: none !important;
+    }
+
+    .ecommerce-guest-login .log-in-text,
+    .ecommerce-guest-login .user-name-ecommerce {
+        display: none !important;
     }
 
     .category-dropdown-toggle {
@@ -4955,8 +5008,18 @@ html:has(#app.checkout-page-root) .container {
 }
 
 @media (max-width: 576px) {
+    .header-middle .container {
+        position: relative;
+    }
+
+    .header-middle .category-dropdown {
+        position: static;
+    }
+
     .category-menu {
-        width: calc(100vw - 30px);
-        left: -70px;
+        width: auto;
+        max-width: none;
+        right: 15px;
+        left: 15px;
     }
 }

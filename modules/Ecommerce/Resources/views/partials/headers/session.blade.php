@@ -5,7 +5,7 @@
 <div class="dropdown cart-dropdown" style="margin-left: 16px;">
 
     @guest('ecommerce')
-        <a class="header-contact mr-0 login-link" href="#" style="text-decoration: none;">
+        <a class="header-contact mr-0 login-link ecommerce-guest-login" href="#" style="text-decoration: none;">
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-circle" style="color: #fff;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 10a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" /></svg>
             <strong class="ml-2 log-in-text" style="font-size: 15px; color: #fff;">Iniciar sesión</strong>
 

@@ -193,4 +193,32 @@
         gap: 4px;
         flex-wrap: nowrap;
     }
+
+    @media (max-width: 767.98px) {
+        .product.product-style > .product-image-container-ecommerce {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0;
+            margin-right: 0;
+            border-radius: 32px 32px 0 0;
+            overflow: hidden;
+        }
+
+        .product.product-style > .product-image-container-ecommerce .product-image-list {
+            display: flex;
+            width: 100%;
+            max-width: 100%;
+            border-radius: inherit;
+            overflow: hidden;
+        }
+
+        .product.product-style > .product-image-container-ecommerce .image {
+            display: block;
+            width: 100%;
+            max-width: none;
+            height: 210px;
+            object-fit: cover;
+            object-position: center;
+        }
+    }
 </style>

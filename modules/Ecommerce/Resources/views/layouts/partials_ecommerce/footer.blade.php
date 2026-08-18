@@ -163,6 +163,36 @@
     .select-part, .input-part {
         box-shadow: none !important
     }
+
+    @media (max-width: 575.98px) {
+        .footer-middle {
+            padding: 42px 0;
+        }
+
+        .footer-middle > .container > .row > [class*="col-"] {
+            width: 100%;
+            margin-bottom: 36px;
+        }
+
+        .footer-middle > .container > .row > [class*="col-"]:last-child {
+            margin-bottom: 0;
+        }
+
+        .footer-socials {
+            margin-top: 12px;
+            padding-bottom: 8px;
+            align-items: center;
+        }
+
+        .footer-col-title {
+            margin-top: 0;
+        }
+
+        .footer-nav,
+        .footer-contact-list {
+            width: 100%;
+        }
+    }
 </style>
 
 <div class="footer-middle">
@@ -710,6 +740,39 @@ body.cart-added-modal-open #announcement-bar.announcement-bar {
     .cart-added-modal .modal-dialog {
         max-width: calc(100% - 2rem);
         margin: 1.2rem auto;
+    }
+    .cart-added-modal .cart-added-modal__qty,
+    .cart-added-modal .cart-confirm-qty {
+        border: 1px solid #d1d5db !important;
+        border-radius: 999px !important;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: none !important;
+    }
+    .cart-added-modal .cart-added-modal__qty-input,
+    .cart-added-modal .cart-confirm-qty .input-quantity {
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        outline: 0 !important;
+        margin: 0 !important;
+        background: #fff;
+        appearance: textfield;
+    }
+    .cart-added-modal .cart-added-modal__qty-btn,
+    .cart-added-modal .cart-confirm-qty button {
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        outline: 0 !important;
+        background: #fff;
+    }
+    .cart-added-modal .cart-added-modal__qty-input::before,
+    .cart-added-modal .cart-added-modal__qty-input::after,
+    .cart-added-modal .cart-confirm-qty .input-quantity::before,
+    .cart-added-modal .cart-confirm-qty .input-quantity::after {
+        display: none !important;
+        content: none !important;
     }
     .cart-added-modal__header,
     .cart-added-modal__body,

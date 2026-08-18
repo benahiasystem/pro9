@@ -261,6 +261,10 @@ div.cart-dropdown {
 <header class="header">
     <div class="header-middle">
         <div class="container">
+            <button class="mobile-menu-toggler" type="button">
+                <i class="icon-menu"></i>
+            </button>
+
             <div class="header-left">
                 <a href="{{ route("tenant.ecommerce.index") }}" class="logo" style="max-width: 180px">
                     @php
@@ -350,9 +354,6 @@ div.cart-dropdown {
             </div>
 
             <div class="header-right">
-                <button class="mobile-menu-toggler" type="button">
-                    <i class="icon-menu"></i>
-                </button>
                 @include('ecommerce::layouts.partials_ecommerce.cart_dropdown')
                 @include('ecommerce::partials.headers.session')
             </div>
