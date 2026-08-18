@@ -2722,9 +2722,19 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
         function normalizedPreferences(value) {
             const source = value && typeof value === 'object' ? value : {};
+            const uniqueKeys = function (items) {
+                const seen = new Set();
+                return (Array.isArray(items) ? items : []).filter(function (item) {
+                    if (typeof item !== 'string') return false;
+                    const key = item.trim();
+                    if (!key || seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                }).map(function (item) { return item.trim(); });
+            };
             return {
-                pinned_items: Array.isArray(source.pinned_items) ? source.pinned_items.filter(function (item) { return typeof item === 'string'; }) : [],
-                menu_order: Array.isArray(source.menu_order) ? source.menu_order.filter(function (item) { return typeof item === 'string'; }) : [],
+                pinned_items: uniqueKeys(source.pinned_items),
+                menu_order: uniqueKeys(source.menu_order),
                 show_only_active_menu: source.show_only_active_menu === true
             };
         }
@@ -2913,6 +2923,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                 syncInProgress = true;
                 const snapshot = normalizedPreferences(preferences);
                 const serializedSnapshot = JSON.stringify(snapshot);
+                const requestPayload = Object.assign({}, snapshot, {
+                    menu_hierarchy: menuConfigurationEntries.map(function (entry) {
+                        return { key: entry.key, ancestors: entry.ancestorKeys || [] };
+                    })
+                });
                 const csrf = document.querySelector('meta[name="csrf-token"]');
                 fetch(endpoint, {
                     method: 'POST',
@@ -2923,7 +2938,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                         'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    body: serializedSnapshot
+                    body: JSON.stringify(requestPayload)
                 }).then(function (response) {
                     return response.text().then(function (body) {
                         let payload = null;
@@ -3164,12 +3179,16 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
         function buildMenuConfigurationEntries() {
             menuConfigurationEntries = [];
+            let dashboardOrder = 0;
             availableItems().forEach(function (item, key) {
                 const hierarchy = [];
+                const hierarchyKeys = [];
                 let current = item;
                 while (current && current !== originalList) {
                     const label = menuItemLabel(current);
+                    const currentKey = itemKey(current);
                     if (label) hierarchy.unshift(label);
+                    if (currentKey) hierarchyKeys.unshift(currentKey);
                     const parentList = current.parentElement;
                     current = parentList ? parentList.closest('li') : null;
                 }
@@ -3181,15 +3200,37 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                     group: hierarchy[0],
                     groupKey: normalizeSearchText(hierarchy[0]),
                     normalizedName: normalizeSearchText(hierarchy[hierarchy.length - 1]),
-                    normalizedPath: normalizeSearchText(hierarchy.join(' '))
+                    normalizedPath: normalizeSearchText(hierarchy.join(' ')),
+                    ancestorKeys: hierarchyKeys.slice(0, -1),
+                    dashboardOrder: dashboardOrder++
                 });
             });
-            menuConfigurationEntries.sort(function (left, right) {
-                return left.path.localeCompare(right.path);
+            normalizeHierarchicalPreferences();
+        }
+
+        function normalizeHierarchicalPreferences() {
+            const selected = new Set(preferences.pinned_items);
+            const redundant = new Set();
+            menuConfigurationEntries.forEach(function (entry) {
+                if (!selected.has(entry.key)) return;
+                if ((entry.ancestorKeys || []).some(function (ancestorKey) { return selected.has(ancestorKey); })) {
+                    redundant.add(entry.key);
+                }
+            });
+            preferences.pinned_items = preferences.pinned_items.filter(function (key, index, items) {
+                return items.indexOf(key) === index && !redundant.has(key);
+            });
+            const pinned = new Set(preferences.pinned_items);
+            preferences.menu_order = preferences.menu_order.filter(function (key, index, items) {
+                return items.indexOf(key) === index && pinned.has(key);
+            });
+            preferences.pinned_items.forEach(function (key) {
+                if (!preferences.menu_order.includes(key)) preferences.menu_order.push(key);
             });
         }
 
         function updateMenuConfiguration() {
+            normalizeHierarchicalPreferences();
             renderPinnedItems();
             renderMenuConfiguration();
             applyCompactMode();
@@ -3198,28 +3239,41 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         }
 
         function toggleConfiguredFavorite(key) {
+            const entry = menuConfigurationEntries.find(function (candidate) { return candidate.key === key; });
+            const selectedAncestor = entry && (entry.ancestorKeys || []).some(function (ancestorKey) {
+                return preferences.pinned_items.includes(ancestorKey);
+            });
+            if (selectedAncestor) return;
             const pinnedIndex = preferences.pinned_items.indexOf(key);
             if (pinnedIndex >= 0) {
                 preferences.pinned_items.splice(pinnedIndex, 1);
                 preferences.menu_order = preferences.menu_order.filter(function (value) { return value !== key; });
             } else {
+                const descendantKeys = menuConfigurationEntries.filter(function (candidate) {
+                    return (candidate.ancestorKeys || []).includes(key);
+                }).map(function (candidate) { return candidate.key; });
+                preferences.pinned_items = preferences.pinned_items.filter(function (value) { return !descendantKeys.includes(value); });
+                preferences.menu_order = preferences.menu_order.filter(function (value) { return !descendantKeys.includes(value); });
                 preferences.pinned_items.push(key);
                 preferences.menu_order.push(key);
             }
+            normalizeHierarchicalPreferences();
             updateMenuConfiguration();
         }
 
         function setConfiguredGroupSelection(entries, selected) {
             const keys = entries.map(function (entry) { return entry.key; });
+            const parent = entries.find(function (entry) { return (entry.ancestorKeys || []).length === 0; }) || entries[0];
             if (selected) {
-                keys.forEach(function (key) {
-                    if (!preferences.pinned_items.includes(key)) preferences.pinned_items.push(key);
-                    if (!preferences.menu_order.includes(key)) preferences.menu_order.push(key);
-                });
+                preferences.pinned_items = preferences.pinned_items.filter(function (key) { return !keys.includes(key); });
+                preferences.menu_order = preferences.menu_order.filter(function (key) { return !keys.includes(key); });
+                preferences.pinned_items.push(parent.key);
+                preferences.menu_order.push(parent.key);
             } else {
                 preferences.pinned_items = preferences.pinned_items.filter(function (key) { return !keys.includes(key); });
                 preferences.menu_order = preferences.menu_order.filter(function (key) { return !keys.includes(key); });
             }
+            normalizeHierarchicalPreferences();
             updateMenuConfiguration();
             window.requestAnimationFrame(function () {
                 menuConfigSearch.focus({ preventScroll: true });
@@ -3276,6 +3330,10 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             row.className = 'sidebar-menu-config-row';
             row.dataset.menuConfigKey = entry.key;
             row.dataset.menuConfigSource = pinned ? 'selected' : 'available';
+            const coveredByParent = !pinned && (entry.ancestorKeys || []).some(function (ancestorKey) {
+                return preferences.pinned_items.includes(ancestorKey);
+            });
+            if (coveredByParent) row.classList.add('is-disabled');
 
             const dragHandle = document.createElement('span');
             dragHandle.className = 'sidebar-menu-config-drag-handle';
@@ -3283,6 +3341,12 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             dragHandle.tabIndex = 0;
             dragHandle.title = pinned ? 'Arrastrar para reordenar o quitar' : 'Arrastrar a elementos seleccionados';
             dragHandle.setAttribute('aria-label', dragHandle.title);
+            if (coveredByParent) {
+                dragHandle.draggable = false;
+                dragHandle.tabIndex = -1;
+                dragHandle.title = 'Incluido por el módulo completo';
+                dragHandle.setAttribute('aria-label', dragHandle.title);
+            }
             dragHandle.innerHTML = '<i class="fas fa-ellipsis-v" aria-hidden="true"></i>';
             dragHandle.addEventListener('dragstart', function (event) {
                 menuConfigDraggedKey = entry.key;
@@ -3312,6 +3376,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                 'aria-label',
                 pinned ? 'Mover a opciones disponibles' : 'Mover a elementos seleccionados'
             );
+            toggle.disabled = coveredByParent;
+            if (coveredByParent) {
+                toggle.title = 'Incluido por el módulo completo';
+                toggle.setAttribute('aria-label', toggle.title);
+            }
             toggle.innerHTML = pinned
                 ? '<i class="fas fa-arrow-left" aria-hidden="true"></i>'
                 : '<i class="fas fa-plus" aria-hidden="true"></i>';
@@ -3362,7 +3431,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             const selectedCount = entries.filter(function (entry) {
                 return preferences.pinned_items.includes(entry.key);
             }).length;
-            count.textContent = selectedCount + ' de ' + entries.length + ' seleccionados';
+            const parent = entries.find(function (entry) { return (entry.ancestorKeys || []).length === 0; }) || entries[0];
+            const parentSelected = preferences.pinned_items.includes(parent.key);
+            count.textContent = (parentSelected ? entries.length : selectedCount) + ' de ' + entries.length + ' seleccionados';
             copy.appendChild(name);
             copy.appendChild(count);
 
@@ -3370,8 +3441,8 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             selectLabel.className = 'sidebar-menu-config-group-select';
             const select = document.createElement('input');
             select.type = 'checkbox';
-            select.checked = selectedCount === entries.length;
-            select.indeterminate = selectedCount > 0 && selectedCount < entries.length;
+            select.checked = parentSelected;
+            select.indeterminate = !parentSelected && selectedCount > 0;
             select.setAttribute('aria-label', 'Seleccionar todo el módulo ' + groupName);
             select.addEventListener('change', function () {
                 setConfiguredGroupSelection(entries, select.checked);
@@ -3423,7 +3494,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             }).filter(function (result) {
                 return result.score > 0;
             }).sort(function (left, right) {
-                return right.score - left.score || left.entry.path.localeCompare(right.entry.path);
+                // La relevancia manda durante la búsqueda. Ante resultados con
+                // el mismo puntaje se conserva el orden visual del dashboard.
+                return right.score - left.score || left.entry.dashboardOrder - right.entry.dashboardOrder;
             }).map(function (result) {
                 return result.entry;
             });
