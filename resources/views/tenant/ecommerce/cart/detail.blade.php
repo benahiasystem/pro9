@@ -190,12 +190,9 @@
                                     <button :disabled="!formIdentity.number" @click.prevent="searchCustomer"
                                         class="btn btn-outline-secondary" type="button" id="button-addon2">
 
-                                        <template v-if="formIdentity.identity_document_type_id === '6'">
-                                            <i class="icon-search"></i> <span>SUNAT</span>
-                                        </template>
-                                        <template v-if="formIdentity.identity_document_type_id === '1'">
-                                            <i class="icon-search"></i> <span>RENIEC</span>
-                                        </template>
+                                        {{-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT --}}
+                                        <template><i class="icon-search"></i> <span>Buscar</span></template>
+                                        {{-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT --}}
                                     </button>
                                 </div>
                             </div>

@@ -26,11 +26,9 @@
                         <div class="col-md-6">
                             <h4 class="title">
                                 Estado de comprobante:
-                                {{
-                                    statusDocument.sent
-                                        ? "Enviado a Sunat"
-                                        : "No enviado a Sunat"
-                                }}
+                                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                {{ statusDocument.sent ? "Enviado" : "No enviado" }}
+                                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                             </h4>
                             <h4 class="title">
                                 Envio automático:

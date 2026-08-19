@@ -216,7 +216,9 @@ const SAMPLE_BY_TYPE = {
     date:     ['01/05/2026', '05/05/2026', '10/05/2026'],
     document: ['F001-00001', 'B001-00002', 'F002-00003'],
     customer: ['Juan Pérez García', 'Empresa SAC', 'María López'],
-    sunat:    ['43211503', '43211706', '81112100'],
+    // ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT
+    // Se retiró la muestra del catálogo fiscal item_code de la configuración visual.
+    // ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT
     status:   ['Pendiente', 'En proceso', 'Cerrado'],
     currency: ['VES', 'USD', 'VES'],
     exchange: ['3.75', '3.80', '3.72'],
@@ -431,7 +433,9 @@ const MODULES = {
             description:                 { title: 'Descripción',              visible: false, type: 'longtext' },
             model:                       { title: 'Modelo',                   visible: false, type: 'text'     },
             brand:                       { title: 'Marca',                    visible: false, type: 'text'     },
-            item_code:                   { title: 'Cód. SUNAT',               visible: false, type: 'sunat'    },
+            // ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT
+            // item_code se conserva en datos/API, pero no es una columna configurable de la interfaz.
+            // ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT
             history:                     { title: 'Historial',                visible: true,  type: 'action'   },
             stock:                       { title: 'Stock',                    visible: true,  type: 'number'   },
             sale_unit_price:             { title: 'P. Unitario (Venta)',      visible: true,  type: 'price'    },

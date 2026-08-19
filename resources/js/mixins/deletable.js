@@ -199,7 +199,9 @@ export const deletable = {
         forceSendBySummary(url, params) 
         {
             return new Promise((resolve) => {
-                this.$confirm('Debe validar que la boleta no se encuentre en Sunat, ya que si la envió de forma individual al menos una vez, puede que ya se encuentre registrada.', '¿Desea enviar la boleta por resumen?', {
+                // ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT
+                this.$confirm('Debe validar que la boleta no se encuentre registrada, ya que pudo enviarse de forma individual previamente.', '¿Desea enviar la boleta por resumen?', {
+                // ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT
                     confirmButtonText: 'Modificar',
                     cancelButtonText: 'Cancelar',
                     type: 'warning'

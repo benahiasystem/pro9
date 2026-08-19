@@ -24,14 +24,16 @@
             <div class="card card-dashboard card-reports">
                 <div class="card-body">
                     <h6 class="card-title">Informacion adicion para items
+                        <!-- ########## INICIO CAMBIO SUNAT A SENIAT -->
                         <el-tooltip
                             class="item"
                             effect="dark"
-                            content="No serán utilizados en calculo de SUNAT."
+                            content="No serán utilizados en este cálculo."
                             placement="top-start"
                         >
                             <i class="fa fa-info-circle"></i>
                         </el-tooltip>
+                        <!-- ######### FIN CAMBIO SUNAT A SENIAT -->
                     </h6>
                     <ul class="card-report-links">
                         <li>

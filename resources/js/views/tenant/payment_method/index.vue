@@ -4,9 +4,11 @@
       <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
       <ol class="breadcrumbs">
           <li class="active"><span> Listado de métodos de pago
-            <el-tooltip class="item" effect="dark" content="Catálogo de Sunat - Operaciones relacionadas a la misma" placement="top-start">
+            <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+            <el-tooltip class="item" effect="dark" content="Catálogo de operaciones relacionadas" placement="top-start">
               <i class="fa fa-info-circle"></i>
             </el-tooltip>
+            <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
           </span></li>
       </ol>
       <div class="right-wrapper pull-right">

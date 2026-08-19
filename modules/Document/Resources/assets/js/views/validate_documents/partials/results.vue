@@ -20,7 +20,9 @@
                                     <th>Comprobante</th>
                                     <th>Descripción</th>
                                     <th class="text-center">Estado sistema</th>
-                                    <th class="text-center">Estado Sunat</th>
+                                    <!-- ########## INICIO CAMBIO SUNAT A SENIAT -->
+                                    <th class="text-center">Estado fiscal</th>
+                                    <!-- ######### FIN CAMBIO SUNAT A SENIAT -->
                                     <th class="text-center">¿Estado actualizado?</th>
                                 </tr>
                             </thead>

@@ -240,7 +240,9 @@
                             <th v-if="col.visible && col.key === 'description'" :key="col.key">Descripción</th>
                             <th v-if="col.visible && col.key === 'model'" :key="col.key">Modelo</th>
                             <th v-if="col.visible && col.key === 'brand'" :key="col.key">Marca</th>
-                            <th v-if="col.visible && col.key === 'item_code'" :key="col.key" class="text-end">Cód. SUNAT</th>
+                            <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                            <!-- Encabezado fiscal item_code retirado del listado de productos. -->
+                            <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                             <th v-if="col.visible && col.key === 'sanitary'" :key="col.key" class="text-end">R.S.</th>
                             <th v-if="col.visible && col.key === 'cod_digemid'" :key="col.key">DIGEMID</th>
                             <th v-if="col.visible && col.key === 'history' && typeUser == 'admin'" :key="col.key" class="text-center">Historial</th>
@@ -272,7 +274,9 @@
                             <td v-if="col.visible && col.key === 'description'" :key="col.key"><div class="limit-4-lines">{{ stripHtml(row.name) }}</div></td>
                             <td v-if="col.visible && col.key === 'model'" :key="col.key">{{ row.model }}</td>
                             <td v-if="col.visible && col.key === 'brand'" :key="col.key">{{ row.brand }}</td>
-                            <td v-if="col.visible && col.key === 'item_code'" :key="col.key" class="text-end">{{ row.item_code }}</td>
+                            <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                            <!-- Celda fiscal item_code retirada para mantener alineado el listado de productos. -->
+                            <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                             <td v-if="col.visible && col.key === 'sanitary'" :key="col.key">{{ row.sanitary }}</td>
                             <td v-if="col.visible && col.key === 'cod_digemid'" :key="col.key" class="text-end">{{ row.cod_digemid }}</td>
                             <td v-if="col.visible && col.key === 'history' && typeUser == 'admin'" :key="col.key" class="text-center">
@@ -560,7 +564,9 @@ export default {
                 description:                 { title: "Descripción",                                         visible: false, order: 5  },
                 model:                       { title: "Modelo",                                              visible: false, order: 6  },
                 brand:                       { title: "Marca",                                               visible: false, order: 7  },
-                item_code:                   { title: "Cód. SUNAT",                                          visible: false, order: 8  },
+                // ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT
+                // La columna fiscal item_code ya no se ofrece en el selector de productos.
+                // ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT
                 sanitary:                    { title: "N° Sanitario",                                        visible: false, order: 9  },
                 cod_digemid:                 { title: "DIGEMID",                                             visible: false, order: 10 },
                 extra_data:                  { title: "Stock Por datos extra",                               visible: false, order: 11 },

@@ -12,7 +12,9 @@
                 </div>
             </div>
             <div class="col-md-10">
-                <p class="title"><strong>¿Los comprobantes del resúmen {{summary.identifier}} han sido validados por SUNAT?</strong></p>
+                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                <p class="title"><strong>¿Los comprobantes del resumen {{summary.identifier}} han sido validados?</strong></p>
+                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
             </div>
             <div class="col-md-12">
                 <p>Si acepta la operación, todos los comprobantes informados en el resúmen se modificarán a estado <strong>ACEPTADO</strong></p>

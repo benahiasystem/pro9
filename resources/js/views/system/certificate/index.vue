@@ -1,7 +1,9 @@
 <template>
     <div class="card">
         <div class="card-header bg-info bg-info-customer-admin">
-            <h3 class="my-0">Certificado PSE - Datos Sunat</h3>
+            <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+            <h3 class="my-0">Certificado PSE</h3>
+            <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
         </div>
         <div class="card-body">
             <div class="title border-bottom pt-0">
@@ -32,7 +34,9 @@
                 </div>
             </div>
             <div class="title border-bottom">
-                <h4>Usuario Secundario SUNAT</h4>
+                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                <h4>Usuario secundario</h4>
+                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
             </div>
             <div class="row">
                 <div class="col-md-6 py-2">

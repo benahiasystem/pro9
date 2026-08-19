@@ -65,8 +65,10 @@
                                 El proceso puede demorar
                             </li>
                             <li>
-                                La cantidad de productos debe tomarse en cuenta, ya que la respuesta de sunat podra
+                                <!-- ########## INICIO CAMBIO SUNAT A SENIAT -->
+                                La cantidad de productos debe tomarse en cuenta, ya que la respuesta del servicio puede
                                 hacer que la carga falle.
+                                <!-- ######### FIN CAMBIO SUNAT A SENIAT -->
                             </li>
                         </ul>
                     </div>

@@ -74,7 +74,9 @@
                         <th v-if="columns.description.visible">Descripción</th>
                         <th v-if="columns.model.visible">Modelo</th>
                         <!-- <th v-if="columns.brand.visible">Marca</th>  -->
-                        <th class="text-end" v-if="columns.item_code.visible">Cód. SUNAT</th>
+                        <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                        <!-- Encabezado fiscal item_code retirado del listado de packs. -->
+                        <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                         <!-- <th  class="text-start">Stock</th> -->
                         <th class="text-end">P.Unitario (Venta)</th>
                         <th class="text-start">Tiene Igv</th>
@@ -90,7 +92,9 @@
                         <td>{{ row.description }}</td>
                         <td v-if="columns.description.visible">{{ row.name }}</td>
                         <td v-if="columns.model.visible">{{ row.model }}</td>
-                        <td class="text-end" v-if="columns.item_code.visible">{{ row.item_code }}</td>
+                        <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                        <!-- Celda fiscal item_code retirada para mantener alineado el listado. -->
+                        <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                         <!-- <td>
                             <template v-if="typeUser=='seller' && row.unit_type_id !='ZZ'">{{ row.stock }}</template>
                             <template v-else-if="typeUser!='seller'&& row.unit_type_id !='ZZ'">
@@ -211,10 +215,9 @@ export default {
                     title: 'Descripción',
                     visible: true
                 },
-                item_code: {
-                    title: 'Cód. SUNAT',
-                    visible: false
-                },
+                // ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT
+                // La columna fiscal item_code ya no se ofrece en el selector de packs.
+                // ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT
                 /*
                 purchase_unit_price: {
                     title: 'P.Unitario (Compra)',

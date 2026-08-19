@@ -352,7 +352,9 @@ export default {
             clearable: true,
             textplaceholder: 'Ninguno seleccionado',
             activePanel: 0,
-            infoPop: 'No será enviado a SUNAT',
+            // ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT
+            infoPop: 'No será enviado',
+            // ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT
 
         }
     },

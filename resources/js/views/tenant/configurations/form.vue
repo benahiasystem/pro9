@@ -1285,7 +1285,9 @@
                                                         - Registra las series vendidas como información adicional a nivel de
                                                         item.<br>
                                                         - Usa el atributo con código 5019 - Serie/Chasis del catálogo 55 - Código de
-                                                        identificación del concepto tributario de Sunat. <br>
+                                                        <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                                        identificación del concepto tributario. <br>
+                                                        <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                                         - Disponible para Facturas y Boletas. <br>
                                                     </div>
                                                     <i class="fa fa-info-circle"></i>

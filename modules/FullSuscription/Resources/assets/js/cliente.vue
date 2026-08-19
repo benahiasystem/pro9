@@ -75,8 +75,9 @@
                                                 type="primary"
                                                 style="border-radius: 0 4px 4px 0; margin-left: -1px; height: 40px;"
                                                 @click.prevent="searchCustomer">
-                                            <template v-if="form.identity_document_type_id === '6'">SUNAT</template>
-                                            <template v-if="form.identity_document_type_id === '1'">RENIEC</template>
+                                            <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                            <template>Buscar</template>
+                                            <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                         </el-button>
                                     </div>
 
