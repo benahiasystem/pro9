@@ -65,16 +65,18 @@
         methods: {
             changeIdentityDocumentTypeId() {
                 this.buttonText = null;
+                // ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT
                 if(this.identity_document_type_id === '6') {
                     this.maxLength = 11;
-                    this.buttonText = 'SUNAT';
+                    this.buttonText = 'Buscar';
                     this.resource = this.resource_base+'/ruc';
                 }
                 if(this.identity_document_type_id === '1') {
                     this.maxLength = 8;
-                    this.buttonText = 'RENIEC';
+                    this.buttonText = 'Buscar';
                     this.resource = this.resource_base+'/dni';
                 }
+                // ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT
                 if(this.identity_document_type_id !== '6' && this.identity_document_type_id !== '1') {
                     this.maxLength = 20
                 }

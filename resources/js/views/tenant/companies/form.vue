@@ -399,12 +399,14 @@
         <div class="card card-config">
             <div class="card-header bg-info">
                 <h3 class="my-0">Consulta integrada de CPE - Validador de documentos
+                    <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                     <el-tooltip class="item"
-                                content="Obtener los datos desde el portal de Sunat"
+                                content="Obtener los datos desde el proveedor fiscal configurado"
                                 effect="dark"
                                 placement="top-start">
                         <i class="fa fa-info-circle"></i>
                     </el-tooltip>
+                    <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                 </h3>
             </div>
             <div class="card-body">
@@ -451,7 +453,9 @@
                     <div class="form-body">
                         <div class="row">
                             <div class="col-md-12">
-                                <h4 class="border-bottom">Usuario Secundario Sunat</h4>
+                                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                <h4 class="border-bottom">Usuario secundario</h4>
+                                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                             </div>
                         </div>
                         <div class="row">

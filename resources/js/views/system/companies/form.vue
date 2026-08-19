@@ -40,7 +40,9 @@
                     <template v-if="form.soap_type_id == '02' || toggle == true ">
                         <div class="row" >
                             <div class="col-md-12 mt-2">
-                                <h4 class="border-bottom">Usuario Secundario Sunat</h4>
+                                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                <h4 class="border-bottom">Usuario secundario</h4>
+                                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                             </div>
                         </div>
                         <div class="row">

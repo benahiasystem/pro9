@@ -283,16 +283,18 @@
                                 >
                                     <label class="control-label"
                                         >Tipo de cambio
+                                        <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                         <el-tooltip
                                             class="item"
                                             effect="dark"
-                                            content="Tipo de cambio del día, extraído de SUNAT"
+                                            content="Tipo de cambio del día"
                                             placement="top-end"
                                         >
                                             <i
                                                 class="fa fa-info-circle"
                                             ></i>
                                         </el-tooltip>
+                                        <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                     </label>
                                     <el-input
                                         v-model="form.exchange_rate_sale"

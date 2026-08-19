@@ -274,24 +274,9 @@
                                         <!-- </template> -->
                                     </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <div :class="{'has-danger': errors.item_code}"
-                                        class="form-group">
-                                        <label class="control-label">Código Sunat
-                                            <el-tooltip class="item"
-                                                        content="Código proporcionado por SUNAT, campo obligatorio para exportaciones"
-                                                        effect="dark"
-                                                        placement="top">
-                                                <i class="fa fa-info-circle"></i>
-                                            </el-tooltip>
-                                        </label>
-                                        <el-input v-model="form.item_code"
-                                                dusk="item_code"></el-input>
-                                        <small v-if="errors.item_code"
-                                            class="form-control-feedback"
-                                            v-text="errors.item_code[0]"></small>
-                                    </div>
-                                </div>
+                                <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                                <!-- Campo fiscal item_code retirado del detalle; se conserva el contrato de datos. -->
+                                <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                                 <div class="col-md-3">
                                     <div :class="{'has-danger': errors.line}"
                                         class="form-group">

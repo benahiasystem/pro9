@@ -58,9 +58,11 @@
                              <div class="col-lg-2">
                                 <div class="form-group" :class="{'has-danger': errors.exchange_rate_sale}">
                                     <label class="control-label">Tipo de cambio
-                                        <el-tooltip class="item" effect="dark" content="Tipo de cambio del día, extraído de SUNAT" placement="top-end">
+                                        <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                        <el-tooltip class="item" effect="dark" content="Tipo de cambio del día" placement="top-end">
                                             <i class="fa fa-info-circle"></i>
                                         </el-tooltip>
+                                        <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                     </label>
                                     <el-input v-model="form.exchange_rate_sale"></el-input>
                                     <small class="form-control-feedback" v-if="errors.exchange_rate_sale" v-text="errors.exchange_rate_sale[0]"></small>

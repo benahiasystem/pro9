@@ -159,7 +159,9 @@
             },
             clickRegularizeDocuments() {
 
-                this.$confirm('¿Desea actualizar el estado de los documentos con los ubicados en SUNAT?', 'Regularizar documentos', {
+                // ########## INICIO CAMBIO SUNAT A SENIAT
+                this.$confirm('¿Desea actualizar el estado de los documentos con la fuente fiscal configurada?', 'Regularizar documentos', {
+                // ######### FIN CAMBIO SUNAT A SENIAT
                     confirmButtonText: 'Regularizar',
                     cancelButtonText: 'Cancelar',
                     type: 'warning'

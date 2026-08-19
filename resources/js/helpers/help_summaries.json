@@ -9,6 +9,6 @@
     },
     "/persons/customers": {
         "title": "Gestión de Clientes",
-        "summary": "Agrega y edita los datos de tus clientes. Puedes buscar directamente por RUC/DNI para autocompletar la información desde los servidores de SUNAT/RENIEC."
+        "summary": "Agrega y edita los datos de tus clientes. Puedes usar la acción Buscar para intentar autocompletar la información desde el proveedor configurado."
     }
 }

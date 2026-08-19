@@ -34,12 +34,9 @@
                                         v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'">
                                         <el-button type="primary" slot="append" :loading="loading_search"
                                                    icon="el-icon-search" @click.prevent="searchCustomer">
-                                            <template v-if="form.identity_document_type_id === '6'">
-                                                SUNAT
-                                            </template>
-                                            <template v-if="form.identity_document_type_id === '1'">
-                                                RENIEC
-                                            </template>
+                                            <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                            <template>Buscar</template>
+                                            <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                         </el-button>
                                     </template>
                                 </el-input>

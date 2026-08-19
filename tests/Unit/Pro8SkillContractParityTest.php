@@ -10,24 +10,14 @@ class Pro8SkillContractParityTest extends TestCase
     /** @test */
     public function every_pro8_venezuela_skill_has_its_pro9_counterpart(): void
     {
-        // ########## INICIO CAMBIO AFECTACIÓN IVA
-        $requiredSkills = [
-                'adaptar-sistema-venezuela',
-                'gestionar-clientes-venezuela',
-                'migrar-venezuela-geopolitica',
-                'migrar-venezuela-moneda',
-                'migrar-venezuela-telefonia',
-                'migrate-product-import-excel-format',
-                'reconstruir-migraciones-tenant',
-            ];
-        $pro9Skills = $this->skillNames(base_path('.codex/skills'));
+        // ########## INICIO CAMBIO SUNAT A SENIAT
+        $availableSkills = $this->skillNames(base_path('.codex/skills'));
 
-        self::assertSame(
-            [],
-            array_values(array_diff($requiredSkills, $pro9Skills))
-        );
-        self::assertContains('migrar-iva-venezuela', $pro9Skills);
-        // ######### FIN CAMBIO AFECTACIÓN IVA
+        foreach (array_keys($this->requiredContracts()) as $requiredSkill) {
+            self::assertContains($requiredSkill, $availableSkills);
+        }
+        // Los skills específicos de Pro9 pueden extender los contratos heredados de Pro8.
+        // ######### FIN CAMBIO SUNAT A SENIAT
     }
 
     /** @test */

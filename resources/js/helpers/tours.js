@@ -72,7 +72,9 @@ export default {
             element: '.tour-person-form',
             popover: {
                 title: 'Formulario de Cliente',
-                description: 'Aquí puedes rellenar todos los datos. Si pones el RUC o DNI y haces clic en el botón SUNAT/RENIEC, buscará automáticamente los datos.',
+                // ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT
+                description: 'Aquí puedes rellenar todos los datos. Si indicas el documento y haces clic en Buscar, el sistema intentará autocompletar la información.',
+                // ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT
                 side: 'left',
                 onNextClick: (element, step, opts) => {
                     const closeBtn = document.querySelector('.el-dialog__headerbtn');

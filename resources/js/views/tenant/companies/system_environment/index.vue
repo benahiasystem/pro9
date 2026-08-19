@@ -45,7 +45,9 @@
 
 					<template v-if="form.soap_type_id == '02' || form.soap_send_id == '02'">						
 						<div class="row mt-4">
-                            <h4 class="col-12 m-0 fw-medium">Usuario Secundario Sunat/OSE</h4>
+                            <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                            <h4 class="col-12 m-0 fw-medium">Usuario secundario del proveedor fiscal</h4>
+                            <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
 							<div class="col-md-6">
 								<div :class="{'has-danger': errors.soap_username}"
 									 class="form-group">

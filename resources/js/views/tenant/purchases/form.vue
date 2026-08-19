@@ -179,12 +179,14 @@
                                 <div :class="{'has-danger': errors.exchange_rate_sale}"
                                      class="form-group">
                                     <label class="control-label">Tipo de cambio
+                                        <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                         <el-tooltip class="item"
-                                                    content="Tipo de cambio del día, extraído de SUNAT"
+                                                    content="Tipo de cambio del día"
                                                     effect="dark"
                                                     placement="top-end">
                                             <i class="fa fa-info-circle"></i>
                                         </el-tooltip>
+                                        <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                     </label>
                                     <el-input v-model="form.exchange_rate_sale"></el-input>
                                     <small v-if="errors.exchange_rate_sale"

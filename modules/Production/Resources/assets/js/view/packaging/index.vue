@@ -171,10 +171,9 @@ export default {
                     title: "Descripción",
                     visible: true
                 },
-                item_code: {
-                    title: "Cód. SUNAT",
-                    visible: false
-                },
+                // ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT
+                // La columna fiscal item_code ya no se ofrece en packaging.
+                // ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT
                 /*
                 purchase_unit_price: {
                     title: 'P.Unitario (Compra)',

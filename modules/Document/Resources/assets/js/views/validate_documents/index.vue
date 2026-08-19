@@ -23,7 +23,9 @@
                         <th>Cliente</th>
                         <th  class="text-center">Código</th>
                         <th >Estado sistema</th>
-                        <th >Estado Sunat</th>
+                        <!-- ########## INICIO CAMBIO SUNAT A SENIAT -->
+                        <th>Estado fiscal</th>
+                        <!-- ######### FIN CAMBIO SUNAT A SENIAT -->
                     <tr>
                     <tr slot-scope="{ index, row }">
                         <td>{{ index }}</td>

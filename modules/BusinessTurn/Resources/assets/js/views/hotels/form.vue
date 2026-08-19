@@ -41,9 +41,11 @@
                             <div v-else>
                                 <el-input v-model="hotel.number" :maxlength="maxLength" dusk="number">
                                     <template v-if="identity_document_type_id === '1'">
+                                        <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                         <el-button type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="searchCustomer">
-                                            RENIEC
+                                            Buscar
                                         </el-button>
+                                        <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                     </template>
                                 </el-input>
                             </div>

@@ -17,9 +17,11 @@
                             class="form-group">
                             <label class="control-label">RUC</label>
                             <!-- <el-input :disabled="form.is_update" v-model="form.number" :maxlength="11" dusk="number">
+                                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                 <el-button :disabled="form.is_update" type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="searchSunat">
-                                    SUNAT
+                                    Buscar
                                 </el-button>
+                                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                             </el-input> -->
 
                             <!-- apiperu -->
@@ -446,7 +448,9 @@
                             <div class="row">
                                 <div class="col-md-12 mt-2">
                                     <h4 class="border-bottom">
-                                        Usuario Secundario Sunat
+                                        <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
+                                        Usuario secundario
+                                        <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                     </h4>
                                 </div>
                             </div>

@@ -151,7 +151,9 @@
                         <th v-if="columns.description.visible">Descripción</th>
                         <th v-if="columns.model.visible">Modelo</th>
                         <th >Marca</th>
-                        <th v-if="columns.item_code.visible">Cód. SUNAT</th>
+                        <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                        <!-- Columna fiscal item_code retirada del encabezado DIGEMID. -->
+                        <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                         <th >R.S.</th>
                         <th >DIGEMID </th>
                         <th >Nom. DIGEMID </th>
@@ -184,7 +186,9 @@
                         <td v-if="columns.model.visible">{{ row.model }}</td>
                         <td >{{ row.brand }}</td>
                         <td v-if="columns.description.visible">{{ row.name }}</td>
-                        <td v-if="columns.item_code.visible">{{ row.item_code }}</td>
+                        <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                        <!-- Celda fiscal item_code retirada para mantener alineada la tabla DIGEMID. -->
+                        <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                         <td >{{ row.sanitary }} </td>
                         <td >{{ row.cod_digemid }} </td>
                         <td >{{ row.name_disa }} </td>
@@ -405,10 +409,9 @@ export default {
                     title: 'Descripción',
                     visible: false
                 },
-                item_code: {
-                    title: 'Cód. SUNAT',
-                    visible: false
-                },
+                // ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT
+                // La columna fiscal item_code ya no se ofrece en el selector DIGEMID.
+                // ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT
                 purchase_unit_price: {
                     title: 'P.Unitario (Compra)',
                     visible: false
