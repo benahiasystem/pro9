@@ -8,7 +8,7 @@
                             <label class="control-label">
                                 Descripción
                             </label>
-                            <el-input type="textarea" autosize v-model="form.description"></el-input>
+                            <el-input type="textarea" autosize v-model="form.description" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
                         </div>
                     </div>
@@ -17,7 +17,7 @@
                             <label class="control-label">
                                 Total
                             </label>
-                            <el-input v-model="form.total" >
+                            <el-input v-model="form.total" @focus="$event.target.select()" >
                                 <template slot="prepend" v-if="currencyType">{{ currencyType.symbol }}</template>
                             </el-input>
                             <small class="form-control-feedback" v-if="errors.total" v-text="errors.total[0]"></small>
