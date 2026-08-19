@@ -40,6 +40,9 @@ class TenantMigrationDataSeederTest extends TestCase
         // ########## INICIO CAMBIO AFECTACIÓN IVA
         $ivaMigrations = glob(database_path('migrations/tenant/*_configure_venezuela_iva.php')) ?: [];
         // ######### FIN CAMBIO AFECTACIÓN IVA
+        // ########## INICIO CAMBIO SUNAT A SENIAT
+        $identityDocumentRenameMigrations = glob(database_path('migrations/tenant/*_rename_undomiciled_tax_document_to_doc_sin_rif.php')) ?: [];
+        // ######### FIN CAMBIO SUNAT A SENIAT
 
         self::assertCount(327, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
@@ -47,8 +50,11 @@ class TenantMigrationDataSeederTest extends TestCase
         self::assertCount(1, $existingTenantMigrations);
         // ########## INICIO CAMBIO AFECTACIÓN IVA
         self::assertCount(1, $ivaMigrations);
-        self::assertCount(331, glob(database_path('migrations/tenant/*.php')) ?: []);
         // ######### FIN CAMBIO AFECTACIÓN IVA
+        // ########## INICIO CAMBIO SUNAT A SENIAT
+        self::assertCount(1, $identityDocumentRenameMigrations);
+        self::assertCount(332, glob(database_path('migrations/tenant/*.php')) ?: []);
+        // ######### FIN CAMBIO SUNAT A SENIAT
     }
 
     /** @test */

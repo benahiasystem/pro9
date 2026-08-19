@@ -15,19 +15,14 @@
                         <div
                             :class="{'has-danger': errors.number}"
                             class="form-group">
-                            <label class="control-label">RUC</label>
-                            <!-- <el-input :disabled="form.is_update" v-model="form.number" :maxlength="11" dusk="number">
-                                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                <el-button :disabled="form.is_update" type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="searchSunat">
-                                    Buscar
-                                </el-button>
-                                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                            </el-input> -->
-
-                            <!-- apiperu -->
-                            <x-input-service class="btn-sunat-reniec-container" v-model="form.number"
-                                             :identity_document_type_id="form.identity_document_type_id"
-                                             @search="searchNumber"></x-input-service>
+                            <!-- ########## INICIO CAMBIO RIF SUPER ADMIN -->
+                            <label class="control-label">RIF</label>
+                            <rif-input
+                                v-model="form.number"
+                                :available="rif_lookup_available"
+                                @search="searchNumber">
+                            </rif-input>
+                            <!-- ######### FIN CAMBIO RIF SUPER ADMIN -->
                         </div>
                         <small
                             v-if="errors.number"
@@ -785,10 +780,14 @@
 }
 </style>
 <script>
-import {serviceNumber} from '../../../mixins/functions'
+// ########## INICIO CAMBIO RIF SUPER ADMIN
+import RifInput from './partials/RifInput.vue'
+// ######### FIN CAMBIO RIF SUPER ADMIN
 
 export default {
-    mixins: [serviceNumber],
+    // ########## INICIO CAMBIO RIF SUPER ADMIN
+    components: { RifInput },
+    // ######### FIN CAMBIO RIF SUPER ADMIN
     props: ['showDialog', 'recordId'],
     data() {
         return {
@@ -803,6 +802,9 @@ export default {
             headers: headers_token,
             loading_submit: false,
             loading_search: false,
+            // ########## INICIO CAMBIO RIF SUPER ADMIN
+            rif_lookup_available: false,
+            // ######### FIN CAMBIO RIF SUPER ADMIN
             titleDialog: null,
             button_text: null,
             resource: 'clients',
@@ -907,6 +909,9 @@ export default {
                 this.regex_password_client = response.data.regex_password_client
                 this.plan_periods = response.data.plan_periods
                 this.global_smtp_config = response.data.global_smtp_config || {}
+                // ########## INICIO CAMBIO RIF SUPER ADMIN
+                this.rif_lookup_available = response.data.rif_lookup_available === true
+                // ######### FIN CAMBIO RIF SUPER ADMIN
             })
 
         await this.initForm()
@@ -1257,9 +1262,6 @@ export default {
             this.$emit('update:showDialog', false)
             this.initForm()
         },
-        searchSunat() {
-            this.searchServiceNumber()
-        },
         errorUpload(r) {
             console.log(r)
         },
@@ -1272,7 +1274,9 @@ export default {
             }
         },
         searchNumber(data) {
-            this.form.name = data.name;
+            // ########## INICIO CAMBIO RIF SUPER ADMIN
+            if (data.name) this.form.name = data.name
+            // ######### FIN CAMBIO RIF SUPER ADMIN
         },
         changeModules() {
             if (this.business === 0) return;

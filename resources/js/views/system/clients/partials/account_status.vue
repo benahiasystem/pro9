@@ -11,7 +11,9 @@
                         <el-input  v-model="client.name" readonly></el-input>
                     </div>
                     <div class="form-group" >
-                        <label class="control-label d-block">RUC</label>
+                        <!-- ########## INICIO CAMBIO RIF SUPER ADMIN -->
+                        <label class="control-label d-block">RIF</label>
+                        <!-- ######### FIN CAMBIO RIF SUPER ADMIN -->
                         <!-- <label class="d-block"  v-text="client.number" ></label> -->
                         <el-input  v-model="client.number" readonly></el-input>
                     </div>

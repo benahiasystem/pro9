@@ -12,6 +12,7 @@ description: Mantener y extender en Pro9 la migración de referencias visibles S
 - Usar `Buscar` en acciones de consulta de identidad. No exponer SUNAT/RENIEC ni rotular SENIAT si el proveedor real no corresponde.
 - Mostrar `Tipo de cambio del día` sin atribuir BCV mientras `ServiceData::exchange()` siga consumiendo ApiPeru. Sólo mencionar BCV después de migrar y probar la fuente backend efectiva.
 - Usar textos fiscales neutrales cuando la autoridad no sea necesaria para comprender la acción.
+- Conservar el tipo de documento de identidad `0`: su etiqueta contractual es `Doc.sin.rif`. No eliminarlo, no reasignar sus registros a otro tipo y no volver a mostrar `Doc.trib.no.dom.sin.ruc`.
 
 ## Integraciones que se preservan
 
@@ -42,7 +43,7 @@ Usar comentarios válidos del lenguaje y rodear el bloque mínimo. No insertar m
 2. Confirmar que ninguna fuente alcanzada vuelve a enlazar o configurar visualmente `item_code`.
 3. Confirmar que los tooltips migrados no mencionan SUNAT ni BCV mientras la fuente siga siendo ApiPeru.
 4. Confirmar que las consultas de identidad migradas muestran `Buscar` y conservan sus endpoints compatibles.
-5. Ejecutar `git diff --check`, `phpunit` relevante y `npm run build`.
-6. Auditar las coincidencias SUNAT/SENIAT restantes: deben corresponder a integración activa, compatibilidad persistida, formato real, documentación histórica o marcador.
-7. No incorporar artefactos generados al diff salvo que la política vigente del repositorio lo exija.
-
+5. Confirmar que el seeder mantiene el ID `0` con la descripción `Doc.sin.rif` y que una migración incremental renombra ese mismo registro en tenants existentes.
+6. Ejecutar `git diff --check`, `phpunit` relevante y `npm run build`.
+7. Auditar las coincidencias SUNAT/SENIAT restantes: deben corresponder a integración activa, compatibilidad persistida, formato real, documentación histórica o marcador.
+8. No incorporar artefactos generados al diff salvo que la política vigente del repositorio lo exija.

@@ -1882,7 +1882,9 @@ return array (
         array (
           'id' => '0',
           'active' => 1,
-          'description' => 'Doc.trib.no.dom.sin.ruc',
+          // ########## INICIO CAMBIO SUNAT A SENIAT
+          'description' => 'Doc.sin.rif',
+          // ######### FIN CAMBIO SUNAT A SENIAT
         ),
         // ########### INICIO CAMBIO CLIENTES VENEZUELA
         1 =>

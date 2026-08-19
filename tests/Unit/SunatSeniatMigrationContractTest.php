@@ -72,6 +72,30 @@ class SunatSeniatMigrationContractTest extends TestCase
     }
 
     /** @test */
+    public function identity_document_type_zero_is_preserved_and_renamed_to_doc_sin_rif(): void
+    {
+        $payload = require database_path('seeders/data/tenant_initial_data.php');
+        $identityDocumentTypes = collect($payload['tables']['cat_identity_document_types']['rows'])
+            ->keyBy('id');
+
+        self::assertTrue($identityDocumentTypes->has('0'));
+        self::assertSame('Doc.sin.rif', $identityDocumentTypes->get('0')['description']);
+
+        $migration = $this->source('database/migrations/tenant/2026_08_19_000332_rename_undomiciled_tax_document_to_doc_sin_rif.php');
+        self::assertStringContainsString("->where('id', '0')", $migration);
+        self::assertStringContainsString("->update(['description' => 'Doc.sin.rif'])", $migration);
+
+        foreach ([
+            'modules/Order/Imports/MiTiendaPeImport.php',
+            'modules/Order/Resources/assets/js/views/order_notes/partials/options.vue',
+        ] as $path) {
+            $source = $this->source($path);
+            self::assertStringContainsString('Doc.sin.rif', $source, $path);
+            self::assertStringNotContainsString('Doc.trib.no.dom.sin.ruc', $source, $path);
+        }
+    }
+
+    /** @test */
     public function active_internal_sunat_contracts_are_not_misrepresented_as_seniat(): void
     {
         self::assertStringContainsString("Route::post('/sendSunat/{document}'", $this->source('routes/web.php'));
@@ -120,6 +144,10 @@ class SunatSeniatMigrationContractTest extends TestCase
                 'modules/Production/Resources/assets/js/view/item_production/index.vue',
                 'modules/Production/Resources/assets/js/view/packaging/index.vue',
                 'modules/Production/Resources/assets/js/view/production/index.vue',
+                'database/migrations/tenant/2026_08_19_000332_rename_undomiciled_tax_document_to_doc_sin_rif.php',
+                'database/seeders/data/tenant_initial_data.php',
+                'modules/Order/Imports/MiTiendaPeImport.php',
+                'modules/Order/Resources/assets/js/views/order_notes/partials/options.vue',
                 'resources/js/views/tenant/item_sets/form.vue',
                 'resources/js/views/tenant/item_sets/index.vue',
                 'resources/js/views/tenant/items/form.vue',

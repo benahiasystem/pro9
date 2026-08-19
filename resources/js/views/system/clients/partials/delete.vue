@@ -16,7 +16,9 @@
                 <div class="col-md-12 mt-5"> 
                     
                     <div class="form-group" >
-                        <label class="control-label font-weight-bold">Ingrese el número de ruc o nombre de la empresa para confirmar la acción<span class="text-danger"> *</span></label>
+                        <!-- ########## INICIO CAMBIO RIF SUPER ADMIN -->
+                        <label class="control-label font-weight-bold">Ingrese el RIF o nombre de la empresa para confirmar la acción<span class="text-danger"> *</span></label>
+                        <!-- ######### FIN CAMBIO RIF SUPER ADMIN -->
                         <p><el-tag type="info"><b>{{ record.number }}</b></el-tag> o <el-tag type="info"><b>{{ record.name }}</b></el-tag></p>
                         <el-input  v-model="form.input_validate" @input="inputCheckAvailableDelete"></el-input>
                     </div>

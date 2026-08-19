@@ -139,7 +139,9 @@
         <header class="payment-public__header">
             <h1 class="payment-public__company">{{ $client['name'] ?? 'Cliente' }}</h1>
             @if(!empty($client['number']))
-                <p class="payment-public__ruc">RUC {{ $client['number'] }}</p>
+                {{-- ########## INICIO CAMBIO RIF SUPER ADMIN --}}
+                <p class="payment-public__ruc">RIF {{ $client['number'] }}</p>
+                {{-- ######### FIN CAMBIO RIF SUPER ADMIN --}}
             @endif
         </header>
 

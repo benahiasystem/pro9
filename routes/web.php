@@ -1106,6 +1106,9 @@ if ($hostname) {
             Route::post('users', 'System\UserController@store');
 
             Route::get('services/ruc/{number}', 'System\ServiceController@ruc');
+            // ########## INICIO CAMBIO RIF SUPER ADMIN
+            Route::get('services/rif/{rif}', 'System\ServiceController@rif');
+            // ######### FIN CAMBIO RIF SUPER ADMIN
 
             Route::get('certificates/record', 'System\CertificateController@record');
             Route::post('certificates/uploads', 'System\CertificateController@uploadFile');

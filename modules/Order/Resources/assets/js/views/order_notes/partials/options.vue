@@ -997,10 +997,12 @@ export default {
         },
         async validateIdentityDocumentType() {
             let identity_document_types = ["0", "1"];
+            // ########## INICIO CAMBIO SUNAT A SENIAT
             /*
-            0		Doc.trib.no.dom.sin.ruc
+            0		Doc.sin.rif
             1		DNI
             */
+            // ######### FIN CAMBIO SUNAT A SENIAT
             let customer = _.find(this.customers, {
                 id: this.document.customer_id
             });

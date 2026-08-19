@@ -70,7 +70,9 @@
                     <span class="info-value">{{ client.name }}</span>
                 </div>
                 <div class="info-row" v-if="client.number">
-                    <span class="info-label">RUC / Nº</span>
+                    <!-- ########## INICIO CAMBIO RIF SUPER ADMIN -->
+                    <span class="info-label">RIF / Nº</span>
+                    <!-- ######### FIN CAMBIO RIF SUPER ADMIN -->
                     <span class="info-value">{{ client.number }}</span>
                 </div>
                 <div class="info-row" v-if="client.client_name">

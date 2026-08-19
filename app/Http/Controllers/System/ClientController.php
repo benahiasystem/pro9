@@ -7,6 +7,9 @@
     use App\CoreFacturalo\Helpers\Certificate\GenerateCertificate;
     use App\Http\Controllers\Controller;
     use App\Http\Requests\System\ClientRequest;
+    // ########## INICIO CAMBIO RIF SUPER ADMIN
+    use App\Http\Requests\System\ClientUpdateRequest;
+    // ######### FIN CAMBIO RIF SUPER ADMIN
     use App\Http\Resources\System\ClientCollection;
     use App\Http\Resources\System\ClientResource;
     use App\Models\System\Client;
@@ -32,6 +35,9 @@
     use App\Helpers\GuestRegisterHelper;
     use App\Models\System\PlanPeriod;
     use App\Models\System\User as SystemUser;
+    // ########## INICIO CAMBIO RIF SUPER ADMIN
+    use App\Services\System\RifLookupService;
+    // ######### FIN CAMBIO RIF SUPER ADMIN
 use App\Traits\StorageManagementTrait;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
@@ -51,8 +57,10 @@ use Illuminate\Support\Facades\Mail;
             return view('system.clients.form');
         }
 
-        public function tables()
+        // ########## INICIO CAMBIO RIF SUPER ADMIN
+        public function tables(RifLookupService $rifLookupService)
         {
+        // ######### FIN CAMBIO RIF SUPER ADMIN
 
             $url_base = '.' . config('tenant.app_url_base');
             $plans = Plan::all();
@@ -142,6 +150,10 @@ use Illuminate\Support\Facades\Mail;
                 'smtp_encryption' => $config->mail_encryption ?? 'ssl',
             ];
 
+            // ########## INICIO CAMBIO RIF SUPER ADMIN
+            $rif_lookup_available = $rifLookupService->isAvailable();
+            // ######### FIN CAMBIO RIF SUPER ADMIN
+
             return compact(
                 'url_base',
                 'plans',
@@ -161,7 +173,10 @@ use Illuminate\Support\Facades\Mail;
                 'regex_password_client',
                 'group_restaurant_apps',
                 'group_restaurant_apps',
-                'global_smtp_config');
+                'global_smtp_config',
+                // ########## INICIO CAMBIO RIF SUPER ADMIN
+                'rif_lookup_available');
+                // ######### FIN CAMBIO RIF SUPER ADMIN
         }
 
         /**
@@ -562,8 +577,10 @@ use Illuminate\Support\Facades\Mail;
          *
          * @return array
          */
-        public function update(Request $request)
+        // ########## INICIO CAMBIO RIF SUPER ADMIN
+        public function update(ClientUpdateRequest $request)
         {
+        // ######### FIN CAMBIO RIF SUPER ADMIN
             /**
              * @var Collection $valueModules
              * @var Collection $valueLevels
@@ -636,6 +653,9 @@ use Illuminate\Support\Facades\Mail;
                     $client->setSmtpPassword($smtp_password);
                 }
                 $client->plan_id = $request->plan_id;
+                // ########## INICIO CAMBIO RIF SUPER ADMIN
+                $client->number = $request->number;
+                // ######### FIN CAMBIO RIF SUPER ADMIN
                 $client->whatsapp_messages_limit_override = ($request->whatsapp_messages_limit_override === '' ? null : $request->whatsapp_messages_limit_override);
                 $client->price = $request->price;
                 $client->plan_period_id = $request->plan_period_id;
@@ -675,6 +695,9 @@ use Illuminate\Support\Facades\Mail;
                     ->table('companies')
                     ->where('id', 1)
                     ->update([
+                        // ########## INICIO CAMBIO RIF SUPER ADMIN
+                        'number' => $request->number,
+                        // ######### FIN CAMBIO RIF SUPER ADMIN
                         'soap_type_id' => $request->soap_type_id,
                         'soap_send_id' => $request->soap_send_id,
                         'soap_username' => $request->soap_username,
@@ -1336,7 +1359,9 @@ use Illuminate\Support\Facades\Mail;
         /**
          *
          * Validar si el valor de confirmacion ingresado por el usuario es
-         * igual al ruc o nombre de la empresa, para poder eliminar el cliente
+         * ########## INICIO CAMBIO RIF SUPER ADMIN
+         * igual al RIF o nombre de la empresa, para poder eliminar el cliente
+         * ######### FIN CAMBIO RIF SUPER ADMIN
          *
          * @param  Client $client
          * @param  string $input_validate
@@ -1350,7 +1375,9 @@ use Illuminate\Support\Facades\Mail;
                 return $this->generalResponse(true);
             }
 
-            return $this->generalResponse(false, 'El valor ingresado no coincide con el nombre o número de ruc de la empresa.');
+            // ########## INICIO CAMBIO RIF SUPER ADMIN
+            return $this->generalResponse(false, 'El valor ingresado no coincide con el nombre o RIF de la empresa.');
+            // ######### FIN CAMBIO RIF SUPER ADMIN
 
         }
 

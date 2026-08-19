@@ -35,4 +35,13 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
+    // ########## INICIO CAMBIO RIF SUPER ADMIN
+    'super_admin_rif_lookup' => [
+        'enabled' => env('SUPER_ADMIN_RIF_LOOKUP_ENABLED', false),
+        'url' => env('SUPER_ADMIN_RIF_LOOKUP_URL', ''),
+        'token' => env('SUPER_ADMIN_RIF_LOOKUP_TOKEN', ''),
+        'timeout' => env('SUPER_ADMIN_RIF_LOOKUP_TIMEOUT', 10),
+    ],
+    // ######### FIN CAMBIO RIF SUPER ADMIN
+
 ];

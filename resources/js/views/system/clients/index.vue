@@ -318,13 +318,15 @@
                     <div class="row">
                         <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2">
                             <label class="control-label mb-1">Buscar:</label>
+                            <!-- ########## INICIO CAMBIO RIF SUPER ADMIN -->
                             <el-input
                                 v-model="searchQuery"
-                                placeholder="Buscar por hostname, nombre, ruc o correo"
+                                placeholder="Buscar por hostname, nombre, RIF o correo"
                                 style="width: 100%;"
                                 prefix-icon="el-icon-search"
                                 @input="applyFilters">
                             </el-input>
+                            <!-- ######### FIN CAMBIO RIF SUPER ADMIN -->
                         </div>
                         <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2">
                             <label class="control-label mb-1">Filtrar por Entorno:</label>
@@ -402,7 +404,9 @@
                             <th class="sticky-column">Hostname</th>
                             <th v-if="columns.bloquear_cuenta.visible" class="text-center">Bloquear <br>cuenta</th>
                             <th v-if="columns.nombre.visible" class="column-name">Nombre</th>
-                            <th v-if="columns.ruc.visible">RUC</th>
+                            <!-- ########## INICIO CAMBIO RIF SUPER ADMIN -->
+                            <th v-if="columns.ruc.visible">RIF</th>
+                            <!-- ######### FIN CAMBIO RIF SUPER ADMIN -->
                             <th v-if="columns.plan.visible">Plan</th>
                             <th v-if="columns.correo.visible">Correo</th>
                             <th v-if="columns.entorno.visible">Entorno</th>
@@ -1165,7 +1169,9 @@ export default {
                     visible: true
                 },
                 ruc: {
-                    title: 'RUC',
+                    // ########## INICIO CAMBIO RIF SUPER ADMIN
+                    title: 'RIF',
+                    // ######### FIN CAMBIO RIF SUPER ADMIN
                     visible: true
                 },
                 plan: {
