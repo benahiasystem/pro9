@@ -68,6 +68,7 @@ import XImportServiceGuest from './../../modules/ApiPeruDev/Resources/assets/js/
 import SystemConfigurationThemes from './views/system/configuration/themes.vue'
 import SystemsVisibleColumns from './views/system/configuration/visibleColumns.vue'
 import SystemStorageManagement from './views/system/storage-management/index.vue'
+import SystemExtraServicesIndex from '@viewsModuleExtraServices/index.vue';
 
 locale.use(lang)
 
@@ -178,6 +179,7 @@ Vue.component('system-configuration-themes', SystemConfigurationThemes)
 Vue.component('system-configuration-visible-columns', SystemsVisibleColumns)
 
 Vue.component('system-storage-management-index', SystemStorageManagement)
+Vue.component('system-extra-services-index', SystemExtraServicesIndex);
 
 import VueClipboard from 'vue-clipboard2'
 Vue.use(VueClipboard)

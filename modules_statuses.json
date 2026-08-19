@@ -45,5 +45,6 @@
     "ItemFormLayout": true,
     "DocumentFormLayout": true,
     "Webhook": true,
+    "ExtraServices": true,
     "Marketplace": true
 }

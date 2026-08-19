@@ -438,18 +438,9 @@
                                 <div class="col-lg-4">
                                     <div class="form-group">
                                         <label class="control-label">Número<span class="text-danger"> *</span></label>
-                                        <el-input v-model="form.payer.number" :maxlength="11" placeholder="Número...">
-                                            <template v-if="form.payer.identity_document_type_id === '6' || form.payer.identity_document_type_id === '1'">
-                                                <el-button type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="searchPayer">
-                                                    <template v-if="form.payer.identity_document_type_id === '6'">
-                                                        SUNAT
-                                                    </template>
-                                                    <template v-if="form.payer.identity_document_type_id === '1'">
-                                                        RENIEC
-                                                    </template>
-                                                </el-button>
-                                            </template>
-                                        </el-input>
+                                        <x-input-service v-model="form.payer.number"
+                                                         :identity_document_type_id="form.payer.identity_document_type_id"
+                                                         @search="searchPayer"></x-input-service>
                                     </div>
                                 </div>
                                 <div class="col-lg-4">
@@ -1546,24 +1537,8 @@ export default {
                 this.form.payer.number=null;
             }
         },
-        async searchPayer() {
-            if(this.form.payer.number === '') {
-                this.$message.error('Ingresar el número a buscar')
-                return
-            }
-            let identity_document_type_name = ''
-            this.loading_search = true
-            identity_document_type_name = (this.form.payer.identity_document_type_id === '6')?'ruc':'dni'
-
-            let response = await this.$http.get(`/service/${identity_document_type_name}/${this.form.payer.number}`)
-            if(response.data.success) {
-                let data = response.data.data
-                this.form.payer.name = data.name
-            } else {
-                this.$message.error(response.data.message)
-            }
-
-            this.loading_search = false
+        searchPayer(data) {
+            this.form.payer.name = data.name
         },
         setDefaultSeries() {
             if (this.series.length > 0) {
