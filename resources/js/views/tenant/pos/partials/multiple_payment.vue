@@ -37,12 +37,12 @@
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2"  >
-                                        <el-input v-model="row.reference"></el-input>
+                                        <el-input v-model="row.reference" @focus="$event.target.select()"></el-input>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2" >
-                                        <el-input v-model="row.payment"></el-input>
+                                        <el-input v-model="row.payment" @focus="$event.target.select()"></el-input>
                                     </div>
                                 </td>
                                 <td class="series-table-actions text-center">

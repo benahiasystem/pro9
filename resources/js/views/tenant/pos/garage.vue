@@ -776,6 +776,7 @@
                                     </button>
                                     <el-input
                                         v-model="item.item.aux_quantity"
+                                        @focus="$event.target.select()"
                                         @input="clickAddItem(item, index, true)"
                                         @keyup.enter.native="keyupEnterQuantity"
                                         class="pos-qty-field"
