@@ -88,6 +88,7 @@ if ($hostname) {
 
             //Company
             Route::get('company', 'Tenant\Api\CompanyController@record');
+            Route::get('company/customers', 'Tenant\Api\CompanyController@searchCustomers');
 
             // Cotizaciones
             Route::get('quotations/list', 'Tenant\Api\QuotationController@list');
@@ -109,6 +110,7 @@ if ($hostname) {
                 Route::get('/items', 'Tenant\Api\SellnowController@items');
                 Route::get('/categories', 'Tenant\Api\SellnowController@categories');
                 Route::post('/favoriteitem', 'Tenant\Api\SellnowController@setFavoriteItem');
+                Route::get('/customers', 'Tenant\Api\CompanyController@searchCustomers');
             });
 
             Route::prefix('consigneds')->group(function () {
