@@ -88,10 +88,6 @@ class DownloadController extends Controller
 
         switch ($format) 
         {
-            case 'ticket_50':
-                $size_width = 45;
-                break;
-            
             case 'ticket_58':
                 $size_width = 56;
                 break;

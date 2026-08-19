@@ -38,9 +38,11 @@
                                         <!-- End .ratings -->
                                     </div><!-- End .product-ratings -->
                                 </div><!-- End .product-container -->
+                                @if($storefront_show_prices ?? true)
                                 <div class="price-box">
                                     <span class="product-price">{{ $item->currency_type_symbol }} {{ number_format($item->sale_unit, 2) }}</span>
                                 </div><!-- End .price-box -->
+                                @endif
                             </div><!-- End .product-details -->
                         </div><!-- End .product -->
                         @endforeach
@@ -73,10 +75,12 @@
                                         <!-- End .ratings -->
                                     </div><!-- End .product-ratings -->
                                 </div><!-- End .product-container -->
+                                @if($storefront_show_prices ?? true)
                                 <div class="price-box">
                                     <span class="product-price">
                                         {{ $item->currency_type_symbol }} {{ number_format($item->sale_unit, 2) }}</span>
                                 </div><!-- End .price-box -->
+                                @endif
                             </div><!-- End .product-details -->
                         </div><!-- End .product -->
                         @endforeach

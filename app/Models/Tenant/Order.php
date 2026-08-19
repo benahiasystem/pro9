@@ -4,7 +4,10 @@ namespace App\Models\Tenant;
 
 
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Http\Helpers\HeaderNotifications;
 use App\Models\Tenant\Document;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Modules\Ecommerce\Models\Tenant\DiscountCoupon;
 
 
@@ -14,6 +17,7 @@ class Order extends ModelTenant
 
     protected $fillable = [
         'external_id',
+        'order_code',
         'customer',
         'shipping_address',
         'items',
@@ -24,6 +28,7 @@ class Order extends ModelTenant
         'status_order_id',
         'payment_status_order_id',
         'shipping_status_order_id',
+        'tracking_code',
         'purchase',
         'total_discount',
         'discount_coupon_code',
@@ -38,6 +43,82 @@ class Order extends ModelTenant
         'purchase' => 'object',
         'stock_discounted' => 'boolean'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function (self $order) {
+            if (empty($order->order_code)) {
+                $order->order_code = self::nextDailyOrderCode();
+            }
+        });
+    }
+
+    /**
+     * N° público del pedido: ddmm + secuencia diaria (ej. 120801).
+     * Pedidos antiguos sin order_code conservan el id rellenado a 6 dígitos.
+     */
+    public function publicNumber(): string
+    {
+        if (! empty($this->order_code)) {
+            return (string) $this->order_code;
+        }
+
+        return str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Genera el siguiente código del día: ddmm + secuencia (01, 02, …).
+     */
+    public static function nextDailyOrderCode($at = null): string
+    {
+        $at = Carbon::parse($at ?? now());
+        $prefix = $at->format('dm');
+
+        return DB::transaction(function () use ($prefix, $at) {
+            $codes = static::query()
+                ->whereDate('created_at', $at->toDateString())
+                ->whereNotNull('order_code')
+                ->where('order_code', 'like', $prefix . '%')
+                ->lockForUpdate()
+                ->pluck('order_code');
+
+            $max = 0;
+            foreach ($codes as $code) {
+                if (preg_match('/^' . preg_quote($prefix, '/') . '(\d+)$/', (string) $code, $m)) {
+                    $max = max($max, (int) $m[1]);
+                }
+            }
+
+            $seq = $max + 1;
+
+            return $prefix . str_pad((string) $seq, 2, '0', STR_PAD_LEFT);
+        });
+    }
+
+    /**
+     * Resuelve un pedido por N° público (order_code) o por id legado.
+     */
+    public static function findByPublicNumber(?string $raw): ?self
+    {
+        $digits = preg_replace('/\D+/', '', (string) $raw);
+        if ($digits === '') {
+            return null;
+        }
+
+        $byCode = static::where('order_code', $digits)->first();
+        if ($byCode) {
+            return $byCode;
+        }
+
+        $id = (int) $digits;
+        if ($id <= 0) {
+            return null;
+        }
+
+        return static::find($id);
+    }
 
     public function status_order()
     {
@@ -65,6 +146,14 @@ class Order extends ModelTenant
     }
 
     /**
+     * Pedidos que requieren atención del administrador (pago sin verificar u otros estados activos).
+     */
+    public function scopePendingForNotification($query)
+    {
+        return HeaderNotifications::pendingOrdersQuery($query);
+    }
+
+    /**
      * Retorna un standar de nomenclatura para el modelo
      *
      * @return array
@@ -75,19 +164,24 @@ class Order extends ModelTenant
             'id' => $this->id,
             'external_id' => $this->external_id,
             'number_document' => $this->number_document,
-            'order_id' => str_pad($this->id, 6, "0", STR_PAD_LEFT),
+            'order_id' => $this->publicNumber(),
+            'order_code' => $this->order_code,
             'customer' => $this->customer->apellidos_y_nombres_o_razon_social,
             'customer_email' => $this->customer->correo_electronico,
             'customer_telefono' => $this->customer->telefono,
             'customer_direccion' => $this->customer->direccion,
+            'is_guest' => $this->isGuestCheckout(),
             'items' => $this->items,
             'total' => $this->total,
             'reference_payment' => strtoupper($this->reference_payment),
+            'payment_transaction_id' => data_get($this->purchase, 'gateway_payment.charge_id'),
+            'payment_gateway_status' => data_get($this->purchase, 'gateway_payment.panel_status'),
             'document_external_id' => $this->document_external_id,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'status_order_id' => $this->status_order_id,
             'payment_status_order_id' => $this->payment_status_order_id,
             'shipping_status_order_id' => $this->shipping_status_order_id,
+            'tracking_code' => $this->tracking_code,
             'purchase' => $this->purchase,
             'status_order_description' => $this->status_order->description ?? null,
             'payment_status_order_description' => $this->payment_status_order->description ?? null,
@@ -100,6 +194,87 @@ class Order extends ModelTenant
         ];
 
         return $data;
+    }
+
+    /**
+     * Indica si el pedido se realizó como invitado en la tienda virtual.
+     *
+     * Prioridad:
+     * 1) Marca explícita purchase.checkout.is_guest (pedidos nuevos)
+     * 2) ecommerce_customer_id guardado al comprar con sesión
+     * 3) Pedidos antiguos: si el correo/documento del pedido coincide con
+     *    una cuenta ecommerce (Person con password), se considera autenticado
+     */
+    public function isGuestCheckout(): bool
+    {
+        $flag = data_get($this->purchase, 'checkout.is_guest');
+        if ($flag !== null) {
+            return (bool) $flag;
+        }
+
+        if (data_get($this->purchase, 'checkout.ecommerce_customer_id')) {
+            return false;
+        }
+
+        return ! $this->matchesEcommerceAccount();
+    }
+
+    /**
+     * ¿El comprador del pedido corresponde a una cuenta ecommerce registrada?
+     */
+    protected function matchesEcommerceAccount(): bool
+    {
+        $email = strtolower(trim((string) (
+            data_get($this->customer, 'correo_electronico')
+            ?: data_get($this->customer, 'email')
+            ?: ''
+        )));
+        $document = preg_replace(
+            '/\D+/',
+            '',
+            (string) (
+                data_get($this->customer, 'numero_documento')
+                ?? data_get($this->customer, 'number')
+                ?? ''
+            )
+        );
+
+        if ($email === '' && ($document === '' || $document === '0')) {
+            return false;
+        }
+
+        return Person::query()
+            ->whereNotNull('password')
+            ->where('password', '!=', '')
+            ->where(function ($query) use ($email, $document) {
+                if ($email !== '') {
+                    $query->whereRaw('LOWER(email) = ?', [$email]);
+                }
+                if ($document !== '' && $document !== '0') {
+                    $method = $email !== '' ? 'orWhere' : 'where';
+                    $query->{$method}('number', $document);
+                }
+            })
+            ->exists();
+    }
+
+    /**
+     * Adjunta metadatos de checkout ecommerce al payload purchase.
+     *
+     * @param  mixed  $ecommerceUser  Cliente autenticado del guard ecommerce (Person) o null
+     * @param  bool|null  $isGuestOverride  Si viene del front, manda sobre la sesión
+     */
+    public static function attachEcommerceCheckoutMeta(array $purchase, $ecommerceUser = null, ?bool $isGuestOverride = null): array
+    {
+        $isGuest = $isGuestOverride ?? ($ecommerceUser === null);
+
+        $purchase['checkout'] = array_merge((array) ($purchase['checkout'] ?? []), [
+            'channel' => 'ecommerce',
+            'is_guest' => $isGuest,
+            'ecommerce_customer_id' => $isGuest ? null : ($ecommerceUser->id ?? null),
+        ]);
+
+        return $purchase;
     }
 
     /**

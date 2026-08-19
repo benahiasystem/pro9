@@ -109,24 +109,6 @@
                     </button>
                 </div>
 
-                <div v-if="ShowTicket50"
-                     class="col text-center font-weight-bold mt-3">
-
-                    <el-popover
-                        placement="top-start"
-                        :open-delay="1000"
-                        width="145"
-                        trigger="hover"
-                        content="Presiona ALT + P">
-                        <el-button slot="reference"
-                                   class="btn btn-lg btn-info waves-effect waves-light w-100"
-                                   type="button"
-                                   @click="clickPrint('ticket_50')">
-                            50MM
-                        </el-button>
-                    </el-popover>
-                </div>
-
                 <div class="col text-center font-weight-bold mt-3" v-if="!isNrus">
 
                     <button class="btn btn-lg btn-info waves-effect waves-light w-100"
@@ -309,18 +291,6 @@ export default {
             }
             return false;
         },
-        ShowTicket50: function () {
-            if (this.config === undefined) return false;
-            if (this.config == null) return false;
-            if (this.config.show_ticket_50 === undefined) return false;
-            if (this.config.show_ticket_50 == null) return false;
-            if (
-                this.config.show_ticket_50 !== undefined &&
-                this.config.show_ticket_50 !== null) {
-                return this.config.show_ticket_50;
-            }
-            return false;
-        },
         chooseServiceApiWsp() {
             return !this.config.qrchat_enable && !this.config.qr_api_enable_ws
         }
@@ -471,9 +441,6 @@ export default {
                 code === 'KeyN'
             ) {
                 this.clickClose()
-            }
-            if (code === 'KeyP') {
-                this.clickPrint('ticket_50'); // Imprime ticket 50 con letra P
             }
 
         },

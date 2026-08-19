@@ -50,7 +50,7 @@
         "sku": "{{ data_get($product, 'internal_id') }}",
         "brand": {
             "@type": "Brand",
-            "name": "{{ $pageTitle }}"
+            "name": "{{ data_get($product, 'brand.name') ?: $pageTitle }}"
         },
         "offers": {
             "@type": "Offer",
@@ -110,7 +110,6 @@
                     </div><!-- End .col-lg-9 -->
 
                     <div class="sidebar-overlay"></div>
-                    <div class="sidebar-toggle"><i class="icon-sliders"></i></div>
                     @include('ecommerce::layouts.partials_ecommerce.sidebar_product_right')
                 </div><!-- End .row -->
             </div><!-- End .container -->

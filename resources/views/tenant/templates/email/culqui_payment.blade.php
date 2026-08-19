@@ -73,6 +73,32 @@
                                     <br>
                                     Monto: <b>S/ {{ $document->total }}</b><br>
 
+                                    @if(!empty($document->order_number) || !empty($document->tracking_token))
+                                    <br>
+                                    @if(!empty($document->order_number))
+                                    N° de pedido: <b>#{{ $document->order_number }}</b><br>
+                                    @endif
+                                    @if(!empty($document->tracking_token))
+                                    <br>
+                                    <span style="color:#846add;">Código de seguimiento:</span><br>
+                                    <b style="font-family:Consolas,Monaco,monospace;font-size:12px;word-break:break-all;">{{ $document->tracking_token }}</b><br>
+                                    <span style="color:#666;font-size:11px;line-height:18px;">
+                                        Guárdalo para consultar el estado de tu pedido
+                                        @if(empty($document->tracking_url))
+                                            en Seguimiento de la tienda
+                                        @endif
+                                        (también sirve si compraste como invitado).
+                                    </span>
+                                    @if(!empty($document->tracking_url))
+                                    <br><br>
+                                    <a href="{{ $document->tracking_url }}"
+                                       style="display:inline-block;background:#846add;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:4px;font-family:Montserrat,Arial,sans-serif;font-size:12px;font-weight:600;">
+                                        Ver estado del pedido
+                                    </a>
+                                    @endif
+                                    @endif
+                                    @endif
+
                                     <br><br>
 
                                     <span style="color:#846add;">Información de contacto:</span><br>

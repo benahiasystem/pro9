@@ -12,28 +12,25 @@ class Functions
 {
     public static function newNumber($soap_type_id, $document_type_id, $series, $number, $model)
     {
-        // Marca la serie como en uso al asignarle número en emisión (§4.7).
+        // Marca la serie como en uso al asignarle n├║mero en emisi├│n (┬º4.7).
         Series::markInUse($document_type_id, $series);
 
         if ($number === '#') {
+            // max() num├®rico evita saltos/duplicados frente a orderBy string.
+            $max = $model::where('document_type_id', $document_type_id)
+                ->where('series', $series)
+                ->max(\Illuminate\Support\Facades\DB::raw('CAST(number AS UNSIGNED)'));
 
-            $document = $model::select('number')
-                                    ->where('document_type_id', $document_type_id)
-                                    ->where('series', $series)
-                                    ->orderBy('number', 'desc')
-                                    ->first();
-
-            if($document){
-
-                return (int)$document->number+1;
-
-            }else{
-
-                $series_configuration = SeriesConfiguration::where([['document_type_id',$document_type_id],['series',$series]])->first();
-                return ($series_configuration) ? (int) $series_configuration->number:1;
-
+            if ($max !== null) {
+                return (int) $max + 1;
             }
 
+            $series_configuration = SeriesConfiguration::where([
+                ['document_type_id', $document_type_id],
+                ['series', $series],
+            ])->first();
+
+            return ($series_configuration) ? (int) $series_configuration->number : 1;
         }
 
         return $number;

@@ -8,8 +8,18 @@
                 $tagid = Request::segment(3);
             @endphp
 
-            @if(!$tagid && !isset($category))
+            @if(!$tagid && !isset($category) && !isset($brand))
                 @include('ecommerce::layouts.partials_ecommerce.home_slider')
+            @endif
+            @if(isset($brand))
+                <div class="row">
+                    <div class="col-12 text-center py-5">
+                        <p class="text-muted text-uppercase mb-2">Marca</p>
+                        <h1 class="title-category text-uppercase" style="font-size: 2.5rem; letter-spacing: 2px;">
+                            {{ $brand->name }}
+                        </h1>
+                    </div>
+                </div>
             @endif
             @if(isset($category))
                 <div class="row">
@@ -21,9 +31,11 @@
                     </div>
                 </div>
             @endif
-            <div class="row py-4 mx-0">
-                @include('ecommerce::layouts.partials_ecommerce.categories')
-            </div>
+            @if(!isset($brand))
+                <div class="row py-4 mx-0">
+                    @include('ecommerce::layouts.partials_ecommerce.categories')
+                </div>
+            @endif
                 {{-- @include('ecommerce::layouts.partials_ecommerce.featured_products') --}}
             <div class="row py-4">
                 <div class="container d-flex justify-content-between align-items-center">

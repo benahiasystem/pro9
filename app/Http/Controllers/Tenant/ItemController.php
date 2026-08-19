@@ -1265,6 +1265,9 @@ class ItemController extends Controller
             $item->active = 0;
             $item->save();
 
+            CacheHelper::forget(['item_detail'], "item_detail_{$id}");
+            CacheHelper::flush(['items_list']);
+
             return [
                 'success' => true,
                 'message' => 'Producto inhabilitado con éxito'
@@ -1389,6 +1392,9 @@ class ItemController extends Controller
             $item = Item::findOrFail($id);
             $item->active = 1;
             $item->save();
+
+            CacheHelper::forget(['item_detail'], "item_detail_{$id}");
+            CacheHelper::flush(['items_list']);
 
             return [
                 'success' => true,

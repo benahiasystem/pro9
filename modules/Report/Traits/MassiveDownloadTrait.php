@@ -321,7 +321,7 @@ use Illuminate\Support\Str;
             $pdf->WriteHTML($html, HTMLParserMode::HTML_BODY);
 
             if (config('tenant.pdf_template_footer')) {
-                // if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58') AND ($format_pdf != 'ticket_50')) {
+                // if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58')) {
                 if ($base_template != 'full_height') {
                     $html_footer = $template->pdfFooter($base_template, $this->document);
                 } else {
@@ -339,7 +339,7 @@ use Illuminate\Support\Str;
 
             if ($base_template === 'brand') {
 
-                if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58') || ($format_pdf === 'ticket_50')) {
+                if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58')) {
                     $pdf->SetHTMLHeader("");
                     $pdf->SetHTMLFooter("");
                 }

@@ -133,9 +133,9 @@ class TenantCatalogsTable extends Migration
         });
 
         DB::table('cat_identity_document_types')->insert([
-            ['id' => '0', 'active' => true,  'description' => 'Doc.trib.no.dom.sin.ruc'],
+            ['id' => '0', 'active' => true,  'description' => 'No Domiciliado sin Ruc'],
             ['id' => '1', 'active' => true,  'description' => 'DNI'],
-            ['id' => '4', 'active' => true,  'description' => 'CE'],
+            ['id' => '4', 'active' => true,  'description' => 'Carnet de Extranjeria'],
             ['id' => '6', 'active' => true,  'description' => 'RUC'],
             ['id' => '7', 'active' => true,  'description' => 'Pasaporte'],
             ['id' => 'A', 'active' => false, 'description' => 'Ced. Diplomática de identidad'],

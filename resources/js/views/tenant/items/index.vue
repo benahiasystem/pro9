@@ -260,7 +260,7 @@
                         slot-scope="{ index, row }"
                         :class="{ disable_color: !row.active, 'text-warning': row.hidden_search }"
                     >
-                        <td>
+                        <td @click.stop>
                             <el-checkbox :value="selected.includes(row.id)" @change="handleSelectionChange(row)"></el-checkbox>
                         </td>
                         <template v-for="col in orderedColumns">
@@ -268,17 +268,26 @@
                             <!-- <td v-if="col.visible && col.key === 'internal_id'" :key="col.key" class="text-end">{{ row.internal_id }}</td> -->
                             <td v-if="col.visible && col.key === 'unit_type'" :key="col.key">{{ row.unit_type_id }}</td>
                             <td v-if="col.visible && col.key === 'image'" :key="col.key"><img :src="row.image_url_small" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
-                            <td class="fw-semibold" v-if="col.visible && col.key === 'name'" :key="col.key">{{ row.description }} <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template></td>
+                            <td v-if="col.visible && col.key === 'name'" :key="col.key">
+                                <span
+                                    class="customer-link"
+                                    role="button"
+                                    tabindex="0"
+                                    @click="clickDetail(row)"
+                                    @keyup.enter.prevent="clickDetail(row)"
+                                >{{ row.description }}</span>
+                                <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template>
+                            </td>
                             <td v-if="col.visible && col.key === 'description'" :key="col.key"><div class="limit-4-lines">{{ stripHtml(row.name) }}</div></td>
                             <td v-if="col.visible && col.key === 'model'" :key="col.key">{{ row.model }}</td>
                             <td v-if="col.visible && col.key === 'brand'" :key="col.key">{{ row.brand }}</td>
                             <td v-if="col.visible && col.key === 'item_code'" :key="col.key" class="text-end">{{ row.item_code }}</td>
                             <td v-if="col.visible && col.key === 'sanitary'" :key="col.key">{{ row.sanitary }}</td>
                             <td v-if="col.visible && col.key === 'cod_digemid'" :key="col.key" class="text-end">{{ row.cod_digemid }}</td>
-                            <td v-if="col.visible && col.key === 'history' && typeUser == 'admin'" :key="col.key" class="text-center">
+                            <td v-if="col.visible && col.key === 'history' && typeUser == 'admin'" :key="col.key" class="text-center" @click.stop>
                                 <button class="btn waves-effect waves-light btn-xs btn-primary" type="button" @click.prevent="clickHistory(row.id)"><i class="fa fa-history"></i></button>
                             </td>
-                            <td v-if="col.visible && col.key === 'stock'" :key="col.key">
+                            <td v-if="col.visible && col.key === 'stock'" :key="col.key" @click.stop>
                                 <div class="fw-semibold" v-if="config.product_only_location == true" :class="{ 'text-danger': row.stock < row.stock_min }">
                                     {{ formatStock(row.stock, row.unit_type_id) }} <!-- <small class="text-muted ms-1">{{ unitSymbol(row.unit_type_id) }}</small> -->
                                 </div>
@@ -293,7 +302,7 @@
                                     </template>
                                 </div>
                             </td>
-                            <td v-if="col.visible && col.key === 'extra_data'" :key="col.key" class="text-center">
+                            <td v-if="col.visible && col.key === 'extra_data'" :key="col.key" class="text-center" @click.stop>
                                 <template v-if="config.show_extra_info_to_item && (row.stock_by_extra.total !== null || row.stock_by_extra.colors !== null || row.stock_by_extra.CatItemSize !== null || row.stock_by_extra.CatItemStatus !== null || row.stock_by_extra.CatItemUnitBusiness !== null || row.stock_by_extra.CatItemMoldCavity !== null || row.stock_by_extra.CatItemPackageMeasurement !== null || row.stock_by_extra.CatItemUnitsPerPackage !== null || row.stock_by_extra.CatItemMoldProperty !== null || row.stock_by_extra.CatItemProductFamily !== null)">
                                     <button class="btn waves-effect waves-light btn-xs btn-primary" type="button" @click.prevent="clickStockItems(row)"><i class="fa fa-database"></i></button>
                                 </template>
@@ -303,8 +312,8 @@
                             <td v-if="col.visible && col.key === 'real_unit_price'" :key="col.key" class="text-end">{{ row.sale_unit_price_with_igv }}</td>
                             <td v-if="col.visible && col.key === 'has_igv'" :key="col.key" class="text-start">{{ row.has_igv_description }}</td>
                             <td v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key" class="text-start">{{ row.purchase_has_igv_description }}</td>
-                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
-                            <el-dropdown trigger="click">
+                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
+                            <el-dropdown trigger="click" @command="handleRowCommand">
                                 <button
                                     id="dropdownMenuButton"
                                     aria-expanded="false"
@@ -316,16 +325,23 @@
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </button>
                                 <el-dropdown-menu slot="dropdown">
-                                  <template v-if="typeUser === 'admin'">                                    
+                                  <el-dropdown-item
+                                    :command="{ action: 'detail', row }"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                    Ver detalle
+                                  </el-dropdown-item>
+
+                                  <template v-if="typeUser === 'admin'">
                                     <el-dropdown-item
-                                      @click.native.prevent="clickCreate(row.id)"
+                                      :command="{ action: 'edit', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                                       Editar
                                     </el-dropdown-item>
                                 
                                     <el-dropdown-item
-                                      @click.native.prevent="clickPrintBarcode(row)"
+                                      :command="{ action: 'printBarcode', row }"
                                       class="d-flex align-items-center justify-content-between"
                                     >
                                       <span class="d-flex align-items-center me-5">
@@ -360,7 +376,7 @@
                                     </el-dropdown-item>
                                 
                                     <el-dropdown-item
-                                      @click.native.prevent="duplicate(row.id)"
+                                      :command="{ action: 'duplicate', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-copy me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" /></svg>
                                       Duplicar
@@ -368,7 +384,7 @@
 
                                     <el-dropdown-item
                                       v-if="!row.hidden_search"
-                                      @click.native.prevent="clickHiddenSearch(row.id)"
+                                      :command="{ action: 'hiddenSearch', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye-off me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" /><path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" /><path d="M3 3l18 18" /></svg>
                                       Ocultar de búsquedas
@@ -376,7 +392,7 @@
 
                                     <el-dropdown-item
                                       v-else
-                                      @click.native.prevent="clickShowSearch(row.id)"
+                                      :command="{ action: 'showSearch', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
                                       Mostrar en búsquedas
@@ -386,7 +402,7 @@
                                 
                                     <el-dropdown-item
                                       v-if="row.active"
-                                      @click.native.prevent="clickDisable(row.id)"
+                                      :command="{ action: 'disable', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-ban me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M5.7 5.7l12.6 12.6" /></svg>
                                       Inhabilitar
@@ -394,14 +410,14 @@
                                 
                                     <el-dropdown-item
                                       v-else
-                                      @click.native.prevent="clickEnable(row.id)"
+                                      :command="{ action: 'enable', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
                                       Habilitar
                                     </el-dropdown-item>
                                 
                                     <el-dropdown-item
-                                      @click.native.prevent="clickDelete(row.id)"
+                                      :command="{ action: 'delete', id: row.id }"
                                       class="text-danger option-delete"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
@@ -477,6 +493,16 @@
                 :configuration="configuration"
                 :showDialog.sync="showExportBartenderDialog"
             ></items-export-bartender>
+
+            <items-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :type="type"
+                :typeUser="typeUser"
+                :resource="resource"
+                @edit="openEditFromDrawer"
+            ></items-detail-drawer>
         </div>
     </div>
 </template>
@@ -488,6 +514,21 @@
     border-radius: 8px;
     padding: 3px !important;
     line-height: normal;
+}
+</style>
+<style scoped>
+.item-name-link {
+    color: inherit;
+    cursor: pointer;
+    font-weight: inherit;
+    text-decoration: underline;
+}
+.item-name-link:hover,
+.item-name-link:focus {
+    color: inherit;
+    font-weight: inherit;
+    text-decoration: underline;
+    outline: none;
 }
 </style>
 <script>
@@ -508,6 +549,7 @@ import { mapActions, mapState } from "vuex";
 import ItemsImportUpdatePrice from "./partials/update_prices.vue";
 import ItemsImportTags from "./partials/export_tag.vue";
 import ItemsExportBartender from "./partials/export_bartender.vue";
+import ItemsDetailDrawer from "./partials/detail-drawer.vue";
 
 export default {
     props: ["configuration", "typeUser", "type"],
@@ -526,7 +568,8 @@ export default {
         ItemsHistory,
         ItemsImportTags,
         ItemsImportUpdatePrice,
-        ItemsExportBartender
+        ItemsExportBartender,
+        ItemsDetailDrawer
     },
     data() {
         return {
@@ -571,13 +614,16 @@ export default {
                 real_unit_price:             { title: "Mostrar el precio de venta total (con el cálculo IGV)", visible: false, order: 16 },
                 has_igv:                     { title: "Tiene Igv (Venta)",                                   visible: true,  order: 17 },
                 purchase_has_igv_description:{ title: "Tiene Igv (Compra)",                                  visible: false, order: 18 },
-                actions:                     { title: "Acciones",                                            visible: true,  order: 19 },
+                actions:                     { title: "Acciones",                                            visible: true,  order: 20 },
             },
             item_unit_types: [],
             titleTopBar: "",
             title: "",
             showDialogHistory: false,
             showDialogItemStock: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             sortField: localStorage.getItem('itemSortField') || 'id',
             sortDirection: localStorage.getItem('itemSortDirection') || 'desc',
         };
@@ -1046,6 +1092,54 @@ export default {
             this.recordId = recordId;
             this.showDialog = true;
         },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickCreate(recordId);
+        },
+        handleRowCommand(command) {
+            if (!command || !command.action) {
+                return;
+            }
+
+            const { action, id, row } = command;
+
+            switch (action) {
+                case 'detail':
+                    this.clickDetail(row);
+                    break;
+                case 'edit':
+                    this.clickCreate(id);
+                    break;
+                case 'duplicate':
+                    this.duplicate(id);
+                    break;
+                case 'hiddenSearch':
+                    this.clickHiddenSearch(id);
+                    break;
+                case 'showSearch':
+                    this.clickShowSearch(id);
+                    break;
+                case 'disable':
+                    this.clickDisable(id);
+                    break;
+                case 'enable':
+                    this.clickEnable(id);
+                    break;
+                case 'delete':
+                    this.clickDelete(id);
+                    break;
+                case 'printBarcode':
+                    this.clickPrintBarcode(row);
+                    break;
+                default:
+                    break;
+            }
+        },
         clickImport() {
             this.showImportDialog = true;
         },
@@ -1077,6 +1171,55 @@ export default {
             this.destroy(`/${this.resource}/${id}`).then(() =>
                 this.$eventHub.$emit("reloadData")
             );
+        },
+        changeActive(row) {
+            const newValue = row.active;
+            const previousValue = !newValue;
+            const entityLabel = this.type === 'ZZ' ? 'servicio' : 'producto';
+
+            const applyChange = () => {
+                const url = newValue
+                    ? `/${this.resource}/enable/${row.id}`
+                    : `/${this.resource}/disable/${row.id}`;
+
+                this.$http
+                    .get(url)
+                    .then(response => {
+                        if (response.data.success) {
+                            this.$message.success(response.data.message);
+                            if (this.selectedMeta[row.id]) {
+                                this.$set(this.selectedMeta[row.id], 'active', newValue);
+                            }
+                            return;
+                        }
+
+                        row.active = previousValue;
+                        this.$message.error(response.data.message || 'No se pudo actualizar el estado.');
+                    })
+                    .catch(() => {
+                        row.active = previousValue;
+                        this.$message.error('No se pudo actualizar el estado.');
+                    });
+            };
+
+            if (!newValue) {
+                this.$confirm(
+                    `¿Desea inhabilitar este ${entityLabel}?`,
+                    'Inhabilitar',
+                    {
+                        confirmButtonText: 'Inhabilitar',
+                        cancelButtonText: 'Cancelar',
+                        type: 'warning'
+                    }
+                )
+                    .then(() => applyChange())
+                    .catch(() => {
+                        row.active = previousValue;
+                    });
+                return;
+            }
+
+            applyChange();
         },
         clickDisable(id) {
             this.disable(`/${this.resource}/disable/${id}`).then(() =>

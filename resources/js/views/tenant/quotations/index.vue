@@ -83,6 +83,7 @@
                             <th v-if="col.visible && col.key === 'customer'" :key="col.key">Cliente</th>
                             <th v-if="col.visible && col.key === 'state_type'" :key="col.key">Estado</th>
                             <th v-if="col.visible && col.key === 'identifier'" :key="col.key">Cotización</th>
+                            <th v-if="col.visible && col.key === 'source'" :key="col.key">Origen</th>
                             <th v-if="col.visible && col.key === 'documents'" :key="col.key">Comprobantes</th>
                             <th v-if="col.visible && col.key === 'sale_notes'" :key="col.key">Notas de venta</th>
                             <th v-if="col.visible && col.key === 'order_note'" :key="col.key">Pedido</th>
@@ -117,16 +118,44 @@
                             <td v-if="col.visible && col.key === 'delivery_date'" :key="col.key" class="text-center">{{ row.delivery_date }}</td>
                             <td v-if="col.visible && col.key === 'registered_by'" :key="col.key">{{ row.user_name }}</td>
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.seller_name }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br /><small v-text="row.customer_number"></small></td>
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">
+                                <span
+                                    role="button"
+                                    tabindex="0"
+                                    @keyup.enter.prevent="clickDetail(row)"
+                                >{{ row.customer_name }}</span>
+                                <br /><small v-text="row.customer_number"></small>
+                            </td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
-                                <template v-if="row.state_type_id == '11'">{{ row.state_type_description }}</template>
+                                <template v-if="row.state_type_id == '11'">
+                                    <el-tag size="mini" type="info" effect="plain">{{ row.state_type_description }}</el-tag>
+                                </template>
                                 <template v-else>
-                                    <el-select v-model="row.state_type_id" @change="changeStateType(row)" style="width:120px !important">
-                                        <el-option v-for="option in state_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
+                                    <el-select v-model="row.state_type_id" @change="changeStateType(row)" style="width:140px !important">
+                                        <el-option
+                                            v-for="option in editableStateTypes"
+                                            :key="option.id"
+                                            :value="option.id"
+                                            :label="option.description"
+                                        ></el-option>
                                     </el-select>
                                 </template>
                             </td>
-                            <td v-if="col.visible && col.key === 'identifier'" :key="col.key">{{ row.identifier }}</td>
+                            <td v-if="col.visible && col.key === 'identifier'" :key="col.key">
+                                <span class="quotation-customer-link" @click="clickDetail(row)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M13 5h8" /><path d="M13 9h5" /><path d="M13 15h8" /><path d="M13 19h5" /><path d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /></svg>
+                                    {{ row.identifier }}
+                                </span>
+                            </td>
+                            <td v-if="col.visible && col.key === 'source'" :key="col.key">
+                                <el-tag
+                                    size="mini"
+                                    :type="row.source === 'ecommerce' ? 'warning' : 'info'"
+                                    effect="plain"
+                                >
+                                    {{ row.source_label || (row.source === 'ecommerce' ? 'Tienda virtual' : 'Empresa') }}
+                                </el-tag>
+                            </td>
                             <td v-if="col.visible && col.key === 'documents'" :key="col.key">
                                 <template v-for="(document, i) in row.documents">
                                     <template v-if="document.is_voided_or_rejected">
@@ -147,7 +176,7 @@
                                     <label class="d-block">{{ row.order_note.full_number }}</label>
                                 </template>
                             </td>
-                            <td v-if="col.visible && col.key === 'sale_opportunity'" :key="col.key">
+                            <td v-if="col.visible && col.key === 'sale_opportunity'" :key="col.key" @click.stop>
                                 <el-popover placement="right" v-if="row.sale_opportunity" width="400" trigger="click">
                                     <div class="col-md-12 mt-4">
                                         <table>
@@ -173,7 +202,7 @@
                             <td v-if="col.visible && col.key === 'contract'" :key="col.key">{{ row.contract_number_full }}</td>
                             <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key">{{ row.exchange_rate_sale }}</td>
                             <td v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
-                            <td v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-end" @click.stop>
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickPayment(row.id)">Pagos</button>
                             </td>
                             <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
@@ -182,7 +211,30 @@
                             <td v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_exonerated) }}</td>
                             <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
                             <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
-                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}</td>
+                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">
+                                <span class="quotation-total-cell">
+                                    <template v-if="row.needs_price_confirmation">
+                                        <el-tag size="mini" type="warning" effect="plain">Sin precios</el-tag>
+                                    </template>
+                                    <template v-else>
+                                        {{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}
+                                    </template>
+                                    <button
+                                        v-if="canQuickEditPrices(row)"
+                                        type="button"
+                                        class="btn btn-link btn-sm p-0 ms-1 quotation-total-edit"
+                                        :title="row.needs_price_confirmation ? 'Definir precios' : 'Edición rápida'"
+                                        @click.prevent="clickDefinePrices(row.id)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                                            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" />
+                                            <path d="M16 5l3 3" />
+                                        </svg>
+                                    </button>
+                                </span>
+                            </td>
                             <td v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-end">
                                 <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickOptionsPdf(row.id)">PDF</button>
                             </td>
@@ -194,13 +246,20 @@
                                     </td>
                                 </template>
                             </template>
-                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
                             <el-dropdown trigger="click" placement="bottom-end">
                                 <el-button class="btn-dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </el-button>
                                 <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item @click.native="clickDetail(row)">
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                      Ver detalle
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item divided />
+
                                     <el-dropdown-item
                                       v-if="row.btn_options"
                                       @click.native="clickGenerateDocument(row.id)"
@@ -236,6 +295,14 @@
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-arrow-right me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 15h6" /><path d="M12.5 17.5l2.5 -2.5l-2.5 -2.5" /></svg>
                                       Enviar cotización
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item
+                                      v-if="row.external_id"
+                                      @click.native="clickRegeneratePdf(row)"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-refresh me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4" /><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" /></svg>
+                                      Regenerar PDF
                                     </el-dropdown-item>
 
                                     <el-dropdown-item
@@ -281,6 +348,14 @@
                                     </template>
 
                                     <el-dropdown-item divided />
+
+                                    <el-dropdown-item
+                                      v-if="canQuickEditPrices(row)"
+                                      @click.native="clickDefinePrices(row.id)"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tag me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
+                                      {{ row.needs_price_confirmation ? 'Definir precios' : 'Edición rápida' }}
+                                    </el-dropdown-item>
 
                                     <el-dropdown-item
                                       v-if="row.documents.length == 0 && row.state_type_id != '11'"
@@ -339,6 +414,21 @@
                 :recordId="recordId"
                 :resource="resource"
             ></send-email-document>
+
+            <quotation-define-prices
+                :showDialog.sync="showDialogDefinePrices"
+                :recordId="recordId"
+            ></quotation-define-prices>
+
+            <quotation-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                :canEditRow="canEditQuotation"
+                :canAnulateRow="canAnulateQuotation"
+                @edit="openEditFromDrawer"
+            ></quotation-detail-drawer>
         </div>
     </div>
 </template>
@@ -350,9 +440,11 @@
 <script>
 import QuotationOptions from "./partials/options.vue";
 import QuotationOptionsPdf from "./partials/options_pdf.vue";
+import QuotationDefinePrices from "./partials/define_prices.vue";
 import DataTable from "../../../components/DataTableQuotation.vue";
 import { deletable } from "../../../mixins/deletable";
 import QuotationPayments from "./partials/payments.vue";
+import QuotationDetailDrawer from "./partials/detail-drawer.vue";
 import { mapActions, mapState } from "vuex";
 import SendEmailDocument from "@components/secondary/SendEmailDocument.vue";
 
@@ -363,7 +455,9 @@ export default {
         DataTable,
         QuotationOptions,
         QuotationOptionsPdf,
+        QuotationDefinePrices,
         QuotationPayments,
+        QuotationDetailDrawer,
         SendEmailDocument
     },
     computed: {
@@ -376,6 +470,10 @@ export default {
         tenantSelectableColumns() {
             return this.orderedColumns.filter(col => col.key !== 'personalized');
         },
+        // Anulado se gestiona por acción dedicada; no se ofrece en el selector inline
+        editableStateTypes() {
+            return (this.state_types || []).filter(s => s.id !== '11');
+        },
     },
     data() {
         return {
@@ -385,6 +483,7 @@ export default {
             showDialogPayments: false,
             showDialogOptions: false,
             showDialogOptionsPdf: false,
+            showDialogDefinePrices: false,
             state_types: [],
             columns: {
                 date_of_issue:           { title: "Fecha Emisión",    visible: true,  order: 0  },
@@ -394,6 +493,7 @@ export default {
                 customer:                { title: "Cliente",          visible: true,  order: 4  },
                 state_type:              { title: "Estado",           visible: true,  order: 5  },
                 identifier:              { title: "Cotización",       visible: true,  order: 6  },
+                source:                  { title: "Origen",           visible: true,  order: 6.5 },
                 documents:               { title: "Comprobantes",     visible: false, order: 7  },
                 sale_notes:              { title: "Notas de venta",   visible: false, order: 8  },
                 order_note:              { title: "Pedidos",          visible: false, order: 9  },
@@ -417,6 +517,9 @@ export default {
             customFieldColumns: [],
             savedCustomFieldVisibilities: {},
             decimal_quantity: 2,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
         };
     },
     async created() {
@@ -526,6 +629,22 @@ export default {
             this.recordId = id;
             this.showDialogSendEmailDocument = true;
         },
+        clickDefinePrices(id) {
+            this.recordId = id;
+            this.showDialogDefinePrices = true;
+        },
+        canQuickEditPrices(row) {
+            return row
+                && row.source === 'ecommerce'
+                && String(row.state_type_id) !== '11'
+                && (!row.documents || row.documents.length === 0);
+        },
+        clickRegeneratePdf(row) {
+            if (!row || !row.external_id) {
+                return;
+            }
+            window.open(`/quotations/print/${row.external_id}/a4`, "_blank");
+        },
         ...mapActions(["loadConfiguration"]),
         canMakeOrderNote(row) {
             let permission = true;
@@ -569,6 +688,21 @@ export default {
         clickOptionsPdf(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptionsPdf = true;
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            window.location.href = `/${this.resource}/create/${recordId}`;
+        },
+        canEditQuotation(row) {
+            return row.documents.length === 0 && String(row.state_type_id) !== '11';
+        },
+        canAnulateQuotation(row) {
+            return row.documents.length === 0 && String(row.state_type_id) !== '11';
         },
         clickAnulate(id) {
             this.anular(`/${this.resource}/anular/${id}`).then(() =>
@@ -616,3 +750,32 @@ export default {
     }
 };
 </script>
+
+<style scoped>
+.quotation-customer-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: none;
+}
+.quotation-customer-link:hover,
+.quotation-customer-link:focus {
+    color: inherit;
+    text-decoration: underline;
+    outline: none;
+}
+.quotation-total-cell {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+.quotation-total-edit {
+    line-height: 1;
+    color: #409eff;
+    vertical-align: middle;
+}
+.quotation-total-edit:hover,
+.quotation-total-edit:focus {
+    color: #66b1ff;
+}
+</style>

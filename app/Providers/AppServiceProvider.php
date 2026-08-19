@@ -24,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
 	public function boot()
 	{
 		View::addLocation(app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.'Templates'));
+		$this->configureLocalNgrokUrl();
 
 		// Evitar ejecutar en consola; aplicar sólo en contexto web
 		if (!app()->runningInConsole()) {
@@ -57,6 +58,29 @@ class AppServiceProvider extends ServiceProvider
 		$this->app->singleton(\App\Services\CentrifugoService::class);
 	}
 
+    /**
+     * Keep the tenant's internal Host header while generating public ngrok URLs.
+     */
+    private function configureLocalNgrokUrl(): void
+    {
+        if (! app()->environment('local') || app()->runningInConsole() || ! request()->headers->has('x-forwarded-host')) {
+            return;
+        }
+
+        $forwardedHost = trim(explode(',', request()->header('x-forwarded-host'))[0]);
+        $forwardedProto = strtolower(trim(explode(',', request()->header('x-forwarded-proto', 'https'))[0]));
+
+        if (! preg_match('/^[a-z0-9-]+\.(ngrok-free\.(app|dev)|ngrok\.app)$/i', $forwardedHost)) {
+            return;
+        }
+
+        if (! in_array($forwardedProto, ['http', 'https'], true)) {
+            $forwardedProto = 'https';
+        }
+
+        URL::forceRootUrl("{$forwardedProto}://{$forwardedHost}");
+    }
+
 	/**
      * Configura el correo dinámicamente usando los datos de Configuration
      */
@@ -68,7 +92,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $encryption = $config->mail_encryption;
-        $host = $config->mail_host;
+        $host = $config->mail_host ?: env('MAIL_HOST', '127.0.0.1');
 
         if ($encryption === 'none' || $encryption === '') {
             $encryption = null;

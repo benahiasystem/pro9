@@ -101,11 +101,6 @@
 
         public function finance_cash_document($model, $id)
         {
-            $cash = Cash::where([
-                ['user_id', auth()->id()],
-                ['state', true],
-            ])->firstOrFail();
-
             $isDocument = $model instanceof Document;
             $documentModel = $isDocument ? Document::class : SaleNote::class;
             $documentField = $isDocument ? 'document_id' : 'sale_note_id';
@@ -113,6 +108,17 @@
             $creditCondition = $isDocument ? '02' : '09';
 
             $document = $documentModel::findOrFail((int) $id);
+
+            // Tienda / API sin sesión de admin: usar el emisor del comprobante.
+            // Si no hay caja abierta, no bloquear la emisión del documento.
+            $userId = auth()->id() ?: ($document->user_id ?? null);
+            $cash = $userId
+                ? Cash::where([['user_id', $userId], ['state', true]])->first()
+                : null;
+
+            if (! $cash) {
+                return;
+            }
 
             $isCredit = $document->$paymentConditionField === $creditCondition;
             $cashDocumentCredit = $isCredit ? CashDocumentCredit::updateOrCreate([

@@ -30,7 +30,8 @@ class QuotationController extends Controller
         // $records = Quotation::orderBy('prefix', 'desc')->take(50)->get();
         // $records = new QuotationCollection($records); // crear nuevo collection para apis
 
-        $records = Quotation::where('id','like', "%{$request->input}%")
+        $records = Quotation::whereSourceAdmin()
+                            ->where('id','like', "%{$request->input}%")
                             ->take(config('tenant.items_per_page'))
                             ->latest()
                             ->get();

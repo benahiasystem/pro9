@@ -5,7 +5,7 @@
 <div class="dropdown cart-dropdown" style="margin-left: 16px;">
 
     @guest('ecommerce')
-        <a class="header-contact mr-0 login-link" href="#" style="text-decoration: none;">
+        <a class="header-contact mr-0 login-link ecommerce-guest-login" href="#" style="text-decoration: none;">
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-circle" style="color: #fff;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 10a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" /></svg>
             <strong class="ml-2 log-in-text" style="font-size: 15px; color: #fff;">Iniciar sesión</strong>
 
@@ -20,7 +20,6 @@
 
             <div class="user-name-ecommerce d-flex align-items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 10a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" /></svg>
-                <span class="text-name ml-2 mr-1">{{ Auth::guard('ecommerce')->user()->name }}</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 9l6 6l6 -6" /></svg>
             </div>
         </a>
@@ -50,6 +49,17 @@
                         </span>
                         <span>Mis pedidos</span>
                     </a>
+                    @php
+                        $quotationEnabledMenu = (bool) optional($information ?? \App\Models\Tenant\ConfigurationEcommerce::first())->quotation_enabled;
+                    @endphp
+                    @if($quotationEnabledMenu)
+                    <a href="{{ route('tenant_ecommerce_quotation_list') }}" class="dropdown-options user-menu-item">
+                        <span class="user-menu-ic">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 9l1 0" /><path d="M9 13l6 0" /><path d="M9 17l6 0" /></svg>
+                        </span>
+                        <span>Mis cotizaciones</span>
+                    </a>
+                    @endif
                     <div class="dropdown-divider"></div>
                 @endif
 

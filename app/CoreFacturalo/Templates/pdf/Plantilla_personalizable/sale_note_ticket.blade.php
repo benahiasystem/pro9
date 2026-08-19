@@ -16,9 +16,12 @@
     }
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
-    extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns($document->establishment_id));
-    $colspan_total = $show_codigo ? 6 : 5;
-    $colspan_label = $colspan_total - 1;
+    extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns(
+        $document->establishment_id,
+        ['codigo', 'cantidad', 'unidad', 'descripcion', 'precio_unitario', 'total']
+    ));
+
+    $person_type = $document->person?->person_type;
 
 @endphp
 <html>
@@ -176,11 +179,11 @@
     <thead class="">
     <tr>
         @if($show_codigo) <th class="border-top-bottom desc-9 text-left">COD.</th> @endif
-        <th class="border-top-bottom desc-9 text-left">CANT.</th>
-        <th class="border-top-bottom desc-9 text-left">UNIDAD</th>
-        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
-        <th class="border-top-bottom desc-9 text-left">P.UNIT</th>
-        <th class="border-top-bottom desc-9 text-left">TOTAL</th>
+        @if($show_cantidad) <th class="border-top-bottom desc-9 text-left">CANT.</th> @endif
+        @if($show_unidad) <th class="border-top-bottom desc-9 text-left">UNIDAD</th> @endif
+        @if($show_descripcion) <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th> @endif
+        @if($show_precio_unitario) <th class="border-top-bottom desc-9 text-left">P.UNIT</th> @endif
+        @if($show_total) <th class="border-top-bottom desc-9 text-left">TOTAL</th> @endif
     </tr>
     </thead>
     <tbody>
@@ -196,13 +199,15 @@
         @endphp
         <tr>
             @if($show_codigo) <td class="text-center align-top">001</td> @endif
+            @if($show_cantidad)
             <td class="text-center desc-9 align-top">
                 {{ ((int)$cantidad_fusionada != $cantidad_fusionada) ? $cantidad_fusionada : number_format($cantidad_fusionada, 0) }}
             </td>
-            <td class="text-center desc-9 align-top">NIU</td>
-            <td class="text-left desc-9 align-top">Por consumo</td>
-            <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
-            <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td>
+            @endif
+            @if($show_unidad) <td class="text-center desc-9 align-top">NIU</td> @endif
+            @if($show_descripcion) <td class="text-left desc-9 align-top">Por consumo</td> @endif
+            @if($show_precio_unitario) <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td> @endif
+            @if($show_total) <td class="text-right desc-9 align-top">{{ number_format($total_fusionado, 2) }}</td> @endif
         </tr>
         <tr><td colspan="{{ $colspan_total }}" class="border-bottom"></td></tr>
     @endif
@@ -222,6 +227,7 @@
                 @endif
             </td>
             @endif
+            @if($show_cantidad)
             <td class="text-center desc-9 align-top">
                 @if(((int)$row->quantity != $row->quantity))
                     {{ $row->quantity }}
@@ -229,6 +235,8 @@
                     {{ number_format($row->quantity, 0) }}
                 @endif
             </td>
+            @endif
+            @if($show_unidad)
             <td class="text-center desc-9 align-top">
                 @if(!empty($row->item->esFusionado))
                     NIU
@@ -236,6 +244,8 @@
                     {{ $row->item->unit_type_id }}
                 @endif
             </td>
+            @endif
+            @if($show_descripcion)
             <td class="text-left desc-9 align-top">
                 @if(!empty($row->item->esFusionado))
                     Por consumo
@@ -245,12 +255,18 @@
                     {!!$row->item->description!!}
                 @endif
                     @if (!empty($row->item->presentation)) {!!$row->item->presentation->description!!} @endif
+                @if($show_marca && !empty($row->relation_item->brand->name ?? null))
+                    <br/><small>Marca: {{ $row->relation_item->brand->name }}</small>
+                @endif
+                @if($show_modelo && !empty($row->item->model ?? null))
+                    <br/><small>Modelo: {{ $row->item->model }}</small>
+                @endif
                 @if($row->attributes)
                     @foreach($row->attributes as $attr)
                         <br/>{!! $attr->description !!} : {{ $attr->value }}
                     @endforeach
                 @endif
-                @if($row->discounts)
+                @if($show_descuento && $row->discounts)
                     @foreach($row->discounts as $dtos)
                         @if(!($dtos->from_global_distribution ?? false))
                             <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
@@ -276,19 +292,22 @@
                     $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
                     $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
                 @endphp
-                @if($lot)
+                @if($lot && $show_lote)
                     <small style="display:block; font-weight: normal; font-size: 7px;">
-                        Lote: {{ ltrim($lot, '/') }}  
-                        <br>
-                        FV: 
-                        @if($date_due != '')
-                            {{ ltrim($date_due, '/') }}
-                        @elseif($row->relation_item->date_of_due)
-                            {{ $row->relation_item->date_of_due->format('y-m-d') }}
-                        @endif 
-                        <br>
+                        Lote: {{ ltrim($lot, '/') }}
                     </small>
                 @endif
+                @if($show_fecha_vencimiento && ($date_due != '' || $row->relation_item->date_of_due))
+                    <small style="display:block; font-weight: normal; font-size: 7px;">
+                        FV:
+                        @if($date_due != '')
+                            {{ ltrim($date_due, '/') }}
+                        @else
+                            {{ $row->relation_item->date_of_due->format('y-m-d') }}
+                        @endif
+                    </small>
+                @endif
+                @if($show_serie)
                 <small style="display:block; font-weight: normal; font-size: 7px;">
                     @isset($row->item->lots)
                         @foreach($row->item->lots as $lot)
@@ -298,9 +317,11 @@
                         @endforeach
                     @endisset
                 </small>
+                @endif
             </td>
-            <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td>
-            <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td>
+            @endif
+            @if($show_precio_unitario) <td class="text-right desc-9 align-top">{{ number_format($row->unit_price, 2) }}</td> @endif
+            @if($show_total) <td class="text-right desc-9 align-top">{{ number_format($row->total, 2) }}</td> @endif
         </tr>
         <tr>
             <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
@@ -354,10 +375,12 @@
             </tr>
         @endif
 
+        @if($show_nro_producto)
         <tr>
             <td colspan="{{ $colspan_label }}" class="text-left font-bold desc" style="white-space: nowrap;">Productos: {{ rtrim(rtrim(number_format(collect($document->items)->sum(function ($item) { return (float) data_get($item, 'quantity', 0); }), 2, '.', ''), '0'), '.') }}</td>
             <td class="text-right font-bold desc"></td>
         </tr>
+        @endif
         <tr>
             <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">TOTAL A PAGAR: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format($document->total, 2) }}</td>
@@ -371,6 +394,14 @@
             <tr>
                 <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold desc">{{ number_format(abs($change_payment),2, ".", "") }}</td>
+            </tr>
+        @endif
+
+        @if($show_tipo_persona && $person_type && $person_type->enabled_description_person_type)
+            <tr>
+                <td colspan="{{ $colspan_total }}" class="text-left desc">
+                    <span class="font-bold">{{ $person_type->description }}:</span> {{ $person_type->description_person_type }}
+                </td>
             </tr>
         @endif
 
