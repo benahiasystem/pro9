@@ -4,28 +4,23 @@
         :with-header="false"
         size="560px"
         direction="rtl"
-        custom-class="quotation-detail-drawer"
+        custom-class="detail-drawer quotation-detail-drawer"
         append-to-body
         @closed="handleClosed"
     >
-        <div class="quotation-detail-drawer__inner" v-loading="loading">
-            <div class="theme-sidebar-header quotation-detail-drawer__header">
-                <div class="quotation-detail-drawer__title">
-                    <h4>Detalle de la cotización</h4>
+        <div class="detail-drawer__inner quotation-detail-drawer__inner" v-loading="loading">
+            <div class="theme-sidebar-header detail-drawer__header quotation-detail-drawer__header">
+                <div class="detail-drawer__title quotation-detail-drawer__title">
+                    <h5>Detalle de la cotización</h5>
                     <small v-if="record">{{ quotationIdentifier }}</small>
                 </div>
-                <button
-                    type="button"
-                    class="close-theme-sidebar quotation-detail-drawer__close"
-                    aria-label="Cerrar panel"
-                    @click="visibleDrawer = false"
-                >
-                    <i class="el-icon-close"></i>
-                </button>
+                <a class="close-btn detail-drawer__close" href="#" aria-label="Cerrar panel" @click.prevent="visibleDrawer = false">
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                </a>
             </div>
 
             <template v-if="record">
-                <div class="quotation-detail-drawer__status-bar">
+                <div class="detail-drawer__status-bar quotation-detail-drawer__status-bar">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span
                             class="badge"
@@ -39,16 +34,16 @@
                     <small class="text-muted">#{{ record.id }}</small>
                 </div>
 
-                <div class="quotation-detail-drawer__body">
+                <div class="detail-drawer__body quotation-detail-drawer__body">
                     <el-tabs v-model="activeTab">
                         <el-tab-pane label="Productos" name="products">
-                            <div class="quotation-detail-drawer__section-card">
-                                <div class="quotation-detail-drawer__section-card-header">
+                            <div class="detail-drawer__section-card quotation-detail-drawer__section-card">
+                                <div class="detail-drawer__section-card-header quotation-detail-drawer__section-card-header">
                                     <h5 class="section-title">Productos</h5>
                                     <p class="section-subtitle">Detalle de ítems incluidos en la cotización</p>
                                 </div>
                                 <div v-if="lineItems.length" class="table-responsive">
-                                    <table class="table table-sm quotation-detail-drawer__items-table mb-0">
+                                    <table class="table table-sm detail-drawer__items-table quotation-detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Producto</th>
@@ -72,83 +67,200 @@
                         </el-tab-pane>
 
                         <el-tab-pane label="Cliente" name="customer">
-                            <div class="quotation-detail-drawer__section-card">
-                                <div class="quotation-detail-drawer__section-card-header">
+                            <div class="detail-drawer__customer-section">
+                                <div class="detail-drawer__customer-heading">
                                     <h5 class="section-title">Cliente</h5>
                                     <p class="section-subtitle">Datos del cliente asociado a la cotización</p>
                                 </div>
-                                <dl class="quotation-detail-drawer__list">
-                                    <dt>Nombre / Razón social</dt>
-                                    <dd>{{ customerName }}</dd>
 
-                                    <dt>Documento</dt>
-                                    <dd>{{ customerDocument }}</dd>
+                                <div class="detail-drawer__customer-summary">
+                                    <div class="detail-drawer__customer-avatar" aria-hidden="true">{{ customerInitials }}</div>
+                                    <div class="detail-drawer__customer-identity">
+                                        <strong class="detail-drawer__customer-name">{{ customerName }}</strong>
+                                        <span
+                                            v-if="customerDocumentTypeLabel"
+                                            class="detail-drawer__customer-badge"
+                                            :class="{ 'detail-drawer__customer-badge--warning': customerDocumentTypeIsWarning }"
+                                        >
+                                            <svg v-if="customerDocumentTypeIsWarning" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-alert-triangle" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 14.54a1.914 1.914 0 0 0 1.636 2.869h16.214a1.914 1.914 0 0 0 1.636 -2.869l-8.106 -14.54a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
+                                            {{ customerDocumentTypeLabel }}
+                                        </span>
+                                    </div>
+                                </div>
 
-                                    <dt v-if="contactLabel">Contacto</dt>
-                                    <dd v-if="contactLabel">{{ contactLabel }}</dd>
+                                <div class="detail-drawer__customer-grid">
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-id"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 8l2 0"/><path d="M15 12l2 0"/><path d="M7 16l10 0"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__customer-field-content">
+                                            <span class="detail-drawer__customer-field-label">Documento</span>
+                                            <strong>{{ customerDocumentNumber }}</strong>
+                                        </div>
+                                    </div>
 
-                                    <dt v-if="customerTelephone">Teléfono</dt>
-                                    <dd v-if="customerTelephone">{{ customerTelephone }}</dd>
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-phone"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__customer-field-content">
+                                            <span class="detail-drawer__customer-field-label">Teléfono</span>
+                                            <strong>{{ customerTelephone || '—' }}</strong>
+                                        </div>
+                                    </div>
 
-                                    <dt v-if="customerEmail">Correo</dt>
-                                    <dd v-if="customerEmail">{{ customerEmail }}</dd>
-                                </dl>
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M3 7l9 6l9 -6"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__customer-field-content">
+                                            <span class="detail-drawer__customer-field-label">Correo</span>
+                                            <strong>{{ customerEmail || '—' }}</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-map-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M17.657 16.657l-4.243 4.243a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 1 1 11.314 0z"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__customer-field-content">
+                                            <span class="detail-drawer__customer-field-label">Dirección</span>
+                                            <strong>{{ customerAddress || '—' }}</strong>
+                                        </div>
+                                    </div>
+
+                                    <div v-if="contactLabel" class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-circle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 10m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0"/><path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__customer-field-content">
+                                            <span class="detail-drawer__customer-field-label">Contacto</span>
+                                            <strong>{{ contactLabel }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Información operativa" name="operational">
-                            <div class="quotation-detail-drawer__section-card">
-                                <div class="quotation-detail-drawer__section-card-header">
+                            <div class="detail-drawer__operation-section">
+                                <div class="detail-drawer__operation-heading">
                                     <h5 class="section-title">Información operativa</h5>
-                                    <p class="section-subtitle">Asignación comercial y origen del inventario</p>
+                                    <p class="section-subtitle">Asignación comercial y referencia de almacén</p>
                                 </div>
-                                <dl class="quotation-detail-drawer__list">
-                                    <dt>Vendedor</dt>
-                                    <dd>{{ sellerLabel }}</dd>
 
-                                    <dt>Establecimiento</dt>
-                                    <dd>{{ establishmentLabel }}</dd>
+                                <div class="detail-drawer__operation-seller">
+                                    <div class="detail-drawer__operation-avatar" aria-hidden="true">{{ sellerInitials }}</div>
+                                    <div class="detail-drawer__operation-seller-content">
+                                        <span class="detail-drawer__operation-label">Vendedor</span>
+                                        <strong>{{ sellerLabel }}</strong>
+                                    </div>
+                                    <span v-if="sellerAccountLabel" class="detail-drawer__operation-badge">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shield" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3c3.866 0 7 1.79 7 4v5c0 4.418 -3.134 8 -7 9c-3.866 -1 -7 -4.582 -7 -9v-5c0 -2.21 3.134 -4 7 -4z"/></svg>
+                                        {{ sellerAccountLabel }}
+                                    </span>
+                                </div>
 
-                                    <dt>Almacén / origen</dt>
-                                    <dd>{{ warehouseLabel }}</dd>
+                                <div class="detail-drawer__operation-flow">
+                                    <div class="detail-drawer__operation-card">
+                                        <span class="detail-drawer__operation-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0"/><path d="M5 21v-14l8 -4v18"/><path d="M19 21v-10l-6 -4"/><path d="M9 9l0 .01"/><path d="M9 12l0 .01"/><path d="M9 15l0 .01"/><path d="M9 18l0 .01"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__operation-card-content">
+                                            <span class="detail-drawer__operation-label">Establecimiento</span>
+                                            <strong>{{ establishmentDisplayLabel }}</strong>
+                                        </div>
+                                    </div>
 
-                                    <dt v-if="record.delivery_date">Fecha de entrega</dt>
-                                    <dd v-if="record.delivery_date">{{ formatDisplayDate(record.delivery_date) }}</dd>
+                                    <span class="detail-drawer__operation-arrow" aria-hidden="true">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg>
+                                    </span>
 
-                                    <dt v-if="record.referential_information">Inf. referencial</dt>
-                                    <dd v-if="record.referential_information">{{ record.referential_information }}</dd>
-                                </dl>
+                                    <div class="detail-drawer__operation-card">
+                                        <span class="detail-drawer__operation-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-warehouse"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21v-13l9 -4l9 4v13"/><path d="M13 13h4v8h-10v-6h6"/><path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__operation-card-content">
+                                            <span class="detail-drawer__operation-label">Almacén / referencia</span>
+                                            <strong>{{ warehouseLabel }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="detail-drawer__operation-note">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0 -18"/></svg>
+                                    <span>{{ inventoryReferenceNote }}</span>
+                                </div>
+
+                                <div v-if="record.delivery_date" class="detail-drawer__operation-note detail-drawer__operation-note--observation">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-event" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3l0 4"/><path d="M8 3l0 4"/><path d="M4 11l16 0"/><path d="M8 15h2v2h-2z"/></svg>
+                                    <span>Fecha de entrega: {{ formatDisplayDate(record.delivery_date) }}</span>
+                                </div>
+
+                                <div v-if="record.referential_information" class="detail-drawer__operation-note detail-drawer__operation-note--observation">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-message" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 9h8"/><path d="M8 13h6"/><path d="M9 18h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-3l-3 3z"/></svg>
+                                    <span>{{ record.referential_information }}</span>
+                                </div>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Vigencia y totales" name="totals">
-                            <div class="quotation-detail-drawer__section-card">
-                                <div class="quotation-detail-drawer__section-card-header">
+                            <div class="detail-drawer__totals-section">
+                                <div class="detail-drawer__totals-heading">
                                     <h5 class="section-title">Vigencia y totales</h5>
                                     <p class="section-subtitle">Validez, moneda e importes de la cotización</p>
                                 </div>
-                                <dl class="quotation-detail-drawer__list">
-                                    <dt>Días de validez</dt>
-                                    <dd>{{ validityDaysLabel }}</dd>
 
-                                    <dt>Moneda</dt>
-                                    <dd>{{ currencyLabel }}</dd>
+                                <div class="detail-drawer__totals-summary">
+                                    <div class="detail-drawer__totals-summary-card">
+                                        <span class="detail-drawer__totals-summary-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-time"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M11.5 21h-5.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M4 11h16"/><path d="M15 18h2l1 2"/><path d="M16 22a4 4 0 1 0 0 -8a4 4 0 0 0 0 8"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__totals-summary-content">
+                                            <span class="detail-drawer__totals-label">Días de validez</span>
+                                            <strong>{{ validityDaysLabel }}</strong>
+                                        </div>
+                                    </div>
 
-                                    <dt>Gravado</dt>
-                                    <dd>{{ formatMoney(record.total_taxed) }}</dd>
+                                    <div class="detail-drawer__totals-summary-card">
+                                        <span class="detail-drawer__totals-summary-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-coin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 6m-6 0a6 3 0 1 0 12 0a6 3 0 1 0 -12 0"/><path d="M6 6v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/><path d="M6 12v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/></svg>
+                                        </span>
+                                        <div class="detail-drawer__totals-summary-content">
+                                            <span class="detail-drawer__totals-label">Moneda</span>
+                                            <strong>{{ currencyLabel }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
 
-                                    <dt>IGV</dt>
-                                    <dd>{{ formatMoney(record.total_igv) }}</dd>
+                                <div class="detail-drawer__totals-card">
+                                    <div class="detail-drawer__totals-row">
+                                        <span class="detail-drawer__totals-row-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/><path d="M13 15l2 0"/></svg>
+                                        </span>
+                                        <span class="detail-drawer__totals-row-label">Op. gravada</span>
+                                        <strong>{{ formatMoney(record.total_taxed) }}</strong>
+                                    </div>
 
-                                    <dt>Total</dt>
-                                    <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
-                                </dl>
+                                    <div class="detail-drawer__totals-row">
+                                        <span class="detail-drawer__totals-row-icon" aria-hidden="true">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg>
+                                        </span>
+                                        <span class="detail-drawer__totals-row-label">IGV ({{ igvPercentage }}%)</span>
+                                        <strong>{{ formatMoney(record.total_igv) }}</strong>
+                                    </div>
+
+                                    <div class="detail-drawer__totals-total">
+                                        <span>Total</span>
+                                        <strong><small>{{ currencySymbol }}</small> {{ formatMoney(record.total, false) }}</strong>
+                                    </div>
+                                </div>
                             </div>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
 
-                <div class="quotation-detail-drawer__footer">
+                <div class="detail-drawer__footer detail-drawer__footer--actions quotation-detail-drawer__footer">
                     <button
                         v-if="canAnulate"
                         type="button"
@@ -156,7 +268,8 @@
                         :disabled="voiding"
                         @click="clickAnulate"
                     >
-                        <i class="fa fa-trash"></i> Anular cotización
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                        Anular cotización
                     </button>
                     <button
                         v-if="canEdit"
@@ -164,7 +277,8 @@
                         class="btn btn-custom btn-sm"
                         @click="$emit('edit', record.id)"
                     >
-                        <i class="fa fa-edit"></i> Editar cotización
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                        Editar cotización
                     </button>
                 </div>
             </template>
@@ -285,24 +399,43 @@ export default {
                 || this.record?.customer_name
                 || '—';
         },
-        customerDocument() {
+        customerInitials() {
+            const words = String(this.customerName || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            if (!words.length) {
+                return 'CL';
+            }
+
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
+        customerDocumentNumber() {
             const customer = this.record?.customer;
-            const number = customer?.number || this.record?.customer_number || null;
-            const type =
-                customer?.identity_document_type?.description
+            return customer?.number
+                || this.record?.customer_number
+                || '—';
+        },
+        customerDocumentTypeLabel() {
+            const customer = this.record?.customer;
+            return customer?.identity_document_type?.description
                 || customer?.document_type
                 || this.record?.customer_identity_document_type_description
                 || null;
+        },
+        customerDocumentTypeIsWarning() {
+            const customer = this.record?.customer;
+            const typeId = customer?.identity_document_type_id
+                || customer?.identity_document_type?.id
+                || this.record?.customer_identity_document_type_id;
+            const label = String(this.customerDocumentTypeLabel || '').toLowerCase();
 
-            if (number && type) {
-                return `${number} (${type})`;
-            }
-
-            if (number) {
-                return number;
-            }
-
-            return '—';
+            return String(typeId) === '0' || label.includes('no domiciliado');
         },
         contactLabel() {
             const parts = [this.record?.contact, this.record?.phone].filter(Boolean);
@@ -319,6 +452,13 @@ export default {
                 || this.record?.customer_email
                 || null;
         },
+        customerAddress() {
+            const customer = this.record?.customer;
+            return customer?.address
+                || customer?.direccion
+                || this.record?.customer_address
+                || null;
+        },
         sellerLabel() {
             return this.record?.seller?.name
                 || this.record?.seller_name
@@ -326,27 +466,66 @@ export default {
                 || this.record?.user_name
                 || '—';
         },
-        establishmentLabel() {
+        sellerInitials() {
+            const words = String(this.sellerLabel || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            if (!words.length) {
+                return 'VE';
+            }
+
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
+        sellerAccountLabel() {
+            const seller = this.record?.seller || this.record?.user || {};
+            const role = String(seller.role || seller.type || '').toLowerCase();
+            const name = String(this.sellerLabel || '').toLowerCase();
+            const isMainAccount = seller.is_admin
+                || seller.is_main
+                || role.includes('admin')
+                || name.includes('administrador');
+
+            return isMainAccount ? 'Cuenta principal' : null;
+        },
+        establishmentData() {
             const establishment = this.record?.establishment;
             if (!establishment) {
-                return '—';
+                return null;
             }
 
             if (typeof establishment === 'string') {
                 try {
-                    const parsed = JSON.parse(establishment);
-                    return parsed.description || parsed.address || '—';
+                    return JSON.parse(establishment);
                 } catch (error) {
-                    return establishment;
+                    return { description: establishment };
                 }
             }
 
-            if (establishment.description) {
-                return establishment.description;
+            return establishment;
+        },
+        establishmentLabel() {
+            const establishment = this.establishmentData;
+            const values = [establishment?.description, establishment?.address];
+            return values.find(value => this.hasDisplayValue(value)) || '—';
+        },
+        establishmentDisplayLabel() {
+            const establishment = this.establishmentData;
+            if (!establishment) {
+                return '—';
             }
 
-            const parts = [establishment.code, establishment.address].filter(Boolean);
-            return parts.length ? parts.join(' — ') : '—';
+            const name = [establishment.description, establishment.address]
+                .find(value => this.hasDisplayValue(value));
+
+            return [establishment.code, name]
+                .filter(value => this.hasDisplayValue(value))
+                .join(' — ') || '—';
         },
         warehouseLabel() {
             const warehouseIds = new Set();
@@ -358,14 +537,17 @@ export default {
             });
 
             if (!warehouseIds.size) {
-                return this.establishmentLabel !== '—' ? this.establishmentLabel : '—';
+                return 'Almacén predeterminado';
             }
 
             if (warehouseIds.size === 1) {
                 return `Almacén #${Array.from(warehouseIds)[0]}`;
             }
 
-            return `${warehouseIds.size} almacenes`;
+            return `${warehouseIds.size} almacenes asignados`;
+        },
+        inventoryReferenceNote() {
+            return 'La cotización no descuenta ni reserva stock. El almacén mostrado es solo una referencia para el documento de venta que se genere.';
         },
         currencyLabel() {
             const currencyId = this.record?.currency_type_id;
@@ -378,6 +560,13 @@ export default {
         },
         currencySymbol() {
             return this.record?.currency_type_id === 'USD' ? '$' : 'S/';
+        },
+        igvPercentage() {
+            const percentage = this.record?.percentage_igv
+                ?? this.record?.igv_percentage
+                ?? 18;
+
+            return Number(percentage) || 18;
         },
         lineItems() {
             const items = Array.isArray(this.record?.items) ? this.record.items : [];
@@ -430,6 +619,10 @@ export default {
         }
     },
     methods: {
+        hasDisplayValue(value) {
+            const normalized = String(value ?? '').trim();
+            return normalized !== '' && normalized !== '-' && normalized !== '—';
+        },
         openDrawer() {
             this.activeTab = 'products';
             this.applyInitialSnapshot();
@@ -596,212 +789,3 @@ export default {
     }
 };
 </script>
-
-<style scoped>
-.quotation-detail-drawer__inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #fff;
-}
-
-.quotation-detail-drawer__header {
-    flex-shrink: 0;
-    width: 100%;
-    min-height: 56px;
-    box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    direction: ltr;
-}
-
-.quotation-detail-drawer__title {
-    flex: 1;
-    min-width: 0;
-    padding-right: 4px;
-    text-align: left;
-}
-
-.quotation-detail-drawer__close {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    border-radius: 6px;
-    align-self: center;
-}
-
-.quotation-detail-drawer__title h4 {
-    margin: 0;
-    line-height: 1.2;
-}
-
-.quotation-detail-drawer__title small {
-    display: block;
-    margin-top: 4px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 12px;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.quotation-detail-drawer__section-card {
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #f8fafc;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.quotation-detail-drawer__section-card:last-child {
-    margin-bottom: 0;
-}
-
-.quotation-detail-drawer__section-card-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eef2f7;
-}
-
-.quotation-detail-drawer__section-card-header .section-title {
-    margin-bottom: 2px;
-}
-
-.quotation-detail-drawer__section-card-header .section-subtitle {
-    margin-bottom: 0;
-}
-
-.quotation-detail-drawer__status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ebeef5;
-    background: #f8fafc;
-}
-
-.quotation-detail-drawer__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px 16px;
-}
-
-.quotation-detail-drawer__body >>> .el-tabs__header {
-    margin-bottom: 12px;
-}
-
-.quotation-detail-drawer__body >>> .el-tabs__nav-wrap::after {
-    height: 1px;
-    background-color: #ebeef5;
-}
-
-.quotation-detail-drawer__body >>> .el-tabs__item {
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-}
-
-.quotation-detail-drawer__body >>> .el-tabs__item.is-active {
-    color: #1f3a8a;
-}
-
-.quotation-detail-drawer__body >>> .el-tabs__active-bar {
-    background-color: #1f3a8a;
-}
-
-.quotation-detail-drawer__list {
-    margin: 0 0 8px;
-}
-
-.quotation-detail-drawer__list dt {
-    font-size: 12px;
-    color: #909399;
-    margin-bottom: 4px;
-}
-
-.quotation-detail-drawer__list dd {
-    margin: 0 0 14px;
-    font-weight: 500;
-    color: #303133;
-}
-
-.quotation-detail-drawer__items-table thead th {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.quotation-detail-drawer__items-table td {
-    vertical-align: middle;
-    border-top: 1px solid #eef2f7;
-    font-size: 13px;
-}
-
-.quotation-detail-drawer__footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 14px 20px;
-    border-top: 1px solid #ebeef5;
-    background: #fff;
-}
-
-.section-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f3a8a;
-    margin-bottom: 0.2rem;
-}
-
-.section-subtitle {
-    color: #6b7280;
-    font-size: 0.86rem;
-    margin-bottom: 0.5rem;
-}
-</style>
-
-<style>
-.quotation-detail-drawer.el-drawer .el-drawer__body {
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-}
-
-.quotation-detail-drawer .theme-sidebar-header.quotation-detail-drawer__header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-    overflow: hidden;
-    padding: 14px 16px;
-    gap: 12px;
-    direction: ltr;
-}
-
-.quotation-detail-drawer .quotation-detail-drawer__close {
-    position: static;
-    top: auto;
-    right: auto;
-    margin: 0;
-    transform: none;
-}
-</style>

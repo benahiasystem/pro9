@@ -4,28 +4,23 @@
         :with-header="false"
         size="560px"
         direction="rtl"
-        custom-class="item-set-detail-drawer"
+        custom-class="detail-drawer item-set-detail-drawer"
         append-to-body
         @closed="handleClosed"
     >
-        <div class="item-set-detail-drawer__inner" v-loading="loading">
-            <div class="theme-sidebar-header item-set-detail-drawer__header">
-                <div class="item-set-detail-drawer__title">
-                    <h4>Detalle del conjunto</h4>
+        <div class="detail-drawer__inner item-set-detail-drawer__inner" v-loading="loading">
+            <div class="theme-sidebar-header detail-drawer__header item-set-detail-drawer__header">
+                <div class="detail-drawer__title item-set-detail-drawer__title">
+                    <h5>Detalle del conjunto</h5>
                     <small v-if="record">{{ packName }}</small>
                 </div>
-                <button
-                    type="button"
-                    class="close-theme-sidebar item-set-detail-drawer__close"
-                    aria-label="Cerrar panel"
-                    @click="visibleDrawer = false"
-                >
-                    <i class="el-icon-close"></i>
-                </button>
+                <a class="close-btn detail-drawer__close" href="#" aria-label="Cerrar panel" @click.prevent="visibleDrawer = false">
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                </a>
             </div>
 
             <template v-if="record">
-                <div class="item-set-detail-drawer__status-bar">
+                <div class="detail-drawer__status-bar item-set-detail-drawer__status-bar">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span
                             class="badge"
@@ -33,21 +28,24 @@
                         >
                             {{ record.active === false ? 'Inactivo' : 'Activo' }}
                         </span>
-                        <small class="text-muted">{{ unitLabel }}</small>
+                        <span v-if="componentItems.length" class="badge badge-info">
+                            {{ componentItems.length }} producto{{ componentItems.length === 1 ? '' : 's' }}
+                        </span>
+                        <small class="text-muted">{{ salePriceLabel }}</small>
                     </div>
                     <small class="text-muted">#{{ record.id }}</small>
                 </div>
 
-                <div class="item-set-detail-drawer__body">
+                <div class="detail-drawer__body item-set-detail-drawer__body">
                     <el-tabs v-model="activeTab">
-                        <el-tab-pane label="Productos del conjunto" name="products">
-                            <div class="item-set-detail-drawer__section-card">
-                                <div class="item-set-detail-drawer__section-card-header">
+                        <el-tab-pane label="Productos" name="products">
+                            <div class="detail-drawer__section-card item-set-detail-drawer__section-card">
+                                <div class="detail-drawer__section-card-header item-set-detail-drawer__section-card-header">
                                     <h5 class="section-title">Productos del conjunto</h5>
                                     <p class="section-subtitle">Ítems que componen el pack o conjunto</p>
                                 </div>
                                 <div v-if="componentItems.length" class="table-responsive">
-                                    <table class="table table-sm item-set-detail-drawer__items-table mb-0">
+                                    <table class="table table-sm detail-drawer__items-table item-set-detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Producto</th>
@@ -77,36 +75,86 @@
                         </el-tab-pane>
 
                         <el-tab-pane label="Información general" name="general">
-                            <div class="item-set-detail-drawer__section-card">
-                                <div class="item-set-detail-drawer__section-card-header">
+                            <div class="detail-drawer__customer-section">
+                                <div class="detail-drawer__customer-heading">
                                     <h5 class="section-title">Información general</h5>
                                     <p class="section-subtitle">Datos principales del pack o conjunto</p>
                                 </div>
-                                <dl class="item-set-detail-drawer__list">
-                                    <dt>Cód. Interno</dt>
-                                    <dd>{{ record.internal_id || '—' }}</dd>
 
-                                    <dt>Unidad</dt>
-                                    <dd>{{ unitLabel }}</dd>
+                                <div class="detail-drawer__customer-summary">
+                                    <div
+                                        class="detail-drawer__customer-avatar item-set-detail-drawer__avatar"
+                                        :class="{ 'item-set-detail-drawer__avatar--image': record.image_url }"
+                                        aria-hidden="true"
+                                    >
+                                        <img
+                                            v-if="record.image_url"
+                                            :src="record.image_url"
+                                            :alt="packName"
+                                            class="item-set-detail-drawer__image"
+                                        />
+                                        <template v-else>{{ packInitials }}</template>
+                                    </div>
+                                    <div class="detail-drawer__customer-identity">
+                                        <strong class="detail-drawer__customer-name">{{ packName }}</strong>
+                                        <span class="detail-drawer__customer-badge">{{ unitLabel }}</span>
+                                    </div>
+                                </div>
 
-                                    <dt>Nombre</dt>
-                                    <dd>{{ packName }}</dd>
+                                <div class="detail-drawer__details-grid item-set-detail-drawer__grid">
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Cód. interno</span><strong>{{ record.internal_id || '—' }}</strong></div>
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Unidad</span><strong>{{ unitLabel }}</strong></div>
+                                    <div v-if="categoryLabel" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Categoría</span><strong>{{ categoryLabel }}</strong></div>
+                                    <div v-if="brandLabel" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Marca</span><strong>{{ brandLabel }}</strong></div>
+                                    <div class="detail-drawer__details-card detail-drawer__details-card--wide"><span class="detail-drawer__details-label">Descripción</span><p>{{ descriptionText || '—' }}</p></div>
+                                </div>
+                            </div>
+                        </el-tab-pane>
 
-                                    <dt>Descripción</dt>
-                                    <dd>{{ descriptionText || '—' }}</dd>
+                        <el-tab-pane label="Precios" name="prices">
+                            <div class="detail-drawer__totals-section">
+                                <div class="detail-drawer__totals-heading">
+                                    <h5 class="section-title">Precios</h5>
+                                    <p class="section-subtitle">Precio del conjunto frente al valor de sus componentes</p>
+                                </div>
 
-                                    <dt>Precio Unitario de Venta</dt>
-                                    <dd class="text-primary fw-bold">{{ salePriceLabel }}</dd>
+                                <div class="detail-drawer__totals-summary">
+                                    <div class="detail-drawer__totals-summary-card">
+                                        <span class="detail-drawer__totals-summary-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tag"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z"/></svg></span>
+                                        <div class="detail-drawer__totals-summary-content"><span class="detail-drawer__totals-label">Precio del conjunto</span><strong>{{ salePriceLabel }}</strong></div>
+                                    </div>
+                                    <div class="detail-drawer__totals-summary-card">
+                                        <span class="detail-drawer__totals-summary-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-stack-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 4l-8 4l8 4l8 -4l-8 -4"/><path d="M4 12l8 4l8 -4"/><path d="M4 16l8 4l8 -4"/></svg></span>
+                                        <div class="detail-drawer__totals-summary-content"><span class="detail-drawer__totals-label">Suma de componentes</span><strong>{{ formatMoney(componentsTotal) }}</strong></div>
+                                    </div>
+                                </div>
 
-                                    <dt>IGV</dt>
-                                    <dd>{{ igvLabel }}</dd>
-                                </dl>
+                                <div class="detail-drawer__totals-card">
+                                    <div class="detail-drawer__totals-row">
+                                        <span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span>
+                                        <span class="detail-drawer__totals-row-label">Incluye IGV</span><strong>{{ igvLabel }}</strong>
+                                    </div>
+                                    <div class="detail-drawer__totals-row">
+                                        <span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-coin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 6m-6 0a6 3 0 1 0 12 0a6 3 0 1 0 -12 0"/><path d="M6 6v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/><path d="M6 12v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/></svg></span>
+                                        <span class="detail-drawer__totals-row-label">Moneda</span><strong>{{ currencySymbol }}</strong>
+                                    </div>
+                                    <div v-if="componentsTotal > 0" class="detail-drawer__totals-row">
+                                        <span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrows-exchange"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 10h14l-4 -4"/><path d="M17 14h-14l4 4"/></svg></span>
+                                        <span class="detail-drawer__totals-row-label">Diferencia vs. componentes</span><strong>{{ priceDifferenceLabel }}</strong>
+                                    </div>
+                                    <div class="detail-drawer__totals-total"><span>Precio con IGV</span><strong><small>{{ currencySymbol }}</small> {{ priceWithIgvAmount }}</strong></div>
+                                </div>
+
+                                <div v-if="componentsTotal > 0" class="detail-drawer__operation-note">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0 -18"/></svg>
+                                    <span>{{ priceComparisonNote }}</span>
+                                </div>
                             </div>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
 
-                <div class="item-set-detail-drawer__footer">
+                <div class="detail-drawer__footer detail-drawer__footer--actions detail-drawer__footer--wrap item-set-detail-drawer__footer">
                     <button
                         v-if="typeUser === 'admin'"
                         type="button"
@@ -114,7 +162,8 @@
                         :disabled="deleting"
                         @click="clickDelete"
                     >
-                        <i class="fa fa-trash"></i> Eliminar
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                        Eliminar
                     </button>
                     <button
                         v-if="typeUser === 'admin'"
@@ -122,7 +171,8 @@
                         class="btn btn-custom btn-sm"
                         @click="$emit('edit', record.id)"
                     >
-                        <i class="fa fa-edit"></i> Editar
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                        Editar
                     </button>
                 </div>
             </template>
@@ -173,6 +223,28 @@ export default {
         },
         packName() {
             return this.record?.description || '—';
+        },
+        packInitials() {
+            const words = String(this.record?.description || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            if (!words.length) {
+                return 'PK';
+            }
+
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
+        categoryLabel() {
+            return this.record?.category_description || null;
+        },
+        brandLabel() {
+            return this.record?.brand || null;
         },
         descriptionText() {
             if (!this.record) {
@@ -236,6 +308,44 @@ export default {
         },
         componentsTotal() {
             return this.componentItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
+        },
+        salePriceAmount() {
+            return this.parseAmount(this.record?.sale_unit_price);
+        },
+        priceDifference() {
+            return this.salePriceAmount - this.componentsTotal;
+        },
+        priceDifferenceLabel() {
+            const difference = this.priceDifference;
+            const sign = difference > 0 ? '+' : (difference < 0 ? '-' : '');
+
+            return `${sign}${this.formatMoney(Math.abs(difference))}`;
+        },
+        priceComparisonNote() {
+            const difference = this.priceDifference;
+
+            if (!difference) {
+                return 'El precio del conjunto coincide con la suma de sus componentes.';
+            }
+
+            const percentage = this.componentsTotal
+                ? Math.abs((difference / this.componentsTotal) * 100).toFixed(1)
+                : null;
+
+            const direction = difference < 0 ? 'menor' : 'mayor';
+            const detail = percentage ? ` (${percentage}%)` : '';
+
+            return `El precio del conjunto es ${direction} que la suma de sus componentes${detail}.`;
+        },
+        priceWithIgvAmount() {
+            const amount = this.parseAmount(
+                this.record?.sale_unit_price_with_igv || this.record?.sale_unit_price
+            );
+
+            return amount.toLocaleString('es-PE', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
     },
     watch: {
@@ -388,150 +498,6 @@ export default {
 </script>
 
 <style scoped>
-.item-set-detail-drawer__inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #fff;
-}
-
-.item-set-detail-drawer__header {
-    flex-shrink: 0;
-    width: 100%;
-    min-height: 56px;
-    box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    direction: ltr;
-}
-
-.item-set-detail-drawer__title {
-    flex: 1;
-    min-width: 0;
-    padding-right: 4px;
-    text-align: left;
-}
-
-.item-set-detail-drawer__close {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    border-radius: 6px;
-    align-self: center;
-}
-
-.item-set-detail-drawer__title h4 {
-    margin: 0;
-    line-height: 1.2;
-}
-
-.item-set-detail-drawer__title small {
-    display: block;
-    margin-top: 4px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 12px;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.item-set-detail-drawer__status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ebeef5;
-    background: #f8fafc;
-}
-
-.item-set-detail-drawer__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px 16px;
-}
-
-.item-set-detail-drawer__body >>> .el-tabs__header {
-    margin-bottom: 12px;
-}
-
-.item-set-detail-drawer__body >>> .el-tabs__nav-wrap::after {
-    height: 1px;
-    background-color: #ebeef5;
-}
-
-.item-set-detail-drawer__body >>> .el-tabs__item {
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-}
-
-.item-set-detail-drawer__body >>> .el-tabs__item.is-active {
-    color: #1f3a8a;
-}
-
-.item-set-detail-drawer__body >>> .el-tabs__active-bar {
-    background-color: #1f3a8a;
-}
-
-.item-set-detail-drawer__section-card {
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #f8fafc;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.item-set-detail-drawer__section-card:last-child {
-    margin-bottom: 0;
-}
-
-.item-set-detail-drawer__section-card-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eef2f7;
-}
-
-.item-set-detail-drawer__section-card-header .section-title {
-    margin-bottom: 2px;
-}
-
-.item-set-detail-drawer__section-card-header .section-subtitle {
-    margin-bottom: 0;
-}
-
-.item-set-detail-drawer__list {
-    margin: 0 0 8px;
-}
-
-.item-set-detail-drawer__list dt {
-    font-size: 12px;
-    color: #909399;
-    margin-bottom: 4px;
-}
-
-.item-set-detail-drawer__list dd {
-    margin: 0 0 14px;
-    font-weight: 500;
-    color: #303133;
-}
-
-.item-set-detail-drawer__list dd:last-child {
-    margin-bottom: 0;
-}
 
 .item-set-detail-drawer__items-table thead th,
 .item-set-detail-drawer__items-table tfoot td {
@@ -542,68 +508,25 @@ export default {
     border-bottom: 1px solid #e2e8f0;
 }
 
-.item-set-detail-drawer__items-table td {
-    vertical-align: middle;
-    border-top: 1px solid #eef2f7;
-    font-size: 13px;
-}
-
 .item-set-detail-drawer__items-table tfoot td {
     border-top: 1px solid #e2e8f0;
     border-bottom: 0;
     padding-top: 10px;
 }
 
-.item-set-detail-drawer__footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 14px 20px;
-    border-top: 1px solid #ebeef5;
+.item-set-detail-drawer__avatar--image {
+    overflow: hidden;
+    border: 1px solid #dfe7ee;
     background: #fff;
 }
 
-.section-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f3a8a;
-    margin-bottom: 0.2rem;
-}
-
-.section-subtitle {
-    color: #6b7280;
-    font-size: 0.86rem;
-    margin-bottom: 0.5rem;
-}
-</style>
-
-<style>
-.item-set-detail-drawer.el-drawer .el-drawer__body {
-    padding: 0;
+.item-set-detail-drawer__image {
+    width: 100%;
     height: 100%;
-    overflow: hidden;
+    object-fit: contain;
 }
 
-.item-set-detail-drawer .theme-sidebar-header.item-set-detail-drawer__header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-    overflow: hidden;
-    padding: 14px 16px;
-    gap: 12px;
-    direction: ltr;
-}
-
-.item-set-detail-drawer .item-set-detail-drawer__close {
-    position: static;
-    top: auto;
-    right: auto;
-    margin: 0;
-    transform: none;
+.item-set-detail-drawer__grid {
+    margin-top: 16px;
 }
 </style>

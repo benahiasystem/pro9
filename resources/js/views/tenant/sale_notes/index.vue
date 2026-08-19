@@ -139,15 +139,18 @@
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">
                                 <span
-                                    class="sale-note-customer-link"
                                     role="button"
                                     tabindex="0"
-                                    @click="clickDetail(row)"
                                     @keyup.enter.prevent="clickDetail(row)"
                                 >{{ row.customer_name }}</span>
-                                <br /><small v-text="row.customer_number"></small>
+                                <br /><small class="text-muted" v-text="row.customer_number"></small>
                             </td>
-                            <td v-if="col.visible && col.key === 'full_number'" :key="col.key">{{ row.full_number }}</td>
+                            <td v-if="col.visible && col.key === 'full_number'" :key="col.key">
+                                <span class="customer-link" @click="clickDetail(row)">
+                                    <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -2px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
+                                    {{ row.full_number }}
+                                </span>
+                            </td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key">{{ row.state_type_description }}</td>
                             <td v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-center">{{ row.exchange_rate_sale }}</td>
                             <td v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>

@@ -4,51 +4,40 @@
         :with-header="false"
         size="560px"
         direction="rtl"
-        custom-class="purchase-order-detail-drawer"
+        custom-class="detail-drawer purchase-order-detail-drawer"
         append-to-body
         @closed="handleClosed"
     >
-        <div class="purchase-order-detail-drawer__inner" v-loading="loading">
-            <div class="theme-sidebar-header purchase-order-detail-drawer__header">
-                <div class="purchase-order-detail-drawer__title">
-                    <h4>Detalle de la orden de compra</h4>
+        <div class="detail-drawer__inner purchase-order-detail-drawer__inner" v-loading="loading">
+            <div class="theme-sidebar-header detail-drawer__header purchase-order-detail-drawer__header">
+                <div class="detail-drawer__title purchase-order-detail-drawer__title">
+                    <h5>Detalle de la orden de compra</h5>
                     <small v-if="record" class="purchase-order-detail-drawer__identifier">{{ orderIdentifier }}</small>
-                    <div v-if="record" class="purchase-order-detail-drawer__header-meta">
-                        <span
-                            class="badge purchase-order-detail-drawer__state-badge"
-                            :class="stateBadgeClass"
-                        >
-                            {{ stateLabel }}
-                        </span>
-                        <small class="purchase-order-detail-drawer__header-date text-dark">{{ issueDateLabel }}</small>
-                    </div>
                 </div>
-                <button
-                    type="button"
-                    class="close-theme-sidebar purchase-order-detail-drawer__close"
-                    aria-label="Cerrar panel"
-                    @click="visibleDrawer = false"
-                >
-                    <i class="el-icon-close"></i>
-                </button>
+                <a class="close-btn detail-drawer__close" href="#" aria-label="Cerrar panel" @click.prevent="visibleDrawer = false">
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                </a>
             </div>
 
             <template v-if="record">
-                <div class="purchase-order-detail-drawer__status-bar">
-                    <small class="text-muted">Orden de compra</small>
+                <div class="detail-drawer__status-bar purchase-order-detail-drawer__status-bar">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge" :class="stateBadgeClass">{{ stateLabel }}</span>
+                        <small class="text-muted">{{ issueDateLabel }}</small>
+                    </div>
                     <small class="text-muted">#{{ record.id }}</small>
                 </div>
 
-                <div class="purchase-order-detail-drawer__body">
+                <div class="detail-drawer__body purchase-order-detail-drawer__body">
                     <el-tabs v-model="activeTab">
                         <el-tab-pane label="Productos" name="products">
-                            <div class="purchase-order-detail-drawer__section-card">
-                                <div class="purchase-order-detail-drawer__section-card-header">
+                            <div class="detail-drawer__section-card purchase-order-detail-drawer__section-card">
+                                <div class="detail-drawer__section-card-header purchase-order-detail-drawer__section-card-header">
                                     <h5 class="section-title">Productos</h5>
                                     <p class="section-subtitle">Detalle de ítems solicitados en la orden</p>
                                 </div>
                                 <div v-if="lineItems.length" class="table-responsive">
-                                    <table class="table table-sm purchase-order-detail-drawer__items-table mb-0">
+                                    <table class="table table-sm detail-drawer__items-table purchase-order-detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Producto</th>
@@ -72,74 +61,72 @@
                         </el-tab-pane>
 
                         <el-tab-pane label="Proveedor" name="supplier">
-                            <div class="purchase-order-detail-drawer__section-card">
-                                <div class="purchase-order-detail-drawer__section-card-header">
+                            <div class="detail-drawer__customer-section">
+                                <div class="detail-drawer__customer-heading">
                                     <h5 class="section-title">Proveedor</h5>
                                     <p class="section-subtitle">Datos del proveedor asociado a la orden</p>
                                 </div>
-                                <dl class="purchase-order-detail-drawer__list">
-                                    <dt>Nombre / Razón social</dt>
-                                    <dd>{{ supplierName }}</dd>
 
-                                    <dt>Documento</dt>
-                                    <dd>{{ supplierDocument }}</dd>
+                                <div class="detail-drawer__customer-summary">
+                                    <div class="detail-drawer__customer-avatar" aria-hidden="true">{{ supplierInitials }}</div>
+                                    <div class="detail-drawer__customer-identity">
+                                        <strong class="detail-drawer__customer-name">{{ supplierName }}</strong>
+                                        <span v-if="supplierDocumentTypeLabel" class="detail-drawer__customer-badge">{{ supplierDocumentTypeLabel }}</span>
+                                    </div>
+                                </div>
 
-                                    <dt v-if="supplierTelephone">Teléfono</dt>
-                                    <dd v-if="supplierTelephone">{{ supplierTelephone }}</dd>
-
-                                    <dt v-if="supplierEmail">Correo</dt>
-                                    <dd v-if="supplierEmail">{{ supplierEmail }}</dd>
-                                </dl>
+                                <div class="detail-drawer__customer-grid">
+                                    <div class="detail-drawer__customer-field"><span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-id"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 8l2 0"/><path d="M15 12l2 0"/><path d="M7 16l10 0"/></svg></span><div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Documento</span><strong>{{ supplierDocumentNumber }}</strong></div></div>
+                                    <div class="detail-drawer__customer-field"><span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-phone"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg></span><div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Teléfono</span><strong>{{ supplierTelephone || '—' }}</strong></div></div>
+                                    <div class="detail-drawer__customer-field"><span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M3 7l9 6l9 -6"/></svg></span><div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Correo</span><strong>{{ supplierEmail || '—' }}</strong></div></div>
+                                    <div class="detail-drawer__customer-field"><span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-map-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M12.783 21.326a2 2 0 0 1 -2.196 -.426l-4.244 -4.243a8 8 0 1 1 13.657 -5.62"/><path d="M15 19l2 2l4 -4"/></svg></span><div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Dirección</span><strong>{{ supplierAddress }}</strong></div></div>
+                                </div>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Información operativa" name="operational">
-                            <div class="purchase-order-detail-drawer__section-card">
-                                <div class="purchase-order-detail-drawer__section-card-header">
+                            <div class="detail-drawer__operation-section">
+                                <div class="detail-drawer__operation-heading">
                                     <h5 class="section-title">Información operativa</h5>
                                     <p class="section-subtitle">Vigencia, moneda y tipo de cambio</p>
                                 </div>
-                                <dl class="purchase-order-detail-drawer__list">
-                                    <dt>Fecha de vencimiento</dt>
-                                    <dd>{{ dueDateLabel }}</dd>
 
-                                    <dt>Moneda</dt>
-                                    <dd>{{ currencyLabel }}</dd>
+                                <div class="detail-drawer__operation-flow">
+                                    <div class="detail-drawer__operation-card"><span class="detail-drawer__operation-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-event"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3l0 4"/><path d="M8 3l0 4"/><path d="M4 11l16 0"/><path d="M8 15h2v2h-2z"/></svg></span><div class="detail-drawer__operation-card-content"><span class="detail-drawer__operation-label">Emisión</span><strong>{{ issueDateLabel }}</strong></div></div>
+                                    <span class="detail-drawer__operation-arrow" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg></span>
+                                    <div class="detail-drawer__operation-card"><span class="detail-drawer__operation-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-due"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-3l-3 3v-3h-4a2 2 0 0 1 -2 -2z"/><path d="M16 3l0 4"/><path d="M8 3l0 4"/><path d="M4 11l16 0"/></svg></span><div class="detail-drawer__operation-card-content"><span class="detail-drawer__operation-label">Vencimiento</span><strong>{{ dueDateLabel }}</strong></div></div>
+                                </div>
 
-                                    <dt>Tipo de cambio</dt>
-                                    <dd>{{ exchangeRateLabel }}</dd>
-
-                                    <dt v-if="record.sale_opportunity_number_full">O. Venta</dt>
-                                    <dd v-if="record.sale_opportunity_number_full">{{ record.sale_opportunity_number_full }}</dd>
-
-                                    <dt v-if="record.observation">Observaciones</dt>
-                                    <dd v-if="record.observation" class="text-pre-wrap">{{ record.observation }}</dd>
-                                </dl>
+                                <div class="detail-drawer__operation-note"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0 -18"/></svg><span>La orden de compra no ingresa ni reserva stock. El inventario se actualiza cuando se genera y registra la compra.</span></div>
+                                <div class="detail-drawer__operation-note detail-drawer__operation-note--observation"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-coins" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 14c0 1.657 2.686 3 6 3s6 -1.343 6 -3s-2.686 -3 -6 -3s-6 1.343 -6 3z"/><path d="M9 14v4c0 1.656 2.686 3 6 3s6 -1.344 6 -3v-4"/><path d="M3 6c0 1.072 1.144 2.062 3 2.598s4.144 .536 6 0c1.856 -.536 3 -1.526 3 -2.598c0 -1.072 -1.144 -2.062 -3 -2.598s-4.144 -.536 -6 0c-1.856 .536 -3 1.526 -3 2.598z"/><path d="M3 6v4c0 .888 .772 1.716 2 2.282"/><path d="M15 6v2"/></svg><span>{{ issuanceCurrencyLabel }}</span></div>
+                                <div v-if="record.sale_opportunity_number_full" class="detail-drawer__operation-note"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-link" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"/><path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"/></svg><span>Oportunidad de venta: {{ record.sale_opportunity_number_full }}</span></div>
+                                <div v-if="record.observation" class="detail-drawer__operation-note detail-drawer__operation-note--observation"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-message" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 9h8"/><path d="M8 13h6"/><path d="M9 18h-3a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-3l-3 3z"/></svg><span>{{ record.observation }}</span></div>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Totales" name="totals">
-                            <div class="purchase-order-detail-drawer__section-card">
-                                <div class="purchase-order-detail-drawer__section-card-header">
+                            <div class="detail-drawer__totals-section">
+                                <div class="detail-drawer__totals-heading">
                                     <h5 class="section-title">Totales</h5>
                                     <p class="section-subtitle">Importes gravados, IGV y total de la orden</p>
                                 </div>
-                                <dl class="purchase-order-detail-drawer__list">
-                                    <dt>Gravado</dt>
-                                    <dd>{{ formatMoney(record.total_taxed) }}</dd>
 
-                                    <dt>IGV</dt>
-                                    <dd>{{ formatMoney(record.total_igv) }}</dd>
+                                <div class="detail-drawer__totals-summary">
+                                    <div class="detail-drawer__totals-summary-card"><span class="detail-drawer__totals-summary-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-coin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 6m-6 0a6 3 0 1 0 12 0a6 3 0 1 0 -12 0"/><path d="M6 6v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/><path d="M6 12v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/></svg></span><div class="detail-drawer__totals-summary-content"><span class="detail-drawer__totals-label">Moneda</span><strong>{{ currencyLabel }}</strong></div></div>
+                                    <div class="detail-drawer__totals-summary-card"><span class="detail-drawer__totals-summary-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrows-exchange"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 10h14l-4 -4"/><path d="M17 14h-14l4 4"/></svg></span><div class="detail-drawer__totals-summary-content"><span class="detail-drawer__totals-label">Tipo de cambio</span><strong>{{ exchangeRateLabel }}</strong></div></div>
+                                </div>
 
-                                    <dt>Total</dt>
-                                    <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
-                                </dl>
+                                <div class="detail-drawer__totals-card">
+                                    <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/></svg></span><span class="detail-drawer__totals-row-label">Op. gravada</span><strong>{{ formatMoney(record.total_taxed) }}</strong></div>
+                                    <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span><span class="detail-drawer__totals-row-label">IGV</span><strong>{{ formatMoney(record.total_igv) }}</strong></div>
+                                    <div class="detail-drawer__totals-total"><span>Total</span><strong><small>{{ currencySymbol }}</small> {{ formatMoney(record.total, false) }}</strong></div>
+                                </div>
                             </div>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
 
-                <div class="purchase-order-detail-drawer__footer">
+                <div class="detail-drawer__footer detail-drawer__footer--stacked purchase-order-detail-drawer__footer">
                     <div class="purchase-order-detail-drawer__email-row">
                         <el-input
                             v-model="emailToSend"
@@ -157,13 +144,14 @@
                         </el-input>
                     </div>
 
-                    <div class="purchase-order-detail-drawer__actions">
+                    <div class="detail-drawer__actions purchase-order-detail-drawer__actions">
                         <button
                             type="button"
                             class="btn btn-outline-info btn-sm"
                             @click="clickPrint"
                         >
-                            <i class="fa fa-file-pdf"></i> Imprimir A4
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /></svg>
+                            Imprimir A4
                         </button>
                         <button
                             v-if="record.upload_filename"
@@ -171,7 +159,8 @@
                             class="btn btn-outline-secondary btn-sm"
                             @click="clickDownloadAttached"
                         >
-                            <i class="fa fa-download"></i> Descargar archivo
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-download" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2" /><path d="M12 17v-6" /><path d="M9.5 14.5l2.5 2.5l2.5 -2.5" /></svg>
+                            Descargar archivo
                         </button>
                         <button
                             v-if="canEdit"
@@ -179,7 +168,8 @@
                             class="btn btn-custom btn-sm"
                             @click="$emit('edit', record.id)"
                         >
-                            <i class="fa fa-edit"></i> Editar
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                            Editar
                         </button>
                         <button
                             v-if="canGenerate"
@@ -187,7 +177,8 @@
                             class="btn btn-outline-primary btn-sm"
                             @click="$emit('generate', record.id)"
                         >
-                            <i class="fa fa-shopping-bag"></i> Generar compra
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304" /><path d="M9 11v-5a3 3 0 0 1 6 0v5" /></svg>
+                            Generar compra
                         </button>
                         <button
                             v-if="canAnulate"
@@ -196,7 +187,8 @@
                             :disabled="voiding"
                             @click="clickAnulate"
                         >
-                            <i class="fa fa-times-circle"></i> Anular
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-x" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>
+                            Anular
                         </button>
                     </div>
                 </div>
@@ -294,35 +286,51 @@ export default {
         dueDateLabel() {
             return this.formatDisplayDate(this.record?.date_of_due);
         },
-        supplierName() {
-            return this.record?.supplier_name
-                || this.parseSupplier(this.record?.supplier)?.name
-                || '—';
+        supplierData() {
+            return this.parseSupplier(this.record?.supplier) || {};
         },
-        supplierDocument() {
-            const supplier = this.parseSupplier(this.record?.supplier);
-            const number = supplier?.number || this.record?.supplier_number || null;
-            const type =
-                supplier?.identity_document_type?.description
-                || supplier?.document_type
-                || this.record?.supplier_identity_document_type_description
-                || null;
+        supplierName() {
+            return this.record?.supplier_name || this.supplierData.name || '—';
+        },
+        supplierInitials() {
+            const words = String(this.supplierName || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
 
-            if (number && type) {
-                return `${number} (${type})`;
+            if (!words.length) {
+                return 'PR';
             }
 
-            return number || '—';
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
+        supplierDocumentNumber() {
+            return this.supplierData.number || this.record?.supplier_number || '—';
+        },
+        supplierDocumentTypeLabel() {
+            return this.supplierData.identity_document_type?.description
+                || this.supplierData.document_type
+                || this.record?.supplier_identity_document_type_description
+                || null;
         },
         supplierTelephone() {
             return this.record?.supplier_telephone
-                || this.parseSupplier(this.record?.supplier)?.telephone
+                || this.supplierData.telephone
                 || null;
         },
         supplierEmail() {
             return this.record?.supplier_email
-                || this.parseSupplier(this.record?.supplier)?.email
+                || this.supplierData.email
                 || null;
+        },
+        supplierAddress() {
+            return this.supplierData.address
+                || this.supplierData.direccion
+                || '—';
         },
         currencyLabel() {
             const currencyId = this.record?.currency_type_id;
@@ -345,6 +353,11 @@ export default {
                 minimumFractionDigits: 3,
                 maximumFractionDigits: 4
             });
+        },
+        issuanceCurrencyLabel() {
+            return this.exchangeRateLabel === '—'
+                ? this.currencyLabel
+                : `${this.currencyLabel} · T.C. ${this.exchangeRateLabel}`;
         },
         lineItems() {
             const items = Array.isArray(this.record?.items) ? this.record.items : [];
@@ -643,256 +656,8 @@ export default {
 </script>
 
 <style scoped>
-.purchase-order-detail-drawer__inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #fff;
-}
-
-.purchase-order-detail-drawer__header {
-    flex-shrink: 0;
-    width: 100%;
-    min-height: 56px;
-    box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    direction: ltr;
-}
-
-.purchase-order-detail-drawer__title {
-    flex: 1;
-    min-width: 0;
-    padding-right: 4px;
-    text-align: left;
-}
-
-.purchase-order-detail-drawer__close {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    border-radius: 6px;
-    align-self: center;
-}
-
-.purchase-order-detail-drawer__title h4 {
-    margin: 0;
-    line-height: 1.2;
-}
-
-.purchase-order-detail-drawer__title small.purchase-order-detail-drawer__identifier {
-    display: block;
-    margin-top: 4px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 12px;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.purchase-order-detail-drawer__header-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.purchase-order-detail-drawer__header-date {
-    color: #334155 !important;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1.2;
-}
-
-.purchase-order-detail-drawer__state-badge {
-    display: inline-flex;
-    align-items: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    line-height: 1;
-    padding: 0.35em 0.65em;
-    border-radius: 999px;
-    vertical-align: middle;
-}
-
-.purchase-order-detail-drawer__section-card {
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #f8fafc;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.purchase-order-detail-drawer__section-card:last-child {
-    margin-bottom: 0;
-}
-
-.purchase-order-detail-drawer__section-card-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eef2f7;
-}
-
-.purchase-order-detail-drawer__section-card-header .section-title {
-    margin-bottom: 2px;
-}
-
-.purchase-order-detail-drawer__section-card-header .section-subtitle {
-    margin-bottom: 0;
-}
-
-.purchase-order-detail-drawer__status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ebeef5;
-    background: #f8fafc;
-}
-
-.purchase-order-detail-drawer__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px 16px;
-}
-
-.purchase-order-detail-drawer__body >>> .el-tabs__header {
-    margin-bottom: 12px;
-}
-
-.purchase-order-detail-drawer__body >>> .el-tabs__nav-wrap::after {
-    height: 1px;
-    background-color: #ebeef5;
-}
-
-.purchase-order-detail-drawer__body >>> .el-tabs__item {
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-}
-
-.purchase-order-detail-drawer__body >>> .el-tabs__item.is-active {
-    color: #1f3a8a;
-}
-
-.purchase-order-detail-drawer__body >>> .el-tabs__active-bar {
-    background-color: #1f3a8a;
-}
-
-.purchase-order-detail-drawer__list {
-    margin: 0 0 8px;
-}
-
-.purchase-order-detail-drawer__list dt {
-    font-size: 12px;
-    color: #909399;
-    margin-bottom: 4px;
-}
-
-.purchase-order-detail-drawer__list dd {
-    margin: 0 0 14px;
-    font-weight: 500;
-    color: #303133;
-}
-
-.purchase-order-detail-drawer__list dd.text-pre-wrap {
-    white-space: pre-wrap;
-}
-
-.purchase-order-detail-drawer__items-table thead th {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.purchase-order-detail-drawer__items-table td {
-    vertical-align: middle;
-    border-top: 1px solid #eef2f7;
-    font-size: 13px;
-}
-
-.purchase-order-detail-drawer__footer {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 14px 20px;
-    border-top: 1px solid #ebeef5;
-    background: #fff;
-}
 
 .purchase-order-detail-drawer__email-row {
     width: 100%;
-}
-
-.purchase-order-detail-drawer__actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-    width: 100%;
-}
-
-.section-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f3a8a;
-    margin-bottom: 0.2rem;
-}
-
-.section-subtitle {
-    color: #6b7280;
-    font-size: 0.86rem;
-    margin-bottom: 0.5rem;
-}
-</style>
-
-<style>
-.purchase-order-detail-drawer.el-drawer .el-drawer__body {
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-}
-
-.purchase-order-detail-drawer .theme-sidebar-header.purchase-order-detail-drawer__header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-    overflow: hidden;
-    padding: 14px 16px;
-    gap: 12px;
-    direction: ltr;
-}
-
-.purchase-order-detail-drawer .purchase-order-detail-drawer__header-date {
-    color: #334155 !important;
-}
-
-.purchase-order-detail-drawer .purchase-order-detail-drawer__close {
-    position: static;
-    top: auto;
-    right: auto;
-    margin: 0;
-    transform: none;
 }
 </style>

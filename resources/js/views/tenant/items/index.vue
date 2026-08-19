@@ -268,7 +268,7 @@
                             <td v-if="col.visible && col.key === 'image'" :key="col.key"><img :src="row.image_url_small" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
                             <td v-if="col.visible && col.key === 'name'" :key="col.key">
                                 <span
-                                    class="item-name-link"
+                                    class="customer-link"
                                     role="button"
                                     tabindex="0"
                                     @click="clickDetail(row)"

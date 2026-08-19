@@ -4,34 +4,42 @@
         :with-header="false"
         size="560px"
         direction="rtl"
-        custom-class="person-detail-drawer"
+        custom-class="detail-drawer person-detail-drawer"
         append-to-body
         @closed="handleClosed"
     >
-        <div class="person-detail-drawer__inner" v-loading="loading">
-            <div class="theme-sidebar-header person-detail-drawer__header">
-                <div class="person-detail-drawer__title">
-                    <h4>{{ entityLabel }}</h4>
+        <div class="detail-drawer__inner person-detail-drawer__inner" v-loading="loading">
+            <div class="theme-sidebar-header detail-drawer__header person-detail-drawer__header">
+                <div class="detail-drawer__title person-detail-drawer__title">
+                    <h5>{{ entityLabel }}</h5>
                     <small v-if="record">{{ record.name }}</small>
                 </div>
-                <button
-                    type="button"
-                    class="close-theme-sidebar person-detail-drawer__close"
-                    aria-label="Cerrar panel"
-                    @click="visibleDrawer = false"
-                >
-                    <i class="el-icon-close"></i>
-                </button>
+                <a class="close-btn detail-drawer__close" href="#" aria-label="Cerrar panel" @click.prevent="visibleDrawer = false">
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                </a>
             </div>
 
             <template v-if="record">
+                <div class="detail-drawer__status-bar person-detail-drawer__status-bar">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span class="badge badge-info">{{ entityTypeBadgeLabel }}</span>
+                        <span
+                            v-if="record.enabled !== undefined && record.enabled !== null"
+                            class="badge"
+                            :class="personIsEnabled ? 'badge-success' : 'badge-danger'"
+                        >
+                            {{ personIsEnabled ? 'Habilitado' : 'Inhabilitado' }}
+                        </span>
+                    </div>
+                    <small class="text-muted">#{{ record.id }}</small>
+                </div>
+
                 <div v-if="type === 'customers'" class="person-detail-drawer__metrics">
                     <div class="row g-2">
                         <div class="col-6">
                             <div class="shad-kpi" v-loading="loadingMetrics">
                                 <div class="shad-kpi-header">
                                     <span class="shad-kpi-label">Total Pedidos</span>
-                                    <svg class="shad-kpi-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14l-2 -2h-3v16" /></svg>
                                 </div>
                                 <div class="shad-kpi-value">{{ metrics.totalOrders }}</div>
                                 <div class="shad-kpi-desc">
@@ -55,7 +63,6 @@
                                     >
                                         <i class="el-icon-edit-outline"></i>
                                     </button>
-                                    <svg v-else class="shad-kpi-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h12a1 1 0 0 0 1 -1v-3" /><path d="M20 12h-7l3 -3m0 6l-3 -3" /></svg>
                                 </div>
                                 <div class="shad-kpi-value">S/ {{ formatAmount(metrics.balance) }}</div>
                                 <div class="shad-kpi-desc">
@@ -67,88 +74,56 @@
                     </div>
                 </div>
 
-                <div class="person-detail-drawer__body">
+                <div class="detail-drawer__body person-detail-drawer__body">
                     <el-tabs v-model="activeTab" @tab-click="handleTabClick">
                         <el-tab-pane label="General" name="general">
-                            <div class="person-detail-drawer__section-card">
-                                <div class="person-detail-drawer__section-card-header">
+                            <div class="detail-drawer__customer-section">
+                                <div class="detail-drawer__customer-heading">
                                     <h5 class="section-title">Identificación</h5>
                                     <p class="section-subtitle">Datos principales del {{ entityShortLabel }}</p>
                                 </div>
-                                <dl class="person-detail-drawer__list">
-                                    <dt>Nombre / Razón social</dt>
-                                    <dd>{{ record.name || '—' }}</dd>
 
-                                    <dt v-if="record.trade_name">Nombre comercial</dt>
-                                    <dd v-if="record.trade_name">{{ record.trade_name }}</dd>
+                                <div class="detail-drawer__customer-summary">
+                                    <div class="detail-drawer__customer-avatar" aria-hidden="true">{{ personInitials }}</div>
+                                    <div class="detail-drawer__customer-identity">
+                                        <strong class="detail-drawer__customer-name">{{ record.name || '—' }}</strong>
+                                        <span v-if="personDocumentTypeLabel" class="detail-drawer__customer-badge">{{ personDocumentTypeLabel }}</span>
+                                    </div>
+                                </div>
 
-                                    <dt>Documento</dt>
-                                    <dd>{{ personDocument }}</dd>
-
-                                    <dt>Cód. interno</dt>
-                                    <dd>{{ record.internal_code || '—' }}</dd>
-
-                                    <dt v-if="record.person_type">Tipo de cliente</dt>
-                                    <dd v-if="record.person_type">{{ record.person_type }}</dd>
-                                </dl>
+                                <div class="detail-drawer__customer-grid">
+                                    <div class="detail-drawer__customer-field"><span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-id"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 8l2 0"/><path d="M15 12l2 0"/><path d="M7 16l10 0"/></svg></span><div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Documento</span><strong>{{ personDocumentNumber }}</strong></div></div>
+                                    <div class="detail-drawer__customer-field"><span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-hash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 9l14 0"/><path d="M5 15l14 0"/><path d="M11 4l-2 16"/><path d="M17 4l-2 16"/></svg></span><div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Código interno</span><strong>{{ record.internal_code || '—' }}</strong></div></div>
+                                    <div class="detail-drawer__customer-field"><span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M3 7l9 6l9 -6"/></svg></span><div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Correo</span><strong>{{ record.email || '—' }}</strong></div></div>
+                                    <div class="detail-drawer__customer-field"><span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-phone"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg></span><div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Teléfono</span><strong>{{ record.telephone || '—' }}</strong></div></div>
+                                </div>
                             </div>
 
-                            <div class="person-detail-drawer__section-card">
-                                <div class="person-detail-drawer__section-card-header">
-                                    <h5 class="section-title">Contacto</h5>
-                                    <p class="section-subtitle">Canales de comunicación</p>
+                            <div v-if="hasGeneralAdditionalData" class="detail-drawer__details-section mt-3">
+                                <div class="detail-drawer__details-heading"><h5 class="section-title">Contacto adicional</h5><p class="section-subtitle">Información complementaria y canales de contacto</p></div>
+                                <div class="detail-drawer__details-grid">
+                                    <div v-if="record.trade_name" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Nombre comercial</span><strong>{{ record.trade_name }}</strong></div>
+                                    <div v-if="record.person_type" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Tipo de cliente</span><strong>{{ record.person_type }}</strong></div>
+                                    <div v-if="contactDisplay" class="detail-drawer__details-card detail-drawer__details-card--wide"><span class="detail-drawer__details-label">Persona de contacto</span><strong>{{ contactDisplayLabel }}</strong></div>
+                                    <div v-if="record.website" class="detail-drawer__details-card detail-drawer__details-card--wide"><span class="detail-drawer__details-label">Sitio web</span><strong>{{ record.website }}</strong></div>
                                 </div>
-                                <dl class="person-detail-drawer__list">
-                                    <dt>Correo</dt>
-                                    <dd>{{ record.email || '—' }}</dd>
-
-                                    <dt>Teléfono</dt>
-                                    <dd>{{ record.telephone || '—' }}</dd>
-
-                                    <template v-if="contactDisplay">
-                                        <dt>Persona de contacto</dt>
-                                        <dd>
-                                            <span v-if="contactDisplay.full_name">{{ contactDisplay.full_name }}</span>
-                                            <template v-if="contactDisplay.full_name && contactDisplay.phone">
-                                                <br>
-                                            </template>
-                                            <span v-if="contactDisplay.phone" class="text-muted">{{ contactDisplay.phone }}</span>
-                                        </dd>
-                                    </template>
-
-                                    <dt v-if="record.website">Sitio web</dt>
-                                    <dd v-if="record.website">{{ record.website }}</dd>
-                                </dl>
                             </div>
 
-                            <div class="person-detail-drawer__section-card">
-                                <div class="person-detail-drawer__section-card-header">
-                                    <h5 class="section-title">Comercial</h5>
-                                    <p class="section-subtitle">Asignación comercial y condiciones</p>
+                            <div class="detail-drawer__details-section mt-3">
+                                <div class="detail-drawer__details-heading"><h5 class="section-title">Comercial</h5><p class="section-subtitle">Asignación comercial y condiciones</p></div>
+                                <div v-if="hasCommercialData" class="detail-drawer__details-grid">
+                                    <div v-if="record.seller && record.seller.name" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Vendedor</span><strong>{{ record.seller.name }}</strong></div>
+                                    <div v-if="record.zone" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Zona</span><strong>{{ record.zone.name || '—' }}</strong></div>
+                                    <div v-if="record.credit_days" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Días de crédito</span><strong>{{ record.credit_days }}</strong></div>
+                                    <div v-if="record.observation" class="detail-drawer__details-card detail-drawer__details-card--wide detail-drawer__details-card--notice"><span class="detail-drawer__details-label">Observaciones</span><p>{{ record.observation }}</p></div>
                                 </div>
-                                <dl class="person-detail-drawer__list">
-                                    <dt v-if="record.seller && record.seller.name">Vendedor</dt>
-                                    <dd v-if="record.seller && record.seller.name">{{ record.seller.name }}</dd>
-
-                                    <dt v-if="record.zone">Zona</dt>
-                                    <dd v-if="record.zone">{{ record.zone.name || '—' }}</dd>
-
-                                    <dt v-if="record.credit_days">Días de crédito</dt>
-                                    <dd v-if="record.credit_days">{{ record.credit_days }}</dd>
-
-                                    <dt v-if="record.observation">Observaciones</dt>
-                                    <dd v-if="record.observation">{{ record.observation }}</dd>
-
-                                    <template v-if="!hasCommercialData">
-                                        <dd class="text-muted mb-0">Sin datos comerciales adicionales.</dd>
-                                    </template>
-                                </dl>
+                                <p v-else class="text-muted small mb-0">Sin datos comerciales adicionales.</p>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Ubicación" name="location">
-                            <div class="person-detail-drawer__section-card person-detail-drawer__map-card">
-                                <div class="person-detail-drawer__section-card-header">
+                            <div v-if="locationMapQuery" class="detail-drawer__section-card person-detail-drawer__section-card person-detail-drawer__map-card">
+                                <div class="detail-drawer__section-card-header person-detail-drawer__section-card-header">
                                     <h5 class="section-title">Mapa</h5>
                                     <p class="section-subtitle">Ubicación geográfica del {{ entityShortLabel }}</p>
                                 </div>
@@ -165,50 +140,33 @@
                                 </div>
                             </div>
 
-                            <div class="person-detail-drawer__section-card">
-                                <div class="person-detail-drawer__section-card-header">
+                            <div class="detail-drawer__details-section">
+                                <div class="detail-drawer__details-heading">
                                     <h5 class="section-title">Dirección principal</h5>
                                     <p class="section-subtitle">Ubigeo y domicilio fiscal</p>
                                 </div>
-                                <dl class="person-detail-drawer__list">
-                                    <dt>Dirección</dt>
-                                    <dd>{{ record.address || '—' }}</dd>
-
-                                    <dt>Departamento</dt>
-                                    <dd>{{ locationDepartment }}</dd>
-
-                                    <dt>Provincia</dt>
-                                    <dd>{{ locationProvince }}</dd>
-
-                                    <dt>Distrito</dt>
-                                    <dd>{{ locationDistrict }}</dd>
-
-                                    <dt v-if="record.state">Estado contribuyente</dt>
-                                    <dd v-if="record.state">{{ record.state }}</dd>
-
-                                    <dt v-if="record.condition">Condición</dt>
-                                    <dd v-if="record.condition">{{ record.condition }}</dd>
-                                </dl>
+                                <div class="detail-drawer__details-grid">
+                                    <div class="detail-drawer__details-card detail-drawer__details-card--wide"><span class="detail-drawer__details-label">Dirección</span><strong>{{ record.address || '—' }}</strong></div>
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Departamento</span><strong>{{ locationDepartment }}</strong></div>
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Provincia</span><strong>{{ locationProvince }}</strong></div>
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Distrito</span><strong>{{ locationDistrict }}</strong></div>
+                                    <div v-if="record.state" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Estado contribuyente</span><strong>{{ record.state }}</strong></div>
+                                    <div v-if="record.condition" class="detail-drawer__details-card"><span class="detail-drawer__details-label">Condición</span><strong>{{ record.condition }}</strong></div>
+                                </div>
                             </div>
 
                             <template v-if="secondaryAddresses.length">
-                                <div class="person-detail-drawer__section-card">
-                                    <div class="person-detail-drawer__section-card-header">
+                                <div class="detail-drawer__details-section mt-3">
+                                    <div class="detail-drawer__details-heading">
                                         <h5 class="section-title">Direcciones adicionales</h5>
                                         <p class="section-subtitle">Otros domicilios registrados</p>
                                     </div>
-                                    <div
-                                        v-for="(address, index) in secondaryAddresses"
-                                        :key="address.id || index"
-                                        class="person-detail-drawer__address-card"
-                                    >
-                                        <small class="text-muted d-block mb-1">
-                                            Dirección {{ index + 1 }}
-                                            <span v-if="address.main" class="badge badge-info ms-1">Principal</span>
-                                        </small>
-                                        <p class="mb-1">{{ address.address || '—' }}</p>
-                                        <small v-if="address.phone" class="text-muted d-block">Tel: {{ address.phone }}</small>
-                                        <small v-if="address.email" class="text-muted d-block">Email: {{ address.email }}</small>
+                                    <div class="detail-drawer__details-grid">
+                                        <div v-for="(address, index) in secondaryAddresses" :key="address.id || index" class="detail-drawer__details-card detail-drawer__details-card--wide">
+                                            <span class="detail-drawer__details-label">Dirección {{ index + 1 }}<span v-if="address.main"> · Principal</span></span>
+                                            <strong>{{ address.address || '—' }}</strong>
+                                            <p v-if="address.phone || address.email">{{ secondaryAddressContact(address) }}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </template>
@@ -218,18 +176,17 @@
                         </el-tab-pane>
 
                         <el-tab-pane label="Documentos" name="documents">
-                            <div class="section-header section-header-first">
-                                <h5 class="section-title">Comprobantes asociados</h5>
-                                <p class="section-subtitle">Últimos documentos emitidos a este {{ entityShortLabel }}</p>
-                            </div>
+                            <div class="detail-drawer__section-card person-detail-drawer__section-card">
+                                <div class="detail-drawer__section-card-header person-detail-drawer__section-card-header">
+                                    <h5 class="section-title">Comprobantes asociados</h5>
+                                    <p class="section-subtitle">Últimos documentos emitidos a este {{ entityShortLabel }}</p>
+                                </div>
 
-                            <p v-if="type !== 'customers'" class="text-muted small mb-0">
-                                Los comprobantes de venta se registran únicamente para clientes.
-                            </p>
+                                <p v-if="type !== 'customers'" class="text-muted small mb-0">Los comprobantes de venta se registran únicamente para clientes.</p>
 
-                            <div v-else v-loading="loadingDocuments">
-                                <div v-if="documents.length" class="table-responsive">
-                                    <table class="table table-sm mb-0">
+                                <div v-else v-loading="loadingDocuments">
+                                    <div v-if="documents.length" class="table-responsive">
+                                    <table class="table table-sm detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Fecha</th>
@@ -250,16 +207,15 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                    </div>
+                                    <p v-else-if="!loadingDocuments" class="text-muted small mb-0">No se encontraron comprobantes para este {{ entityShortLabel }}.</p>
                                 </div>
-                                <p v-else-if="!loadingDocuments" class="text-muted small mb-0">
-                                    No se encontraron comprobantes para este {{ entityShortLabel }}.
-                                </p>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Historial" name="history">
-                            <div class="person-detail-drawer__section-card">
-                                <div class="person-detail-drawer__section-card-header">
+                            <div class="detail-drawer__section-card person-detail-drawer__section-card">
+                                <div class="detail-drawer__section-card-header person-detail-drawer__section-card-header">
                                     <h5 class="section-title">Historial</h5>
                                     <p class="section-subtitle">Actividad reciente del {{ entityShortLabel }}</p>
                                 </div>
@@ -277,7 +233,7 @@
                     </el-tabs>
                 </div>
 
-                <div class="person-detail-drawer__footer">
+                <div class="detail-drawer__footer detail-drawer__footer--actions person-detail-drawer__footer">
                     <button
                         v-if="typeUser === 'admin'"
                         type="button"
@@ -285,14 +241,16 @@
                         :disabled="deleting"
                         @click="clickDelete"
                     >
-                        <i class="fa fa-trash"></i> Eliminar {{ entityShortLabel }}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                        Eliminar {{ entityShortLabel }}
                     </button>
                     <button
                         type="button"
                         class="btn btn-custom btn-sm"
                         @click="$emit('edit', record.id)"
                     >
-                        <i class="fa fa-edit"></i> Editar {{ entityShortLabel }}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                        Editar {{ entityShortLabel }}
                     </button>
                 </div>
             </template>
@@ -354,6 +312,41 @@ export default {
         entityShortLabel() {
             return this.type === 'customers' ? 'cliente' : 'proveedor';
         },
+        entityTypeBadgeLabel() {
+            return this.type === 'customers' ? 'Cliente' : 'Proveedor';
+        },
+        personIsEnabled() {
+            return this.record?.enabled === true
+                || this.record?.enabled === 1
+                || this.record?.enabled === '1';
+        },
+        personInitials() {
+            const words = String(this.record?.name || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            if (!words.length) {
+                return 'PE';
+            }
+
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
+        personDocumentNumber() {
+            return this.record?.number || '—';
+        },
+        personDocumentTypeLabel() {
+            const type = this.record?.document_type;
+            if (type && typeof type === 'object') {
+                return type.description || type.name || null;
+            }
+
+            return type || null;
+        },
         personDocument() {
             const number = this.record?.number || null;
             const type = this.record?.document_type || null;
@@ -379,6 +372,23 @@ export default {
         },
         contactDisplay() {
             return this.parseContact(this.record?.contact);
+        },
+        contactDisplayLabel() {
+            if (!this.contactDisplay) {
+                return '—';
+            }
+
+            return [this.contactDisplay.full_name, this.contactDisplay.phone]
+                .filter(Boolean)
+                .join(' · ');
+        },
+        hasGeneralAdditionalData() {
+            return Boolean(
+                this.record?.trade_name
+                || this.record?.person_type
+                || this.contactDisplay
+                || this.record?.website
+            );
         },
         hasCommercialData() {
             if (!this.record) {
@@ -408,11 +418,10 @@ export default {
                 this.record.address,
                 this.locationDistrict !== '—' ? this.locationDistrict : null,
                 this.locationProvince !== '—' ? this.locationProvince : null,
-                this.locationDepartment !== '—' ? this.locationDepartment : null,
-                'Perú'
+                this.locationDepartment !== '—' ? this.locationDepartment : null
             ].filter(part => part && String(part).trim() !== '');
 
-            return parts.join(', ');
+            return parts.length ? [...parts, 'Perú'].join(', ') : '';
         },
         mapEmbedUrl() {
             if (this.locationMapQuery) {
@@ -744,6 +753,12 @@ export default {
                 phone: hasValue(phone) ? String(phone).trim() : null
             };
         },
+        secondaryAddressContact(address) {
+            return [
+                address?.phone ? `Tel: ${address.phone}` : null,
+                address?.email ? `Email: ${address.email}` : null
+            ].filter(Boolean).join(' · ');
+        },
         formatDateTime(value) {
             if (!value) {
                 return '—';
@@ -792,104 +807,6 @@ export default {
 </script>
 
 <style scoped>
-.person-detail-drawer__inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #fff;
-}
-
-.person-detail-drawer__header {
-    flex-shrink: 0;
-    width: 100%;
-    min-height: 56px;
-    box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    direction: ltr;
-}
-
-.person-detail-drawer__title {
-    flex: 1;
-    min-width: 0;
-    padding-right: 4px;
-    text-align: left;
-}
-
-.person-detail-drawer__close {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    border-radius: 6px;
-    align-self: center;
-}
-
-.person-detail-drawer__title h4 {
-    margin: 0;
-    line-height: 1.2;
-}
-
-.person-detail-drawer__title small {
-    display: block;
-    margin-top: 4px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 12px;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.person-detail-drawer__section-card {
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #f8fafc;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.person-detail-drawer__section-card:last-child {
-    margin-bottom: 0;
-}
-
-.person-detail-drawer__section-card-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eef2f7;
-}
-
-.person-detail-drawer__section-card-header .section-title {
-    margin-bottom: 2px;
-}
-
-.person-detail-drawer__section-card-header .section-subtitle {
-    margin-bottom: 0;
-}
-
-.person-detail-drawer__section-card .person-detail-drawer__list dd:last-child {
-    margin-bottom: 0;
-}
-
-.person-detail-drawer__status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ebeef5;
-    background: #f8fafc;
-}
 
 .person-detail-drawer__metrics {
     padding: 14px 16px 0;
@@ -918,12 +835,8 @@ export default {
     transition: box-shadow .15s;
 }
 
-.shad-kpi:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
-}
-
 .shad-kpi-danger {
-    border-left: 3px solid #ef4444;
+    border-left: 3px solid var(--danger);
 }
 
 .shad-kpi-header {
@@ -960,39 +873,13 @@ export default {
 }
 
 .shad-kpi-green {
-    color: #16a34a;
+    color: var(--success);
     font-weight: 600;
 }
 
 .shad-kpi-red {
-    color: #ef4444;
+    color: var(--danger);
     font-weight: 600;
-}
-
-.person-detail-drawer__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px 16px;
-}
-
-.person-detail-drawer__body >>> .el-tabs__header {
-    margin-bottom: 12px;
-}
-
-.person-detail-drawer__list {
-    margin: 0 0 8px;
-}
-
-.person-detail-drawer__list dt {
-    font-size: 12px;
-    color: #909399;
-    margin-bottom: 4px;
-}
-
-.person-detail-drawer__list dd {
-    margin: 0 0 14px;
-    font-weight: 500;
-    color: #303133;
 }
 
 .person-detail-drawer__map-card {
@@ -1011,18 +898,6 @@ export default {
     width: 100%;
     height: 180px;
     border: 0;
-}
-
-.person-detail-drawer__address-card {
-    padding: 12px;
-    margin-bottom: 10px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    background: #fff;
-}
-
-.person-detail-drawer__address-card:last-child {
-    margin-bottom: 0;
 }
 
 .person-detail-drawer__history {
@@ -1054,68 +929,4 @@ export default {
     color: #303133;
 }
 
-.person-detail-drawer__footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
-    padding: 14px 20px;
-    border-top: 1px solid #ebeef5;
-    background: #fff;
-}
-
-.section-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f3a8a;
-    margin-bottom: 0.2rem;
-}
-
-.section-subtitle {
-    color: #6b7280;
-    font-size: 0.86rem;
-    margin-bottom: 0.5rem;
-}
-
-.section-header {
-    border-top: 1px solid #d4e4f4;
-    margin-top: 1.2rem;
-    padding-top: 0.8rem;
-    padding-bottom: 0.5rem;
-}
-
-.section-header.section-header-first {
-    border-top: none;
-    margin-top: 0.5rem;
-    padding-top: 0;
-}
-</style>
-
-<style>
-.person-detail-drawer.el-drawer .el-drawer__body {
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-}
-
-.person-detail-drawer .theme-sidebar-header.person-detail-drawer__header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-    overflow: hidden;
-    padding: 14px 16px;
-    gap: 12px;
-    direction: ltr;
-}
-
-.person-detail-drawer .person-detail-drawer__close {
-    position: static;
-    top: auto;
-    right: auto;
-    margin: 0;
-    transform: none;
-}
 </style>

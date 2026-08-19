@@ -229,17 +229,18 @@
                             <td v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center">{{ row.date_of_payment | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.balance > 0 && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">
-                                <span
-                                    class="document-customer-link"
+                                <feSpecularLighting
                                     role="button"
                                     tabindex="0"
-                                    @click="clickDetail(row)"
                                     @keyup.enter.prevent="clickDetail(row)"
-                                >{{ row.customer_name }}</span>
+                                >{{ row.customer_name }}</feSpecularLighting>
                                 <br /><small class="text-muted"><template v-if="row.customer_identity_document_type_description">{{ row.customer_identity_document_type_description }}: </template>{{ row.customer_number }}</small>
                             </td>
                             <td v-if="col.visible && col.key === 'number'" :key="col.key">
-                                <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px;">{{ row.number }}</span>
+                                <span class="badge" :class="{ 'bg-invoices': row.document_type_id === '01', 'bg-tickets': row.document_type_id === '03', 'bg-credit-notes': row.document_type_id === '07' }" style="font-size: 11px; cursor: pointer;" @click="clickDetail(row)">
+                                    <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -4px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
+                                    {{ row.number }}
+                                </span>
                             </td>
                             <td v-if="col.visible && col.key === 'notes'" :key="col.key">
                                 <template v-for="(note, i) in row.notes">

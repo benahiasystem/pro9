@@ -323,7 +323,8 @@ span.badge.bg-secondary.text-white.bg-info {
 html .card-primary .card-header {
     background: var(--dark-color) !important;
 }
-.support-header {
+.support-header,
+.theme-sidebar-header {
     background: var(--primary-color);
 }
 .support-right strong {
@@ -4193,7 +4194,8 @@ html.dark .db-seg,
 html.dark .db-count {
     background-color: var(--inputs-dark);
 }
-html.dark .db-thumb {
+html.dark .db-thumb,
+html.dark .detail-drawer__inner {
     background-color: var(--contents-dark);
 }
 html.dark .db-seg button.active {

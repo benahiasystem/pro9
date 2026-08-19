@@ -4,31 +4,26 @@
         :with-header="false"
         size="560px"
         direction="rtl"
-        custom-class="document-detail-drawer"
+        custom-class="detail-drawer document-detail-drawer"
         append-to-body
         @closed="handleClosed"
     >
-        <div class="document-detail-drawer__inner" v-loading="loading">
-            <div class="theme-sidebar-header document-detail-drawer__header">
-                <div class="document-detail-drawer__title">
-                    <h4>Detalle del comprobante</h4>
+        <div class="detail-drawer__inner document-detail-drawer__inner" v-loading="loading">
+            <div class="theme-sidebar-header detail-drawer__header document-detail-drawer__header">
+                <div class="detail-drawer__title document-detail-drawer__title">
+                    <h5>Detalle del comprobante</h5>
                     <small v-if="record">{{ documentIdentifier }}</small>
                 </div>
-                <button
-                    type="button"
-                    class="close-theme-sidebar document-detail-drawer__close"
-                    aria-label="Cerrar panel"
-                    @click="visibleDrawer = false"
-                >
-                    <i class="el-icon-close"></i>
-                </button>
+                <a class="close-btn detail-drawer__close" href="#" aria-label="Cerrar panel" @click.prevent="visibleDrawer = false">
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                </a>
             </div>
 
             <template v-if="record">
-                <div class="document-detail-drawer__status-bar">
+                <div class="detail-drawer__status-bar document-detail-drawer__status-bar">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span
-                            class="badge document-detail-drawer__doc-badge"
+                            class="badge detail-drawer__doc-badge document-detail-drawer__doc-badge"
                             :class="documentTypeBadgeClass"
                         >
                             {{ documentTypeLabel }}
@@ -41,16 +36,16 @@
                     <small class="text-muted">#{{ record.id }}</small>
                 </div>
 
-                <div class="document-detail-drawer__body">
+                <div class="detail-drawer__body document-detail-drawer__body">
                     <el-tabs v-model="activeTab">
                         <el-tab-pane label="Productos / Servicios" name="products">
-                            <div class="document-detail-drawer__section-card">
-                                <div class="document-detail-drawer__section-card-header">
+                            <div class="detail-drawer__section-card document-detail-drawer__section-card">
+                                <div class="detail-drawer__section-card-header document-detail-drawer__section-card-header">
                                     <h5 class="section-title">Productos / Servicios</h5>
                                     <p class="section-subtitle">Detalle de ítems incluidos en el comprobante</p>
                                 </div>
                                 <div v-if="lineItems.length" class="table-responsive">
-                                    <table class="table table-sm document-detail-drawer__items-table mb-0">
+                                    <table class="table table-sm detail-drawer__items-table document-detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Descripción</th>
@@ -74,76 +69,100 @@
                         </el-tab-pane>
 
                         <el-tab-pane label="Cliente" name="customer">
-                            <div class="document-detail-drawer__section-card">
-                                <div class="document-detail-drawer__section-card-header">
+                            <div class="detail-drawer__customer-section">
+                                <div class="detail-drawer__customer-heading">
                                     <h5 class="section-title">Cliente</h5>
                                     <p class="section-subtitle">Datos del receptor del comprobante fiscal</p>
                                 </div>
-                                <dl class="document-detail-drawer__list">
-                                    <dt>Nombre / Razón social</dt>
-                                    <dd>{{ customerName }}</dd>
 
-                                    <dt>Documento</dt>
-                                    <dd>{{ customerDocument }}</dd>
+                                <div class="detail-drawer__customer-summary">
+                                    <div class="detail-drawer__customer-avatar" aria-hidden="true">{{ customerInitials }}</div>
+                                    <div class="detail-drawer__customer-identity">
+                                        <strong class="detail-drawer__customer-name">{{ customerName }}</strong>
+                                        <span
+                                            v-if="customerDocumentTypeLabel"
+                                            class="detail-drawer__customer-badge"
+                                            :class="{ 'detail-drawer__customer-badge--warning': customerDocumentTypeIsWarning }"
+                                        >
+                                            <svg v-if="customerDocumentTypeIsWarning" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-alert-triangle" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 14.54a1.914 1.914 0 0 0 1.636 2.869h16.214a1.914 1.914 0 0 0 1.636 -2.869l-8.106 -14.54a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
+                                            {{ customerDocumentTypeLabel }}
+                                        </span>
+                                    </div>
+                                </div>
 
-                                    <dt v-if="customerTelephone">Teléfono</dt>
-                                    <dd v-if="customerTelephone">{{ customerTelephone }}</dd>
-
-                                    <dt v-if="customerEmail">Correo</dt>
-                                    <dd v-if="customerEmail">{{ customerEmail }}</dd>
-
-                                    <dt v-if="customerAddress">Dirección fiscal</dt>
-                                    <dd v-if="customerAddress">{{ customerAddress }}</dd>
-                                </dl>
+                                <div class="detail-drawer__customer-grid">
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-id"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 8l2 0"/><path d="M15 12l2 0"/><path d="M7 16l10 0"/></svg></span>
+                                        <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Documento</span><strong>{{ customerDocumentNumber }}</strong></div>
+                                    </div>
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-phone"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg></span>
+                                        <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Teléfono</span><strong>{{ customerTelephone || '—' }}</strong></div>
+                                    </div>
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M3 7l9 6l9 -6"/></svg></span>
+                                        <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Correo</span><strong>{{ customerEmail || '—' }}</strong></div>
+                                    </div>
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-map-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M12.783 21.326a2 2 0 0 1 -2.196 -.426l-4.244 -4.243a8 8 0 1 1 13.657 -5.62"/><path d="M15 19l2 2l4 -4"/></svg></span>
+                                        <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Dirección fiscal</span><strong>{{ customerAddress || '—' }}</strong></div>
+                                    </div>
+                                </div>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Información operativa" name="operational">
-                            <div class="document-detail-drawer__section-card">
-                                <div class="document-detail-drawer__section-card-header">
+                            <div class="detail-drawer__operation-section">
+                                <div class="detail-drawer__operation-heading">
                                     <h5 class="section-title">Información operativa</h5>
                                     <p class="section-subtitle">Asignación comercial y condiciones de emisión</p>
                                 </div>
-                                <dl class="document-detail-drawer__list">
-                                    <dt>Vendedor</dt>
-                                    <dd>{{ sellerLabel }}</dd>
 
-                                    <dt>Establecimiento</dt>
-                                    <dd>{{ establishmentLabel }}</dd>
+                                <div class="detail-drawer__operation-seller">
+                                    <div class="detail-drawer__operation-avatar" aria-hidden="true">{{ sellerInitials }}</div>
+                                    <div class="detail-drawer__operation-seller-content"><span class="detail-drawer__operation-label">Vendedor</span><strong>{{ sellerLabel }}</strong></div>
+                                    <span v-if="sellerAccountLabel" class="detail-drawer__operation-badge"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shield" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3c3.866 0 7 1.79 7 4v5c0 4.418 -3.134 8 -7 9c-3.866 -1 -7 -4.582 -7 -9v-5c0 -2.21 3.134 -4 7 -4z"/></svg>{{ sellerAccountLabel }}</span>
+                                </div>
 
-                                    <dt>Moneda</dt>
-                                    <dd>{{ currencyLabel }}</dd>
+                                <div class="detail-drawer__operation-flow">
+                                    <div class="detail-drawer__operation-card">
+                                        <span class="detail-drawer__operation-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0"/><path d="M5 21v-14l8 -4v18"/><path d="M19 21v-10l-6 -4"/><path d="M9 9l0 .01"/><path d="M9 12l0 .01"/><path d="M9 15l0 .01"/><path d="M9 18l0 .01"/></svg></span>
+                                        <div class="detail-drawer__operation-card-content"><span class="detail-drawer__operation-label">Establecimiento</span><strong>{{ establishmentDisplayLabel }}</strong></div>
+                                    </div>
+                                    <span class="detail-drawer__operation-arrow" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg></span>
+                                    <div class="detail-drawer__operation-card">
+                                        <span class="detail-drawer__operation-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-coins"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 14c0 1.657 2.686 3 6 3s6 -1.343 6 -3s-2.686 -3 -6 -3s-6 1.343 -6 3z"/><path d="M9 14v4c0 1.656 2.686 3 6 3s6 -1.344 6 -3v-4"/><path d="M3 6c0 1.072 1.144 2.062 3 2.598s4.144 .536 6 0c1.856 -.536 3 -1.526 3 -2.598c0 -1.072 -1.144 -2.062 -3 -2.598s-4.144 -.536 -6 0c-1.856 .536 -3 1.526 -3 2.598z"/><path d="M3 6v4c0 .888 .772 1.716 2 2.282"/><path d="M3 10v4c0 .888 .772 1.716 2 2.282"/><path d="M3 14v4c0 .888 .772 1.716 2 2.282"/><path d="M15 6v2"/></svg></span>
+                                        <div class="detail-drawer__operation-card-content"><span class="detail-drawer__operation-label">Moneda / T. cambio</span><strong>{{ issuanceCurrencyLabel }}</strong></div>
+                                    </div>
+                                </div>
 
-                                    <dt>Tipo de cambio</dt>
-                                    <dd>{{ exchangeRateLabel }}</dd>
-                                </dl>
+                                <div class="detail-drawer__operation-note"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-event" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"/><path d="M16 3l0 4"/><path d="M8 3l0 4"/><path d="M4 11l16 0"/><path d="M8 15h2v2h-2z"/></svg><span>Fecha de emisión: {{ issueDateLabel }}</span></div>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Totales y pagos" name="totals">
-                            <div class="document-detail-drawer__section-card">
-                                <div class="document-detail-drawer__section-card-header">
+                            <div class="detail-drawer__totals-section">
+                                <div class="detail-drawer__totals-heading">
                                     <h5 class="section-title">Totales y pagos</h5>
                                     <p class="section-subtitle">Importes gravados, IGV, saldo y pagos registrados</p>
                                 </div>
-                                <dl class="document-detail-drawer__list">
-                                    <dt>Gravado</dt>
-                                    <dd>{{ formatMoney(record.total_taxed) }}</dd>
 
-                                    <dt>IGV</dt>
-                                    <dd>{{ formatMoney(record.total_igv) }}</dd>
+                                <div class="detail-drawer__totals-summary">
+                                    <div class="detail-drawer__totals-summary-card"><span class="detail-drawer__totals-summary-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-coin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 6m-6 0a6 3 0 1 0 12 0a6 3 0 1 0 -12 0"/><path d="M6 6v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/><path d="M6 12v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/></svg></span><div class="detail-drawer__totals-summary-content"><span class="detail-drawer__totals-label">Moneda</span><strong>{{ currencyLabel }}</strong></div></div>
+                                    <div class="detail-drawer__totals-summary-card"><span class="detail-drawer__totals-summary-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 9m0 2a2 2 0 1 0 0 4a2 2 0 0 0 0 -4"/><path d="M17 9m0 2a2 2 0 1 0 0 4a2 2 0 0 0 0 -4"/><path d="M14 15a2 2 0 0 0 -4 0"/><path d="M6 6h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2"/></svg></span><div class="detail-drawer__totals-summary-content"><span class="detail-drawer__totals-label">Pagado</span><strong>{{ formatMoney(totalPayments) }}</strong></div></div>
+                                </div>
 
-                                    <dt>Total</dt>
-                                    <dd class="text-primary fw-bold">{{ formatMoney(record.total) }}</dd>
+                                <div class="detail-drawer__totals-card">
+                                    <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/></svg></span><span class="detail-drawer__totals-row-label">Op. gravada</span><strong>{{ formatMoney(record.total_taxed) }}</strong></div>
+                                    <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span><span class="detail-drawer__totals-row-label">IGV</span><strong>{{ formatMoney(record.total_igv) }}</strong></div>
+                                    <div class="detail-drawer__totals-row detail-drawer__totals-row--balance"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-wallet"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4z"/></svg></span><span class="detail-drawer__totals-row-label">Saldo pendiente</span><span class="detail-drawer__totals-status" :class="balanceIsPaid ? 'detail-drawer__totals-status--paid' : 'detail-drawer__totals-status--pending'"><svg v-if="balanceIsPaid" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10"/></svg>{{ balanceStatusLabel }}</span></div>
+                                    <div class="detail-drawer__totals-total"><span>Total</span><strong><small>{{ currencySymbol }}</small> {{ formatMoney(record.total, false) }}</strong></div>
+                                </div>
 
-                                    <dt>Saldo</dt>
-                                    <dd :class="{ 'text-warning fw-bold': balanceAmount > 0, 'text-success': balanceAmount === 0 }">
-                                        {{ formatMoney(balanceAmount) }}
-                                    </dd>
-                                </dl>
-
-                                <div v-if="paymentRows.length" class="table-responsive mt-2">
-                                    <table class="table table-sm document-detail-drawer__items-table mb-0">
+                                <div class="detail-drawer__section-card mt-3 mb-0">
+                                    <div class="detail-drawer__section-card-header"><h5 class="section-title">Pagos registrados</h5><p class="section-subtitle">Detalle de fechas, métodos y destinos</p></div>
+                                    <div v-if="paymentRows.length" class="table-responsive">
+                                    <table class="table table-sm detail-drawer__items-table document-detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Fecha</th>
@@ -164,21 +183,23 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                    </div>
+                                    <p v-else class="text-muted small mb-0">Sin pagos registrados.</p>
                                 </div>
-                                <p v-else class="text-muted small mb-0">Sin pagos registrados.</p>
                             </div>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
 
-                <div class="document-detail-drawer__footer">
+                <div class="detail-drawer__footer detail-drawer__footer--actions detail-drawer__footer--wrap document-detail-drawer__footer">
                     <button
                         v-if="record.has_pdf && record.download_pdf"
                         type="button"
                         class="btn btn-outline-info btn-sm"
                         @click="clickDownload(record.download_pdf)"
                     >
-                        <i class="fa fa-file-pdf"></i> PDF
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-type-pdf" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" /><path d="M17 18h2" /><path d="M20 15h-3v6" /><path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1" /></svg>
+                        PDF
                     </button>
                     <button
                         v-if="record.has_xml && record.download_xml"
@@ -186,7 +207,8 @@
                         class="btn btn-outline-secondary btn-sm"
                         @click="clickDownload(record.download_xml)"
                     >
-                        <i class="fa fa-file-code"></i> XML
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-type-xml" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M4 15l4 6" /><path d="M4 21l4 -6" /><path d="M19 15v6h3" /><path d="M11 21v-6l2.5 3l2.5 -3v6" /></svg>
+                        XML
                     </button>
                     <button
                         v-if="record.has_cdr && record.download_cdr"
@@ -194,21 +216,24 @@
                         class="btn btn-outline-secondary btn-sm"
                         @click="clickDownload(record.download_cdr)"
                     >
-                        <i class="fa fa-file-archive"></i> CDR
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-zip" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6 20.735a2 2 0 0 1 -1 -1.735v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-1" /><path d="M11 17a2 2 0 0 1 2 2v2a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-2a2 2 0 0 1 2 -2" /><path d="M11 5l-1 0" /><path d="M13 7l-1 0" /><path d="M11 9l-1 0" /><path d="M13 11l-1 0" /><path d="M11 13l-1 0" /><path d="M13 15l-1 0" /></svg>
+                        CDR
                     </button>
                     <button
                         type="button"
                         class="btn btn-outline-primary btn-sm"
                         @click="$emit('payments', record.id)"
                     >
-                        <i class="fa fa-money-bill-wave"></i> Pagos
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash-banknote" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M3 8a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -8" /><path d="M18 12h.01" /><path d="M6 12h.01" /></svg>
+                        Pagos
                     </button>
                     <button
                         type="button"
                         class="btn btn-outline-secondary btn-sm"
                         @click="$emit('options', record.id)"
                     >
-                        <i class="fa fa-cog"></i> Opciones
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                        Opciones
                     </button>
                     <button
                         v-if="canVoid"
@@ -216,7 +241,8 @@
                         class="btn btn-outline-danger btn-sm"
                         @click="$emit('voided', record.id)"
                     >
-                        <i class="fa fa-times-circle"></i> Anular
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-x" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>
+                        Anular
                     </button>
                 </div>
             </template>
@@ -283,7 +309,7 @@ export default {
                 return 'document-detail-drawer__doc-badge--note';
             }
 
-            return 'document-detail-drawer__doc-badge--default';
+            return 'detail-drawer__doc-badge--default document-detail-drawer__doc-badge--default';
         },
         stateLabel() {
             return this.record?.state_type_description || '—';
@@ -319,15 +345,30 @@ export default {
         customerName() {
             return this.record?.customer_name || '—';
         },
-        customerDocument() {
-            const docType = this.record?.customer_identity_document_type_description;
-            const number = this.record?.customer_number;
+        customerInitials() {
+            const words = String(this.customerName || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
 
-            if (docType && number) {
-                return `${number} (${docType})`;
+            if (!words.length) {
+                return 'CL';
             }
 
-            return number || '—';
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
+        customerDocumentNumber() {
+            return this.record?.customer_number || '—';
+        },
+        customerDocumentTypeLabel() {
+            return this.record?.customer_identity_document_type_description || null;
+        },
+        customerDocumentTypeIsWarning() {
+            return String(this.customerDocumentTypeLabel || '').toLowerCase().includes('no domiciliado');
         },
         customerTelephone() {
             return this.record?.customer?.telephone
@@ -347,28 +388,62 @@ export default {
                 || this.record?.user_name
                 || '—';
         },
-        establishmentLabel() {
+        sellerInitials() {
+            const words = String(this.sellerLabel || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            if (!words.length) {
+                return 'VE';
+            }
+
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
+        sellerAccountLabel() {
+            const seller = String(this.sellerLabel || '').toLowerCase();
+            return seller.includes('administrador') || seller.includes('admin')
+                ? 'Cuenta principal'
+                : null;
+        },
+        establishmentData() {
             const establishment = this.record?.establishment;
 
             if (!establishment) {
-                return '—';
+                return null;
             }
 
             if (typeof establishment === 'string') {
                 try {
-                    const parsed = JSON.parse(establishment);
-                    return parsed.description || parsed.address || '—';
+                    return JSON.parse(establishment);
                 } catch (error) {
-                    return establishment;
+                    return { description: establishment };
                 }
             }
 
-            if (establishment.description) {
-                return establishment.description;
+            return establishment;
+        },
+        establishmentLabel() {
+            const establishment = this.establishmentData;
+            const values = [establishment?.description, establishment?.address];
+            return values.find(value => this.hasDisplayValue(value)) || '—';
+        },
+        establishmentDisplayLabel() {
+            const establishment = this.establishmentData;
+            if (!establishment) {
+                return '—';
             }
 
-            const parts = [establishment.code, establishment.address].filter(Boolean);
-            return parts.length ? parts.join(' — ') : '—';
+            const name = [establishment.description, establishment.address]
+                .find(value => this.hasDisplayValue(value));
+
+            return [establishment.code, name]
+                .filter(value => this.hasDisplayValue(value))
+                .join(' — ') || '—';
         },
         currencyLabel() {
             const currencyId = this.record?.currency_type_id;
@@ -392,8 +467,27 @@ export default {
                 maximumFractionDigits: 4
             });
         },
+        issuanceCurrencyLabel() {
+            return this.exchangeRateLabel === '—'
+                ? this.currencyLabel
+                : `${this.currencyLabel} · T.C. ${this.exchangeRateLabel}`;
+        },
         balanceAmount() {
-            return this.parseAmount(this.record?.balance);
+            return Math.max(this.parseAmount(this.record?.balance), 0);
+        },
+        totalPayments() {
+            if (this.record?.total_paid !== undefined && this.record?.total_paid !== null) {
+                return this.parseAmount(this.record.total_paid);
+            }
+
+            return this.paymentRows.reduce((sum, payment) => sum + this.parseAmount(payment.payment), 0);
+        },
+        balanceIsPaid() {
+            return this.balanceAmount < 0.01;
+        },
+        balanceStatusLabel() {
+            const status = this.balanceIsPaid ? 'Pagado' : 'Pendiente';
+            return `${this.formatMoney(this.balanceAmount)} · ${status}`;
         },
         paymentRows() {
             return Array.isArray(this.record?.payments) ? this.record.payments : [];
@@ -439,6 +533,10 @@ export default {
         }
     },
     methods: {
+        hasDisplayValue(value) {
+            const normalized = String(value ?? '').trim();
+            return normalized !== '' && normalized !== '-' && normalized !== '—';
+        },
         openDrawer() {
             this.activeTab = 'products';
             this.applyInitialSnapshot();
@@ -641,106 +739,6 @@ export default {
 </script>
 
 <style scoped>
-.document-detail-drawer__inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #fff;
-}
-
-.document-detail-drawer__header {
-    flex-shrink: 0;
-    width: 100%;
-    min-height: 56px;
-    box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    direction: ltr;
-}
-
-.document-detail-drawer__title {
-    flex: 1;
-    min-width: 0;
-    padding-right: 4px;
-    text-align: left;
-}
-
-.document-detail-drawer__close {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    border-radius: 6px;
-    align-self: center;
-}
-
-.document-detail-drawer__title h4 {
-    margin: 0;
-    line-height: 1.2;
-}
-
-.document-detail-drawer__title small {
-    display: block;
-    margin-top: 4px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 12px;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.document-detail-drawer__section-card {
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #f8fafc;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.document-detail-drawer__section-card:last-child {
-    margin-bottom: 0;
-}
-
-.document-detail-drawer__section-card-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eef2f7;
-}
-
-.document-detail-drawer__section-card-header .section-title {
-    margin-bottom: 2px;
-}
-
-.document-detail-drawer__section-card-header .section-subtitle {
-    margin-bottom: 0;
-}
-
-.document-detail-drawer__status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ebeef5;
-    background: #f8fafc;
-}
-
-.document-detail-drawer__doc-badge {
-    font-size: 11px;
-    font-weight: 600;
-}
 
 .document-detail-drawer__doc-badge--invoice {
     background-color: color-mix(in srgb, var(--warning) 10%, #ffffff) !important;
@@ -758,123 +756,5 @@ export default {
     background-color: color-mix(in srgb, var(--info) 10%, #ffffff) !important;
     border: 1px solid var(--info);
     color: var(--info);
-}
-
-.document-detail-drawer__doc-badge--default {
-    background-color: #eef2f7;
-    border: 1px solid #cbd5e1;
-    color: #475569;
-}
-
-.document-detail-drawer__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px 16px;
-}
-
-.document-detail-drawer__body >>> .el-tabs__header {
-    margin-bottom: 12px;
-}
-
-.document-detail-drawer__body >>> .el-tabs__nav-wrap::after {
-    height: 1px;
-    background-color: #ebeef5;
-}
-
-.document-detail-drawer__body >>> .el-tabs__item {
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-}
-
-.document-detail-drawer__body >>> .el-tabs__item.is-active {
-    color: #1f3a8a;
-}
-
-.document-detail-drawer__body >>> .el-tabs__active-bar {
-    background-color: #1f3a8a;
-}
-
-.document-detail-drawer__list {
-    margin: 0 0 8px;
-}
-
-.document-detail-drawer__list dt {
-    font-size: 12px;
-    color: #909399;
-    margin-bottom: 4px;
-}
-
-.document-detail-drawer__list dd {
-    margin: 0 0 14px;
-    font-weight: 500;
-    color: #303133;
-}
-
-.document-detail-drawer__items-table thead th {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.document-detail-drawer__items-table td {
-    vertical-align: middle;
-    border-top: 1px solid #eef2f7;
-    font-size: 13px;
-}
-
-.document-detail-drawer__footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 14px 20px;
-    border-top: 1px solid #ebeef5;
-    background: #fff;
-}
-
-.section-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f3a8a;
-    margin-bottom: 0.2rem;
-}
-
-.section-subtitle {
-    color: #6b7280;
-    font-size: 0.86rem;
-    margin-bottom: 0.5rem;
-}
-</style>
-
-<style>
-.document-detail-drawer.el-drawer .el-drawer__body {
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-}
-
-.document-detail-drawer .theme-sidebar-header.document-detail-drawer__header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-    overflow: hidden;
-    padding: 14px 16px;
-    gap: 12px;
-    direction: ltr;
-}
-
-.document-detail-drawer .document-detail-drawer__close {
-    position: static;
-    top: auto;
-    right: auto;
-    margin: 0;
-    transform: none;
 }
 </style>

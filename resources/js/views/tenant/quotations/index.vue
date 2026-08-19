@@ -120,10 +120,8 @@
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.seller_name }}</td>
                             <td v-if="col.visible && col.key === 'customer'" :key="col.key">
                                 <span
-                                    class="quotation-customer-link"
                                     role="button"
                                     tabindex="0"
-                                    @click="clickDetail(row)"
                                     @keyup.enter.prevent="clickDetail(row)"
                                 >{{ row.customer_name }}</span>
                                 <br /><small v-text="row.customer_number"></small>
@@ -143,7 +141,12 @@
                                     </el-select>
                                 </template>
                             </td>
-                            <td v-if="col.visible && col.key === 'identifier'" :key="col.key">{{ row.identifier }}</td>
+                            <td v-if="col.visible && col.key === 'identifier'" :key="col.key">
+                                <span class="quotation-customer-link" @click="clickDetail(row)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M13 5h8" /><path d="M13 9h5" /><path d="M13 15h8" /><path d="M13 19h5" /><path d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /></svg>
+                                    {{ row.identifier }}
+                                </span>
+                            </td>
                             <td v-if="col.visible && col.key === 'source'" :key="col.key">
                                 <el-tag
                                     size="mini"
@@ -752,7 +755,7 @@ export default {
 .quotation-customer-link {
     color: inherit;
     cursor: pointer;
-    text-decoration: underline;
+    text-decoration: none;
 }
 .quotation-customer-link:hover,
 .quotation-customer-link:focus {

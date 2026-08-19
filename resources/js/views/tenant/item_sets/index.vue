@@ -89,7 +89,7 @@
                         <td>{{ row.unit_type_id }}</td>
                         <td>
                             <span
-                                class="item-set-name-link"
+                                class="customer-link"
                                 role="button"
                                 tabindex="0"
                                 @click="clickDetail(row)"

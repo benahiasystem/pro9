@@ -4,47 +4,44 @@
         :with-header="false"
         size="560px"
         direction="rtl"
-        custom-class="purchase-quotation-detail-drawer"
+        custom-class="detail-drawer purchase-quotation-detail-drawer"
         append-to-body
         @closed="handleClosed"
     >
-        <div class="purchase-quotation-detail-drawer__inner" v-loading="loading">
-            <div class="theme-sidebar-header purchase-quotation-detail-drawer__header">
-                <div class="purchase-quotation-detail-drawer__title">
-                    <h4>Detalle de la solicitud</h4>
+        <div class="detail-drawer__inner purchase-quotation-detail-drawer__inner" v-loading="loading">
+            <div class="theme-sidebar-header detail-drawer__header purchase-quotation-detail-drawer__header">
+                <div class="detail-drawer__title purchase-quotation-detail-drawer__title">
+                    <h5>Detalle de la solicitud</h5>
                     <small v-if="record">{{ quotationIdentifier }}</small>
                 </div>
-                <button
-                    type="button"
-                    class="close-theme-sidebar purchase-quotation-detail-drawer__close"
-                    aria-label="Cerrar panel"
-                    @click="visibleDrawer = false"
-                >
-                    <i class="el-icon-close"></i>
-                </button>
+                <a class="close-btn detail-drawer__close" href="#" aria-label="Cerrar panel" @click.prevent="visibleDrawer = false">
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                </a>
             </div>
 
             <template v-if="record">
-                <div class="purchase-quotation-detail-drawer__status-bar">
+                <div class="detail-drawer__status-bar purchase-quotation-detail-drawer__status-bar">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span class="badge" :class="stateBadgeClass">
                             {{ stateLabel }}
                         </span>
+                        <span v-if="hasPurchaseOrders" class="badge badge-info">OC generada</span>
                         <small class="text-muted">{{ issueDateLabel }}</small>
                     </div>
                     <small class="text-muted">#{{ record.id }}</small>
                 </div>
 
-                <div class="purchase-quotation-detail-drawer__body">
+                <div class="detail-drawer__body purchase-quotation-detail-drawer__body">
                     <el-tabs v-model="activeTab">
                         <el-tab-pane label="Productos" name="products">
-                            <div class="purchase-quotation-detail-drawer__section-card">
-                                <div class="purchase-quotation-detail-drawer__section-card-header">
+                            <div class="detail-drawer__section-card purchase-quotation-detail-drawer__section-card">
+                                <div class="detail-drawer__section-card-header purchase-quotation-detail-drawer__section-card-header">
                                     <h5 class="section-title">Productos</h5>
                                     <p class="section-subtitle">Detalle de ítems solicitados en la cotización</p>
                                 </div>
+
                                 <div v-if="lineItems.length" class="table-responsive">
-                                    <table class="table table-sm purchase-quotation-detail-drawer__items-table mb-0">
+                                    <table class="table table-sm detail-drawer__items-table purchase-quotation-detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Producto</th>
@@ -69,8 +66,8 @@
                             :label="supplierRows.length > 1 ? 'Proveedores' : 'Proveedor'"
                             name="supplier"
                         >
-                            <div class="purchase-quotation-detail-drawer__section-card">
-                                <div class="purchase-quotation-detail-drawer__section-card-header">
+                            <div class="detail-drawer__customer-section">
+                                <div class="detail-drawer__customer-heading">
                                     <h5 class="section-title">Proveedor{{ supplierRows.length > 1 ? 'es' : '' }}</h5>
                                     <p class="section-subtitle">
                                         Datos del{{ supplierRows.length > 1 ? 's' : '' }} proveedor{{ supplierRows.length > 1 ? 'es' : '' }} asociado{{ supplierRows.length > 1 ? 's' : '' }} a la solicitud
@@ -82,21 +79,33 @@
                                         v-for="(supplier, index) in supplierRows"
                                         :key="supplier.key || index"
                                         class="purchase-quotation-detail-drawer__supplier"
-                                        :class="{ 'purchase-quotation-detail-drawer__supplier--bordered': index > 0 }"
                                     >
-                                        <dl class="purchase-quotation-detail-drawer__list mb-0">
-                                            <dt>Nombre / Razón social</dt>
-                                            <dd>{{ supplier.name }}</dd>
+                                        <div class="detail-drawer__customer-summary">
+                                            <div class="detail-drawer__customer-avatar" aria-hidden="true">{{ supplier.initials }}</div>
+                                            <div class="detail-drawer__customer-identity">
+                                                <strong class="detail-drawer__customer-name">{{ supplier.name }}</strong>
+                                                <span v-if="supplier.documentType" class="detail-drawer__customer-badge">{{ supplier.documentType }}</span>
+                                            </div>
+                                        </div>
 
-                                            <dt>Documento</dt>
-                                            <dd>{{ supplier.document }}</dd>
-
-                                            <dt v-if="supplier.email">Correo</dt>
-                                            <dd v-if="supplier.email">{{ supplier.email }}</dd>
-
-                                            <dt v-if="supplier.telephone">Teléfono</dt>
-                                            <dd v-if="supplier.telephone">{{ supplier.telephone }}</dd>
-                                        </dl>
+                                        <div class="detail-drawer__customer-grid">
+                                            <div class="detail-drawer__customer-field">
+                                                <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-id"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 8l2 0"/><path d="M15 12l2 0"/><path d="M7 16l10 0"/></svg></span>
+                                                <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Documento</span><strong>{{ supplier.number }}</strong></div>
+                                            </div>
+                                            <div class="detail-drawer__customer-field">
+                                                <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-phone"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg></span>
+                                                <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Teléfono</span><strong>{{ supplier.telephone || '—' }}</strong></div>
+                                            </div>
+                                            <div class="detail-drawer__customer-field">
+                                                <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M3 7l9 6l9 -6"/></svg></span>
+                                                <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Correo</span><strong>{{ supplier.email || '—' }}</strong></div>
+                                            </div>
+                                            <div v-if="supplier.address" class="detail-drawer__customer-field">
+                                                <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-map-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M12.783 21.326a2 2 0 0 1 -2.196 -.426l-4.244 -4.243a8 8 0 1 1 13.657 -5.62"/><path d="M15 19l2 2l4 -4"/></svg></span>
+                                                <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Dirección</span><strong>{{ supplier.address }}</strong></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </template>
                                 <p v-else class="text-muted small mb-0">Sin proveedores registrados.</p>
@@ -104,36 +113,41 @@
                         </el-tab-pane>
 
                         <el-tab-pane label="Información operativa" name="operational">
-                            <div class="purchase-quotation-detail-drawer__section-card">
-                                <div class="purchase-quotation-detail-drawer__section-card-header">
+                            <div class="detail-drawer__details-section">
+                                <div class="detail-drawer__details-heading">
                                     <h5 class="section-title">Información operativa</h5>
                                     <p class="section-subtitle">Establecimiento, estado y origen de la solicitud</p>
                                 </div>
-                                <dl class="purchase-quotation-detail-drawer__list">
-                                    <dt>Establecimiento</dt>
-                                    <dd>{{ establishmentLabel }}</dd>
 
-                                    <dt>Registrado por</dt>
-                                    <dd>{{ userLabel }}</dd>
+                                <div class="detail-drawer__details-grid">
+                                    <div class="detail-drawer__details-card detail-drawer__details-card--wide"><span class="detail-drawer__details-label">Establecimiento</span><p>{{ establishmentLabel }}</p></div>
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Fecha de emisión</span><strong>{{ issueDateLabel }}</strong></div>
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Estado</span><strong>{{ stateLabel }}</strong></div>
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Registrado por</span><strong>{{ userLabel }}</strong></div>
+                                    <div class="detail-drawer__details-card"><span class="detail-drawer__details-label">Órdenes de compra</span><strong>{{ purchaseOrdersLabel }}</strong></div>
+                                </div>
 
-                                    <dt>Estado</dt>
-                                    <dd>{{ stateLabel }}</dd>
-
-                                    <dt v-if="hasPurchaseOrdersLabel">Órdenes de compra</dt>
-                                    <dd v-if="hasPurchaseOrdersLabel">{{ hasPurchaseOrdersLabel }}</dd>
-                                </dl>
+                                <div v-if="hasPurchaseOrders" class="detail-drawer__operation-note detail-drawer__operation-note--observation">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-alert-triangle" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9v4"/><path d="M10.363 3.591l-8.106 14.54a1.914 1.914 0 0 0 1.636 2.869h16.214a1.914 1.914 0 0 0 1.636 -2.869l-8.106 -14.54a1.914 1.914 0 0 0 -3.274 0z"/><path d="M12 16h.01"/></svg>
+                                    <span>La solicitud ya tiene órdenes de compra generadas, por eso no puede editarse ni volver a generarse.</span>
+                                </div>
+                                <div v-else class="detail-drawer__operation-note">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0 -18"/></svg>
+                                    <span>La solicitud de cotización no afecta el stock. El inventario se actualiza recién cuando se registra la compra.</span>
+                                </div>
                             </div>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
 
-                <div class="purchase-quotation-detail-drawer__footer">
+                <div class="detail-drawer__footer detail-drawer__footer--actions detail-drawer__footer--wrap purchase-quotation-detail-drawer__footer">
                     <button
                         type="button"
                         class="btn btn-outline-info btn-sm"
                         @click="clickDownloadPdf"
                     >
-                        <i class="fa fa-file-pdf"></i> Descargar PDF
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-type-pdf" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" /><path d="M5 18h1.5a1.5 1.5 0 0 0 0 -3h-1.5v6" /><path d="M17 18h2" /><path d="M20 15h-3v6" /><path d="M11 15v6h1a2 2 0 0 0 2 -2v-2a2 2 0 0 0 -2 -2h-1" /></svg>
+                        Descargar PDF
                     </button>
                     <button
                         v-if="canEdit"
@@ -141,7 +155,8 @@
                         class="btn btn-custom btn-sm"
                         @click="$emit('edit', record.id)"
                     >
-                        <i class="fa fa-edit"></i> Editar
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                        Editar
                     </button>
                     <button
                         v-if="canGenerate"
@@ -149,14 +164,16 @@
                         class="btn btn-outline-primary btn-sm"
                         @click="$emit('generate', record.id)"
                     >
-                        <i class="fa fa-shopping-bag"></i> Generar OC
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6.331 8h11.339a2 2 0 0 1 1.977 2.304l-1.255 8.152a3 3 0 0 1 -2.966 2.544h-6.852a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304" /><path d="M9 11v-5a3 3 0 0 1 6 0v5" /></svg>
+                        Generar OC
                     </button>
                     <button
                         type="button"
                         class="btn btn-outline-secondary btn-sm"
                         @click="$emit('options', record.id)"
                     >
-                        <i class="fa fa-cog"></i> Opciones
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                        Opciones
                     </button>
                 </div>
             </template>
@@ -250,26 +267,24 @@ export default {
         supplierRows() {
             return this.normalizeSuppliers(this.record?.suppliers).map((supplier, index) => {
                 const number = supplier.number || null;
-                const type =
+                const documentType =
                     supplier.identity_document_type_description
                     || supplier.identity_document_type?.description
                     || supplier.document_type
                     || this.inferDocumentType(number)
                     || null;
 
-                let document = '—';
-                if (number && type) {
-                    document = `${number} (${type})`;
-                } else if (number) {
-                    document = number;
-                }
+                const name = supplier.name || supplier.description || '—';
 
                 return {
                     key: supplier.supplier_id || index,
-                    name: supplier.name || supplier.description || '—',
-                    document,
+                    name,
+                    initials: this.buildInitials(name),
+                    number: number || '—',
+                    documentType,
                     email: supplier.email || null,
-                    telephone: supplier.telephone || null
+                    telephone: supplier.telephone || null,
+                    address: supplier.address || supplier.direccion || null
                 };
             });
         },
@@ -311,9 +326,9 @@ export default {
 
             return false;
         },
-        hasPurchaseOrdersLabel() {
+        purchaseOrdersLabel() {
             if (!this.hasPurchaseOrders) {
-                return null;
+                return 'Sin generar';
             }
 
             const count = Array.isArray(this.record?.purchase_orders)
@@ -463,6 +478,22 @@ export default {
 
             return [];
         },
+        buildInitials(name) {
+            const words = String(name || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
+
+            if (!words.length || words[0] === '—') {
+                return 'PR';
+            }
+
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
         inferDocumentType(number) {
             if (!number) {
                 return null;
@@ -514,221 +545,10 @@ export default {
 </script>
 
 <style scoped>
-.purchase-quotation-detail-drawer__inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #fff;
-}
 
-.purchase-quotation-detail-drawer__header {
-    flex-shrink: 0;
-    width: 100%;
-    min-height: 56px;
-    box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    direction: ltr;
-}
-
-.purchase-quotation-detail-drawer__title {
-    flex: 1;
-    min-width: 0;
-    padding-right: 4px;
-    text-align: left;
-}
-
-.purchase-quotation-detail-drawer__close {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    border-radius: 6px;
-    align-self: center;
-}
-
-.purchase-quotation-detail-drawer__title h4 {
-    margin: 0;
-    line-height: 1.2;
-}
-
-.purchase-quotation-detail-drawer__title small {
-    display: block;
-    margin-top: 4px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 12px;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.purchase-quotation-detail-drawer__section-card {
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #f8fafc;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.purchase-quotation-detail-drawer__section-card:last-child {
-    margin-bottom: 0;
-}
-
-.purchase-quotation-detail-drawer__section-card-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eef2f7;
-}
-
-.purchase-quotation-detail-drawer__section-card-header .section-title {
-    margin-bottom: 2px;
-}
-
-.purchase-quotation-detail-drawer__section-card-header .section-subtitle {
-    margin-bottom: 0;
-}
-
-.purchase-quotation-detail-drawer__status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ebeef5;
-    background: #f8fafc;
-}
-
-.purchase-quotation-detail-drawer__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px 16px;
-}
-
-.purchase-quotation-detail-drawer__body >>> .el-tabs__header {
-    margin-bottom: 12px;
-}
-
-.purchase-quotation-detail-drawer__body >>> .el-tabs__nav-wrap::after {
-    height: 1px;
-    background-color: #ebeef5;
-}
-
-.purchase-quotation-detail-drawer__body >>> .el-tabs__item {
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-}
-
-.purchase-quotation-detail-drawer__body >>> .el-tabs__item.is-active {
-    color: #1f3a8a;
-}
-
-.purchase-quotation-detail-drawer__body >>> .el-tabs__active-bar {
-    background-color: #1f3a8a;
-}
-
-.purchase-quotation-detail-drawer__list {
-    margin: 0 0 8px;
-}
-
-.purchase-quotation-detail-drawer__list dt {
-    font-size: 12px;
-    color: #909399;
-    margin-bottom: 4px;
-}
-
-.purchase-quotation-detail-drawer__list dd {
-    margin: 0 0 14px;
-    font-weight: 500;
-    color: #303133;
-}
-
-.purchase-quotation-detail-drawer__list dd:last-child {
-    margin-bottom: 0;
-}
-
-.purchase-quotation-detail-drawer__supplier--bordered {
-    margin-top: 14px;
-    padding-top: 14px;
+.purchase-quotation-detail-drawer__supplier + .purchase-quotation-detail-drawer__supplier {
+    margin-top: 18px;
+    padding-top: 18px;
     border-top: 1px solid #eef2f7;
-}
-
-.purchase-quotation-detail-drawer__items-table thead th {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.purchase-quotation-detail-drawer__items-table td {
-    vertical-align: middle;
-    border-top: 1px solid #eef2f7;
-    font-size: 13px;
-}
-
-.purchase-quotation-detail-drawer__footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 14px 20px;
-    border-top: 1px solid #ebeef5;
-    background: #fff;
-}
-
-.section-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f3a8a;
-    margin-bottom: 0.2rem;
-}
-
-.section-subtitle {
-    color: #6b7280;
-    font-size: 0.86rem;
-    margin-bottom: 0.5rem;
-}
-</style>
-
-<style>
-.purchase-quotation-detail-drawer.el-drawer .el-drawer__body {
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-}
-
-.purchase-quotation-detail-drawer .theme-sidebar-header.purchase-quotation-detail-drawer__header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-    overflow: hidden;
-    padding: 14px 16px;
-    gap: 12px;
-    direction: ltr;
-}
-
-.purchase-quotation-detail-drawer .purchase-quotation-detail-drawer__close {
-    position: static;
-    top: auto;
-    right: auto;
-    margin: 0;
-    transform: none;
 }
 </style>

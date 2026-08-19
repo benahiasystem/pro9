@@ -4,32 +4,27 @@
         :with-header="false"
         size="560px"
         direction="rtl"
-        custom-class="purchase-detail-drawer"
+        custom-class="detail-drawer purchase-detail-drawer"
         append-to-body
         @closed="handleClosed"
     >
-        <div class="purchase-detail-drawer__inner" v-loading="loading">
-            <div class="theme-sidebar-header purchase-detail-drawer__header">
-                <div class="purchase-detail-drawer__title">
-                    <h4>Detalle de la compra</h4>
+        <div class="detail-drawer__inner purchase-detail-drawer__inner" v-loading="loading">
+            <div class="theme-sidebar-header detail-drawer__header purchase-detail-drawer__header">
+                <div class="detail-drawer__title purchase-detail-drawer__title">
+                    <h5>Detalle de la compra</h5>
                     <small v-if="record">{{ purchaseIdentifier }}</small>
                 </div>
-                <button
-                    type="button"
-                    class="close-theme-sidebar purchase-detail-drawer__close"
-                    aria-label="Cerrar panel"
-                    @click="visibleDrawer = false"
-                >
-                    <i class="el-icon-close"></i>
-                </button>
+                <a class="close-btn detail-drawer__close" href="#" aria-label="Cerrar panel" @click.prevent="visibleDrawer = false">
+                    <svg  xmlns="http://www.w3.org/2000/svg"  width="20"  height="20"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                </a>
             </div>
 
             <template v-if="record">
-                <div class="purchase-detail-drawer__status-bar">
+                <div class="detail-drawer__status-bar purchase-detail-drawer__status-bar">
                     <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span
                             v-if="documentTypeLabel"
-                            class="badge purchase-detail-drawer__doc-badge purchase-detail-drawer__doc-badge--default"
+                            class="badge detail-drawer__doc-badge purchase-detail-drawer__doc-badge detail-drawer__doc-badge--default purchase-detail-drawer__doc-badge--default"
                         >
                             {{ documentTypeLabel }}
                         </span>
@@ -48,16 +43,16 @@
                     <small class="text-muted">#{{ record.id }}</small>
                 </div>
 
-                <div class="purchase-detail-drawer__body">
+                <div class="detail-drawer__body purchase-detail-drawer__body">
                     <el-tabs v-model="activeTab">
                         <el-tab-pane label="Productos" name="products">
-                            <div class="purchase-detail-drawer__section-card">
-                                <div class="purchase-detail-drawer__section-card-header">
+                            <div class="detail-drawer__section-card purchase-detail-drawer__section-card">
+                                <div class="detail-drawer__section-card-header purchase-detail-drawer__section-card-header">
                                     <h5 class="section-title">Productos</h5>
                                     <p class="section-subtitle">Detalle de ítems incluidos en la compra</p>
                                 </div>
                                 <div v-if="lineItems.length" class="table-responsive">
-                                    <table class="table table-sm purchase-detail-drawer__items-table mb-0">
+                                    <table class="table table-sm detail-drawer__items-table purchase-detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Producto</th>
@@ -81,84 +76,85 @@
                         </el-tab-pane>
 
                         <el-tab-pane label="Proveedor" name="supplier">
-                            <div class="purchase-detail-drawer__section-card">
-                                <div class="purchase-detail-drawer__section-card-header">
+                            <div class="detail-drawer__customer-section">
+                                <div class="detail-drawer__customer-heading">
                                     <h5 class="section-title">Proveedor</h5>
                                     <p class="section-subtitle">Datos del proveedor asociado a la compra</p>
                                 </div>
-                                <dl class="purchase-detail-drawer__list">
-                                    <dt>Nombre / Razón social</dt>
-                                    <dd>{{ supplierName }}</dd>
 
-                                    <dt>Documento</dt>
-                                    <dd>{{ supplierDocument }}</dd>
+                                <div class="detail-drawer__customer-summary">
+                                    <div class="detail-drawer__customer-avatar" aria-hidden="true">{{ supplierInitials }}</div>
+                                    <div class="detail-drawer__customer-identity">
+                                        <strong class="detail-drawer__customer-name">{{ supplierName }}</strong>
+                                        <span v-if="supplierDocumentTypeLabel" class="detail-drawer__customer-badge">{{ supplierDocumentTypeLabel }}</span>
+                                    </div>
+                                </div>
 
-                                    <dt v-if="supplierTelephone">Teléfono</dt>
-                                    <dd v-if="supplierTelephone">{{ supplierTelephone }}</dd>
-
-                                    <dt v-if="supplierEmail">Correo</dt>
-                                    <dd v-if="supplierEmail">{{ supplierEmail }}</dd>
-                                </dl>
+                                <div class="detail-drawer__customer-grid">
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-id"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 4m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 8l2 0"/><path d="M15 12l2 0"/><path d="M7 16l10 0"/></svg></span>
+                                        <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Documento</span><strong>{{ supplierDocumentNumber }}</strong></div>
+                                    </div>
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-phone"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"/></svg></span>
+                                        <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Teléfono</span><strong>{{ supplierTelephone || '—' }}</strong></div>
+                                    </div>
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"/><path d="M3 7l9 6l9 -6"/></svg></span>
+                                        <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Correo</span><strong>{{ supplierEmail || '—' }}</strong></div>
+                                    </div>
+                                    <div class="detail-drawer__customer-field">
+                                        <span class="detail-drawer__customer-field-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-map-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0"/><path d="M12.783 21.326a2 2 0 0 1 -2.196 -.426l-4.244 -4.243a8 8 0 1 1 13.657 -5.62"/><path d="M15 19l2 2l4 -4"/></svg></span>
+                                        <div class="detail-drawer__customer-field-content"><span class="detail-drawer__customer-field-label">Dirección</span><strong>{{ supplierAddress }}</strong></div>
+                                    </div>
+                                </div>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Información operativa" name="operational">
-                            <div class="purchase-detail-drawer__section-card">
-                                <div class="purchase-detail-drawer__section-card-header">
+                            <div class="detail-drawer__operation-section">
+                                <div class="detail-drawer__operation-heading">
                                     <h5 class="section-title">Información operativa</h5>
                                     <p class="section-subtitle">Establecimiento, almacén y condiciones de la compra</p>
                                 </div>
-                                <dl class="purchase-detail-drawer__list">
-                                    <dt>Establecimiento</dt>
-                                    <dd>{{ establishmentLabel }}</dd>
 
-                                    <dt>Almacén</dt>
-                                    <dd>{{ warehouseLabel }}</dd>
+                                <div class="detail-drawer__operation-flow">
+                                    <div class="detail-drawer__operation-card"><span class="detail-drawer__operation-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l18 0"/><path d="M5 21v-14l8 -4v18"/><path d="M19 21v-10l-6 -4"/><path d="M9 9l0 .01"/><path d="M9 12l0 .01"/><path d="M9 15l0 .01"/><path d="M9 18l0 .01"/></svg></span><div class="detail-drawer__operation-card-content"><span class="detail-drawer__operation-label">Establecimiento</span><strong>{{ establishmentDisplayLabel }}</strong></div></div>
+                                    <span class="detail-drawer__operation-arrow" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-right"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg></span>
+                                    <div class="detail-drawer__operation-card"><span class="detail-drawer__operation-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-warehouse"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21v-13l9 -4l9 4v13"/><path d="M13 13h4v8h-10v-6h6"/><path d="M13 21v-9a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v3"/></svg></span><div class="detail-drawer__operation-card-content"><span class="detail-drawer__operation-label">Almacén / destino</span><strong>{{ warehouseLabel }}</strong></div></div>
+                                </div>
 
-                                    <dt>Condición de pago</dt>
-                                    <dd>{{ paymentConditionLabel }}</dd>
-
-                                    <dt v-if="record.purchase_order">Orden de compra</dt>
-                                    <dd v-if="record.purchase_order">
-                                        {{ record.purchase_order.prefix }}-{{ record.purchase_order.id }}
-                                    </dd>
-
-                                    <dt v-if="guideNumbers.length">Guías</dt>
-                                    <dd v-if="guideNumbers.length">{{ guideNumbers.join(', ') }}</dd>
-                                </dl>
+                                <div class="detail-drawer__operation-note"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/><path d="M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0 -18"/></svg><span>{{ inventoryMovementNote }}</span></div>
+                                <div class="detail-drawer__operation-note detail-drawer__operation-note--observation"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-credit-card" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5m0 3a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3z"/><path d="M3 10l18 0"/><path d="M7 15l.01 0"/><path d="M11 15l2 0"/></svg><span>Condición de pago: {{ paymentConditionLabel }}</span></div>
+                                <div v-if="record.purchase_order" class="detail-drawer__operation-note"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-description" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"/><path d="M9 17h6"/><path d="M9 13h6"/></svg><span>Orden de compra: {{ record.purchase_order.prefix }}-{{ record.purchase_order.id }}</span></div>
+                                <div v-if="guideNumbers.length" class="detail-drawer__operation-note"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck-delivery" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 17a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M15 17a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M5 17h-2v-4m-1 -5h11v9m-4 0h6m4 0h2v-6l-3 -5h-5"/><path d="M3 9l4 0"/></svg><span>Guías asociadas: {{ guideNumbers.join(', ') }}</span></div>
                             </div>
                         </el-tab-pane>
 
                         <el-tab-pane label="Totales y pagos" name="totals">
-                            <div class="purchase-detail-drawer__section-card">
-                                <div class="purchase-detail-drawer__section-card-header">
+                            <div class="detail-drawer__totals-section">
+                                <div class="detail-drawer__totals-heading">
                                     <h5 class="section-title">Totales y pagos</h5>
                                     <p class="section-subtitle">Moneda, importes gravados, saldo e historial de pagos</p>
                                 </div>
-                                <dl class="purchase-detail-drawer__list">
-                                    <dt>Moneda</dt>
-                                    <dd>{{ currencyLabel }}</dd>
 
-                                    <dt>Gravado</dt>
-                                    <dd>{{ formatMoney(record.total_taxed) }}</dd>
+                                <div class="detail-drawer__totals-summary">
+                                    <div class="detail-drawer__totals-summary-card"><span class="detail-drawer__totals-summary-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-coin"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 6m-6 0a6 3 0 1 0 12 0a6 3 0 1 0 -12 0"/><path d="M6 6v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/><path d="M6 12v6c0 1.657 2.686 3 6 3s6 -1.343 6 -3v-6"/></svg></span><div class="detail-drawer__totals-summary-content"><span class="detail-drawer__totals-label">Moneda</span><strong>{{ currencyLabel }}</strong></div></div>
+                                    <div class="detail-drawer__totals-summary-card"><span class="detail-drawer__totals-summary-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 9m0 2a2 2 0 1 0 0 4a2 2 0 0 0 0 -4"/><path d="M17 9m0 2a2 2 0 1 0 0 4a2 2 0 0 0 0 -4"/><path d="M14 15a2 2 0 0 0 -4 0"/><path d="M6 6h12a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2"/></svg></span><div class="detail-drawer__totals-summary-content"><span class="detail-drawer__totals-label">Pagado</span><strong>{{ formatMoney(totalPaid) }}</strong></div></div>
+                                </div>
 
-                                    <dt>IGV</dt>
-                                    <dd>{{ formatMoney(record.total_igv) }}</dd>
+                                <div class="detail-drawer__totals-card">
+                                    <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-receipt"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 21v-16a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v16l-3 -2l-2 2l-2 -2l-2 2l-2 -2z"/><path d="M9 7l6 0"/><path d="M9 11l6 0"/></svg></span><span class="detail-drawer__totals-row-label">Op. gravada</span><strong>{{ formatMoney(record.total_taxed) }}</strong></div>
+                                    <div class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-percentage"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 17m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M7 7m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"/><path d="M6 18l12 -12"/></svg></span><span class="detail-drawer__totals-row-label">IGV</span><strong>{{ formatMoney(record.total_igv) }}</strong></div>
+                                    <div v-if="perceptionAmount > 0" class="detail-drawer__totals-row"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14"/><path d="M5 12l14 0"/></svg></span><span class="detail-drawer__totals-row-label">Percepción</span><strong>{{ formatMoney(perceptionAmount) }}</strong></div>
+                                    <div class="detail-drawer__totals-row detail-drawer__totals-row--balance"><span class="detail-drawer__totals-row-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-wallet"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M17 8v-3a1 1 0 0 0 -1 -1h-10a2 2 0 0 0 0 4h12a1 1 0 0 1 1 1v3m0 4v3a1 1 0 0 1 -1 1h-12a2 2 0 0 1 -2 -2v-12"/><path d="M20 12v4h-4a2 2 0 0 1 0 -4z"/></svg></span><span class="detail-drawer__totals-row-label">Saldo pendiente</span><span class="detail-drawer__totals-status" :class="balanceIsPaid ? 'detail-drawer__totals-status--paid' : 'detail-drawer__totals-status--pending'"><svg v-if="balanceIsPaid" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10"/></svg>{{ balanceStatusLabel }}</span></div>
+                                    <div class="detail-drawer__totals-total"><span>Total</span><strong><small>{{ currencySymbol }}</small> {{ formatMoney(totalAmount, false) }}</strong></div>
+                                </div>
 
-                                    <dt v-if="parseAmount(record.total_perception) > 0">Percepción</dt>
-                                    <dd v-if="parseAmount(record.total_perception) > 0">{{ formatMoney(record.total_perception) }}</dd>
-
-                                    <dt>Total</dt>
-                                    <dd class="text-primary fw-bold">{{ formatMoney(totalAmount) }}</dd>
-
-                                    <dt>Saldo</dt>
-                                    <dd :class="{ 'text-warning fw-bold': balanceAmount > 0, 'text-success': balanceAmount === 0 }">
-                                        {{ formatMoney(balanceAmount) }}
-                                    </dd>
-                                </dl>
-
-                                <div v-if="paymentRows.length" class="table-responsive mt-2">
-                                    <table class="table table-sm purchase-detail-drawer__items-table mb-0">
+                                <div class="detail-drawer__section-card mt-3 mb-0">
+                                    <div class="detail-drawer__section-card-header"><h5 class="section-title">Pagos registrados</h5><p class="section-subtitle">Detalle de fechas, métodos y referencias</p></div>
+                                    <div v-if="paymentRows.length" class="table-responsive">
+                                    <table class="table table-sm detail-drawer__items-table purchase-detail-drawer__items-table mb-0">
                                         <thead>
                                             <tr>
                                                 <th>Fecha</th>
@@ -179,21 +175,23 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                    </div>
+                                    <p v-else class="text-muted small mb-0">Sin pagos registrados.</p>
                                 </div>
-                                <p v-else class="text-muted small mb-0">Sin pagos registrados.</p>
                             </div>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
 
-                <div class="purchase-detail-drawer__footer">
+                <div class="detail-drawer__footer detail-drawer__footer--actions detail-drawer__footer--wrap purchase-detail-drawer__footer">
                     <button
                         v-if="canEdit"
                         type="button"
                         class="btn btn-custom btn-sm"
                         @click="$emit('edit', record.id)"
                     >
-                        <i class="fa fa-edit"></i> Editar compra
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                        Editar compra
                     </button>
                     <button
                         v-if="canGuide"
@@ -201,7 +199,8 @@
                         class="btn btn-outline-secondary btn-sm"
                         @click="$emit('guide', record.id)"
                     >
-                        <i class="fa fa-truck"></i> Guía
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck-delivery" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M15 17a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /><path d="M3 9l4 0" /></svg>
+                        Guía
                     </button>
                     <button
                         v-if="canPayments"
@@ -209,7 +208,7 @@
                         class="btn btn-outline-primary btn-sm"
                         @click="$emit('payments', record.id)"
                     >
-                        <i class="fa fa-money-bill-wave"></i> Pagos
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash-banknote" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M3 8a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2l0 -8" /><path d="M18 12h.01" /><path d="M6 12h.01" /></svg>Pagos
                     </button>
                     <button
                         v-if="canAnulate"
@@ -218,7 +217,8 @@
                         :disabled="voiding"
                         @click="clickAnulate"
                     >
-                        <i class="fa fa-times-circle"></i> Anular compra
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-x" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M10 10l4 4m0 -4l-4 4" /></svg>
+                        Anular compra
                     </button>
                 </div>
             </template>
@@ -324,64 +324,104 @@ export default {
         issueDateLabel() {
             return this.formatDisplayDate(this.record?.date_of_issue);
         },
-        supplierName() {
-            return this.record?.supplier_name || this.parseSupplier(this.record?.supplier)?.name || '—';
+        supplierData() {
+            return this.parseSupplier(this.record?.supplier) || {};
         },
-        supplierDocument() {
-            const supplier = this.parseSupplier(this.record?.supplier);
-            const number = supplier?.number || this.record?.supplier_number || null;
-            const type =
-                supplier?.identity_document_type?.description
-                || supplier?.document_type
-                || this.record?.supplier_identity_document_type_description
-                || null;
+        supplierName() {
+            return this.record?.supplier_name || this.supplierData.name || '—';
+        },
+        supplierInitials() {
+            const words = String(this.supplierName || '')
+                .trim()
+                .split(/\s+/)
+                .filter(Boolean);
 
-            if (number && type) {
-                return `${number} (${type})`;
+            if (!words.length) {
+                return 'PR';
             }
 
-            return number || '—';
+            const initials = words.length === 1
+                ? words[0].slice(0, 2)
+                : `${words[0][0]}${words[words.length - 1][0]}`;
+
+            return initials.toUpperCase();
+        },
+        supplierDocumentNumber() {
+            return this.supplierData.number || this.record?.supplier_number || '—';
+        },
+        supplierDocumentTypeLabel() {
+            return this.supplierData.identity_document_type?.description
+                || this.supplierData.document_type
+                || this.record?.supplier_identity_document_type_description
+                || null;
         },
         supplierTelephone() {
             return this.record?.supplier_telephone
-                || this.parseSupplier(this.record?.supplier)?.telephone
+                || this.supplierData.telephone
                 || null;
         },
         supplierEmail() {
             return this.record?.supplier_email
-                || this.parseSupplier(this.record?.supplier)?.email
+                || this.supplierData.email
                 || null;
         },
-        establishmentLabel() {
+        supplierAddress() {
+            return this.supplierData.address
+                || this.supplierData.direccion
+                || '—';
+        },
+        establishmentData() {
             const establishment = this.record?.establishment;
 
             if (!establishment) {
-                if (this.record?.establishment_id) {
-                    return `Establecimiento #${this.record.establishment_id}`;
-                }
-
-                return '—';
+                return null;
             }
 
             if (typeof establishment === 'string') {
                 try {
-                    const parsed = JSON.parse(establishment);
-                    return parsed.description || parsed.address || '—';
+                    return JSON.parse(establishment);
                 } catch (error) {
-                    return establishment;
+                    return { description: establishment };
                 }
             }
 
-            if (establishment.description) {
-                return establishment.description;
+            return establishment;
+        },
+        establishmentLabel() {
+            const establishment = this.establishmentData;
+            const values = [establishment?.description, establishment?.address];
+            const label = values.find(value => this.hasDisplayValue(value));
+
+            if (label) {
+                return label;
             }
 
-            const parts = [establishment.code, establishment.address].filter(Boolean);
-            return parts.length ? parts.join(' — ') : '—';
+            return this.record?.establishment_id
+                ? `Establecimiento #${this.record.establishment_id}`
+                : '—';
+        },
+        establishmentDisplayLabel() {
+            const establishment = this.establishmentData;
+            if (!establishment) {
+                return this.establishmentLabel;
+            }
+
+            const name = [establishment.description, establishment.address]
+                .find(value => this.hasDisplayValue(value));
+
+            return [establishment.code, name]
+                .filter(value => this.hasDisplayValue(value))
+                .join(' — ') || this.establishmentLabel;
         },
         warehouseLabel() {
             if (Array.isArray(this.record?.warehouses) && this.record.warehouses.length) {
-                return this.record.warehouses.map(warehouse => warehouse.description).join(', ');
+                const descriptions = this.record.warehouses
+                    .map(warehouse => warehouse.description)
+                    .filter(value => this.hasDisplayValue(value));
+
+                if (descriptions.length) {
+                    return descriptions.join(', ');
+                }
             }
 
             const warehouseNames = new Set();
@@ -396,7 +436,29 @@ export default {
                 return Array.from(warehouseNames).join(', ');
             }
 
-            return '—';
+            const warehouseIds = new Set(
+                this.lineItems
+                    .map(item => item.warehouse_id)
+                    .filter(Boolean)
+                    .map(String)
+            );
+
+            if (warehouseIds.size === 1) {
+                return `Almacén #${Array.from(warehouseIds)[0]}`;
+            }
+
+            if (warehouseIds.size > 1) {
+                return `${warehouseIds.size} almacenes asignados`;
+            }
+
+            return 'Almacén predeterminado';
+        },
+        inventoryMovementNote() {
+            if (String(this.record?.state_type_id || '') === '11') {
+                return 'Esta compra fue anulada. El sistema registró la salida de las cantidades ingresadas y el movimiento correspondiente en kardex.';
+            }
+
+            return `Al registrar esta compra, el sistema ingresó las cantidades a ${this.warehouseLabel.toLowerCase()} y generó los movimientos de kardex correspondientes.`;
         },
         paymentConditionLabel() {
             const condition = this.record?.payment_condition;
@@ -444,6 +506,9 @@ export default {
 
             return total;
         },
+        perceptionAmount() {
+            return this.parseAmount(this.record?.total_perception);
+        },
         totalPaid() {
             return this.paymentRows.reduce((sum, payment) => sum + this.parseAmount(payment.payment), 0);
         },
@@ -453,6 +518,13 @@ export default {
             }
 
             return Math.max(0, this.totalAmount - this.totalPaid);
+        },
+        balanceIsPaid() {
+            return this.balanceAmount < 0.01;
+        },
+        balanceStatusLabel() {
+            const status = this.balanceIsPaid ? 'Pagado' : 'Pendiente';
+            return `${this.formatMoney(this.balanceAmount)} · ${status}`;
         },
         paymentRows() {
             return Array.isArray(this.record?.payments) ? this.record.payments : [];
@@ -474,6 +546,7 @@ export default {
                     quantity,
                     unit_price: unitPrice,
                     subtotal,
+                    warehouse_id: row.warehouse_id || itemData?.warehouse_id || null,
                     warehouse_description: row.warehouse?.description || null
                 };
             });
@@ -512,6 +585,10 @@ export default {
         }
     },
     methods: {
+        hasDisplayValue(value) {
+            const normalized = String(value ?? '').trim();
+            return normalized !== '' && normalized !== '-' && normalized !== '—';
+        },
         openDrawer() {
             this.activeTab = 'products';
             this.applyInitialSnapshot();
@@ -744,224 +821,3 @@ export default {
     }
 };
 </script>
-
-<style scoped>
-.purchase-detail-drawer__inner {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #fff;
-}
-
-.purchase-detail-drawer__header {
-    flex-shrink: 0;
-    width: 100%;
-    min-height: 56px;
-    box-sizing: border-box;
-    overflow: hidden;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    direction: ltr;
-}
-
-.purchase-detail-drawer__title {
-    flex: 1;
-    min-width: 0;
-    padding-right: 4px;
-    text-align: left;
-}
-
-.purchase-detail-drawer__close {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    border-radius: 6px;
-    align-self: center;
-}
-
-.purchase-detail-drawer__title h4 {
-    margin: 0;
-    line-height: 1.2;
-}
-
-.purchase-detail-drawer__title small {
-    display: block;
-    margin-top: 4px;
-    color: rgba(255, 255, 255, 0.85);
-    font-size: 12px;
-    max-width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.purchase-detail-drawer__section-card {
-    padding: 14px 16px;
-    margin-bottom: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    background: #f8fafc;
-    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.purchase-detail-drawer__section-card:last-child {
-    margin-bottom: 0;
-}
-
-.purchase-detail-drawer__section-card-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eef2f7;
-}
-
-.purchase-detail-drawer__section-card-header .section-title {
-    margin-bottom: 2px;
-}
-
-.purchase-detail-drawer__section-card-header .section-subtitle {
-    margin-bottom: 0;
-}
-
-.purchase-detail-drawer__status-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ebeef5;
-    background: #f8fafc;
-}
-
-.purchase-detail-drawer__doc-badge {
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.purchase-detail-drawer__doc-badge--default {
-    background-color: #eef2f7;
-    border: 1px solid #cbd5e1;
-    color: #475569;
-}
-
-.purchase-detail-drawer__body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 12px 16px 16px;
-}
-
-.purchase-detail-drawer__body >>> .el-tabs__header {
-    margin-bottom: 12px;
-}
-
-.purchase-detail-drawer__body >>> .el-tabs__nav-wrap::after {
-    height: 1px;
-    background-color: #ebeef5;
-}
-
-.purchase-detail-drawer__body >>> .el-tabs__item {
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
-}
-
-.purchase-detail-drawer__body >>> .el-tabs__item.is-active {
-    color: #1f3a8a;
-}
-
-.purchase-detail-drawer__body >>> .el-tabs__active-bar {
-    background-color: #1f3a8a;
-}
-
-.purchase-detail-drawer__list {
-    margin: 0 0 8px;
-}
-
-.purchase-detail-drawer__list dt {
-    font-size: 12px;
-    color: #909399;
-    margin-bottom: 4px;
-}
-
-.purchase-detail-drawer__list dd {
-    margin: 0 0 14px;
-    font-weight: 500;
-    color: #303133;
-}
-
-.purchase-detail-drawer__items-table thead th {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: #64748b;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.purchase-detail-drawer__items-table td {
-    vertical-align: middle;
-    border-top: 1px solid #eef2f7;
-    font-size: 13px;
-}
-
-.purchase-detail-drawer__footer {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 14px 20px;
-    border-top: 1px solid #ebeef5;
-    background: #fff;
-}
-
-.section-title {
-    font-size: 1.05rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #1f3a8a;
-    margin-bottom: 0.2rem;
-}
-
-.section-subtitle {
-    color: #6b7280;
-    font-size: 0.86rem;
-    margin-bottom: 0.5rem;
-}
-</style>
-
-<style>
-.purchase-detail-drawer.el-drawer .el-drawer__body {
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-}
-
-.purchase-detail-drawer .theme-sidebar-header.purchase-detail-drawer__header {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    box-sizing: border-box;
-    overflow: hidden;
-    padding: 14px 16px;
-    gap: 12px;
-    direction: ltr;
-}
-
-.purchase-detail-drawer .purchase-detail-drawer__close {
-    position: static;
-    top: auto;
-    right: auto;
-    margin: 0;
-    transform: none;
-}
-</style>
