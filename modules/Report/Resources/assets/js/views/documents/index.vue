@@ -177,7 +177,9 @@
                             </th>
 
                             <th v-if="columns.total_igv.visible" class="">
-                                Total IGV
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                Total IVA
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                             </th>
                             <th class="" v-if="columns.total_isc.visible">
                                 Total ISC
@@ -533,7 +535,9 @@ export default {
                     visible: true
                 },
                 total_igv: {
-                    title: "Total IGV",
+                    // ########## INICIO CAMBIO IGV A IVA
+                    title: "Total IVA",
+                    // ######### FIN CAMBIO IGV A IVA
                     visible: true
                 },
                 total_isc: {
@@ -645,7 +649,9 @@ export default {
             arrayColumns.filter(function(num) {
                 switch (num.title) {
                     case "Total":
-                    case "Total IGV":
+                    // ########## INICIO CAMBIO IGV A IVA
+                    case "Total IVA":
+                    // ######### FIN CAMBIO IGV A IVA
                     case "Total Gratuito":
                     case "Total Gravado":
                     case "Total Exonerado":

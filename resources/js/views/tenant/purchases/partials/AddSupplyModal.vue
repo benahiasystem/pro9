@@ -51,7 +51,9 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="control-label">Afectación IGV</label>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <label class="control-label">Afectación IVA</label>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <el-select
                                 v-model="supplyForm.affectation_igv_type_id"
                                 style="width: 100%"
@@ -96,7 +98,9 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label class="control-label">IGV</label>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <label class="control-label">IVA</label>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <el-input
                                 :value="totalIgv"
                                 readonly

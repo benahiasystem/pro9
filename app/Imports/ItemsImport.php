@@ -383,7 +383,9 @@ class ItemsImport implements ToCollection
         }
 
         if ($this->isBlank($sale_affectation_igv_type_id)) {
-            throw new Exception("Fila {$rowNumber}: el tipo de afectación IGV es obligatorio (columna H). Ejemplo: 10.");
+            // ########## INICIO CAMBIO IGV A IVA
+            throw new Exception("Fila {$rowNumber}: el tipo de Afectación IVA es obligatorio (columna H). Ejemplo: 10.");
+            // ######### FIN CAMBIO IGV A IVA
         }
 
         return $sale_unit_price;

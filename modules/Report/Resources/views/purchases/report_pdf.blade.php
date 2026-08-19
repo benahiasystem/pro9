@@ -123,7 +123,9 @@
                                 <th>Moneda</th>
                                 <th>Total ISC</th>
                                 <th>Total Gravado</th>
-                                <th>Total IGV</th>
+                                {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                                <th>Total IVA</th>
+                                {{-- ######### FIN CAMBIO IGV A IVA --}}
                                 <th>Total</th>
                             </tr>
                         </thead>

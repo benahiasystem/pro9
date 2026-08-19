@@ -17,7 +17,9 @@
                             <th class="">Moneda</th> 
                             <th class="">Total Gravado</th>
                             
-                            <th class="">Total IGV</th>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th class="">Total IVA</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th class="">Total</th>
                         <tr>
                         <tr slot-scope="{ index, row }">

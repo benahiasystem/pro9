@@ -643,7 +643,9 @@ export default {
 
                 this.form.discounts.push({
                     discount_type_id: '03',
-                    description: 'Descuentos globales que no afectan la base imponible del IGV/IVAP',
+                    // ########## INICIO CAMBIO IGV A IVA
+                    description: 'Descuentos globales que no afectan la base imponible del IVA',
+                    // ######### FIN CAMBIO IGV A IVA
                     factor: factor,
                     amount: amount,
                     base: base

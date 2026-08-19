@@ -613,7 +613,9 @@
                                     {{ form.total_taxed }}
                                 </p>
                                 <p class="text-end" v-if="form.total_igv > 0">
-                                    IGV: {{ currency_type.symbol }}
+                                    <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                    IVA: {{ currency_type.symbol }}
+                                    <!-- ######### FIN CAMBIO IGV A IVA -->
                                     {{ form.total_igv }}
                                 </p>
                                 <h3 class="text-end" v-if="form.total > 0">

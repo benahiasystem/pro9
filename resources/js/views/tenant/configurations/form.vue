@@ -904,7 +904,9 @@
 
                                         <div v-if="!form.global_igv_handling" class="col-12">
                                             <label class="control-label">Impuesto incluido en registro de productos
-                                                <el-tooltip class="item" content="Se asignará automáticamente la opción 'Incluye IGV' al registrar un producto" effect="dark"
+                                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                <el-tooltip class="item" content="Se asignará automáticamente la opción 'Incluye IVA' al registrar un producto" effect="dark"
+                                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                                     placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -1155,7 +1157,9 @@
                                                             Si la venta tiene op. gravadas utilice el descuento que afecta a la base
                                                             imponible del IGV/IVAP.<br />
                                                             Si la venta no tiene op. gravadas utilice el descuento que no afecta a
-                                                            la base imponible del IGV/IVAP.<br />
+                                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                            la base imponible del IVA.<br />
+                                                            <!-- ######### FIN CAMBIO IGV A IVA -->
                                                         </div>
                                                     </el-tooltip>
                                                 </label>
@@ -1459,8 +1463,14 @@
                                                     <label class="control-label ms-2">Manejo de IGV
                                                         <el-tooltip class="item" effect="dark" placement="top-start">
                                                             <div slot="content">
-                                                                <strong>Activado (global):</strong> todos los productos se registran con IGV incluido. El checkbox "Incluye Igv" se oculta del formulario de productos.<br />
-                                                                <strong>Desactivado (individual):</strong> el checkbox "Incluye Igv" se muestra y se configura por producto.
+                                                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                                <strong>Activado (global):</strong> todos los productos se registran con IVA incluido. El checkbox "Incluye IVA" se oculta del formulario de productos.<br />
+                                                                <!-- ######### FIN CAMBIO IGV A IVA -->
+                                                                <!-- ######### FIN CAMBIO IGV A IVA -->
+                                                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                                <strong>Desactivado (individual):</strong> el checkbox "Incluye IVA" se muestra y se configura por producto.
+                                                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                                             </div>
                                                             <i class="fa fa-info-circle"></i>
                                                         </el-tooltip>
@@ -1468,10 +1478,16 @@
                                                 </div>
                                                 <div>
                                                     <span v-if="form.global_igv_handling" class="text-muted small">
-                                                        Todos los productos se registrarán con IGV incluido. El checkbox "Incluye IGV" no aparecerá en el formulario.
+                                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                        Todos los productos se registrarán con IVA incluido. El checkbox "Incluye IVA" no aparecerá en el formulario.
+                                                        <!-- ######### FIN CAMBIO IGV A IVA -->
+                                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                                     </span>
                                                     <span v-else class="text-muted small">
-                                                        El checkbox "Incluye IGV" se mostrará en el formulario y podrás configurarlo producto por producto.
+                                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                        El checkbox "Incluye IVA" se mostrará en el formulario y podrás configurarlo producto por producto.
+                                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                                     </span>
                                                 </div>
                                             </div>

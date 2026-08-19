@@ -55,7 +55,9 @@
 
                             <th class="text-end">T.Exonerado</th>
                             <th class="text-end">T.Gravado</th>
-                            <th class="text-end">T.Igv</th>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th class="text-end">T.IVA</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th class="text-end">Total</th>
                         </tr>
 

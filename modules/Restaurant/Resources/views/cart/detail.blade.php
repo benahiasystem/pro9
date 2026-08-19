@@ -169,7 +169,9 @@
                         <td>Bs. @{{ summary.total_taxed }}</td>
                     </tr>
                     <tr v-if="summary.total_igv > 0">
-                        <td>IGV</td>
+                        {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                        <td>IVA</td>
+                        {{-- ######### FIN CAMBIO IGV A IVA --}}
                         <td>Bs. @{{ summary.total_igv }}</td>
                     </tr>
                 </tbody>
@@ -550,7 +552,9 @@
                     let total_igv = 0
                     let total_val = 0
                     let total = 0
-                    let percentage_igv = 18
+                    // ########## INICIO CAMBIO AFECTACIÓN IVA
+                    let percentage_igv = @json(\App\Support\Venezuela\Localization::taxPercentage())
+                    // ######### FIN CAMBIO AFECTACIÓN IVA
                     let nombre_producto_pdf = item.promotion_id ? item.description : null
 
                     if (item.sale_affectation_igv_type_id === '10') {
@@ -721,7 +725,9 @@
 
                     let unit_price = item.sub_total
                     let unit_value = unit_price
-                    let percentage_igv = 18
+                    // ########## INICIO CAMBIO AFECTACIÓN IVA
+                    let percentage_igv = @json(\App\Support\Venezuela\Localization::taxPercentage())
+                    // ######### FIN CAMBIO AFECTACIÓN IVA
 
                     if (item.sale_affectation_igv_type_id === '10') {
                         unit_value = item.sub_total / (1 + percentage_igv / 100)

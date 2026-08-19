@@ -124,7 +124,9 @@
                     <th>Total Gratuito</th>
                     <th>Total Gravado</th>
                     <th>Descuento total</th>
-                    <th>Total IGV</th>
+                    {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                    <th>Total IVA</th>
+                    {{-- ######### FIN CAMBIO IGV A IVA --}}
                     <th>Total ISC</th>
                     <th>Total</th>
                     <th>Total por pagar</th>

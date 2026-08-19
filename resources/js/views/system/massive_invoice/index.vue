@@ -38,7 +38,9 @@
                                 <th>Número</th>
                                 <th>Estado</th>
                                 <th>T.Gravado</th>
-                                <th>T.IGV</th>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <th>T.IVA</th>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <th>Total</th>
                                 <th>Acciones</th>
                             </tr>

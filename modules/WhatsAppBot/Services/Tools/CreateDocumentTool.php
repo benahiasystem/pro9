@@ -9,7 +9,9 @@ use App\Models\Tenant\Person;
 
 class CreateDocumentTool implements ToolInterface
 {
-    private const IGV_RATE = 0.18;
+    // ########## INICIO CAMBIO AFECTACIÓN IVA
+    private const IGV_RATE = 0.16;
+    // ######### FIN CAMBIO AFECTACIÓN IVA
     private const DOC_TYPE_FACTURA = '01';
     private const DOC_TYPE_BOLETA = '03';
 
@@ -96,7 +98,9 @@ class CreateDocumentTool implements ToolInterface
         // Mismo metodo que FacturaloDraftMapper::mapItem: el total de la linea
         // se calcula multiplicando el precio unitario CON IGV completo por la
         // cantidad, y recien ahi se separa base/IGV. Redondear el unit_value
-        // sin IGV antes de multiplicar (como se hacia antes) arrastra el error
+        // ########## INICIO CAMBIO IGV A IVA
+        // SIN IVA antes de multiplicar (como se hacia antes) arrastra el error
+        // ######### FIN CAMBIO IGV A IVA
         // de redondeo x cantidad (ver bug: Bs.3.00 x 15 daba Bs.44.96 en vez de
         // Bs.45.00 exacto).
         foreach ($items as $line) {
@@ -163,14 +167,20 @@ class CreateDocumentTool implements ToolInterface
         $subtotal = $totalValue;
         $total = round($totalValue + $totalIgv, 2);
 
-        // Descuento global tipo '02' (SUNAT): afecta la base imponible del IGV.
-        // Se aplica sobre el valor neto (sin IGV); el IGV se recalcula despues.
+        // ########## INICIO CAMBIO IGV A IVA
+        // Descuento global tipo '02' (SUNAT): afecta la base imponible del IVA.
+        // ######### FIN CAMBIO IGV A IVA
+        // ########## INICIO CAMBIO IGV A IVA
+        // Se aplica sobre el valor neto (SIN IVA); el IGV se recalcula despues.
+        // ######### FIN CAMBIO IGV A IVA
         $discountBase = $subtotal;
         if ($discountAmount > 0) {
             if ($discountAmount >= $discountBase) {
                 return [
                     'status' => 'error',
-                    'error' => "El descuento (Bs. {$discountAmount}) no puede ser mayor o igual al subtotal sin IGV (Bs. {$discountBase}).",
+                    // ########## INICIO CAMBIO IGV A IVA
+                    'error' => "El descuento (Bs. {$discountAmount}) no puede ser mayor o igual al subtotal SIN IVA (Bs. {$discountBase}).",
+                    // ######### FIN CAMBIO IGV A IVA
                 ];
             }
             $subtotal = round($discountBase - $discountAmount, 2);
@@ -224,7 +234,9 @@ class CreateDocumentTool implements ToolInterface
             $lines[] = 'Descuento: -Bs. ' . number_format($draft['discount_amount'], 2);
         }
         $lines[] = 'Subtotal: Bs. ' . number_format($draft['subtotal'], 2);
-        $lines[] = 'IGV: Bs. ' . number_format($draft['igv'], 2);
+        // ########## INICIO CAMBIO IGV A IVA
+        $lines[] = 'IVA: Bs. ' . number_format($draft['igv'], 2);
+        // ######### FIN CAMBIO IGV A IVA
         $lines[] = 'Total: Bs. ' . number_format($draft['total'], 2);
         if ($draft['observations']) {
             $lines[] = '';

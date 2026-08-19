@@ -62,7 +62,9 @@
                                 <th class="" >T.Inafecta</th>
                                 <th class="" >T.Gratuito</th>
                                 <th>Total Gravado</th>
-                                <th>Total IGV</th>
+                                {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                                <th>Total IVA</th>
+                                {{-- ######### FIN CAMBIO IGV A IVA --}}
                                 <th>Total</th>
                             </tr>
                         </thead>

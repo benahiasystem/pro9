@@ -24,7 +24,9 @@
                                 </div>
                             </div>
                             <div class="col-md-4 form-modern">
-                                <label class="control-label">IGV Bolívares</label>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <label class="control-label">IVA Bolívares</label>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <div class="form-group" :class="{'has-danger': errors.igv_pen}">
                                     <el-input v-model="form.igv_pen" ></el-input>
                                     <small class="form-control-feedback" v-if="errors.igv_pen" v-text="errors.igv_pen[0]"></small>
@@ -45,7 +47,9 @@
                                 </div>
                             </div>
                             <div class="col-md-4 mt-4 form-modern">
-                                <label class="control-label">IGV Dólares</label>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <label class="control-label">IVA Dólares</label>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <div class="form-group" :class="{'has-danger': errors.igv_usd}">
                                     <el-input v-model="form.igv_usd" ></el-input>
                                     <small class="form-control-feedback" v-if="errors.igv_usd" v-text="errors.igv_usd[0]"></small>

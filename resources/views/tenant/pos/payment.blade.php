@@ -114,7 +114,9 @@
                 </div>
                 <div class="row m-0 p-0 bg-white">
                     <div class="col-sm-6 py-1">
-                        <p class="font-weight-semibold mb-0">IGV</p>
+                        {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                        <p class="font-weight-semibold mb-0">IVA</p>
+                        {{-- ######### FIN CAMBIO IGV A IVA --}}
                     </div>
                     <div class="col-sm-6 py-1 text-right">
                         <p class="font-weight-semibold mb-0">Bs. 0.00</p>

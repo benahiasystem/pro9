@@ -109,14 +109,18 @@ class MassiveInvoiceService
                         'codigo_tipo_precio' => '01',
                         'precio_unitario' => ($tipoAfectacion == '20' || $tipoAfectacion == '30')
                             ? $precio
-                            : ($incluyeIgv ? $precio : round($precio * 1.18, 2)),
+                            // ########## INICIO CAMBIO AFECTACIÓN IVA
+                            : ($incluyeIgv ? $precio : round($precio * \App\Support\Venezuela\Localization::taxMultiplier(), 2)),
+                            // ######### FIN CAMBIO AFECTACIÓN IVA
                         'codigo_tipo_afectacion_igv' => $tipoAfectacion,
                         'total_base_igv' => $tipoAfectacion == '10' ? $montos['baseImponible'] : (
                             $tipoAfectacion == '20' ? $montos['baseImponible'] : (
                                 $tipoAfectacion == '30' ? $montos['baseImponible'] : 0
                             )
                         ),
-                        'porcentaje_igv' => 18,
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        'porcentaje_igv' => \App\Support\Venezuela\Localization::taxPercentage(),
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                         'total_igv' => $tipoAfectacion == '10' ? $montos['igv'] : 0,
                         'total_impuestos' => $tipoAfectacion == '10' ? $montos['igv'] : 0,
                         'total_valor_item' => $montos['baseImponible'],
@@ -131,7 +135,11 @@ class MassiveInvoiceService
 
     private function calcularMontos($precio, $cantidad, $tipoAfectacion, $incluyeIgv)
     {
-        $igvPercentage = ($tipoAfectacion == '20' || $tipoAfectacion == '30') ? 0 : 18;
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        $igvPercentage = ($tipoAfectacion == '20' || $tipoAfectacion == '30')
+            ? 0
+            : \App\Support\Venezuela\Localization::taxPercentage();
+        // ######### FIN CAMBIO AFECTACIÓN IVA
 
         if ($igvPercentage == 0) {
             // Exonerado o inafecto, no hay IGV
@@ -141,7 +149,9 @@ class MassiveInvoiceService
             $total = $baseImponible;
         } else {
             if ($incluyeIgv) {
-                // El precio incluye IGV
+                // ########## INICIO CAMBIO IGV A IVA
+                // El precio Incluye IVA
+                // ######### FIN CAMBIO IGV A IVA
                 $valorUnitario = round($precio / (1 + ($igvPercentage/100)), 2);
                 $baseImponible = round($valorUnitario * $cantidad, 2);
                 $igv = round($baseImponible * ($igvPercentage/100), 2);

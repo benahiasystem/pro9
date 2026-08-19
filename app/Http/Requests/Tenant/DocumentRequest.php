@@ -165,7 +165,9 @@ class DocumentRequest extends FormRequest
         if ($hasIgv) {
             $validator->errors()->add(
                 'note.note_debit_type_id',
-                'Las penalidades son operaciones inafectas del IGV'
+                // ########## INICIO CAMBIO IGV A IVA
+                'Las penalidades son operaciones inafectas del IVA'
+                // ######### FIN CAMBIO IGV A IVA
             );
         }
     }

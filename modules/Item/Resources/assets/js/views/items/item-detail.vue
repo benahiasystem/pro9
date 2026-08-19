@@ -18,7 +18,9 @@
                                         class="">
                                         <div :class="{'has-danger': errors.has_igv}"
                                             class="form-group">
-                                            <el-checkbox v-model="form.has_igv">Incluye Igv
+                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                            <el-checkbox v-model="form.has_igv">Incluye IVA
+                                            <!-- ######### FIN CAMBIO IGV A IVA -->
                                             </el-checkbox>
                                             <br>
                                             <small v-if="errors.has_igv"
@@ -907,7 +909,9 @@
                                     class="col-md-4 center-el-checkbox pt-2">
                                     <div :class="{'has-danger': errors.purchase_has_igv}"
                                         class="form-group">
-                                        <el-checkbox v-model="form.purchase_has_igv">Incluye Igv</el-checkbox>
+                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                        <el-checkbox v-model="form.purchase_has_igv">Incluye IVA</el-checkbox>
+                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <br>
                                         <small v-if="errors.purchase_has_igv"
                                             class="form-control-feedback"
@@ -1107,7 +1111,9 @@
                                     class="col-md-4 center-el-checkbox pt-2">
                                     <div :class="{'has-danger': errors.purchase_has_igv}"
                                         class="form-group">
-                                        <el-checkbox v-model="form.purchase_has_igv">Incluye Igv</el-checkbox>
+                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                        <el-checkbox v-model="form.purchase_has_igv">Incluye IVA</el-checkbox>
+                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <br>
                                         <small v-if="errors.purchase_has_igv"
                                             class="form-control-feedback"

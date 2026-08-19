@@ -315,7 +315,9 @@ use Modules\Payment\Models\PaymentConfiguration;
         {
 
             $total = $plan->total;
-            $taxed = $total / 1.18;
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            $taxed = $total / \App\Support\Venezuela\Localization::taxMultiplier();
+            // ######### FIN CAMBIO AFECTACIÓN IVA
             $igv = $total - $taxed;
 
             $total = number_format($total, 2, '.', '');

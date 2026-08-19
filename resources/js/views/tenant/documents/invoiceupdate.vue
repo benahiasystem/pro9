@@ -2214,7 +2214,11 @@ export default {
 
             }
 
-            this.form.prepayments[index].total = (this.form.affectation_type_prepayment == 10) ? _.round(this.form.prepayments[index].amount * 1.18, 2) : this.form.prepayments[index].amount
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            this.form.prepayments[index].total = (this.form.affectation_type_prepayment == 10)
+                ? _.round(this.form.prepayments[index].amount * (1 + this.percentage_igv), 2)
+                : this.form.prepayments[index].amount
+            // ######### FIN CAMBIO AFECTACIÓN IVA
 
             this.changeTotalPrepayment()
 
@@ -2381,7 +2385,9 @@ export default {
 
                     this.form.discounts.push({
                         discount_type_id: "04",
-                        description: "Descuentos globales por anticipos gravados que afectan la base imponible del IGV/IVAP",
+                        // ########## INICIO CAMBIO IGV A IVA
+                        description: "Descuentos globales por anticipos gravados que afectan la base imponible del IVA",
+                        // ######### FIN CAMBIO IGV A IVA
                         factor: factor,
                         amount: amount,
                         base: base
@@ -2774,7 +2780,9 @@ export default {
 
                 this.form.retention = {
                     base: base,
-                    code: '62', //Código de Retención del IGV
+                    // ########## INICIO CAMBIO IGV A IVA
+                    code: '62', //Código de Retención del IVA
+                    // ######### FIN CAMBIO IGV A IVA
                     amount: amount,
                     percentage: percentage
                 }
@@ -3337,7 +3345,9 @@ export default {
 
                 this.form.charges.push({
                     charge_type_id: '50',
-                    description: 'Cargos globales que no afectan la base imponible del IGV/IVAP',
+                    // ########## INICIO CAMBIO IGV A IVA
+                    description: 'Cargos globales que no afectan la base imponible del IVA',
+                    // ######### FIN CAMBIO IGV A IVA
                     factor: factor,
                     amount: amount,
                     base: base
@@ -3397,7 +3407,9 @@ export default {
             let input_global_discount = parseFloat(this.total_global_discount)
 
             if (input_global_discount > 0) {
-                const percentage_igv = 18
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                const percentage_igv = this.percentage_igv * 100
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 let base = (this.isGlobalDiscountBase) ? parseFloat(this.form.total_taxed) : parseFloat(this.form.total)
                 let amount = 0
                 let factor = 0

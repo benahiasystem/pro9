@@ -22,7 +22,9 @@ class SearchMostUsedAffectationIgvTypes extends Command
      *
      * @var string
      */
-    protected $description = 'Activa el tipo de afectación IGV más usado en los productos referente a boleta/factura y nota de venta';
+    // ########## INICIO CAMBIO IGV A IVA
+    protected $description = 'Activa el tipo de Afectación IVA más usado en los productos referente a boleta/factura y nota de venta';
+    // ######### FIN CAMBIO IGV A IVA
 
 
     /**

@@ -156,7 +156,9 @@ trait SuscriptionDocumentService
                 'unit_price'               => $row->unit_price,
                 'affectation_igv_type_id'  => $row->affectation_igv_type_id,
                 'total_base_igv'           => $row->total_base_igv,
-                'percentage_igv'           => 18,
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                'percentage_igv'           => \App\Support\Venezuela\Localization::taxPercentage(),
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 'total_igv'                => $row->total_igv,
                 'system_isc_type_id'       => $row->system_isc_type_id ?? null,
                 'total_base_isc'           => $row->total_base_isc ?? null,

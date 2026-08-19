@@ -244,7 +244,9 @@ const MODULES = {
             total_unaffected: { title: 'T.Inafecto',          visible: false, type: 'price'    },
             total_exonerated: { title: 'T.Exonerado',         visible: false, type: 'price'    },
             total_taxed:      { title: 'T.Gravado',           visible: true,  type: 'price'    },
-            total_igv:        { title: 'T.IGV',               visible: true,  type: 'price'    },
+            // ########## INICIO CAMBIO IGV A IVA
+            total_igv:        { title: 'T.IVA',               visible: true,  type: 'price'    },
+            // ######### FIN CAMBIO IGV A IVA
             balance:          { title: 'Saldo',               visible: true,  type: 'price'    },
             total:            { title: 'Total',               visible: true,  type: 'price'    },
             pdf:              { title: 'PDF',                 visible: true,  type: 'action'   },
@@ -267,7 +269,9 @@ const MODULES = {
             total_unaffected:{ title: 'T.Inafecto',    visible: false, type: 'price'    },
             total_exonerated:{ title: 'T.Exonerado',   visible: false, type: 'price'    },
             total_taxed:     { title: 'T.Gravado',     visible: true,  type: 'price'    },
-            total_igv:       { title: 'T.Igv',         visible: true,  type: 'price'    },
+            // ########## INICIO CAMBIO IGV A IVA
+            total_igv:       { title: 'T.IVA',         visible: true,  type: 'price'    },
+            // ######### FIN CAMBIO IGV A IVA
             total:           { title: 'Total',         visible: true,  type: 'price'    },
             actions:         { title: 'Acciones',      visible: true,  type: 'action'   },
         },
@@ -296,7 +300,9 @@ const MODULES = {
             total_unaffected:        { title: 'T.Inafecto',         visible: false, type: 'price'    },
             total_exonerated:        { title: 'T.Exonerado',        visible: false, type: 'price'    },
             total_taxed:             { title: 'T.Gravado',          visible: true,  type: 'price'    },
-            total_igv:               { title: 'T.Igv',              visible: true,  type: 'price'    },
+            // ########## INICIO CAMBIO IGV A IVA
+            total_igv:               { title: 'T.IVA',              visible: true,  type: 'price'    },
+            // ######### FIN CAMBIO IGV A IVA
             total:                   { title: 'Total',              visible: true,  type: 'price'    },
             pdf:                     { title: 'PDF',                visible: true,  type: 'action'   },
             actions:                 { title: 'Acciones',           visible: true,  type: 'action'   },
@@ -321,7 +327,9 @@ const MODULES = {
             total_unaffected: { title: 'T.Inafecta',       visible: false, type: 'price'    },
             total_exonerated: { title: 'T.Exonerado',      visible: false, type: 'price'    },
             total_taxed:      { title: 'T.Gravado',        visible: false, type: 'price'    },
-            total_igv:        { title: 'T.Igv',            visible: false, type: 'price'    },
+            // ########## INICIO CAMBIO IGV A IVA
+            total_igv:        { title: 'T.IVA',            visible: false, type: 'price'    },
+            // ######### FIN CAMBIO IGV A IVA
             total_perception: { title: 'Percepción',       visible: false, type: 'price'    },
             total:            { title: 'Total',            visible: true,  type: 'price'    },
             actions:          { title: 'Acciones',         visible: true,  type: 'action'   },
@@ -344,7 +352,9 @@ const MODULES = {
             total_unaffected:   { title: 'T.Inafecto',           visible: false, type: 'price'    },
             total_exonerated:   { title: 'T.Exonerado',          visible: false, type: 'price'    },
             total_taxed:        { title: 'T.Gravado',            visible: false, type: 'price'    },
-            total_igv:          { title: 'T.IGV',                visible: false, type: 'price'    },
+            // ########## INICIO CAMBIO IGV A IVA
+            total_igv:          { title: 'T.IVA',                visible: false, type: 'price'    },
+            // ######### FIN CAMBIO IGV A IVA
             total:              { title: 'Total',                visible: true,  type: 'price'    },
             total_paid:         { title: 'Pagado',               visible: false, type: 'price'    },
             total_pending_paid: { title: 'Por pagar',            visible: false, type: 'price'    },
@@ -391,7 +401,9 @@ const MODULES = {
             total_exonerated:  { title: 'T.Exonerado',                visible: false, type: 'price'    },
             total_charge:      { title: 'T.Cargos',                   visible: false, type: 'price'    },
             total_taxed:       { title: 'T.Gravado',                  visible: true,  type: 'price'    },
-            total_igv:         { title: 'T.Igv',                      visible: true,  type: 'price'    },
+            // ########## INICIO CAMBIO IGV A IVA
+            total_igv:         { title: 'T.IVA',                      visible: true,  type: 'price'    },
+            // ######### FIN CAMBIO IGV A IVA
             total:             { title: 'Total',                      visible: false, type: 'price'    },
             balance:           { title: 'Saldo',                      visible: true,  type: 'price'    },
             purchase_order:    { title: 'Orden de Compra',            visible: false, type: 'document' },
@@ -415,7 +427,9 @@ const MODULES = {
             total_unaffected: { title: 'T.Inafecto',    visible: false, type: 'price'    },
             total_exonerated: { title: 'T.Exonerado',   visible: false, type: 'price'    },
             total_taxed:      { title: 'T.Gravado',     visible: false, type: 'price'    },
-            total_igv:        { title: 'T.IGV',         visible: false, type: 'price'    },
+            // ########## INICIO CAMBIO IGV A IVA
+            total_igv:        { title: 'T.IVA',         visible: false, type: 'price'    },
+            // ######### FIN CAMBIO IGV A IVA
             total:            { title: 'Total',         visible: true,  type: 'price'    },
             actions:          { title: 'Acciones',      visible: true,  type: 'action'   },
         },
@@ -437,8 +451,12 @@ const MODULES = {
             sale_unit_price:             { title: 'P. Unitario (Venta)',      visible: true,  type: 'price'    },
             purchase_unit_price:         { title: 'P. Unitario (Compra)',     visible: false, type: 'price'    },
             real_unit_price:             { title: 'P. Venta total (con IGV)', visible: false, type: 'price'    },
-            has_igv:                     { title: 'Tiene IGV (Venta)',        visible: true,  type: 'boolean'  },
-            purchase_has_igv_description:{ title: 'Tiene IGV (Compra)',       visible: false, type: 'boolean'  },
+            // ########## INICIO CAMBIO IGV A IVA
+            has_igv:                     { title: 'Tiene IVA (Venta)',        visible: true,  type: 'boolean'  },
+            // ######### FIN CAMBIO IGV A IVA
+            // ########## INICIO CAMBIO IGV A IVA
+            purchase_has_igv_description:{ title: 'Tiene IVA (Compra)',       visible: false, type: 'boolean'  },
+            // ######### FIN CAMBIO IGV A IVA
             actions:                     { title: 'Acciones',                 visible: true,  type: 'action'   },
         },
     },

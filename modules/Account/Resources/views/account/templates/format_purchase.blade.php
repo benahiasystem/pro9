@@ -92,11 +92,17 @@ $col_span = 25;
         <td>NÚMERO</td>
         <td>APELLIDOS Y NOMBRES, DENOMINACIÓN O RAZÓN SOCIAL</td>
         <td>BASE IMPONIBLE</td>
-        <td>IGV</td>
+        {{-- ########## INICIO CAMBIO IGV A IVA --}}
+        <td>IVA</td>
+        {{-- ######### FIN CAMBIO IGV A IVA --}}
         <td>BASE IMPONIBLE</td>
-        <td>IGV</td>
+        {{-- ########## INICIO CAMBIO IGV A IVA --}}
+        <td>IVA</td>
+        {{-- ######### FIN CAMBIO IGV A IVA --}}
         <td>BASE IMPONIBLE</td>
-        <td>IGV</td>
+        {{-- ########## INICIO CAMBIO IGV A IVA --}}
+        <td>IVA</td>
+        {{-- ######### FIN CAMBIO IGV A IVA --}}
         <td></td>
         <td></td>
         <td></td>

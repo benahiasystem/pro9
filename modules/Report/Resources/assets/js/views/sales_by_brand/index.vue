@@ -38,7 +38,9 @@
                                     <th>Valor de venta 
                                         <el-tooltip
                                             class="item"
-                                            content="Sin IGV"
+                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                            content="SIN IVA"
+                                            <!-- ######### FIN CAMBIO IGV A IVA -->
                                             effect="dark"
                                             placement="top"
                                         >

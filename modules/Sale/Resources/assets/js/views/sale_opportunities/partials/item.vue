@@ -113,7 +113,9 @@
                             }"
                             class="form-group"
                         >
-                            <label class="control-label">Afectación Igv</label>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <label class="control-label">Afectación IVA</label>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <el-select
                                 v-model="form.affectation_igv_type_id"
                                 :disabled="!change_affectation_igv_type_id"
@@ -708,7 +710,9 @@ export default {
                 await this.changeItem();
 
                 this.form.quantity = this.recordItem.quantity;
-                // El campo form.unit_price es el valor que ingresa el usuario (sin IGV)
+                // ########## INICIO CAMBIO IGV A IVA
+                // El campo form.unit_price es el valor que ingresa el usuario (SIN IVA)
+                // ######### FIN CAMBIO IGV A IVA
                 this.form.unit_price = this.recordItem.input_unit_price_value;
                 this.form.unit_price_value = this.recordItem.input_unit_price_value;
                 this.form.has_plastic_bag_taxes =

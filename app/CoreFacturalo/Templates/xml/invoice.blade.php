@@ -6,7 +6,9 @@
     $itinerant = $document->itinerant;
     $document_xml_service = new Modules\Document\Services\DocumentXmlService;
 
-    // Cargos globales que no afectan la base imponible del IGV/IVAP
+    // ########## INICIO CAMBIO IGV A IVA
+    // Cargos globales que no afectan la base imponible del IVA
+    // ######### FIN CAMBIO IGV A IVA
     $tot_charges = $document_xml_service->getGlobalChargesNoBase($document);
 
     //descuento global - item que no afectan la base imponible

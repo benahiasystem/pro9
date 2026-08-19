@@ -755,7 +755,9 @@ foreach ($document->items as $row) {
         <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_free, 2) }}</td>
     </tr>
     <tr>
-        <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">IGV: {{ $document->currency_type->symbol }}</td>
+        {{-- ########## INICIO CAMBIO IGV A IVA --}}
+        <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">IVA: {{ $document->currency_type->symbol }}</td>
+        {{-- ######### FIN CAMBIO IGV A IVA --}}
         <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
     </tr>
     <tr>

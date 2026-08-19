@@ -225,9 +225,13 @@ class ReportSalesByBrandController extends Controller
                 if (isset($item->total_value)) {
                     $total_sale_value += $item->total_value;
                 } else {
-                    // Si solo tienes el total con IGV:
+                    // ########## INICIO CAMBIO IGV A IVA
+                    // Si solo tienes el total con IVA:
+                    // ######### FIN CAMBIO IGV A IVA
                     $total = $item->total ?? 0;
-                    $total_sale_value += $total / 1.18;
+                    // ########## INICIO CAMBIO AFECTACIÓN IVA
+                    $total_sale_value += $total / \App\Support\Venezuela\Localization::taxMultiplier();
+                    // ######### FIN CAMBIO AFECTACIÓN IVA
                 }
 
                 if (isset($item->relation_item->brand) && $item->relation_item->brand) {

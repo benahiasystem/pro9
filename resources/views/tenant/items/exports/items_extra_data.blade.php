@@ -34,7 +34,9 @@
                     <th>Descripción</th>
                     <th>Modelo</th>
                     <th>Unidad de medida</th>
-                    <th>Posee IGV</th>
+                    {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                    <th>Posee IVA</th>
+                    {{-- ######### FIN CAMBIO IGV A IVA --}}
                     <th>Categoría</th>
                     <th>Marca</th>
                     <th>Precio</th>

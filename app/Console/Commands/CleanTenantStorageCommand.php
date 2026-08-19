@@ -30,7 +30,9 @@ class CleanTenantStorageCommand extends Command
         $dry_run = (bool) $this->option('dry-run');
         $force = (bool) $this->option('force');
 
-        // el timezone de la app ya es America/Lima, la hora configurada se compara
+        // ########## INICIO CAMBIO IGV A IVA
+        // El timezone de la app es America/Caracas; la hora configurada se compara
+        // ######### FIN CAMBIO IGV A IVA
         // directamente contra esta
         $now = Carbon::now();
 

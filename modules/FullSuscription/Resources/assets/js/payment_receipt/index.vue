@@ -332,7 +332,9 @@ export default {
                     visible: false
                 },
                 total_igv: {
-                    title: 'T.IGV',
+                    // ########## INICIO CAMBIO IGV A IVA
+                    title: 'T.IVA',
+                    // ######### FIN CAMBIO IGV A IVA
                     visible: false
                 },
                 type_period: {

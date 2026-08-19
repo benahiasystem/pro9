@@ -318,7 +318,9 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
             saleUnitPriceBreakdown() {
                 const price = parseFloat(this.form.sale_unit_price)
                 if (!price || price <= 0) return null
-                const IGV_RATE = 0.18
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                const IGV_RATE = 0.16
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 let base, igv, total
                 if (this.form.has_igv) {
                     total = price
@@ -336,7 +338,9 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
             purchaseUnitPriceBreakdown() {
                 const price = parseFloat(this.form.purchase_unit_price)
                 if (!price || price <= 0) return null
-                const IGV_RATE = 0.18
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                const IGV_RATE = 0.16
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 const hasIgv = (this.form.purchase_has_igv !== undefined && this.form.purchase_has_igv !== null)
                     ? this.form.purchase_has_igv
                     : this.form.has_igv

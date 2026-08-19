@@ -13,7 +13,9 @@ foreach ($columns as $value) {
     switch ($value->title) {
         case 'Opciones':
         case 'Total':
-        case 'Total IGV':
+        // ########## INICIO CAMBIO IGV A IVA
+        case 'Total IVA':
+        // ######### FIN CAMBIO IGV A IVA
         case 'Total Gratuito':
         case 'Total Gravado':
         case 'Total Exonerado':
@@ -235,7 +237,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
 
                         <th style="padding: 5px; text-align: center;">Descuento total</th>
                         @if ($columns->total_igv->visible)
-                            <th style="padding: 5px; text-align: center;">Total IGV</th>
+                            {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                            <th style="padding: 5px; text-align: center;">Total IVA</th>
+                            {{-- ######### FIN CAMBIO IGV A IVA --}}
                         @endif
 
                         @if ($columns->total_isc->visible)

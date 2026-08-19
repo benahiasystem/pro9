@@ -1483,7 +1483,9 @@ var app_cart = new Vue({
             let montoCalculado = 0;
 
             if(this.global_discount_type.base == 1) {
-                montoCalculado = montoEntrada / 1.18;
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                montoCalculado = montoEntrada / 1.16;
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 base = parseFloat(this.summary.total_taxed);
             } else {
                 montoCalculado = montoEntrada;
@@ -1510,7 +1512,9 @@ var app_cart = new Vue({
             let igv_antes  = parseFloat(this.aux_totals.total_igv);
 
             let delivery_price = (this.deliveryZone && this.deliveryZone.price) ? parseFloat(this.deliveryZone.price) : 0;
-            let delivery_base  = parseFloat((delivery_price / 1.18).toFixed(2));
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            let delivery_base  = parseFloat((delivery_price / 1.16).toFixed(2));
+            // ######### FIN CAMBIO AFECTACIÓN IVA
             let delivery_igv   = parseFloat((delivery_price - delivery_base).toFixed(2));
 
             let total_operaciones_gravadas = base_antes + delivery_base;
@@ -1672,7 +1676,9 @@ var app_cart = new Vue({
                 let total_igv = 0
                 let total_val = 0
                 let total = 0
-                let percentage_igv = 18
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                let percentage_igv = 16
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 let nombre_producto_pdf = item.promotion_id ? item.description : null
 
                 if (item.sale_affectation_igv_type_id === '10') {
@@ -1744,7 +1750,9 @@ var app_cart = new Vue({
 
             if (this.deliveryZone && parseFloat(this.deliveryZone.price) > 0) {
                 const delivery_price  = parseFloat(this.deliveryZone.price);
-                const percentage_igv = 18;
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                const percentage_igv = 16;
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 const unit_value   = delivery_price / (1 + percentage_igv / 100);
                 const igv_val      = delivery_price - unit_value;
                 rec.push({
@@ -1892,7 +1900,9 @@ var app_cart = new Vue({
             this.records.forEach(function (item) {
                 let unit_price = item.sub_total
                 let unit_value = unit_price
-                let percentage_igv = 18
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                let percentage_igv = 16
+                // ######### FIN CAMBIO AFECTACIÓN IVA
 
                 if (item.sale_affectation_igv_type_id === '10') {
                     unit_value = item.sub_total / (1 + percentage_igv / 100)
@@ -1923,7 +1933,9 @@ var app_cart = new Vue({
                 deliveryPrice = 0;
             }
             computedTotal += deliveryPrice;
-            let deliveryIgv = parseFloat((deliveryPrice / 1.18 * 0.18).toFixed(2));
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            let deliveryIgv = parseFloat((deliveryPrice / 1.16 * 0.16).toFixed(2));
+            // ######### FIN CAMBIO AFECTACIÓN IVA
             this.summary.delivery         = deliveryPrice.toFixed(2);
             this.summary.delivery_igv     = deliveryIgv.toFixed(2);
             this.summary.total            = computedTotal.toFixed(2)

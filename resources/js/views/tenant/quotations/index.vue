@@ -98,7 +98,9 @@
                             <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
                             <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
                             <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
-                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.Igv</th>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-center">PDF</th>
                             <template v-if="col.key === 'personalized'">
@@ -409,7 +411,9 @@ export default {
                 total_unaffected:        { title: "T.Inafecto",       visible: false, order: 18 },
                 total_exonerated:        { title: "T.Exonerado",      visible: false, order: 19 },
                 total_taxed:             { title: "T.Gravado",        visible: true,  order: 20 },
-                total_igv:               { title: "T.Igv",            visible: true,  order: 21 },
+                // ########## INICIO CAMBIO IGV A IVA
+                total_igv:               { title: "T.IVA",            visible: true,  order: 21 },
+                // ######### FIN CAMBIO IGV A IVA
                 total:                   { title: "Total",            visible: true,  order: 22 },
                 pdf:                     { title: "PDF",              visible: true,  order: 23 },
                 actions:                 { title: "Acciones",         visible: true,  order: 24 },

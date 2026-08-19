@@ -859,7 +859,9 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 @endphp
                 @if ($global)
                     @php
-                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : $global->amount;
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier() : $global->amount;
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                     @endphp
                     <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
                 @else
@@ -944,7 +946,9 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             </tr>
             @endif
             <tr>
-                <td colspan="{{ $colspan_total - 1 }}" class="text-right pr-2">IGV: {{ $document->currency_type->symbol }}</td>
+                {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                <td colspan="{{ $colspan_total - 1 }}" class="text-right pr-2">IVA: {{ $document->currency_type->symbol }}</td>
+                {{-- ######### FIN CAMBIO IGV A IVA --}}
                 <td class="text-right">{{ number_format($document->total_igv, 2) }}</td>
             </tr>
 

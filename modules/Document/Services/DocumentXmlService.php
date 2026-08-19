@@ -7,7 +7,9 @@ class DocumentXmlService
     
     public function getGlobalChargesNoBase($document)
     { 
-        // Cargos globales que no afectan la base imponible del IGV/IVAP
+        // ########## INICIO CAMBIO IGV A IVA
+        // Cargos globales que no afectan la base imponible del IVA
+        // ######### FIN CAMBIO IGV A IVA
         $tot_charges = 0;
 
         if($document->charges){

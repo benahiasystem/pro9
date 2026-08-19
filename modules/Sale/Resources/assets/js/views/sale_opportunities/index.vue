@@ -79,7 +79,9 @@
                             <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
                             <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
                             <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
-                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.Igv</th>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">Acciones</th>
                         </template>
@@ -234,7 +236,9 @@ export default {
                 total_unaffected: { title: 'T.Inafecto',    visible: false, order: 10 },
                 total_exonerated: { title: 'T.Exonerado',   visible: false, order: 11 },
                 total_taxed:      { title: 'T.Gravado',     visible: false, order: 12 },
-                total_igv:        { title: 'T.IGV',         visible: false, order: 13 },
+                // ########## INICIO CAMBIO IGV A IVA
+                total_igv:        { title: 'T.IVA',         visible: false, order: 13 },
+                // ######### FIN CAMBIO IGV A IVA
                 total:            { title: 'Total',         visible: true,  order: 14 },
                 actions:          { title: 'Acciones',      visible: true,  order: 15 },
             },

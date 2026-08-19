@@ -203,7 +203,9 @@
                                     {{ currency_type.symbol }} {{ formatDecimal(form.total_exonerated) }}</p>
                                 <p class="text-end" v-if="form.total_taxed > 0">OP.GRAVADA: {{ currency_type.symbol }}
                                     {{ formatDecimal(form.total_taxed) }}</p>
-                                <p class="text-end" v-if="form.total_igv > 0">IGV: {{ currency_type.symbol }}
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <p class="text-end" v-if="form.total_igv > 0">IVA: {{ currency_type.symbol }}
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                     {{ formatDecimal(form.total_igv) }}</p>
                                 <h3 class="text-end" v-if="form.total > 0"><b>TOTAL COMPRAS: </b>{{
                                         currency_type.symbol

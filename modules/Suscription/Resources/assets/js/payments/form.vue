@@ -408,7 +408,9 @@
                             <th>Número</th>
                             <th>Estado</th>
                             <th class="text-center">Moneda</th>
-                            <th class="text-end">T.Igv</th>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th class="text-end">T.IVA</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th class="text-end">Total</th>
                             <th class="text-center">Saldo</th>
                             <th class="text-center"></th>

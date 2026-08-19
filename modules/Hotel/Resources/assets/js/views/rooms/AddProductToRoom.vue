@@ -148,7 +148,9 @@
                                         </td>
 
                                         <!-- <td class="text-right">
-                                            <strong>IGV</strong>
+                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                            <strong>IVA</strong>
+                                            <!-- ######### FIN CAMBIO IGV A IVA -->
                                         </td>
                                         <td class="text-right">
                                             <strong>{{ this.form.igv | toDecimals }}</strong>

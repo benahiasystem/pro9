@@ -1171,9 +1171,11 @@ class Item extends ModelTenant
         $purchase_unit_price = $this->purchase_unit_price;
         $purchase_unit_value = $this->purchase_unit_price;
         if($this->purchase_has_igv) {
-            $purchase_unit_value = round($purchase_unit_price / 1.18, 8);
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            $purchase_unit_value = round($purchase_unit_price / \App\Support\Venezuela\Localization::taxMultiplier(), 8);
         } else {
-            $purchase_unit_price = $purchase_unit_value * 1.18;
+            $purchase_unit_price = $purchase_unit_value * \App\Support\Venezuela\Localization::taxMultiplier();
+            // ######### FIN CAMBIO AFECTACIÓN IVA
         }
 
         $data = [
@@ -1470,7 +1472,9 @@ class Item extends ModelTenant
         $decimal_units = (int)$configuration->decimal_quantity;
         $stockPerCategory = ItemMovement::getStockByCategory($this->id,auth()->user()->establishment_id);
         $has_igv = (bool)$this->has_igv;
-        $igv = 1.18; // El igv es de 18%
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        $igv = \App\Support\Venezuela\Localization::taxMultiplier();
+        // ######### FIN CAMBIO AFECTACIÓN IVA
         $affectation_igv_types_exonerated_unaffected = self::AffectationIgvTypesExoneratedUnaffected();
         if (in_array($this->sale_affectation_igv_type_id, $affectation_igv_types_exonerated_unaffected)) {
             // Exonerado, solo se multiplica por la unidad para que no haga cambio.

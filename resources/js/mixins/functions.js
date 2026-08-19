@@ -3,7 +3,9 @@ export const functions = {
         return {
             loading_search_exchange_rate: false,
             loading_search: false,
-            percentage_igv: 0.18
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            percentage_igv: 0.16
+            // ######### FIN CAMBIO AFECTACIÓN IVA
         }
     },
     methods: {
@@ -70,10 +72,6 @@ export const functions = {
             })
         },
         async getPercentageIgv() {
-            console.log('********');
-            console.log(this.form.establishment_id);
-            console.log(this.form.date_of_issue);
-            console.log('********');
             await this.$http.post(`/store/get_igv`, {
                 'establishment_id': this.form.establishment_id,
                 'date': this.form.date_of_issue

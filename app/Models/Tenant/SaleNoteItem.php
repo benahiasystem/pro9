@@ -275,7 +275,9 @@ class SaleNoteItem extends ModelTenant
 
     /**
      *
-     * Obtener total igv y realizar conversión a bolívares de acuerdo al tipo de cambio
+     // ########## INICIO CAMBIO IGV A IVA
+     * Obtener Total IVA y realizar conversión a bolívares de acuerdo al tipo de cambio
+     // ######### FIN CAMBIO IGV A IVA
      *
      * @return float
      */

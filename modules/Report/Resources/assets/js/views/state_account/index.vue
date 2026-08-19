@@ -96,7 +96,9 @@
                             <th>Total Gratuito</th>
                             <th>Total Gravado</th>
 
-                            <th class="">Total IGV</th>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th class="">Total IVA</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th class="" v-if="columns.total_isc.visible">
                                 Total ISC
                             </th>

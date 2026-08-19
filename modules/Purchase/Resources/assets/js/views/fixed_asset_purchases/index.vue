@@ -40,7 +40,9 @@
                         <th v-if="columns.total_unaffected.visible" class="text-end">T.Inafecta</th>
                         <th v-if="columns.total_exonerated.visible" class="text-end">T.Exonerado</th>
                         <th v-if="columns.total_taxed.visible" class="text-end">T.Gravado</th>
-                        <th v-if="columns.total_igv.visible" class="text-end">T.Igv</th>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <th v-if="columns.total_igv.visible" class="text-end">T.IVA</th>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         <!-- <th v-if="columns.total_perception.visible" >Percepcion</th> -->
                         <th class="text-end">Total</th>
                         <th class="text-end">Acciones</th>
@@ -141,7 +143,9 @@
                         visible: false
                     },
                     total_igv: {
-                        title: 'T.Igv',
+                        // ########## INICIO CAMBIO IGV A IVA
+                        title: 'T.IVA',
+                        // ######### FIN CAMBIO IGV A IVA
                         visible: false
                     },
                     // total_perception:{

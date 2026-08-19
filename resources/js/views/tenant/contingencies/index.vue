@@ -93,7 +93,9 @@
                             T.Exonerado
                         </th>
                         <th class="text-end">T.Gravado</th>
-                        <th class="text-end">T.Igv</th>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <th class="text-end">T.IVA</th>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         <th class="text-end">Total</th>
                         <th class="text-center">Descargas</th>
                         <!--<th class="text-center">Anulación</th>-->

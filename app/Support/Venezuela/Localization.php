@@ -15,6 +15,35 @@ final class Localization
     public const NATIONAL_CURRENCY_DESCRIPTION = 'Bolívares';
     public const SECONDARY_CURRENCY_ID = 'USD';
 
+    // ########## INICIO CAMBIO AFECTACIÓN IVA
+    public const TAX_NAME = 'IVA';
+    public const TAX_RATE = 0.16;
+    public const SELECTABLE_AFFECTATION_IDS = ['10', '20'];
+
+    public static function taxRate(): float
+    {
+        return (float) config('venezuela.tax.rate', self::TAX_RATE);
+    }
+
+    public static function taxPercentage(): float
+    {
+        return self::taxRate() * 100;
+    }
+
+    public static function taxMultiplier(): float
+    {
+        return 1 + self::taxRate();
+    }
+
+    public static function selectableAffectationIds(): array
+    {
+        return (array) config(
+            'venezuela.tax.selectable_affectation_ids',
+            self::SELECTABLE_AFFECTATION_IDS
+        );
+    }
+    // ######### FIN CAMBIO AFECTACIÓN IVA
+
     public static function countryId(): string
     {
         return (string) config('venezuela.country_id', self::COUNTRY_ID);

@@ -7,7 +7,9 @@
         <td>DOCUMENTO</td>
         <td>CLIENTE</td>
         <td>SUBTOTAL</td>
-        <td>IGV</td>
+        {{-- ########## INICIO CAMBIO IGV A IVA --}}
+        <td>IVA</td>
+        {{-- ######### FIN CAMBIO IGV A IVA --}}
         <td>EXO</td>
         <td>TOTAL</td>
         <td>ANULADO</td>

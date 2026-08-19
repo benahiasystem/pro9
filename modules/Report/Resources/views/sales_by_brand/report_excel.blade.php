@@ -53,7 +53,9 @@
                             <th>#</th>
                             <th>Marca</th>
                             <th class="text-center">Cantidad vendida</th>
-                            <th class="text-center">Valor de venta (sin IGV)</th>
+                            {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                            <th class="text-center">Valor de venta (SIN IVA)</th>
+                            {{-- ######### FIN CAMBIO IGV A IVA --}}
                             <th class="text-center">Utilidad generada</th>
                         </tr>
                     </thead>

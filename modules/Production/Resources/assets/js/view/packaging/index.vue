@@ -181,7 +181,9 @@ export default {
                     visible: false
                 },
                 purchase_has_igv_description: {
-                    title: 'Tiene Igv (Compra)',
+                    // ########## INICIO CAMBIO IGV A IVA
+                    title: 'Tiene IVA (Compra)',
+                    // ######### FIN CAMBIO IGV A IVA
                     visible: false
                 },*/
                 model: {

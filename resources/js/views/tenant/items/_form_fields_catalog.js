@@ -74,7 +74,9 @@ const FIELDS = [
     },
     {
         key: 'has_igv',
-        label: 'Incluye IGV',
+        // ########## INICIO CAMBIO IGV A IVA
+        label: 'Incluye IVA',
+        // ######### FIN CAMBIO IGV A IVA
         type: 'boolean',
         tab: 'general',
         defaultWidth: 3,

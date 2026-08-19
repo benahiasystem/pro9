@@ -77,7 +77,9 @@
                         <th class="text-end" v-if="columns.item_code.visible">Cód. SUNAT</th>
                         <!-- <th  class="text-start">Stock</th> -->
                         <th class="text-end">P.Unitario (Venta)</th>
-                        <th class="text-start">Tiene Igv</th>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <th class="text-start">Tiene IVA</th>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         <th class="text-end">Acciones</th>
                     <tr>
                     <tr
@@ -221,7 +223,9 @@ export default {
                     visible: false
                 },
                 purchase_has_igv_description: {
-                    title: 'Tiene Igv (Compra)',
+                    // ########## INICIO CAMBIO IGV A IVA
+                    title: 'Tiene IVA (Compra)',
+                    // ######### FIN CAMBIO IGV A IVA
                     visible: false
                 },*/
                 model: {

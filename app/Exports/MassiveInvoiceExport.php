@@ -56,7 +56,9 @@ class MassiveInvoiceExport extends DefaultValueBinder implements
             'Moneda',
             'Estado',
             'Total gravado',
-            'Total IGV',
+            // ########## INICIO CAMBIO IGV A IVA
+            'Total IVA',
+            // ######### FIN CAMBIO IGV A IVA
             'Total venta',
         ];
     }

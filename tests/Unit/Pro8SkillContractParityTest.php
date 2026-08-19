@@ -10,8 +10,8 @@ class Pro8SkillContractParityTest extends TestCase
     /** @test */
     public function every_pro8_venezuela_skill_has_its_pro9_counterpart(): void
     {
-        self::assertSame(
-            [
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        $requiredSkills = [
                 'adaptar-sistema-venezuela',
                 'gestionar-clientes-venezuela',
                 'migrar-venezuela-geopolitica',
@@ -19,9 +19,15 @@ class Pro8SkillContractParityTest extends TestCase
                 'migrar-venezuela-telefonia',
                 'migrate-product-import-excel-format',
                 'reconstruir-migraciones-tenant',
-            ],
-            $this->skillNames(base_path('.codex/skills'))
+            ];
+        $pro9Skills = $this->skillNames(base_path('.codex/skills'));
+
+        self::assertSame(
+            [],
+            array_values(array_diff($requiredSkills, $pro9Skills))
         );
+        self::assertContains('migrar-iva-venezuela', $pro9Skills);
+        // ######### FIN CAMBIO AFECTACIÓN IVA
     }
 
     /** @test */
@@ -97,6 +103,15 @@ class Pro8SkillContractParityTest extends TestCase
                 'QrChatBuho',
                 'encodeURIComponent',
             ],
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            'migrar-iva-venezuela' => [
+                '0.16',
+                '10 = Gravado',
+                '20 = Exento',
+                'affectation_igv_type_id',
+                'Localization::taxRate',
+            ],
+            // ######### FIN CAMBIO AFECTACIÓN IVA
             'migrate-product-import-excel-format' => [
                 'ItemsImport',
                 'quick_validate.py',

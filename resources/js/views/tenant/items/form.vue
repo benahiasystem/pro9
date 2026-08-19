@@ -87,7 +87,9 @@
                 </template>
                 <template #sale_unit_price>
                     <div :class="{'has-danger': errors.sale_unit_price}" class="form-group">
-                        <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template><span class="text-danger">*</span></label>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template><span class="text-danger">*</span></label>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-input v-model="form.sale_unit_price"
                                   class="input-select-all"
                                   dusk="sale_unit_price"
@@ -187,7 +189,9 @@
                 </template>
                 <template #has_igv>
                     <div :class="{'has-danger': errors.has_igv}" class="form-group">
-                        <label class="control-label">Incluye IGV</label>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <label class="control-label">Incluye IVA</label>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-checkbox v-model="form.has_igv">Sí</el-checkbox>
                     </div>
                 </template>
@@ -291,7 +295,9 @@
                 </template>
                 <template #purchase_unit_price>
                     <div :class="{'has-danger': errors.purchase_unit_price}" class="form-group">
-                        <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template></label>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <label class="control-label">Precio Unitario (Compra) <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template></label>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         <el-input v-model="form.purchase_unit_price"
                                   class="input-select-all"
                                   @input="calculatePercentageOfProfitByPurchase"></el-input>
@@ -328,7 +334,9 @@
                                  class="">
                                 <div :class="{'has-danger': errors.has_igv}"
                                      class="form-group">
-                                    <el-checkbox v-model="form.has_igv">Incluye Igv
+                                    <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                    <el-checkbox v-model="form.has_igv">Incluye IVA
+                                    <!-- ######### FIN CAMBIO IGV A IVA -->
                                     </el-checkbox>
                                     <br>
                                     <small v-if="errors.has_igv"
@@ -1256,7 +1264,9 @@
                         <div v-show="!isPinned('purchase_unit_price')" class="col-md-4 field-pinnable">
                             <div :class="{'has-danger': errors.purchase_unit_price}"
                                  class="form-group">
-                                <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(sin IGV)</small></template></label>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <label class="control-label">Precio Unitario <template v-if="!isNrus"><small v-if="form.purchase_has_igv">(con IGV)</small> <small v-else>(SIN IVA)</small></template></label>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <el-input v-model="form.purchase_unit_price"
                                           class="input-select-all"
                                           dusk="purchase_unit_price"
@@ -1279,7 +1289,9 @@
                              class="col-md-4 center-el-checkbox pt-2">
                             <div :class="{'has-danger': errors.purchase_has_igv}"
                                  class="form-group">
-                                <el-checkbox v-model="form.purchase_has_igv">Incluye Igv</el-checkbox>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <el-checkbox v-model="form.purchase_has_igv">Incluye IVA</el-checkbox>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <br>
                                 <small v-if="errors.purchase_has_igv"
                                        class="form-control-feedback"
@@ -1501,7 +1513,9 @@
                              class="col-md-4 center-el-checkbox pt-2">
                             <div :class="{'has-danger': errors.purchase_has_igv}"
                                  class="form-group">
-                                <el-checkbox v-model="form.purchase_has_igv">Incluye Igv</el-checkbox>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <el-checkbox v-model="form.purchase_has_igv">Incluye IVA</el-checkbox>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <br>
                                 <small v-if="errors.purchase_has_igv"
                                        class="form-control-feedback"
@@ -1699,7 +1713,9 @@ export default {
             const price = parseFloat(this.form.sale_unit_price)
             if (!price || price <= 0) return null
             const symbol = this.getCurrencySymbol()
-            const IGV_RATE = 0.18
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            const IGV_RATE = 0.16
+            // ######### FIN CAMBIO AFECTACIÓN IVA
             let base, igv, total
             if (this.form.has_igv) {
                 total = price
@@ -1717,7 +1733,9 @@ export default {
             const price = parseFloat(this.form.purchase_unit_price)
             if (!price || price <= 0) return null
             const symbol = this.getCurrencySymbol()
-            const IGV_RATE = 0.18
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            const IGV_RATE = 0.16
+            // ######### FIN CAMBIO AFECTACIÓN IVA
             let base, igv, total
             if (this.form.purchase_has_igv) {
                 total = price

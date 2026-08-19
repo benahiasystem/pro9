@@ -453,7 +453,9 @@ class DocumentInput
                     $amount = $row['amount'];
                     $base = $row['base'];
                     $is_amount = $row['is_amount'] ?? null; //registra si el descuento fue por monto o porcentaje
-                    $amount_without_rounded = $row['amount_without_rounded'] ?? null; // monto sin redondear para cálculos posteriores, principalmente para descuentos que afectan base imponible del IGV
+                    // ########## INICIO CAMBIO IGV A IVA
+                    $amount_without_rounded = $row['amount_without_rounded'] ?? null; // monto sin redondear para cálculos posteriores, principalmente para descuentos que afectan base imponible del IVA
+                    // ######### FIN CAMBIO IGV A IVA
 
                     $discounts[] = [
                         'discount_type_id' => $discount_type_id,

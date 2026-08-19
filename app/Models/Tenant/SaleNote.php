@@ -370,9 +370,13 @@ use Modules\Sale\Models\Agent;
                 $item_discount = 0;
 
                 foreach (($row->discounts ?: []) as $discount) {
-                    // discount_type_id "00" guarda el importe sin IGV.
+                    // ########## INICIO CAMBIO IGV A IVA
+                    // discount_type_id "00" guarda el importe SIN IVA.
+                    // ######### FIN CAMBIO IGV A IVA
                     $amount = $discount->discount_type_id == '00'
-                        ? $discount->amount_without_rounded * 1.18
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        ? $discount->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier()
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                         : $discount->amount;
 
                     if (!empty($discount->from_global_distribution)) {

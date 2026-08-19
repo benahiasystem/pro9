@@ -264,7 +264,11 @@ class DocumentController extends Controller
         $prepayment_documents = Document::whereHasPrepayment()->whereAffectationTypePrepayment($type)->get()->transform(function ($row) {
 
             $total = round($row->pending_amount_prepayment, 2);
-            $amount = ($row->affectation_type_prepayment == '10') ? round($total / 1.18, 2) : $total;
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            $amount = ($row->affectation_type_prepayment == '10')
+                ? round($total / \App\Support\Venezuela\Localization::taxMultiplier(), 2)
+                : $total;
+            // ######### FIN CAMBIO AFECTACIÓN IVA
 
             return [
                 'id' => $row->id,

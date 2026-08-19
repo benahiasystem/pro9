@@ -201,7 +201,9 @@
                             <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
                             <th v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ columns.total_charge.title }}</th>
                             <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
-                            <!-- <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.Igv</th> -->
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <!-- <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th> -->
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end">Saldo</th>
                             <th v-if="col.visible && col.key === 'purchase_order'" :key="col.key" class="text-center" style="min-width: 95px;">Orden de compra</th>
@@ -312,7 +314,9 @@
                             <td v-if="col.visible && col.key === 'total_charge'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_charge) }}</td>
                             <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_taxed) }}</td>
                             <!-- <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</td> -->
-                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IGV {{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</small></template></td>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_symbol }} {{ formatDecimal(row.total) }} <template v-if="columns.total_igv && columns.total_igv.visible"><br> <small class="text-muted">IVA {{ row.currency_type_symbol }} {{ formatDecimal(row.total_igv) }}</small></template></td>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_symbol }} {{ formatDecimal(row.balance) }}</td>
                             <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
                             <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads">
@@ -822,7 +826,9 @@ export default {
                 total_exonerated:   { title: "T.Exonerado",                    visible: false, order: 22 },
                 total_charge:       { title: "T.Cargos",                       visible: false, order: 23 },
                 total_taxed:        { title: "T.Gravado",                      visible: true,  order: 24 },
-                total_igv:          { title: "T.Igv",                          visible: true,  order: 25 },
+                // ########## INICIO CAMBIO IGV A IVA
+                total_igv:          { title: "T.IVA",                          visible: true,  order: 25 },
+                // ######### FIN CAMBIO IGV A IVA
                 total:              { title: "Total",                          visible: false, order: 26 },
                 balance:            { title: "Saldo",                          visible: true,  order: 27 },
                 purchase_order:     { title: "Orden de Compra",                visible: false, order: 28 },

@@ -915,7 +915,9 @@
                             <td>Bs. @{{ summary.total_taxed }}</td>
                         </tr>
                         <tr v-if="summary.total_igv > 0">
-                            <td>IGV (18%)</td>
+                            {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                            <td>IVA (18%)</td>
+                            {{-- ######### FIN CAMBIO IGV A IVA --}}
                             <td>Bs. @{{ summary.total_igv }}</td>
                         </tr>
                         <tr v-if="appliedCoupon && appliedCoupon.code">
@@ -1231,7 +1233,9 @@
                 <div class="o-sep"></div>
                 <div class="o-row" v-if="parseFloat(successOrder.total_exonerated) > 0">Op. exoneradas <span class="v">Bs. @{{ successOrder.total_exonerated }}</span></div>
                 <div class="o-row" v-if="parseFloat(successOrder.total_taxed) > 0">Op. gravada <span class="v">Bs. @{{ successOrder.total_taxed }}</span></div>
-                <div class="o-row" v-if="parseFloat(successOrder.total_igv) > 0">IGV (18%) <span class="v">Bs. @{{ successOrder.total_igv }}</span></div>
+                {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                <div class="o-row" v-if="parseFloat(successOrder.total_igv) > 0">IVA (18%) <span class="v">Bs. @{{ successOrder.total_igv }}</span></div>
+                {{-- ######### FIN CAMBIO IGV A IVA --}}
                 <div class="o-row" v-if="parseFloat(successOrder.delivery) > 0">Envío <span class="v">Bs. @{{ successOrder.delivery }}</span></div>
                 <div class="o-total"><span class="l">Total pagado</span><span class="a">Bs. @{{ successOrder.total }}</span></div>
                 <div class="o-pay">

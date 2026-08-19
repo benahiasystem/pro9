@@ -145,7 +145,9 @@ class DocumentsImport implements ToCollection
                             "codigo_producto_sunat" => "",
                             "unidad_de_medida" => $unit_type,
                             "cantidad" => $row[24],
-                            "valor_unitario" => $row[25] / 1.18,
+                            // ########## INICIO CAMBIO AFECTACIÓN IVA
+                            "valor_unitario" => $row[25] / \App\Support\Venezuela\Localization::taxMultiplier(),
+                            // ######### FIN CAMBIO AFECTACIÓN IVA
                             "codigo_tipo_precio" => "01",
                             "precio_unitario" => $row[25],
                             "codigo_tipo_afectacion_igv" => "10",
@@ -176,7 +178,9 @@ class DocumentsImport implements ToCollection
                             "codigo_producto_sunat" => "",
                             "unidad_de_medida" => $unit_type,
                             "cantidad" => $row[29],
-                            "valor_unitario" => $row[30] / 1.18,
+                            // ########## INICIO CAMBIO AFECTACIÓN IVA
+                            "valor_unitario" => $row[30] / \App\Support\Venezuela\Localization::taxMultiplier(),
+                            // ######### FIN CAMBIO AFECTACIÓN IVA
                             "codigo_tipo_precio" => "01",
                             "precio_unitario" => $row[30],
                             "codigo_tipo_afectacion_igv" => "10",

@@ -162,8 +162,12 @@
                         <th v-if="typeUser != 'seller' && columns.purchase_unit_price.visible" class="text-end">
                             P.Unitario (Compra)
                         </th>
-                        <th class="text-center">Tiene Igv (Venta)</th>
-                        <th v-if="columns.purchase_has_igv_description.visible" class="text-center">Tiene Igv (Compra)
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <th class="text-center">Tiene IVA (Venta)</th>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <th v-if="columns.purchase_has_igv_description.visible" class="text-center">Tiene IVA (Compra)
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         </th>
                         <th class="text-end">Acciones</th>
                     </tr>
@@ -410,7 +414,9 @@ export default {
                     visible: false
                 },
                 purchase_has_igv_description: {
-                    title: 'Tiene Igv (Compra)',
+                    // ########## INICIO CAMBIO IGV A IVA
+                    title: 'Tiene IVA (Compra)',
+                    // ######### FIN CAMBIO IGV A IVA
                     visible: false
                 },
                 model: {

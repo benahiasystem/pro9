@@ -6115,7 +6115,9 @@ export default {
                     this.form.discounts.push({
                         discount_type_id: "04",
                         description:
-                            "Descuentos globales por anticipos gravados que afectan la base imponible del IGV/IVAP",
+                            // ########## INICIO CAMBIO IGV A IVA
+                            "Descuentos globales por anticipos gravados que afectan la base imponible del IVA",
+                            // ######### FIN CAMBIO IGV A IVA
                         factor: factor,
                         amount: amount,
                         base: base
@@ -6459,7 +6461,9 @@ export default {
 
                 this.form.retention = {
                     base: base,
-                    code: "62", //Código de Retención del IGV
+                    // ########## INICIO CAMBIO IGV A IVA
+                    code: "62", //Código de Retención del IVA
+                    // ######### FIN CAMBIO IGV A IVA
                     amount: amount,
                     percentage: percentage,
                     currency_type_id: this.form.currency_type_id,
@@ -7418,7 +7422,9 @@ export default {
                 this.form.charges.push({
                     charge_type_id: "50",
                     description:
-                        "Cargos globales que no afectan la base imponible del IGV/IVAP",
+                        // ########## INICIO CAMBIO IGV A IVA
+                        "Cargos globales que no afectan la base imponible del IVA",
+                        // ######### FIN CAMBIO IGV A IVA
                     factor: factor,
                     amount: amount,
                     base: base
@@ -7701,7 +7707,9 @@ export default {
 
              if (!this.total_global_discount || this.total_global_discount <= 0) return;
 
-             // Si el monto incluye IGV (descuento exacto tipo "02"), extraemos la base sin IGV
+             // ########## INICIO CAMBIO IGV A IVA
+             // Si el monto Incluye IVA (descuento exacto tipo "02"), extraemos la base SIN IVA
+             // ######### FIN CAMBIO IGV A IVA
              let amount_discount = parseFloat(this.total_global_discount);
              if (this.is_amount) {
                  if (this.recordDiscountsGlobal) {
@@ -7823,7 +7831,9 @@ export default {
                     this.form.total = _.round(total, 2);
                     // TaxInclusiveAmount en XML usa form.subtotal: debe ser el total YA con dto
                     this.form.subtotal = this.form.total;
-                    // Solo para UI: subtotal antes del descuento (ctx.total incluye IGV)
+                    // ########## INICIO CAMBIO IGV A IVA
+                    // Solo para UI: subtotal antes del descuento (ctx.total Incluye IVA)
+                    // ######### FIN CAMBIO IGV A IVA
                     this.subtotal_before_global_discount = _.round(ctx.total, 2);
 
                     if (this.form.total <= 0)

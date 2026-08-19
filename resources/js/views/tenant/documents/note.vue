@@ -200,7 +200,9 @@
                     <div class="row" v-if="isDebitNoteAndType13">
                         <div class="col-md-12">
                             <el-alert type="info" :closable="false" show-icon
-                                      title="Las penalidades son operaciones inafectas del IGV"
+                                      <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                      title="Las penalidades son operaciones inafectas del IVA"
+                                      <!-- ######### FIN CAMBIO IGV A IVA -->
                                       description="Solo se puede agregar el servicio Penalidad. Ingrese el monto de la penalidad como precio unitario."></el-alert>
                         </div>
                     </div>
@@ -268,7 +270,9 @@
                                 {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
                             <p class="text-right" v-if="form.total_taxed > 0">OP.GRAVADA: {{ currency_type.symbol }}
                                 {{ form.total_taxed }}</p>
-                            <p class="text-right" v-if="form.total_igv > 0">IGV: {{ currency_type.symbol }}
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <p class="text-right" v-if="form.total_igv > 0">IVA: {{ currency_type.symbol }}
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                                 {{ form.total_igv }}</p>
                             <p class="text-right" v-if="form.total_isc > 0">ISC: {{ currency_type.symbol }}
                                 {{ form.total_isc }}</p>
@@ -574,7 +578,9 @@ export default {
         async changeNoteDebitType() {
 
             if (this.isDebitNoteAndType13) {
-                //Penalidades: la nota solo debe llevar el servicio de penalidad, inafecto al IGV
+                // ########## INICIO CAMBIO IGV A IVA
+                //Penalidades: la nota solo debe llevar el servicio de penalidad, inafecto al IVA
+                // ######### FIN CAMBIO IGV A IVA
 
                 const found = await this.getPenaltyItem()
 
@@ -1039,7 +1045,9 @@ export default {
             await this.checkPercentageIgvDebitNote()
 
             if (this.isDebitNoteAndType13 && parseFloat(this.form.total_igv) > 0) {
-                return this.$message.error('Las penalidades son operaciones inafectas del IGV')
+                // ########## INICIO CAMBIO IGV A IVA
+                return this.$message.error('Las penalidades son operaciones inafectas del IVA')
+                // ######### FIN CAMBIO IGV A IVA
             }
 
             if (this.isCreditNote && this.hasDiscounts && this.form.total > this.document.total) {

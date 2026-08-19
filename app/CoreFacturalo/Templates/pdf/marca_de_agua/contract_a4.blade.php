@@ -423,7 +423,9 @@
                     <strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}
                 @endif
             </td>
-            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="2">IGV: {{ $document->currency_type->symbol }}</td>
+            {{-- ########## INICIO CAMBIO IGV A IVA --}}
+            <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="2">IVA: {{ $document->currency_type->symbol }}</td>
+            {{-- ######### FIN CAMBIO IGV A IVA --}}
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_igv, 2) }}</td>
         </tr>
         <tr>

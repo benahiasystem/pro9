@@ -109,7 +109,9 @@
                             class="text-right">T.Gravado
                         </th>
                         <th v-if="columns.total_igv.visible"
-                            class="text-right">T.Igv
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            class="text-right">T.IVA
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                         </th>
                         -->
                         <th class="text-end">Total</th>
@@ -532,7 +534,9 @@ export default {
                     visible: false
                 },
                 total_igv: {
-                    title: 'T.IGV',
+                    // ########## INICIO CAMBIO IGV A IVA
+                    title: 'T.IVA',
+                    // ######### FIN CAMBIO IGV A IVA
                     visible: false
                 },
                 type_period: {

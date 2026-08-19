@@ -184,7 +184,9 @@
                                                     <td class="text-end py-1">{{ getSymbol(currency_type) }} {{ form.total_unaffected }}</td>
                                                 </tr>
                                                 <tr v-if="form.total_igv > 0">
-                                                    <td class="text-muted py-1">IGV<template v-if="percentage_igv"> ({{ percentage_igv }}%)</template></td>
+                                                    <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                    <td class="text-muted py-1">IVA<template v-if="percentage_igv"> ({{ percentage_igv }}%)</template></td>
+                                                    <!-- ######### FIN CAMBIO IGV A IVA -->
                                                     <td class="text-end py-1">{{ getSymbol(currency_type) }} {{ form.total_igv }}</td>
                                                 </tr>
                                                 <tr class="border-top">
@@ -282,7 +284,9 @@
                                 <th>Número</th>
                                 <th>Estado</th>
                                 <th class="text-center">Moneda</th>
-                                <th class="text-end">T.Igv</th>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <th class="text-end">T.IVA</th>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <th class="text-end">Total</th>
                                 <th class="text-center">Saldo</th>
                                 <th class="text-center"></th>

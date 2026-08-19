@@ -1212,7 +1212,9 @@ export default {
                     this.form.discounts.push({
                         discount_type_id: "04",
                         description:
-                            "Descuentos globales por anticipos gravados que afectan la base imponible del IGV/IVAP",
+                            // ########## INICIO CAMBIO IGV A IVA
+                            "Descuentos globales por anticipos gravados que afectan la base imponible del IVA",
+                            // ######### FIN CAMBIO IGV A IVA
                         factor: factor,
                         amount: amount,
                         base: base
@@ -1442,7 +1444,9 @@ export default {
                 this.form.charges.push({
                     charge_type_id: "50",
                     description:
-                        "Cargos globales que no afectan la base imponible del IGV/IVAP",
+                        // ########## INICIO CAMBIO IGV A IVA
+                        "Cargos globales que no afectan la base imponible del IVA",
+                        // ######### FIN CAMBIO IGV A IVA
                     factor: factor,
                     amount: amount,
                     base: base

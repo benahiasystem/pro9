@@ -75,7 +75,9 @@
                                             ></small>
                                         </div>
 
-                                        <!-- afectación igv -->
+                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                        <!-- Afectación IVA -->
+                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <div
                                             class="col-12 col-md-6 form-group"
                                             :class="{ 'has-danger': errors.affectation_igv_type_id }"
@@ -99,7 +101,9 @@
                                                 v-text="errors.affectation_igv_type_id[0]"
                                             ></small>
                                         </div>
-                                        <!-- afectación igv -->
+                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                        <!-- Afectación IVA -->
+                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <h3 class="col-12 text-center m-0" v-if="Number(rate_unit_value) > 0">
                                             <span class="text-muted text-xs">Tarifa de alojamiento: </span> <b>Bs. {{ Number(rate_unit_value).toFixed(2) }}</b> <span class="text-muted text-xs">por noche</span>
                                         </h3>

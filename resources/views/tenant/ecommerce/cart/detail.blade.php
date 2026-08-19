@@ -70,7 +70,9 @@
                     </tr>
 
                     <tr>
-                        <td>IGV</td>
+                        {{-- ########## INICIO CAMBIO IGV A IVA --}}
+                        <td>IVA</td>
+                        {{-- ######### FIN CAMBIO IGV A IVA --}}
                         <td>Bs. @{{summary.tax}}</td>
                     </tr>
                 </tbody>

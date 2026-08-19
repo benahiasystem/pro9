@@ -355,7 +355,11 @@ class RestaurantController extends Controller
         }
 
         $exchange_rate_sale = $this->getExchangeRateSale();
-        $sale_unit_price = ($row->has_igv) ? $row->sale_unit_price : $row->sale_unit_price*1.18;
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        $sale_unit_price = ($row->has_igv)
+            ? $row->sale_unit_price
+            : $row->sale_unit_price * \App\Support\Venezuela\Localization::taxMultiplier();
+        // ######### FIN CAMBIO AFECTACIÓN IVA
 
         $description = $promotion_id ? $this->getDescriptionWithPromotion($row, $promotion_id) : $row->description;
 

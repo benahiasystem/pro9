@@ -953,40 +953,6 @@
                             </table>
                         </div>
 
-                        <!-- <div class="col-12 text-right px-0" v-if="form.total_taxed > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.GRAVADA: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_taxed }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_free > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.GRATUITAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_free }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_unaffected > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.INAFECTAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_unaffected }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_exonerated > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.EXONERADAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_exonerated }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_igv > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">IGV: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{form.total_igv}}</span>
-              </h4>
-            </div> -->
                     </div>
                     </div>
 
@@ -1969,7 +1935,9 @@ export default {
                 }
                 this.form.retention = {
                     base: base,
-                    code: "62", //Código de Retención del IGV
+                    // ########## INICIO CAMBIO IGV A IVA
+                    code: "62", //Código de Retención del IVA
+                    // ######### FIN CAMBIO IGV A IVA
                     amount: amount,
                     percentage: percentage,
                     currency_type_id: this.form.currency_type_id,

@@ -14,7 +14,9 @@ use Carbon\Carbon;
 
 class FacturaloDraftMapper
 {
-    private const IGV_RATE = 0.18;
+    // ########## INICIO CAMBIO AFECTACIÓN IVA
+    private const IGV_RATE = 0.16;
+    // ######### FIN CAMBIO AFECTACIÓN IVA
     private const AFFECTATION_TAXED = '10';
     private const SYSTEM_ISC_NONE = '01';
     private const PRICE_TYPE_UNIT = '01';
@@ -63,7 +65,9 @@ class FacturaloDraftMapper
         $total = round($totalTaxed + $totalIgv, 2);
         $totalValueRounded = round($totalValue, 2);
 
-        // Descuento global tipo '02': afecta la base imponible del IGV.
+        // ########## INICIO CAMBIO IGV A IVA
+        // Descuento global tipo '02': afecta la base imponible del IVA.
+        // ######### FIN CAMBIO IGV A IVA
         // El front (mixins/functions.js::discountGlobal) calcula los mismos
         // ajustes: total_taxed = base - amount, total_igv = nuevo total_taxed * %igv.
         $discountAmount = round((float) ($draft['discount_amount'] ?? 0), 2);
@@ -79,7 +83,9 @@ class FacturaloDraftMapper
             $totalDiscount = $discountAmount;
             $discounts[] = [
                 'discount_type_id' => '02',
-                'description' => 'Descuentos globales que afectan la base imponible del IGV/IVAP',
+                // ########## INICIO CAMBIO IGV A IVA
+                'description' => 'Descuentos globales que afectan la base imponible del IVA',
+                // ######### FIN CAMBIO IGV A IVA
                 'factor' => $factor,
                 'amount' => $discountAmount,
                 'amount_without_rounded' => $discountAmount,
@@ -176,7 +182,9 @@ class FacturaloDraftMapper
             : round($item->sale_unit_price * (1 + self::IGV_RATE), 2);
 
         // Multiplicar primero con el precio unitario CON IGV completo, y recien
-        // ahi separar base/IGV. Redondear el unit_value sin IGV antes de
+        // ########## INICIO CAMBIO IGV A IVA
+        // ahi separar base/IGV. Redondear el unit_value SIN IVA antes de
+        // ######### FIN CAMBIO IGV A IVA
         // multiplicar (como se hacia antes) arrastra el error de redondeo x
         // cantidad (ver bug: Bs.3.00 x 15 daba Bs.44.96 en vez de Bs.45.00 exacto).
         $total = round($unitPriceWithIgv * $quantity, 2);

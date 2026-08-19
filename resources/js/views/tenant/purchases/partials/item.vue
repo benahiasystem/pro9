@@ -125,7 +125,9 @@
                         <div class="col-md-8" v-if="affectation_igv_types.length > 1">
                             <div :class="{'has-danger': errors.affectation_igv_type_id}"
                                  class="form-group">
-                                <label class="control-label">Afectación Igv</label>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <label class="control-label">Afectación IVA</label>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <el-select v-model="form.affectation_igv_type_id"
                                            :disabled="!change_affectation_igv_type_id"
                                            filterable>

@@ -56,8 +56,12 @@
                 'stock' => "Stock",
                 'purchase_unit_price' => "P.Unitario (Venta)",
                 'purchase_has_igv_description' => "P.Unitario (Compra)",
-                'has_igv_description' => "Tiene Igv (Venta)",
-// '' =>"Tiene Igv (Compra)",
+                // ########## INICIO CAMBIO IGV A IVA
+                'has_igv_description' => "Tiene IVA (Venta)",
+                // ######### FIN CAMBIO IGV A IVA
+// ########## INICIO CAMBIO IGV A IVA
+// '' =>"Tiene IVA (Compra)",
+// ######### FIN CAMBIO IGV A IVA
             ];
         }
 

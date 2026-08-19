@@ -8,7 +8,9 @@ use App\Models\Tenant\Item;
 
 class SearchItemsTool implements ToolInterface
 {
-    private const IGV_RATE = 0.18;
+    // ########## INICIO CAMBIO AFECTACIÓN IVA
+    private const IGV_RATE = 0.16;
+    // ######### FIN CAMBIO AFECTACIÓN IVA
     private const MAX_RESULTS = 10;
     private const TOO_MANY_THRESHOLD = 8;
 
@@ -23,7 +25,9 @@ class SearchItemsTool implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $this->name(),
-                'description' => 'Busca productos del catálogo por nombre, código interno o código de barras. Devuelve nombre, código y precio con IGV incluido.',
+                // ########## INICIO CAMBIO IGV A IVA
+                'description' => 'Busca productos del catálogo por nombre, código interno o código de barras. Devuelve nombre, código y precio con IVA incluido.',
+                // ######### FIN CAMBIO IGV A IVA
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [

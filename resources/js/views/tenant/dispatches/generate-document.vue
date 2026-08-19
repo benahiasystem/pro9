@@ -641,7 +641,9 @@ export default {
 
                 this.document.retention = {
                     base: base,
-                    code: '62', //Código de Retención del IGV
+                    // ########## INICIO CAMBIO IGV A IVA
+                    code: '62', //Código de Retención del IVA
+                    // ######### FIN CAMBIO IGV A IVA
                     amount: amount,
                     percentage: percentage
                 }

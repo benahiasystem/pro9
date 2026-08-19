@@ -9,7 +9,7 @@
             "summary_lines": [
                 "En el listado puedes buscar y filtrar ítems, revisar precios, stock (si aplica) y si están habilitados para ventas.",
                 "Desde aquí suelen estar las acciones masivas: importación/exportación, etiquetas o códigos de barras según tu configuración.",
-                "Para dar de alta un producto o servicio abre el formulario nuevo registro: completa datos base (descripción, unidad, tipo de ítem), tributación IGV y precios antes de usarlo en facturación o POS.",
+                "Para dar de alta un producto o servicio abre el formulario nuevo registro: completa datos base (descripción, unidad, tipo de ítem), tributación IVA y precios antes de usarlo en facturación o POS.",
                 "Si tu rubro exige códigos de producto SUNAT u otros datos regulatorios, complétalos para evitar rechazos al emitir comprobantes."
             ],
             "source_doc_repo_relative": "docs/modulos/esenciales/productos-servicios/01-Lista-de-productos.md · docs/modulos/esenciales/productos-servicios/03-productos-creacion-basica.md",
@@ -73,7 +73,7 @@
             "summary_lines": [
                 "Emisión de comprobantes electrónicos (factura, boleta, etc.) ante SUNAT/OSE según tu configuración.",
                 "Define cliente, tipo de documento, serie, moneda, fecha y condición de pago.",
-                "Agrega ítems con cantidades, precios y afectación IGV; luego genera el XML/PDF y envía según tu flujo.",
+                "Agrega ítems con cantidades, precios y afectación IVA; luego genera el XML/PDF y envía según tu flujo.",
                 "Retenciones, detracciones y campos SUNAT aparecen solo cuando aplican al tipo de operación."
             ],
             "source_doc_repo_relative": "modulos/esenciales/ventas/nuevo-comprobante.md",

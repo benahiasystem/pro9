@@ -30,10 +30,14 @@
                         </div>
                     </div>
 
-                    <!-- Afectación IGV -->
+                    <!-- ########## INICIO CAMBIO IGV A IVA -->
+                    <!-- Afectación IVA -->
+                    <!-- ######### FIN CAMBIO IGV A IVA -->
                     <div class="col-md-5">
                         <div class="form-group">
-                            <label class="control-label">Afectación IGV</label>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <label class="control-label">Afectación IVA</label>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <el-select
                                 v-model="form.affectation_igv_type_id"
                                 filterable
@@ -568,7 +572,9 @@ export default {
 
 
                 this.form.quantity = this.recordItem.quantity;
-                // El campo form.unit_price es el valor que ingresa el usuario (sin IGV)
+                // ########## INICIO CAMBIO IGV A IVA
+                // El campo form.unit_price es el valor que ingresa el usuario (SIN IVA)
+                // ######### FIN CAMBIO IGV A IVA
                 // input_unit_price_value es el valor original ingresado
                 this.form.unit_price = this.recordItem.input_unit_price_value;
                 this.form.unit_price_value = this.recordItem.input_unit_price_value;

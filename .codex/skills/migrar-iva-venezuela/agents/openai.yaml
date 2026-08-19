@@ -1,0 +1,4 @@
+interface:
+  display_name: "Migrar IVA Venezuela"
+  short_description: "Mantener el contrato fiscal visible y compatible de IVA en Pro9"
+  default_prompt: "Migra o valida el contrato de IVA venezolano en Pro9 preservando los identificadores internos igv."

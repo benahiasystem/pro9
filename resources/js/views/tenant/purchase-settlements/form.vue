@@ -185,7 +185,9 @@
                                 <div class="form-group">
                                     <el-checkbox v-model="localHasGlobalIgv"
                                                  :disabled="(this.form.items.length != 0 && this.config.enabled_global_igv_to_purchase === true)"
-                                                 @change="changeHasGlobalIgv">¿La compra tiene igv?
+                                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                                 @change="changeHasGlobalIgv">¿La compra Tiene IVA?
+                                                 <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <el-tooltip class="item"
                                                     content="Al estar la configuracion activa, sobreescribe el igv del item. Si no esta checado, el producto no tendra igv."
                                                     effect="dark"
@@ -381,7 +383,9 @@
                                         form.total_taxed
                                                                }}</p>
                                 <p v-if="form.total_igv > 0"
-                                   class="text-end">IGV: {{ currency_type.symbol }} {{ form.total_igv }}</p>
+                                   <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                   class="text-end">IVA: {{ currency_type.symbol }} {{ form.total_igv }}</p>
+                                   <!-- ######### FIN CAMBIO IGV A IVA -->
     
                                 <h3 v-if="form.total > 0"
                                     class="text-end"><b>TOTAL: </b>{{ currency_type.symbol }} {{ form.total }}

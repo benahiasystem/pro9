@@ -40,7 +40,9 @@
                         <th class="text-right" v-if="columns.total_unaffected.visible">T.Inafecta</th>
                         <th class="text-right" v-if="columns.total_exonerated.visible">T.Exonerado</th>
                         <th class="text-right" v-if="columns.total_taxed.visible">T.Gravado</th>
-                        <th class="text-right" v-if="columns.total_igv.visible">T.Igv</th>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <th class="text-right" v-if="columns.total_igv.visible">T.IVA</th>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         <th class="text-right">Total</th>
                     <tr>
                     <tr slot-scope="{ index, row }" :class="{ anulate_color : row.state_type_id == '11' }">
@@ -112,7 +114,9 @@
                         visible: false
                     } ,
                     total_igv: {
-                        title: 'T.IGV',
+                        // ########## INICIO CAMBIO IGV A IVA
+                        title: 'T.IVA',
+                        // ######### FIN CAMBIO IGV A IVA
                         visible: false
                     } 
                 }

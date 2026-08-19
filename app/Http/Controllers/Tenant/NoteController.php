@@ -75,7 +75,9 @@ class NoteController extends Controller
         if (!$item) {
             return [
                 'success' => false,
-                'message' => 'No se encontró el servicio "Penalidad". Regístrelo como servicio inafecto al IGV para emitir notas de débito por penalidad.',
+                // ########## INICIO CAMBIO IGV A IVA
+                'message' => 'No se encontró el servicio "Penalidad". Regístrelo como servicio inafecto al IVA para emitir notas de débito por penalidad.',
+                // ######### FIN CAMBIO IGV A IVA
             ];
         }
 

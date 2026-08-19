@@ -584,7 +584,9 @@
                                     {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
                                 <p class="text-end" v-if="form.total_taxed > 0">OP.GRAVADA: {{ currency_type.symbol }}
                                     {{ form.total_taxed }}</p>
-                                <p class="text-end" v-if="form.total_igv > 0">IGV: {{ currency_type.symbol }}
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <p class="text-end" v-if="form.total_igv > 0">IVA: {{ currency_type.symbol }}
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                     {{ form.total_igv }}</p>
                                 <h3 class="text-end" v-if="form.total > 0"><b>TOTAL A
                                     PAGAR: </b>{{ currency_type.symbol }} {{ form.total }}</h3>
@@ -951,7 +953,9 @@ export default {
                         this.recordDiscountsGlobal = dato.discounts[0];
                         let discount_type_id = dato.discounts[0].discount_type_id
                         this.total_global_discount = discount_type_id !== "02" ? dato.total_discount : 
-                        _.round(Number(dato.total_discount * 1.18).toFixed(3), 2);
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        _.round(Number(dato.total_discount * (1 + this.percentage_igv)).toFixed(3), 2);
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                     }
                     this.calculateTotal()
                 })

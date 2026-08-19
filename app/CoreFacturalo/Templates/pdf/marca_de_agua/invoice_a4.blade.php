@@ -462,7 +462,9 @@
             </th> @endif
             @if($showLoteColumn) <th class="border-top-bottom text-center py-1 desc" class="cell-solid"> F. VENC. </th> @endif
             <th class="border-top-bottom text-center py-1 desc col-total" class="cell-solid">P.UNIT</th>
-            <th class="border-top-bottom text-center py-1 desc" class="cell-solid"  width="8%">SIN IGV</th>
+            {{-- ########## INICIO CAMBIO IGV A IVA --}}
+            <th class="border-top-bottom text-center py-1 desc" class="cell-solid"  width="8%">SIN IVA</th>
+            {{-- ######### FIN CAMBIO IGV A IVA --}}
             <th class="border-top-bottom text-center py-1 desc col-total" class="cell-solid">TOTAL</th>
         </tr>
     </thead>

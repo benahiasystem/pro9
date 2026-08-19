@@ -1389,7 +1389,9 @@ class AccountController extends Controller
                 return $date_percentage*100;
             }
         }
-        return 0.18*100;
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        return \App\Support\Venezuela\Localization::taxPercentage();
+        // ######### FIN CAMBIO AFECTACIÓN IVA
     }
 
     private function getShortDocumentTypeConcarSimple($document_type_id)

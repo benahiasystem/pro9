@@ -249,7 +249,9 @@
                             }"
                             class="form-group"
                         >
-                            <label class="control-label">Afectación Igv</label>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <label class="control-label">Afectación IVA</label>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <el-select
                                 v-model="form.affectation_igv_type_id"
                                 :disabled="!change_affectation_igv_type_id"
@@ -2115,7 +2117,9 @@ export default {
             const unit_value = is_taxed ? unit_price / igv_factor : unit_price;
 
 
-            const total_value_partial = unit_value * quantity;   // base imponible (sin IGV)
+            // ########## INICIO CAMBIO IGV A IVA
+            const total_value_partial = unit_value * quantity;   // base imponible (SIN IVA)
+            // ######### FIN CAMBIO IGV A IVA
 
             const aux_total_line = unit_price * quantity;        // total con IGV
 
@@ -2161,7 +2165,9 @@ export default {
                     discount.base = _.round(base, 2);
                     discount.factor = _.round(factor, 5);
                     discount.percentage = percentage;
-                    discount.amount = (amount_base); // Vista para mostrar el monto del descuento con IGV incluido
+                    // ########## INICIO CAMBIO IGV A IVA
+                    discount.amount = (amount_base); // Vista para mostrar el monto del descuento con IVA incluido
+                    // ######### FIN CAMBIO IGV A IVA
                     discount.amount_without_rounded = affects_base ? base * factor : discount.amount / igv_factor; // monto sin redondear para cálculos posteriores
 
                 }

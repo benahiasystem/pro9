@@ -37,12 +37,18 @@ class TenantMigrationDataSeederTest extends TestCase
         $foreignKeyMigrations = glob(database_path('migrations/tenant/*_add_tenant_foreign_keys.php')) ?: [];
         $currencyMigrations = glob(database_path('migrations/tenant/*_migrate_currency_code_to_ves.php')) ?: [];
         $existingTenantMigrations = glob(database_path('migrations/tenant/*_migrate_existing_tenant_to_venezuela.php')) ?: [];
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        $ivaMigrations = glob(database_path('migrations/tenant/*_configure_venezuela_iva.php')) ?: [];
+        // ######### FIN CAMBIO AFECTACIÓN IVA
 
         self::assertCount(327, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
         self::assertCount(1, $currencyMigrations);
         self::assertCount(1, $existingTenantMigrations);
-        self::assertCount(330, glob(database_path('migrations/tenant/*.php')) ?: []);
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        self::assertCount(1, $ivaMigrations);
+        self::assertCount(331, glob(database_path('migrations/tenant/*.php')) ?: []);
+        // ######### FIN CAMBIO AFECTACIÓN IVA
     }
 
     /** @test */

@@ -197,7 +197,9 @@
                                     {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
                                 <p class="text-right" v-if="form.items.length > 0">OP.GRAVADA: 
                                     {{ currency_type.symbol }} {{ form.total_taxed }}</p>
-                                <p class="text-right" v-if="form.items.length > 0">IGV: 
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <p class="text-right" v-if="form.items.length > 0">IVA:
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                     {{ currency_type.symbol }} {{ form.total_igv }}</p>
                                 <h3 class="text-right" v-if="form.items.length > 0"><b>TOTAL COMPRAS: </b>
                                     {{ currency_type.symbol }} {{ form.total }}</h3>

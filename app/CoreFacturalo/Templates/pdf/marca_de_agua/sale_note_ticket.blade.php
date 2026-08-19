@@ -279,7 +279,9 @@
             </tr>
         @endif
         {{--<tr>
-            <td colspan="5" class="text-right font-bold desc">IGV: {{ $document->currency_type->symbol }}</td>
+            {{-- ########## INICIO CAMBIO IGV A IVA --}}
+            <td colspan="5" class="text-right font-bold desc">IVA: {{ $document->currency_type->symbol }}</td>
+            {{-- ######### FIN CAMBIO IGV A IVA --}}
             <td class="text-right font-bold desc">{{ number_format($document->total_igv, 2) }}</td>
         </tr>--}}
         

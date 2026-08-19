@@ -139,7 +139,9 @@
                             <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
                             <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
                             <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
-                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.Igv</th>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end">Saldo</th>
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'pdf'" :key="col.key" class="text-center">PDF</th>
@@ -351,7 +353,9 @@ export default {
                 total_unaffected:  { title: "T.Inafecto",          visible: false, order: 14 },
                 total_exonerated:  { title: "T.Exonerado",         visible: false, order: 15 },
                 total_taxed:       { title: "T.Gravado",           visible: true,  order: 16 },
-                total_igv:         { title: "T.IGV",               visible: true,  order: 17 },
+                // ########## INICIO CAMBIO IGV A IVA
+                total_igv:         { title: "T.IVA",               visible: true,  order: 17 },
+                // ######### FIN CAMBIO IGV A IVA
                 balance:           { title: "Saldo",               visible: true,  order: 18 },
                 total:             { title: "Total",               visible: true,  order: 19 },
                 pdf:               { title: "PDF",                 visible: true,  order: 20 },

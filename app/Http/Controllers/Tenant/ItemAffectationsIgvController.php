@@ -25,7 +25,9 @@ class ItemAffectationsIgvController extends Controller
         if ($validate && $active == 0 && $affiliation->active == 1) {
             return [
                 'success' => false,
-                'message' => 'No se puede desactivar esta afectación IGV porque está asociada a comprobantes/nota de venta.',
+                // ########## INICIO CAMBIO IGV A IVA
+                'message' => 'No se puede desactivar esta Afectación IVA porque está asociada a comprobantes/nota de venta.',
+                // ######### FIN CAMBIO IGV A IVA
             ];
         }
 
@@ -36,7 +38,9 @@ class ItemAffectationsIgvController extends Controller
 
         return [
             'success' => true,
-            'message' => 'Afectación IGV actualizada correctamente',
+            // ########## INICIO CAMBIO IGV A IVA
+            'message' => 'Afectación IVA actualizada correctamente',
+            // ######### FIN CAMBIO IGV A IVA
         ];
     }
 

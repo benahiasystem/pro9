@@ -249,8 +249,12 @@
                             <th v-if="col.visible && col.key === 'sale_unit_price'" :key="col.key" class="text-end">P.Unitario (Venta)</th>
                             <th v-if="col.visible && col.key === 'purchase_unit_price' && typeUser != 'seller'" :key="col.key" class="text-end">P.Unitario (Compra)</th>
                             <th v-if="col.visible && col.key === 'real_unit_price'" :key="col.key" class="text-end">P. venta</th>
-                            <th v-if="col.visible && col.key === 'has_igv'" :key="col.key" class="text-start">Tiene Igv (Venta)</th>
-                            <th v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key" class="text-start">Tiene Igv (Compra)</th>
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th v-if="col.visible && col.key === 'has_igv'" :key="col.key" class="text-start">Tiene IVA (Venta)</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
+                            <!-- ########## INICIO CAMBIO IGV A IVA -->
+                            <th v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key" class="text-start">Tiene IVA (Compra)</th>
+                            <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end"></th>
                         </template>
                     </tr>
@@ -569,8 +573,12 @@ export default {
                 sale_unit_price:             { title: "P.Unitario (Venta)",                                  visible: true,  order: 14 },
                 purchase_unit_price:         { title: "P.Unitario (Compra)",                                 visible: false, order: 15 },
                 real_unit_price:             { title: "Mostrar el precio de venta total (con el cálculo IGV)", visible: false, order: 16 },
-                has_igv:                     { title: "Tiene Igv (Venta)",                                   visible: true,  order: 17 },
-                purchase_has_igv_description:{ title: "Tiene Igv (Compra)",                                  visible: false, order: 18 },
+                // ########## INICIO CAMBIO IGV A IVA
+                has_igv:                     { title: "Tiene IVA (Venta)",                                   visible: true,  order: 17 },
+                // ######### FIN CAMBIO IGV A IVA
+                // ########## INICIO CAMBIO IGV A IVA
+                purchase_has_igv_description:{ title: "Tiene IVA (Compra)",                                  visible: false, order: 18 },
+                // ######### FIN CAMBIO IGV A IVA
                 actions:                     { title: "Acciones",                                            visible: true,  order: 19 },
             },
             item_unit_types: [],

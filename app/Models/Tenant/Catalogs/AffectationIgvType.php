@@ -17,6 +17,15 @@ class AffectationIgvType extends ModelCatalog
     public $incrementing = false;
     public $timestamps = false;
 
+    // ########## INICIO CAMBIO AFECTACIÓN IVA
+    public function scopeWhereActive($query)
+    {
+        return $query
+            ->where('active', true)
+            ->whereIn('id', \App\Support\Venezuela\Localization::selectableAffectationIds());
+    }
+    // ######### FIN CAMBIO AFECTACIÓN IVA
+
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */

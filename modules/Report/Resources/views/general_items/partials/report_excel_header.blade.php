@@ -55,8 +55,12 @@
 <th> PRECIO UNITARIO</th>
 <th> DESCUENTO</th>
 <th> SUBTOTAL</th>
-<th> TIPO DE IGV</th>
-<th> IGV</th>
+{{-- ########## INICIO CAMBIO IGV A IVA --}}
+<th> Tipo de IVA</th>
+{{-- ######### FIN CAMBIO IGV A IVA --}}
+{{-- ########## INICIO CAMBIO IGV A IVA --}}
+<th> IVA</th>
+{{-- ######### FIN CAMBIO IGV A IVA --}}
 <th> TIPO DE ISC</th>
 <th> ISC</th>
 <th> IMPUESTO BOLSAS</th>

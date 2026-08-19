@@ -380,7 +380,9 @@ use Illuminate\Support\Str;
                 return $percentages->first();
             }
 
-            return 18;
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            return (int) \App\Support\Venezuela\Localization::taxPercentage();
+            // ######### FIN CAMBIO AFECTACIÓN IVA
         }
 
         /**

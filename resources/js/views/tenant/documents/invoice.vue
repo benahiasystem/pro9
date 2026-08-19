@@ -2351,7 +2351,9 @@ export default {
 
                     this.form.discounts.push({
                         discount_type_id: "04",
-                        description: "Descuentos globales por anticipos gravados que afectan la base imponible del IGV/IVAP",
+                        // ########## INICIO CAMBIO IGV A IVA
+                        description: "Descuentos globales por anticipos gravados que afectan la base imponible del IVA",
+                        // ######### FIN CAMBIO IGV A IVA
                         factor: factor,
                         amount: amount,
                         base: base
@@ -2750,7 +2752,9 @@ export default {
 
                 this.form.retention = {
                     base: base,
-                    code: '62', //Código de Retención del IGV
+                    // ########## INICIO CAMBIO IGV A IVA
+                    code: '62', //Código de Retención del IVA
+                    // ######### FIN CAMBIO IGV A IVA
                     amount: amount,
                     percentage: percentage,
                     currency_type_id: this.form.currency_type_id,
@@ -3318,7 +3322,9 @@ export default {
 
                 this.form.charges.push({
                     charge_type_id: '50',
-                    description: 'Cargos globales que no afectan la base imponible del IGV/IVAP',
+                    // ########## INICIO CAMBIO IGV A IVA
+                    description: 'Cargos globales que no afectan la base imponible del IVA',
+                    // ######### FIN CAMBIO IGV A IVA
                     factor: factor,
                     amount: amount,
                     base: base

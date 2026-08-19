@@ -255,20 +255,9 @@ class StoreController extends Controller
 
     public function getIgv(Request $request)
     {
-        $establishment_id = $request->input('establishment_id');
-        $date = $request->input('date');
-        $date_start = config('tenant.igv_31556_start');
-        $date_end = config('tenant.igv_31556_end');
-        $date_percentage = config('tenant.igv_31556_percentage');
-        $establishment = Establishment::query()
-            ->select('id', 'has_igv_31556')
-            ->find($establishment_id);
-        if ($establishment->has_igv_31556) {
-            if ($date >= $date_start && $date <= $date_end) {
-                return $date_percentage;
-            }
-        }
-        return 0.18;
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        return \App\Support\Venezuela\Localization::taxRate();
+        // ######### FIN CAMBIO AFECTACIÓN IVA
     }
 
     public function getCustomers(Request $request)

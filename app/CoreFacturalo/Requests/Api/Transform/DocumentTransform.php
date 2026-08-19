@@ -209,7 +209,9 @@ class DocumentTransform
             $discounts = [];
             foreach ($inputs['descuentos'] as $row) {
                 // $is_amount = $row['is_amount'] ?? null; //registra si el descuento fue por monto o porcentaje
-                $amount_without_rounded = $row['cantidad_sin_redondeo'] ?? null; // monto sin redondear para cálculos posteriores, principalmente para descuentos que afectan base imponible del IGV
+                // ########## INICIO CAMBIO IGV A IVA
+                $amount_without_rounded = $row['cantidad_sin_redondeo'] ?? null; // monto sin redondear para cálculos posteriores, principalmente para descuentos que afectan base imponible del IVA
+                // ######### FIN CAMBIO IGV A IVA
                 $from_global_distribution = $row['global_distribucion'] ?? null;
                 $discounts[] = [
                     'discount_type_id' => $row['codigo'],

@@ -44,8 +44,12 @@ return [
     'fields.wholesale_unit_price' => 'Precio unitario x mayor',
     'fields.retail_unit_price' => 'Precio unitario x menor',
     'fields.internal_id' => 'Código interno',
-    'fields.affectation_igv_type_id' => 'Tipo afectación IGV',
-    'fields.affectation_igv_type_description' => 'Tipo afectación IGV',
+    // ########## INICIO CAMBIO IGV A IVA
+    'fields.affectation_igv_type_id' => 'Tipo Afectación IVA',
+    // ######### FIN CAMBIO IGV A IVA
+    // ########## INICIO CAMBIO IGV A IVA
+    'fields.affectation_igv_type_description' => 'Tipo Afectación IVA',
+    // ######### FIN CAMBIO IGV A IVA
     'fields.add_charge_or_discount' => 'Agregar Cargo o Descuento',
     'fields.charge_or_discount_type_id' => 'Tipo Cargo / Descuento',
     'fields.charge_or_discount_percentage' => 'Cargo / Descuento (%)',
@@ -74,7 +78,9 @@ return [
     'fields.quantity' => 'Cantidad',
     'fields.item_id' => 'Item',
     'fields.total_taxed' => 'Total Gravado',
-    'fields.total_igv' => 'Total Igv',
+    // ########## INICIO CAMBIO IGV A IVA
+    'fields.total_igv' => 'Total IVA',
+    // ######### FIN CAMBIO IGV A IVA
     'fields.total' => 'Total',
     'fields.payment_condition_type_id' => 'Método de pago',
     'fields.api_token' => 'Api Token',
@@ -155,7 +161,9 @@ return [
     'labels.customer_name' => 'Cliente',
     'labels.currency_type_description' => 'Moneda',
     'labels.total_taxed' => 'Total Gravado',
-    'labels.total_igv' => 'Total IGV',
+    // ########## INICIO CAMBIO IGV A IVA
+    'labels.total_igv' => 'Total IVA',
+    // ######### FIN CAMBIO IGV A IVA
     'labels.total' => 'Total',
     'labels.document_number' => 'Número',
     'labels.state_type_description' => 'Estado',

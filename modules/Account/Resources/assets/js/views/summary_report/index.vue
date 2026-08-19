@@ -66,7 +66,9 @@
                                         <th class="text-center">N° Inicial</th>
                                         <th class="text-center">N° Final</th>
                                         <th class="text-end">Valor venta</th>
-                                        <th class="text-end">IGV</th>
+                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                        <th class="text-end">IVA</th>
+                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <th class="text-end">ICBPER</th>
                                         <th class="text-end">Importe</th>
                                     </tr>

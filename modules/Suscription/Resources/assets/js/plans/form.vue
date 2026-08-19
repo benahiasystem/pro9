@@ -226,7 +226,9 @@
                                     </p>
                                     <p v-if="fakeForm.total_igv > 0"
                                        class="text-end">
-                                        IGV: {{ currency_type.symbol }} {{ fakeForm.total_igv }}
+                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                        IVA: {{ currency_type.symbol }} {{ fakeForm.total_igv }}
+                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                     </p>
                                     <h3 v-if="fakeForm.total > 0"
                                         class="text-end">

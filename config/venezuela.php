@@ -12,6 +12,14 @@ return [
         'secondary_id' => env('APP_SECONDARY_CURRENCY_ID', 'USD'),
     ],
 
+    // ########## INICIO CAMBIO AFECTACIÓN IVA
+    'tax' => [
+        'name' => 'IVA',
+        'rate' => (float) env('APP_IVA_RATE', 0.16),
+        'selectable_affectation_ids' => ['10', '20'],
+    ],
+    // ######### FIN CAMBIO AFECTACIÓN IVA
+
     'locations' => [
         'labels' => [
             'department' => 'Estado',

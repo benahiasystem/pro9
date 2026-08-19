@@ -261,7 +261,9 @@
                                 <p class="text-right" v-if="form.total_unaffected > 0">OP.INAFECTAS: {{ currency_type.symbol }} {{ form.total_unaffected }}</p>
                                 <p class="text-right" v-if="form.total_exonerated > 0">OP.EXONERADAS: {{ currency_type.symbol }} {{ form.total_exonerated }}</p>
                                 <p class="text-right" v-if="form.total_taxed > 0">OP.GRAVADA: {{ currency_type.symbol }} {{ form.total_taxed }}</p>
-                                <p class="text-right" v-if="form.total_igv > 0">IGV: {{ currency_type.symbol }} {{ form.total_igv }}</p>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <p class="text-right" v-if="form.total_igv > 0">IVA: {{ currency_type.symbol }} {{ form.total_igv }}</p>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <h3 class="text-right" v-if="form.total > 0"><b>TOTAL A PAGAR: </b>{{ currency_type.symbol }} {{ form.total }}</h3>
                             </div>
 

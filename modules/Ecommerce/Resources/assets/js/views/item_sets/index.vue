@@ -67,7 +67,9 @@
                         <th class="text-end" v-if="columns.item_code.visible">Cód. SUNAT</th>
                         <!-- <th  class="text-left">Stock</th> -->
                         <th class="text-end">P.Unitario (Venta)</th>
-                        <th class="text-start">Tiene Igv</th>
+                        <!-- ########## INICIO CAMBIO IGV A IVA -->
+                        <th class="text-start">Tiene IVA</th>
+                        <!-- ######### FIN CAMBIO IGV A IVA -->
                         <th class="text-end">Acciones</th>
                     </tr>
                     <tr slot-scope="{ index, row }">

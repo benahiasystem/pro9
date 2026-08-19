@@ -138,8 +138,12 @@
 
                 $internal_id = trim($row[11] ?? null);
                 $quantity = $row[12] ?? null;
-                // $amountWithOutIGV = $row[13] ?? 0; // precio sin igv
-                $amountWithOutIGV = $row[17] ?? 0; // precio sin igv
+                // ########## INICIO CAMBIO IGV A IVA
+                // $amountWithOutIGV = $row[13] ?? 0; // precio SIN IVA
+                // ######### FIN CAMBIO IGV A IVA
+                // ########## INICIO CAMBIO IGV A IVA
+                $amountWithOutIGV = $row[17] ?? 0; // precio SIN IVA
+                // ######### FIN CAMBIO IGV A IVA
                 //
                 $total_igv = $row[14] ?? 0; // igv del producto
                 $igv = $row[15] ?? 18; // igv

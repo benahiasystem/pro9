@@ -767,7 +767,9 @@ return array (
           'active' => 1,
           'exportation' => 0,
           'free' => 0,
-          'description' => 'Gravado - Operación Onerosa',
+          // ########## INICIO CAMBIO AFECTACIÓN IVA
+          'description' => 'Gravado',
+          // ######### FIN CAMBIO AFECTACIÓN IVA
         ),
         1 =>
         array (
@@ -828,10 +830,14 @@ return array (
         8 =>
         array (
           'id' => '20',
-          'active' => 0,
+          // ########## INICIO CAMBIO AFECTACIÓN IVA
+          'active' => 1,
+          // ######### FIN CAMBIO AFECTACIÓN IVA
           'exportation' => 0,
           'free' => 0,
-          'description' => 'Exonerado - Operación Onerosa',
+          // ########## INICIO CAMBIO AFECTACIÓN IVA
+          'description' => 'Exento',
+          // ######### FIN CAMBIO AFECTACIÓN IVA
         ),
         9 =>
         array (
@@ -1510,7 +1516,9 @@ return array (
           'base' => 1,
           'level' => 'item',
           'type' => 'discount',
-          'description' => 'Descuentos que afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Descuentos que afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         1 =>
         array (
@@ -1519,7 +1527,9 @@ return array (
           'base' => 0,
           'level' => 'item',
           'type' => 'discount',
-          'description' => 'Descuentos que no afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Descuentos que no afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         2 =>
         array (
@@ -1528,7 +1538,9 @@ return array (
           'base' => 1,
           'level' => 'global',
           'type' => 'discount',
-          'description' => 'Descuentos globales que afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Descuentos globales que afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         3 =>
         array (
@@ -1537,7 +1549,9 @@ return array (
           'base' => 0,
           'level' => 'global',
           'type' => 'discount',
-          'description' => 'Descuentos globales que no afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Descuentos globales que no afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         4 =>
         array (
@@ -1546,7 +1560,9 @@ return array (
           'base' => 1,
           'level' => 'global',
           'type' => 'discount',
-          'description' => 'Descuentos globales por anticipos gravados que afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Descuentos globales por anticipos gravados que afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         5 =>
         array (
@@ -1591,7 +1607,9 @@ return array (
           'base' => 1,
           'level' => 'item',
           'type' => 'charge',
-          'description' => 'Cargos que afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Cargos que afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         10 =>
         array (
@@ -1600,7 +1618,9 @@ return array (
           'base' => 0,
           'level' => 'item',
           'type' => 'charge',
-          'description' => 'Cargos que no afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Cargos que no afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         11 =>
         array (
@@ -1609,7 +1629,9 @@ return array (
           'base' => 1,
           'level' => 'global',
           'type' => 'charge',
-          'description' => 'Cargos globales que afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Cargos globales que afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         12 =>
         array (
@@ -1618,7 +1640,9 @@ return array (
           'base' => 0,
           'level' => 'global',
           'type' => 'charge',
-          'description' => 'Cargos globales que no afectan la base imponible del IGV/IVAP',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Cargos globales que no afectan la base imponible del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         13 =>
         array (
@@ -1654,7 +1678,9 @@ return array (
           'base' => 0,
           'level' => 'global',
           'type' => 'discount',
-          'description' => 'Retención del IGV',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Retención del IVA',
+          // ######### FIN CAMBIO IGV A IVA
         ),
       ),
     ),
@@ -2658,7 +2684,9 @@ return array (
         array (
           'id' => '01',
           'active' => 1,
-          'description' => 'Precio unitario (incluye el IGV)',
+          // ########## INICIO CAMBIO IGV A IVA
+          'description' => 'Precio unitario (incluye el IVA)',
+          // ######### FIN CAMBIO IGV A IVA
         ),
         1 =>
         array (
