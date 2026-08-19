@@ -998,7 +998,7 @@ export default {
         async validateIdentityDocumentType() {
             let identity_document_types = ["0", "1"];
             /*
-            0		Doc.trib.no.dom.sin.ruc
+            0		No Domiciliado sin Ruc
             1		DNI
             */
             let customer = _.find(this.customers, {

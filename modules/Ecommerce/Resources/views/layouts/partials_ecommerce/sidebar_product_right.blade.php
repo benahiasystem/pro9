@@ -6,29 +6,6 @@
             </a>
         </div> -->
 
-        <div class="widget widget-info mt-2">
-            <ul>
-                @if($information->tag_shipping)
-                    <li>
-                        <i class="icon-shipping"></i>
-                        <h4>{!!$information->tag_shipping!!}</h4>
-                    </li>
-                @endif
-                @if($information->tag_dollar)
-                <li>
-                    <i class="icon-us-dollar"></i>
-                    <h4>{!!$information->tag_dollar!!}</h4>
-                </li>
-                @endif
-                @if($information->tag_support)
-                <li>
-                    <i class="icon-online-support"></i>
-                    <h4>{!!$information->tag_support!!}</h4>
-                </li>
-                @endif
-            </ul>
-        </div><!-- End .widget -->
-
 <!-- Carousel a Editar-->
        <div class="widget widget-banners box-carousel">
          <div class="widget-banners-slider owl-carousel owl-theme">

@@ -117,4 +117,16 @@
                          ->orderByRaw("FIELD(id, '1', '7', '4', '0')");
         }
 
+        /**
+         * Orden de prioridad para el select de Tipo Doc. Identidad (clientes/ventas).
+         * DNI, RUC, Pasaporte, Carnet de Extranjeria, No Domiciliado sin Ruc.
+         *
+         * @param  Builder $query
+         * @return Builder
+         */
+        public function scopeOrderByPersonPriority($query)
+        {
+            return $query->orderByRaw("FIELD(id, '1', '6', '7', '4', '0') = 0, FIELD(id, '1', '6', '7', '4', '0')");
+        }
+
     }

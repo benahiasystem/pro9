@@ -10,27 +10,34 @@
         </ol>
     </div>
 
-    <div class="row">
-        <div class="col-lg-6 col-md-12">
-            <system-login-settings :configuration='@json($configuration)'></system-login-settings>
-            <system-configuration-themes></system-configuration-themes>
-            <system-configuration-visible-columns></system-configuration-visible-columns>
-            <system-login-other-configuration :plans='@json($plans)'></system-login-other-configuration>
-            <system-openai-configuration></system-openai-configuration>
-            <system-google-maps-configuration :configuration='@json($configuration)'></system-google-maps-configuration>
-            <system-cron-order-configuration :configuration='@json($configuration)'></system-cron-order-configuration>
-            <system-whatsapp-provider-configuration></system-whatsapp-provider-configuration>
-            <system-waha-servers-index></system-waha-servers-index>
-        </div>
-        <div class="col-lg-6 col-md-12">
-            <system-configuration-payment-gateway></system-configuration-payment-gateway>
-            <system-configuration-token></system-configuration-token>
-            <system-configuration-apk-url></system-configuration-apk-url>
-            <system-support-configuration></system-support-configuration>
-            <system-terms-configuration></system-terms-configuration>
-            <system-email-configuration :configuration='@json($configuration)'></system-email-configuration>
-            <system-whatsapp-notify-configuration :configuration='@json($configuration)'></system-whatsapp-notify-configuration>
-        </div>
-    </div>
+    <system-configuration-sections>
+
+        {{-- General --}}
+        <system-login-other-configuration slot="other" :plans='@json($plans)'></system-login-other-configuration>
+        <system-configuration-apk-url slot="apk"></system-configuration-apk-url>
+
+        {{-- Apariencia --}}
+        <system-login-settings slot="login" :configuration='@json($configuration)'></system-login-settings>
+        <system-configuration-themes slot="themes"></system-configuration-themes>
+        <system-configuration-visible-columns slot="columns"></system-configuration-visible-columns>
+
+        {{-- Integraciones --}}
+        <system-openai-configuration slot="openai"></system-openai-configuration>
+        <system-google-maps-configuration slot="maps" :configuration='@json($configuration)'></system-google-maps-configuration>
+        <system-configuration-token slot="ruc"></system-configuration-token>
+
+        {{-- Pagos --}}
+        <system-configuration-payment-gateway slot="gateway"></system-configuration-payment-gateway>
+        <system-cron-order-configuration slot="cron" :configuration='@json($configuration)'></system-cron-order-configuration>
+
+        {{-- Notificaciones --}}
+        <system-email-configuration slot="email" :configuration='@json($configuration)'></system-email-configuration>
+        <system-whatsapp-notify-configuration slot="whatsapp" :configuration='@json($configuration)'></system-whatsapp-notify-configuration>
+
+        {{-- Soporte y legal --}}
+        <system-support-configuration slot="support"></system-support-configuration>
+        <system-terms-configuration slot="terms"></system-terms-configuration>
+
+    </system-configuration-sections>
 
 @endsection

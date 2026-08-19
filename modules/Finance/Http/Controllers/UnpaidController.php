@@ -184,11 +184,10 @@ class UnpaidController extends Controller
         $html = $template->pdf($base_template, "unpaid", $this->company, $this->document, $format_pdf);
 
         /* cuentas por cobrar formato a4 */
-        if (($format_pdf === 'ticket') OR ($format_pdf === 'ticket_58')OR ($format_pdf=='ticket_50')) {
+        if (($format_pdf === 'ticket') OR ($format_pdf === 'ticket_58')) {
 
             $width = ($format_pdf === 'ticket_58') ? 56 : 78 ;
             if(config('tenant.enabled_template_ticket_80')) $width = 76;
-            if($format_pdf === 'ticket_50') $width = 45;
 
             $company_logo      = ($this->company->logo) ? 40 : 0;
             $company_name      = (strlen($this->company->name) / 20) * 10;

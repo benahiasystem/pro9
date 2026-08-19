@@ -8,8 +8,10 @@ use Illuminate\Support\Facades\Log;
 trait IzipayTrait
 {
 
-    const URL = "https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment";
-    const URL_GET_TRANSACTION = "https://api.micuentaweb.pe/api-payment/V4/Transaction/Get";
+    // Izipay Perú (Lyra): test y producción comparten el mismo host; el entorno lo define la credencial.
+    const URL = 'https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment';
+    const URL_GET_TRANSACTION = 'https://api.micuentaweb.pe/api-payment/V4/Transaction/Get';
+    const KRYPTON_STATIC_BASE = 'https://static.micuentaweb.pe';
 
     /**
      * @param $credentials {username_izipay, password_izipay, publickey_izipay, sha256key_izipay}

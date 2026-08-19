@@ -83,15 +83,29 @@
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">Acciones</th>
                         </template>
                     </tr>
-                    <tr slot-scope="{ index, row }" :class="{'anulate_color': row.state_type_id === '11'}">
+                    <tr
+                        slot-scope="{ index, row }"
+                        :class="{ anulate_color: row.state_type_id === '11' }"
+                    >
                         <template v-for="col in orderedColumns">
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center" :class="{ 'text-danger': row.state_type_payment_description != 'Pagado' && isDateWarning(row.date_of_due) }">{{ row.date_of_due | toDate }}</td>
-                            <td v-if="col.visible && col.key === 'supplier'" :key="col.key">{{ row.supplier_name }}<br /><small v-text="row.supplier_number"></small></td>
+                            <td v-if="col.visible && col.key === 'supplier'" :key="col.key">
+                                <span
+                                    role="button"
+                                    tabindex="0"
+                                    @keyup.enter.prevent="clickDetail(row)"
+                                >{{ row.supplier_name }}</span>
+                                <br /><small v-text="row.supplier_number"></small>
+                            </td>
                             <td v-if="col.visible && col.key === 'state_type'" :key="col.key">{{ row.state_type_description }}</td>
                             <td v-if="col.visible && col.key === 'payment_state'" :key="col.key" :class="row.state_type_payment_description == 'Pagado' ? 'text-success' : 'text-warning'">{{ row.state_type_payment_description }}</td>
-                            <td v-if="col.visible && col.key === 'number'" :key="col.key">{{ row.number }}<br /><small v-text="row.document_type_description"></small><br /></td>
-                            <td v-if="col.visible && col.key === 'products'" :key="col.key">
+                            <td v-if="col.visible && col.key === 'number'" :key="col.key">
+                                <span class="customer-link" @click="clickDetail(row)">
+                                    <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -2px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
+                                    {{ row.number }}
+                                </span><br /><small v-text="row.document_type_description"></small><br /></td>
+                            <td v-if="col.visible && col.key === 'products'" :key="col.key" @click.stop>
                                 <el-popover placement="right" width="400" trigger="click">
                                     <el-table :data="row.items">
                                         <el-table-column width="80" property="key" label="#"></el-table-column>
@@ -112,7 +126,7 @@
                                 </template>
                                 <span v-else class="text-muted">-</span>
                             </td>
-                            <td v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'payments'" :key="col.key" class="text-end" @click.stop>
                                 <button v-if="row.state_type_id != '11'" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2" @click.prevent="clickPurchasePayment(row.id)">Pagos</button>
                             </td>
                             <td v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
@@ -129,7 +143,7 @@
                             <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
                             <td v-if="col.visible && col.key === 'total_perception'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ row.total_perception ? formatDecimal(row.total_perception) : formatDecimal(0) }}</td>
                             <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">{{ row.currency_type_id === 'PEN' ? 'S/' : '$' }} {{ formatDecimal(row.total) }}</td>
-                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
                                 <el-dropdown trigger="click" @command="handleCommand($event, row)">
                                     <el-button class="btn-dropdown">
                                         <i class="fas fa-ellipsis-v"></i>
@@ -137,6 +151,13 @@
                                     </el-button>
                                     <template #dropdown>
                                         <el-dropdown-menu>
+                                            <el-dropdown-item command="detail">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                                Ver detalle
+                                            </el-dropdown-item>
+
+                                            <el-dropdown-item divided />
+
                                             <el-dropdown-item v-if="permissions.edit_purchase && row.state_type_id != '11'" command="edit">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
                                                 Editar
@@ -195,8 +216,37 @@
             :recordId="recordId"
             :showClose="true"
         ></purchase-options>
+
+        <purchase-detail-drawer
+            :showDrawer.sync="showDetailDrawer"
+            :recordId="detailRecordId"
+            :initialRow.sync="detailInitialRow"
+            :resource="resource"
+            :permissions="permissions"
+            :disableGuideBtn="disableGuideBtn"
+            @edit="openEditFromDrawer"
+            @guide="openGuideFromDrawer"
+            @payments="openPaymentsFromDrawer"
+        ></purchase-detail-drawer>
     </div>
 </template>
+
+<style scoped>
+.anulate_color {
+    color: red;
+}
+.purchase-supplier-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.purchase-supplier-link:hover,
+.purchase-supplier-link:focus {
+    color: inherit;
+    text-decoration: underline;
+    outline: none;
+}
+</style>
 
 <script>
 import { mapActions, mapState } from "vuex";
@@ -208,6 +258,7 @@ import { deletable } from "../../../mixins/deletable";
 import PurchaseImport from "./import.vue";
 import PurchasePayments from "@viewsModulePurchase/purchase_payments/payments.vue";
 import PurchaseOptions from "./partials/options.vue";
+import PurchaseDetailDrawer from "./partials/detail-drawer.vue";
 
 export default {
     mixins: [deletable],
@@ -216,7 +267,8 @@ export default {
         DataTable,
         PurchaseImport,
         PurchasePayments,
-        PurchaseOptions
+        PurchaseOptions,
+        PurchaseDetailDrawer
     },
     props: ["typeUser", "configuration"],
     data() {
@@ -229,6 +281,9 @@ export default {
             showDialogOptions: false,
             showDialogPurchasePayments: false,
             showImportDialog: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             columns: {
                 date_of_issue:    { title: "F. Emisión",     visible: true,  order: 0  },
                 date_of_due:      { title: "F. Vencimiento", visible: false, order: 1  },
@@ -340,6 +395,9 @@ export default {
         },
         handleCommand(command, row) {
             switch (command) {
+                case "detail":
+                    this.clickDetail(row);
+                    break;
                 case "edit":
                     if (row.state_type_id != "11")
                         window.location.href = `/${this.resource}/edit/${row.id}`;
@@ -377,6 +435,23 @@ export default {
         },
         clickImport() {
             this.showImportDialog = true;
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            window.location.href = `/${this.resource}/edit/${recordId}`;
+        },
+        openGuideFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickGuide(recordId);
+        },
+        openPaymentsFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickPurchasePayment(recordId);
         },
         getDocumentTypes() {
             this.$http

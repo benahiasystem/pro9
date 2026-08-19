@@ -216,9 +216,12 @@ class ContractController extends Controller
 
     public function record($id)
     {
-        $record = new ContractResource(Contract::findOrFail($id));
+        $contract = Contract::with([
+            'seller',
+            'person.identity_document_type',
+        ])->findOrFail($id);
 
-        return $record;
+        return new ContractResource($contract);
     }
 
 

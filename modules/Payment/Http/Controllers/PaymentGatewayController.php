@@ -162,7 +162,7 @@ class PaymentGatewayController extends Controller
 
         $credentials = $this->izipayCredentials($is_tenant);
 
-        if (!$credentials) {
+        if (! $credentials) {
             return [
                 'success' => false,
                 'formToken' => null,
@@ -207,7 +207,24 @@ class PaymentGatewayController extends Controller
      */
     private function izipayCredentials(bool $is_tenant = false)
     {
-        return $is_tenant ? PaymentConfiguration::accessIzipay() : Configuration::accessIzipay();
+        if ($is_tenant) {
+            return PaymentConfiguration::accessIzipayCredentials();
+        }
+
+        $record = Configuration::query()
+            ->select('username_izipay', 'password_izipay', 'publickey_izipay', 'sha256key_izipay')
+            ->first();
+
+        if (! $record) {
+            return null;
+        }
+
+        return [
+            'username_izipay' => PaymentConfiguration::normalizeIzipayCredential($record->username_izipay),
+            'password_izipay' => PaymentConfiguration::normalizeIzipayCredential($record->password_izipay),
+            'publickey_izipay' => PaymentConfiguration::normalizeIzipayCredential($record->publickey_izipay),
+            'sha256key_izipay' => PaymentConfiguration::normalizeIzipayCredential($record->sha256key_izipay),
+        ];
     }
 
 
@@ -215,13 +232,15 @@ class PaymentGatewayController extends Controller
     {
 
         $is_tenant = $request->boolean('isTenant', false);
-
-        $configuration = $is_tenant
-            ? PaymentConfiguration::select('publickey_izipay')->first()
-            : Configuration::select('publickey_izipay')->first();
+        $publickey_izipay = $is_tenant
+            ? PaymentConfiguration::getKryptonPublicKeyIzipay()
+            : (PaymentConfiguration::buildKryptonPublicKey(
+                optional(Configuration::select('username_izipay')->first())->username_izipay,
+                optional(Configuration::select('publickey_izipay')->first())->publickey_izipay
+            ) ?: null);
 
         return [
-            'publickey_izipay' => optional($configuration)->publickey_izipay,
+            'publickey_izipay' => $publickey_izipay,
         ];
     }
 
@@ -234,7 +253,7 @@ class PaymentGatewayController extends Controller
             'uuid' => 'required|string'
         ])['uuid'];
 
-        if (!$credentials) {
+        if (! $credentials) {
             return [
                 'success' => false,
                 'result' => null,
@@ -265,11 +284,15 @@ class PaymentGatewayController extends Controller
      */
     public function mercadoPagoCredentials(bool $is_tenant = false)
     {
-        if ($is_tenant) {
-            return optional(PaymentConfiguration::select('access_token_mp')->first())->access_token_mp;
+        if (
+            $is_tenant
+        ) {
+            $access_token = optional(PaymentConfiguration::select('access_token_mp')->first())->access_token_mp;
+        } else {
+            $access_token = optional(Configuration::select('access_token_mp')->first())->access_token_mp;
         }
 
-        return optional(Configuration::select('access_token_mp')->first())->access_token_mp;
+        return trim((string) $access_token);
     }
 
     /**
@@ -340,6 +363,8 @@ class PaymentGatewayController extends Controller
             $payment->transaction_amount = (float) $request->input('form_data.transaction_amount');
             $payment->installments = (int) $request->input('form_data.installments');
             $payment->payer = $request->input('form_data.payer');
+            $payment->description = $request->input('description') ?: 'Compras Ecommerce';
+            $payment->external_reference = $request->input('external_reference') ?: (string) Str::uuid();
 
             if (!$payment->save()) {
                 $error = $payment->error;
@@ -357,12 +382,24 @@ class PaymentGatewayController extends Controller
             }
 
             $paid = $this->getStatusPaymentMP($payment->status);
+            $pending = in_array($payment->status, ['in_process', 'pending'], true);
+            $accepted = $paid || $pending;
+            $message = $accepted
+                ? null
+                : $this->getMercadoPagoStatusMessage($payment->status_detail);
+
+            Log::info('MercadoPago payment result', [
+                'payment_id' => $payment->id ?? null,
+                'status' => $payment->status ?? null,
+                'status_detail' => $payment->status_detail ?? null,
+            ]);
 
             return [
-                'success' => true,
+                'success' => $accepted,
                 'paid' => $paid,
-                'pending' => in_array($payment->status, ['in_process', 'pending'], true),
+                'pending' => $pending,
                 'result' => $this->formatMercadoPagoPaymentResult($payment),
+                'message' => $message,
             ];
 
         } catch (\Throwable $th) {
@@ -400,5 +437,24 @@ class PaymentGatewayController extends Controller
             default                             => false,
         };
      }
+
+    private function getMercadoPagoStatusMessage(?string $statusDetail): string
+    {
+        return match ($statusDetail) {
+            'cc_rejected_bad_filled_card_number' => 'Revisa el número de la tarjeta.',
+            'cc_rejected_bad_filled_date' => 'Revisa la fecha de vencimiento de la tarjeta.',
+            'cc_rejected_bad_filled_security_code' => 'Revisa el código de seguridad de la tarjeta.',
+            'cc_rejected_bad_filled_other' => 'Revisa los datos ingresados de la tarjeta.',
+            'cc_rejected_call_for_authorize' => 'El titular debe autorizar el pago con su banco.',
+            'cc_rejected_card_disabled' => 'La tarjeta está deshabilitada. Comunícate con el banco o usa otra tarjeta.',
+            'cc_rejected_duplicated_payment' => 'Mercado Pago detectó un pago duplicado por el mismo importe.',
+            'cc_rejected_high_risk' => 'Mercado Pago rechazó la operación por validaciones de seguridad.',
+            'cc_rejected_insufficient_amount' => 'La tarjeta no tiene fondos suficientes.',
+            'cc_rejected_invalid_installments' => 'La tarjeta no admite la cantidad de cuotas seleccionada.',
+            'cc_rejected_max_attempts' => 'Se alcanzó el límite de intentos permitidos.',
+            'cc_rejected_blacklist', 'cc_rejected_card_error', 'cc_rejected_other_reason' => 'La entidad emisora no pudo procesar el pago. Prueba con otra tarjeta.',
+            default => 'Mercado Pago no aprobó la operación.',
+        };
+    }
 
 }

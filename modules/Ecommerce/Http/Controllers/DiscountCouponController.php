@@ -9,6 +9,7 @@ use Modules\Ecommerce\Http\Requests\DiscountCouponRequest;
 use Modules\Ecommerce\Http\Resources\DiscountCouponCollection;
 use Modules\Ecommerce\Http\Resources\DiscountCouponResource;
 use Modules\Ecommerce\Models\Tenant\DiscountCoupon;
+use Illuminate\Support\Facades\Validator;
 
 /**
  * CRUD de cupones de descuento para el módulo Ecommerce.
@@ -94,7 +95,7 @@ class DiscountCouponController extends Controller
     {
         $id   = $request->input('id');
         $data = $request->validated();
-        $code = $request->input('code');
+        $code = mb_strtoupper(trim((string) $request->input('code')));
 
         // Validación manual de código
         if (!$code || strlen($code) > 20) {
@@ -126,6 +127,67 @@ class DiscountCouponController extends Controller
         $coupon->save();
 
         return new DiscountCouponResource($coupon);
+    }
+
+    /**
+     * Valida un cupón contra el subtotal actual sin consumirlo.
+     */
+    public function validateCoupon(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => ['required', 'string', 'max:20'],
+            'subtotal' => ['required', 'numeric', 'min:0'],
+        ], [
+            'code.required' => 'Ingresa un código de cupón.',
+            'subtotal.required' => 'No se recibió el subtotal de la compra.',
+            'subtotal.numeric' => 'El subtotal de la compra no es válido.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $code = mb_strtoupper(trim((string) $request->input('code')));
+        $subtotal = round((float) $request->input('subtotal'), 2);
+        $coupon = DiscountCoupon::where('code', $code)->first();
+
+        if (! $coupon) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El cupón ingresado no existe.',
+            ], 422);
+        }
+
+        $personId = optional(auth('ecommerce')->user())->id;
+        if ($message = $coupon->validationError($personId, $subtotal)) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], 422);
+        }
+
+        $discount = $coupon->calculateDiscountAmount($subtotal);
+        $total = max(0, round($subtotal - $discount, 2));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cupón aplicado correctamente.',
+            'data' => [
+                'id' => $coupon->id,
+                'code' => $coupon->code,
+                'type' => $coupon->type,
+                'value' => (float) $coupon->amount,
+                'discount' => $discount,
+                'subtotal' => $subtotal,
+                'new_total' => $total,
+                'total' => $total,
+                'free_shipping' => (bool) $coupon->free_shipping,
+            ],
+        ]);
     }
 
     /**

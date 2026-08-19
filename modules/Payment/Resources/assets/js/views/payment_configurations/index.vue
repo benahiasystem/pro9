@@ -292,6 +292,12 @@
                 accessTokenMpDraft: null,
                 accessTokenMpRevealLoading: false,
                 accessTokenMpUnchangedSinceReveal: false,
+                payments: [
+                    {id: '01', description: 'Yape', enabled: 'enabled_yape'},
+                    {id: '02', description: 'Mercado Pago', enabled: 'enabled_mp'},
+                    {id: '03', description: 'Culqi', enabled: 'enabled_culqi'},
+                    {id: '04', description: 'Izipay', enabled: 'enabled_izipay'},
+                ],
             }
         },
         computed: {
@@ -424,8 +430,8 @@
 
                 this.$http.post(`/${this.resource}`, payload)
                     .then(response => {
-                        if (response.data.success) {
-                            this.$message.success(response.data.message)
+                        if (response.data && response.data.success) {
+                            this.$message.success(response.data.message || 'Configuración actualizada')
 
                             if (this.form.type === '02' && this.accessTokenMpDraft) {
                                 this.form.has_access_token_mp = true
@@ -434,15 +440,23 @@
                                 this.resetAccessTokenMpState()
                             }
                         } else {
-                            this.$message.error(response.data.message)
+                            this.$message.error((response.data && response.data.message) || 'No se pudo guardar la configuración')
                         }
                     })
                     .catch(error => {
-                        if (error.response.status === 422) {
-                            this.errors = error.response.data
+                        if (error.response && error.response.status === 422) {
+                            const data = error.response.data || {}
+                            this.errors = data.errors || data
+                            const firstError = data.errors
+                                ? Object.values(data.errors).flat()[0]
+                                : null
+                            this.$message.error(firstError || data.message || 'Error de validación')
                         } else {
                             console.log(error)
-                            this.$message.error(error.response.data.message)
+                            const message = error.response && error.response.data
+                                ? error.response.data.message
+                                : null
+                            this.$message.error(message || 'Error al guardar la configuración')
                         }
                     })
                     .then(() => {
@@ -479,6 +493,7 @@
                     has_access_token_mp: false,
                     access_token_mp_suffix: null,
                     access_token_mp_length: null,
+                    default_payment_for_payment_links: null,
                 }
 
                 this.errors = {}

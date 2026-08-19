@@ -139,10 +139,10 @@
                                 <label class="control-label">FECHA DE VENCIMIENTO</label>
                                 <el-date-picker
                                     v-model="form.expires_at"
-                                    type="date"
-                                    format="dd/MM/yyyy"
-                                    value-format="yyyy-MM-dd"
-                                    placeholder="dd/mm/aaaa"
+                                    type="datetime"
+                                    format="dd/MM/yyyy HH:mm"
+                                    value-format="yyyy-MM-dd HH:mm:ss"
+                                    placeholder="dd/mm/aaaa hh:mm"
                                     style="width: 100%;"
                                 ></el-date-picker>
                                 <small class="form-control-feedback" v-if="errors.expires_at" v-text="errors.expires_at[0]"></small>

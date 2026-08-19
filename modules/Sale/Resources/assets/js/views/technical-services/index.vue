@@ -47,44 +47,56 @@
                 <data-table :resource="resource">
                     <tr slot="heading">
                         <!-- <th>#</th> -->
-                        <th>Cliente</th>
-                        <th class="text-end">Celular</th>
-                        <th class="text-end">Número</th>
-                        <th>F. Emisión</th>
-                        <th>N° Serie</th>
-                        <th>Costo S.</th>
-                        <th>Costo P.</th>
-                        <th>Total</th>
+                        <th class="text-start">Cliente</th>
+                        <th class="text-center">Celular</th>
+                        <th class="text-center">Número</th>
+                        <th class="text-center">F. Emisión</th>
+                        <th class="text-center">N° Serie</th>
+                        <th class="text-end">Costo S.</th>
+                        <th class="text-end">Costo P.</th>
+                        <th class="text-end">Total</th>
                         <th class="text-center">Documento</th>
                         <!-- <th>Pago adelantado</th> -->
-                        <th></th>
-                        <th>Saldo</th>
+                        <th class="text-center"></th>
+                        <th class="text-end">Saldo</th>
                         <th class="text-center">Ver</th>
-                        <th class="text-end">Acciones</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
 
                     <tr></tr>
-                    <tr slot-scope="{ index, row }">
+                    <tr
+                        slot-scope="{ index, row }"
+                    >
                         <!-- <td>{{ index }}</td> -->
-                        <td>
-                            {{ row.customer_name }}<br /><small
+                        <td class="text-start">
+                            <span
+                                role="button"
+                                tabindex="0"
+                                @keyup.enter.prevent="clickDetail(row)"
+                            >{{ row.customer_name }}</span>
+                            <br /><small
                                 v-text="row.customer_number"
                             ></small>
                         </td>
-                        <td class="text-end">{{ row.cellphone }}</td>
-                        <td class="text-end">{{ row.id }}</td>
-                        <td class="text-start">
+                        <td class="text-center">{{ row.cellphone }}</td>
+                        <td class="text-center">
+                            <span class="customer-link" @click="clickDetail(row)">
+                                <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -2px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
+                                {{ row.id }}
+                            </span>
+                        </td>
+                        <td class="text-center">
                             {{ row.date_of_issue | toDate }}
                         </td>
                         <td class="text-center">{{ row.serial_number }}</td>
-                        <td class="text-center">{{ formatDecimal(row.cost) }}</td>
-                        <td class="text-center">{{ formatDecimal(row.total) }}</td>
-                        <td class="text-center">{{ formatDecimal(row.sum_total) }}</td>
+                        <td class="text-end">{{ formatDecimal(row.cost) }}</td>
+                        <td class="text-end">{{ formatDecimal(row.total) }}</td>
+                        <td class="text-end">{{ formatDecimal(row.sum_total) }}</td>
                         <td class="text-center">
                             {{ row.number_document_sale_note }}
                         </td>
                         <!-- <td class="text-center">{{ row.prepayment }}</td> -->
-                        <td class="text-end">
+                        <td class="text-center" @click.stop>
                             <button
                                 type="button"
                                 style="min-width: 41px"
@@ -95,9 +107,9 @@
                             </button>
                         </td>
 
-                        <td class="text-center">{{ formatDecimal(row.balance) }}</td>
+                        <td class="text-end">{{ formatDecimal(row.balance) }}</td>
 
-                        <td class="text-center">
+                        <td class="text-center" @click.stop>
                             <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info"
@@ -107,7 +119,7 @@
                             </button>
                         </td>
 
-                        <td class="text-end">
+                        <td class="text-center" @click.stop>
                             <el-dropdown
                                 trigger="click"
                                 @command="(command) => handleRowAction(command, row)"
@@ -117,6 +129,13 @@
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </el-button>
                                 <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item command="detail">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                        Ver detalle
+                                    </el-dropdown-item>
+
+                                    <el-dropdown-item divided />
+
                                     <el-dropdown-item
                                         v-if="!row.has_document_sale_note"
                                         command="generate"
@@ -171,6 +190,16 @@
                 :recordId="recordId"
                 :external="true"
             ></technical-service-payments>
+
+            <technical-service-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                :canEditRow="canEditTechnicalService"
+                @edit="openEditFromDrawer"
+                @payments="openPaymentsFromDrawer"
+            ></technical-service-detail-drawer>
         </div>
     </div>
 </template>
@@ -187,12 +216,26 @@
     }
 }
 </style>
+<style scoped>
+.technical-service-customer-link {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.technical-service-customer-link:hover,
+.technical-service-customer-link:focus {
+    color: inherit;
+    text-decoration: underline;
+    outline: none;
+}
+</style>
 <script>
 import TechnicalServicesForm from "./form.vue";
 import DataTable from "@components/DataTable.vue";
 import { deletable } from "@mixins/deletable";
 import TechnicalServicePayments from "./partials/payments.vue";
 import TechnicalServiceOptions from "./partials/options.vue";
+import TechnicalServiceDetailDrawer from "./partials/detail-drawer.vue";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 
 export default {
@@ -205,7 +248,8 @@ export default {
         TechnicalServicesForm,
         DataTable,
         TechnicalServicePayments,
-        TechnicalServiceOptions
+        TechnicalServiceOptions,
+        TechnicalServiceDetailDrawer
     },
     data() {
         return {
@@ -215,6 +259,9 @@ export default {
             resource: "technical-services",
             recordId: null,
             showDialogPayments: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             decimal_quantity: 2
         };
     },
@@ -274,6 +321,11 @@ export default {
             this.showDialogOptions = true;
         },
         handleRowAction(command, row) {
+            if (command === "detail") {
+                this.clickDetail(row);
+                return;
+            }
+
             if (command === "generate") {
                 this.clickOptions(row.id);
                 return;
@@ -287,6 +339,22 @@ export default {
             if (command === "delete") {
                 this.clickDelete(row.id);
             }
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickCreate(recordId);
+        },
+        openPaymentsFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickPayment(recordId);
+        },
+        canEditTechnicalService(row) {
+            return row && !row.has_document_sale_note;
         }
     }
 };

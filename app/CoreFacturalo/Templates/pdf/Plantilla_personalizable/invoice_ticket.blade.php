@@ -33,8 +33,8 @@
     $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 
     extract(\App\CoreFacturalo\Helpers\Template\TemplateHelper::getPersonalizableTicketShowColumns($document->establishment_id));
-    $colspan_total = $show_codigo ? 7 : 6;
-    $colspan_label = $colspan_total - 1;
+
+    $person_type = $document->person?->person_type;
 
 @endphp
 <html>
@@ -487,12 +487,12 @@
     <thead class="">
     <tr>
         @if($show_codigo) <th class="border-top-bottom desc-9 text-left">COD.</th> @endif
-        <th class="border-top-bottom desc-9 text-left">CANT.</th>
-        <th class="border-top-bottom desc-9 text-left">U.</th>
-        <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th>
-        <th class="border-top-bottom desc-9 text-right" style="padding-right: 6px;">P.U</th>
-        <th class="border-top-bottom desc-9 text-right" style="padding-right: 6px;">DTO.</th>
-        <th class="border-top-bottom desc-9 text-right">TOTAL</th>
+        @if($show_cantidad) <th class="border-top-bottom desc-9 text-left">CANT.</th> @endif
+        @if($show_unidad) <th class="border-top-bottom desc-9 text-left">U.</th> @endif
+        @if($show_descripcion) <th class="border-top-bottom desc-9 text-left">DESCRIPCIÓN</th> @endif
+        @if($show_precio_unitario) <th class="border-top-bottom desc-9 text-right" style="padding-right: 6px;">P.U</th> @endif
+        @if($show_descuento) <th class="border-top-bottom desc-9 text-right" style="padding-right: 6px;">DTO.</th> @endif
+        @if($show_total) <th class="border-top-bottom desc-9 text-right">TOTAL</th> @endif
     </tr>
     </thead>
     <tbody>
@@ -511,18 +511,19 @@
     @if($hay_fusionados)
         <tr>
         @if($show_codigo) <td class="text-center desc-9 align-top font-bold">001</td> @endif
-        <td class="text-center">{{ number_format($cantidad_fusionada, 0) }}</td>
-        <td class="text-center desc-9 align-top">NIU</td>
-        <td class="text-left desc-9 align-top font-bold">Por consumo</td>
-        <td class="text-right">{{ number_format($total_fusionado, 2) }}</td>
-        <td class="text-right">0.00</td>
-        <td class="text-right">{{ number_format($total_fusionado, 2) }}</td>
+        @if($show_cantidad) <td class="text-center">{{ number_format($cantidad_fusionada, 0) }}</td> @endif
+        @if($show_unidad) <td class="text-center desc-9 align-top">NIU</td> @endif
+        @if($show_descripcion) <td class="text-left desc-9 align-top font-bold">Por consumo</td> @endif
+        @if($show_precio_unitario) <td class="text-right">{{ number_format($total_fusionado, 2) }}</td> @endif
+        @if($show_descuento) <td class="text-right">0.00</td> @endif
+        @if($show_total) <td class="text-right">{{ number_format($total_fusionado, 2) }}</td> @endif
     </tr>
     <tr><td colspan="{{ $colspan_total }}" class="border-bottom"></td></tr>
     @else
         @foreach($document->items as $row)
             <tr>
                 @if($show_codigo) <td class="text-center desc-9 align-top font-bold">{{ $row->item->internal_id }}</td> @endif
+                @if($show_cantidad)
                 <td class="text-center desc-9 align-top font-bold">
                     @if(((int)$row->quantity != $row->quantity))
                         {{ $row->quantity }}
@@ -530,7 +531,9 @@
                         {{ number_format($row->quantity, 0) }}
                     @endif
                 </td>
-                <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td>
+                @endif
+                @if($show_unidad) <td class="text-center desc-9 align-top">{{ $row->item->unit_type_id }}</td> @endif
+                @if($show_descripcion)
                 <td class="text-left desc-9 align-top font-bold">
                     @if($row->name_product_pdf)
                         {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::formatNameProductPdfForTicket($row->name_product_pdf) !!}
@@ -576,7 +579,7 @@
                             @endif
                         @endforeach
                     @endif
-                    @if($row->discounts)
+                    @if($show_descuento && $row->discounts)
                         @foreach($row->discounts as $dtos)
                             @if(!($dtos->from_global_distribution ?? false))
                                 <br/><small>{{ ($dtos->is_amount ?? false) ? '' : ($dtos->factor * 100).'%' }} {{$dtos->description }}</small>
@@ -637,7 +640,9 @@
                     </small>
                     @endif
                 </td>
-                <td class="text-right desc-9 align-top" style="padding-right: 6px;">{{ number_format($row->unit_price, 2) }}</td>
+                @endif
+                @if($show_precio_unitario) <td class="text-right desc-9 align-top" style="padding-right: 6px;">{{ number_format($row->unit_price, 2) }}</td> @endif
+                @if($show_descuento)
                 <td class="text-right desc-9 align-top" style="padding-right: 6px;">
                     @if($row->discounts)
                         @php
@@ -651,7 +656,8 @@
                         0.00
                     @endif
                 </td>
-                <td class="text-right desc-9 align-top font-bold">{{ number_format($row->total, 2) }}</td>
+                @endif
+                @if($show_total) <td class="text-right desc-9 align-top font-bold">{{ number_format($row->total, 2) }}</td> @endif
             </tr>
             <tr>
                 <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
@@ -662,14 +668,16 @@
         @foreach($document->prepayments as $p)
             <tr>
                 @if($show_codigo) <td class="text-center desc-9 align-top"></td> @endif
-                <td class="text-center desc-9 align-top">1</td>
-                <td class="text-center desc-9 align-top">NIU</td>
+                @if($show_cantidad) <td class="text-center desc-9 align-top">1</td> @endif
+                @if($show_unidad) <td class="text-center desc-9 align-top">NIU</td> @endif
+                @if($show_descripcion)
                 <td class="text-left desc-9 align-top">
                     ANTICIPO: {{($p->document_type_id == '02')? 'FACTURA':'BOLETA'}} NRO. {{$p->number}}
                 </td>
-                <td class="text-right desc-9 align-top">-{{ number_format($p->total, 2) }}</td>
-                <td class="text-right desc-9 align-top">0.00</td>
-                <td class="text-right desc-9 align-top">-{{ number_format($p->total, 2) }}</td>
+                @endif
+                @if($show_precio_unitario) <td class="text-right desc-9 align-top">-{{ number_format($p->total, 2) }}</td> @endif
+                @if($show_descuento) <td class="text-right desc-9 align-top">0.00</td> @endif
+                @if($show_total) <td class="text-right desc-9 align-top">-{{ number_format($p->total, 2) }}</td> @endif
             </tr>
             <tr>
                 <td colspan="{{ $colspan_total }}" class="border-bottom"></td>
@@ -793,6 +801,20 @@
         <tr>
             <td colspan="{{ $colspan_label }}" class="text-right font-bold desc">VUELTO: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold desc">{{ number_format(abs($balance),2, ".", "") }}</td>
+        </tr>
+    @endif
+
+    @if($show_nro_producto)
+        <tr>
+            <td colspan="{{ $colspan_total }}" class="text-left font-bold desc">N° DE PRODUCTOS: {{ $document->items->count() }}</td>
+        </tr>
+    @endif
+
+    @if($show_tipo_persona && $person_type && $person_type->enabled_description_person_type)
+        <tr>
+            <td colspan="{{ $colspan_total }}" class="text-left desc">
+                <span class="font-bold">{{ $person_type->description }}:</span> {{ $person_type->description_person_type }}
+            </td>
         </tr>
     @endif
     </tbody>

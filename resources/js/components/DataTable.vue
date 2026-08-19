@@ -88,8 +88,8 @@
                                 @change="handleShowDisabledChange"
                             >
                                 <el-option label="Todos" value="all"></el-option>
-                                <el-option label="Habilitados" value="enabled"></el-option>
-                                <el-option label="Inhabilitados" value="disabled"></el-option>
+                                <el-option :label="filterEnabledLabel" value="enabled"></el-option>
+                                <el-option :label="filterDisabledLabel" value="disabled"></el-option>
                             </el-select>
                         </div>
                     </div>
@@ -316,6 +316,16 @@ export default {
         filterPlaceholder: {
             type: String,
             default: 'Filtrar productos',
+            required: false
+        },
+        filterEnabledLabel: {
+            type: String,
+            default: 'Habilitados',
+            required: false
+        },
+        filterDisabledLabel: {
+            type: String,
+            default: 'Inhabilitados',
             required: false
         },
         customListColumns: {

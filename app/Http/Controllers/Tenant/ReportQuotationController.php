@@ -51,11 +51,11 @@ class ReportQuotationController extends Controller
             $d = $request->d;
             $a = $request->a;
             
-            $reports = Quotation::whereBetween('date_of_issue', [$d, $a])->latest();
+            $reports = Quotation::whereSourceAdmin()->whereBetween('date_of_issue', [$d, $a])->latest();
         }
         else {
             
-            $reports = Quotation::latest();
+            $reports = Quotation::whereSourceAdmin()->latest();
         }
 
         $reports = $reports->paginate(config('tenant.items_per_page'));
@@ -81,7 +81,7 @@ class ReportQuotationController extends Controller
             $d = $request->d;
             $a = $request->a;
 
-            $reports = Quotation::whereBetween('date_of_issue', [$d, $a])->latest()->get();
+            $reports = Quotation::whereSourceAdmin()->whereBetween('date_of_issue', [$d, $a])->latest()->get();
             
            /* if (is_null($td)) {
                 $reports = Purchase::with([ 'state_type', 'supplier'])
@@ -99,7 +99,7 @@ class ReportQuotationController extends Controller
         }
         else {
 
-            $reports = Quotation::latest()->get();
+            $reports = Quotation::whereSourceAdmin()->latest()->get();
            /* if (is_null($td)) {
                 $reports = Purchase::with([ 'state_type', 'supplier'])
                     ->latest()
@@ -138,7 +138,7 @@ class ReportQuotationController extends Controller
             $d = $request->d;
             $a = $request->a;
 
-              $records = Quotation::whereBetween('date_of_issue', [$d, $a])->latest()->get();
+              $records = Quotation::whereSourceAdmin()->whereBetween('date_of_issue', [$d, $a])->latest()->get();
             
             /*if (is_null($td)) {
                 $records = Purchase::with([ 'state_type', 'supplier'])
@@ -155,7 +155,7 @@ class ReportQuotationController extends Controller
             }*/
         }
         else {
-             $records = Quotation::latest()->get();
+             $records = Quotation::whereSourceAdmin()->latest()->get();
            /* if (is_null($td)) {
                 $records = Purchase::with([ 'state_type', 'supplier'])
                     ->latest()

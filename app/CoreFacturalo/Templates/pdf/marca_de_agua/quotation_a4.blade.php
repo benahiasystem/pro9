@@ -7,7 +7,7 @@
     $accounts = \App\Models\Tenant\BankAccount::all();
     //$accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);
 
-    $tittle = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
+    $tittle = $document->pdf_title;
 
     $logo = "storage/uploads/logos/{$company->logo}";
     if($establishment->logo) {

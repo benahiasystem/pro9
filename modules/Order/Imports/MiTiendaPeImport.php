@@ -223,7 +223,7 @@
 
                     // Crear nuevo cliente
                     $customer = new Person($dataCustomer);
-                    $customer->identity_document_type_id = IdentityDocumentType::where('description', 'Doc.trib.no.dom.sin.ruc')->first()->id;
+                    $customer->identity_document_type_id = '0';
                     if (strlen($identificationNumber) == 11) {
                         $customer->identity_document_type_id = IdentityDocumentType::where('description', 'RUC')->first()->id;
                     } elseif (strlen($identificationNumber) == 8) {
@@ -571,7 +571,7 @@
 
                 // Crear nuevo cliente
                 $customer = new Person($dataCustomer);
-                $customer->identity_document_type_id = IdentityDocumentType::where('description', 'Doc.trib.no.dom.sin.ruc')->first()->id;
+                $customer->identity_document_type_id = '0';
                 if (strlen($identificationNumber) == 11) {
                     $customer->identity_document_type_id = IdentityDocumentType::where('description', 'RUC')->first()->id;
                 } elseif (strlen($identificationNumber) == 8) {

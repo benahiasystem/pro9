@@ -82,7 +82,7 @@ class PersonController extends Controller
     public function tables()
     {
         $countries = Country::whereActive()->orderByDescription()->get();
-        $identity_document_types = IdentityDocumentType::whereActive()->get();
+        $identity_document_types = IdentityDocumentType::whereActive()->orderByPersonPriority()->get();
         $person_types = PersonType::get();
         $locations = func_get_locations();
         $zones = Zone::all();
@@ -144,7 +144,14 @@ class PersonController extends Controller
         $person->fill($data);
 
         $location_id = $request->input('location_id');
-        if($request->input('country_id') === 'PE' && is_array($location_id) && count($location_id) === 3) {
+        if (
+            $request->input('country_id') === 'PE'
+            && is_array($location_id)
+            && count($location_id) === 3
+            && !empty($location_id[0])
+            && !empty($location_id[1])
+            && !empty($location_id[2])
+        ) {
             $person->district_id = $location_id[2];
             $person->province_id = $location_id[1];
             $person->department_id = $location_id[0];
@@ -160,7 +167,26 @@ class PersonController extends Controller
 
         $person->save();
 
-        $this->syncPersonAddresses($person, $addresses);
+        $addresses = $request->input('addresses') ?: [];
+        $existingAddresses = $person->addresses()->get();
+        $submittedIds = collect($addresses)->pluck('id')->filter()->all();
+
+        $existingAddresses->each(function ($item) use ($submittedIds) {
+            if (!in_array($item->id, $submittedIds, true)) {
+                $item->delete();
+            }
+        });
+
+        foreach ($addresses as $row) {
+            $payload = $this->mapPersonAddressPayload($row);
+
+            if (!empty($row['id'])) {
+                $person->addresses()->updateOrCreate(['id' => $row['id']], $payload);
+                continue;
+            }
+
+            $person->addresses()->create($payload);
+        }
 
         $optional_email = $request->optional_email;
         if (!empty($optional_email)) {
@@ -233,6 +259,51 @@ class PersonController extends Controller
         } else {
             $query->whereNotIn('id', $keepIds)->delete();
         }
+    }
+
+    /**
+     * Normaliza el payload de una dirección secundaria antes de persistirla.
+     */
+    private function mapPersonAddressPayload(array $row): array
+    {
+        $locationId = $row['location_id'] ?? [];
+        if (!is_array($locationId)) {
+            $locationId = [];
+        }
+
+        $locationId = array_values(array_filter($locationId, function ($value) {
+            return $value !== null && $value !== '';
+        }));
+
+        $departmentId = $row['department_id'] ?? null;
+        $provinceId = $row['province_id'] ?? null;
+        $districtId = $row['district_id'] ?? null;
+
+        if (count($locationId) === 3) {
+            $departmentId = $locationId[0];
+            $provinceId = $locationId[1];
+            $districtId = $locationId[2];
+        } elseif ($departmentId && $provinceId && $districtId) {
+            $locationId = [$departmentId, $provinceId, $districtId];
+        } else {
+            $departmentId = null;
+            $provinceId = null;
+            $districtId = null;
+        }
+
+        return [
+            'country_id'           => $row['country_id'] ?? 'PE',
+            'address'              => $row['address'] ?? null,
+            'phone'                => $row['phone'] ?? null,
+            'email'                => $row['email'] ?? null,
+            'main'                 => (bool) ($row['main'] ?? false),
+            'establishment_code'   => $row['establishment_code'] ?? null,
+            'has_consigned'        => (bool) ($row['has_consigned'] ?? false),
+            'consigned_id'         => $row['consigned_id'] ?? null,
+            'department_id'        => $departmentId,
+            'province_id'          => $provinceId,
+            'district_id'          => $districtId,
+        ];
     }
 
     public function destroy($id)

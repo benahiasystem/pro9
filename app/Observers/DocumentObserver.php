@@ -7,6 +7,7 @@ use App\Models\Tenant\Cash;
 use App\Models\Tenant\CashDocument;
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Document;
+use App\Models\Tenant\Series;
 use Modules\Finance\Traits\FinanceTrait;
 use Modules\Webhook\Services\WebhookDispatcher;
 use Modules\Webhook\Services\WebhookEvents;
@@ -23,15 +24,37 @@ class DocumentObserver
     public function creating(Document $document)
     {
         $company = Company::active();
-        $number = Functions::newNumber($document->soap_type_id,
-                                       $document->document_type_id,
-                                       $document->series,
-                                       $document->number, Document::class);
+
+        // Serializa la asignaci├│n de correlativo por serie (evita duplicados en pagos concurrentes).
+        Series::where('document_type_id', $document->document_type_id)
+            ->where('number', $document->series)
+            ->lockForUpdate()
+            ->first();
+
+        $seed = $document->number;
+        $number = Functions::newNumber(
+            $document->soap_type_id,
+            $document->document_type_id,
+            $document->series,
+            $seed,
+            Document::class
+        );
+
+        // Si el n├║mero ya est├í tomado (carrera residual), buscar el siguiente libre.
+        if ($seed === '#' || $seed === null || $seed === '') {
+            while (
+                Document::where('document_type_id', $document->document_type_id)
+                    ->where('series', $document->series)
+                    ->where('number', $number)
+                    ->exists()
+            ) {
+                $number++;
+            }
+        }
+
         $document->number = $number;
-
         $document->filename = Functions::filename($company, $document->document_type_id, $document->series, $number);
-        $document->unique_filename = $document->filename; //campo único para evitar duplicados
-
+        $document->unique_filename = $document->filename; //campo ├║nico para evitar duplicados
     }
 
     /**
@@ -85,14 +108,17 @@ class DocumentObserver
 
     public function created(Document $document)
     {
-        // Antes de la lógica de caja: Cash::firstOrFail() puede lanzar excepción
         app(WebhookDispatcher::class)->dispatch(WebhookEvents::DOCUMENT_CREATED, $document);
 
-        // Esto nos verifica que es un documento generado desde el api
+        // Emisi├│n desde tienda / API sin caja abierta: emitir igual, sin asociar caja.
         $cash = Cash::where([
-            ['user_id', auth()->id()],
+            ['user_id', auth()->id() ?: $document->user_id],
             ['state', true],
-        ])->firstOrFail();
+        ])->first();
+
+        if (! $cash) {
+            return;
+        }
 
         $cash_document = CashDocument::where('cash_id', $cash->id)
                     ->where('document_id', $document->id)->first();

@@ -39,6 +39,7 @@ if ($hostname) {
             Route::get('keep-alive', function () {
                 return response()->noContent(); // 204
             });
+            Route::get('notifications/header', 'Tenant\NotificationController@header');
             // Route::get('catalogs', 'Tenant\CatalogController@index')->name('tenant.catalogs.index');
             Route::get('list-reports', 'Tenant\SettingController@listReports');
             Route::get('list-extras', 'Tenant\SettingController@listExtras');
@@ -74,6 +75,7 @@ if ($hostname) {
             Route::get('orders/record/{order}', 'Tenant\OrderController@record');
             //Route::get('orders/print/{external_id}/{format?}', 'Tenant\OrderController@toPrint');
             Route::post('statusOrder/update', 'Tenant\OrderController@updateStatusOrders');
+            Route::post('orders/tracking-code', 'Tenant\OrderController@updateTrackingCode');
             Route::get('orders/pdf/{id}', 'Tenant\OrderController@pdf');
 
             //warehouse
@@ -680,6 +682,8 @@ if ($hostname) {
             Route::get('quotations/table/{table}', 'Tenant\QuotationController@table');
             Route::post('quotations', 'Tenant\QuotationController@store');
             Route::post('quotations/update', 'Tenant\QuotationController@update');
+            Route::get('quotations/prices/{id}', 'Tenant\QuotationController@pricesRecord');
+            Route::post('quotations/update-prices', 'Tenant\QuotationController@updatePrices');
             Route::get('quotations/record/{quotation}', 'Tenant\QuotationController@record');
             Route::get('quotations/anular/{id}', 'Tenant\QuotationController@anular');
             Route::get('quotations/item/tables', 'Tenant\QuotationController@item_tables');

@@ -16,7 +16,7 @@ class ExpenseResource extends JsonResource
     public function toArray($request)
     {
         
-        $expense = Expense::with(['items'])->find($this->id);
+        $expense = Expense::with(['items', 'expense_reason', 'expense_type', 'state_type'])->find($this->id);
         $expense->payments = self::getTransformPayments($expense->payments);
 
         return [

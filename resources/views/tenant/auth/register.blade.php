@@ -1,7 +1,7 @@
 @extends('tenant.layouts.auth')
 
 @section('content')
-<form class="form-material" id="loginform" method="POST" action="{{ route('register') }}">
+<form class="form-material" id="loginform" method="POST" action="{{ route('register', [], false) }}">
         @csrf
 
         <div class="form-group">

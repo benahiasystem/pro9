@@ -89,52 +89,109 @@
                 <h1 class="product-title mb-0">{{$record->description}}</h1>
 
                 @php
-                    // Genera rating random entre 4.1 y 4.9
-                    $rating = ($record->id % 9 + 41) / 10;
-                
-                    // Convierte a porcentaje para pintar estrellas
-                    $percentage = ($rating / 5) * 100;
+                    $activeCampaign = null;
+                    $hasActiveOffer = false;
+                    $activeOfferPrice = (float) $record->sale_unit_price;
+                    $compareAtPrice = null;
+                    $offerExpiresAt = null;
+                    $stockThreshold = 10;
+
+                    if (isset($campaigns) && count($campaigns) > 0) {
+                        $activeCampaign = $campaigns instanceof \Illuminate\Support\Collection
+                            ? $campaigns->first()
+                            : (is_array($campaigns) ? ($campaigns[0] ?? null) : $campaigns);
+                    }
+
+                    if ($activeCampaign) {
+                        $stockThreshold = method_exists($activeCampaign, 'stockThreshold')
+                            ? $activeCampaign->stockThreshold()
+                            : (int) ($activeCampaign->sp_stock_threshold ?: 10);
+
+                        if (method_exists($activeCampaign, 'hasActiveDiscount')
+                            ? $activeCampaign->hasActiveDiscount()
+                            : ($activeCampaign->sp_discount_price && (! $activeCampaign->end_date || $activeCampaign->end_date > now()))
+                        ) {
+                            $hasActiveOffer = true;
+                            $activeOfferPrice = method_exists($activeCampaign, 'discountedPrice')
+                                ? $activeCampaign->discountedPrice((float) $record->sale_unit_price)
+                                : (float) $record->sale_unit_price;
+                            $compareAtPrice = method_exists($activeCampaign, 'compareAtPrice')
+                                ? $activeCampaign->compareAtPrice((float) $record->sale_unit_price)
+                                : null;
+                            if (! $compareAtPrice) {
+                                $hasActiveOffer = false;
+                            }
+                        }
+
+                        // Evergreen: si venció, rollForwardCountdownIfNeeded ya sumó +1 día en el modelo.
+                        if (method_exists($activeCampaign, 'hasActiveCountdown')
+                            ? $activeCampaign->hasActiveCountdown()
+                            : ($activeCampaign->sp_countdown && $activeCampaign->end_date && $activeCampaign->end_date > now())
+                        ) {
+                            $offerExpiresAt = $activeCampaign->end_date;
+                        }
+                    }
+                    $activeOfferPrice = $campaignPricing['final_price'];
+                    $compareAtPrice = $campaignPricing['compare_at_price'];
+                    $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
                 @endphp
 
-                <div class="ratings-container d-flex align-items-center gap-2">
-
-                    <!-- Estrellas -->
-                    <div class="product-ratings position-relative" style="display:inline-block; line-height:1;">
-
-                        <!-- Fondo gris -->
-                        <div style="color:#ddd; font-size:22px;">
-                            ★★★★★
-                        </div>
-
-                        <!-- Relleno amarillo -->
-                        <div style="
-                            position:absolute;
-                            top:0;
-                            left:0;
-                            width:{{ $percentage }}%;
-                            overflow:hidden;
-                            white-space:nowrap;
-                            color:#f4b400;
-                            font-size:22px;">
-                            ★★★★★
+                <style>[v-cloak]{display:none}@keyframes sp-pulse{0%{opacity:1}50%{opacity:.75}100%{opacity:1}}</style>
+                <div class="social-proof-container" v-cloak>
+                    <div class="ratings-container mb-2 d-flex align-items-center gap-2" v-if="socialProofConfig.sp_rating">
+                        <div class="card-rating-social-proof" style="margin: 4px 0; font-size: 16px;">
+                            <span style="color: #333; font-weight: bold; margin-right: 4px;">5.0</span>
+                            <span style="color: #ffc107;">★★★★★</span>
+                            <span style="color: #777; margin-left: 4px; font-size: 13px;">(@{{ sp_rating_count }} opiniones)</span>
                         </div>
                     </div>
 
-                    <!-- Puntaje -->
-                    <span style="font-size:16px; font-weight:500;" class="mt-1 ml-3">
-                        {{ number_format($rating, 1) }}/5
-                    </span>
+                    @if($storefront_show_prices ?? true)
+                    <div class="price-box my-2">
+                        <template v-if="compareAtPrice">
+                            <span class="old-price text-muted text-decoration-line-through mr-2">
+                                @{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}
+                            </span>
+                            <span class="product-price text-danger font-weight-bold" style="font-size: 1.5rem;">
+                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
+                            </span>
+                        </template>
+                        <template v-else>
+                            <span class="product-price font-weight-bold" style="font-size: 1.5rem;">
+                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
+                            </span>
+                        </template>
+                    </div>
+                    @endif
 
+                    <div v-if="offerExpiresAt && !sp_countdown_ended" class="countdown-badge alert alert-warning p-2 mb-2 d-inline-block shadow-sm" style="border-radius: 8px; font-size: 0.9rem; border-left: 4px solid #dc3545;">
+                        <i class="far fa-clock text-danger"></i> ¡Termina en:
+                        <strong class="time-left">@{{ sp_countdown_text }}</strong>!
+                    </div>
+
+                    <div v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" class="text-danger font-weight-bold small mt-1" style="animation: sp-pulse 2s infinite;">
+                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan @{{ Math.round(stock) }} unidades.
+                    </div>
+
+                    <div v-if="socialProofConfig.sp_views_count" class="text-muted small mt-2">
+                        <i class="far fa-eye text-info"></i> <strong v-text="sp_viewers"></strong> personas están viendo este producto.
+                    </div>
+
+                    <div v-if="socialProofConfig.sp_purchase_count" class="text-success small mt-1 font-weight-bold">
+                        <i class="fas fa-shopping-cart"></i> <span v-text="sp_purchases"></span> personas lo compraron en los últimos 7 días.
+                    </div>
                 </div>
-
-                <div class="price-box">
-                    <span class="old-price">{{ $record->currency_type['symbol'] }} {{ number_format( ($record->sale_unit_price * 1.2 ) , 2 ) }}</span>
-                    <span class="product-price">{{ $record->currency_type['symbol'] }} {{ number_format($record->sale_unit_price, 2) }}</span>
-                </div><!-- End .price-box -->
 
                 <div class="product-desc pb-0">
                     @if ($record->category && $record->category->name)
                         <p class="product-category">Categoría: <span> {{$record->category->name}} </span></p>
+                    @endif
+                    @if ($record->brand && $record->brand->id)
+                        <p class="product-category">Marca:
+                            <a href="{{ route('tenant.ecommerce.brand', ['id' => $record->brand->id, 'slug' => \Illuminate\Support\Str::slug($record->brand->name)]) }}">
+                                {{ $record->brand->name }}
+                            </a>
+                        </p>
                     @endif
                 <p class="product-stock">Disponible: <span>{{number_format(($record->stock), 0)}} </span>
                 <?php
@@ -204,7 +261,11 @@
                         @php
                             $waPhoneRaw = preg_replace('/\D+/', '', $phoneWhatsapp);
                             $waPhone = (strlen($waPhoneRaw) == 9 && str_starts_with($waPhoneRaw, '9')) ? '51'.$waPhoneRaw : $waPhoneRaw;
-                            $waText = rawurlencode("Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?");
+                            $waText = rawurlencode(
+                                ($storefront_show_prices ?? true)
+                                    ? "Buenas, deseo consultar acerca del producto *{$record->description}*, con precio de {$record->currency_type['symbol']}{$record->sale_unit_price}. ¿Podrían brindarme más información?"
+                                    : "Buenas, deseo consultar acerca del producto *{$record->description}*. ¿Podrían brindarme más información?"
+                            );
                             $waLink = "https://wa.me/{$waPhone}?text={$waText}";
                         @endphp
                         <a href="{{ $waLink }}" class="btn-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">
@@ -227,9 +288,47 @@
                     <div class="addthis_inline_share_toolbox"></div>
                 </div><!-- End .product single-share -->
             </div><!-- End .product-single-details -->
+
+            <div id="product-trust-badges" class="mt-2"></div>
         </div><!-- End .col-lg-5 -->
     </div><!-- End .row -->
 </div><!-- End .product-single-container -->
+
+@if($record->components->isNotEmpty())
+<section class="pack-components mb-4" aria-labelledby="pack-components-title">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <p class="text-muted text-uppercase mb-1" style="font-size: 12px; letter-spacing: .08em;">Pack compuesto</p>
+            <h2 id="pack-components-title" class="mb-0">Este pack incluye</h2>
+        </div>
+        <span class="badge badge-light">{{ $record->components->count() }} productos</span>
+    </div>
+    <div class="row">
+        @foreach($record->components as $component)
+            @php
+                $componentImage = ($component->image && $component->image !== 'imagen-no-disponible.jpg')
+                    ? asset('storage/uploads/items/'.$component->image)
+                    : $defaultImagePath;
+            @endphp
+            <article class="col-12 col-sm-6 mb-3">
+                <div class="d-flex h-100 p-3 border rounded bg-white">
+                    <img src="{{ $componentImage }}" alt="{{ $component->name }}"
+                         class="mr-3 rounded" style="width: 88px; height: 88px; object-fit: contain;">
+                    <div class="flex-grow-1">
+                        <div class="font-weight-bold mb-1">{{ $component->name }}</div>
+                        <div class="text-primary font-weight-bold mb-1">
+                            {{ rtrim(rtrim(number_format($component->quantity, 2, '.', ''), '0'), '.') }} unidad(es)
+                        </div>
+                        @if($component->description)
+                            <p class="text-muted mb-0" style="line-height: 1.4;">{{ strip_tags($component->description) }}</p>
+                        @endif
+                    </div>
+                </div>
+            </article>
+        @endforeach
+    </div>
+</section>
+@endif
 
 <div class="product-single-tabs">
     <ul class="nav nav-tabs" role="tablist">
@@ -322,11 +421,32 @@
     </div>
 </div>
 
+<div id="product-frequently-bought" class="mt-4 mb-2"
+     data-item-id="{{ $record->id }}"></div>
+
 @endsection
 
+@push('scripts')
+<script>
+window.__socialProofBoot = {
+    itemId: {{ (int) $record->id }},
+    trustBadgesEnabled: {{ ($trustBadgesEnabled ?? true) ? 'true' : 'false' }},
+    trustBadges: @json($trustBadges ?? []),
+    fbtLimit: 8,
+    showFbtCount: false
+};
+</script>
+@vite('modules/Ecommerce/Resources/assets/js/frontend/product-social-app.js')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('product-detail-vue')) {
+        const viewsMin = {{ $activeCampaign ? (int) $activeCampaign->sp_views_min : 0 }};
+        const viewsMax = {{ $activeCampaign ? (int) $activeCampaign->sp_views_max : 0 }};
+        const purchaseMin = {{ $activeCampaign ? (int) $activeCampaign->sp_purchase_min : 0 }};
+        const purchaseMax = {{ $activeCampaign ? (int) $activeCampaign->sp_purchase_max : 0 }};
+        const viewsSpan = Math.max(1, viewsMax - viewsMin + 1);
+        const purchaseSpan = Math.max(1, purchaseMax - purchaseMin + 1);
+
         new Vue({
             el: '#product-detail-vue',
             data: {
@@ -342,13 +462,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     currency_type_symbol: @json($record->currency_type['symbol'] ?? 'S/'),
                     unit_type_id: @json($record->unit_type_id ?? 'NIU'),
                     internal_id: @json($record->internal_id ?? ''),
+                    original_price: {{ number_format((float) $record->sale_unit_price, 2, '.', '') }},
+                    compare_at_price: {{ $compareAtPrice !== null ? number_format((float) $compareAtPrice, 2, '.', '') : 'null' }},
+                    discount_campaign_id: {{ $campaignPricing['discount_campaign_id'] ?: 'null' }},
+                    discount_campaign_name: @json($campaignPricing['discount_campaign_name']),
+                    campaign_discount_percent: {{ number_format((float) $campaignPricing['real_discount_percentage'], 2, '.', '') }},
+                    campaign_discount_embedded: {{ $campaignPricing['has_real_discount'] ? 'true' : 'false' }},
                 },
                 cartQuantities: {},
                 quantity: 1,
+                stock: {{ (float) $record->stock }},
+                stockThreshold: {{ (int) $stockThreshold }},
+                hasActiveOffer: {{ $hasActiveOffer ? 'true' : 'false' }},
+                activeOfferPrice: {{ number_format((float) $activeOfferPrice, 2, '.', '') }},
+                compareAtPrice: {{ $compareAtPrice !== null ? number_format((float) $compareAtPrice, 2, '.', '') : 'null' }},
+                offerExpiresAt: {{ $offerExpiresAt ? (int) \Carbon\Carbon::parse($offerExpiresAt)->getTimestamp() : 'null' }},
+                socialProofConfig: {
+                    sp_countdown: {{ ($activeCampaign && $activeCampaign->sp_countdown) ? 'true' : 'false' }},
+                    sp_discount_price: {{ ($activeCampaign && $activeCampaign->sp_discount_price) ? 'true' : 'false' }},
+                    sp_purchase_count: {{ ($activeCampaign && $activeCampaign->sp_purchase_count) ? 'true' : 'false' }},
+                    sp_views_count: {{ ($activeCampaign && $activeCampaign->sp_views_count) ? 'true' : 'false' }},
+                    sp_stock_alert: {{ ($activeCampaign && $activeCampaign->sp_stock_alert) ? 'true' : 'false' }},
+                    sp_rating: {{ ($activeCampaign && $activeCampaign->sp_rating) ? 'true' : 'false' }}
+                },
+                sp_viewers: Math.floor(Math.random() * viewsSpan) + viewsMin,
+                sp_purchases: Math.floor(Math.random() * purchaseSpan) + purchaseMin,
+                sp_rating_count: Math.floor(Math.random() * (120 - 45 + 1)) + 45,
+                sp_countdown_text: 'Cargando...',
+                sp_countdown_ended: false,
+                _countdownTimer: null,
+                _viewersTimer: null,
             },
             created() {
                 this.loadCartQuantities();
                 window.addEventListener('productAddedToCart', this.loadCartQuantities);
+                this.startCountdown();
+                this.startViewersDrift();
+            },
+            beforeDestroy() {
+                if (this._countdownTimer) clearInterval(this._countdownTimer);
+                if (this._viewersTimer) clearInterval(this._viewersTimer);
+                window.removeEventListener('productAddedToCart', this.loadCartQuantities);
             },
             watch: {
                 cartQuantities: {
@@ -363,15 +517,69 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             },
             methods: {
+                startCountdown() {
+                    if (!this.offerExpiresAt) {
+                        return;
+                    }
+                    let endMs = Number(this.offerExpiresAt) * 1000;
+                    const dayMs = 24 * 60 * 60 * 1000;
+                    const tick = () => {
+                        // Evergreen: si ya pasó la hora, suma +1 día (misma hora) y sigue.
+                        while (endMs <= Date.now()) {
+                            endMs += dayMs;
+                        }
+                        const distance = endMs - Date.now();
+                        const days = Math.floor(distance / dayMs);
+                        const hours = Math.floor((distance % dayMs) / (1000 * 60 * 60));
+                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                        this.sp_countdown_ended = false;
+                        this.sp_countdown_text = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+                    };
+                    tick();
+                    this._countdownTimer = setInterval(tick, 1000);
+                },
+                startViewersDrift() {
+                    if (!this.socialProofConfig.sp_views_count) {
+                        return;
+                    }
+                    this._viewersTimer = setInterval(() => {
+                        const delta = Math.random() > 0.5 ? 1 : -1;
+                        this.sp_viewers = Math.max(viewsMin, this.sp_viewers + delta);
+                        if (this.sp_viewers > viewsMax) this.sp_viewers = viewsMax;
+                    }, 8000);
+                },
                 addOrUpdateCart(item) {
                     let array = localStorage.getItem('products_cart');
                     array = array ? JSON.parse(array) : [];
                     let found = array.find(x => x.id == item.id);
+                    const cartItem = {
+                        ...item,
+                        sale_unit_price: this.activeOfferPrice,
+                        original_price: parseFloat(item.sale_unit_price),
+                        has_discount: this.hasActiveOffer,
+                        quantity: this.quantity,
+                        stock: Math.round(this.stock),
+                    };
+
+                    if (typeof cartAddOrUpdateItem === 'function') {
+                        cartAddOrUpdateItem(cartItem, {
+                            quantity: this.quantity,
+                            replaceQuantity: true,
+                            mode: found ? 'exists' : 'added',
+                        });
+                        this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: this.quantity });
+                        return;
+                    }
+
+                    const price = this.activeOfferPrice;
                     if (found) {
                         found.quantity = this.quantity;
+                        found.sale_unit_price = price;
                     } else {
                         array.push({
                             ...item,
+                            sale_unit_price: price,
                             quantity: this.quantity
                         });
                     }
@@ -434,3 +642,4 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
+@endpush

@@ -23,7 +23,41 @@ class EcommerceServiceProvider extends ServiceProvider
         // $this->registerFactories();
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
 
+        View::composer('ecommerce::*', function ($view) {
+            $campaigns = \App\Models\Tenant\EcommerceCampaign::activeCampaigns();
+            $configEcommerce = \App\Models\Tenant\ConfigurationEcommerce::first();
+            $trustBadgesEnabled = true;
+            $trustBadges = \Modules\Ecommerce\Http\Controllers\SocialProofController::defaultTrustBadges();
 
+            if ($configEcommerce && is_array($configEcommerce->preferences)) {
+                $prefs = $configEcommerce->preferences;
+                $trustBadgesEnabled = (bool) ($prefs['trust_badges_enabled'] ?? true);
+                if (! empty($prefs['trust_badges']) && is_array($prefs['trust_badges'])) {
+                    $trustBadges = array_values($prefs['trust_badges']);
+                }
+            }
+
+            $cartModalCampaignJson = null;
+            $cartModalCampaign = $campaigns instanceof \Illuminate\Support\Collection
+                ? $campaigns->first()
+                : (is_array($campaigns) ? ($campaigns[0] ?? null) : $campaigns);
+
+            if ($cartModalCampaign) {
+                $hasActiveDiscount = method_exists($cartModalCampaign, 'hasActiveDiscount')
+                    ? $cartModalCampaign->hasActiveDiscount()
+                    : ($cartModalCampaign->sp_discount_price && (! $cartModalCampaign->end_date || $cartModalCampaign->end_date > now()));
+
+                if ($hasActiveDiscount) {
+                    $cartModalCampaignJson = [
+                        'sp_discount_price' => (bool) $cartModalCampaign->sp_discount_price,
+                        'discount_type' => $cartModalCampaign->discount_type,
+                        'discount_value' => (float) $cartModalCampaign->discount_value,
+                    ];
+                }
+            }
+
+            $view->with(compact('campaigns', 'configEcommerce', 'trustBadges', 'trustBadgesEnabled', 'cartModalCampaignJson'));
+        });
     }
 
     /**
@@ -33,6 +67,7 @@ class EcommerceServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->app->singleton(\Modules\Ecommerce\Services\CampaignPriceService::class);
         $this->app->register(RouteServiceProvider::class);
     }
 

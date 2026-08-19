@@ -76,19 +76,6 @@
                                 width="100%"
                             />
                         </el-tab-pane>
-                        <el-tab-pane
-                            label="Ticket 50mm"
-                            name="third"
-                            v-if="config.show_ticket_50"
-                        >
-                            <embed
-                                v-if="config.show_ticket_50"
-                                class="pos-ticket-embed"
-                                :src="form.print_ticket_50"
-                                type="application/pdf"
-                                width="100%"
-                            />
-                        </el-tab-pane>
                         <el-tab-pane label="A4" name="quarter" v-if="!isNrus">
                             <embed
                                 class="pos-ticket-embed"
@@ -144,19 +131,6 @@
                                 <i class="fa fa-receipt"></i>
                             </button>
                             <p>Ticket 58</p>
-                        </div>
-                        <div
-                            v-if="config.show_ticket_50"
-                            class="col text-center font-weight-bold mt-3"
-                        >
-                            <button
-                                class="btn btn-lg btn-info waves-effect waves-light"
-                                type="button"
-                                @click="clickPrint(form.print_ticket_50)"
-                            >
-                                <i class="fa fa-receipt"></i>
-                            </button>
-                            <p>Ticket 50</p>
                         </div>
                         <div v-if="!isNrus" class="col text-center font-weight-bold mt-3">
                             <button
@@ -361,9 +335,6 @@ export default {
                 case "second":
                     format = "ticket_58";
                     break;
-                case "third":
-                    format = "ticket_50";
-                    break;
                 case "quarter":
                     format = "a4";
                     break;
@@ -417,7 +388,6 @@ export default {
                 print_a4: null,
                 print_a5: null,
                 print_ticket: null,
-                print_ticket_50: null,
                 print_ticket_58: null,
                 external_id: null,
                 number: null,
@@ -488,24 +458,12 @@ export default {
         },
         changeActiveName() {
             this.loadConfiguration();
-            this.activeName =
-                this.config !== null && this.config.show_ticket_80
-                    ? "first"
-                    : "quarter";
-            if (
-                (!this.config.show_ticket_80 && this.config.show_ticket_50) ||
-                (!this.config.show_ticket_80 && !this.config.show_ticket_50)
-            ) {
-                this.activeName =
-                    this.config !== null && this.config.show_ticket_58
-                        ? "second"
-                        : "third";
-            }
-            if (!this.config.show_ticket_58 && !this.config.show_ticket_80) {
-                this.activeName =
-                    this.config !== null && this.config.show_ticket_50
-                        ? "third"
-                        : "quarter";
+            if (this.config !== null && this.config.show_ticket_80) {
+                this.activeName = "first";
+            } else if (this.config !== null && this.config.show_ticket_58) {
+                this.activeName = "second";
+            } else {
+                this.activeName = "quarter";
             }
         }
         ,

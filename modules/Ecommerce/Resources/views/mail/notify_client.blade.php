@@ -112,6 +112,13 @@
                                                                 <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#232e3c;padding:8px 0;text-align:right;">{{ $order['number_document'] ?? ($order['order_id'] ?? '') }}</td>
                                                             </tr>
 
+                                                            @if(!empty($order['tracking_code']))
+                                                            <tr style="border-bottom:1px solid #f0f2f5;">
+                                                                <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6c7a8a;padding:8px 12px 8px 0;white-space:nowrap;width:1%;vertical-align:top;">Código de seguimiento</td>
+                                                                <td style="font-family:Consolas,Monaco,monospace;font-size:12px;color:#232e3c;padding:8px 0;text-align:right;word-break:break-all;">{{ $order['tracking_code'] }}</td>
+                                                            </tr>
+                                                            @endif
+
                                                             <tr>
                                                                 <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#6c7a8a;padding:8px 12px 8px 0;white-space:nowrap;width:1%;">Estado</td>
                                                                 <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#232e3c;padding:8px 0;text-align:right;">{{ $status['name'] ?? 'Estado actualizado' }}</td>
@@ -163,23 +170,36 @@
                                                 <!-- BOTÓN -->
                                                 <tr>
                                                     <td style="padding:24px 32px 32px;" align="center">
+                                                        @php
+                                                            $primaryCtaUrl = !empty($tracking_url) ? $tracking_url : $route_list;
+                                                            $primaryCtaLabel = !empty($tracking_url) ? 'Ver estado del pedido' : 'Ver mis pedidos';
+                                                        @endphp
                                                         <!--[if mso]>
-                                                        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ $route_list }}" style="height:44px;v-text-anchor:middle;width:200px;" arcsize="14%" stroke="f" fillcolor="#066FD1">
+                                                        <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ $primaryCtaUrl }}" style="height:44px;v-text-anchor:middle;width:220px;" arcsize="14%" stroke="f" fillcolor="#066FD1">
                                                             <w:anchorlock/>
-                                                            <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">Ver mis pedidos</center>
+                                                            <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:14px;font-weight:bold;">{{ $primaryCtaLabel }}</center>
                                                         </v:roundrect>
                                                         <![endif]-->
                                                         <!--[if !mso]><!-->
                                                         <table cellspacing="0" cellpadding="0" role="presentation" style="display:inline-table;">
                                                             <tr>
                                                                 <td align="center" style="border-radius:6px;background-color:#066FD1;">
-                                                                    <a href="{{ $route_list }}" style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;background-color:#066FD1;">
-                                                                        Ver&nbsp;mis&nbsp;pedidos
+                                                                    <a href="{{ $primaryCtaUrl }}" style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;background-color:#066FD1;">
+                                                                        {{ $primaryCtaLabel }}
                                                                     </a>
                                                                 </td>
                                                             </tr>
                                                         </table>
                                                         <!--<![endif]-->
+                                                        @if(!empty($order['tracking_code']))
+                                                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6c7a8a;text-align:center;margin:14px 0 0 0;line-height:18px;">
+                                                            Guarda tu código de seguimiento de la agencia para rastrear el envío. Para ver el estado en la tienda usa tu N° de pedido y DNI.
+                                                        </p>
+                                                        @else
+                                                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6c7a8a;text-align:center;margin:14px 0 0 0;line-height:18px;">
+                                                            Para consultar el estado de tu pedido en la tienda usa tu N° de pedido y DNI.
+                                                        </p>
+                                                        @endif
                                                     </td>
                                                 </tr>
 

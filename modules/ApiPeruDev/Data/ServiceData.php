@@ -521,26 +521,40 @@ class ServiceData
         ];
 
         $this->parameters['form_params'] = $form_params;
-        $res = $this->client->request('POST', '/api/tipo_de_cambio', $this->parameters);
-        $response = json_decode($res->getBody()->getContents(), true);
 
-        if ($response['success']) {
-            $data = $response['data'];
-            ExchangeRate::query()->create([
-                'date' => $data['fecha_busqueda'],
-                'date_original' => $data['fecha_sunat'],
-                'sale_original' => $data['venta'],
-                'sale' => $data['venta'],
-                'purchase_original' => $data['compra'],
-                'purchase' => $data['compra'],
-            ]);
+        try {
+            $res = $this->client->request('POST', '/api/tipo_de_cambio', $this->parameters);
+            $response = json_decode($res->getBody()->getContents(), true);
 
-            return [
-                'date' => $data['fecha_busqueda'],
-                'purchase' => $data['compra'],
-                'sale' => $data['venta']
-            ];
+            if (!empty($response['success'])) {
+                $data = $response['data'];
+                ExchangeRate::query()->create([
+                    'date' => $data['fecha_busqueda'],
+                    'date_original' => $data['fecha_sunat'],
+                    'sale_original' => $data['venta'],
+                    'sale' => $data['venta'],
+                    'purchase_original' => $data['compra'],
+                    'purchase' => $data['compra'],
+                ]);
+
+                return [
+                    'date' => $data['fecha_busqueda'],
+                    'purchase' => $data['compra'],
+                    'sale' => $data['venta']
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Si apiperu no responde, no tumbar la tienda: usar último tipo de cambio local.
+            $latest = ExchangeRate::query()->orderByDesc('date')->first();
+            if ($latest) {
+                return [
+                    'date' => $date,
+                    'purchase' => $latest->purchase,
+                    'sale' => $latest->sale,
+                ];
+            }
         }
+
         $this->saveService(4);
 
         return [

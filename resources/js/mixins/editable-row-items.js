@@ -35,7 +35,7 @@ export const editableRowItems = {
         },
         setRowValuesFreeAffectationIgv(row, total_plastic_bag_taxes)
         {
-            if (row.affectation_igv_type.free) 
+            if (row.affectation_igv_type && row.affectation_igv_type.free) 
             {
                 row.price_type_id = '02'
                 row.unit_value = 0

@@ -6,6 +6,7 @@ use App\CoreFacturalo\Facturalo;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
 use App\CoreFacturalo\Helpers\Template\ReportHelper;
 use App\Exports\PaymentExport;
+use App\Helpers\CacheHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\SearchItemController;
 use App\Http\Requests\Tenant\DocumentEmailRequest;
@@ -755,18 +756,34 @@ class DocumentController extends Controller
 
     public function record($id)
     {
-        if ($this->pingCache()) {
-            return $this->cacheWithTagKey(
-                "document_detail_{$id}", // Clave de caché específica para el detalle del item
-                ['document_detail'], // Etiqueta para el detalle del item
-                3600, // 1 hora (el detalle cambia menos frecuentemente que las listas)
-                fn() => new DocumentResource(Document::findOrFail($id)) ,
-                [ 'section' => 'Document Detail', 'item_id' => $id ] // Contexto adicional para logging
-            );
+        $this->forgetLegacyDocumentDetailCache($id);
 
-        } else {
-            $record = new DocumentResource(Document::findOrFail($id));
-            return $record;
+        $document = Document::with([
+            'items',
+            'payments.payment_method_type',
+            'payments.global_payment',
+            'payments.payment_file',
+            'state_type',
+            'document_type',
+            'user',
+            'seller',
+            'person.identity_document_type',
+        ])->findOrFail($id);
+
+        return new DocumentResource($document);
+    }
+
+    /**
+     * Elimina claves de caché obsoletas del detalle (respuestas serializadas sin ítems).
+     */
+    protected function forgetLegacyDocumentDetailCache($id): void
+    {
+        foreach ([
+            "document_detail_{$id}",
+            "document_detail_v2_{$id}",
+            "document_detail_v3_{$id}",
+        ] as $cacheKey) {
+            CacheHelper::forget(['document_detail'], $cacheKey);
         }
     }
 
@@ -1079,7 +1096,7 @@ class DocumentController extends Controller
 
     public function show($documentId)
     {
-        $document = Document::findOrFail($documentId);
+        $document = Document::with('items')->findOrFail($documentId);
         foreach ($document->items as &$item) {
             $discounts = [];
             if($item->discounts) {

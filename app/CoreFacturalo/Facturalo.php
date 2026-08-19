@@ -432,8 +432,7 @@ class Facturalo
 
         $base_pdf_template = Establishment::find($this->document->establishment_id)->template_pdf;
         if (($format_pdf === 'ticket') OR
-            ($format_pdf === 'ticket_58') OR
-            ($format_pdf === 'ticket_50'))
+            ($format_pdf === 'ticket_58'))
         {
             $base_pdf_template = Establishment::find($this->document->establishment_id)->template_ticket_pdf;
         }
@@ -470,15 +469,13 @@ class Facturalo
         $html = $template->pdf($base_pdf_template, $this->type, $this->company, $this->document, $format_pdf, $optional_configuration);
 
         if (($format_pdf === 'ticket') OR
-            ($format_pdf === 'ticket_58') OR
-            ($format_pdf === 'ticket_50'))
+            ($format_pdf === 'ticket_58'))
         {
             $base_pdf_template = Establishment::find($this->document->establishment_id)->template_ticket_pdf;
 
             $width = ($format_pdf === 'ticket_58') ? 56 : 72 ;
             if(config('tenant.enabled_template_ticket_80')) $width = 76;
             if(config('tenant.enabled_template_ticket_70')) $width = 70;
-            if($format_pdf === 'ticket_50') $width = 45;
 
             $company_name      = (strlen($this->company->name) / 20) * 10;
             $company_address   = (strlen($this->document->establishment->address) / 30) * 10;
@@ -559,10 +556,6 @@ class Facturalo
                 AND !in_array($base_pdf_template, ['ticket_c']))
             {
                 $height_legend = 30;
-            } elseif($this->configuration->legend_footer
-                AND $format_pdf === 'ticket_50')
-            {
-                $height_legend = 10;
             } else {
                 $height_legend = 10;
             }
@@ -754,11 +747,11 @@ class Facturalo
         $stylesheet = file_get_contents($path_css);
 
 
-        // if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58') AND ($format_pdf != 'ticket_50')) {
+        // if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58')) {
             // dd($base_pdf_template);// = config(['tenant.pdf_template'=> $configuration]);
         if(config('tenant.pdf_template_footer')) {
             $html_footer = '';
-            if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58') AND ($format_pdf != 'ticket_50')) {
+            if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58')) {
                 $html_footer = $template->pdfFooter($base_pdf_template, $this->document);
                 $html_footer_legend = "";
 
@@ -806,7 +799,7 @@ class Facturalo
             $html_header = $template->pdfHeader($base_pdf_template, $this->company, in_array($this->document->document_type_id, ['09']) ? null : $this->document);
             $pdf->SetHTMLHeader($html_header);
 
-            if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58') || ($format_pdf === 'ticket_50') || ($format_pdf === 'a5')) {
+            if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58') || ($format_pdf === 'a5')) {
                 $pdf->SetHTMLHeader("");
                 $pdf->SetHTMLFooter("");
             }
@@ -1938,8 +1931,7 @@ class Facturalo
 
         $base_pdf_template = Establishment::find($this->document->establishment_id)->template_pdf;
         if (($format_pdf === 'ticket') OR
-            ($format_pdf === 'ticket_58') OR
-            ($format_pdf === 'ticket_50'))
+            ($format_pdf === 'ticket_58'))
         {
             $base_pdf_template = Establishment::find($this->document->establishment_id)->template_ticket_pdf;
         }
@@ -1974,15 +1966,13 @@ class Facturalo
         $html = $template->pdf($base_pdf_template, $this->type, $this->company, $this->document, $format_pdf, $preview_configuration);
 
         if (($format_pdf === 'ticket') OR
-            ($format_pdf === 'ticket_58') OR
-            ($format_pdf === 'ticket_50'))
+            ($format_pdf === 'ticket_58'))
         {
             $base_pdf_template = Establishment::find($this->document->establishment_id)->template_ticket_pdf;
 
             $width = ($format_pdf === 'ticket_58') ? 56 : 78 ;
             if(config('tenant.enabled_template_ticket_80')) $width = 76;
             if(config('tenant.enabled_template_ticket_70')) $width = 70;
-            if($format_pdf === 'ticket_50') $width = 45;
 
             $company_name      = (strlen($this->company->name) / 20) * 10;
             $company_address   = (strlen($this->document->establishment->address) / 30) * 10;
@@ -2059,10 +2049,6 @@ class Facturalo
                 AND !in_array($base_pdf_template, ['ticket_c']))
             {
                 $height_legend = 30;
-            } elseif($this->configuration->legend_footer
-                AND $format_pdf === 'ticket_50')
-            {
-                $height_legend = 10;
             } else {
                 $height_legend = 10;
             }
@@ -2251,7 +2237,7 @@ class Facturalo
 
         if(config('tenant.pdf_template_footer')) {
             $html_footer = '';
-            if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58') AND ($format_pdf != 'ticket_50')) {
+            if (($format_pdf != 'ticket') AND ($format_pdf != 'ticket_58')) {
                 $html_footer = $template->pdfFooter($base_pdf_template, in_array($this->document->document_type_id, ['09']) ? null : $this->document);
                 $html_footer_legend = "";
             }
@@ -2272,7 +2258,7 @@ class Facturalo
             $html_header = $template->pdfHeader($base_pdf_template, $this->company, in_array($this->document->document_type_id, ['09']) ? null : $this->document);
             $pdf->SetHTMLHeader($html_header);
 
-            if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58') || ($format_pdf === 'ticket_50') || ($format_pdf === 'a5')) {
+            if (($format_pdf === 'ticket') || ($format_pdf === 'ticket_58') || ($format_pdf === 'a5')) {
                 $pdf->SetHTMLHeader("");
                 $pdf->SetHTMLFooter("");
             }

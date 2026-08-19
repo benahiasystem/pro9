@@ -2,10 +2,22 @@
 
 namespace App\CoreFacturalo\Requests\Api\Validation;
 
+use App\Models\Tenant\Establishment;
+use App\Models\Tenant\User;
+
 class DocumentValidation
 {
     public static function validation($inputs) {
-        $inputs['establishment_id'] = auth()->user()->establishment_id;// Functions::establishment($inputs['establishment']);
+        // Tienda / invitado: auth() puede ser null (pago ecommerce sin sesión admin).
+        $authUser = auth()->user();
+        if ($authUser && ! empty($authUser->establishment_id)) {
+            $inputs['establishment_id'] = $authUser->establishment_id;
+        } elseif (empty($inputs['establishment_id'])) {
+            $inputs['establishment_id'] = optional(
+                User::query()->whereNotNull('establishment_id')->orderBy('id')->first()
+            )->establishment_id
+                ?? optional(Establishment::query()->orderBy('id')->first())->id;
+        }
         //unset($inputs['establishment']);
         
         Functions::validateSeries($inputs);
