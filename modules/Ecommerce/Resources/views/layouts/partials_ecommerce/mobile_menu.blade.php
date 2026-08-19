@@ -139,9 +139,11 @@
         margin-bottom: 7px;
         border: 0;
     }
-    .mobile-menu-wrapper .mobile-menu > li > a {
+    .mobile-menu-wrapper .mobile-menu > li > a,
+    .mobile-menu-wrapper .mobile-menu > li > button {
         position: relative;
         display: flex;
+        width: 100%;
         min-height: 52px;
         align-items: center;
         gap: 13px;
@@ -154,10 +156,16 @@
         background: transparent;
         border: 1px solid transparent;
         border-radius: 14px;
+        cursor: pointer;
+        font-family: inherit;
+        text-align: left;
         transition: color .2s, background .2s, border-color .2s, transform .2s;
     }
     .mobile-menu-wrapper .mobile-menu > li > a:hover,
-    .mobile-menu-wrapper .mobile-menu > li.active > a {
+    .mobile-menu-wrapper .mobile-menu > li > button:hover,
+    .mobile-menu-wrapper .mobile-menu > li.active > a,
+    .mobile-menu-wrapper .mobile-menu > li.active > button,
+    .mobile-menu-wrapper .mobile-menu > li.open > button {
         color: var(--primary-color);
         text-decoration: none;
         background: hsl(var(--primary-h), var(--primary-s), 97%);
@@ -178,6 +186,19 @@
         width: 19px;
         height: 19px;
     }
+    .mobile-category-chevron {
+        position: absolute;
+        right: 18px;
+        width: 8px;
+        height: 8px;
+        border-right: 2px solid currentColor;
+        border-bottom: 2px solid currentColor;
+        transform: rotate(45deg);
+        transition: transform .25s ease;
+    }
+    .mobile-category-accordion.open .mobile-category-chevron {
+        transform: rotate(225deg);
+    }
     .mobile-menu-wrapper .mobile-menu .mmenu-btn {
         right: 8px;
         width: 38px;
@@ -191,6 +212,21 @@
         background: #f8fafc;
         border: 1px solid #edf0f4;
         border-radius: 13px;
+    }
+    .mobile-category-panel {
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transition: grid-template-rows .28s ease, opacity .2s ease;
+    }
+    .mobile-category-panel > ul {
+        display: block !important;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .mobile-category-accordion.open .mobile-category-panel {
+        grid-template-rows: 1fr;
+        opacity: 1;
     }
     .mobile-menu-wrapper .mobile-menu ul li {
         border: 0;
@@ -278,24 +314,27 @@
             <li class="{{ request()->routeIs('tenant.ecommerce.index') ? 'active' : '' }}">
                 <a href="{{ route('tenant.ecommerce.index') }}">
                     <span class="mobile-menu-link-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>
-                    <span>Home</span>
+                    <span>Inicio</span>
                 </a>
             </li>
-            <li class="{{ $currentCategorySlug ? 'active' : '' }}">
-                <a href="#">
+            <li class="mobile-category-accordion {{ $currentCategorySlug ? 'active open' : '' }}">
+                <button type="button" class="mobile-category-toggle" aria-expanded="{{ $currentCategorySlug ? 'true' : 'false' }}" aria-controls="mobile-category-list">
                     <span class="mobile-menu-link-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span>
                     <span>Categorías</span>
-                </a>
-                <ul>
-                    @foreach ($categories as $category)
-                        @php($categorySlug = \Illuminate\Support\Str::slug($category->name, '-'))
-                        <li class="{{ ($currentCategorySlug == $categorySlug) ? 'active':'' }}">
-                            <a href="{{ route('tenant.ecommerce.category', $categorySlug) }}">
-                                {{$category->name}}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
+                    <span class="mobile-category-chevron" aria-hidden="true"></span>
+                </button>
+                <div class="mobile-category-panel" id="mobile-category-list">
+                    <ul>
+                        @foreach ($categories as $category)
+                            @php($categorySlug = \Illuminate\Support\Str::slug($category->name, '-'))
+                            <li class="{{ ($currentCategorySlug == $categorySlug) ? 'active':'' }}">
+                                <a href="{{ route('tenant.ecommerce.category', $categorySlug) }}">
+                                    {{$category->name}}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
             </li>
             {{-- <li>
                 <a href="product.html">Products</a>
@@ -355,12 +394,6 @@
                     <li><a href="single.html">Blog Post</a></li>
                 </ul>
             </li> --}}
-            <li class="{{ request()->routeIs('tenant_detail_cart') ? 'active' : '' }}">
-                <a href="{{ route('tenant_detail_cart') }}">
-                    <span class="mobile-menu-link-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg></span>
-                    <span>Ver carrito</span>
-                </a>
-            </li>
             {{-- <li><a href="#">Special Offer!<span class="tip tip-hot">Hot!</span></a></li>
             <li><a href="#">Buy Porto!</a></li> --}}
         </ul>
@@ -391,3 +424,17 @@
     </div><!-- End .social-icons -->
     </footer>
 </div><!-- End .mobile-menu-wrapper -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var accordion = document.querySelector('.mobile-category-accordion');
+        var toggle = accordion ? accordion.querySelector('.mobile-category-toggle') : null;
+
+        if (!accordion || !toggle) return;
+
+        toggle.addEventListener('click', function () {
+            var isOpen = accordion.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+    });
+</script>
