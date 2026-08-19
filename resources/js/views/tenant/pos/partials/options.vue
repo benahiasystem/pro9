@@ -57,10 +57,10 @@
                             <embed
                                 v-if="config !== null && config.show_ticket_80"
                                 id="nemo"
+                                class="pos-ticket-embed"
                                 :src="form.print_ticket"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                         <el-tab-pane
@@ -70,10 +70,10 @@
                         >
                             <embed
                                 v-if="config.show_ticket_58"
+                                class="pos-ticket-embed"
                                 :src="form.print_ticket_58"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                         <el-tab-pane
@@ -83,26 +83,26 @@
                         >
                             <embed
                                 v-if="config.show_ticket_50"
+                                class="pos-ticket-embed"
                                 :src="form.print_ticket_50"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                         <el-tab-pane label="A4" name="quarter" v-if="!isNrus">
                             <embed
+                                class="pos-ticket-embed"
                                 :src="form.print_a4"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                         <el-tab-pane label="A5" name="fifth" v-if="!isNrus">
                             <embed
+                                class="pos-ticket-embed"
                                 :src="form.print_a5"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                     </el-tabs>
@@ -258,6 +258,11 @@
 <style>
 .code-number-container {
     display: none;
+}
+.pos-ticket-embed {
+    display: block;
+    height: calc(100vh - 280px);
+    min-height: 560px;
 }
 </style>
 <script>

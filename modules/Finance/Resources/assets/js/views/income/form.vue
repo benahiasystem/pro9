@@ -61,7 +61,7 @@
                                             <i class="fa fa-info-circle"></i>
                                         </el-tooltip>
                                     </label>
-                                    <el-input v-model="form.exchange_rate_sale"></el-input>
+                                    <el-input v-model="form.exchange_rate_sale" @focus="$event.target.select()"></el-input>
                                     <small class="form-control-feedback" v-if="errors.exchange_rate_sale" v-text="errors.exchange_rate_sale[0]"></small>
                                 </div>
                             </div>
@@ -81,7 +81,7 @@
                                     <label class="control-label">
                                         Cliente
                                     </label>
-                                    <el-input v-model="form.customer"></el-input>
+                                    <el-input v-model="form.customer" @focus="$event.target.select()"></el-input>
                                     <small class="form-control-feedback" v-if="errors.customer" v-text="errors.customer[0]"></small>
                                 </div>
                             </div>
@@ -118,12 +118,12 @@
                                         </td>
                                         <td>
                                             <div class="form-group mb-2 me-2">
-                                                <el-input v-model="row.reference"></el-input>
+                                                <el-input v-model="row.reference" @focus="$event.target.select()"></el-input>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="form-group mb-2 me-2">
-                                                <el-input v-model="row.payment"></el-input>
+                                                <el-input v-model="row.payment" @focus="$event.target.select()"></el-input>
                                             </div>
                                         </td>
                                         <td class="series-table-actions text-center">

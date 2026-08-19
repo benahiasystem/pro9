@@ -113,6 +113,7 @@
                         placeholder="Buscar productos"
                         size="medium"
                         v-model="input_item"
+                        @focus="$event.target.select()"
                         @input="searchItems"
                         @keyup.native="keyupTabCustomer"
                         @keyup.enter.native="keyupEnterAddItem"
@@ -137,6 +138,7 @@
                         placeholder="Buscar productos"
                         size="medium"
                         v-model="input_item"
+                        @focus="$event.target.select()"
                         @change="searchItemsBarcode"
                         @keyup.native="keyupTabCustomer"
                         ref="ref_search_items"
@@ -253,6 +255,7 @@
                                             v-model="item.edit_sale_unit_price"
                                             class="mt-3 mb-3"
                                             size="mini"
+                                            @focus="$event.target.select()"
                                         >
                                             <el-button
                                                 slot="append"
@@ -587,6 +590,7 @@
                                         </td>
                                         <td style="width: 80px; vertical-align: top">
                                             <el-input v-model="item.item.aux_quantity"
+                                                      @focus="$event.target.select()"
                                                       @input="clickAddItem(item, index, true)"
                                                       @keyup.enter.native="keyupEnterQuantity"></el-input>
                                             <!-- <el-input
@@ -643,6 +647,7 @@
                                             <template v-if="edit_unit_price">
                                                 <el-input
                                                     v-model="item.total"
+                                                    @focus="$event.target.select()"
                                                     @input="calculateQuantity(index)"
                                                     @blur="blurCalculateQuantity(index)"
                                                     :readonly="!item.item.calculate_quantity">

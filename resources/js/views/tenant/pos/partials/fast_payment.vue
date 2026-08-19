@@ -35,6 +35,7 @@
                         <label class="control-label">Ingrese monto</label>
                         <el-input ref="enter_amount"
                                     v-model="enter_amount"
+                                    @focus="$event.target.select()"
                                     @input="enterAmount()"
                                     @keyup.enter.native="keyupEnterAmount()">
                             <template slot="prepend" style="px-1">{{ currencyTypeActive.symbol }}</template>
@@ -82,6 +83,7 @@
                         <label class="control-label">Monto descuento</label>
                         <el-input v-model="discount_amount"
                                     :disabled="!enabled_discount"
+                                    @focus="$event.target.select()"
                                     @input="inputDiscountAmount()">
                             <template slot="prepend">{{ currencyTypeActive.symbol }}</template>
                         </el-input>
