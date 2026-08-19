@@ -58,7 +58,7 @@
                         </div>
 
                         <div class="col-md-6">
-                            <div v-if="configuration.enabled_guarantee_fund" class="short-div col-md-12">
+                            <div v-if="configuration && configuration.enabled_guarantee_fund" class="short-div col-md-12">
                                     <div class="form-group">
                                         <label class="control-label">Fondo de garantía
                                         </label>
@@ -191,23 +191,29 @@
             ]),
         },
         methods: {
+            getDetractionRound() {
+                if (this.detractionDecimalQuantity === 0 || this.detractionDecimalQuantity === 2) {
+                    return this.detractionDecimalQuantity
+                }
+                const roundedInt = (this.configuration && this.configuration.detraction_amount_rounded_int)
+                    || (this.config && this.config.detraction_amount_rounded_int)
+                return roundedInt ? 0 : 2
+            },
             async changeDetractionType(){
-                let detraction_type = await _.find(this.detraction_types, {'id':this.detraction.detraction_type_id})
-                // console.log(detraction_type, this.detraction.detraction_type_id)
+                let detraction_type = _.find(this.detraction_types, (item) => String(item.id) === String(this.detraction.detraction_type_id))
 
                 if(detraction_type){
+                    const percentage = parseFloat(detraction_type.percentage) || 0
+                    const total = parseFloat(this.total) || 0
+                    const rate = parseFloat(this.exchangeRateSale) || 1
+                    const round = this.getDetractionRound()
+                    const amount = (this.currencyTypeIdActive == 'PEN')
+                        ? _.round(total * (percentage / 100), round)
+                        : _.round((total * rate) * (percentage / 100), round)
 
-                    this.detraction.percentage = detraction_type.percentage
-                    // this.detraction.amount = (this.currencyTypeIdActive == 'PEN') ? _.round(parseFloat(this.total) * (detraction_type.percentage/100),2): _.round((parseFloat(this.total) * this.exchangeRateSale) * (detraction_type.percentage/100),2)
-                    let round = this.config.detraction_amount_rounded_int ? 0 : 2;
-                    if(this.currencyTypeIdActive == 'PEN')
-                    {
-                        this.detraction.amount = _.round(parseFloat(this.total) * (detraction_type.percentage/100), round)
-                    }else
-                    {
-                        this.detraction.amount = _.round((parseFloat(this.total) * this.exchangeRateSale) * (detraction_type.percentage/100), round)
-                    }
-
+                    // form.detraction nace como {} — en Vue 2 hay que usar $set para que el input se actualice
+                    this.$set(this.detraction, 'percentage', percentage)
+                    this.$set(this.detraction, 'amount', amount)
                 }
             },
             validateDetraction(){
@@ -350,7 +356,7 @@
 
             },
             changeAmountDetraction(){
-                let round = this.configuration.detraction_amount_rounded_int ? 0 : 2;
+                let round = this.getDetractionRound();
                 if(_.round(this.detraction.reference_value_service*(parseFloat(this.detraction.percentage) / 100), round)> this.detraction.amount ){
                     this.detraction_invoice_amount = this.detraction.amount
                     this.detraction.amount = _.round(this.detraction.reference_value_service*(parseFloat(this.detraction.percentage) / 100), round)

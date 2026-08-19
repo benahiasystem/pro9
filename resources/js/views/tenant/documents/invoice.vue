@@ -1427,6 +1427,7 @@
             :total="form.total"
             :isUpdateDocument="isUpdateDocument"
             :detractionDecimalQuantity="detractionDecimalQuantity"
+            :configuration="configuration"
             @addDocumentDetraction="addDocumentDetraction"></document-detraction>
     </div>
 </template>
@@ -2840,14 +2841,14 @@ export default {
                 if (this.form.currency_type_id == 'PEN') {
 
                     // this.form.detraction.amount = _.round(parseFloat(this.form.total) * (parseFloat(this.form.detraction.percentage) / 100), 2)
-                    this.form.detraction.amount = _.round(parseFloat(this.form.total) * (parseFloat(this.form.detraction.percentage) / 100), 0)
+                    this.form.detraction.amount = _.round(parseFloat(this.form.total) * (parseFloat(this.form.detraction.percentage) / 100), this.detractionDecimalQuantity)
 
                     this.form.total_pending_payment = this.form.total - this.form.detraction.amount
 
                 } else {
 
                     // this.form.detraction.amount = _.round((parseFloat(this.form.total) * this.form.exchange_rate_sale) * (parseFloat(this.form.detraction.percentage) / 100), 2)
-                    this.form.detraction.amount = _.round((parseFloat(this.form.total) * this.form.exchange_rate_sale) * (parseFloat(this.form.detraction.percentage) / 100), 0)
+                    this.form.detraction.amount = _.round((parseFloat(this.form.total) * this.form.exchange_rate_sale) * (parseFloat(this.form.detraction.percentage) / 100), this.detractionDecimalQuantity)
 
                     this.form.total_pending_payment = _.round(this.form.total - (this.form.detraction.amount / this.form.exchange_rate_sale), 2)
 
