@@ -15,24 +15,14 @@ class DispatcherRequest extends FormRequest
     public function rules()
     {
         $id = $this->input('id');
-        $doc_type = $this->input('identity_document_type_id');
-
-        $number_rules = [
-            'required',
-            Rule::unique('tenant.dispatchers')->ignore($id),
-        ];
-
-        if ($doc_type === '6') {            // RUC
-            $number_rules[] = 'regex:/^(10|15|16|17|20)\d{9}$/';
-        } elseif ($doc_type === '1') {      // DNI
-            $number_rules[] = 'digits:8';
-        } else {                            // CE, pasaporte, otros
-            $number_rules[] = 'regex:/^[a-zA-Z0-9]{4,15}$/';
-        }
 
         return [
-            'identity_document_type_id' => ['required'],
-            'number' => $number_rules,
+            'identity_document_type_id' => ['required', 'in:6'],
+            'number' => [
+                'required',
+                'regex:/^(10|15|16|17|20)\d{9}$/',
+                Rule::unique('tenant.dispatchers')->ignore($id),
+            ],
             'name' => ['required', 'string', 'min:2', 'regex:/[A-Za-zÁÉÍÓÚáéíóúÑñ]/'],
             'address' => ['nullable', 'string', 'min:3', 'regex:/[A-Za-zÁÉÍÓÚáéíóúÑñ]/'],
             'number_mtc' => ['nullable', 'regex:/^[a-zA-Z0-9]+$/', 'max:12'],
@@ -43,10 +33,10 @@ class DispatcherRequest extends FormRequest
     {
         return [
             'identity_document_type_id.required' => 'Seleccione el tipo de documento.',
+            'identity_document_type_id.in' => 'El transportista solo puede registrarse con RUC.',
             'number.required' => 'El número es obligatorio.',
             'number.unique' => 'Ya existe un transportista con este número.',
-            'number.regex' => 'El número no tiene un formato válido para el tipo de documento seleccionado.',
-            'number.digits' => 'El número debe tener 8 dígitos.',
+            'number.regex' => 'El RUC debe tener 11 dígitos y un prefijo válido (10, 15, 16, 17 o 20).',
             'name.required' => 'El nombre es obligatorio.',
             'name.min' => 'El nombre debe tener al menos 2 caracteres.',
             'name.regex' => 'El nombre debe contener al menos una letra.',

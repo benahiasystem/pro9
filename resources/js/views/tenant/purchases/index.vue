@@ -390,8 +390,10 @@ export default {
                 });
         },
         isDateWarning(date_due) {
-            let today = Date.now();
-            return moment(date_due).isBefore(today);
+            if (!date_due) return false;
+            const due = moment(date_due, ["DD-MM-YYYY", "YYYY-MM-DD", "DD/MM/YYYY", moment.ISO_8601], true);
+            if (!due.isValid()) return false;
+            return due.startOf("day").isBefore(moment().startOf("day"));
         }
     }
 };

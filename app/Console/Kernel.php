@@ -39,6 +39,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('tenancy:run print-orders:prune')->dailyAt('04:00')->timezone('America/Caracas')->appendOutputTo(storage_path('logs/print_orders_prune.log'));
         // Marketplace: minimización de retención (Ley 29733) — purga contactos e IPs viejas
         $schedule->command('marketplace:purge')->dailyAt('03:30')->timezone('America/Caracas')->appendOutputTo(storage_path('logs/marketplace_purge.log'));
+        $schedule->command('marketplace:purge')->dailyAt('03:30')->timezone('America/Caracas')->appendOutputTo(storage_path('logs/marketplace_purge.log'));
+        // Limpieza de archivos por empresa segun lo programado en storage_cleanup_configurations.
+        // Corre cada 30 min porque la hora la define cada configuracion, no el schedule
+        $schedule->command('storage:clean')->everyMinute()->timezone('America/Caracas')->appendOutputTo(storage_path('logs/storage_clean.log'));
         $schedule->command('mozo:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/mozo_sync.log'));
         $schedule->command('vendeya:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/vendeya_sync.log'));
         // Llena las tablas para libro mayor - Se desactiva CMAR - buscar opcion de url

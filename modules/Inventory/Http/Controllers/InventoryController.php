@@ -657,7 +657,6 @@ class InventoryController extends Controller
                     'warehouse_id' => $warehouse_id,
                     'quantity_real' => $quantity_real,
                     'item_warehouse_id' => $item_warehouse->id,
-                    'saved' => $saved
                 ]);
 
             }

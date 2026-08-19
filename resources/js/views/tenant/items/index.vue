@@ -97,6 +97,8 @@
                             >
                         </div>
                     </div>
+                </template>
+                <template v-if="can_add_new_product">
                     <div class="btn-group flex-wrap dropdown">
                         <button
                             aria-expanded="false"
