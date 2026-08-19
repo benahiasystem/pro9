@@ -241,6 +241,14 @@ class PersonController extends Controller
 
             $person = Person::findOrFail($id);
             $person_type = ($person->type == 'customers') ? 'Cliente' : 'Proveedor';
+
+            if ($person->isVariousClients()) {
+                return [
+                    'success' => false,
+                    'message' => 'El cliente Clientes - Varios es un registro por defecto del sistema, no se puede eliminar'
+                ];
+            }
+
             $person->delete();
 
             return [

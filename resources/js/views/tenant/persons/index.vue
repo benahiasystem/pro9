@@ -340,7 +340,7 @@
                                   </template>
                               
                                   <el-dropdown-item
-                                    v-if="typeUser === 'admin'"
+                                    v-if="typeUser === 'admin' && !isVariousClients(row)"
                                     :command="{ action: 'delete', id: row.id }"
                                     class="text-danger option-delete"
                                   >
@@ -547,6 +547,13 @@ export default {
         },
         clickExport() {
             this.showExportDialog = true;
+        },
+        isVariousClients(row) {
+            return (
+                String(row.identity_document_type_id) === "0" &&
+                String(row.number) === "99999999" &&
+                row.type === "customers"
+            );
         },
         clickDelete(id) {
             this.destroy(`/${this.resource}/${id}`).then(() =>
