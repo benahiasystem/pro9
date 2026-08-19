@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -107,3 +108,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `item_movement`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -50,3 +51,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `cat_accounting_ledger_code_account`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -58,3 +59,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `transfer_account_payments`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -46,3 +47,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `cat_colors_items`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

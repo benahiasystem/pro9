@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -56,3 +57,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `documentary_files_requirements`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

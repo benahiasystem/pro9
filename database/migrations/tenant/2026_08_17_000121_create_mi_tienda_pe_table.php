@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -52,3 +53,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `mi_tienda_pe`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

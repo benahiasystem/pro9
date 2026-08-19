@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -65,3 +66,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `mill`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

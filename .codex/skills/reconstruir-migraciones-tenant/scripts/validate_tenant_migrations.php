@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 declare(strict_types=1);
 
@@ -385,3 +386,4 @@ function assertRollbackState($connection, string $target): void
         );
     }
 }
+// ######### FIN CAMBIO NELSON #########

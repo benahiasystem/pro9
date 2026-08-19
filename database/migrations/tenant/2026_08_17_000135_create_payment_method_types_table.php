@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
  * Estructura efectiva clonada desde `tenancy_bbc`.
@@ -43,3 +44,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `payment_method_types`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

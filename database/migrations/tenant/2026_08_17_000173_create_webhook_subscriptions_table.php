@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
  * Estructura efectiva clonada desde `tenancy_bbc`.
@@ -47,3 +48,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `webhook_subscriptions`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

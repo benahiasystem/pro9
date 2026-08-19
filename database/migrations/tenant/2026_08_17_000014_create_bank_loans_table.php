@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
  * Estructura efectiva clonada desde `tenancy_bbc`.
@@ -66,3 +67,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `bank_loans`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

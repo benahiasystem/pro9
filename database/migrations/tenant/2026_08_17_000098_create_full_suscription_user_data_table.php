@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -54,3 +55,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `full_suscription_user_data`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
          * Run the migrations.
@@ -50,3 +51,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `rel_user_to_documentary_offices`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

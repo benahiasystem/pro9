@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 declare(strict_types=1);
 
@@ -470,3 +471,4 @@ function applyRequiredPolicyRecords(array &$dataset): array
     // Pro9 preserva exactamente el resultado de su propio historial.
     return [];
 }
+// ######### FIN CAMBIO NELSON #########

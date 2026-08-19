@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
  * Estructura efectiva clonada desde `tenancy_bbc`.
@@ -146,3 +147,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `user_rel_suscription_plans`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

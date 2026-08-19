@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 declare(strict_types=1);
 
@@ -583,3 +584,4 @@ function writeGeneratedFile(string $path, string $contents): void
         fail("No se pudo escribir {$path}.");
     }
 }
+// ######### FIN CAMBIO NELSON #########

@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 declare(strict_types=1);
 
@@ -551,3 +552,4 @@ function assertRollbackState($connection, string $database): void
         throw new RuntimeException('La tabla migrations no quedó vacía.');
     }
 }
+// ######### FIN CAMBIO NELSON #########

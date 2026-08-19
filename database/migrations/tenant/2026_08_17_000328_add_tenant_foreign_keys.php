@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
  * Agrega las claves foráneas después de crear todas las tablas.
@@ -2042,3 +2043,4 @@ SQL
         }
     }
 };
+// ######### FIN CAMBIO NELSON #########

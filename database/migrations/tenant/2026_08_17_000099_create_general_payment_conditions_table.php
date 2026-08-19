@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
  * Estructura efectiva clonada desde `tenancy_bbc`.
@@ -30,3 +31,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `general_payment_conditions`');
     }
 };
+// ######### FIN CAMBIO NELSON #########

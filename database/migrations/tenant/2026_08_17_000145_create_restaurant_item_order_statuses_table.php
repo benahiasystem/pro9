@@ -1,4 +1,5 @@
 <?php
+// ######### INICIO CAMBIO NELSON #########
 
 /**
  * Estructura efectiva clonada desde `tenancy_bbc`.
@@ -46,3 +47,4 @@ SQL);
         DB::unprepared('DROP TABLE IF EXISTS `restaurant_item_order_statuses`');
     }
 };
+// ######### FIN CAMBIO NELSON #########
