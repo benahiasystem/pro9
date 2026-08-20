@@ -1,0 +1,351 @@
+/* ============================================================================
+   mobile-admin.css — Ajustes del panel SYSTEM/admin (Digital Buho)
+
+   Se carga SOLO en los layouts de system (auth, app, web), inmediatamente
+   después de mobile.css, por lo que puede corregir cualquier hoja anterior.
+
+   Método (mismo que mobile.css): solo CSS — ninguna vista se modifica salvo
+   para añadir clases hook. Los ajustes de escritorio van fuera del media
+   query; los de celular dentro de (max-width: 767.98px).
+   ========================================================================== */
+
+/* ============================================================================
+   A. GENERAL (todas las pantallas)
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   A1. Píldora de versión del login: acabado de producto (punto de estado +
+       tipografía compacta) en lugar del look "IA" con destello.
+   ---------------------------------------------------------------------------- */
+
+.body-sign .login-version {
+    gap: 7px;
+    padding: 3px 12px 3px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    border-radius: 7px;
+    background: rgba(255, 255, 255, .13);
+    border: 0;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28);
+}
+
+.body-sign .login-version::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: #4ade80;
+    box-shadow: 0 0 0 3px rgba(74, 222, 128, .22);
+}
+
+.body-sign .login-version .ti {
+    display: none;
+}
+
+.body-sign .login-version b {
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+/* ----------------------------------------------------------------------------
+   A2. Página de Configuraciones: navegación lateral de secciones.
+
+   Las 16 secciones estaban apiladas sin agrupar. Ahora van en cinco grupos
+   con la navegación a la izquierda (patrón de páginas de ajustes).
+   ---------------------------------------------------------------------------- */
+
+.config-tabs.el-tabs--left {
+    margin-top: 4px;
+}
+
+.config-tabs.el-tabs--left .el-tabs__header.is-left {
+    margin-right: 20px;
+}
+
+.config-tabs.el-tabs--left .el-tabs__nav-wrap.is-left::after {
+    display: none;
+}
+
+.config-tabs.el-tabs--left .el-tabs__item.is-left {
+    height: auto;
+    padding: 11px 18px 11px 14px;
+    margin-bottom: 2px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    color: var(--dark-color, #3a4658);
+    transition: background .15s ease, color .15s ease;
+}
+
+.config-tabs.el-tabs--left .el-tabs__item.is-left:hover {
+    background: var(--light-color, #f5f8ff);
+}
+
+.config-tabs.el-tabs--left .el-tabs__item.is-left.is-active {
+    background: var(--accent-color, #e7edfc);
+    color: var(--primary-color, #3d6bf5);
+}
+
+/* La barra activa de Element sobra: el estado se marca con el fondo */
+.config-tabs.el-tabs--left .el-tabs__active-bar.is-left {
+    display: none;
+}
+
+.config-tabs .el-tabs__content {
+    overflow: visible;
+}
+
+/* ============================================================================
+   B. CELULAR (≤ 767px)
+   ========================================================================== */
+@media (max-width: 767.98px) {
+
+    /* ------------------------------------------------------------------------
+       B1. Login: la tarjeta tiene width fijo (480px) dentro de un layout
+           display:table, que crece con el contenido e ignora el max-width.
+           En celular se rompe la tabla y todo fluye al ancho real.
+       ---------------------------------------------------------------------- */
+
+    .body-sign {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: 24px 16px;
+    }
+
+    .body-sign .center-sign {
+        display: block;
+        padding-top: 0;
+    }
+
+    .body-sign .card {
+        width: 100%;
+    }
+
+    .logo-login {
+        text-align: center;
+    }
+
+    .logo-login img {
+        max-width: 190px;
+        height: auto;
+    }
+
+    .body-sign .card-header {
+        border-radius: 10px 10px 0 0;
+    }
+
+    /* El pie ("Copyright…") no debe forzar ancho */
+    .body-sign ~ p,
+    .body-sign p.text-center,
+    .body-sign .not-account {
+        font-size: 12px;
+        overflow-wrap: anywhere;
+    }
+
+    /* ------------------------------------------------------------------------
+       B2. Menú lateral: cabecera fija y pie de cuenta diferenciado.
+
+       mobile.css convierte el panel completo en el scroller (decisión
+       deliberada: es lo que responde de forma fiable al dedo en iOS). El
+       efecto colateral es que al desplazar la lista se va también la
+       cabecera, y con ella el botón de cerrar. Se ancla con position:sticky
+       — funciona dentro del mismo scroller, sin cambiar la arquitectura.
+       ---------------------------------------------------------------------- */
+
+    html.sidebar-left-opened .sidebar-left .header-mobile {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        /* Fondo opaco: la lista pasa por debajo al desplazarse */
+        background: #fff;
+        box-shadow: 0 1px 0 var(--accent-color, #e7edfc);
+    }
+
+    /* ------------------------------------------------------------------------
+       B3. Pie del menú (Configuración / Perfil / Estilos y Temas / Salir).
+
+       Es un <nav> aparte pensado para escritorio; en celular caía justo
+       detrás del último módulo con la misma pinta, así que parecía un
+       módulo más ("se mezcla y no está definido"). Se le da separación,
+       fondo propio y un rótulo de sección generado por CSS.
+       ---------------------------------------------------------------------- */
+
+    html.sidebar-left-opened .sidebar-left nav#menu.configuration-nav {
+        margin-top: 10px;
+        padding-top: 0;
+        padding-bottom: 6px;
+        border-top: 1px solid var(--accent-color, #e7edfc);
+        background: var(--light-color, #f5f8ff);
+    }
+
+    html.sidebar-left-opened .sidebar-left nav#menu.configuration-nav::before {
+        content: "Mi cuenta";
+        display: block;
+        padding: 10px 16px 2px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted, #8492a6);
+    }
+
+    /* ------------------------------------------------------------------------
+       B4. Densidad: cada opción es su propio <ul>, lo que sumaba márgenes y
+           dejaba ~48px por fila para 40px de contenido. Se compacta para que
+           entren más módulos sin desplazar.
+       ---------------------------------------------------------------------- */
+
+    html.sidebar-left-opened .sidebar-left ul.nav-main {
+        margin-bottom: 0;
+        padding-top: 0;
+    }
+
+    html.sidebar-left-opened .sidebar-left ul.nav-main > li > .nav-link {
+        padding-top: 9px;
+        padding-bottom: 9px;
+    }
+
+    /* ------------------------------------------------------------------------
+       B5. Modales y formularios: textos largos que no cortaban.
+
+       Element UI aplica white-space:nowrap a .el-checkbox, así que una
+       etiqueta larga ("¿Permitir a la empresa cambiar la configuración de
+       producción...?") se estiraba a 442px dentro de un modal de 357px y
+       provocaba desplazamiento horizontal. Se permite el salto de línea y
+       se alinea la casilla con la primera línea del texto.
+       ---------------------------------------------------------------------- */
+
+    .el-dialog .el-checkbox,
+    .el-dialog .el-radio {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        width: 100%;
+        margin-right: 0;
+        white-space: normal;
+    }
+
+    .el-dialog .el-checkbox__input,
+    .el-dialog .el-radio__input {
+        /* La casilla no se encoge y queda a la altura de la primera línea */
+        flex: 0 0 auto;
+        margin-top: 2px;
+    }
+
+    .el-dialog .el-checkbox__label,
+    .el-dialog .el-radio__label {
+        padding-left: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.35;
+    }
+
+    /* Red de seguridad: ningún contenido del modal debe forzar ancho */
+    .el-dialog .el-dialog__body {
+        overflow-x: hidden;
+    }
+
+    .el-dialog .el-dialog__body label,
+    .el-dialog .el-dialog__body p,
+    .el-dialog .el-dialog__body .control-label,
+    .el-dialog .el-dialog__title {
+        overflow-wrap: anywhere;
+    }
+
+    /* ------------------------------------------------------------------------
+       B6. Mensajes de "sin registros" dentro de tablas anchas.
+
+       La celda usa colspan sobre TODA la tabla (p. ej. 528px) y va centrada,
+       así que en una pantalla de 375px el texto caía fuera de la zona
+       visible: parecía que la tabla mostraba datos movidos o vacíos.
+       Se alinea a la izquierda y se fija al borde para que siga visible
+       aunque se desplace la tabla en horizontal.
+       ---------------------------------------------------------------------- */
+
+    .table-responsive td[colspan] {
+        position: sticky;
+        left: 0;
+        /* !important: estas celdas suelen traer la utilidad .text-center de
+           Bootstrap, que ya viene con !important */
+        text-align: left !important;
+    }
+
+    /* ------------------------------------------------------------------------
+       B7. Campos de formulario en columnas de media pantalla.
+
+       `col-6` (sin sufijo de breakpoint) aplica desde el móvil, así que en
+       375px quedaban campos de ~156px: un desplegable como "Encima del
+       formulario" necesita 198px y se cortaba a media palabra. Sólo se
+       expanden las columnas que contienen un control de formulario, para no
+       tocar las que agrupan botones o textos.
+       ---------------------------------------------------------------------- */
+
+    .col-6:has(.el-select),
+    .col-6:has(.el-input),
+    .col-6:has(input),
+    .col-6:has(select),
+    .col-6:has(textarea) {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+
+    /* ------------------------------------------------------------------------
+       B8. Configuraciones: la navegación lateral pasa a barra horizontal
+           desplazable (en 375px una columna de secciones se come la pantalla).
+       ---------------------------------------------------------------------- */
+
+    .config-tabs.el-tabs--left {
+        display: block;
+    }
+
+    .config-tabs.el-tabs--left .el-tabs__header.is-left {
+        float: none;
+        width: 100%;
+        margin: 0 0 14px;
+    }
+
+    .config-tabs.el-tabs--left .el-tabs__nav-wrap.is-left {
+        margin-bottom: 0;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .config-tabs.el-tabs--left .el-tabs__nav-wrap.is-left::-webkit-scrollbar {
+        display: none;
+    }
+
+    .config-tabs.el-tabs--left .el-tabs__nav.is-left {
+        display: flex;
+        gap: 6px;
+        width: max-content;
+    }
+
+    .config-tabs.el-tabs--left .el-tabs__item.is-left {
+        flex: 0 0 auto;
+        height: auto;
+        padding: 9px 14px;
+        margin-bottom: 0;
+        font-size: 13.5px;
+        white-space: nowrap;
+    }
+
+    /* ------------------------------------------------------------------------
+       B9. Menú lateral: aire entre el bloque de usuario y el primer módulo
+           (quedaban a 4px, se leían como un solo bloque).
+       ---------------------------------------------------------------------- */
+
+    html.sidebar-left-opened .sidebar-left .user-mobile {
+        padding: 12px 14px;
+    }
+
+    html.sidebar-left-opened .sidebar-left .header-mobile {
+        margin-bottom: 10px;
+    }
+}

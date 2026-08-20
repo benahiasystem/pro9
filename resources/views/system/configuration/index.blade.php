@@ -10,26 +10,86 @@
         </ol>
     </div>
 
+    {{--
+        Las 16 secciones de configuración estaban apiladas en dos columnas sin
+        agrupar: había que recorrer toda la página para encontrar cualquier
+        ajuste. Ahora se reparten en cinco grupos temáticos. En escritorio la
+        navegación va a la izquierda (patrón habitual de páginas de ajustes) y
+        en celular pasa a una barra horizontal desplazable — ese cambio vive en
+        mobile-admin.css, sección B8.
+    --}}
     <div class="row">
-        <div class="col-lg-6 col-md-12">
-            <system-login-settings :configuration='@json($configuration)'></system-login-settings>
-            <system-configuration-themes></system-configuration-themes>
-            <system-configuration-visible-columns></system-configuration-visible-columns>
-            <system-login-other-configuration :plans='@json($plans)'></system-login-other-configuration>
-            <system-openai-configuration></system-openai-configuration>
-            <system-google-maps-configuration :configuration='@json($configuration)'></system-google-maps-configuration>
-            <system-cron-order-configuration :configuration='@json($configuration)'></system-cron-order-configuration>
-            <system-whatsapp-provider-configuration></system-whatsapp-provider-configuration>
-            <system-waha-servers-index></system-waha-servers-index>
-        </div>
-        <div class="col-lg-6 col-md-12">
-            <system-configuration-payment-gateway></system-configuration-payment-gateway>
-            <system-configuration-token></system-configuration-token>
-            <system-configuration-apk-url></system-configuration-apk-url>
-            <system-support-configuration></system-support-configuration>
-            <system-terms-configuration></system-terms-configuration>
-            <system-email-configuration :configuration='@json($configuration)'></system-email-configuration>
-            <system-whatsapp-notify-configuration :configuration='@json($configuration)'></system-whatsapp-notify-configuration>
+        <div class="col-12">
+            {{-- value: sin sección inicial Element UI no activa ninguna y el contenido queda en blanco --}}
+            <el-tabs class="config-tabs" tab-position="left" value="apariencia">
+
+                <el-tab-pane name="apariencia">
+                    <span slot="label">Apariencia</span>
+                    <div class="row">
+                        <div class="col-xl-6 col-12">
+                            <system-login-settings :configuration='@json($configuration)'></system-login-settings>
+                            <system-configuration-themes></system-configuration-themes>
+                        </div>
+                        <div class="col-xl-6 col-12">
+                            <system-configuration-visible-columns></system-configuration-visible-columns>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="integraciones">
+                    <span slot="label">Integraciones</span>
+                    <div class="row">
+                        <div class="col-xl-6 col-12">
+                            <system-configuration-payment-gateway></system-configuration-payment-gateway>
+                            <system-configuration-token></system-configuration-token>
+                        </div>
+                        <div class="col-xl-6 col-12">
+                            <system-openai-configuration></system-openai-configuration>
+                            <system-google-maps-configuration :configuration='@json($configuration)'></system-google-maps-configuration>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="whatsapp">
+                    <span slot="label">WhatsApp</span>
+                    <div class="row">
+                        <div class="col-xl-6 col-12">
+                            <system-whatsapp-provider-configuration></system-whatsapp-provider-configuration>
+                            <system-waha-servers-index></system-waha-servers-index>
+                        </div>
+                        <div class="col-xl-6 col-12">
+                            <system-whatsapp-notify-configuration :configuration='@json($configuration)'></system-whatsapp-notify-configuration>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="comunicacion">
+                    <span slot="label">Comunicación</span>
+                    <div class="row">
+                        <div class="col-xl-6 col-12">
+                            <system-email-configuration :configuration='@json($configuration)'></system-email-configuration>
+                            <system-support-configuration></system-support-configuration>
+                        </div>
+                        <div class="col-xl-6 col-12">
+                            <system-terms-configuration></system-terms-configuration>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <el-tab-pane name="sistema">
+                    <span slot="label">Sistema</span>
+                    <div class="row">
+                        <div class="col-xl-6 col-12">
+                            <system-login-other-configuration :plans='@json($plans)'></system-login-other-configuration>
+                            <system-configuration-apk-url></system-configuration-apk-url>
+                        </div>
+                        <div class="col-xl-6 col-12">
+                            <system-cron-order-configuration :configuration='@json($configuration)'></system-cron-order-configuration>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+            </el-tabs>
         </div>
     </div>
 
