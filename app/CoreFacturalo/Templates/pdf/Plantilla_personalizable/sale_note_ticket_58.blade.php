@@ -363,16 +363,25 @@
 
 </table>
 
-@if($document->payment_method_type_id && $payments->count() == 0)
+@php
+    $paymentCondition = \App\CoreFacturalo\Helpers\Template\TemplateHelper::getDocumentPaymentCondition($document);
+@endphp
 <table class="full-width">
     <tr>
-    <td class="desc pt-5">
-        <strong>PAGO: </strong>{{ $document->payment_method_type->description }}
-    </td>
-</tr>
+        <td class="desc pt-5">
+            <strong>CONDICIÓN DE PAGO: {{ $paymentCondition }} </strong>
+        </td>
+    </tr>
+    @if($document->payment_method_type_id)
+    <tr>
+        <td class="desc pt-5">
+            <strong>MÉTODO DE PAGO: </strong>{{ $document->payment_method_type->description }}
+        </td>
+    </tr>
+    @endif
 </table>
-@endif
 
+@if ($document->payment_condition_id === '01')
 @if($payments->count())
 <table class="full-width">
     <tr><td><strong>PAGOS:</strong> </td></tr>
@@ -386,6 +395,17 @@
         @endphp
     @endforeach
     <tr><td><strong>SALDO:</strong> {{ $document->currency_type->symbol }} {{ number_format($document->total - $payment, 2) }}</td></tr>
+</table>
+@endif
+@else
+<table class="full-width">
+    @foreach($document->fee as $key => $quote)
+    <tr>
+        <td class="desc pt-5">
+            &#8226; {{ (empty($quote->getStringPaymentMethodType()) ? 'Cuota #'.( $key + 1) : $quote->getStringPaymentMethodType()) }} / Fecha: {{ $quote->date->format('d-m-Y') }} / Monto: {{ $quote->currency_type->symbol }}{{ $quote->amount }}
+        </td>
+    </tr>
+    @endforeach
 </table>
 @endif
 @if ($document->terms_condition)
