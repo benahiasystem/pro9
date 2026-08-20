@@ -2,8 +2,8 @@
     <div class="coupon-list">
 
         <!-- Tarjeta principal -->
-        <div class="card tab-content-default row-new mb-0">
-            <div class="card-body">
+        <div class="card tab-content-default mb-0">
+            <div>
                 <coupons-data-table>
                     <tr slot="heading">
                         <th class="text-start">Código</th>
