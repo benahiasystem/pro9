@@ -76,6 +76,7 @@ class MobileController extends Controller
             'ruc' => $company->number,
             'app_logo' => $company->logo,
             'app_logo_base64' => '',//base64_encode(file_get_contents(config('app.url').'/storage/uploads/logos/'.$company->logo)),
+            'app_url_logo' => Company::getAppUrlLogo(),
             'company' => [
                 'name' => $company->name,
                 'address' => auth()->user()->establishment->department->description.', '.auth()->user()->establishment->province->description.', '.auth()->user()->establishment->district->description.', '.auth()->user()->establishment->address,
