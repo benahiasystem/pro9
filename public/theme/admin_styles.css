@@ -1323,6 +1323,10 @@ div.sub-title.text-muted{
     -webkit-box-shadow: -1px 0 0 0 var(--primary-color) !important;
     box-shadow: -1px 0 var(--primary-color) !important;
 }
+.el-alert--warning.is-light {
+    background-color: color-mix(in srgb, var(--warning) 6%, #ffffff00) !important;
+    color: var(--warning) !important;
+}
 @media only screen and (max-width: 767px) {
     html.sidebar-left-big-icons .sidebar-left {
         left: -100% !important;
