@@ -302,80 +302,40 @@
     </table>
 @endif
 
-@php
-$showSerie = false;
-$showModel = false;
-$showBrand = false;
-$showLot = false;
-$showDateDue = false;
-
-$itemLotGroup = app('App\Services\ItemLotsGroupService');
-
-foreach($document->items as $row) {
-    if (!empty($row->item->lots)) {
-        foreach ($row->item->lots as $lot) {
-            if (!empty($lot->series)) {
-                $showSerie = true;
-                break;
-            }
-        }
-    }
-
-    if (!empty($row->item->model)) {
-        $showModel = true;
-    }
-
-    if (!empty($row->relation_item->brand->name ?? null)) {
-        $showBrand = true;
-    }
-
-    $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
-    $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
-
-    if (!empty($lot)) {
-        $showLot = true;
-    }
-
-    if (!empty($date_due) || !empty($row->relation_item->date_of_due)) {
-        $showDateDue = true;
-    }
-
-    if ($showSerie && $showModel && $showBrand && $showLot && $showDateDue) {
-        break;
-    }
-}
-@endphp
-
+@inject('unitTypeService', 'App\Services\UnitTypeService')
 <table class="full-width border-box mt-10 mb-10">
     <thead class="">
     <tr>
-        <th class="border-top-bottom text-center">Item</th>
-        <th class="border-top-bottom text-center">Código</th>
-        <th class="border-top-bottom text-left">Descripción</th>
-        @if($showSerie)
-            <th class="border-top-bottom text-left">Serie</th>
-        @endif
-        @if($showModel)
-            <th class="border-top-bottom text-left">Modelo</th>
-        @endif
-        @if($showBrand)
-            <th class="border-top-bottom text-center">Marca</th>
-        @endif
-        @if($showLot)
-            <th class="border-top-bottom text-center">Lote</th>
-        @endif
-        @if($showDateDue)
-            <th class="border-top-bottom text-center">F. Venc.</th>
-        @endif
-        <th class="border-top-bottom text-center">Unidad</th>
-        <th class="border-top-bottom text-right">Cantidad</th>
+        <th class="border-top-bottom text-center" width="6%">ITEM</th>
+        <th class="border-top-bottom text-center" width="12%">CÓDIGO</th>
+        <th class="border-top-bottom text-center" width="10%">CANTIDAD</th>
+        <th class="border-top-bottom text-center" width="10%">U.M</th>
+        <th class="border-top-bottom text-left">DESCRIPCIÓN</th>
+        <th class="border-top-bottom text-center" width="10%">PESO</th>
     </tr>
     </thead>
     <tbody>
     @foreach($document->items as $row)
+        @php
+            $unitTypeId = $row->item->unit_type_id ?? null;
+            $unitMeasure = ($unitTypeId === 'NIU')
+                ? 'UNIDAD'
+                : ($unitTypeService->getDescription($unitTypeId) ?: $unitTypeId);
+            $itemWeight = $row->item->weight
+                ?? optional($row->relation_item)->weight
+                ?? '';
+        @endphp
         <tr>
             <td class="text-center">{{ $loop->iteration }}</td>
             <td class="text-center">{{ $row->item->internal_id }}</td>
+            <td class="text-center">
+                @if(((int)$row->quantity != $row->quantity))
+                    {{ $row->quantity }}
+                @else
+                    {{ number_format($row->quantity, 0) }}
+                @endif
+            </td>
+            <td class="text-center">{{ $unitMeasure }}</td>
             <td class="text-left">
                 @if($row->name_product_pdf)
                     {!!$row->name_product_pdf!!}
@@ -397,7 +357,7 @@ foreach($document->items as $row) {
                         @endif
                     @endforeach
                 @endif
-                @if($row->relation_item->is_set == 1)
+                @if(optional($row->relation_item)->is_set == 1)
                     <br>
                     @inject('itemSet', 'App\Services\ItemSetService')
                     @foreach ($itemSet->getItemsSet($row->item_id) as $item)
@@ -410,59 +370,7 @@ foreach($document->items as $row) {
                     *** Pago Anticipado ***
                 @endif
             </td>
-            @if($showSerie)
-            <td class="text-left align-top">
-                @isset($row->item->lots)
-                    @foreach($row->item->lots as $lot)
-                        @if(!empty($lot->series))
-                            <span style="font-size: 9px">{{ $lot->series }}</span><br>
-                        @endif
-                    @endforeach
-                @endisset
-            </td>
-            @endif
-            @if($showModel)
-            <td class="text-left">{{ $row->item->model ?? '' }}</td>
-            @endif
-            @if($showBrand)
-            <td class="text-center align-top">{{ $row->relation_item->brand->name ?? '' }}</td>
-            @endif
-            @inject('itemLotGroup', 'App\Services\ItemLotsGroupService')
-            @php
-                $lot = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLote($row->item->IdLoteSelected) : '';
-                $date_due = optional($row->item)->IdLoteSelected ? $itemLotGroup->getLotDateOfDue($row->item->IdLoteSelected) : '';
-            @endphp
-
-            @if($showLot)
-                <td class="text-center align-top">
-                    @if($lot)
-                        @foreach(explode('/', $lot) as $code)
-                            @if(trim($code) !== '')
-                                {{ trim($code) }}<br>
-                            @endif
-                        @endforeach
-                    @endif
-                </td>
-            @endif
-            @if($showDateDue)
-                <td class="text-center align-top">
-                    @php
-                        $cleanedDate = $date_due != ''
-                            ? ltrim($date_due, '/')
-                            : ($row->relation_item->date_of_due ? $row->relation_item->date_of_due->format('Y-m-d') : '');
-                    @endphp
-            
-                    {{ $cleanedDate }}
-                </td>
-            @endif
-            <td class="text-center">{{ $row->item->unit_type_id }}</td>
-            <td class="text-right">
-                @if(((int)$row->quantity != $row->quantity))
-                    {{ $row->quantity }}
-                @else
-                    {{ number_format($row->quantity, 0) }}
-                @endif
-            </td>
+            <td class="text-center">{{ $itemWeight }}</td>
         </tr>
     @endforeach
     </tbody>
