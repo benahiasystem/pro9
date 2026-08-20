@@ -729,9 +729,7 @@ class SaleNoteController extends Controller
 
             //pagos
             $this->savePayments($this->sale_note, $data['payments'], $isUpdate);
-            if (isset($data['fee'])) {
-                $this->saveFee($this->sale_note, $data['fee']);
-            }
+            $this->saveFee($this->sale_note, $data['fee'] ?? []);
 
             $this->setFilename();
             $this->createPdf($this->sale_note,"a4", $this->sale_note->filename);
@@ -764,9 +762,14 @@ class SaleNoteController extends Controller
 
     private function saveFee($document, $fee)
     {
+        // Al editar, reemplazar cuotas (evita acumular historial de crédito en el PDF).
+        $document->fee()->delete();
+
         foreach ($fee as $row) {
             $document->fee()->create($row);
         }
+
+        $document->unsetRelation('fee');
     }
 
     /**

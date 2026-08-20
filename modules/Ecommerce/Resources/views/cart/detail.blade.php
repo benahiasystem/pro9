@@ -85,7 +85,26 @@
         margin-bottom: 9px !important;
         padding: 6px 9px !important;
         box-sizing: border-box;
-        border: 1px solid #b8b8b8 !important;
+    }
+    .mp-checkout-bricks__payment-options-_ANPQa.svelte-19uzzy1 {
+        border: none !important;
+    }
+    .mp-checkout-bricks__selector-NagIaJ.active-3bFn8Q.svelte-1s6wsbi, .mp-checkout-bricks__selector-NagIaJ.svelte-1s6wsbi:hover {
+        background-color: transparent !important;
+    }
+    .mp-checkout-bricks__selector-NagIaJ.svelte-1s6wsbi:not(:first-child) {
+        box-shadow: none !important;
+    }
+    .mp-checkout-bricks__selector-icon-3awWEM.default-2Bvwuv.svelte-1s6wsbi {
+        margin-left: 10px;
+        margin-right: 5px;
+    }
+    .button-container-8cRhpK.svelte-10yh6ws {
+        width: 100%;
+        max-width: 100% !important;
+    }
+    form.visible-BQhSi2.svelte-734qla {
+        margin-bottom: 0 !important;
     }
 
     #mp-brick-container form button {
@@ -1024,6 +1043,8 @@
     #izipay-payment-host .kr-payment-button {
         border-radius: 12px !important;
         background: var(--primary-color) !important;
+        color: #fff !important;
+        height: 56px;
     }
 
     #mp-brick-stash {
@@ -1745,6 +1766,203 @@
         margin-bottom: 0;
         white-space: pre-line;
     }
+    .pay-note {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding: 14px 16px;
+        border-radius: 8px;
+        background: color-mix(in srgb, var(--primary-color) 6%, #ffffff00);
+    }
+
+    .pay-note-ic {
+        flex: none;
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        border-radius: 9px;
+        background: #fff;
+        color: var(--primary-color);
+        box-shadow: 0 1px 3px rgba(15, 122, 61, .12);
+    }
+
+    .pay-note-txt {
+        margin: 0;
+        font-size: 13.5px;
+        line-height: 1.45;
+        color: var(--primary-color);
+        white-space: pre-line;
+    }
+    .pay-panel {
+        margin-bottom: 12px;
+        border: 1px solid #e6e6e6;
+        border-radius: 10px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .pay-panel-note {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: color-mix(in srgb, var(--primary-color) 6%, #ffffff00);
+    }
+
+    .pay-panel-body {
+        padding: 16px;
+    }
+
+    .pay-detail-title {
+        margin: 0 0 2px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--title-color);
+    }
+
+    .pay-rows {
+        margin: 0;
+    }
+
+    .pay-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid #efefef;
+    }
+
+    .pay-row:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .pay-row dt {
+        flex: none;
+        width: 84px;
+        margin: 0;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--subtitle-color);
+    }
+
+    .pay-row dd {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 0;
+    }
+
+    .pay-row-value {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--title-color);
+        word-break: break-word;
+    }
+
+    .pay-row-value--amount {
+        color: #742284;
+    }
+
+    .pay-row-sub {
+        display: block;
+        margin-top: -5px;
+        font-size: 12.5px;
+        font-weight: 400;
+        color: var(--subtitle-color);
+    }
+
+    .pay-copy {
+        flex: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 13px;
+        border: 1px solid color-mix(in srgb, var(--primary-color) 28%, #ffffff);
+        border-radius: 9px;
+        background: #fff;
+        color: var(--primary-color);
+        font-size: 12.5px;
+        font-weight: 600;
+        line-height: 1;
+        cursor: pointer;
+        transition: border-color .15s ease, background .15s ease;
+    }
+
+    .pay-copy:hover {
+        border-color: var(--primary-color);
+        background: color-mix(in srgb, var(--primary-color) 8%, #ffffff);
+    }
+
+    .pay-copy svg {
+        flex: none;
+    }
+
+    .pay-account + .pay-account {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid #efefef;
+    }
+
+    .pay-empty {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: #d9534f;
+    }
+    .pay-panel--yape .pay-panel-body {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .yape-qr {
+        flex: none;
+        width: 190px;
+        margin: 0;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(116, 34, 132, .15);
+    }
+
+    .yape-qr img {
+        display: block;
+        width: 100%;
+        height: auto;
+    }
+
+    .yape-info {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .yape-intro {
+        margin: 0 0 4px;
+        font-size: 14.5px;
+        line-height: 1.5;
+        color: var(--subtitle-color);
+        white-space: normal;
+    }
+
+    @media (max-width: 575px) {
+        .pay-panel--yape .pay-panel-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .yape-qr {
+            width: 175px;
+            align-self: center;
+        }
+    }
 
     .pay-method-action {
         width: 100%;
@@ -1896,216 +2114,6 @@
             opacity: 1;
             transform: translateY(0);
         }
-    }
-
-    /* Guest checkout modals */
-    .guest-modal .modal-content {
-        border: 0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .guest-modal .modal-header {
-        border-bottom: 1px solid #eef1f4;
-        padding: 1.25rem 1.5rem 1rem;
-    }
-
-    .guest-modal .modal-title {
-        font-weight: 700;
-        color: #1f2937;
-    }
-
-    .guest-modal .modal-body {
-        padding: 0 1.5rem 1.25rem;
-        color: #4b5563;
-        line-height: 1.55;
-    }
-
-    .guest-modal .modal-footer {
-        border-top: 1px solid #eef1f4;
-        padding: 1rem 1.5rem 1.25rem;
-        gap: .5rem;
-    }
-
-    .guest-modal__intro {
-        margin-bottom: 1rem;
-    }
-
-    .guest-modal__actions {
-        display: flex;
-        flex-direction: column;
-        gap: .75rem;
-    }
-
-    .guest-modal__warning-list {
-        margin: 0 0 1rem;
-        padding-left: 1.15rem;
-    }
-
-    .guest-modal__warning-list li {
-        margin-bottom: .45rem;
-    }
-
-    .guest-modal__check {
-        display: flex;
-        align-items: flex-start;
-        gap: .65rem;
-        margin: 0;
-        cursor: pointer;
-        user-select: none;
-    }
-
-    .guest-modal__check input {
-        margin-top: .2rem;
-    }
-
-    .guest-form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
-    }
-
-    .guest-form-grid .field-full {
-        grid-column: 1 / -1;
-    }
-
-    @media (max-width: 767px) {
-        .guest-form-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .pay-method-panel {
-        padding: 15px;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        margin-bottom: 12px;
-        background: #fafafa;
-    }
-
-    .pay-method-panel p {
-        font-size: 13px;
-        color: #555;
-        margin-bottom: 0;
-        white-space: pre-line;
-    }
-
-    .pay-method-action {
-        width: 100%;
-        margin-top: 12px;
-    }
-
-    .checkout-hint {
-        font-size: 13px;
-        color: #666;
-        text-align: center;
-        margin: 0 0 8px;
-        line-height: 1.4;
-    }
-
-    /* Guest checkout modals */
-    .guest-modal .modal-content {
-        border: 0;
-        border-radius: 14px;
-        overflow: hidden;
-    }
-
-    .guest-modal .modal-header {
-        border-bottom: 1px solid #eef1f4;
-        padding: 1.25rem 1.5rem 1rem;
-    }
-
-    .guest-modal .modal-title {
-        font-weight: 700;
-        color: #1f2937;
-    }
-
-    .guest-modal .modal-body {
-        padding: 0 1.5rem 1.25rem;
-        color: #4b5563;
-        line-height: 1.55;
-    }
-
-    .guest-modal .modal-footer {
-        border-top: 1px solid #eef1f4;
-        padding: 1rem 1.5rem 1.25rem;
-        gap: .5rem;
-    }
-
-    .guest-modal__intro {
-        margin-bottom: 1rem;
-    }
-
-    .guest-modal__actions {
-        display: flex;
-        flex-direction: column;
-        gap: .75rem;
-    }
-
-    .guest-modal__warning-list {
-        margin: 0 0 1rem;
-        padding-left: 1.15rem;
-    }
-
-    .guest-modal__warning-list li {
-        margin-bottom: .45rem;
-    }
-
-    .guest-modal__check {
-        display: flex;
-        align-items: flex-start;
-        gap: .65rem;
-        margin: 0;
-        cursor: pointer;
-        user-select: none;
-    }
-
-    .guest-modal__check input {
-        margin-top: .2rem;
-    }
-
-    .guest-form-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 1rem;
-    }
-
-    .guest-form-grid .field-full {
-        grid-column: 1 / -1;
-    }
-
-    @media (max-width: 767px) {
-        .guest-form-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    .pay-method-panel {
-        padding: 15px;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        margin-bottom: 12px;
-        background: #fafafa;
-    }
-
-    .pay-method-panel p {
-        font-size: 13px;
-        color: #555;
-        margin-bottom: 0;
-        white-space: pre-line;
-    }
-
-    .pay-method-action {
-        width: 100%;
-        margin-top: 12px;
-    }
-
-    .checkout-hint {
-        font-size: 13px;
-        color: #666;
-        text-align: center;
-        margin: 0 0 8px;
-        line-height: 1.4;
     }
 </style>
 @endpush
@@ -2972,8 +2980,11 @@
                             </span>
                             <span class="pay-method-label">@{{ titleIzipay }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'izipay' && descriptionIzipay && String(descriptionIzipay).trim()" class="pay-method-panel">
-                            <p>@{{ descriptionIzipay }}</p>
+                        <div v-if="selectedPaymentMethod === 'izipay' && descriptionIzipay && String(descriptionIzipay).trim()" class="pay-note">
+                            <span class="pay-note-ic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></svg>
+                            </span>
+                            <p class="pay-note-txt">@{{ descriptionIzipay }}</p>
                         </div>
 
                         <label v-if="enableMp" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'mp' }">
@@ -2983,8 +2994,11 @@
                             </span>
                             <span class="pay-method-label">@{{ titleMp }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'mp' && descriptionMp && String(descriptionMp).trim()" class="pay-method-panel">
-                            <p>@{{ descriptionMp }}</p>
+                        <div v-if="selectedPaymentMethod === 'mp' && descriptionMp && String(descriptionMp).trim()" class="pay-note">
+                            <span class="pay-note-ic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></svg>
+                            </span>
+                            <p class="pay-note-txt">@{{ descriptionMp }}</p>
                         </div>
 
                         <label v-if="enableCash && (!cashPaymentPickupOnly || isPickupMode)" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'cash' }">
@@ -2994,8 +3008,11 @@
                             </span>
                             <span class="pay-method-label">@{{ cashPaymentTitle }}</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'cash' && cashPaymentDescription && String(cashPaymentDescription).trim()" class="pay-method-panel">
-                            <p>@{{ cashPaymentDescription }}</p>
+                        <div v-if="selectedPaymentMethod === 'cash' && cashPaymentDescription && String(cashPaymentDescription).trim()" class="pay-note">
+                            <span class="pay-note-ic">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></svg>
+                            </span>
+                            <p class="pay-note-txt">@{{ cashPaymentDescription }}</p>
                         </div>
 
                         <label v-if="enableYape" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'yape' }">
@@ -3005,28 +3022,37 @@
                             </span>
                             <span class="pay-method-label">Pagar con Yape</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'yape'" class="pay-method-panel">
-                            <p>Escanea el código QR desde tu app de Yape.</p>
-                            @if(!empty($payment_configuration->image_url_yape))
-                            <div style="text-align: center; margin: 15px 0;">
-                                <img src="{{ $payment_configuration->image_url_yape }}" alt="QR Yape" style="max-width: 150px; border-radius: 8px; border: 1px solid #eee;">
+                        <div v-if="selectedPaymentMethod === 'yape'" class="pay-panel pay-panel--yape">
+                            <div class="pay-panel-body">
+                                @if(!empty($payment_configuration->image_url_yape))
+                                <figure class="yape-qr">
+                                    <img src="{{ $payment_configuration->image_url_yape }}" alt="Código QR de Yape" loading="lazy">
+                                </figure>
+                                @endif
+                                <div class="yape-info">
+                                    <p class="yape-intro">Escanea el código QR desde tu app de Yape para completar el pago.</p>
+                                    <dl class="pay-rows">
+                                        <div class="pay-row">
+                                            <dt>Titular</dt>
+                                            <dd>
+                                                <span class="pay-row-value">{{ $payment_configuration->name_yape ?? 'No registrado' }}</span>
+                                            </dd>
+                                        </div>
+                                        <div class="pay-row">
+                                            <dt>Teléfono</dt>
+                                            <dd>
+                                                <span class="pay-row-value">{{ $payment_configuration->telephone_yape ?? 'No registrado' }}</span>
+                                                @if(!empty($payment_configuration->telephone_yape))
+                                                <button type="button" class="pay-copy" @click.prevent="copyToClipboard('{{ $payment_configuration->telephone_yape }}')" title="Copiar teléfono">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"/></svg>
+                                                    Copiar
+                                                </button>
+                                                @endif
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                </div>
                             </div>
-                            @endif
-                            <div style="font-size: 14px; text-align: center; margin-bottom: 10px;">
-                                <strong>Titular:</strong> {{ $payment_configuration->name_yape ?? 'No registrado' }}<br>
-                                <strong>Teléfono:</strong> <span>{{ $payment_configuration->telephone_yape ?? 'No registrado' }}</span>
-                                <button type="button" @click.prevent="copyToClipboard('{{ $payment_configuration->telephone_yape ?? '' }}')" class="btn btn-sm btn-outline-secondary" style="padding: 2px 8px; font-size: 12px; margin-left: 5px;">
-                                    Copiar
-                                </button>
-                            </div>
-                            <button
-                                type="button"
-                                class="pay-btn pay-method-action"
-                                :disabled="processingPayment || !acceptedTerms"
-                                @click="runPayment('yape')"
-                            >
-                                Confirmar pedido con Yape
-                            </button>
                         </div>
 
                         <label v-if="enableTransfer" class="pay-method" :class="{ 'pay-method--active': selectedPaymentMethod === 'transfer' }">
@@ -3036,31 +3062,65 @@
                             </span>
                             <span class="pay-method-label">Transferencia bancaria</span>
                         </label>
-                        <div v-if="selectedPaymentMethod === 'transfer'" class="pay-method-panel">
-                            <p>Realiza el depósito en alguna de nuestras cuentas bancarias y envíanos el voucher por WhatsApp.</p>
-                            @if(isset($bank_accounts) && count($bank_accounts) > 0)
-                                <ul style="list-style: none; padding-left: 0; font-size: 13px; margin: 10px 0 0;">
-                                @foreach($bank_accounts as $account)
-                                    <li style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
-                                        <strong>Banco:</strong> {{ $account->bank->description }} ({{ $account->currency_type->symbol }})<br>
-                                        <strong>Cuenta:</strong> {{ $account->number }}<br>
-                                        @if($account->cci)
-                                        <strong>CCI:</strong> {{ $account->cci }}
-                                        @endif
-                                    </li>
-                                @endforeach
-                                </ul>
-                            @else
-                                <p style="font-size: 13px; font-weight: bold; color: #d9534f; margin-top: 10px;">No hay cuentas bancarias configuradas.</p>
-                            @endif
-                            <button
-                                type="button"
-                                class="pay-btn pay-method-action"
-                                :disabled="processingPayment || !acceptedTerms"
-                                @click="runPayment('transfer')"
-                            >
-                                Confirmar pedido con transferencia
-                            </button>
+                        <div v-if="selectedPaymentMethod === 'transfer'" class="pay-panel">
+                            <div class="pay-panel-note">
+                                <span class="pay-note-ic">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"/><path d="M12 9h.01"/><path d="M11 12h1v4h1"/></svg>
+                                </span>
+                                <p class="pay-note-txt">Realiza el depósito en alguna de nuestras cuentas bancarias y envíanos el voucher por WhatsApp.</p>
+                            </div>
+                            <div class="pay-panel-body">
+                                @if(isset($bank_accounts) && count($bank_accounts) > 0)
+                                    @foreach($bank_accounts as $account)
+                                    <div class="pay-account">
+                                        <h6 class="pay-detail-title">
+                                            @if(count($bank_accounts) > 1)
+                                                Cuenta {{ $loop->iteration }}
+                                            @else
+                                                Datos de la cuenta
+                                            @endif
+                                        </h6>
+                                        <dl class="pay-rows">
+                                            <div class="pay-row">
+                                                <dt>Banco</dt>
+                                                <dd>
+                                                    <span class="pay-row-value">
+                                                        {{ optional($account->bank)->description }}
+                                                        @if($account->currency_type)
+                                                        <small class="pay-row-sub">Cuenta en {{ mb_strtolower($account->currency_type->description ?? '') }} ({{ $account->currency_type->symbol }})</small>
+                                                        @endif
+                                                    </span>
+                                                </dd>
+                                            </div>
+                                            <div class="pay-row">
+                                                <dt>Cuenta</dt>
+                                                <dd>
+                                                    <span class="pay-row-value">{{ $account->number }}</span>
+                                                    <button type="button" class="pay-copy" @click.prevent="copyToClipboard('{{ $account->number }}')" title="Copiar número de cuenta">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"/></svg>
+                                                        Copiar
+                                                    </button>
+                                                </dd>
+                                            </div>
+                                            @if($account->cci)
+                                            <div class="pay-row">
+                                                <dt>CCI</dt>
+                                                <dd>
+                                                    <span class="pay-row-value">{{ $account->cci }}</span>
+                                                    <button type="button" class="pay-copy" @click.prevent="copyToClipboard('{{ $account->cci }}')" title="Copiar CCI">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z"/><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"/></svg>
+                                                        Copiar
+                                                    </button>
+                                                </dd>
+                                            </div>
+                                            @endif
+                                        </dl>
+                                    </div>
+                                    @endforeach
+                                @else
+                                    <p class="pay-empty">No hay cuentas bancarias configuradas.</p>
+                                @endif
+                            </div>
                         </div>
 
                         @if($information->script_paypal)
