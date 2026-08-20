@@ -384,7 +384,7 @@
                 )
             },
             clickPrint(external_id) {
-                 window.open(`/finances/unpaid/print/${external_id}/sale`, '_blank');
+                 window.open(`/sale-notes/print/${external_id}/a4`, '_blank');
             },
             clickOptions() {
                 this.showDialogOptions = true

@@ -141,25 +141,47 @@ export default {
         },
         async getRecord() {
             this.loading = true;
-            if (this.type=='sale') {
+            if (this.type=='sale' || this.type=='sale_note') {
                 this.resource_document='sale-notes';
             } else {
                 this.resource_document='documents'
             }
             await this.$http.get(`/${this.resource_document}/record/${this.recordId}`).then(response => {
-                this.form = response.data.data;
-                this.titleDialog = 'Comprobante de documento por cobrar: ' + this.form.number;
+                this.form = response.data.data || {};
+                const number = this.form.number_full || this.form.full_number || this.form.number;
+                this.titleDialog = 'Comprobante de documento por cobrar: ' + (number || '');
             }).finally(() => {
                 this.loading = false
             });
         },
         clickPrint(format) {
-            if (!this.form.external_id) {
+            const isSaleNote = this.type === 'sale' || this.type === 'sale_note';
+            const externalId = this.form.external_id
+                || (this.form.sale_note && this.form.sale_note.external_id);
+
+            const saleNoteUrls = {
+                a4: this.form.print_a4,
+                ticket: this.form.print_ticket,
+                ticket_58: this.form.print_ticket_58,
+                a5: this.form.print_a5,
+            };
+
+            if (isSaleNote) {
+                const url = saleNoteUrls[format] || (externalId ? `/sale-notes/print/${externalId}/${format}` : null);
+                if (!url) {
+                    this.$message.error('No se encontró el identificador del comprobante.');
+                    return;
+                }
+                window.open(url, '_blank');
+                return;
+            }
+
+            if (!externalId) {
                 this.$message.error('No se encontró el identificador del comprobante.');
                 return;
             }
 
-            window.open(`/${this.resource}/print/${this.form.external_id}/${this.type}/${format}`, '_blank');
+            window.open(`/${this.resource}/print/${externalId}/${this.type}/${format}`, '_blank');
         },
         clickCloseUnpaid() {
             this.$emit('update:showDialogOptions', false)
