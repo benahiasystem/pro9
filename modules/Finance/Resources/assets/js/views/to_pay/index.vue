@@ -114,15 +114,16 @@
                                         <el-button
                                             class="submit mb-2"
                                             type="success"
+                                            :disabled="!canExportResults"
                                             @click.prevent="clickOpen()"
                                             >
                                             <i class="fa fa-file-excel"></i> Exportar Todo
                                         </el-button>
 
                                         <el-button
-                                            v-if="records.length > 0"
                                             class="submit mb-2"
                                             type="success"
+                                            :disabled="!canExportResults"
                                             @click.prevent="clickDownload('excel')"
                                             >
                                             <i class="fa fa-file-excel"></i> Exportar Excel
@@ -130,9 +131,9 @@
 
                                         <el-tooltip class="item" effect="dark" content="Reporte por formas de pago (Días)" placement="top-start">
                                             <el-button
-                                                v-if="records.length > 0"
                                                 class="submit mb-2"
                                                 type="primary"
+                                                :disabled="!canExportResults"
                                                 @click.prevent="clickDownloadPaymentMethod()"
                                                 >
                                                 <i class="fa fa-file-excel"></i> Formas de pago (Días)
@@ -140,9 +141,9 @@
                                         </el-tooltip>
 
                                         <el-button
-                                            v-if="records.length > 0"
                                             class="submit mb-2"
                                             type="danger"
+                                            :disabled="!canExportResults"
                                             @click.prevent="clickDownload('pdf')"
                                             >
                                             <i class="fa fa-file-pdf"></i> Exportar PDF
@@ -431,6 +432,9 @@
                 return _.sumBy(source, function(item) {
                     return  parseFloat(item.total);
                 }).toFixed(2)
+            },
+            canExportResults() {
+                return this.getTotalRowsUnpaid > 0;
             }
         },
         async mounted() {
@@ -459,6 +463,10 @@
                 this.isVisible = !this.isVisible;
             },
             clickDownloadPaymentMethod() {
+                if (!this.canExportResults) {
+                    return;
+                }
+
                 let query = queryString.stringify({
                     ...this.form
                 });
@@ -501,6 +509,10 @@
                 window.open(download, "_blank");
             },
             clickDownload(type) {
+                if (!this.canExportResults) {
+                    return;
+                }
+
                 let query = queryString.stringify({
                     ...this.form
                 });
@@ -512,6 +524,9 @@
                 window.open(`/${this.resource}/to-pay/?${query}`, "_blank");
             },
             clickOpen(){
+                if (!this.canExportResults) {
+                    return;
+                }
                 window.open(`/${this.resource}/to-pay-all`, "_blank");
             },
             changeDisabledDates() {

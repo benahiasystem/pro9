@@ -383,6 +383,7 @@
                                             <el-button
                                                 class="submit"
                                                 type="success"
+                                                :disabled="!canExportResults"
                                                 @click.prevent="clickOpen()"
                                             >
                                                 <i class="fa fa-file-excel"></i>
@@ -390,9 +391,9 @@
                                             </el-button>
 
                                             <el-button
-                                                v-if="records.length > 0"
                                                 class="submit"
                                                 type="success"
+                                                :disabled="!canExportResults"
                                                 @click.prevent="
                                                     clickDownload('excel')
                                                 "
@@ -408,9 +409,9 @@
                                                 placement="top-start"
                                             >
                                                 <el-button
-                                                    v-if="records.length > 0"
                                                     class="submit"
                                                     type="primary"
+                                                    :disabled="!canExportResults"
                                                     @click.prevent="
                                                         clickDownloadPaymentMethod()
                                                     "
@@ -423,9 +424,9 @@
                                             </el-tooltip>
 
                                             <el-button
-                                                v-if="records.length > 0"
                                                 class="submit"
                                                 type="danger"
+                                                :disabled="!canExportResults"
                                                 @click.prevent="
                                                     clickDownload('pdf')
                                                 "
@@ -1116,6 +1117,9 @@ export default {
             return _.sumBy(source, function(item) {
                 return parseFloat(item.total);
             }).toFixed(2);
+        },
+        canExportResults() {
+            return this.getTotalRowsUnpaid > 0;
         }
     },
     async mounted() {
@@ -1259,6 +1263,10 @@ export default {
             window.open(download, "_blank");
         },
         clickDownload(type) {
+            if (!this.canExportResults) {
+                return;
+            }
+
             let query = queryString.stringify({
                 ...this.form
             });
@@ -1273,6 +1281,10 @@ export default {
             window.open(`/reports/no_paid/${type}/?${query}`, "_blank");
         },
         clickDownloadPaymentMethod() {
+            if (!this.canExportResults) {
+                return;
+            }
+
             let query = queryString.stringify({
                 ...this.form
             });
@@ -1282,12 +1294,8 @@ export default {
             );
         },
         clickOpen() {
-            if (!this.tableData || this.tableData.length === 0) {
-                this.$alert('No se encontraron datos para exportar', 'Sin resultados', {
-                    confirmButtonText: 'Entendido',
-                    type: 'warning'
-                });
-                return false;
+            if (!this.canExportResults) {
+                return;
             }
             window.open(`/${this.resource}/unpaidall`, "_blank");
         },
