@@ -175,6 +175,9 @@
     export default {
         props: ['showDialog', 'documentId','external','configuration'],
         mixins: [deletable],
+        components: {
+            DocumentOptions
+        },
         data() {
             return {
                 title: null,
@@ -354,7 +357,9 @@
                         }
                     })
                     .finally(() => {
-                        this.records[index].loading = false;
+                        if (this.records[index]) {
+                            this.records[index].loading = false;
+                        }
                     })
             },
             // filterDocumentType(row){
