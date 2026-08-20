@@ -84,8 +84,14 @@ class ReportGeneralItemController extends Controller
         $brand_id = isset($request['brand_id']) ? $request['brand_id'] : null;
         $category_id = isset($request['category_id']) ? $request['category_id'] : null;
 
-        $user_id = isset($request['user_id']) ? $request['user_id'] : null;
-        $user_type = isset($request['user_type']) ? $request['user_type'] : 'VENDEDOR';
+        $user_id = $request['user_id'] ?? null;
+        if ($user_id === '' || $user_id === 'null' || $user_id === 'all' || $user_id === 'TODOS') {
+            $user_id = null;
+        }
+        $user_type = $request['user_type'] ?? null;
+        if ($user_type === '' || $user_type === 'null' || $user_type === 'TODOS') {
+            $user_type = null;
+        }
         $web_platform_id = isset($request['web_platform_id']) ? $request['web_platform_id'] : null;
 
         $records = $this->dataItems($d_start, $d_end, $document_type_id, $data_type, $person_id, $type_person, $item_id, $web_platform_id, $brand_id, $category_id, $user_id, $user_type);
