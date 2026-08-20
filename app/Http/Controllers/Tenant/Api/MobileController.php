@@ -64,6 +64,7 @@ class MobileController extends Controller
         $business_turn_tap = BusinessTurn::where('value','tap')->first();
 
         $user = $request->user();
+        $establishment = $user->establishment;
         return [
             'success' => true,
             'name' => $user->name,
@@ -76,7 +77,11 @@ class MobileController extends Controller
             'ruc' => $company->number,
             'app_logo' => $company->logo,
             'app_logo_base64' => '',//base64_encode(file_get_contents(config('app.url').'/storage/uploads/logos/'.$company->logo)),
-            'app_url_logo' => Company::getAppUrlLogo(),
+            // El logo del establecimiento manda sobre el de la empresa. Ojo: aqui la ruta
+            // ya viene completa (storage/uploads/logos/...), a diferencia de company->logo.
+            'app_url_logo' => filled(optional($establishment)->logo)
+                ? asset($establishment->logo)
+                : Company::getAppUrlLogo(),
             'company' => [
                 'name' => $company->name,
                 'address' => auth()->user()->establishment->department->description.', '.auth()->user()->establishment->province->description.', '.auth()->user()->establishment->district->description.', '.auth()->user()->establishment->address,
