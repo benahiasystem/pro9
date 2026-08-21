@@ -63,6 +63,9 @@ class SaleNoteResource2 extends JsonResource
             'actions' => $this->actions,
             'observation' => $this->observation,
             'seller_id' => $this->seller_id,
+            'payment_condition_id' => $this->payment_condition_id ?: '01',
+            'fee' => $this->getTransformFee($this->fee),
+            'payment_method_type_id' => $this->payment_method_type_id,
         ];
     }
 
@@ -85,5 +88,19 @@ class SaleNoteResource2 extends JsonResource
             ];
         }); 
 
+    }
+
+    private function getTransformFee($fees)
+    {
+        return $fees->transform(function ($row) {
+            return [
+                'id' => $row->id,
+                'sale_note_id' => $row->sale_note_id,
+                'date' => $row->date ? $row->date->format('Y-m-d') : null,
+                'currency_type_id' => $row->currency_type_id,
+                'amount' => $row->amount,
+                'payment_method_type_id' => $row->payment_method_type_id,
+            ];
+        });
     }
 }
