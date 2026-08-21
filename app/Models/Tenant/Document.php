@@ -416,6 +416,9 @@ class Document extends ModelTenant
             'customer_name'          => optional($this->customer)->name,
             'customer_number'        => optional($this->customer)->number,
             'customer_address'       => $this->getApiResourceCustomerAddress(),
+            'department_id'          => optional($this->customer)->department_id ,
+            'province_id'            => optional($this->customer)->province_id ,
+            'district_id'            => optional($this->customer)->district_id ,
 
             'qr'                     => $this->qr,
 
@@ -433,6 +436,9 @@ class Document extends ModelTenant
             'total'                  => round((float) $this->total, 2),
 
             'items'                  => $items,
+            'terms_condition'        => $this->terms_condition,
+            'legends'                => $this->legends,
+            'seller'                 => $this->seller,
         ];
     }
 
