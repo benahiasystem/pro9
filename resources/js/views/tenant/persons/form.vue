@@ -173,6 +173,8 @@
                             <span v-if="addressesBadgeCount > 0" class="tab-count-badge">{{ addressesBadgeCount }}</span>
                         </span>
 
+                        <!-- Datos de la direccion principal: ahora se cargan desde addresses[0]. -->
+                        <template v-if="show_main_address_fields">
                         <div class="row mb-3 section-header section-header-first">
                             <div class="col-12">
                                 <h5 class="section-title">Dirección principal</h5>
@@ -396,10 +398,11 @@
                             <!-- Correos electronicos alterno -->
                         </div>
                         </div>
+                        </template>
                         <div class="row mt-3 section-header">
                             <div class="col-12">
-                                <h5 class="section-title">Direcciones adicionales</h5>
-                                <p class="section-subtitle">Agregar una o varias direcciones secundarias del cliente/proveedor</p>
+                                <h5 class="section-title">Direcciones</h5>
+                                <p class="section-subtitle">La primera es la dirección principal; puede agregar una o varias secundarias</p>
                             </div>
                         </div>
                         <div class="row mt-1">
@@ -840,6 +843,9 @@ export default {
             showDialogConsignedForm: false, 
             errors: {},
             api_service_token: false,
+            // Los campos de la direccion principal viven en addresses[0]; estos inputs
+            // quedan ocultos y se rellenan por espejo desde esa fila.
+            show_main_address_fields: false,
             form: {
                 optional_email: []
             },
@@ -920,13 +926,15 @@ export default {
         addressesBadgeCount() {
             // Dirección principal (columnas de la persona) + direcciones adicionales.
             // Al guardar, si no hay adicionales la principal se persiste como 1 dirección.
-            const additional = (this.form.addresses || []).length
+            const rows = this.form.addresses || []
             const hasMain = !!(this.form.address
                 && Array.isArray(this.form.location_id)
                 && this.form.location_id.length === 3
                 && this.form.location_id.every(x => x))
-            if (additional === 0) return hasMain ? 1 : 0
-            return additional + (hasMain ? 1 : 0)
+            // Si la principal ya figura dentro de addresses no se vuelve a sumar.
+            const mainAlreadyInRows = rows.some(row => row.main === true)
+            if (rows.length === 0) return hasMain ? 1 : 0
+            return rows.length + (hasMain && !mainAlreadyInRows ? 1 : 0)
         },
     },
     watch: {
@@ -934,7 +942,15 @@ export default {
             if (newValue !== 'PE' && this.form.location_id && this.form.location_id.length > 0) {
                 this.form.location_id = [];
             }
-        }
+        },
+        // addresses[0] es la direccion principal: cualquier cambio se refleja en las
+        // columnas de la persona, que ahora no tienen inputs visibles.
+        'form.addresses': {
+            deep: true,
+            handler() {
+                this.syncMainAddressToForm()
+            },
+        },
     },
     methods: {
         handleCloseDialog() {
@@ -1017,6 +1033,7 @@ export default {
             }
             this.updateEmail()
             this.resetEstablishments()
+            this.ensureMainAddressRow()
             this.originalForm = JSON.stringify(this.form)
 
         },
@@ -1113,6 +1130,7 @@ export default {
         normalizeFormAddresses() {
             if (!Array.isArray(this.form.addresses)) {
                 this.form.addresses = []
+                this.ensureMainAddressRow()
                 return
             }
 
@@ -1125,6 +1143,145 @@ export default {
                     row.district_id
                 ),
             }))
+
+            this.ensureMainAddressRow()
+        },
+        buildDefaultAddressRow(main = false) {
+            return {
+                'id': null,
+                'country_id': 'PE',
+                'location_id': [],
+                'address': null,
+                'email': null,
+                'phone': null,
+                'main': main,
+                'establishment_code': main ? (this.form.establishment_code || '0000') : '0000',
+                'has_consigned': false,
+                'consigned_id': null,
+            }
+        },
+        ensureMainAddressRow() {
+            // La direccion principal siempre existe como addresses[0]: es el unico lugar
+            // donde se cargan pais, ubigeo, direccion, telefono y correo de la persona.
+            if (!Array.isArray(this.form.addresses)) this.form.addresses = []
+
+            if (this.form.addresses.length > 0 && this.form.addresses[0].main === true) return
+
+            const existing = this.form.addresses.find(row => row.main === true)
+            if (existing) {
+                this.moveMainAddressFirst(existing)
+                return
+            }
+
+            // En registros anteriores a este flujo los datos viven en las columnas de
+            // la persona: se usan para estrenar la fila.
+            this.form.addresses.unshift({
+                ...this.buildDefaultAddressRow(true),
+                ...this.buildMainAddressPayload(),
+                main: true,
+            })
+        },
+        syncMainAddressToForm() {
+            const row = (this.form.addresses || [])[0]
+            if (!row || row.main !== true) return
+
+            this.form.country_id = row.country_id || 'PE'
+            this.form.location_id = Array.isArray(row.location_id) ? [...row.location_id] : []
+            this.form.address = row.address || null
+            this.form.establishment_code = row.establishment_code || null
+            this.form.telephone = row.phone || null
+            this.form.email = row.email || null
+        },
+        isEmptyAddressRow(row) {
+            if (!row) return true
+            // Una fila ya guardada no se descarta: quitarla del envio la borraria en el backend.
+            if (row.id) return false
+
+            return !this.hasAddressValue(row.address)
+                && !this.hasAddressValue(row.phone)
+                && !this.hasAddressValue(row.email)
+                && !this.hasAddressValue(row.location_id)
+        },
+        hasAddressValue(value) {
+            if (value === null || value === undefined) return false
+            if (Array.isArray(value)) return value.length > 0 && value.every(item => item)
+            if (typeof value === 'string') return value.trim() !== ''
+            return true
+        },
+        onlyFilledValues(source) {
+            // Solo se propagan los campos realmente cargados: los vacios no deben
+            // pisar lo que ya estaba guardado en la fila.
+            const filled = {}
+            Object.keys(source).forEach(key => {
+                if (this.hasAddressValue(source[key])) filled[key] = source[key]
+            })
+            return filled
+        },
+        buildMainAddressPayload(overrides = {}) {
+            return this.onlyFilledValues({
+                address: this.form.address,
+                location_id: this.form.location_id,
+                phone: this.form.telephone,
+                email: this.form.email,
+                country_id: this.form.country_id,
+                establishment_code: this.form.establishment_code,
+                ...this.onlyFilledValues(overrides),
+            })
+        },
+        findMainAddressRow(payload) {
+            // Se busca por la marca main y, si no existe (registros anteriores a este flujo),
+            // por la direccion. No se compara establishment_code: las direcciones cargadas a
+            // mano tambien nacen con '0000' y se estaria pisando una secundaria.
+            const rows = this.form.addresses
+            const normalize = value => (value || '').toString().trim().toLowerCase()
+
+            return rows.find(row => row.main === true)
+                || rows.find(row => normalize(row.address) === normalize(payload.address))
+                || null
+        },
+        upsertMainAddress(overrides = {}) {
+            if (!Array.isArray(this.form.addresses)) this.form.addresses = []
+
+            const payload = this.buildMainAddressPayload(overrides)
+
+            // Sin direccion no hay nada que registrar.
+            if (!this.hasAddressValue(payload.address)) return
+
+            const existing = this.findMainAddressRow(payload)
+
+            if (existing) {
+                Object.keys(payload).forEach(key => this.$set(existing, key, payload[key]))
+                this.$set(existing, 'main', true)
+                this.moveMainAddressFirst(existing)
+                return
+            }
+
+            // Una fila nueva de PE sin ubigeo completo bloquearia el guardado
+            // (misma validacion que corre en submit), asi que no se crea todavia.
+            const country_id = payload.country_id || 'PE'
+            const location_id = payload.location_id || []
+            if (country_id === 'PE' && (location_id.length !== 3 || !location_id.every(item => item))) return
+
+            // La vista rotula addresses[0] como "Direccion principal": va al inicio.
+            this.form.addresses.unshift({
+                'id': null,
+                'country_id': 'PE',
+                'location_id': [],
+                'address': null,
+                'email': null,
+                'phone': null,
+                'main': true,
+                'establishment_code': '0000',
+                'has_consigned': false,
+                'consigned_id': null,
+                ...payload,
+            })
+        },
+        moveMainAddressFirst(row) {
+            const index = this.form.addresses.indexOf(row)
+            if (index <= 0) return
+            this.form.addresses.splice(index, 1)
+            this.form.addresses.unshift(row)
         },
         clickAddAddress() {
             /* this.form.more_address.push({
@@ -1132,18 +1289,7 @@ export default {
                  address: null,
              })*/
 
-            this.form.addresses.push({
-                'id': null,
-                'country_id': 'PE',
-                'location_id': [],
-                'address': null,
-                'email': null,
-                'phone': null,
-                'main': false,
-                'establishment_code':'0000',
-                'has_consigned': false,
-                'consigned_id': null,
-            });
+            this.form.addresses.push(this.buildDefaultAddressRow(false));
         },
         validateEmail(email) {
             var re = /\S+@\S+\.\S+/;
@@ -1280,12 +1426,17 @@ export default {
                } 
             }*/
 
+            // La direccion principal se registra tambien dentro de addresses.
+            this.upsertMainAddress()
+
             let hasErrorInAdditionalAddresses = false;
             let addressWithError = null;
 
             if (this.form.addresses && this.form.addresses.length > 0) {
                 for (let i = 0; i < this.form.addresses.length; i++) {
                     const address = this.form.addresses[i];
+                    // Una fila sin ningun dato no se guarda, asi que tampoco se valida.
+                    if (this.isEmptyAddressRow(address)) continue;
                     if (
                         address.country_id === 'PE'
                         && (
@@ -1295,14 +1446,17 @@ export default {
                         )
                     ) {
                         hasErrorInAdditionalAddresses = true;
-                        addressWithError = i + 1;
+                        addressWithError = i;
                         break;
                     }
                 }
             }
 
             if (hasErrorInAdditionalAddresses) {
-                return this.$message.error(`Falta registrar el ubigeo en la Dirección secundaria #${addressWithError}`);
+                const label = addressWithError === 0
+                    ? 'la Dirección principal'
+                    : `la Dirección secundaria #${addressWithError}`;
+                return this.$message.error(`Falta registrar el ubigeo en ${label}`);
             }
 
             // if(this.form.location_id.length===3 && this.form.identity_document_type_id === '6'){
@@ -1311,12 +1465,21 @@ export default {
             //     }
             // }
 
-            // La dirección principal se persiste en person.address; no duplicar en person_addresses.
-            // Las secundarias provienen del panel de establecimientos o del alta manual.
+            // La dirección principal se persiste en person.address y además se registra
+            // como addresses[0] (ver upsertMainAddress). Las secundarias provienen del
+            // panel de establecimientos o del alta manual.
 
             this.loading_submit = true
             this.form.parent_id = parseInt(this.parent);
-            await this.$http.post(`/${this.resource}`, this.form)
+
+            // La fila principal siempre existe en pantalla; si quedo vacia no se envia
+            // para no crear una direccion en blanco.
+            const payload = {
+                ...this.form,
+                addresses: (this.form.addresses || []).filter(row => !this.isEmptyAddressRow(row)),
+            }
+
+            await this.$http.post(`/${this.resource}`, payload)
                 .then(response => {
                     if (response.data.success) {
                         this.$message.success(response.data.message)
@@ -1380,6 +1543,9 @@ export default {
 //                this.form.addresses[0].telephone = data.telefono;
             // Mostrar el domicilio fiscal (0000) como primera y única opción del listado
             this.setPrincipalFromRuc(data)
+            // El domicilio fiscal tambien queda dentro de addresses,
+            // con el telefono de la consulta si es que vino.
+            this.upsertMainAddress({phone: data.telefono})
         },
         clickRemoveAddress(index) {
             this.form.addresses.splice(index, 1);
@@ -1539,6 +1705,12 @@ export default {
                 .map(e => this.buildAddressFromEstablishment(e, false))
 
             this.form.addresses = [...preserved, ...secondary]
+
+            // Se refresca addresses[0] con la principal recien elegida antes de que el
+            // watcher espejo copie la fila hacia las columnas de la persona; de lo
+            // contrario el espejo devolveria el valor anterior.
+            this.ensureMainAddressRow()
+            this.upsertMainAddress()
         },
 
         saveZone() {
