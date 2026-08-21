@@ -782,7 +782,6 @@ if ($hostname) {
             Route::post('cash', 'Tenant\CashController@store');
             Route::post('cash/cash_document', 'Tenant\CashController@cash_document');
             Route::get('cash/close/{cash}', 'Tenant\CashController@close');
-            Route::get('cash/report/{cash}', 'Tenant\CashController@report');
             Route::get('cash/report', 'Tenant\CashController@report_general');
 
             Route::get('cash/record/{cash}', 'Tenant\CashController@record');
@@ -793,7 +792,6 @@ if ($hostname) {
 
             Route::get('cash/report/products/{cash}/{is_garage?}', 'Tenant\CashController@report_products');
             Route::get('cash/report/products-excel/{cash}', 'Tenant\CashController@report_products_excel');
-            Route::get('cash/report/cash-excel/{cash}', 'Tenant\CashController@report_cash_excel');
 
             //POS VENTA RAPIDA
             Route::get('pos/fast', 'Tenant\PosController@fast')->name('tenant.pos.fast');
