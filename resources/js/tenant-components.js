@@ -173,6 +173,7 @@ import TenantReportTipsIndex from '../../modules/Report/Resources/assets/js/view
 
 import TenantCategoriesIndex from '../../modules/Item/Resources/assets/js/views/categories/index.vue'
 import TenantBrandsIndex from '../../modules/Item/Resources/assets/js/views/brands/index.vue'
+import TenantProductVariablesIndex from '../../modules/Item/Resources/assets/js/views/product-variables/index.vue'
 import TenantZoneIndex from '../../modules/Item/Resources/assets/js/views/zone/index.vue'
 import TenantIncentivesIndex from '../../modules/Item/Resources/assets/js/views/incentives/index.vue'
 import TenantItemLotsIndex from '../../modules/Item/Resources/assets/js/views/item-lots/index.vue'
@@ -586,6 +587,7 @@ Vue.component('tenant-report-tips-index', TenantReportTipsIndex)
 
 Vue.component('tenant-categories-index', TenantCategoriesIndex)
 Vue.component('tenant-brands-index', TenantBrandsIndex)
+Vue.component('tenant-product-variables-index', TenantProductVariablesIndex)
 Vue.component('tenant-zone-index', TenantZoneIndex)
 Vue.component('tenant-incentives-index', TenantIncentivesIndex)
 Vue.component('tenant-item-lots-index', TenantItemLotsIndex)

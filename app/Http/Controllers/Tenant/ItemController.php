@@ -63,6 +63,7 @@ use Modules\Item\Models\Brand;
 use Modules\Item\Models\Category;
 use Modules\Item\Models\ItemLot;
 use Modules\Item\Models\ItemLotsGroup;
+use Modules\Item\Models\ProductVariable;
 use Mpdf\HTMLParserMode;
 use Mpdf\Mpdf;
 use setasign\Fpdi\Fpdi;
@@ -168,6 +169,7 @@ class ItemController extends Controller
             'show_disabled' => $request->show_disabled,
             'sort_field' => $request->get('sort_field', 'id'),
             'sort_direction' => $request->get('sort_direction', 'desc'),
+            'variations_view' => $request->variations_view,
             'page' => $request->get('page', 1),
         ];
 
@@ -203,6 +205,18 @@ class ItemController extends Controller
         // $records = Item::whereTypeUser()->whereNotIsSet();
         $records = $this->getInitialQueryRecords($isEcommerce, $request->isRestaurant ?? false);
 
+        // El contador de variaciones se expone siempre (subselect indexado barato);
+        // lo usan la vista agrupada y la cascada de visibilidad en tienda
+        $records->withCount('variations');
+
+        // Vista agrupada: las variaciones se ocultan y el padre expone el stock total
+        if ($request->variations_view === 'grouped') {
+            $records->whereNull('parent_item_id')
+                ->withSum('variations as variations_stock', 'stock');
+        } else {
+            $records->with(['parent', 'variationValues.value', 'variationValues.variable']);
+        }
+
         $sortField = $request->get('sort_field', 'id');
         $sortDirection = $request->get('sort_direction', 'desc');
 
@@ -229,7 +243,8 @@ class ItemController extends Controller
                 break;
 
             default:
-                if($request->has('column'))
+                // column puede llegar vacío (race del DataTable antes de cargar /columns): sin filtro
+                if($request->has('column') && $request->column)
                 {
                     if($this->applyAdvancedRecordsSearch() && $request->column === 'description')
                     {
@@ -378,6 +393,12 @@ class ItemController extends Controller
         $configuration = $configuration->getCollectionData();
         $inventory_configuration = InventoryConfiguration::firstOrFail();
         $next_internal_id = str_pad((Item::max('id') ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+        $product_variables = ProductVariable::whereActive()
+            ->with(['values' => function ($query) {
+                $query->whereActive()->orderBy('position');
+            }])
+            ->orderBy('name')
+            ->get(['id', 'name', 'value_type']);
         /*
         $configuration = Configuration::select(
             'affectation_igv_type_id',
@@ -407,7 +428,8 @@ class ItemController extends Controller
             'CatItemProductFamily',
             'CatItemUnitsPerPackage',
             'inventory_configuration',
-            'next_internal_id'
+            'next_internal_id',
+            'product_variables'
         );
     }
 
@@ -948,6 +970,14 @@ class ItemController extends Controller
         try {
 
             $item = Item::findOrFail($id);
+
+            if ($item->variations()->exists()) {
+                return [
+                    'success' => false,
+                    'message' => 'El producto tiene variaciones registradas. Elimine primero sus variaciones.'
+                ];
+            }
+
             // Evita violaciones de FK en items cuando quedan lotes de cabecera huérfanos.
             ItemLotsGroup::where('item_id', $item->id)->delete();
             $this->deleteRecordInitialKardex($item);
@@ -1226,9 +1256,27 @@ class ItemController extends Controller
         $item->apply_store = $visible;
         $item->save();
 
+        // Cascada hacia las variaciones: activar el padre publica el set completo;
+        // desactivar solo cascadea cuando el frontend lo confirmó (cascade=1)
+        $affected_variations = 0;
+        if ($item->variations()->exists()) {
+            if ($visible) {
+                $affected_variations = $item->variations()->update(['apply_store' => 1]);
+            } elseif ($request->cascade) {
+                $affected_variations = $item->variations()->update(['apply_store' => 0]);
+            }
+        }
+
+        CacheHelper::flush(['items_list']);
+
+        $message = ($visible > 0) ? 'El Producto ya es visible en tienda virtual' : 'El Producto ya no es visible en tienda virtual';
+        if ($affected_variations > 0) {
+            $message .= " junto a sus {$affected_variations} variaciones";
+        }
+
         return [
             'success' => true,
-            'message' => ($visible > 0 )?'El Producto ya es visible en tienda virtual' : 'El Producto ya no es visible en tienda virtual',
+            'message' => $message,
             'id' => $request->id
         ];
 
@@ -1246,6 +1294,8 @@ class ItemController extends Controller
         }
 
         $new = $obj->setDescription($obj->getDescription().' (Duplicado)')->replicate();
+        // el duplicado nace independiente, sin vínculo con variaciones
+        $new->parent_item_id = null;
         $new->save();
 
         return [

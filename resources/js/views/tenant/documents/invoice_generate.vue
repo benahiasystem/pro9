@@ -240,11 +240,11 @@
                                 ></small>
                             </div>
 
-                            <div v-if="form.operation_type_id === '0101'" class="mt-2">
+                            <!-- <div v-if="form.operation_type_id === '0101'" class="mt-2">
                                 <el-checkbox v-model="form.is_itinerant" @change="changeItineratOption">
                                     ¿Venta itinerante?
                                 </el-checkbox>
-                            </div>
+                            </div> -->
                         <div class="points-system">
                                 <div
                                     v-if="config.enabled_point_system && form.customer_id"

@@ -773,6 +773,7 @@ if ($hostname) {
             Route::get('pos/status_configuration', 'Tenant\PosController@status_configuration');
             Route::get('pos/validate_stock/{item}/{quantity}', 'Tenant\PosController@validate_stock');
             Route::get('pos/items', 'Tenant\PosController@item');
+            Route::get('pos/item/{id}', 'Tenant\PosController@singleItem')->where('id', '[0-9]+');
             Route::get('pos/search_items_cat', 'Tenant\PosController@search_items_cat');
 
             Route::get('cash', 'Tenant\CashController@index')->name('tenant.cash.index')->middleware('redirect.level');
@@ -786,7 +787,6 @@ if ($hostname) {
             Route::post('cash', 'Tenant\CashController@store');
             Route::post('cash/cash_document', 'Tenant\CashController@cash_document');
             Route::get('cash/close/{cash}', 'Tenant\CashController@close');
-            Route::get('cash/report/{cash}', 'Tenant\CashController@report');
             Route::get('cash/report', 'Tenant\CashController@report_general');
 
             Route::get('cash/record/{cash}', 'Tenant\CashController@record');
@@ -797,7 +797,6 @@ if ($hostname) {
 
             Route::get('cash/report/products/{cash}/{is_garage?}', 'Tenant\CashController@report_products');
             Route::get('cash/report/products-excel/{cash}', 'Tenant\CashController@report_products_excel');
-            Route::get('cash/report/cash-excel/{cash}', 'Tenant\CashController@report_cash_excel');
 
             //POS VENTA RAPIDA
             Route::get('pos/fast', 'Tenant\PosController@fast')->name('tenant.pos.fast');

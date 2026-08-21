@@ -182,6 +182,29 @@
                     </div>
                 </div>
 
+                @if(!empty($record->variation_selector))
+                <div class="variation-selector">
+                    <div v-for="variable in variationSelector.variables"
+                         :key="'variation-group-' + variable.id"
+                         class="variation-group">
+                        <span class="variation-group-name">@{{ variable.name }}</span>
+                        <div class="variation-options">
+                            <button type="button"
+                                    v-for="value in variable.values"
+                                    :key="'variation-value-' + value.id"
+                                    class="variation-chip"
+                                    :class="{active: isVariationValueSelected(variable.id, value.id)}"
+                                    :disabled="!variationValueAvailable(variable.id, value.id)"
+                                    @click.prevent="selectVariationValue(variable.id, value.id)">
+                                <span v-if="variable.value_type === 'color' && value.color"
+                                      class="variation-swatch"
+                                      :style="{background: value.color}"></span>@{{ value.value }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <div class="product-desc pb-0">
                     @if ($record->category && $record->category->name)
                         <p class="product-category">Categoría: <span> {{$record->category->name}} </span></p>
@@ -426,7 +449,33 @@
 
 @endsection
 
-@push('scripts')
+<style>
+    .variation-selector { margin: 10px 0 6px; }
+    .variation-group { margin-bottom: 10px; }
+    .variation-group-name { display: block; font-weight: 600; margin-bottom: 6px; }
+    .variation-chip {
+        border: 1px solid #d7dae3; border-radius: 20px; padding: 6px 14px;
+        background: #fff; margin: 0 6px 6px 0; cursor: pointer; font-size: 13px;
+    }
+    .variation-chip.active { border-color: #1b2653; color: #1b2653; font-weight: 700; box-shadow: inset 0 0 0 1px #1b2653; }
+    .variation-chip:disabled { opacity: .35; cursor: not-allowed; }
+    .variation-swatch {
+        display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+        margin-right: 5px; vertical-align: middle; border: 1px solid rgba(0,0,0,.2);
+    }
+</style>
+
+@push('scripts')¿
+<script>
+window.__socialProofBoot = {
+    itemId: {{ (int) $record->id }},
+    trustBadgesEnabled: {{ ($trustBadgesEnabled ?? true) ? 'true' : 'false' }},
+    trustBadges: @json($trustBadges ?? []),
+    fbtLimit: 8,
+    showFbtCount: false
+};
+</script>
+@vite('modules/Ecommerce/Resources/assets/js/frontend/product-social-app.js')
 <script>
 window.__socialProofBoot = {
     itemId: {{ (int) $record->id }},
@@ -492,6 +541,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 sp_countdown_ended: false,
                 _countdownTimer: null,
                 _viewersTimer: null,
+                variationSelector: @json($record->variation_selector ?? null),
+                selectedVariationValues: {},
             },
             created() {
                 this.loadCartQuantities();
@@ -503,6 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (this._countdownTimer) clearInterval(this._countdownTimer);
                 if (this._viewersTimer) clearInterval(this._viewersTimer);
                 window.removeEventListener('productAddedToCart', this.loadCartQuantities);
+                this.initVariationSelector();
             },
             watch: {
                 cartQuantities: {
@@ -548,6 +600,43 @@ document.addEventListener('DOMContentLoaded', function() {
                         this.sp_viewers = Math.max(viewsMin, this.sp_viewers + delta);
                         if (this.sp_viewers > viewsMax) this.sp_viewers = viewsMax;
                     }, 8000);
+                },
+                initVariationSelector() {
+                    if (!this.variationSelector) return;
+                    const current = this.variationSelector.current_value_ids || [];
+                    this.variationSelector.variables.forEach(variable => {
+                        const match = variable.values.find(value => current.indexOf(value.id) !== -1);
+                        if (match) this.$set(this.selectedVariationValues, variable.id, match.id);
+                    });
+                },
+                isVariationValueSelected(variableId, valueId) {
+                    return this.selectedVariationValues[variableId] === valueId;
+                },
+                variationValueAvailable(variableId, valueId) {
+                    if (!this.variationSelector) return false;
+                    // alguna combinación incluye este valor junto a lo elegido en las demás variables
+                    return this.variationSelector.combinations.some(combination => {
+                        if (combination.value_ids.indexOf(valueId) === -1) return false;
+                        return Object.keys(this.selectedVariationValues).every(otherVariableId => {
+                            if (String(otherVariableId) === String(variableId)) return true;
+                            return combination.value_ids.indexOf(this.selectedVariationValues[otherVariableId]) !== -1;
+                        });
+                    });
+                },
+                selectVariationValue(variableId, valueId) {
+                    if (this.isVariationValueSelected(variableId, valueId)) return;
+                    this.$set(this.selectedVariationValues, variableId, valueId);
+
+                    const ids = Object.values(this.selectedVariationValues).map(Number).sort((a, b) => a - b);
+                    if (ids.length !== this.variationSelector.variables.length) return;
+
+                    const match = this.variationSelector.combinations.find(combination =>
+                        combination.value_ids.length === ids.length &&
+                        combination.value_ids.every((id, index) => id === ids[index])
+                    );
+                    if (match && match.url) {
+                        window.location.href = match.url;
+                    }
                 },
                 addOrUpdateCart(item) {
                     let array = localStorage.getItem('products_cart');

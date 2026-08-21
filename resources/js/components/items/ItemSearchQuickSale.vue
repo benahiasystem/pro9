@@ -14,39 +14,67 @@
             :disabled="!is_mounted"
             popper-class="list-result"
             :reserve-keyword="false">
-            <el-option
-                class="item-result"
-                v-for="row in items"
-                :key="row.id"
-                :label="itemOptionDescriptionView(row)"
-                :value="row.id">
-                <div class="row">
-                    <div class="col-1 p-1 align-self-center">
-                        <img
-                            class="custom-image"
-                            :src="row.image_url"
-                            :alt="row.description"
-                        >
-                    </div>
-                    <div class="col full-description align-self-center">
-                            {{ itemOptionDescriptionView(row) }}<br>
-                            <b class="custom-price pt-1 pb-1 text-primary">{{ row.currency_type_symbol }} {{ itemSetSaleUnitPrice(row) }}</b>
-                    </div>
-                    <div class="col-4 text-end">
-                        <b :class="{'text-danger': row.stock <= 0, 'text-success': row.stock > 0}" class="py-1 mx-3">
-                                <i class="fas fa-cube"></i> {{ parseStock(row.stock) }}
-                            </b>
-                        <div class="d-flex justify-content-end">
-                            <button v-if="showDetailButton" type="button" class="el-button el-button--default el-button--mini m-1 btn-warning" @click.stop.prevent="clickDetail(row.id)">
-                                <span>Ver Detalle</span>
-                            </button>
-                            <button type="button" class="el-button el-button--default el-button--mini m-1 btn-primary" @click.stop.prevent="clickStock(row)">
-                                <span>Ver stock</span>
-                            </button>
+            <template v-for="row in items">
+                <el-option
+                    class="item-result"
+                    :key="row.id"
+                    :label="itemOptionDescriptionView(row)"
+                    :value="row.id">
+                    <div class="row" @click="handleOptionClick($event, row)">
+                        <div class="col-1 p-1 align-self-center">
+                            <img
+                                class="custom-image"
+                                :src="row.image_url"
+                                :alt="row.description"
+                            >
+                        </div>
+                        <div class="col full-description align-self-center">
+                                {{ itemOptionDescriptionView(row) }}
+                                <span v-if="row.variations_count > 0" class="variation-badge">{{ row.variations_count }} variaciones</span>
+                                <i v-if="row.variations_count > 0" :class="expanded_parent_ids.includes(row.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+                                <br>
+                                <b class="custom-price pt-1 pb-1 text-primary">{{ row.currency_type_symbol }} {{ itemSetSaleUnitPrice(row) }}</b>
+                        </div>
+                        <div class="col-4 text-end">
+                            <b v-if="row.variations_count > 0"
+                               :class="{'text-danger': variationsTotalStock(row) <= 0, 'text-success': variationsTotalStock(row) > 0}"
+                               class="py-1 mx-3">
+                                    <i class="fas fa-cubes"></i> {{ parseStock(variationsTotalStock(row)) }} en variaciones
+                                </b>
+                            <b v-else :class="{'text-danger': row.stock <= 0, 'text-success': row.stock > 0}" class="py-1 mx-3">
+                                    <i class="fas fa-cube"></i> {{ parseStock(row.stock) }}
+                                </b>
+                            <div class="d-flex justify-content-end">
+                                <button v-if="showDetailButton" type="button" class="el-button el-button--default el-button--mini m-1 btn-warning" @click.stop.prevent="clickDetail(row.id)">
+                                    <span>Ver Detalle</span>
+                                </button>
+                                <button type="button" class="el-button el-button--default el-button--mini m-1 btn-primary" @click.stop.prevent="clickStock(row)">
+                                    <span>Ver stock</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </el-option>
+                </el-option>
+                <template v-if="row.variations_count > 0 && expanded_parent_ids.includes(row.id)">
+                    <el-option
+                        v-for="variation in row.variations"
+                        :key="'variation-' + variation.id"
+                        class="variation-child-option"
+                        :label="variation.description"
+                        :value="variation.id">
+                        <div class="d-flex align-items-center justify-content-between" @click.stop="selectVariation(variation)">
+                            <span>
+                                <span class="text-muted me-1">└</span>{{ variation.variation_label || variation.description }}
+                                <small class="text-muted d-block ms-3">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
+                            </span>
+                            <span class="text-end" style="line-height: 1.3;">
+                                <b class="text-primary">{{ variation.sale_unit_price }}</b>
+                                <small class="d-block" :class="variation.stock > 0 ? 'text-success' : 'text-danger'">Stock: {{ parseStock(variation.stock) }}</small>
+                            </span>
+                        </div>
+                    </el-option>
+                </template>
+            </template>
         </el-select>
 
         <div class="w-100 ps-0 pt-2">
@@ -128,6 +156,7 @@
                 searchOnEnter: false,
                 search_item_by_barcode:false,
                 inputEnter: '',
+                expanded_parent_ids: [],
             }
         },
         async created()
@@ -184,10 +213,68 @@
                 this.itemName = row.full_description
                 this.showDialogStock = true
             },
+            handleOptionClick(event, row)
+            {
+                if (row.variations_count > 0) {
+                    event.stopPropagation()
+                    this.toggleExpandVariations(row)
+                }
+            },
+            toggleExpandVariations(row)
+            {
+                const index = this.expanded_parent_ids.indexOf(row.id)
+                if (index === -1) {
+                    this.expanded_parent_ids.push(row.id)
+                } else {
+                    this.expanded_parent_ids.splice(index, 1)
+                }
+            },
+            variationsTotalStock(row)
+            {
+                return (row.variations || []).reduce((total, variation) => total + parseFloat(variation.stock || 0), 0)
+            },
+            async selectVariation(variation)
+            {
+                this.loading_search = true
+                try {
+                    const response = await this.$http.get(`/${this.resource}/search/item/${variation.id}`)
+                    const full_item = (response.data.items || [])[0]
+                    if (!full_item) {
+                        return this.$message.error('No se pudo cargar la variación seleccionada')
+                    }
+                    if (this.$refs.selectBarcode) {
+                        this.$refs.selectBarcode.blur()
+                    }
+                    this.emitItem({ ...full_item })
+                } finally {
+                    this.loading_search = false
+                }
+            },
             changeItem()
             {
-                const item = { ..._.find(this.items, { id : this.item_id}) }
+                const found = _.find(this.items, { id : this.item_id})
+                if (!found) {
+                    return
+                }
 
+                // El padre con variaciones no es vendible: se expande para elegir una variación
+                if (found.variations_count > 0) {
+                    this.item_id = null
+                    if (!this.expanded_parent_ids.includes(found.id)) {
+                        this.expanded_parent_ids.push(found.id)
+                    }
+                    this.$nextTick(() => {
+                        if (this.$refs.selectBarcode) {
+                            this.$refs.selectBarcode.visible = true
+                        }
+                    })
+                    return
+                }
+
+                this.emitItem({ ...found })
+            },
+            emitItem(item)
+            {
                 // Asignar el precio correcto según el selectedOptionPrice antes de emitir
                 if(item && !this.configuration.enable_list_product && this.selectedOptionPrice !== 1) {
                     if(item.item_unit_types && item.item_unit_types.length > 0) {
@@ -260,12 +347,17 @@
                     await this.$http.get(`/${this.resource}/search-items`, { params })
                             .then(response => {
                                 this.items = response.data.items
-                                this.loading_search = false
                                 this.enabledSearchItemsBarcode(input)
                                 if (this.items.length == 0){
                                     this.filterItems();
                                     this.items=[];
                                 }
+                            })
+                            .catch(() => {
+                                this.$message.error('No se pudo completar la búsqueda de productos')
+                            })
+                            .then(() => {
+                                this.loading_search = false
                             })
 
                     return
@@ -284,12 +376,17 @@
                     await this.$http.get(`/${this.resource}/search-items`, { params })
                             .then(response => {
                                 this.items = response.data.items
-                                this.loading_search = false
                                 this.enabledSearchItemsBarcode(this.inputEnter)
                                 if (this.items.length == 0){
                                     this.filterItems();
                                     this.items=[];
                                 }
+                            })
+                            .catch(() => {
+                                this.$message.error('No se pudo completar la búsqueda de productos')
+                            })
+                            .then(() => {
+                                this.loading_search = false
                             })
                     return
                 }
@@ -400,5 +497,27 @@ li.el-select-dropdown__item.item-result {
 
     .list-result .el-select-dropdown__list{
         padding: 0;
+    }
+
+    .list-result .variation-child-option {
+        padding-left: 34px;
+        background: #faf9ff;
+        height: auto;
+        line-height: 1.4;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #f0f2f7;
+    }
+
+    .list-result .variation-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        color: #4b3fd4;
+        background: #eceafd;
+        border-radius: 99px;
+        padding: 1px 8px;
+        margin-left: 6px;
+        vertical-align: middle;
     }
 </style>

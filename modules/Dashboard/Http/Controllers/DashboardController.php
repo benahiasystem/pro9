@@ -20,6 +20,8 @@ use Symfony\Component\Process\Exception\ProcessFailedException;
 use Illuminate\Support\Arr;
 use Modules\Dashboard\Helpers\DashboardInventory;
 use App\Models\Tenant\Configuration;
+use Modules\Dashboard\Widgets\WidgetSourceRegistry;
+use Modules\Dashboard\Models\DashboardLayout;
 
 /**
  * Class DashboardController
@@ -225,6 +227,73 @@ class DashboardController extends Controller
     public function productOfDue(Request $request)
     {
         return  (new DashboardInventory())->data($request);
+    }
+
+    public function widgetCatalog()
+    {
+        return response()->json(app(WidgetSourceRegistry::class)->catalog(), 200);
+    }
+
+    public function widgetLayout()
+    {
+        $record = DashboardLayout::where('user_id', auth()->id())->first();
+
+        return response()->json([
+            'layout' => $record ? $record->layout : null,
+        ], 200);
+    }
+
+    /**
+     * Guarda el layout del usuario validado contra el catálogo: widgets de
+     * fuentes o tipos inexistentes se descartan (equivalente al loadLayout
+     * defensivo del frontend).
+     */
+    public function widgetLayoutStore(Request $request)
+    {
+        $registry = app(WidgetSourceRegistry::class);
+
+        $layout = collect((array) $request->input('layout', []))
+            ->filter(function ($widget) use ($registry) {
+                return is_array($widget)
+                    && !empty($widget['id'])
+                    && !empty($widget['source'])
+                    && !empty($widget['type'])
+                    && $registry->has($widget['source']);
+            })
+            ->map(function ($widget) {
+                return [
+                    'id' => (string) $widget['id'],
+                    'source' => (string) $widget['source'],
+                    'type' => (string) $widget['type'],
+                    'size' => (string) ($widget['size'] ?? 'm'),
+                    'cols' => isset($widget['cols']) ? (int) $widget['cols'] : null,
+                    'rows' => isset($widget['rows']) ? (int) $widget['rows'] : null,
+                    'options' => (array) ($widget['options'] ?? []),
+                ];
+            })
+            ->values()
+            ->all();
+
+        DashboardLayout::updateOrCreate(
+            ['user_id' => auth()->id()],
+            ['layout' => $layout]
+        );
+
+        return response()->json(['success' => true, 'layout' => $layout], 200);
+    }
+
+    /**
+     * Resuelve datos de varios widgets en una sola petición.
+     * Body: { widgets: [{ source, options? }, ...], filters: {...} }
+     */
+    public function widgetData(Request $request)
+    {
+        $widgets = (array) $request->input('widgets', []);
+        $filters = (array) $request->input('filters', []);
+
+        return response()->json([
+            'data' => app(WidgetSourceRegistry::class)->resolveBatch($widgets, $filters),
+        ], 200);
     }
 
 }

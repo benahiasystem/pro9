@@ -1,0 +1,17 @@
+{
+    "name": "nwidart/cashreport",
+    "description": "Reportes de caja chica",
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\CashReport\\Providers\\CashReportServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\CashReport\\": ""
+        }
+    }
+}

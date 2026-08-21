@@ -64,8 +64,8 @@ class EcommerceController extends Controller
      * @return Response
      */
     public function __construct(){
-        // Compartir variable records
-        view()->share('records', Item::where('apply_store', 1)->orderBy('id', 'DESC')->take(2)->get());
+        // Compartir variable records (los padres de variaciones no se listan en tienda)
+        view()->share('records', Item::where('apply_store', 1)->whereDoesntHave('variations')->orderBy('id', 'DESC')->take(2)->get());
 
         // Compartir descripción ecommerce globalmente usando el modelo Company
         $companyModel = \App\Models\Tenant\Company::first();
@@ -101,8 +101,9 @@ class EcommerceController extends Controller
 
         $order = request()->get('order');
 
-        // Query base
-        $query = Item::with('brand')->where([['apply_store', 1], ['internal_id', '!=', null]]);
+        // Query base (los padres de variaciones se ocultan; sus variaciones son cards normales)
+        $query = Item::with('brand')->where([['apply_store', 1], ['internal_id', '!=', null]])
+            ->whereDoesntHave('variations');
 
         if ($brand) {
             $query->where('brand_id', $brand->id);
@@ -232,6 +233,7 @@ class EcommerceController extends Controller
         }
 
         $items = Item::where([['apply_store', 1], ['internal_id', '!=', null]])
+            ->whereDoesntHave('variations')
             ->select('id', 'description', 'updated_at')
             ->orderBy('id', 'DESC')
             ->get();
@@ -273,6 +275,24 @@ class EcommerceController extends Controller
 
         if (!$row) {
             abort(404);
+        }
+
+        // Un padre con variaciones no es vendible: redirige a una variación publicada
+        if ($row->variations()->exists()) {
+            $target = $row->variations()
+                ->where('active', 1)
+                ->where('apply_store', 1)
+                ->orderByDesc('stock')
+                ->first();
+
+            if (!$target) {
+                abort(404);
+            }
+
+            return redirect()->route('tenant.ecommerce.item', [
+                'id' => $target->id,
+                'slug' => Str::slug($target->description),
+            ]);
         }
 
         $promotion_id = $request->query('promotion');
@@ -317,6 +337,7 @@ class EcommerceController extends Controller
             'images' => $row->images,
             'attributes' => $row->attributes ? $row->attributes : [],
             'promotion_id' => $promotion_id,
+            'variation_selector' => $this->getVariationSelector($row),
             'components' => $row->items_sets->map(function ($component) {
                 return (object) [
                     'id' => $component->id,
@@ -338,12 +359,89 @@ class EcommerceController extends Controller
         // El servicio requiere el modelo Eloquent, no el DTO usado por la vista.
         $campaignPricing = app(CampaignPriceService::class)->forItem($row);
         $categories = \Modules\Item\Models\Category::has('items')->get();
-        return view('ecommerce::items.record', compact('record', 'categories', 'campaignPricing'));
+        return view('ecommerce::items.record', compact('record', 'categories'));
+    }
+
+    /**
+     * Estructura para el selector de variantes del detalle: variables con sus valores
+     * y el mapa combinación → variación hermana (elegir otra combinación navega a su URL).
+     */
+    private function getVariationSelector($row)
+    {
+        if (!$row->parent_item_id) {
+            return null;
+        }
+
+        $siblings = Item::where('parent_item_id', $row->parent_item_id)
+            ->where('active', 1)
+            ->where('apply_store', 1)
+            ->with('variationValues.value.variable')
+            ->orderBy('id')
+            ->get();
+
+        if ($siblings->count() < 2) {
+            return null;
+        }
+
+        $variables = [];
+        $combinations = [];
+
+        foreach ($siblings as $sibling) {
+            $value_ids = [];
+
+            foreach ($sibling->variationValues as $variation_value) {
+                $value = $variation_value->value;
+                $variable = $value ? $value->variable : null;
+                if (!$value || !$variable) {
+                    continue;
+                }
+
+                if (!isset($variables[$variable->id])) {
+                    $variables[$variable->id] = [
+                        'id' => $variable->id,
+                        'name' => $variable->name,
+                        'value_type' => $variable->value_type,
+                        'values' => [],
+                    ];
+                }
+                $variables[$variable->id]['values'][$value->id] = [
+                    'id' => $value->id,
+                    'value' => $value->value,
+                    'color' => $value->color,
+                ];
+
+                $value_ids[] = (int) $value->id;
+            }
+
+            sort($value_ids);
+            $combinations[] = [
+                'variation_id' => $sibling->id,
+                'value_ids' => array_values($value_ids),
+                'stock' => $sibling->getStockByWarehouseMain(),
+                'url' => route('tenant.ecommerce.item', ['id' => $sibling->id, 'slug' => Str::slug($sibling->description)]),
+            ];
+        }
+
+        $current = $siblings->firstWhere('id', $row->id);
+        $current_value_ids = $current
+            ? $current->variationValues->pluck('product_variable_value_id')->map(function ($value_id) {
+                return (int) $value_id;
+            })->sort()->values()->all()
+            : [];
+
+        return [
+            'variables' => array_map(function ($variable) {
+                $variable['values'] = array_values($variable['values']);
+                return $variable;
+            }, array_values($variables)),
+            'combinations' => $combinations,
+            'current_value_ids' => $current_value_ids,
+        ];
     }
 
     public function items()
     {
-        $records = Item::with('brand')->where('apply_store', 1)->get();
+        $records = Item::with('brand')->where('apply_store', 1)->whereDoesntHave('variations')->get();
         return view('ecommerce::items.index', compact('records'));
     }
 
@@ -353,7 +451,7 @@ class EcommerceController extends Controller
             ->when(request('brand_id'), function ($query, $brandId) {
                 $query->where('brand_id', (int) $brandId);
             })
-            ->get();
+            ->whereDoesntHave('variations')->get();
         // return new ItemCollection($records);
         return new ItemBarCollection($records);
 
@@ -911,6 +1009,15 @@ class EcommerceController extends Controller
             return response()->json($validator->errors(), 422);
         } else {
             try {
+                // Los padres de variaciones no son vendibles: rechaza carritos manipulados
+                $item_ids = collect($request->items)->pluck('id')->filter()->all();
+                if (count($item_ids) > 0 && Item::whereIn('id', $item_ids)->whereHas('variations')->exists()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El carrito contiene un producto con variaciones: seleccione una variación específica.',
+                    ], 422);
+                }
+
                 $type = ($request->purchase["datos_del_cliente_o_receptor"]["codigo_tipo_documento_identidad"]=='6')?'ruc':'dni';
                 $document_number = $request->purchase["datos_del_cliente_o_receptor"]["numero_documento"];
 

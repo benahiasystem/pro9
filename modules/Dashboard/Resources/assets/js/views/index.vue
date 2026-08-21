@@ -9,6 +9,16 @@
             </div>
             <div class="d-flex align-items-center h-100">
               {{ filterLabel }}
+              <el-tooltip :content="showLegacyDashboard ? 'Probar el nuevo dashboard de widgets' : 'Volver al dashboard clásico'" placement="bottom">
+                <el-button
+                  size="small"
+                  class="mx-2 p-2 btn-dashboard-filter"
+                  style="padding: 8px !important;"
+                  @click="toggleDashboardVersion"
+                >
+                  <i class="ti ti-layout-dashboard" style="font-size: 20px;"></i>
+                </el-button>
+              </el-tooltip>
               <el-button
                 type="primary"
                 size="small"
@@ -40,98 +50,122 @@
 
         <hr v-if="showWelcomePanel">
 
-        <new-dashboard v-if="!showLegacyDashboard"></new-dashboard>
-
-        <div v-if="showLegacyDashboard" class="card mb-0 row-new bg-transparent dashboard-cards mt-0">
-            <div class="row px-2" v-show="showFilters">
-                <div class="col-12">
-                    <section class="card card-dashboard">
-                        <div class="card-body pt-2 pb-0">
-                            <div class="row border-bottom mb-2 no-gutters">
-                                <small class="col-12 text-center txt-dark">Filtrar datos históricos</small>
+        <!-- Filtros compartidos por ambos dashboards -->
+        <div class="row mx-0 wg-filter-row" :class="{ 'wg-full-bleed': !showLegacyDashboard }" v-show="showFilters">
+            <div class="col-12 px-0">
+                <section class="card card-dashboard">
+                    <div class="card-body pt-2 pb-0">
+                        <div class="row">
+                            <div :class="filterColumnClass" class="form-group">
+                                <label class="control-label">Sucursal</label>
+                                <el-select v-model="form.establishment_id" @change="loadAll">
+                                    <el-option
+                                    v-for="option in establishments"
+                                    :key="option.id"
+                                    :value="option.id"
+                                    :label="option.name"
+                                    ></el-option>
+                                </el-select>
                             </div>
-                            <div class="row">
+                            <div :class="filterColumnClass" class="form-period form-group">
+                                <label class="control-label">Periodo</label>
+                                <el-select v-model="form.period" @change="changePeriod">
+                                    <el-option key="all" value="all" label="Todos"></el-option>
+                                    <el-option key="last_week" value="last_week" label="Última semana"></el-option>
+                                    <el-option key="month" value="month" label="Por mes"></el-option>
+                                    <el-option key="between_months" value="between_months" label="Entre meses"></el-option>
+                                    <el-option key="date" value="date" label="Por fecha"></el-option>
+                                    <el-option key="between_dates" value="between_dates" label="Entre fechas"></el-option>
+                                </el-select>
+                            </div>
+                            <template v-if="form.period === 'month' || form.period === 'between_months'">
                                 <div :class="filterColumnClass" class="form-group">
-                                    <label class="control-label">Sucursal</label>
-                                    <el-select v-model="form.establishment_id" @change="loadAll">
-                                        <el-option
-                                        v-for="option in establishments"
-                                        :key="option.id"
-                                        :value="option.id"
-                                        :label="option.name"
-                                        ></el-option>
-                                    </el-select>
+                                    <label class="control-label">Mes de</label>
+                                    <el-date-picker
+                                        v-model="form.month_start"
+                                        type="month"
+                                        @change="changeDisabledMonths"
+                                        value-format="yyyy-MM"
+                                        format="MM/yyyy"
+                                        class="w-100"
+                                        :clearable="false"
+                                    ></el-date-picker>
                                 </div>
-                                <div :class="filterColumnClass" class="form-period form-group">
-                                    <label class="control-label">Periodo</label>
-                                    <el-select v-model="form.period" @change="changePeriod">
-                                        <el-option key="all" value="all" label="Todos"></el-option>
-                                        <el-option key="last_week" value="last_week" label="Última semana"></el-option>
-                                        <el-option key="month" value="month" label="Por mes"></el-option>
-                                        <el-option key="between_months" value="between_months" label="Entre meses"></el-option>
-                                        <el-option key="date" value="date" label="Por fecha"></el-option>
-                                        <el-option key="between_dates" value="between_dates" label="Entre fechas"></el-option>
-                                    </el-select>
+                            </template>
+                            <template v-if="form.period === 'between_months'">
+                                <div :class="filterColumnClass" class="form-group">
+                                    <label class="control-label">Mes al</label>
+                                    <el-date-picker
+                                        v-model="form.month_end"
+                                        type="month"
+                                        :picker-options="pickerOptionsMonths"
+                                        @change="loadAll"
+                                        value-format="yyyy-MM"
+                                        format="MM/yyyy"
+                                        :clearable="false"
+                                    ></el-date-picker>
                                 </div>
-                                <template v-if="form.period === 'month' || form.period === 'between_months'">
-                                    <div :class="filterColumnClass" class="form-group">
-                                        <label class="control-label">Mes de</label>
-                                        <el-date-picker
-                                            v-model="form.month_start"
-                                            type="month"
-                                            @change="changeDisabledMonths"
-                                            value-format="yyyy-MM"
-                                            format="MM/yyyy"
-                                            :clearable="false"
-                                        ></el-date-picker>
-                                    </div>
-                                </template>
-                                <template v-if="form.period === 'between_months'">
-                                    <div :class="filterColumnClass" class="form-group">
-                                        <label class="control-label">Mes al</label>
-                                        <el-date-picker
-                                            v-model="form.month_end"
-                                            type="month"
-                                            :picker-options="pickerOptionsMonths"
-                                            @change="loadAll"
-                                            value-format="yyyy-MM"
-                                            format="MM/yyyy"
-                                            :clearable="false"
-                                        ></el-date-picker>
-                                    </div>
-                                </template>
-                                <template v-if="form.period === 'date' || form.period === 'between_dates'">
-                                    <div :class="filterColumnClass" class="form-group">
-                                        <label class="control-label">Fecha del</label>
-                                        <el-date-picker
-                                            v-model="form.date_start"
-                                            type="date"
-                                            @change="changeDisabledDates"
-                                            value-format="yyyy-MM-dd"
-                                            format="dd/MM/yyyy"
-                                            :clearable="false"
-                                        ></el-date-picker>
-                                    </div>
-                                </template>
-                                <template v-if="form.period === 'between_dates'">
-                                    <div :class="filterColumnClass" class="form-group">
-                                        <label class="control-label">Fecha al</label>
-                                        <el-date-picker
-                                            v-model="form.date_end"
-                                            type="date"
-                                            :picker-options="pickerOptionsDates"
-                                            @change="loadAll"
-                                            value-format="yyyy-MM-dd"
-                                            format="dd/MM/yyyy"
-                                            :clearable="false"
-                                        ></el-date-picker>
-                                    </div>
-                                </template>
+                            </template>
+                            <template v-if="form.period === 'date' || form.period === 'between_dates'">
+                                <div :class="filterColumnClass" class="form-group">
+                                    <label class="control-label">Fecha del</label>
+                                    <el-date-picker
+                                        v-model="form.date_start"
+                                        type="date"
+                                        @change="changeDisabledDates"
+                                        value-format="yyyy-MM-dd"
+                                        format="dd/MM/yyyy"
+                                        :clearable="false"
+                                    ></el-date-picker>
+                                </div>
+                            </template>
+                            <template v-if="form.period === 'between_dates'">
+                                <div :class="filterColumnClass" class="form-group">
+                                    <label class="control-label">Fecha al</label>
+                                    <el-date-picker
+                                        v-model="form.date_end"
+                                        type="date"
+                                        :picker-options="pickerOptionsDates"
+                                        @change="loadAll"
+                                        value-format="yyyy-MM-dd"
+                                        format="dd/MM/yyyy"
+                                        :clearable="false"
+                                    ></el-date-picker>
+                                </div>
+                            </template>
+                            <!-- Acciones del dashboard de widgets, en la misma fila del filtro (mockup) -->
+                            <div v-if="!showLegacyDashboard" class="col-auto ml-auto wg-filter-actions">
+                                <el-tooltip content="Añadir widget" placement="bottom">
+                                    <button type="button" class="wg-action-btn is-primary" @click="widgetStore.openModal()">
+                                        <i class="ti ti-plus"></i>
+                                    </button>
+                                </el-tooltip>
+                                <el-tooltip :content="widgetStore.state.editMode ? 'Terminar edición' : 'Personalizar: reordenar, redimensionar o quitar widgets'" placement="bottom">
+                                    <button
+                                        type="button"
+                                        class="wg-action-btn"
+                                        :class="{ 'is-primary': widgetStore.state.editMode }"
+                                        @click="widgetStore.toggleEdit()"
+                                    >
+                                        <i :class="['ti', widgetStore.state.editMode ? 'ti-check' : 'ti-pencil']"></i>
+                                    </button>
+                                </el-tooltip>
+                                <el-tooltip content="Restablecer layout" placement="bottom">
+                                    <button type="button" class="wg-action-btn" @click="widgetStore.resetLayout()">
+                                        <i class="ti ti-history"></i>
+                                    </button>
+                                </el-tooltip>
                             </div>
                         </div>
-                    </section>
-                </div>
+                    </div>
+                </section>
             </div>
+        </div>
+
+        <!-- Nuevo dashboard de widgets configurables -->
+        <widget-grid v-if="!showLegacyDashboard && filtersReady" :filters="form" class="wg-full-bleed"></widget-grid>
+
+        <div v-if="showLegacyDashboard" class="card mb-0 row-new bg-transparent dashboard-cards mt-0">
 
             <RowTop :company="company" :utilities="utilities" :filters="form"></RowTop>
 
@@ -311,7 +345,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>    
+                                    </div>
                                     <div class="mt-3" v-show="!loaders.balance">
                                         <table class="table-dashboard mb-0 table-sm">
                                             <tbody class="card-default">
@@ -371,7 +405,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>                                
+                                    </div>
                                     <div class="mt-3" v-show="!loaders.utility">
                                         <table class="table-dashboard mb-0 table-sm">
                                             <tbody class="card-default">
@@ -480,7 +514,7 @@
                                     <label>Top clientes</label>
                                     <div class="mt-3">
                                         <el-checkbox  v-model="form.enabled_transaction_customer" @change="loadDataAditional">Ordenar por transacciones</el-checkbox><br>
-                                    </div>                                
+                                    </div>
                                     <div class="mt-3" v-show="!loaders.top_customers">
                                         <div class="table-responsive table-default">
                                             <table class="table table-default">
@@ -531,6 +565,46 @@
     </div>
 </template>
 <style>
+/* Alineación al ancho del breadcrumb: compensa el padding de 40px del
+   .content-body global, igual que hace el propio .page-header. */
+.wg-full-bleed {
+  margin-left: -30px !important;
+  margin-right: -30px !important;
+}
+.wg-filter-row .card.card-dashboard {
+  margin-bottom: 0.75rem;
+}
+.wg-filter-actions {
+  align-items: center;
+  align-self: center;
+  border-left: 1px solid #e3e6ea;
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+}
+.wg-action-btn {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d6dae0;
+  border-radius: 10px;
+  color: var(--primary);
+  cursor: pointer;
+  display: flex;
+  flex-shrink: 0;
+  font-size: 19px;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+.wg-action-btn:hover {
+  border-color: var(--primary);
+}
+.wg-action-btn.is-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
 .widget-summary .summary {
   min-height: inherit;
 }
@@ -681,6 +755,8 @@ import LoaderGraph from "../components/loaders/l-graph.vue";
 import RowTop from "./RowTop.vue";
 import DashboardInventory from "./partials/dashboard_inventory.vue";
 import NewDashboard from "./partials/new_dashboard/NewDashboard.vue";
+import WidgetGrid from "../widgets/WidgetGrid.vue";
+import { widgetStore } from "../widgets/store";
 import TopProducts from "./partials/TopProducts.vue";
 import CashFlowChart from "./partials/CashFlowChart.vue";
 import LowStock from "./partials/LowStock.vue";
@@ -693,11 +769,15 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 export default {
   props: ["typeUser", "soapCompany",'configuration'],
-  components: { DashboardStock, LoaderGraph, RowTop, DashboardInventory, NewDashboard, TopProducts, CashFlowChart, LowStock, WeeklySalesChart, PaymentMethods, SunatStatus, Debtors, MonthGoal },
+  components: { DashboardStock, LoaderGraph, RowTop, DashboardInventory, NewDashboard, WidgetGrid, TopProducts, CashFlowChart, LowStock, WeeklySalesChart, PaymentMethods, SunatStatus, Debtors, MonthGoal },
   data() {
     return {
-            showWelcomePanel: true,
-      showLegacyDashboard: true,
+      widgetStore,
+      showWelcomePanel: true,
+      // Convivencia: el dashboard de widgets es el default; el usuario puede
+      // volver al clásico desde el header y la elección persiste en localStorage.
+      showLegacyDashboard: localStorage.getItem('dashboard_use_widgets') === '0',
+      filtersReady: false,
       showLegacyCards: false,
       showFilters: false,
       loading_search: false,
@@ -778,6 +858,9 @@ export default {
         this.establishments.length > 0 ? this.establishments[0].id : null;
     });
 
+    // El grid de widgets se monta recién con la sucursal resuelta.
+    this.filtersReady = true;
+
     this.$eventHub.$on('establishmentChanged', this.updateEstablishment);
 
     await this.loadAll();
@@ -805,14 +888,14 @@ export default {
         case 'month':
           return this.form.month_start ? `Filtrado por mes: ${moment(this.form.month_start).format('MM/YYYY')}` : 'Filtrado por: Por mes';
         case 'between_months':
-          return this.form.month_start && this.form.month_end 
-            ? `Filtrado entre meses: ${moment(this.form.month_start).format('MM/YYYY')} - ${moment(this.form.month_end).format('MM/YYYY')}` 
+          return this.form.month_start && this.form.month_end
+            ? `Filtrado entre meses: ${moment(this.form.month_start).format('MM/YYYY')} - ${moment(this.form.month_end).format('MM/YYYY')}`
             : 'Filtrado por: Entre meses';
         case 'date':
           return this.form.date_start ? `Filtrado por fecha: ${moment(this.form.date_start).format('DD/MM/YYYY')}` : 'Filtrado por: Por fecha';
         case 'between_dates':
-          return this.form.date_start && this.form.date_end 
-            ? `Filtrado entre fechas: ${moment(this.form.date_start).format('DD/MM/YYYY')} - ${moment(this.form.date_end).format('DD/MM/YYYY')}` 
+          return this.form.date_start && this.form.date_end
+            ? `Filtrado entre fechas: ${moment(this.form.date_start).format('DD/MM/YYYY')} - ${moment(this.form.date_end).format('DD/MM/YYYY')}`
             : 'Filtrado por: Entre fechas';
         default:
           return 'Filtrado por: Última semana';
@@ -820,7 +903,7 @@ export default {
     },
     visibleFiltersCount() {
       let count = 2; // Siempre: Sucursal + Periodo
-      
+
       if (this.form.period === 'month') {
         count += 1; // + Mes de
       } else if (this.form.period === 'between_months') {
@@ -830,10 +913,16 @@ export default {
       } else if (this.form.period === 'between_dates') {
         count += 2; // + Fecha del + Fecha al
       }
-      
+
       return count;
     },
     filterColumnClass() {
+      // Con el dashboard de widgets los botones ocupan una columna fija a la
+      // derecha: los selects reparten el espacio restante en partes iguales
+      // para que los botones nunca salten de fila.
+      if (!this.showLegacyDashboard) {
+        return 'col-md col-12';
+      }
       const count = this.visibleFiltersCount;
       const colMap = {
         2: 'col-md-6 col-12',      // 2 inputs = 50% cada uno
@@ -1225,6 +1314,14 @@ export default {
     toggleFilters() {
       this.showFilters = !this.showFilters;
     },
+    toggleDashboardVersion() {
+      this.showLegacyDashboard = !this.showLegacyDashboard;
+      localStorage.setItem('dashboard_use_widgets', this.showLegacyDashboard ? '0' : '1');
+      if (this.showLegacyDashboard) {
+        // Al volver al clásico, recargar sus datos (se omiten mientras está oculto).
+        this.loadAll();
+      }
+    },
     updateEstablishment(establishmentId) {
       console.log('Cambiando a sucursal ID:', establishmentId);
 
@@ -1324,6 +1421,11 @@ export default {
       this.loadAll();
     },
     loadAll() {
+      // Con el dashboard de widgets activo, el grid pide sus propios datos
+      // (batch /dashboard/widgets/data); se omiten las cargas del clásico.
+      if (!this.showLegacyDashboard) {
+        return;
+      }
       this.loadData();
       // this.loadUnpaid();
       this.loadDataAditional();

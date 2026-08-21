@@ -40,6 +40,27 @@ class PosCollection extends ResourceCollection
                 'stock' => $row->getStockByWarehouse(),
                 'id' => $row->id,
                 'item_id' => $row->id,
+                'parent_item_id' => $row->parent_item_id,
+                'variations_count' => (int) ($row->variations_count ?? 0),
+                'variations_stock' => !is_null($row->variations_stock) ? (float) $row->variations_stock : null,
+                'variations' => ($row->relationLoaded('variations') && ((int) ($row->variations_count ?? 0)) > 0)
+                    ? collect($row->variations)->map(function ($variation) use ($defaultImagePath) {
+                        return [
+                            'id' => $variation->id,
+                            'description' => $variation->description,
+                            'variation_label' => $variation->variation_label,
+                            'variation_attributes' => $variation->getVariationAttributesData(),
+                            'internal_id' => $variation->internal_id,
+                            'barcode' => $variation->barcode,
+                            'stock' => $variation->getStockByWarehouse(),
+                            'stock_min' => (float) $variation->stock_min,
+                            'sale_unit_price' => (float) $variation->sale_unit_price,
+                            'image_url' => ($variation->image && $variation->image !== 'imagen-no-disponible.jpg')
+                                ? asset('storage/uploads/items/' . $variation->image)
+                                : $defaultImagePath,
+                        ];
+                    })->values()
+                    : [],
                 'full_description' => ($row->internal_id) ? $row->internal_id . ' - ' . $row->description : $row->description,
                 'name' => $row->name,
                 'second_name' => $row->second_name,
