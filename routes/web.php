@@ -1062,6 +1062,15 @@ if ($hostname) {
             Route::post('plans', 'System\PlanController@store');
             Route::delete('plans/{plan}', 'System\PlanController@destroy');
 
+            //Giro de negocio
+            Route::get('business-turns', 'System\BusinessTurnController@index')->name('system.business-turns.index');
+            Route::get('business-turns/records', 'System\BusinessTurnController@records');
+            Route::get('business-turns/tables', 'System\BusinessTurnController@tables');
+            Route::get('business-turns/record/{business_turn}', 'System\BusinessTurnController@record');
+            Route::post('business-turns', 'System\BusinessTurnController@store');
+            Route::post('business-turns/change-active', 'System\BusinessTurnController@changeActive');
+            Route::delete('business-turns/{business_turn}', 'System\BusinessTurnController@destroy');
+
             //Pagos
             Route::get('payment-orders', 'System\PaymentOrderController@index')->name('system.payments.index');
             Route::get('payment-orders/records', 'System\PaymentOrderController@records');

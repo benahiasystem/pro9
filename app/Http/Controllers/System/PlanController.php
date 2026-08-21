@@ -4,6 +4,7 @@ namespace App\Http\Controllers\System;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller; 
+use App\Models\System\BusinessTurn;
 use App\Models\System\Plan;
 use App\Models\System\PlanDocument;
 use Illuminate\Support\Facades\DB;
@@ -76,55 +77,8 @@ class PlanController extends Controller
                 return $this->prepareModules($module);
             });
 
-        $group_basic = Module::with('levels')
-            ->whereIn('id', [7,1,6,17,18,5,14])
-            ->orderBy('sort')
-            ->get()
-            ->each(function ($module) {
-                return $this->prepareModules($module);
-            });
-        $group_hotel = Module::with('levels')
-            ->whereIn('id', [7,1,6,17,18,5,14,8,4])
-            ->orderBy('sort')
-            ->get()
-            ->each(function ($module) {
-                return $this->prepareModules($module);
-            });
-        $group_pharmacy = Module::with('levels')
-            ->whereIn('id', [7,1,6,17,18,5,14,8,4])
-            ->orderBy('sort')
-            ->get()
-            ->each(function ($module) {
-                return $this->prepareModules($module);
-            });
-        $group_restaurant = Module::with('levels')
-            ->whereIn('id', [7,1,6,17,18,5,14,8,4])
-            ->orderBy('sort')
-            ->get()
-            ->each(function ($module) {
-                return $this->prepareModules($module);
-            });
-        $group_hotel_apps = Module::with('levels')
-            ->whereIn('id', [15])
-            ->orderBy('sort')
-            ->get()
-            ->each(function ($module) {
-                return $this->prepareModules($module);
-            });
-        $group_pharmacy_apps = Module::with('levels')
-            ->whereIn('id', [19])
-            ->orderBy('sort')
-            ->get()
-            ->each(function ($module) {
-                return $this->prepareModules($module);
-            });
-        $group_restaurant_apps = Module::with('levels')
-            ->whereIn('id', [23])
-            ->orderBy('sort')
-            ->get()
-            ->each(function ($module) {
-                return $this->prepareModules($module);
-            });
+        // Giros de negocio administrables desde el panel system.
+        $business_turns = BusinessTurn::formOptions();
 
         $popular_plan = Plan::where('is_popular', true)->select('id', 'name')->first();
 
@@ -132,13 +86,7 @@ class PlanController extends Controller
             'plan_documents',
             'modules',
             'apps',
-            'group_basic',
-            'group_hotel',
-            'group_pharmacy',
-            'group_restaurant',
-            'group_hotel_apps',
-            'group_pharmacy_apps',
-            'group_restaurant_apps',
+            'business_turns',
             'popular_plan'
         );
     }
