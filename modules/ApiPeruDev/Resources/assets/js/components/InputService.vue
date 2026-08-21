@@ -3,6 +3,7 @@
         :value="value"
         :maxlength="maxLength"
         @input="handleInput($event)"
+        @focus="$event.target.select()"
         show-word-limit>
         <template v-if="buttonText">
             <el-button type="primary"

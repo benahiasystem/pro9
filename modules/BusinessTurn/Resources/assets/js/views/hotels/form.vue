@@ -43,7 +43,7 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.name}">
                             <label class="control-label">Nombres y Apellidos</label>
-                            <el-input v-model="name"></el-input>
+                            <el-input v-model="name" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.name" v-text="errors.name[0]"></small>
                         </div>
                     </div>
@@ -60,14 +60,14 @@
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.ocupation}">
                             <label class="control-label">Ocupación</label>
-                            <el-input v-model="hotel.ocupation"></el-input>
+                            <el-input v-model="hotel.ocupation" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.ocupation" v-text="errors.ocupation[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.age}">
                             <label class="control-label">Edad</label>
-                            <el-input v-model="hotel.age"></el-input>
+                            <el-input v-model="hotel.age" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.age" v-text="errors.age[0]"></small>
                         </div>
                     </div>
@@ -92,21 +92,21 @@
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.room_number}">
                             <label class="control-label">N° Habitación</label>
-                            <el-input v-model="hotel.room_number"></el-input>
+                            <el-input v-model="hotel.room_number" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.room_number" v-text="errors.room_number[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.nacionality}">
                             <label class="control-label">Nacionalidad</label>
-                            <el-input v-model="hotel.nacionality"></el-input>
+                            <el-input v-model="hotel.nacionality" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.nacionality" v-text="errors.nacionality[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.origin}">
                             <label class="control-label">Procedencia</label>
-                            <el-input v-model="hotel.origin"></el-input>
+                            <el-input v-model="hotel.origin" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.origin" v-text="errors.origin[0]"></small>
                         </div>
                     </div>

@@ -98,7 +98,7 @@
                                     <td>
                                         <div :class="{'has-danger': row.errors.reference}"
                                              class="form-group mb-0">
-                                            <el-input v-model="row.reference"></el-input>
+                                            <el-input v-model="row.reference" @focus="$event.target.select()"></el-input>
                                             <small v-if="row.errors.reference"
                                                    class="form-control-feedback"
                                                    v-text="row.errors.reference[0]"></small>
@@ -126,7 +126,7 @@
                                     <td>
                                         <div :class="{'has-danger': row.errors.payment}"
                                              class="form-group mb-0">
-                                            <el-input v-model="row.payment"></el-input>
+                                            <el-input v-model="row.payment" @focus="$event.target.select()"></el-input>
                                             <small v-if="row.errors.payment"
                                                    class="form-control-feedback"
                                                    v-text="row.errors.payment[0]"></small>

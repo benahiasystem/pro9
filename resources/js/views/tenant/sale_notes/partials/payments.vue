@@ -76,7 +76,7 @@
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.reference}">
-                                            <el-input v-model="row.reference"></el-input>
+                                            <el-input v-model="row.reference" @focus="$event.target.select()"></el-input>
                                             <small class="form-control-feedback" v-if="row.errors.reference" v-text="row.errors.reference[0]"></small>
                                         </div>
                                     </td>
@@ -101,7 +101,7 @@
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment}">
-                                            <el-input v-model="row.payment"></el-input>
+                                            <el-input v-model="row.payment" @focus="$event.target.select()"></el-input>
                                             <small class="form-control-feedback" v-if="row.errors.payment" v-text="row.errors.payment[0]"></small>
                                         </div>
                                     </td>

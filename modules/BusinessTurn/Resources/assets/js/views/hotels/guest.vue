@@ -25,7 +25,7 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.name}">
                             <label class="control-label">Nombres y Apellidos</label>
-                            <el-input v-model="form.name"></el-input>
+                            <el-input v-model="form.name" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.name" v-text="errors.name[0]"></small>
                         </div>
                     </div>
@@ -42,14 +42,14 @@
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.ocupation}">
                             <label class="control-label">Ocupación</label>
-                            <el-input v-model="form.ocupation"></el-input>
+                            <el-input v-model="form.ocupation" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.ocupation" v-text="errors.ocupation[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.age}">
                             <label class="control-label">Edad</label>
-                            <el-input v-model="form.age"></el-input>
+                            <el-input v-model="form.age" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.age" v-text="errors.age[0]"></small>
                         </div>
                     </div>
@@ -65,14 +65,14 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.nacionality}">
                             <label class="control-label">Nacionalidad</label>
-                            <el-input v-model="form.nacionality"></el-input>
+                            <el-input v-model="form.nacionality" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.nacionality" v-text="errors.nacionality[0]"></small>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.origin}">
                             <label class="control-label">Procedencia</label>
-                            <el-input v-model="form.origin"></el-input>
+                            <el-input v-model="form.origin" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.origin" v-text="errors.origin[0]"></small>
                         </div>
                     </div>
