@@ -97,7 +97,7 @@
                         <div class="col-md-6 col-lg-6">
                             <div class="form-group">
                                 <label class="control-label">N° Placa</label>
-                                <el-input v-model="form.plate_number" type="textarea"></el-input>
+                                <el-input v-model="form.plate_number" type="textarea" @focus="$event.target.select()"></el-input>
                             </div>
                         </div>
                     </div>

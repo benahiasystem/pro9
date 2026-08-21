@@ -149,6 +149,7 @@
                         <el-input
                             v-model="form.customer_email"
                             ref="ref_customer_email"
+                            @focus="$event.target.select()"
                             @keyup.native="keyupCustomerEmail"
                         >
                             <el-button
@@ -169,7 +170,7 @@
                         <div class="code-number-container">
                             <span>+51</span>
                         </div>
-                        <el-input v-model="form.customer_telephone">
+                        <el-input v-model="form.customer_telephone" @focus="$event.target.select()">
                             <template slot="prepend"
                                 >+51</template
                             >
