@@ -602,6 +602,7 @@
                                             <td style="width: 80px; vertical-align: top">
                                                 <el-input v-model="item.item.aux_quantity"
                                                           @input="clickAddItem(item, index, true)"
+                                                          @focus="$event.target.select()"
                                                           @keyup.enter.native="keyupEnterQuantity"></el-input>
                                             </td>
                                             <td>
@@ -621,7 +622,8 @@
                                                         v-model="item.total"
                                                         @input="calculateQuantity(index)"
                                                         @blur="blurCalculateQuantity(index)"
-                                                        :readonly="!item.item.calculate_quantity">
+                                                        :readonly="!item.item.calculate_quantity"
+                                                        @focus="$event.target.select()">
                                                     </el-input>
                                                 </template>
                                                 <template v-else>

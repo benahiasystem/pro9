@@ -3,7 +3,8 @@
         :visible="showDialog"
         @open="create"
         @opened="opened"
-        width="60%"
+        width="70%"
+        top="4vh"
         :close-on-click-modal="false"
         :close-on-press-escape="false"
         :show-close="false"
@@ -149,6 +150,7 @@
                         <el-input
                             v-model="form.customer_email"
                             ref="ref_customer_email"
+                            @focus="$event.target.select()"
                             @keyup.native="keyupCustomerEmail"
                         >
                             <el-button
@@ -169,7 +171,7 @@
                         <div class="code-number-container">
                             <span>+51</span>
                         </div>
-                        <el-input v-model="form.customer_telephone">
+                        <el-input v-model="form.customer_telephone" @focus="$event.target.select()">
                             <template slot="prepend"
                                 >+51</template
                             >
@@ -197,9 +199,7 @@
                             :wsData="form.pdf_a4_data"
                         />
                     </template>
-
-                    <div class="col-md-6 mt-4"></div>
-                    <div class="col-md-6 mt-4">
+                    <div class="col-12 mt-4 d-flex justify-content-end">
                         <el-button
                             type="primary"
                             class="float-right"
@@ -235,8 +235,8 @@
 }
 .pos-ticket-embed {
     display: block;
-    height: calc(100vh - 280px);
-    min-height: 560px;
+    height: calc(92vh - 330px);
+    min-height: 420px;
 }
 </style>
 <script>

@@ -138,6 +138,7 @@
                         @keyup.enter.native="keyupEnterAddItem"
                         class="m-bottom mt-3 input-search-pos"
                         ref="ref_search_items"
+                        @focus="$event.target.select()"
                     >
                         <template v-if="validteCreateProduct">
                             <el-button
@@ -306,6 +307,7 @@
                                             v-model="item.edit_sale_unit_price"
                                             class="mt-1 mb-2 px-2"
                                             size="mini"
+                                            @focus="$event.target.select()"
                                         >
                                         </el-input>
                                         <div class="btn-edit-price-container d-flex">
@@ -758,6 +760,7 @@
                                             @input="calculateQuantity(index)"
                                             @blur="blurCalculateQuantity(index)"
                                             class="pos-total-input"
+                                            @focus="$event.target.select()"
                                         />
                                     </template>
                                     <span v-else class="pos-cart-price">{{ currency_type.symbol }} {{ item.total }}</span>

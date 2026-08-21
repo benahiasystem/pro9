@@ -392,6 +392,7 @@
                                             v-model="item.edit_sale_unit_price"
                                             class="mt-1 mb-2"
                                             size="mini"
+                                            @focus="$event.target.select()"
                                         >                                            
                                         </el-input>
                                         <div class="btn-edit-price-container d-flex">
@@ -823,6 +824,7 @@
                                                                 :style="{ width: Math.min(120, Math.max(70, String(item.total == null ? '' : item.total).length * 9 + 24)) + 'px' }"
                                                                 @blur="changeRowTotal(index)"
                                                                 :readonly="!edit_unit_price && !item.item.calculate_quantity"
+                                                                @focus="$event.target.select()"
                                                             ></el-input>
                                                         </span>
                                                     </template>
