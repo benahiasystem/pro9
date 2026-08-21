@@ -100,9 +100,9 @@ html.sidebar-light:not(.dark) .page-header h2 {
     html.fixed .inner-wrapper:has(.pos-payment) {
         padding-top: 60px;
     }
-    .pos .pos-payment > div {
-        height: calc(-60px + 100vh);
-    }
+    .pos .pos-payment > div:not(.el-dialog__wrapper) {
+    height: calc(-60px + 100vh);
+}
 }
 
 .pos-client-info{
@@ -597,7 +597,7 @@ html.dark .pos-table {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 10px 12px;
-    background: var(--pos-surface-2);
+    background: #fff;
 }
 
 .pos .pos-cart__body::-webkit-scrollbar {
@@ -610,6 +610,23 @@ html.dark .pos-table {
 }
 
 .pos .pos-cart__body::-webkit-scrollbar-track {
+    background: transparent;
+}
+.pos .hyo {
+    scrollbar-width: thin;
+    scrollbar-color: var(--pos-border-strong) transparent;
+}
+
+.pos .hyo::-webkit-scrollbar {
+    width: 8px;
+}
+
+.pos .hyo::-webkit-scrollbar-thumb {
+    background: var(--pos-border-strong);
+    border-radius: 999px;
+}
+
+.pos .hyo::-webkit-scrollbar-track {
     background: transparent;
 }
 

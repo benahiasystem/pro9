@@ -1,33 +1,31 @@
 <template>
     <div class="pos container-fluid p-0">
         <span class="module-title-marker" data-page-title="Punto de Venta"></span>
-        <div class="row page-header pe-0 no-gutters" style="min-height:48px">
+        <div class="row page-header pos-toolbar pe-0 no-gutters" style="min-height:48px">
             <Keypress
                 key-event="keyup"
                 :key-code="112"
                 @success="handleFn112"
             />
-            <div
-                class="col-md-5 ps-2"
-                :class="{ 'pt-2 mt-1': !search_item_by_barcode }"
-            >
+            <div class="pos-toolbar__scanner ps-3 d-flex flex-column align-items-start justify-content-center">
                 <el-switch
+                    class="pos-toolbar__scanner-switch"
                     v-model="search_item_by_barcode"
                     active-text="Buscar con escáner de código de barras"
                     @change="changeSearchItemBarcode"
                 >
                 </el-switch>
-                <div class="row bar-code-checkbox" v-if="search_item_by_barcode">
-                    <div class="col-md-4">
+                <div class="bar-code-checkbox pt-1" v-if="search_item_by_barcode">
+                    <div class="pos-toolbar__option">
                         <el-checkbox
-                            class="mt-1 font-weight-bold"
+                            class="font-weight-bold"
                             v-model="search_item_by_barcode_presentation"
                             >Por presentación</el-checkbox
                         >
                     </div>
-                    <div class="col-md-4">
+                    <div class="pos-toolbar__option">
                         <el-checkbox
-                            class="mt-1 mb-1 font-weight-bold"
+                            class="font-weight-bold"
                             v-model="electronic_scale_barcode"
                         >
                             Balanza electrónica
@@ -63,18 +61,18 @@
                         </el-tooltip>
                         </el-checkbox>
                     </div>
-                    <div class="col-md-4">
+                    <div class="pos-toolbar__option">
                         <el-checkbox
-                            class="mt-1 font-weight-bold"
+                            class="font-weight-bold"
                             v-model="barcode_stop_presentation"
                             >Seleccionar listado de precio</el-checkbox
                         >
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 pe-0">
-                <div class="d-flex justify-content-center h-100 align-items-center">
-                    <div v-if="!configuration.enable_list_product" class="col-6" style="padding-top: 2.5px;">
+            <div class="pos-toolbar__actions">
+                <div class="pos-toolbar__actions-inner">
+                    <div v-if="!configuration.enable_list_product" class="pos-toolbar__price">
                         <el-select
                             v-model="selected_option_price"
                             @change="onPriceOptionChange"
@@ -88,8 +86,8 @@
                             ></el-option>
                         </el-select>
                     </div>
-                    <div class="col-6">
-                        <el-button-group class="d-flex gap-1">
+                    <div class="pos-toolbar__views">
+                        <el-button-group class="d-flex">
                             <el-tooltip
                                 class="item"
                                 effect="dark"
@@ -153,9 +151,9 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="pull-right h-100 d-flex align-items-center" v-if="currency_types.length > 1">
-                    <p class="pe-3 exchange-currency m-0">
+            <div class="pos-toolbar__currency" v-if="currency_types.length > 1">
+                <div class="h-100 d-flex align-items-center">
+                    <p class="exchange-currency m-0">
                         T.C.
                         <span>S/ {{ form.exchange_rate_sale }}</span> Cambiar
                         Moneda
@@ -942,7 +940,7 @@
                                 clearable
                                 placeholder="Seleccione un cliente"
                                 popper-class="pos-customer-dropdown"
-                                :popper-append-to-body="false"
+                                @visible-change="visibleChangeCustomer"
                                 @change="changeCustomer"
                                 @keyup.native="keyupCustomer"
                                 @keyup.enter.native="keyupEnterCustomer"
@@ -954,7 +952,16 @@
                                     :key="option.id"
                                     :label="option.description"
                                     :value="option.id"
-                                ></el-option>
+                                >
+                                    <span class="pos-customer-option__text">
+                                        <span class="pos-customer-option__track">
+                                            <span class="pos-customer-option__chunk">{{ option.description }}</span><span
+                                                class="pos-customer-option__chunk pos-customer-option__chunk--clone"
+                                                aria-hidden="true"
+                                            >{{ option.description }}</span>
+                                        </span>
+                                    </span>
+                                </el-option>
                             </el-select>
                             <el-tooltip
                                 class="item"
@@ -1161,6 +1168,80 @@
     max-width: 80% !important;
     margin-right: 1% !important;
 }
+.el-select-dropdown.pos-customer-dropdown {
+    max-width: none !important;
+    margin-right: 0 !important;
+    box-sizing: border-box;
+}
+.pos-customer-dropdown .el-scrollbar {
+    overflow: visible;
+}
+
+.pos-customer-dropdown .el-select-dropdown__wrap,
+.pos-customer-dropdown .el-scrollbar__wrap {
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    max-height: 274px;
+    scrollbar-width: thin;
+}
+
+.pos-customer-dropdown .el-scrollbar__bar {
+    display: none;
+}
+
+.pos-customer-dropdown .el-select-dropdown__list {
+    box-sizing: border-box;
+}
+
+.pos-customer-dropdown .pos-customer-option__text {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.pos-customer-dropdown .pos-customer-option__track {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.pos-customer-dropdown .pos-customer-option__chunk--clone {
+    display: none;
+}
+.pos-customer-dropdown .pos-customer-option__text.is-marquee {
+    text-overflow: clip;
+}
+
+.pos-customer-dropdown .pos-customer-option__text.is-marquee .pos-customer-option__chunk--clone {
+    display: inline;
+    padding-left: var(--marquee-gap, 40px);
+}
+
+.pos-customer-dropdown .pos-customer-option__text.is-marquee .pos-customer-option__track {
+    will-change: transform;
+    animation: pos-customer-option-marquee var(--marquee-duration, 6s) linear infinite;
+}
+
+@keyframes pos-customer-option-marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(calc(-1 * var(--marquee-shift, 0px)));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pos-customer-dropdown .pos-customer-option__text.is-marquee .pos-customer-option__track {
+        animation: none;
+    }
+    .pos-customer-dropdown .pos-customer-option__text.is-marquee .pos-customer-option__chunk--clone {
+        display: none;
+    }
+}
 
 .el-input-group__append {
     padding: 0 10px !important;
@@ -1191,6 +1272,90 @@
     grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
     gap: 0.25rem;
 }
+.pos-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto max-content;
+    align-items: stretch;
+}
+
+.pos-toolbar__scanner {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    column-gap: 24px;
+    padding-right: 20px;
+}
+
+.pos-toolbar__scanner-switch,
+.pos-toolbar__option,
+.pos-toolbar__currency {
+    white-space: nowrap;
+}
+
+.bar-code-checkbox {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 18px;
+}
+
+.pos-toolbar__option {
+    min-width: 0;
+}
+
+.pos-toolbar .el-checkbox__label {
+    max-width: none;
+}
+
+.pos-toolbar__actions {
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    border-left: 1px solid rgba(47, 112, 86, 0.14);
+}
+
+.pos-toolbar__actions-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pos-toolbar__price {
+    width: 205px;
+}
+
+.pos-toolbar__views .el-button-group {
+    gap: 6px;
+}
+
+.pos-toolbar__currency {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 16px 0 18px;
+    border-left: 1px solid rgba(47, 112, 86, 0.14);
+}
+
+.pos-toolbar__currency .exchange-currency {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+@media only screen and (max-width: 1450px) and (min-width: 896px) {
+    .pos-toolbar__scanner {
+        grid-template-columns: minmax(0, 1fr);
+        align-content: center;
+        row-gap: 3px;
+    }
+
+    .bar-code-checkbox {
+        justify-content: flex-start;
+    }
+}
+
 @media only screen and (max-width: 1200px) {
     .bar-code-checkbox{
         display: flex;
@@ -1212,16 +1377,17 @@
         margin-top: 182px !important;
     }
     .row.page-header {
+        display: flex;
         flex-direction: column;
         align-items: stretch;
         gap: 15px;
     }
-    .row.page-header > div:first-child {
+    .pos-toolbar__scanner {
         order: 1;
         text-align: left;
         padding-left: 0;
     }
-    .row.page-header > div:nth-child(2) {
+    .pos-toolbar__actions {
         order: 2;
         text-align: center;
         padding-right: 0;
@@ -1229,13 +1395,13 @@
         align-items: center;
         justify-content: center;
     }
-    .row.page-header > div:last-child {
+    .pos-toolbar__currency {
         order: 3;
         text-align: right;
     }
-    .row.page-header .col-md-5,
-    .row.page-header .col-md-3,
-    .row.page-header .col-md-4 {
+    .pos-toolbar__scanner,
+    .pos-toolbar__actions,
+    .pos-toolbar__currency {
         width: 100%;
         max-width: 100%;
         flex: 0 0 100%;
@@ -1902,10 +2068,58 @@ export default {
                 }
             }
         },
+        visibleChangeCustomer(visible) {
+            if (visible) {
+                this.$nextTick(() =>
+                    window.requestAnimationFrame(this.setupCustomerMarquee)
+                );
+            }
+        },
+        setupCustomerMarquee() {
+            const select = this.$refs.select_person;
+            const dropdown =
+                select && select.$refs.popper ? select.$refs.popper.$el : null;
+            if (!select || !dropdown) return;
+
+            const selectWidth = select.$el.getBoundingClientRect().width;
+            if (selectWidth) {
+                dropdown.style.width = `${selectWidth}px`;
+            }
+
+            const gap = 40;
+            const speed = 50; // px por segundo
+            const texts = dropdown.querySelectorAll(
+                ".pos-customer-option__text"
+            );
+
+            texts.forEach(text => {
+                const chunk = text.querySelector(".pos-customer-option__chunk");
+                if (!chunk) return;
+
+                text.classList.remove("is-marquee");
+
+                const available = text.clientWidth;
+                const full = chunk.getBoundingClientRect().width;
+                if (!available || full <= available + 1) return;
+
+                const shift = full + gap;
+                text.style.setProperty("--marquee-gap", `${gap}px`);
+                text.style.setProperty("--marquee-shift", `${shift}px`);
+                text.style.setProperty(
+                    "--marquee-duration",
+                    `${Math.max(2, shift / speed).toFixed(2)}s`
+                );
+                text.classList.add("is-marquee");
+            });
+        },
         keyupCustomer(e) {
             if (this.place == "cat3") {
                 return false;
             }
+
+            this.$nextTick(() =>
+                window.requestAnimationFrame(this.setupCustomerMarquee)
+            );
 
             if (e.key !== "Enter") {
                 this.input_person.number = this.$refs.select_person.$el.getElementsByTagName(
