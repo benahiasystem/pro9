@@ -29,7 +29,6 @@
 
     {{-- Capa móvil global: siempre al final para ganar la cascada --}}
     <link rel="stylesheet" href="{{ asset('porto-light/css/mobile.css') }}?v={{ filemtime(public_path('porto-light/css/mobile.css')) }}" />
-    <link rel="stylesheet" href="{{ asset('porto-light/css/mobile-admin.css') }}?v={{ filemtime(public_path('porto-light/css/mobile-admin.css')) }}" />
 
     <!-- vite aqui -->
     @vite(['resources/js/system.js'])
