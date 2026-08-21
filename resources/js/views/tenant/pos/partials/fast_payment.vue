@@ -531,6 +531,7 @@ export default {
 
         },
         clickAddPayment() {
+            this.payments = JSON.parse(JSON.stringify(this.form.payments || []))
             this.showDialogMultiplePayment = true
         },
         reloadDataCardBrands(card_brand_id) {

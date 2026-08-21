@@ -787,29 +787,14 @@ export default {
 
         },
         clickAddPayment() {
-
-            // Si ya hay pagos registrados, conservarlos al reabrir el diálogo
-            if (this.form.payments && this.form.payments.length > 0) {
-                this.payments = this.form.payments;
-                this.showDialogMultiplePayment = true;
-                this.$nextTick(() => {
-                    if (this.$refs.componentMultiplePaymentGarage) {
-                        this.$refs.componentMultiplePaymentGarage.$data.form.payment = this.form.total;
-                    }
-                });
-                return;
-            }
-
-            // Primera vez: arrancar con un pago por defecto
-            this.payments = [];
-            this.showDialogMultiplePayment = true;
+            this.payments = JSON.parse(JSON.stringify(this.form.payments || []))
+            this.showDialogMultiplePayment = true
 
             this.$nextTick(() => {
                 if (this.$refs.componentMultiplePaymentGarage) {
-                    this.$refs.componentMultiplePaymentGarage.$data.form.payment = this.form.total;
-                    this.$refs.componentMultiplePaymentGarage.clickAddPayment(this.form.total);
+                    this.$refs.componentMultiplePaymentGarage.$data.form.payment = this.form.total
                 }
-            });
+            })
         },
         reloadDataCardBrands(card_brand_id) {
             this.$http.get(`/${this.resource}/table/card_brands`).then((response) => {

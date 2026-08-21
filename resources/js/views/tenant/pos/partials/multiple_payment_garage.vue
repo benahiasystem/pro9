@@ -8,15 +8,15 @@
                     <table>
                     <thead>
                         <tr width="100%">
-                            <th v-if="payments.length>0">Método de pago</th>
-                            <th v-if="payments.length>0">Destino</th>
-                            <th v-if="payments.length>0">Referencia</th>
-                            <th v-if="payments.length>0">Monto</th>
+                            <th v-if="draftPayments.length>0">Método de pago</th>
+                            <th v-if="draftPayments.length>0">Destino</th>
+                            <th v-if="draftPayments.length>0">Referencia</th>
+                            <th v-if="draftPayments.length>0">Monto</th>
                             <th width="15%"><a href="#" @click.prevent="clickAddPayment()" class="text-center font-weight-bold text-info">[+ Agregar]</a></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(row, index) in payments" :key="index">
+                        <tr v-for="(row, index) in draftPayments" :key="index">
                             <td>
                                 <div class="form-group mb-2 mr-2">
                                     <el-select v-model="row.payment_method_type_id">
@@ -63,7 +63,7 @@
 
         <div class="form-actions pt-2 d-flex justify-content-between">
             <el-button @click.prevent="close()">Cerrar</el-button>
-            <el-button type="primary" @click.prevent="close()">Aceptar</el-button>
+            <el-button type="primary" @click.prevent="accept()">Aceptar</el-button>
         </div>
     </el-dialog>
 </template>
@@ -83,7 +83,8 @@
                 payment_method_types:[],
                 payment_destinations: [],
                 cards_brand:[],
-
+                draftPayments: [],
+                paymentsSnapshot: [],
             }
         },
         async created() {
@@ -93,13 +94,15 @@
                     this.payment_method_types = response.data.payment_method_types
                     this.cards_brand = response.data.cards_brand
                     this.payment_destinations = response.data.payment_destinations
-                    // this.clickAddPayment()
                     this.getFormPosLocalStorage()
                 })
 
             this.events()
         },
         methods: {
+            clonePayments(list) {
+                return JSON.parse(JSON.stringify(Array.isArray(list) ? list : []))
+            },
             getFormPosLocalStorage(){
                 let form_pos = localStorage.getItem('form_pos_garage');
                 form_pos = JSON.parse(form_pos)
@@ -110,18 +113,20 @@
                         this.clickAddPayment(this.total)
 
                     }else{
-                        // console.log(form_pos.payments[0])
                         form_pos.payments[0].payment = this.total
                         this.$eventHub.$emit('localSPaymentsGarage', (form_pos.payments))
-                        // this.$eventHub.$emit('eventSetFormPosLocalStorage', form_pos)
                         this.$emit('add', form_pos.payments);
                     }
                 }
 
             },
             create(){
+                this.paymentsSnapshot = this.clonePayments(this.payments)
+                this.draftPayments = this.clonePayments(this.payments)
 
-
+                if (this.draftPayments.length === 0) {
+                    this.pushDraftPayment(this.total)
+                }
             },
             valueInputSelect(event) {
                 const target = event && event.target
@@ -132,9 +137,8 @@
                 if (!input || typeof input.select !== 'function') return
                 this.$nextTick(() => input.select())
             },
-            clickAddPayment(total = 0) {
-
-                this.payments.push({
+            buildPaymentRow(total = 0) {
+                return {
                     id: null,
                     document_id: null,
                     sale_note_id: null,
@@ -143,20 +147,32 @@
                     payment_destination_id: 'cash',
                     reference: null,
                     payment: total,
-                });
-
-                this.calculatePayments();
-                this.$emit('add', this.payments);
+                }
             },
-            calculatePayments() {
-                let payment_count = this.payments.length;
+            pushDraftPayment(total = 0) {
+                this.draftPayments.push(this.buildPaymentRow(total))
+                this.calculatePayments(this.draftPayments)
+            },
+            clickAddPayment(total = 0) {
+                if (this.showDialog) {
+                    this.pushDraftPayment(total)
+                    return
+                }
+
+                this.payments.push(this.buildPaymentRow(total))
+                this.calculatePayments(this.payments)
+                this.$emit('add', this.payments)
+            },
+            calculatePayments(list = null) {
+                const payments = list || (this.showDialog ? this.draftPayments : this.payments)
+                let payment_count = payments.length;
                 if (payment_count === 0) return;
 
                 let total = parseFloat(this.total) || 0;
                 let payment = 0;
                 let amount = _.round(total / payment_count, 2);
 
-                _.forEach(this.payments, row => {
+                _.forEach(payments, row => {
                     payment += amount;
                     if (total - payment < 0) {
                         amount = _.round(total - payment + amount, 2);
@@ -164,15 +180,21 @@
                     this.$set(row, 'payment', amount);
                 });
             },
-
-            close() {
+            accept() {
+                const payments = this.clonePayments(this.draftPayments)
+                this.payments.splice(0, this.payments.length, ...payments)
+                this.$emit('add', payments)
                 this.$emit('update:showDialog', false)
-                this.$emit('add', this.payments);
+            },
+            close() {
+                const snapshot = this.clonePayments(this.paymentsSnapshot)
+                this.payments.splice(0, this.payments.length, ...snapshot)
+                this.draftPayments = snapshot
+                this.$emit('update:showDialog', false)
             },
             clickCancel(index) {
-                this.payments.splice(index, 1);
-                this.calculatePayments();
-                this.$emit('add', this.payments);
+                this.draftPayments.splice(index, 1);
+                this.calculatePayments(this.draftPayments);
             },
             async events() {
                 // await this.$eventHub.$on("cancelSaleGarage", () => {
