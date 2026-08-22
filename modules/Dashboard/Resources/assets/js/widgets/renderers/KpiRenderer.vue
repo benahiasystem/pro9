@@ -1,20 +1,20 @@
 <template>
   <div class="wg-kpi">
-    <div class="wg-kpi-main">
+    <div class="wg-kpi-row">
       <div class="wg-kpi-value">{{ valueStr }}</div>
-      <div v-if="hasDelta" class="wg-kpi-delta" :style="{ color: deltaColor }">
-        <i :class="['ti', deltaUp ? 'ti-trending-up' : 'ti-trending-down']"></i>
-        {{ deltaStr }} <span class="wg-kpi-delta-label">vs periodo anterior</span>
+      <div v-if="spark" class="wg-kpi-spark" :style="{ height: sparkHeight + 'px' }">
+        <apexchart type="area" :height="sparkHeight" :options="sparkOptions" :series="sparkSeries"></apexchart>
       </div>
     </div>
-    <div v-if="spark && sparkSeries.length" class="wg-kpi-spark">
-      <apexchart type="area" :height="sparkHeight" :options="sparkOptions" :series="sparkSeries"></apexchart>
+    <div v-if="hasDelta" class="wg-kpi-delta" :style="{ color: deltaColor }">
+      <i :class="['ti', deltaUp ? 'ti-trending-up' : 'ti-trending-down']"></i>
+      {{ deltaStr }} <span class="wg-kpi-delta-label">{{ changeLabel }}</span>
     </div>
   </div>
 </template>
 
 <script>
-import { formatValue, themeColors } from '../registry'
+import { changeLabelForPeriod, formatKpi, themeColors } from '../registry'
 
 /** KPI (valor + delta) con sparkline opcional (kpi_spark). */
 export default {
@@ -22,17 +22,21 @@ export default {
   props: {
     dataset: { type: Object, required: true },
     spark: { type: Boolean, default: false },
-    sparkHeight: { type: Number, default: 64 },
+    sparkHeight: { type: Number, default: 46 },
+    period: { type: String, default: '' },
   },
   computed: {
     unit() {
       return this.dataset.unit || 'money'
     },
     valueStr() {
-      return formatValue(this.dataset.totals.current, this.unit)
+      return formatKpi(this.dataset.totals.current, this.unit)
     },
     hasDelta() {
-      return this.dataset.totals.delta !== null && this.dataset.totals.delta !== undefined
+      const totals = this.dataset.totals || {}
+      if (totals.delta === null || totals.delta === undefined) return false
+      // Sin valor previo real no hay comparación (espejo de RowTop.changes).
+      return !!Number(totals.previous)
     },
     deltaUp() {
       return (Number(this.dataset.totals.delta) || 0) >= 0
@@ -44,10 +48,13 @@ export default {
       const theme = themeColors()
       return this.deltaUp ? theme.success : theme.danger
     },
+    changeLabel() {
+      return changeLabelForPeriod(this.period)
+    },
     sparkSeries() {
       const serie = (this.dataset.series || [])[0]
-      if (!serie || !serie.data || !serie.data.length) return []
-      return [{ name: '', data: serie.data }]
+      const data = serie && serie.data && serie.data.length ? serie.data : [0, 0]
+      return [{ name: '', data: data }]
     },
     sparkColor() {
       // La línea sigue la inclinación real de la curva: sube en verde, baja en rojo.
@@ -61,11 +68,20 @@ export default {
     },
     sparkOptions() {
       return {
-        chart: { sparkline: { enabled: true }, fontFamily: 'inherit', animations: { enabled: false } },
+        chart: {
+          sparkline: { enabled: true },
+          fontFamily: 'inherit',
+          animations: { enabled: false },
+          parentHeightOffset: 0,
+          toolbar: { show: false },
+        },
         colors: [this.sparkColor],
         stroke: { curve: 'smooth', width: 2 },
-        fill: { type: 'gradient', gradient: { opacityFrom: 0.22, opacityTo: 0.02 } },
+        fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 100] } },
+        dataLabels: { enabled: false },
+        markers: { size: 0, hover: { size: 0 } },
         tooltip: { enabled: false },
+        grid: { show: false, padding: { left: 0, right: 0, top: 2, bottom: 2 } },
       }
     },
   },
@@ -73,37 +89,52 @@ export default {
 </script>
 
 <style scoped>
-/* Formato de lado (mockup): valor a la izquierda, sparkline a la derecha */
+/* Formato clásico (RowTop): valor a la izquierda, sparkline fija a la derecha */
 .wg-kpi {
-  align-items: center;
   display: flex;
   flex: 1 1 auto;
-  gap: 0.75rem;
+  flex-direction: column;
+  justify-content: center;
   min-height: 0;
+  overflow: hidden;
 }
-.wg-kpi-main {
-  flex-shrink: 0;
+.wg-kpi-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-height: 0;
   min-width: 0;
 }
 .wg-kpi-value {
-  font-size: 1.45rem;
+  flex: 1 1 auto;
+  font-size: 1.5rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .wg-kpi-delta {
   align-items: center;
   display: flex;
-  font-size: 0.8rem;
+  flex-shrink: 0;
+  font-size: 0.74rem;
   font-weight: 600;
   gap: 0.3rem;
-  margin-top: 0.15rem;
+  line-height: 1.2;
+  margin-top: 4px;
+  white-space: nowrap;
 }
 .wg-kpi-delta-label {
   color: #9ca3af;
-  font-weight: 500;
+  font-weight: 400;
 }
 .wg-kpi-spark {
-  flex: 1 1 auto;
-  min-width: 60px;
+  flex: 0 0 96px;
+  max-width: 96px;
+  min-width: 96px;
+  overflow: hidden;
+  width: 96px;
 }
 </style>

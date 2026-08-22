@@ -565,11 +565,18 @@
     </div>
 </template>
 <style>
-/* Alineación al ancho del breadcrumb: compensa el padding de 40px del
-   .content-body global, igual que hace el propio .page-header. */
+/* content-body en este tema ya no tiene padding horizontal de 40px
+   (queda 25px 0.5rem 10px 0) y el page-header usa margin-left/right: 0.
+   Un margen negativo aquí sacaba la grilla encima del sidebar. */
 .wg-full-bleed {
-  margin-left: -30px !important;
-  margin-right: -30px !important;
+  margin-left: 0;
+  margin-right: 0;
+  max-width: 100%;
+}
+.dashboard {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
 .wg-filter-row .card.card-dashboard {
   margin-bottom: 0.75rem;
