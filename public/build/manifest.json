@@ -41,11 +41,11 @@
   "_index-e849b4f5.js": {
     "file": "assets/index-e849b4f5.js"
   },
-  "_vue-clipboard-796c1d01.js": {
+  "_vue-clipboard-a5b3fd9b.js": {
     "css": [
-      "assets/vue-clipboard-6556deda.css"
+      "assets/vue-clipboard-bfc4e059.css"
     ],
-    "file": "assets/vue-clipboard-796c1d01.js",
+    "file": "assets/vue-clipboard-a5b3fd9b.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
@@ -170,7 +170,7 @@
     "src": "node_modules/element-ui/lib/theme-chalk/fonts/element-icons.woff"
   },
   "resources/js/app.css": {
-    "file": "assets/app-f7315c3e.css",
+    "file": "assets/app-e1d836e3.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
@@ -180,11 +180,11 @@
       "assets/tabler-icons-9920d986.ttf"
     ],
     "css": [
-      "assets/app-f7315c3e.css"
+      "assets/app-e1d836e3.css"
     ],
-    "file": "assets/app-91511f7c.js",
+    "file": "assets/app-9d205c36.js",
     "imports": [
-      "_vue-clipboard-796c1d01.js",
+      "_vue-clipboard-a5b3fd9b.js",
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
@@ -202,9 +202,9 @@
     "css": [
       "assets/system-35a8639c.css"
     ],
-    "file": "assets/system-13651d15.js",
+    "file": "assets/system-7e5a7b86.js",
     "imports": [
-      "_vue-clipboard-796c1d01.js",
+      "_vue-clipboard-a5b3fd9b.js",
       "_vue.esm-340a2d96.js",
       "_index-3744837a.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
@@ -214,7 +214,7 @@
     "src": "resources/js/system.js"
   },
   "vue-clipboard.css": {
-    "file": "assets/vue-clipboard-6556deda.css",
+    "file": "assets/vue-clipboard-bfc4e059.css",
     "src": "vue-clipboard.css"
   }
 }

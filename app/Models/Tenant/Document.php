@@ -32,6 +32,7 @@ use Modules\Sale\Models\TechnicalService;
 use phpDocumentor\Reflection\Utils;
 use Modules\Pos\Models\Tip;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Sale\Models\Agent;
 
 
@@ -376,6 +377,8 @@ class Document extends ModelTenant
     public function getApiResourceFind()
     {
         $global_discount = 0;
+        $person = $this->customer_id ? Person::find($this->customer_id) : null;
+        $person_ubigeo = $this->resolvePersonUbigeo($person);
 
         $items = $this->items->map(function ($row) use (&$global_discount) {
             $item_discount = 0;
@@ -416,9 +419,9 @@ class Document extends ModelTenant
             'customer_name'          => optional($this->customer)->name,
             'customer_number'        => optional($this->customer)->number,
             'customer_address'       => $this->getApiResourceCustomerAddress(),
-            'department_id'          => optional($this->customer)->department_id ,
-            'province_id'            => optional($this->customer)->province_id ,
-            'district_id'            => optional($this->customer)->district_id ,
+            'department_id'          => $person_ubigeo['department_id'],
+            'province_id'            => $person_ubigeo['province_id'],
+            'district_id'            => $person_ubigeo['district_id'],
 
             'qr'                     => $this->qr,
 
@@ -439,6 +442,48 @@ class Document extends ModelTenant
             'terms_condition'        => $this->terms_condition,
             'legends'                => $this->legends,
             'seller'                 => $this->seller,
+        ];
+    }
+
+    /**
+     * Ubigeo del cliente, con respaldo en su direccion principal.
+     *
+     * Las columnas department_id / province_id / district_id de persons pueden quedar
+     * vacias cuando el ubigeo solo llego a person_addresses (la fila main). Person::find()
+     * no mira esa tabla, asi que aqui se consulta antes de devolver null.
+     *
+     * @param  \App\Models\Tenant\Person|null  $person
+     * @return array
+     */
+    private function resolvePersonUbigeo($person)
+    {
+        $empty = ['department_id' => null, 'province_id' => null, 'district_id' => null];
+
+        if (!$person) {
+            return $empty;
+        }
+
+        if ($person->department_id && $person->province_id && $person->district_id) {
+            return [
+                'department_id' => $person->department_id,
+                'province_id'   => $person->province_id,
+                'district_id'   => $person->district_id,
+            ];
+        }
+
+        $address = $person->addresses()
+            ->orderByDesc('main')
+            ->orderBy('id')
+            ->first();
+
+        if (!$address || !$address->department_id || !$address->province_id || !$address->district_id) {
+            return $empty;
+        }
+
+        return [
+            'department_id' => $address->department_id,
+            'province_id'   => $address->province_id,
+            'district_id'   => $address->district_id,
         ];
     }
 
