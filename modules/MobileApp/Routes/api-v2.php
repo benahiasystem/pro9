@@ -71,6 +71,14 @@ if ($hostname)
                 Route::get('records-scroll', 'Api\DispatchController@byScroll');
             });
 
+            // inventario: catalogos, traslado entre almacenes y ajuste de stock.
+            // La lectura usa GET items/records-scroll (params warehouse_id, stock_filter).
+            Route::prefix('inventory')->group(function () {
+                Route::get('tables', 'Api\InventoryController@tables');
+                Route::post('transfer', 'Api\InventoryController@transfer');
+                Route::post('adjust', 'Api\InventoryController@adjust');
+            });
+
             Route::prefix('cash')->group(function () {
                 Route::get('records-scroll', 'Api\CashController@byScroll');
             });

@@ -3112,7 +3112,51 @@ class Item extends ModelTenant
             $record->where('unit_type_id', '!=', 'ZZ');
         }
 
+        // Inventario (app): filtrar por el stock de un almacen concreto
+        $record->filterStockByWarehouse($request->warehouse_id ?? null, $request->stock_filter ?? null);
+
         return $record;
+    }
+
+    /**
+     *
+     * Filtrar por stock en un almacen (modulo inventario de la app).
+     * Misma semantica que InventoryController::getCommonRecords (modulo Inventory).
+     * Un item sin fila en item_warehouse cuenta como stock 0.
+     *
+     * @param  Builder $query
+     * @param  int|null $warehouse_id
+     * @param  string|null $stock_filter all|positive|negative|zero|min_alert|safe
+     * @return Builder
+     */
+    public function scopeFilterStockByWarehouse($query, $warehouse_id, $stock_filter)
+    {
+        if (!$stock_filter || $stock_filter === 'all') return $query;
+
+        $warehouse_id = $warehouse_id ?: optional(Warehouse::select('id')->where('establishment_id', auth()->user()->establishment_id)->first())->id;
+        if (!$warehouse_id) return $query;
+
+        $has_stock_row = function ($q) use ($warehouse_id, $stock_filter) {
+            $q->where('warehouse_id', $warehouse_id);
+            switch ($stock_filter) {
+                case 'positive': $q->where('stock', '>', 0); break;
+                case 'negative': $q->where('stock', '<', 0); break;
+                case 'zero': $q->where('stock', '=', 0); break;
+                case 'min_alert': $q->where('stock', '>', 0)->whereColumn('stock', '<=', 'items.stock_min'); break;
+                case 'safe': $q->whereColumn('stock', '>', 'items.stock_min'); break;
+            }
+        };
+
+        if ($stock_filter === 'zero') {
+            return $query->where(function ($q) use ($has_stock_row, $warehouse_id) {
+                $q->whereHas('warehouses', $has_stock_row)
+                  ->orWhereDoesntHave('warehouses', function ($w) use ($warehouse_id) {
+                      $w->where('warehouse_id', $warehouse_id);
+                  });
+            });
+        }
+
+        return $query->whereHas('warehouses', $has_stock_row);
     }
 
 
@@ -3138,6 +3182,26 @@ class Item extends ModelTenant
      *
      * @return array
      */
+    /**
+     *
+     * Stock por almacen uniforme para la API movil (records-scroll, document/tables, search-items).
+     * Un establecimiento = un almacen: la app muestra el nombre del establecimiento.
+     *
+     * @param  \Illuminate\Support\Collection $warehouses
+     * @return \Illuminate\Support\Collection
+     */
+    public static function transformWarehousesForApi($warehouses)
+    {
+        return collect($warehouses)->map(function ($row) {
+            return [
+                'warehouse_id' => $row->warehouse_id,
+                'establishment_id' => optional($row->warehouse)->establishment_id,
+                'warehouse_description' => optional($row->warehouse)->description,
+                'stock' => (float) $row->stock,
+            ];
+        })->values();
+    }
+
     public function getSaleApiRowResource($warehouse)
     {
         $configuration =  Configuration::first();
@@ -3170,16 +3234,15 @@ class Item extends ModelTenant
                 return $row->getCollectionData($decimal_units);
             }),
             'stock' => $this->getWarehouseCurrentStock($warehouse),
+            // inventario (app): minimo y flags de lotes/series para bloquear traslado/ajuste
+            'stock_min' => (float) $this->stock_min,
+            'lots_enabled' => (bool) $this->lots_enabled,
+            'series_enabled' => (bool) $this->series_enabled,
             'image_url' => $this->getImageUrl(),
             'brand_id' => $this->brand_id,
             'category_id' => $this->category_id,
             'is_set' => $this->is_set,
-            'warehouses' => collect($this->warehouses)->transform(function ($row) {
-                return [
-                    'warehouse_description' => $row->warehouse->description,
-                    'stock' => $row->stock,
-                ];
-            }),
+            'warehouses' => self::transformWarehousesForApi($this->warehouses),
         ];
     }
 

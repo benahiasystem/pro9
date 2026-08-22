@@ -205,12 +205,7 @@ class MobileController extends Controller
                             'stock' => $row->getWarehouseCurrentStock($warehouse),
                             // 'stock' => $row->unit_type_id!='ZZ' ? ItemWarehouse::where([['item_id', $row->id],['warehouse_id', $warehouse->id]])->first()->stock : '0',
                             'image' => $row->image != "imagen-no-disponible.jpg" ? url("/storage/uploads/items/" . $row->image) : url("/logo/" . $row->image),
-                            'warehouses' => collect($row->warehouses)->transform(function ($row) {
-                                return [
-                                    'warehouse_description' => $row->warehouse->description,
-                                    'stock' => $row->stock,
-                                ];
-                            }),
+                            'warehouses' => Item::transformWarehousesForApi($row->warehouses),
                             'favorite' => (bool) $row->favorite,
                         ];
                     });
@@ -525,13 +520,7 @@ class MobileController extends Controller
                             'stock' => $row->getWarehouseCurrentStock($warehouse),
                             // 'stock' => $row->unit_type_id!='ZZ' ? ItemWarehouse::where([['item_id', $row->id],['warehouse_id', $warehouse->id]])->first()->stock : '0',
                             'image' => $row->image != "imagen-no-disponible.jpg" ? url("/storage/uploads/items/" . $row->image) : url("/logo/" . $row->image),
-                            'warehouses' => collect($row->warehouses)->transform(function($row) {
-                                return [
-                                    'warehouse_description' => $row->warehouse->description,
-                                    'stock' => $row->stock,
-                                    'warehouse_id' => $row->warehouse_id,
-                                ];
-                            }),
+                            'warehouses' => Item::transformWarehousesForApi($row->warehouses),
                             'item_unit_types' => $this->transformMobileItemUnitTypes($row->item_unit_types),
                             'has_isc' => (bool)$row->has_isc,
                             'system_isc_type_id' => $row->system_isc_type_id,
