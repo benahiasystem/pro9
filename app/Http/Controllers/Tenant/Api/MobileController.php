@@ -140,6 +140,10 @@ class MobileController extends Controller
             // legend_footer alimenta $document->legends (Facturalo::549, 784) que se
             // imprime en invoice_a4:1078
             'legend_footer' => (bool) $configuration->legend_footer,
+            // texto libre del pie, se imprime siempre que no este vacio en
+            // partials/footer.blade.php:12. Es independiente de legend_footer,
+            // que solo controla la leyenda de amazonia.
+            'legend_footer_sale' => $configuration->legend_footer_sale,
 
             // Terminos y condiciones
             // se copia a $document->terms_condition (DocumentInput::196) e se imprime

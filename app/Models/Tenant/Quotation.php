@@ -5,6 +5,7 @@ namespace App\Models\Tenant;
 use App\Models\Tenant\GuideFile;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Traits\SellerIdTrait;
+use App\Traits\ApiResourceFindTrait;
 use Illuminate\Support\Collection;
 use Modules\Order\Models\OrderNote;
 use Modules\Sale\Models\SaleOpportunity;
@@ -14,6 +15,7 @@ use Modules\Sale\Models\Contract;
 class Quotation extends ModelTenant
 {
     use SellerIdTrait;
+    use ApiResourceFindTrait;
 
     public const SOURCE_ADMIN = 'admin';
     public const SOURCE_ECOMMERCE = 'ecommerce';
@@ -239,6 +241,62 @@ class Quotation extends ModelTenant
     public function currency_type()
     {
         return $this->belongsTo(CurrencyType::class, 'currency_type_id');
+    }
+
+    /**
+     * Datos esenciales de la cotizacion para consumo por API.
+     *
+     * Mismo contrato que Document::getApiResourceFind() y
+     * SaleNote::getApiResourceFind(); se agrega terms_condition porque la cotizacion
+     * lo guarda en columna propia.
+     *
+     * @return array
+     */
+    public function getApiResourceFind()
+    {
+        $global_discount = 0;
+        $person = $this->customer_id ? Person::find($this->customer_id) : null;
+        $person_ubigeo = $this->resolvePersonUbigeo($person);
+
+        $items = $this->buildApiResourceItems($this->items, $global_discount);
+
+        return [
+            'prefix'                 => $this->prefix,
+            'series'                 => $this->series,
+            'number'                 => $this->number,
+            'document_type_id'       => $this->document_type_id,
+            'date_of_issue'          => optional($this->date_of_issue)->format('Y-m-d'),
+            'time_of_issue'          => $this->time_of_issue,
+            // date_of_due y delivery_date no estan casteados a date en este modelo
+            // (ver $casts), asi que se devuelven tal cual estan guardados.
+            'date_of_due'            => $this->date_of_due,
+            'delivery_date'          => $this->delivery_date,
+            'currency_type_id'       => $this->currency_type_id,
+
+            'customer_name'          => optional($this->customer)->name,
+            'customer_number'        => optional($this->customer)->number,
+            'customer_address'       => $this->buildApiResourcePersonAddress($this->customer, $person_ubigeo),
+            'department_id'          => $person_ubigeo['department_id'],
+            'province_id'            => $person_ubigeo['province_id'],
+            'district_id'            => $person_ubigeo['district_id'],
+
+            // Operaciones segun su afectacion al IGV.
+            'total_taxed'            => round((float) $this->total_taxed, 2),
+            'total_exonerated'       => round((float) $this->total_exonerated, 2),
+            'total_unaffected'       => round((float) $this->total_unaffected, 2),
+            'total_exportation'      => round((float) $this->total_exportation, 2),
+            'total_free'             => round((float) $this->total_free, 2),
+
+            'total_igv'              => round((float) $this->total_igv, 2),
+            'subtotal'               => round((float) $this->subtotal, 2),
+            // Descuento global (con IGV), reconstruido desde los items.
+            'total_discount_global'  => round($global_discount, 2),
+            'total'                  => round((float) $this->total, 2),
+
+            'items'                  => $items,
+            'terms_condition'        => $this->terms_condition,
+            'legends'                => $this->legends,
+        ];
     }
 
     public function items()

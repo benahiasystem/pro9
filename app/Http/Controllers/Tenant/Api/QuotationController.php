@@ -127,4 +127,27 @@ class QuotationController extends Controller
         ];
     }
 
+
+    /**
+     * Devuelve una cotizacion por su id.
+     *
+     * whereTypeUser() evita que un vendedor pueda leer registros de otro usuario
+     * pasando ids ajenos; para los demas perfiles no restringe nada.
+     */
+    public function record($id)
+    {
+        $record = Quotation::whereTypeUser()->find($id);
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró la cotización solicitada.',
+            ], 404);
+        }
+
+        // Mismo envoltorio "data" que document/find y sale-note/find.
+        return response()->json([
+            'data' => $record->getApiResourceFind(),
+        ]);
+    }
 }

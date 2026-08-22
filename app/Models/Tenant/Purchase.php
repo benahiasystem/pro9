@@ -2,6 +2,8 @@
 
 namespace App\Models\Tenant;
 
+use App\Traits\ApiResourceFindTrait;
+
 use App\Models\Tenant\GuideFile;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\DocumentType;
@@ -60,6 +62,8 @@ use Illuminate\Database\Eloquent\Collection;
  */
 class Purchase extends ModelTenant
 {
+    use ApiResourceFindTrait;
+
     // use SoftDeletes;
 
     protected $with = ['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments'];
@@ -299,6 +303,62 @@ class Purchase extends ModelTenant
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
+    /**
+     * Datos esenciales de la compra para consumo por API.
+     *
+     * Mismo contrato que Document::getApiResourceFind(), con la persona en el rol de
+     * proveedor. La tabla purchases no tiene columna subtotal, asi que en su lugar se
+     * expone total_value (valor de venta) junto a total_taxes.
+     *
+     * @return array
+     */
+    public function getApiResourceFind()
+    {
+        $global_discount = 0;
+        $person = $this->supplier_id ? Person::find($this->supplier_id) : null;
+        $person_ubigeo = $this->resolvePersonUbigeo($person);
+
+        $items = $this->buildApiResourceItems($this->items, $global_discount);
+
+        return [
+            'series'                 => $this->series,
+            'number'                 => $this->number,
+            'document_type_id'       => $this->document_type_id,
+            'date_of_issue'          => optional($this->date_of_issue)->format('Y-m-d'),
+            'time_of_issue'          => $this->time_of_issue,
+            'date_of_due'            => optional($this->date_of_due)->format('Y-m-d'),
+            'currency_type_id'       => $this->currency_type_id,
+
+            'supplier_name'          => optional($this->supplier)->name,
+            'supplier_number'        => optional($this->supplier)->number,
+            'supplier_address'       => $this->buildApiResourcePersonAddress($this->supplier, $person_ubigeo),
+            'department_id'          => $person_ubigeo['department_id'],
+            'province_id'            => $person_ubigeo['province_id'],
+            'district_id'            => $person_ubigeo['district_id'],
+
+            // Operaciones segun su afectacion al IGV.
+            'total_taxed'            => round((float) $this->total_taxed, 2),
+            'total_exonerated'       => round((float) $this->total_exonerated, 2),
+            'total_unaffected'       => round((float) $this->total_unaffected, 2),
+            'total_exportation'      => round((float) $this->total_exportation, 2),
+            'total_free'             => round((float) $this->total_free, 2),
+
+            'total_igv'              => round((float) $this->total_igv, 2),
+            'total_value'            => round((float) $this->total_value, 2),
+            'total_taxes'            => round((float) $this->total_taxes, 2),
+            // Descuento global (con IGV), reconstruido desde los items.
+            'total_discount_global'  => round($global_discount, 2),
+            'total'                  => round((float) $this->total, 2),
+            'total_perception'       => round((float) $this->total_perception, 2),
+
+            'items'                  => $items,
+            // clave unificada con dispatch/find y sale-note/find; en purchases la
+            // columna se llama observation (singular).
+            'observations'           => $this->observation,
+            'legends'                => $this->legends,
+        ];
+    }
+
     public function items()
     {
         return $this->hasMany(PurchaseItem::class);

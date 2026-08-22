@@ -147,4 +147,27 @@ class DispatchController extends Controller
         return new DispatchCollection($records->paginate(config('tenant.items_per_page')));
     }
 
+
+    /**
+     * Devuelve una guia de remision por su id.
+     *
+     * whereTypeUser() evita que un vendedor pueda leer registros de otro usuario
+     * pasando ids ajenos; para los demas perfiles no restringe nada.
+     */
+    public function record($id)
+    {
+        $record = Dispatch::whereTypeUser()->find($id);
+
+        if (!$record) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró la guía de remisión solicitada.',
+            ], 404);
+        }
+
+        // Mismo envoltorio "data" que document/find y sale-note/find.
+        return response()->json([
+            'data' => $record->getApiResourceFind(),
+        ]);
+    }
 }
