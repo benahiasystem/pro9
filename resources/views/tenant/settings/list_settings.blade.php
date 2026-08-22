@@ -233,7 +233,7 @@
                         </a>
                     </li>
                     @endif
-                    @if (Route::has('tenant.webhooks.index') && in_array('webhooks', $vc_modules))
+                    @if (Route::has('tenant.webhooks.index'))
                     <li>
                         <a href="{{route('tenant.webhooks.index')}}">
                             <i class="ti ti-share"></i>Webhooks
