@@ -2764,6 +2764,20 @@ export default {
                 : [];
 
             this.form.discounts = this.getDataGlobalDiscount();
+            this.form.fee = this.form.fee || [];
+            this.form.payments = this.form.payments || [];
+
+            // Crédito por cuotas (03) se guarda como 02; en UI se detecta por fee sin método de pago.
+            const is_credit_installments = _.find(this.form.fee, {
+                payment_method_type_id: null
+            });
+            if (is_credit_installments) {
+                this.form.payment_condition_id = "03";
+            } else if (!this.form.payment_condition_id) {
+                this.form.payment_condition_id = "01";
+            }
+
+            this.enabled_payments = this.form.payment_condition_id === "01";
         },
         getDataGlobalDiscount() {
             const discounts = this.form.discounts

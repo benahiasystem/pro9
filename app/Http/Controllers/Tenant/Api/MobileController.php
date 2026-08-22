@@ -44,6 +44,7 @@ use App\Models\Tenant\PriceLabel;
 use App\Models\Tenant\SaleNote;
 use Modules\QrApi\Http\Controllers\QrApiController;
 use Modules\BusinessTurn\Models\BusinessTurn;
+use Modules\MobileApp\Http\Controllers\Api\BankAccountController;
 
 class MobileController extends Controller
 {
@@ -96,6 +97,7 @@ class MobileController extends Controller
                 'is_business_turn_tap' => ($business_turn_tap)?$business_turn_tap->active:0,
             ],
             'app_configuration' => $this->getAppConfiguration(),
+            'pdf_configuration' => $this->getPdfConfiguration($configuration),
             'permission_edit_item_prices' => $user->permission_edit_item_prices,
             'sellerId' => $user->id,
         ];
@@ -113,6 +115,76 @@ class MobileController extends Controller
     {
         return optional(AppConfiguration::first())->getRowResource();
     }
+
+    /**
+     *
+     * Configuracion del PDF
+     *
+     * Solo se exponen las claves que realmente afectan el render de la plantilla
+     * default/invoice_a4.blade.php. Las demas opciones de la pestania PDF aplican
+     * a tickets, cotizaciones o etiquetas y no se envian a la app.
+     *
+     * @param  Configuration|null $configuration
+     * @return array
+     */
+    public function getPdfConfiguration(?Configuration $configuration = null)
+    {
+        $configuration = $configuration ?: Configuration::first();
+
+        if (!$configuration) {
+            return [];
+        }
+
+        return [
+            // Footer / Pie de pagina
+            // legend_footer alimenta $document->legends (Facturalo::549, 784) que se
+            // imprime en invoice_a4:1078
+            'legend_footer' => (bool) $configuration->legend_footer,
+
+            // Terminos y condiciones
+            // se copia a $document->terms_condition (DocumentInput::196) e se imprime
+            // en invoice_a4:1284
+            'show_terms_condition' => (bool) $configuration->terms_condition_sale,
+            'terms_condition_sale' => $configuration->terms_condition_sale,
+
+            // Informacion que aparece en el PDF
+            'show_bank_accounts_in_pdf' => (bool) $configuration->show_bank_accounts_in_pdf, // invoice_a4:1126
+            // cuentas impresas en el pdf, mismo criterio de invoice_a4:15
+            'bank_accounts' => $this->getBankAccountsForPdf(),
+            'show_seller_in_pdf' => (bool) $configuration->show_seller_in_pdf, // invoice_a4:1262
+
+            // Productos y contenido
+            // las tres definen el valor de $row->name_product_pdf impreso en invoice_a4:724
+            'show_pdf_name' => (bool) $configuration->show_pdf_name,
+            'edit_name_product' => (bool) $configuration->edit_name_product,
+            'item_name_pdf_description' => (bool) $configuration->item_name_pdf_description,
+
+            // Decimales del precio unitario
+            'change_decimal_quantity_unit_price_pdf' => (bool) $configuration->change_decimal_quantity_unit_price_pdf, // invoice_a4:835
+            'decimal_quantity_unit_price_pdf' => (int) $configuration->decimal_quantity_unit_price_pdf, // invoice_a4:837
+
+            // Comportamiento
+            // TemplateHelper::canShowNewLineOnObservation() usado en invoice_a4:1117
+            'print_new_line_to_observation' => (bool) $configuration->print_new_line_to_observation,
+        ];
+    }
+
+    /**
+     *
+     * Cuentas bancarias que se imprimen en el pdf del comprobante
+     *
+     * Reutiliza el endpoint bank-accounts/for-pdf para no duplicar el criterio
+     * (show_in_documents y establecimiento del usuario autenticado)
+     *
+     * @return array
+     */
+    public function getBankAccountsForPdf()
+    {
+        $response = app(BankAccountController::class)->forPdf();
+
+        return $response['data']->resolve();
+    }
+
 
     public function customers()
     {
@@ -857,4 +929,3 @@ class MobileController extends Controller
         ];
     }
 }
-

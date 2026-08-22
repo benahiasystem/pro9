@@ -68,6 +68,11 @@ if ($hostname)
                 Route::get('records-scroll', 'Api\CashController@byScroll');
             });
 
+            Route::prefix('bank-accounts')->group(function () {
+                Route::get('records-scroll', 'Api\BankAccountController@byScroll');
+                Route::get('for-pdf', 'Api\BankAccountController@forPdf');
+            });
+
             Route::prefix('reports')->group(function () {});
 
         });

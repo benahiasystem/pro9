@@ -57,11 +57,21 @@
             </div>
         </div>
 
-        <div class="form-actions text-right pt-2">
+        <span slot="footer" class="dialog-footer pos-payments-footer">
             <el-button @click.prevent="close()">Cerrar</el-button>
-        </div>
+            <el-button type="primary" @click.prevent="accept()">Aceptar</el-button>
+        </span>
     </el-dialog>
 </template>
+
+<style scoped>
+.pos-payments-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    width: 100%;
+}
+</style>
 
 <script>
     export default {
@@ -151,6 +161,9 @@
                 });
             },
 
+            accept() {
+                this.close();
+            },
             close() {
                 this.$emit('update:showDialog', false)
                 this.$emit('add', this.payments);

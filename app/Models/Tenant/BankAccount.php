@@ -162,4 +162,53 @@
         }
 
 
+        /**
+         *
+         * Filtro de busqueda para api (app)
+         *
+         * @param  Builder $query
+         * @param  string|null $input
+         * @return Builder
+         */
+        public function scopeWhereFilterRecordsApi($query, $input)
+        {
+            if($input === null || $input === '') return $query;
+
+            return $query->where(function($q) use($input){
+                $q->where('description', 'like', "%{$input}%")
+                    ->orWhere('number', 'like', "%{$input}%")
+                    ->orWhere('cci', 'like', "%{$input}%")
+                    ->orWhereHas('bank', function($b) use($input){
+                        $b->where('description', 'like', "%{$input}%");
+                    });
+            });
+        }
+
+
+        /**
+         *
+         * Obtener datos para api (app)
+         *
+         * @return array
+         */
+        public function getApiRowResource()
+        {
+            return [
+                'id' => $this->id,
+                'bank_id' => $this->bank_id,
+                'bank_description' => optional($this->bank)->description,
+                'description' => $this->description,
+                'number' => $this->number,
+                'cci' => $this->cci,
+                'currency_type_id' => $this->currency_type_id,
+                'currency_type_description' => optional($this->currency_type)->description,
+                'status' => (int) $this->status,
+                'initial_balance' => (float) $this->initial_balance,
+                'show_in_documents' => (bool) $this->show_in_documents,
+                'establishment_id' => $this->establishment_id,
+                'establishment_description' => optional($this->establishment)->description,
+            ];
+        }
+
+
     }
