@@ -85,6 +85,7 @@
                             clearable
                             @input="onFilterChange"
                             @clear="onFilterChange"
+                            @focus="$event.target.select()"
                         ></el-input>
                     </div>
                     <div class="col-lg-4 col-md-5 col-sm-6 col-12">
@@ -95,6 +96,7 @@
                             clearable
                             @input="onFilterChange"
                             @clear="onFilterChange"
+                            @focus="$event.target.select()"
                         ></el-input>
                     </div>
                     <div class="col-lg-6 col-md-4 col-sm-12 col-12">
@@ -107,6 +109,7 @@
                             size="small"
                             style="width:100%"
                             @change="onFilterChange"
+                            @focus="$event.target.select()"
                         ></el-date-picker>
                     </div>
                     <!-- Fila 2: Estado · Tipo · Canal · Registros -->

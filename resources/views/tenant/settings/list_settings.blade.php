@@ -243,6 +243,14 @@
                         </a>
                     </li>
                     @endif
+                    @if (Route::has('tenant.product-variables.index'))
+                    <li>
+                        <a href="{{route('tenant.product-variables.index')}}">
+                            <i class="ti ti-versions"></i>Atributos de productos
+                            <sup style="background: #ffc300;padding: 3px 3px;border-radius: 4px;">Nuevo</sup>
+                        </a>
+                    </li>
+                    @endif
                 </ul>
             </div>
         </div>

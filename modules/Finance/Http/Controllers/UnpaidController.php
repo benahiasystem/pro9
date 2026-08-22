@@ -139,29 +139,23 @@ class UnpaidController extends Controller
 
     }
 
-    public function toPrint($external_id,$type,$format) {
-        if ($type=='sale') {
-            $sale_note = SaleNote::where('external_id', $external_id)->first();
-        } else {
-            $sale_note = Document::where('external_id', $external_id)->first();
+    public function toPrint($external_id, $type, $format = 'a4') {
+        if (in_array($type, ['sale', 'sale_note'], true)) {
+            return redirect()->to("/sale-notes/print/{$external_id}/{$format}");
         }
 
+        $document = Document::where('external_id', $external_id)->first();
 
-        if (!$sale_note) throw new Exception("El código {$external_id} es inválido, no se encontro la nota de venta relacionada");
-        $this->reloadPDF($sale_note, $format, $sale_note->filename);
+        if (!$document) {
+            throw new Exception("El código {$external_id} es inválido, no se encontro el comprobante relacionado");
+        }
+
+        $this->reloadPDF($document, $format, $document->filename);
         $temp = tempnam(sys_get_temp_dir(), 'unpaid');
 
+        file_put_contents($temp, $this->getStorage($document->filename, 'unpaid'));
 
-        file_put_contents($temp, $this->getStorage($sale_note->filename, 'unpaid'));
-
-        /*
-        $headers = [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="'.$sale_note->filename.'.pdf'.'"'
-        ];
-        */
-
-        return response()->file($temp, GeneralPdfHelper::pdfResponseFileHeaders($sale_note->filename));
+        return response()->file($temp, GeneralPdfHelper::pdfResponseFileHeaders($document->filename));
     }
 
     private function reloadPDF($sale_note, $format, $filename) {
@@ -184,11 +178,10 @@ class UnpaidController extends Controller
         $html = $template->pdf($base_template, "unpaid", $this->company, $this->document, $format_pdf);
 
         /* cuentas por cobrar formato a4 */
-        if (($format_pdf === 'ticket') OR ($format_pdf === 'ticket_58')OR ($format_pdf=='ticket_50')) {
+        if (($format_pdf === 'ticket') OR ($format_pdf === 'ticket_58')) {
 
             $width = ($format_pdf === 'ticket_58') ? 56 : 78 ;
             if(config('tenant.enabled_template_ticket_80')) $width = 76;
-            if($format_pdf === 'ticket_50') $width = 45;
 
             $company_logo      = ($this->company->logo) ? 40 : 0;
             $company_name      = (strlen($this->company->name) / 20) * 10;

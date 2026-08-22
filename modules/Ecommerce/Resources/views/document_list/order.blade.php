@@ -26,6 +26,36 @@
     border-bottom: 1px solid var(--line);
     border-radius: 0 !important;
 }
+.tracking-code {
+    display: inline-flex;
+    align-items: center;
+    max-width: 220px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #f4f6f8;
+    border: 1px solid #e8ebef;
+    color: #c45c26;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.3;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.tracking-code:hover {
+    background: #fff4ec;
+    border-color: #f0c9b0;
+}
+.tracking-code.is-copied {
+    background: #e8f8ef;
+    border-color: #b7e4c7;
+    color: #1f7a45;
+}
+.tracking-code-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 </style>
 
 <div id="app">
@@ -138,7 +168,7 @@
                         <th class="product-col">Código de Pedido</th>
                         <th class="price-col">Total</th>
                         <th class="qty-col">Fecha de creación</th>
-                        <th class="qty-col">Estado</th>
+                        <th class="qty-col">Código de seguimiento</th>
                         <th class="qty-col">Cupón</th>
                         <th class="qty-col" v-if="phone_whatsapp"></th>
                     </tr>
@@ -152,7 +182,17 @@
                         <td>
                             @{{ formatDateOnly(row.created_at) }}
                         </td>
-                        <td>@{{ row.status_order_description }}</td>
+                        <td @click.stop>
+                            <span
+                                v-if="row.tracking_code"
+                                class="tracking-code"
+                                :class="{ 'is-copied': copiedTrackingId === row.id }"
+                                :title="copiedTrackingId === row.id ? '¡Copiado!' : 'Clic para copiar'"
+                                @click="copyTrackingCode(row)">
+                                <span class="tracking-code-text">@{{ copiedTrackingId === row.id ? '¡Copiado!' : row.tracking_code }}</span>
+                            </span>
+                            <span v-else>-</span>
+                        </td>
                         <td>
                             <span v-if="row.discount_coupon_code">@{{ row.discount_coupon_code }}</span>
                             <span v-else>-</span>
@@ -249,6 +289,8 @@
             filterId: 1,
             showOrderModal: false,
             selectedOrder: null,
+            copiedTrackingId: null,
+            copiedTrackingTimer: null,
         },
         computed: {
             pagL: function () {
@@ -272,6 +314,46 @@
             openDetail(row) {
                 this.selectedOrder = row;
                 this.showOrderModal = true;
+            },
+            copyTrackingCode(row) {
+                const value = String((row && row.tracking_code) || '').trim();
+                if (!value) return;
+
+                const markCopied = () => {
+                    if (this.copiedTrackingTimer) {
+                        clearTimeout(this.copiedTrackingTimer);
+                    }
+                    this.copiedTrackingId = row.id;
+                    this.copiedTrackingTimer = setTimeout(() => {
+                        this.copiedTrackingId = null;
+                        this.copiedTrackingTimer = null;
+                    }, 1800);
+                };
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(value).then(markCopied).catch(() => {
+                        this.fallbackCopyTrackingCode(value, markCopied);
+                    });
+                    return;
+                }
+
+                this.fallbackCopyTrackingCode(value, markCopied);
+            },
+            fallbackCopyTrackingCode(value, onSuccess) {
+                const textarea = document.createElement('textarea');
+                textarea.value = value;
+                textarea.setAttribute('readonly', '');
+                textarea.style.position = 'fixed';
+                textarea.style.left = '-9999px';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    if (typeof onSuccess === 'function') onSuccess();
+                } catch (e) {
+                    console.error('No se pudo copiar el código de seguimiento', e);
+                }
+                document.body.removeChild(textarea);
             },
             filterRecords(state_id)
             {

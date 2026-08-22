@@ -2,6 +2,7 @@
 
 namespace Modules\Sale\Http\Resources;
 
+use App\Models\Tenant\Person;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Sale\Models\Contract;
 
@@ -15,17 +16,25 @@ class ContractResource extends JsonResource
      */
     public function toArray($request)
     {
-        $contract = Contract::find($this->id);
+        /** @var Contract $contract */
+        $contract = $this->resource;
         $contract->payments = self::getTransformPayments($contract->payments);
+
+        $customer = Person::find($this->customer_id);
+        $customerData = $customer ? $customer->getCollectionData() : null;
+        $storedCustomer = $contract->customer;
 
         return [
             'id' => $this->id,
-            'external_id' => $this->external_id,  
+            'external_id' => $this->external_id,
             'identifier' => $this->identifier,
-            'date_of_issue' => $this->date_of_issue->format('Y-m-d'), 
+            'number_full' => $this->number_full,
+            'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
             'customer_id' => $this->customer_id,
-            'customer_email' => $this->customer->email,
-            'contract' => $contract
+            'customer_email' => optional($customer)->email ?? optional($storedCustomer)->email,
+            'customer_telephone' => optional($customer)->telephone ?? optional($contract->person)->telephone,
+            'customer' => $customerData,
+            'contract' => $contract,
         ];
     }
 

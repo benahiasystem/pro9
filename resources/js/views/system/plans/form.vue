@@ -1,4 +1,3 @@
-<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog :title="titleDialog" :visible="showDialog" @close="close" @open="create">
         <form autocomplete="off" @submit.prevent="submit">
@@ -125,16 +124,17 @@
                                 <el-radio-group v-model="business" @change="changeModules">
                                     <el-radio v-if="business === 0" :label="0">Personalizado</el-radio>
                                     <el-radio :label="5">Completo</el-radio>
-                                    <el-radio :label="1">Básico</el-radio>
-                                    <el-radio :label="2">Farmacia</el-radio>
-                                    <el-radio :label="3">Hotel</el-radio>
-                                    <el-radio :label="4">Restaurante</el-radio>
-                                    <el-radio :label="6">
-                                        NRUS
-                                        <el-tooltip class="item"
-                                                    content="Solo se permite 1 sucursal y un límite de ventas de 8000 por mes."
-                                                    effect="dark"
-                                                    placement="top">
+                                    <el-radio
+                                        v-for="turn in visibleBusinessTurns"
+                                        :key="turn.id"
+                                        :label="turn.id">
+                                        {{ turn.name }}
+                                        <el-tooltip
+                                            v-if="turn.description"
+                                            class="item"
+                                            :content="turn.description"
+                                            effect="dark"
+                                            placement="top">
                                             <i class="fa fa-info-circle"></i>
                                         </el-tooltip>
                                     </el-radio>
@@ -248,13 +248,7 @@
                 },
                 modules: [],
                 apps: [],
-                group_basic: [],
-                group_hotel: [],
-                group_pharmacy: [],
-                group_restaurant: [],
-                group_hotel_apps: [],
-                group_pharmacy_apps: [],
-                group_restaurant_apps: [],
+                business_turns: [],
                 defaultProps: {
                     children: 'childrens',
                     label: 'description'
@@ -266,6 +260,9 @@
             }
         },
         computed: {
+            visibleBusinessTurns() {
+                return this.business_turns.filter(turn => turn.active || turn.id === this.business);
+            },
             visibleModules() {
                 if (this.business === 6) {
                     return this.modules.filter(m => this.nrusSpec.modules[m.id] !== undefined);
@@ -285,13 +282,7 @@
             this.$http.get(`/${this.resource}/tables`).then(response => {
                 this.modules = response.data.modules
                 this.apps = response.data.apps
-                this.group_basic = response.data.group_basic
-                this.group_hotel = response.data.group_hotel
-                this.group_pharmacy = response.data.group_pharmacy
-                this.group_restaurant = response.data.group_restaurant
-                this.group_hotel_apps = response.data.group_hotel_apps
-                this.group_pharmacy_apps = response.data.group_pharmacy_apps
-                this.group_restaurant_apps = response.data.group_restaurant_apps
+                this.business_turns = response.data.business_turns || []
             })
         },
         methods: {
@@ -641,19 +632,50 @@
                 if (this.business === 0) return;
 
                 this.applyingBusinessModules = true;
+
                 if (this.business === 6) {
                     this.applyNrusLimits(true);
+
+                    this.$nextTick(() => {
+                        const treeKeys = this.buildNrusKeys(this.modules, this.nrusSpec.modules);
+                        const appKeys = this.buildNrusKeys(this.apps, this.nrusSpec.apps);
+                        if (this.$refs.tree) this.$refs.tree.setCheckedKeys(treeKeys);
+                        if (this.$refs.Apptree) this.$refs.Apptree.setCheckedKeys(appKeys);
+
+                        this.applyingBusinessModules = false;
+                    });
+                    return;
+                }
+
+                const group = {
+                    modules: [],
+                    levels: [],
+                    apps: [],
+                };
+
+                if (this.business === 5) {
+                    // Completo: se calcula al vuelo, no es un giro administrable.
+                    group.modules = this.getIds(this.modules);
+                    group.apps = this.getIds(this.apps);
+                } else {
+                    const turn = this.business_turns.find(t => t.id === this.business);
+                    if (turn) {
+                        group.modules = turn.modules || [];
+                        group.levels = turn.levels || [];
+                        group.apps = [...(turn.apps || []), ...(turn.app_levels || [])];
+                    }
                 }
 
                 this.$nextTick(() => {
-                    const treeKeys = this.buildNrusKeys(this.modules, this.nrusSpec.modules);
-                    const appKeys = this.buildNrusKeys(this.apps, this.nrusSpec.apps);
-                    if (this.$refs.tree) this.$refs.tree.setCheckedKeys(treeKeys);
-                    if (this.$refs.Apptree) this.$refs.Apptree.setCheckedKeys(appKeys);
+                    if (this.$refs.tree) {
+                        this.$refs.tree.setCheckedKeys([...group.modules, ...group.levels]);
+                    }
+                    if (this.$refs.Apptree) {
+                        this.$refs.Apptree.setCheckedKeys(group.apps);
+                    }
 
                     this.applyingBusinessModules = false;
                 });
-                return;
             },
             buildNrusKeys(treeData, spec) {
                 const keys = [];
@@ -682,5 +704,3 @@
         }
     }
 </script>
-
-<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

@@ -14,7 +14,7 @@
                     <div class="col-md-12 mt-3">
                         <div :class="{ 'has-danger': errors.token }" class="form-group">
                             <label class="control-label">Token de autorización</label>
-                            <el-input v-model="form.token"></el-input>
+                            <el-input v-model="form.token" @focus="$event.target.select()"></el-input>
                             <small v-if="errors.token" class="form-control-feedback" v-text="errors.token[0]"></small>
                         </div>
                     </div>

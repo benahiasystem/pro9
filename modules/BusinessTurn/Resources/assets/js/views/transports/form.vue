@@ -16,7 +16,7 @@
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.number_identity_document}">
                             <label class="control-label">Número documento</label>                             
-                                <el-input v-model="transport.number_identity_document" :maxlength="maxLength" > 
+                                <el-input v-model="transport.number_identity_document" :maxlength="maxLength" @focus="$event.target.select()" > 
                                 </el-input>
                             <small class="form-control-feedback" v-if="errors.number_identity_document" v-text="errors.number_identity_document[0]"></small>
                         </div>
@@ -24,28 +24,28 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.passenger_fullname}">
                             <label class="control-label">Nombres y Apellidos</label>
-                            <el-input v-model="transport.passenger_fullname"></el-input>
+                            <el-input v-model="transport.passenger_fullname" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.passenger_fullname" v-text="errors.passenger_fullname[0]"></small>
                         </div>
                     </div>  
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.seat_number}">
                             <label class="control-label">N° Asiento</label>
-                            <el-input v-model="transport.seat_number"></el-input>
+                            <el-input v-model="transport.seat_number" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.seat_number" v-text="errors.seat_number[0]"></small>
                         </div>
                     </div>  
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.passenger_manifest}">
                             <label class="control-label">Manifiesto pasajeros</label>
-                            <el-input v-model="transport.passenger_manifest"></el-input>
+                            <el-input v-model="transport.passenger_manifest" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.passenger_manifest" v-text="errors.passenger_manifest[0]"></small>
                         </div>
                     </div> 
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.start_date}">
                             <label class="control-label">F. Inicio programado</label>
-                            <el-date-picker v-model="transport.start_date" type="date" value-format="yyyy-MM-dd" :clearable="false" ></el-date-picker>
+                            <el-date-picker v-model="transport.start_date" type="date" value-format="yyyy-MM-dd" :clearable="false" @focus="$event.target.select()" ></el-date-picker>
                             <small class="form-control-feedback" v-if="errors.start_date" v-text="errors.start_date[0]"></small>
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.origin_address}">
                             <label class="control-label">Dirección detallada de origen</label>
-                            <el-input v-model="transport.origin_address"></el-input>
+                            <el-input v-model="transport.origin_address" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.origin_address" v-text="errors.origin_address[0]"></small>
                         </div>
                     </div> 
@@ -87,7 +87,7 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.destinatation_address}">
                             <label class="control-label">Dirección detallada de llegada</label>
-                            <el-input v-model="transport.destinatation_address"></el-input>
+                            <el-input v-model="transport.destinatation_address" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.destinatation_address" v-text="errors.destinatation_address[0]"></small>
                         </div>
                     </div> 

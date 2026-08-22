@@ -15,6 +15,7 @@ class ResellerSystemAdminModules
         'payment-orders' => 'Pagos',
         'multi-users' => 'Multi Usuarios',
         'plans' => 'Planes',
+        'business-turns' => 'Giro de Negocio',
         'massive-invoice' => 'Facturación Masiva',
         'accounting' => 'Contabilidad',
         'auto-update' => 'Actualización',

@@ -1,7 +1,5 @@
 <?php
 
-// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
-
 namespace Modules\Ecommerce\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -36,17 +34,18 @@ class ItemBarCollection extends ResourceCollection
 
             }
 
-            // ########## INICIO CAMBIO AFECTACIÓN IVA
-            $sale_unit_price = ($row->has_igv)
-                ? $row->sale_unit_price
-                : $row->sale_unit_price * \App\Support\Venezuela\Localization::taxMultiplier();
-            // ######### FIN CAMBIO AFECTACIÓN IVA
+            $sale_unit_price = ($row->has_igv) ? $row->sale_unit_price : $row->sale_unit_price*1.18;
 
             return [
                 'id' => $row->id,
                 'slug' => $row->id . '/' . Str::slug($row->description),
                 'unit_type_id' => $row->unit_type_id,
                 'description' => $row->description,
+                'brand' => $row->brand && $row->brand->id ? [
+                    'id' => $row->brand->id,
+                    'name' => $row->brand->name,
+                    'slug' => Str::slug($row->brand->name),
+                ] : null,
                 'name' => $row->name,
                 'second_name' => $row->second_name,
                 'warehouse_id' => $row->warehouse_id,
@@ -62,7 +61,13 @@ class ItemBarCollection extends ResourceCollection
                 'calculate_quantity' => (bool) $row->calculate_quantity,
                 'has_igv' => (bool) $row->has_igv,
                 'has_igv_description' => $has_igv_description,
-                'sale_unit_price' => ($row->currency_type_id === 'VES') ? 'Bs. '.round($sale_unit_price,2) : 'Bs. '.round(($sale_unit_price*$exchange_rate_sale),2),
+                // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+                'sale_unit_price' => sprintf(
+                    '%s %s',
+                    $row->currency_type->symbol ?? \App\Support\Venezuela\Localization::currencySymbol($row->currency_type_id),
+                    round($sale_unit_price, 2)
+                ),
+                // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
                 // 'sale_unit_price' => "{$row->currency_type->symbol} {$row->sale_unit_price}",
                 'purchase_unit_price' => "{$row->currency_type->symbol} {$row->purchase_unit_price}",
                 'created_at' => ($row->created_at) ? $row->created_at->format('Y-m-d H:i:s') : '',
@@ -87,12 +92,16 @@ class ItemBarCollection extends ResourceCollection
     }
 
 
-    private function getExchangeRateSale(){
+    private function getExchangeRateSale()
+    {
+        try {
+            $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
 
-        $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
-
-        return (array_key_exists('sale', $exchange_rate)) ? $exchange_rate['sale'] : 1;
-
+            return (is_array($exchange_rate) && array_key_exists('sale', $exchange_rate) && $exchange_rate['sale'])
+                ? $exchange_rate['sale']
+                : 1;
+        } catch (\Throwable $e) {
+            return 1;
+        }
     }
 }
-// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

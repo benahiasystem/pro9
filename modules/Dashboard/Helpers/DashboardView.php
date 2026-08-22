@@ -251,7 +251,7 @@ class DashboardView
         $purchase_order = $request['purchase_order']??null;
         $payment_method_type_id = $request['payment_method_type_id']??null;
         // Obtendrá todos los establecimientos
-        $stablishmentUnpaidAll = $request['stablishmentUnpaidAll']??0;
+        $stablishmentUnpaidAll = (int) ($request['stablishmentUnpaidAll'] ?? 0);
         $user = auth()->user();
         if(null === $user){
             $user = new \App\Models\Tenant\User();

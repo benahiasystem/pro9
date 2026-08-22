@@ -1546,25 +1546,6 @@
                                         </div>
 
                                         <div class="col-12">
-                                            <label class="control-label">Mostrar ticket 50mm
-                                                <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <div slot="content">Disponible para Ventas (Facturas/Boletas/Notas de
-                                                        Crédito-Débito)
-                                                    </div>
-                                                    <i class="fa fa-info-circle"></i>
-                                                </el-tooltip>
-                                            </label>
-                                            <div class="form-group">
-                                                <div :class="{ 'has-danger': errors.show_ticket_50 }" class="form-group">
-                                                    <el-switch v-model="form.show_ticket_50"
-                                                               @change="submit"></el-switch>
-                                                    <small v-if="errors.show_ticket_50" class="form-control-feedback"
-                                                        v-text="errors.show_ticket_50[0]"></small>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12">
                                             <label class="control-label">Mostrar ticket 80mm
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
                                                     <div slot="content">Disponible para Ventas (Facturas/Boletas/Notas de
@@ -2100,9 +2081,6 @@
                                                 <span class="dot"></span>
                                                 <span class="text-primary text-uppercase">Comprobantes por Defecto</span>
                                             </h5>
-                                            <span class="text-muted text-uppercase px-2 options-count">
-                                                4 opciones
-                                            </span>
                                         </div>
                                         <div>
                                             <span class="text-muted">
@@ -3537,7 +3515,6 @@ export default {
                 visual: {},
                 show_ticket_80: true,
                 show_ticket_58: false,
-                show_ticket_50: false,
                 update_document_on_dispaches: false,
                 auto_send_dispatchs_to_sunat: true,
                 is_pharmacy: false,

@@ -44,7 +44,7 @@
                         <button
                             aria-expanded="false"
                             class="btn btn-custom btn-sm mt-2 me-2 dropdown-toggle"
-                            data-bs-toggle="dropdown" 
+                            data-bs-toggle="dropdown"
                             type="button"
                         >
                             <i class="fa fa-download"></i> Exportar
@@ -103,7 +103,7 @@
                         <button
                             aria-expanded="false"
                             class="btn btn-custom btn-sm mt-2 me-2 dropdown-toggle"
-                            data-bs-toggle="dropdown" 
+                            data-bs-toggle="dropdown"
                             type="button"
                         >
                             <i class="fa fa-upload"></i> Importar
@@ -150,6 +150,12 @@
                                 @click.prevent="clickImportUpdatePrice()"
                                 >Actualizar precios</a
                             >
+                            <a
+                                class="dropdown-item text-1"
+                                href="#"
+                                @click.prevent="clickImportVariations()"
+                                >Variaciones</a
+                            >
                         </div>
                     </div>
                 </template>
@@ -167,7 +173,13 @@
             <!-- <div class="card-header bg-info">
                 <h3 class="my-0">{{ title }}</h3>
             </div> -->
-            <div class="data-table-visible-columns">                
+            <div class="data-table-visible-columns">
+                <el-radio-group v-model="variations_view"
+                                class="me-2"
+                                @change="changeVariationsView">
+                    <el-radio-button label="grouped">Agrupado</el-radio-button>
+                    <el-radio-button label="flat">Separado</el-radio-button>
+                </el-radio-group>
                 <el-dropdown v-if="selected.length > 0">
                   <el-button aria-expanded="false"
                     class="dropdown-toggle me-2"
@@ -179,14 +191,14 @@
                   <el-dropdown-menu slot="dropdown">
                     <el-dropdown-item @click.native="clickDeleteSelected">Eliminar</el-dropdown-item>
                     <el-dropdown-item @click.native="duplicateSelected">Duplicar</el-dropdown-item>
-                
+
                     <!-- Solo si TODOS los seleccionados están habilitados -->
                     <el-dropdown-item
                       v-if="showDisable"
                       @click.native="clickDisableSelected">
                       Inhabilitar
                     </el-dropdown-item>
-                
+
                     <!-- Solo si TODOS los seleccionados están inhabilitados -->
                     <el-dropdown-item
                       v-if="showEnable"
@@ -221,7 +233,7 @@
                 </el-dropdown>
             </div>
             <div class="card-body">
-                <data-table ref="DataTable" :productType="type" :resource="resource" :sort-field="sortField" :sort-direction="sortDirection" :showProductFilter="type !== 'ZZ'" @sort-change="handleSortChange" @records-changed="handleRecordsChanged">
+                <data-table ref="DataTable" :productType="type" :resource="resource" :sort-field="sortField" :sort-direction="sortDirection" :showProductFilter="type !== 'ZZ'" :extra-filters="{ variations_view }" @sort-change="handleSortChange" @records-changed="handleRecordsChanged">
                     <tr slot="heading" width="100%" slot-scope="{ sort }">
                         <th class="text-center" style="width: 34px;">
                             <el-checkbox :value="allSelectedInView" @change="toggleSelectAll"></el-checkbox>
@@ -253,8 +265,6 @@
                             <th v-if="col.visible && col.key === 'real_unit_price'" :key="col.key" class="text-end">P. venta</th>
                             <!-- ########## INICIO CAMBIO IGV A IVA -->
                             <th v-if="col.visible && col.key === 'has_igv'" :key="col.key" class="text-start">Tiene IVA (Venta)</th>
-                            <!-- ######### FIN CAMBIO IGV A IVA -->
-                            <!-- ########## INICIO CAMBIO IGV A IVA -->
                             <th v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key" class="text-start">Tiene IVA (Compra)</th>
                             <!-- ######### FIN CAMBIO IGV A IVA -->
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end"></th>
@@ -262,11 +272,11 @@
                     </tr>
 
                     <tr></tr>
+                    <template slot-scope="{ index, row }">
                     <tr valign="middle"
-                        slot-scope="{ index, row }"
                         :class="{ disable_color: !row.active, 'text-warning': row.hidden_search }"
                     >
-                        <td>
+                        <td @click.stop>
                             <el-checkbox :value="selected.includes(row.id)" @change="handleSelectionChange(row)"></el-checkbox>
                         </td>
                         <template v-for="col in orderedColumns">
@@ -274,7 +284,35 @@
                             <!-- <td v-if="col.visible && col.key === 'internal_id'" :key="col.key" class="text-end">{{ row.internal_id }}</td> -->
                             <td v-if="col.visible && col.key === 'unit_type'" :key="col.key">{{ row.unit_type_id }}</td>
                             <td v-if="col.visible && col.key === 'image'" :key="col.key"><img :src="row.image_url_small" style="object-fit: contain; border-radius: 50%;" alt width="48px" height="48px" /></td>
-                            <td class="fw-semibold" v-if="col.visible && col.key === 'name'" :key="col.key">{{ row.description }} <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template></td>
+                            <td class="fw-semibold" v-if="col.visible && col.key === 'name'" :key="col.key">
+                                <template v-if="hasVariationAttributes(row)">
+                                    {{ row.base_description || row.description }}
+                                    <el-tag v-if="variations_view === 'flat'"
+                                            size="mini"
+                                            type="primary"
+                                            effect="plain">Variación</el-tag>
+                                    <div class="mt-1">
+                                        <variation-chips :attributes="row.variation_attributes"
+                                                         :code="row.internal_id"></variation-chips>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    {{ row.description }}
+                                    <el-tag v-if="variations_view === 'grouped' && row.variations_count > 0"
+                                            size="mini"
+                                            type="primary"
+                                            effect="plain"
+                                            style="cursor: pointer"
+                                            @click.native.stop="toggleVariationsRow(row)">
+                                        {{ row.variations_count }} variaciones <i :class="isExpanded(row.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+                                    </el-tag>
+                                    <el-tag v-else-if="variations_view === 'flat' && row.parent_item_id"
+                                            size="mini"
+                                            type="primary"
+                                            effect="plain">Variación</el-tag>
+                                    <template v-if="columns.internal_id && columns.internal_id.visible"><br> <small class="text-muted uppercase">{{ row.internal_id }}</small></template>
+                                </template>
+                            </td>
                             <td v-if="col.visible && col.key === 'description'" :key="col.key"><div class="limit-4-lines">{{ stripHtml(row.name) }}</div></td>
                             <td v-if="col.visible && col.key === 'model'" :key="col.key">{{ row.model }}</td>
                             <td v-if="col.visible && col.key === 'brand'" :key="col.key">{{ row.brand }}</td>
@@ -283,11 +321,14 @@
                             <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
                             <td v-if="col.visible && col.key === 'sanitary'" :key="col.key">{{ row.sanitary }}</td>
                             <td v-if="col.visible && col.key === 'cod_digemid'" :key="col.key" class="text-end">{{ row.cod_digemid }}</td>
-                            <td v-if="col.visible && col.key === 'history' && typeUser == 'admin'" :key="col.key" class="text-center">
+                            <td v-if="col.visible && col.key === 'history' && typeUser == 'admin'" :key="col.key" class="text-center" @click.stop>
                                 <button class="btn waves-effect waves-light btn-xs btn-primary" type="button" @click.prevent="clickHistory(row.id)"><i class="fa fa-history"></i></button>
                             </td>
                             <td v-if="col.visible && col.key === 'stock'" :key="col.key">
-                                <div class="fw-semibold" v-if="config.product_only_location == true" :class="{ 'text-danger': row.stock < row.stock_min }">
+                                <div class="fw-semibold" v-if="variations_view === 'grouped' && row.variations_count > 0">
+                                    {{ formatStock(row.variations_stock || 0, row.unit_type_id) }}
+                                </div>
+                                <div class="fw-semibold" v-else-if="config.product_only_location == true" :class="{ 'text-danger': row.stock < row.stock_min }">
                                     {{ formatStock(row.stock, row.unit_type_id) }} <!-- <small class="text-muted ms-1">{{ unitSymbol(row.unit_type_id) }}</small> -->
                                 </div>
                                 <div v-else>
@@ -301,7 +342,7 @@
                                     </template>
                                 </div>
                             </td>
-                            <td v-if="col.visible && col.key === 'extra_data'" :key="col.key" class="text-center">
+                            <td v-if="col.visible && col.key === 'extra_data'" :key="col.key" class="text-center" @click.stop>
                                 <template v-if="config.show_extra_info_to_item && (row.stock_by_extra.total !== null || row.stock_by_extra.colors !== null || row.stock_by_extra.CatItemSize !== null || row.stock_by_extra.CatItemStatus !== null || row.stock_by_extra.CatItemUnitBusiness !== null || row.stock_by_extra.CatItemMoldCavity !== null || row.stock_by_extra.CatItemPackageMeasurement !== null || row.stock_by_extra.CatItemUnitsPerPackage !== null || row.stock_by_extra.CatItemMoldProperty !== null || row.stock_by_extra.CatItemProductFamily !== null)">
                                     <button class="btn waves-effect waves-light btn-xs btn-primary" type="button" @click.prevent="clickStockItems(row)"><i class="fa fa-database"></i></button>
                                 </template>
@@ -311,8 +352,8 @@
                             <td v-if="col.visible && col.key === 'real_unit_price'" :key="col.key" class="text-end">{{ row.sale_unit_price_with_igv }}</td>
                             <td v-if="col.visible && col.key === 'has_igv'" :key="col.key" class="text-start">{{ row.has_igv_description }}</td>
                             <td v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key" class="text-start">{{ row.purchase_has_igv_description }}</td>
-                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
-                            <el-dropdown trigger="click">
+                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
+                            <el-dropdown trigger="click" @command="handleRowCommand">
                                 <button
                                     id="dropdownMenuButton"
                                     aria-expanded="false"
@@ -324,23 +365,30 @@
                                     <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                 </button>
                                 <el-dropdown-menu slot="dropdown">
-                                  <template v-if="typeUser === 'admin'">                                    
+                                  <el-dropdown-item
+                                    :command="{ action: 'detail', row }"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                    Ver detalle
+                                  </el-dropdown-item>
+
+                                  <template v-if="typeUser === 'admin'">
                                     <el-dropdown-item
-                                      @click.native.prevent="clickCreate(row.id)"
+                                      :command="{ action: 'edit', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                                       Editar
                                     </el-dropdown-item>
-                                
+
                                     <el-dropdown-item
-                                      @click.native.prevent="clickPrintBarcode(row)"
+                                      :command="{ action: 'printBarcode', row }"
                                       class="d-flex align-items-center justify-content-between"
                                     >
                                       <span class="d-flex align-items-center me-5">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tags me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 8v4.172a2 2 0 0 0 .586 1.414l5.71 5.71a2.41 2.41 0 0 0 3.408 0l3.592 -3.592a2.41 2.41 0 0 0 0 -3.408l-5.71 -5.71a2 2 0 0 0 -1.414 -.586h-4.172a2 2 0 0 0 -2 2z" /><path d="M18 19l1.592 -1.592a4.82 4.82 0 0 0 0 -6.816l-4.592 -4.592" /><path d="M7 10h-.01" /></svg>
                                         Etiquetas
                                       </span>
-                                
+
                                       <el-tooltip
                                         effect="dark"
                                         content="Generar código de barras"
@@ -366,9 +414,9 @@
                                         </button>
                                       </el-tooltip>
                                     </el-dropdown-item>
-                                
+
                                     <el-dropdown-item
-                                      @click.native.prevent="duplicate(row.id)"
+                                      :command="{ action: 'duplicate', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-copy me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" /><path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" /></svg>
                                       Duplicar
@@ -376,7 +424,7 @@
 
                                     <el-dropdown-item
                                       v-if="!row.hidden_search"
-                                      @click.native.prevent="clickHiddenSearch(row.id)"
+                                      :command="{ action: 'hiddenSearch', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye-off me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" /><path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" /><path d="M3 3l18 18" /></svg>
                                       Ocultar de búsquedas
@@ -384,32 +432,32 @@
 
                                     <el-dropdown-item
                                       v-else
-                                      @click.native.prevent="clickShowSearch(row.id)"
+                                      :command="{ action: 'showSearch', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
                                       Mostrar en búsquedas
                                     </el-dropdown-item>
 
                                     <el-dropdown-item divided />
-                                
+
                                     <el-dropdown-item
                                       v-if="row.active"
-                                      @click.native.prevent="clickDisable(row.id)"
+                                      :command="{ action: 'disable', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-ban me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M5.7 5.7l12.6 12.6" /></svg>
                                       Inhabilitar
                                     </el-dropdown-item>
-                                
+
                                     <el-dropdown-item
                                       v-else
-                                      @click.native.prevent="clickEnable(row.id)"
+                                      :command="{ action: 'enable', id: row.id }"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-check me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" /></svg>
                                       Habilitar
                                     </el-dropdown-item>
-                                
+
                                     <el-dropdown-item
-                                      @click.native.prevent="clickDelete(row.id)"
+                                      :command="{ action: 'delete', id: row.id }"
                                       class="text-danger option-delete"
                                     >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
@@ -421,6 +469,49 @@
                         </td>
                         </template>
                     </tr>
+                    <template v-if="variations_view === 'grouped' && isExpanded(row.id)">
+                        <tr v-if="!expanded_variations[row.id]" :key="'variations-loading-' + row.id" class="variations-subrow-tr">
+                            <td colspan="30" class="text-muted">Cargando variaciones...</td>
+                        </tr>
+                        <tr v-else-if="expanded_variations[row.id].length === 0" :key="'variations-empty-' + row.id" class="variations-subrow-tr">
+                            <td colspan="30" class="text-muted">Sin variaciones activas</td>
+                        </tr>
+                        <tr v-for="variation in (expanded_variations[row.id] || [])" :key="'variation-' + variation.id" class="variations-subrow-tr">
+                            <td></td>
+                            <template v-for="col in orderedColumns">
+                                <td v-if="col.visible && col.key === 'id'" :key="col.key" class="text-end text-muted">{{ variation.id }}</td>
+                                <td v-if="col.visible && col.key === 'unit_type'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'image'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'name'" :key="col.key">
+                                    <span class="text-muted me-1">└</span>
+                                    <template v-if="variation.variation_attributes && variation.variation_attributes.length">{{ row.description }}<span v-for="(attribute, index) in variation.variation_attributes" :key="index"><span class="text-muted mx-1">·</span><span v-if="attribute.color" class="variation-dot" :style="{ background: attribute.color }"></span>{{ variationAttributeLabel(attribute) }}</span></template>
+                                    <template v-else>{{ variation.description }}</template>
+                                    <template v-if="columns.internal_id && columns.internal_id.visible">
+                                        <br><small class="text-muted uppercase ms-3">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
+                                    </template>
+                                </td>
+                                <td v-if="col.visible && col.key === 'description'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'model'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'brand'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'sanitary'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'cod_digemid'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'history' && typeUser == 'admin'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'stock'" :key="col.key" class="fw-semibold">{{ formatStock(variation.stock, row.unit_type_id) }}</td>
+                                <td v-if="col.visible && col.key === 'extra_data'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'sale_unit_price'" :key="col.key" class="text-end text-primary fw-semibold">{{ row.currency_type_symbol }} {{ variation.sale_unit_price }}</td>
+                                <td v-if="col.visible && col.key === 'purchase_unit_price' && typeUser != 'seller'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'real_unit_price'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'has_igv'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'purchase_has_igv_description'" :key="col.key"></td>
+                                <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
+                                    <button v-if="typeUser === 'admin'" title="Editar variación" class="btn btn-xs btn-info btn-shad me-1" @click.prevent="clickCreate(variation.id)">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415"></path><path d="M16 5l3 3"></path></svg>
+                                    </button>
+                                </td>
+                            </template>
+                        </tr>
+                    </template>
+                    </template>
                 </data-table>
             </div>
 
@@ -463,6 +554,9 @@
             <items-import-update-price
                 :showDialog.sync="showImporUpdatePrice"
             ></items-import-update-price>
+            <items-import-variations
+                :showDialog.sync="showImportVariationsDialog"
+            ></items-import-variations>
 
             <items-import-tags
                 :showDialog.sync="showDialogTagsExports"
@@ -485,6 +579,16 @@
                 :configuration="configuration"
                 :showDialog.sync="showExportBartenderDialog"
             ></items-export-bartender>
+
+            <items-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :type="type"
+                :typeUser="typeUser"
+                :resource="resource"
+                @edit="openEditFromDrawer"
+            ></items-detail-drawer>
         </div>
     </div>
 </template>
@@ -496,6 +600,36 @@
     border-radius: 8px;
     padding: 3px !important;
     line-height: normal;
+}
+.variations-subrow-tr td {
+    background: #f8f9fb;
+    border-top: none;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+.variation-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    vertical-align: baseline;
+}
+</style>
+<style scoped>
+.item-name-link {
+    color: inherit;
+    cursor: pointer;
+    font-weight: inherit;
+    text-decoration: underline;
+}
+.item-name-link:hover,
+.item-name-link:focus {
+    color: inherit;
+    font-weight: inherit;
+    text-decoration: underline;
+    outline: none;
 }
 </style>
 <script>
@@ -514,8 +648,11 @@ import { deletable } from "../../../mixins/deletable";
 import ItemsHistory from "@viewsModuleItem/items/history.vue";
 import { mapActions, mapState } from "vuex";
 import ItemsImportUpdatePrice from "./partials/update_prices.vue";
+import ItemsImportVariations from "./partials/import_variations.vue";
+import VariationChips from "./partials/variation_chips.vue";
 import ItemsImportTags from "./partials/export_tag.vue";
 import ItemsExportBartender from "./partials/export_bartender.vue";
+import ItemsDetailDrawer from "./partials/detail-drawer.vue";
 
 export default {
     props: ["configuration", "typeUser", "type"],
@@ -534,7 +671,10 @@ export default {
         ItemsHistory,
         ItemsImportTags,
         ItemsImportUpdatePrice,
-        ItemsExportBartender
+        ItemsImportVariations,
+        VariationChips,
+        ItemsExportBartender,
+        ItemsDetailDrawer
     },
     data() {
         return {
@@ -553,6 +693,7 @@ export default {
             showImportListPriceDialog: false,
             showImportExtraWithExtraInfo: false,
             showImporUpdatePrice: false,
+            showImportVariationsDialog: false,
             showWarehousesDetail: false,
             resource: "items",
             recordId: null,
@@ -578,22 +719,26 @@ export default {
                 stock:                       { title: "Stock",                                               visible: true,  order: 13 },
                 sale_unit_price:             { title: "P.Unitario (Venta)",                                  visible: true,  order: 14 },
                 purchase_unit_price:         { title: "P.Unitario (Compra)",                                 visible: false, order: 15 },
-                real_unit_price:             { title: "Mostrar el precio de venta total (con el cálculo IGV)", visible: false, order: 16 },
+                real_unit_price:             { title: "Mostrar el precio de venta total (con el cálculo IVA)", visible: false, order: 16 },
                 // ########## INICIO CAMBIO IGV A IVA
                 has_igv:                     { title: "Tiene IVA (Venta)",                                   visible: true,  order: 17 },
-                // ######### FIN CAMBIO IGV A IVA
-                // ########## INICIO CAMBIO IGV A IVA
                 purchase_has_igv_description:{ title: "Tiene IVA (Compra)",                                  visible: false, order: 18 },
                 // ######### FIN CAMBIO IGV A IVA
-                actions:                     { title: "Acciones",                                            visible: true,  order: 19 },
+                actions:                     { title: "Acciones",                                            visible: true,  order: 20 },
             },
             item_unit_types: [],
             titleTopBar: "",
             title: "",
             showDialogHistory: false,
             showDialogItemStock: false,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             sortField: localStorage.getItem('itemSortField') || 'id',
             sortDirection: localStorage.getItem('itemSortDirection') || 'desc',
+            variations_view: localStorage.getItem('items_variations_view') || 'grouped',
+            expanded_ids: [],
+            expanded_variations: {},
         };
     },
     created() {
@@ -651,7 +796,7 @@ export default {
             this.getItems();
             this.reloadTable();
 
-            
+
             this.filterDisabled = localStorage.getItem('filterDisabled') || 'all'
         });
 
@@ -743,6 +888,38 @@ export default {
     methods: {
         handleRecordsChanged(records) {
             this.visibleRows = Array.isArray(records) ? records : [];
+        },
+        changeVariationsView(value) {
+            localStorage.setItem('items_variations_view', value)
+            this.expanded_ids = []
+            this.expanded_variations = {}
+            this.$refs.DataTable.getRecords()
+        },
+        isExpanded(id) {
+            return this.expanded_ids.includes(id)
+        },
+        hasVariationAttributes(row) {
+            return !!(row.variation_attributes && row.variation_attributes.length)
+        },
+        variationAttributeLabel(attribute) {
+            if (attribute.color || !attribute.variable) {
+                return attribute.value
+            }
+
+            return `${attribute.variable} ${attribute.value}`
+        },
+        toggleVariationsRow(row) {
+            const index = this.expanded_ids.indexOf(row.id)
+            if (index !== -1) {
+                this.expanded_ids.splice(index, 1)
+                return
+            }
+            this.expanded_ids.push(row.id)
+            if (!this.expanded_variations[row.id]) {
+                this.$http.get(`/items/${row.id}/variations`).then(response => {
+                    this.$set(this.expanded_variations, row.id, response.data.data || [])
+                })
+            }
         },
         stripHtml(html) {
             if (!html) return html
@@ -1060,6 +1237,54 @@ export default {
             this.recordId = recordId;
             this.showDialog = true;
         },
+        clickDetail(row) {
+            this.detailRecordId = row.id;
+            this.detailInitialRow = { ...row };
+            this.showDetailDrawer = true;
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false;
+            this.clickCreate(recordId);
+        },
+        handleRowCommand(command) {
+            if (!command || !command.action) {
+                return;
+            }
+
+            const { action, id, row } = command;
+
+            switch (action) {
+                case 'detail':
+                    this.clickDetail(row);
+                    break;
+                case 'edit':
+                    this.clickCreate(id);
+                    break;
+                case 'duplicate':
+                    this.duplicate(id);
+                    break;
+                case 'hiddenSearch':
+                    this.clickHiddenSearch(id);
+                    break;
+                case 'showSearch':
+                    this.clickShowSearch(id);
+                    break;
+                case 'disable':
+                    this.clickDisable(id);
+                    break;
+                case 'enable':
+                    this.clickEnable(id);
+                    break;
+                case 'delete':
+                    this.clickDelete(id);
+                    break;
+                case 'printBarcode':
+                    this.clickPrintBarcode(row);
+                    break;
+                default:
+                    break;
+            }
+        },
         clickImport() {
             this.showImportDialog = true;
         },
@@ -1087,10 +1312,62 @@ export default {
         clickImportUpdatePrice() {
             this.showImporUpdatePrice = true;
         },
+        clickImportVariations() {
+            this.showImportVariationsDialog = true;
+        },
         clickDelete(id) {
             this.destroy(`/${this.resource}/${id}`).then(() =>
                 this.$eventHub.$emit("reloadData")
             );
+        },
+        changeActive(row) {
+            const newValue = row.active;
+            const previousValue = !newValue;
+            const entityLabel = this.type === 'ZZ' ? 'servicio' : 'producto';
+
+            const applyChange = () => {
+                const url = newValue
+                    ? `/${this.resource}/enable/${row.id}`
+                    : `/${this.resource}/disable/${row.id}`;
+
+                this.$http
+                    .get(url)
+                    .then(response => {
+                        if (response.data.success) {
+                            this.$message.success(response.data.message);
+                            if (this.selectedMeta[row.id]) {
+                                this.$set(this.selectedMeta[row.id], 'active', newValue);
+                            }
+                            return;
+                        }
+
+                        row.active = previousValue;
+                        this.$message.error(response.data.message || 'No se pudo actualizar el estado.');
+                    })
+                    .catch(() => {
+                        row.active = previousValue;
+                        this.$message.error('No se pudo actualizar el estado.');
+                    });
+            };
+
+            if (!newValue) {
+                this.$confirm(
+                    `¿Desea inhabilitar este ${entityLabel}?`,
+                    'Inhabilitar',
+                    {
+                        confirmButtonText: 'Inhabilitar',
+                        cancelButtonText: 'Cancelar',
+                        type: 'warning'
+                    }
+                )
+                    .then(() => applyChange())
+                    .catch(() => {
+                        row.active = previousValue;
+                    });
+                return;
+            }
+
+            applyChange();
         },
         clickDisable(id) {
             this.disable(`/${this.resource}/disable/${id}`).then(() =>
@@ -1168,7 +1445,7 @@ export default {
         getItems() {
             this.$http.get(`/${this.resource}/item/tables`).then(response => {
                 let data = response.data;
-                
+
                 this.price_labels = data.price_labels;
 
                 if (this.config.show_extra_info_to_item) {

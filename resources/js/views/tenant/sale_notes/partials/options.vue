@@ -21,9 +21,6 @@
                         <el-tab-pane label="Ticket 58mm" name="third" v-if="ShowTicket58">
                             <iframe :src="`${form.print_ticket_58}?cache_bust=${Date.now()}`" type="application/pdf" width="100%" height="400px"/>
                         </el-tab-pane>
-                        <el-tab-pane label="Ticket 50mm" name="fifth" v-if="ShowTicket50">
-                            <iframe :src="`${form.print_ticket_50}?cache_bust=${Date.now()}`" type="application/pdf" width="100%" height="400px"/>
-                        </el-tab-pane>
                         <el-tab-pane label="A5" name="second" v-if="!isNrus">
                             <iframe :src="`${form.print_a5}?cache_bust=${Date.now()}`" type="application/pdf" width="100%" height="400px"/>
                         </el-tab-pane>
@@ -37,9 +34,6 @@
                         </el-tab-pane>
                         <el-tab-pane label="Ticket 58mm" name="third" v-if="ShowTicket58">
                             <iframe :src="form.print_ticket_58" type="application/pdf" width="100%" height="400px"/>
-                        </el-tab-pane>
-                        <el-tab-pane label="Ticket 50mm" name="fifth" v-if="ShowTicket50">
-                            <iframe :src="form.print_ticket_50" type="application/pdf" width="100%" height="400px"/>
                         </el-tab-pane>
                         <el-tab-pane label="A5" name="second">
                             <iframe :src="form.print_a5" type="application/pdf" width="100%" height="400px"/>
@@ -63,11 +57,6 @@
                         <i class="far fa-file-pdf"></i>
                         <br>
                         <span>PDF TICKET 58mm</span>
-                    </a>
-                    <a :href="`https://docs.google.com/viewer?url=${form.print_ticket_50}?format=pdf`" class="btn mx-3 btn-primary btn-lg" target="_BLANK">
-                        <i class="far fa-file-pdf"></i>
-                        <br>
-                        <span>PDF TICKET 50mm</span>
                     </a>
                     <a :href="`https://docs.google.com/viewer?url=${form.print_ticket}?format=pdf`" class="btn mx-3 btn-primary btn-lg" target="_BLANK">
                         <i class="far fa-file-pdf"></i>
@@ -200,11 +189,6 @@ export default {
             const value = this.config && this.config.show_ticket_80 !== undefined && this.config.show_ticket_80 !== null ? this.config.show_ticket_80 : false;
             console.log('ShowTicket80:', value);
             return value;
-        },
-        ShowTicket50() {
-            const value = this.config && this.config.show_ticket_50 !== undefined && this.config.show_ticket_50 !== null ? this.config.show_ticket_50 : false;
-            console.log('ShowTicket50:', value);
-            return value;
         }
     },
     methods: {
@@ -227,7 +211,7 @@ export default {
         create() {
             // En NRUS no hay A4/A5; seleccionar la primera pestaña de ticket disponible
             if (this.isNrus) {
-                this.activeName = this.ShowTicket80 ? 'fourth' : (this.ShowTicket58 ? 'third' : (this.ShowTicket50 ? 'fifth' : 'first'));
+                this.activeName = this.ShowTicket80 ? 'fourth' : (this.ShowTicket58 ? 'third' : 'first');
             }
             this.$http.get(`/${this.resource}/record/${this.recordId}`)
                 .then(response => {

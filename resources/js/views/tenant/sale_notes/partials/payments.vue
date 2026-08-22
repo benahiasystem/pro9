@@ -76,7 +76,7 @@
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.reference}">
-                                            <el-input v-model="row.reference"></el-input>
+                                            <el-input v-model="row.reference" @focus="$event.target.select()"></el-input>
                                             <small class="form-control-feedback" v-if="row.errors.reference" v-text="row.errors.reference[0]"></small>
                                         </div>
                                     </td>
@@ -101,7 +101,7 @@
                                     </td>
                                     <td>
                                         <div class="form-group mb-0" :class="{'has-danger': row.errors.payment}">
-                                            <el-input v-model="row.payment"></el-input>
+                                            <el-input v-model="row.payment" @focus="$event.target.select()"></el-input>
                                             <small class="form-control-feedback" v-if="row.errors.payment" v-text="row.errors.payment[0]"></small>
                                         </div>
                                     </td>
@@ -175,6 +175,9 @@
     export default {
         props: ['showDialog', 'documentId','external','configuration'],
         mixins: [deletable],
+        components: {
+            DocumentOptions
+        },
         data() {
             return {
                 title: null,
@@ -354,7 +357,9 @@
                         }
                     })
                     .finally(() => {
-                        this.records[index].loading = false;
+                        if (this.records[index]) {
+                            this.records[index].loading = false;
+                        }
                     })
             },
             // filterDocumentType(row){
@@ -384,7 +389,7 @@
                 )
             },
             clickPrint(external_id) {
-                 window.open(`/finances/unpaid/print/${external_id}/sale`, '_blank');
+                 window.open(`/sale-notes/print/${external_id}/a4`, '_blank');
             },
             clickOptions() {
                 this.showDialogOptions = true

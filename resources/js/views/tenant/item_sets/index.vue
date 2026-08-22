@@ -91,7 +91,17 @@
                         <!-- <td>{{ index }}</td> -->
                         <td class="text-end">{{ row.internal_id }}</td>
                         <td>{{ row.unit_type_id }}</td>
-                        <td>{{ row.description }}</td>
+                        <td>
+                            <span
+                                class="customer-link"
+                                role="button"
+                                tabindex="0"
+                                @click="clickDetail(row)"
+                                @keyup.enter.prevent="clickDetail(row)"
+                            >
+                                {{ row.description }}
+                            </span>
+                        </td>
                         <td v-if="columns.description.visible">{{ row.name }}</td>
                         <td v-if="columns.model.visible">{{ row.model }}</td>
                         <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
@@ -106,6 +116,14 @@
                         <td class="text-end">{{ row.sale_unit_price }}</td>
                         <td class="text-start">{{ row.has_igv_description }}</td>
                         <td class="text-end">
+                            <button
+                                type="button"
+                                class="btn btn-xs btn-secondary btn-shad me-1"
+                                title="Ver detalle"
+                                @click.prevent="clickDetail(row)"
+                            >
+                                <i class="fa fa-search"></i>
+                            </button>
                             <template v-if="typeUser === 'admin'">
                                 <button type="button" class="btn btn-xs btn-primary btn-shad me-1" title="Historial"
                                         @click.prevent="clickHistory(row.id)">
@@ -163,9 +181,34 @@
                 :recordId="historyRecordId">
             </items-history>
 
+            <item-set-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                :typeUser="typeUser"
+                @edit="openEditFromDrawer"
+            ></item-set-detail-drawer>
+
         </div>
     </div>
 </template>
+<style scoped>
+.item-set-name-link {
+    color: inherit;
+    cursor: pointer;
+    font-weight: inherit;
+    text-decoration: underline;
+}
+
+.item-set-name-link:hover,
+.item-set-name-link:focus {
+    color: inherit;
+    font-weight: inherit;
+    text-decoration: underline;
+    outline: none;
+}
+</style>
 <script>
 
 import ItemsForm from './form.vue'
@@ -175,6 +218,7 @@ import DataTable from '../../../components/DataTable.vue'
 import {deletable} from '../../../mixins/deletable'
 import ItemsImportSetIndividual from './partials/import_set_individual.vue'
 import ItemsHistory from "@viewsModuleItem/items/history.vue";
+import ItemSetDetailDrawer from './partials/detail-drawer.vue'
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 export default {
@@ -190,6 +234,7 @@ export default {
         WarehousesDetail,
         ItemsImportSetIndividual,
         ItemsHistory,
+        ItemSetDetailDrawer,
     },
     computed: {
         ...mapState([
@@ -208,6 +253,9 @@ export default {
             showWarehousesDetail: false,
             showDialogHistory: false,
             historyRecordId: null,
+            showDetailDrawer: false,
+            detailRecordId: null,
+            detailInitialRow: null,
             resource: 'item-sets',
             recordId: null,
             warehousesDetail: [],
@@ -306,6 +354,15 @@ export default {
         clickCreate(recordId = null) {
             this.recordId = recordId
             this.showDialog = true
+        },
+        clickDetail(row) {
+            this.detailRecordId = row.id
+            this.detailInitialRow = { ...row }
+            this.showDetailDrawer = true
+        },
+        openEditFromDrawer(recordId) {
+            this.showDetailDrawer = false
+            this.clickCreate(recordId)
         },
         clickHistory(recordId) {
             this.historyRecordId = recordId

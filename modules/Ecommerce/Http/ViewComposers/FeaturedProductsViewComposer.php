@@ -17,7 +17,7 @@ class FeaturedProductsViewComposer
 
         $exchange_rate_sale = $this->getExchangeRateSale();
 
-        $view->items = Item::where([['apply_store', 1], ['internal_id','!=', null]])->get()->transform(function($row, $key) use($exchange_rate_sale){
+        $view->items = Item::where([['apply_store', 1], ['internal_id','!=', null]])->whereDoesntHave('variations')->get()->transform(function($row, $key) use($exchange_rate_sale){
 
             // ########## INICIO CAMBIO AFECTACIÓN IVA
             $sale_unit_price = ($row->has_igv)
@@ -57,12 +57,17 @@ class FeaturedProductsViewComposer
         });
     }
 
-    private function getExchangeRateSale(){
+    private function getExchangeRateSale()
+    {
+        try {
+            $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
 
-        $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
-
-        return (array_key_exists('sale', $exchange_rate)) ? $exchange_rate['sale'] : 1;
-
+            return (is_array($exchange_rate) && array_key_exists('sale', $exchange_rate) && $exchange_rate['sale'])
+                ? $exchange_rate['sale']
+                : 1;
+        } catch (\Throwable $e) {
+            return 1;
+        }
     }
 
 }

@@ -1,4 +1,3 @@
-<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog   :title="titleDialog" :visible="showDialog" :close-on-click-modal="false" @close="close" @open="create" append-to-body top="7vh">
         <form autocomplete="off" @submit.prevent="submit">
@@ -39,7 +38,7 @@
                                                 <div class="short-div col-md-6">
                                                     <div class="form-group" :class="{'has-danger': errors.description}">
                                                         <label class="control-label">Nombre<span class="text-danger">*</span></label>
-                                                        <el-input v-model="form.description" dusk="description"></el-input>
+                                                        <el-input v-model="form.description" dusk="description" @focus="$event.target.select()"></el-input>
                                                         <small class="form-control-feedback" v-if="errors.description" v-text="errors.description[0]"></small>
                                                     </div>
                                                 </div>
@@ -47,7 +46,7 @@
                                                 <div class="short-div col-md-6">
                                                     <div class="form-group" :class="{'has-danger': errors.second_name}">
                                                         <label class="control-label">Nombre secundario</label>
-                                                        <el-input v-model="form.second_name" dusk="second_name"></el-input>
+                                                        <el-input v-model="form.second_name" dusk="second_name" @focus="$event.target.select()"></el-input>
                                                         <small class="form-control-feedback" v-if="errors.second_name" v-text="errors.second_name[0]"></small>
                                                     </div>
                                                 </div>
@@ -64,7 +63,7 @@
                                                 <div class="short-div col-md-8">
                                                     <div class="form-group" :class="{'has-danger': errors.name}">
                                                         <label class="control-label">Descripción</label>
-                                                        <el-input v-model="form.name" dusk="name"></el-input>
+                                                        <el-input v-model="form.name" dusk="name" @focus="$event.target.select()"></el-input>
                                                         <small class="form-control-feedback" v-if="errors.name" v-text="errors.name[0]"></small>
                                                     </div>
                                                 </div>
@@ -73,7 +72,7 @@
                                                 <div class="short-div col-md-4">
                                                     <div class="form-group" :class="{'has-danger': errors.unit_type_id}">
                                                         <label class="control-label">Unidad</label>
-                                                        <el-select v-model="form.unit_type_id" dusk="unit_type_id">
+                                                        <el-select v-model="form.unit_type_id" dusk="unit_type_id" @focus="$event.target.select()">
                                                             <el-option v-for="option in unit_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                                         </el-select>
                                                         <small class="form-control-feedback" v-if="errors.unit_type_id" v-text="errors.unit_type_id[0]"></small>
@@ -84,7 +83,7 @@
                                                      <div class="form-group" >
                                                         <label class="control-label">Almacén
                                                         </label>
-                                                        <el-input v-model="warehouse.description" readonly></el-input>
+                                                        <el-input v-model="warehouse.description" readonly @focus="$event.target.select()"></el-input>
                                                     </div>
 
                                                 </div>
@@ -96,7 +95,7 @@
                                                                 <i class="fa fa-info-circle"></i>
                                                             </el-tooltip>
                                                         </label>
-                                                        <el-input v-model="form.internal_id" dusk="internal_id"></el-input>
+                                                        <el-input v-model="form.internal_id" dusk="internal_id" @focus="$event.target.select()"></el-input>
                                                         <small class="form-control-feedback" v-if="errors.internal_id" v-text="errors.internal_id[0]"></small>
                                                     </div>
 
@@ -105,14 +104,14 @@
                                                 <div class="short-div col-md-4">
                                                     <div class="form-group" :class="{'has-danger': errors.stock}">
                                                         <label class="control-label">Stock Inicial</label>
-                                                        <el-input v-model="form.stock" ></el-input>
+                                                        <el-input v-model="form.stock" @focus="$event.target.select()"></el-input>
                                                         <small class="form-control-feedback" v-if="errors.stock" v-text="errors.stock[0]"></small>
                                                     </div>
                                                 </div>
                                                 <div class="short-div col-md-4">
                                                      <div class="form-group" :class="{'has-danger': errors.stock_min}">
                                                         <label class="control-label">Stock Mínimo</label>
-                                                        <el-input v-model="form.stock_min"></el-input>
+                                                        <el-input v-model="form.stock_min" @focus="$event.target.select()"></el-input>
                                                         <small class="form-control-feedback" v-if="errors.stock_min" v-text="errors.stock_min[0]"></small>
                                                     </div>
                                                 </div>
@@ -122,6 +121,7 @@
                                                         <label class="control-label">Categoría</label>
                                                         <el-input v-if="form_category.add == true"
                                                                   v-model="form_category.name"
+                                                                  @focus="$event.target.select()"
                                                                   dusk="item_code"
                                                                   style="margin-bottom:1.5%;"></el-input>
 
@@ -180,10 +180,8 @@
 
                                     <div class="col-md-4">
                                         <div class="form-group" :class="{'has-danger': errors.sale_unit_price}">
-                                            <!-- ######## INICIO ETIQUETA FISCAL VENEZUELA ######## -->
                                             <label class="control-label">Precio Unitario (Venta) <small v-if="form.has_igv">(con IVA)</small> <small v-else>(sin IVA)</small><span class="text-danger">*</span></label>
-                                            <!-- ######## FIN ETIQUETA FISCAL VENEZUELA ######## -->
-                                            <el-input v-model="form.sale_unit_price" dusk="sale_unit_price" @input="calculatePercentageOfProfitBySale"></el-input>
+                                            <el-input v-model="form.sale_unit_price" dusk="sale_unit_price" @input="calculatePercentageOfProfitBySale" @focus="$event.target.select()"></el-input>
                                             <small v-if="saleUnitPriceBreakdown" class="text-muted">{{ saleUnitPriceBreakdown }}</small>
                                             <small class="form-control-feedback" v-if="errors.sale_unit_price" v-text="errors.sale_unit_price[0]"></small>
                                         </div>
@@ -200,7 +198,7 @@
                                     <div class="col-md-4">
                                         <div class="form-group" :class="{'has-danger': errors.currency_type_id}">
                                             <label class="control-label">Moneda</label>
-                                            <el-select v-model="form.currency_type_id" dusk="currency_type_id">
+                                            <el-select v-model="form.currency_type_id" dusk="currency_type_id" @focus="$event.target.select()">
                                                 <el-option v-for="option in currency_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="errors.currency_type_id" v-text="errors.currency_type_id[0]"></small>
@@ -214,9 +212,7 @@
                                     </div>
                                     <div class="col-md-4 center-el-checkbox" v-show="show_has_igv && !globalIgvHandling">
                                         <div class="form-group" :class="{'has-danger': errors.has_igv}">
-                                            <!-- ######## INICIO ETIQUETA FISCAL VENEZUELA ######## -->
                                             <el-checkbox v-model="form.has_igv">Incluye IVA</el-checkbox><br>
-                                            <!-- ######## FIN ETIQUETA FISCAL VENEZUELA ######## -->
                                             <small class="form-control-feedback" v-if="errors.has_igv" v-text="errors.has_igv[0]"></small>
                                         </div>
                                     </div>
@@ -236,9 +232,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group" :class="{'has-danger': errors.purchase_unit_price}">
-                                            <!-- ######## INICIO ETIQUETA FISCAL VENEZUELA ######## -->
                                             <label class="control-label">Precio Unitario (Compra) <small v-if="form.has_igv">(con IVA)</small> <small v-else>(sin IVA)</small></label>
-                                            <!-- ######## FIN ETIQUETA FISCAL VENEZUELA ######## -->
                                             <el-input v-model="form.purchase_unit_price" dusk="purchase_unit_price" @input="calculatePercentageOfProfitByPurchase"></el-input>
                                             <small v-if="purchaseUnitPriceBreakdown" class="text-muted">{{ purchaseUnitPriceBreakdown }}</small>
                                             <small class="form-control-feedback" v-if="errors.purchase_unit_price" v-text="errors.purchase_unit_price[0]"></small>
@@ -247,7 +241,7 @@
                                     <div class="col-md-8">
                                         <div class="form-group" :class="{'has-danger': errors.purchase_affectation_igv_type_id}">
                                             <label class="control-label">Tipo de afectación (Compra)</label>
-                                            <el-select v-model="form.purchase_affectation_igv_type_id">
+                                            <el-select v-model="form.purchase_affectation_igv_type_id" @focus="$event.target.select()">
                                                 <el-option v-for="option in affectation_igv_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                                             </el-select>
                                             <small class="form-control-feedback" v-if="errors.purchase_affectation_igv_type_id" v-text="errors.purchase_affectation_igv_type_id[0]"></small>
@@ -256,7 +250,7 @@
                                     <div class="col-md-4">
                                         <div class="form-group" :class="{'has-danger': errors.percentage_of_profit}">
                                             <label class="control-label">Porcentaje de ganancia (%)</label>
-                                            <el-input v-model="form.percentage_of_profit" @input="calculatePercentageOfProfitByPercentage"></el-input>
+                                            <el-input v-model="form.percentage_of_profit" @input="calculatePercentageOfProfitByPercentage" @focus="$event.target.select()"></el-input>
                                             <small class="form-control-feedback" v-if="errors.percentage_of_profit" v-text="errors.percentage_of_profit[0]"></small>
                                         </div>
                                     </div>
@@ -304,9 +298,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
             saleUnitPriceBreakdown() {
                 const price = parseFloat(this.form.sale_unit_price)
                 if (!price || price <= 0) return null
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                const IGV_RATE = 0.16
-                // ######### FIN CAMBIO AFECTACIÓN IVA
+                const IGV_RATE = 0.18
                 let base, igv, total
                 if (this.form.has_igv) {
                     total = price
@@ -317,16 +309,12 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     igv = price * IGV_RATE
                     total = price + igv
                 }
-                // ######## INICIO ETIQUETA FISCAL VENEZUELA ########
                 return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = Bs. ${total.toFixed(2)}`
-                // ######## FIN ETIQUETA FISCAL VENEZUELA ########
             },
             purchaseUnitPriceBreakdown() {
                 const price = parseFloat(this.form.purchase_unit_price)
                 if (!price || price <= 0) return null
-                // ########## INICIO CAMBIO AFECTACIÓN IVA
-                const IGV_RATE = 0.16
-                // ######### FIN CAMBIO AFECTACIÓN IVA
+                const IGV_RATE = 0.18
                 const hasIgv = (this.form.purchase_has_igv !== undefined && this.form.purchase_has_igv !== null)
                     ? this.form.purchase_has_igv
                     : this.form.has_igv
@@ -340,9 +328,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
                     igv = price * IGV_RATE
                     total = price + igv
                 }
-                // ######## INICIO ETIQUETA FISCAL VENEZUELA ########
                 return `${base.toFixed(2)} + ${igv.toFixed(2)} IVA = Bs. ${total.toFixed(2)}`
-                // ######## FIN ETIQUETA FISCAL VENEZUELA ########
             },
         },
         data() {
@@ -602,5 +588,3 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
         }
     }
 </script>
-
-<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

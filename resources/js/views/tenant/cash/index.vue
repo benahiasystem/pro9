@@ -95,99 +95,14 @@
                         <td>{{ row.expense }}</td> -->
                         <td>{{ row.state_description }}</td>
                         <td class="text-end">
-                            <template v-if="availableReportForSeller">
-                            <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickDownload(row.id)">Reporte</button> -->
-
-                            <div class="btn-group flex-wrap">
-                                <el-dropdown trigger="click">
-                                    <button
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-primary dropdown-toggle me-1"
-                                        aria-expanded="false"
-                                    >
-                                        Reporte <span class="caret"></span>
-                                    </button>
-                                    <el-dropdown-menu slot="dropdown">
-                                        <el-dropdown-item @click.native.prevent="clickDownloadReport(row.id, 'a4')">PDF A4</el-dropdown-item>
-                                        <el-dropdown-item @click.native.prevent="clickDownloadReport(row.id, 'ticket')">PDF Ticket</el-dropdown-item>
-                                        <el-dropdown-item @click.native.prevent="clickDownloadReport(row.id, 'ticket', '58')">PDF Ticket 58</el-dropdown-item>
-                                        <el-dropdown-item @click.native.prevent="clickDownloadReport(row.id, 'ticket', '80', 1)">PDF Ticket Resumen</el-dropdown-item>
-                                        <el-dropdown-item @click.native.prevent="clickDownloadReport(row.id, 'simple_a4')">Simple A4</el-dropdown-item>
-                                        <el-dropdown-item @click.native.prevent="clickDownloadReport(row.id, 'excel')">Excel</el-dropdown-item>
-                                        <el-dropdown-item @click.native.prevent="clickReportSummaryDailyOperations(row.id)">Resumen de Operaciones Diarias</el-dropdown-item>
-                                        <el-tooltip
-                                            class="item"
-                                            content="Reporte general de caja asociado a los pagos al contado con destino caja"
-                                            effect="dark"
-                                            placement="right-end"
-                                        >
-                                            <el-dropdown-item @click.native.prevent="clickReportCashWithPayments(row.id)">Reporte general caja V2</el-dropdown-item>
-                                        </el-tooltip>
-                                    </el-dropdown-menu>
-                                </el-dropdown>
-                            </div>
-
-                            <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-primary" @click.prevent="clickDownloadProducts(row.id)">Reporte Productos</button> -->
-
-                            <div class="btn-group flex-wrap">
-                                <el-dropdown trigger="click">
-                                    <button
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-primary dropdown-toggle me-1"
-                                        aria-expanded="false"
-                                    >
-                                        Reporte Efectivo <span class="caret"></span>
-                                    </button>
-                                    <el-dropdown-menu slot="dropdown">
-                                        <el-tooltip
-                                            class="item"
-                                            content="Ingresos en efectivo con destino caja"
-                                            effect="dark"
-                                            placement="right-end"
-                                        >
-                                            <el-dropdown-item @click.native.prevent="clickCashPaymentReportExcel(row.id)">Excel</el-dropdown-item>
-                                        </el-tooltip>
-                                        <el-dropdown-item @click.native.prevent="clickDownloadReportIncomeEgress(row.id)">Ingresos y egresos</el-dropdown-item>
-                                        <el-tooltip
-                                            class="item"
-                                            content="Ingresos en efectivo con destino caja - Disponible para facturas, boletas y notas de venta"
-                                            effect="dark"
-                                            placement="right-end"
-                                        >
-                                            <el-dropdown-item @click.native.prevent="clickReportPaymentsAssociatedCash(row.id)">Pagos asociados a caja</el-dropdown-item>
-                                        </el-tooltip>
-                                    </el-dropdown-menu>
-                                </el-dropdown>
-                            </div>
-
-                            <div class="btn-group flex-wrap">
-                                <el-dropdown trigger="click">
-                                    <button
-                                        type="button"
-                                        class="btn waves-effect waves-light btn-xs btn-primary dropdown-toggle me-1"
-                                        aria-expanded="false"
-                                    >
-                                        Reporte Productos
-                                        <span class="caret"></span>
-                                    </button>
-                                    <el-dropdown-menu slot="dropdown">
-                                        <el-dropdown-item @click.native.prevent="clickDownloadProducts(row.id, 'pdf')">Punto de venta - PDF</el-dropdown-item>
-                                        <el-dropdown-item @click.native.prevent="clickDownloadProducts(row.id, 'excel')">Punto de venta - Excel</el-dropdown-item>
-                                        <el-dropdown-item @click.native.prevent="clickDownloadProducts(row.id, 'pdf', true)">Venta rápida - PDF</el-dropdown-item>
-                                    </el-dropdown-menu>
-                                </el-dropdown>
-                            </div>
-
                             <button
+                                v-if="availableReportForSeller"
                                 type="button"
-                                class="btn waves-effect waves-light btn-xs btn-success me-1"
-                                @click.prevent="
-                                    clickDownloadIncomeSummary(row.id)
-                                "
+                                class="btn waves-effect waves-light btn-xs btn-primary me-1"
+                                @click.prevent="clickReports(row)"
                             >
-                                R. Ingreso
+                                Reportes
                             </button>
-                            </template>
 
                             <template v-if="row.state">
                                 <button
@@ -237,6 +152,12 @@
             :showDialog.sync="showDialogOptions"
             :recordId="recordId"
         ></cash-options>
+
+        <cash-reports
+            :showDialog.sync="showDialogReports"
+            :recordId="recordId"
+            :cashLabel="cashLabel"
+        ></cash-reports>
     </div>
 </template>
 <style>
@@ -257,15 +178,18 @@ import DataTable from "../../../components/DataTable.vue";
 import { deletable } from "../../../mixins/deletable";
 import CashForm from "./form.vue";
 import CashOptions from "./partials/options.vue";
+import CashReports from "./partials/reports.vue";
 
 export default {
     mixins: [deletable],
-    components: { DataTable, CashForm, CashOptions },
+    components: { DataTable, CashForm, CashOptions, CashReports },
     props: ["typeUser", "configuration"],
     data() {
         return {
             showDialog: false,
             showDialogOptions: false,
+            showDialogReports: false,
+            cashLabel: null,
             open_cash: true,
             resource: "cash",
             recordId: null,
@@ -344,38 +268,14 @@ export default {
                 ? parsedDate.format("DD-MM-YYYY h:mmA")
                 : null;
         },
+        clickReports(row) {
+            this.recordId = row.id;
+            this.cashLabel = `${row.user} · Apertura ${this.formatDate(row.opening)}`;
+            this.showDialogReports = true;
+        },
         clickOptions(recordId) {
             this.showDialogOptions = true;
             this.recordId = recordId;
-        },
-        clickDownloadReport(id, template, mm = 80, summary = 0) {
-            if (template == "ticket") {
-                window.open(
-                    `/${
-                        this.resource
-                    }/report-${template}/${id}/${mm}/${summary}`,
-                    "_blank"
-                );
-            } else if (template == "simple_a4") {
-                window.open(
-                    `/${this.resource}/simple/report-a4/${id}/`,
-                    "_blank"
-                );
-            } else {
-                window.open(
-                    `/${this.resource}/report-${template}/${id}`,
-                    "_blank"
-                );
-            }
-        },
-        clickDownload(id) {
-            window.open(`/${this.resource}/report/${id}`, "_blank");
-        },
-        clickDownloadIncomeSummary(id) {
-            window.open(
-                `/${this.resource}/report/income-summary/${id}`,
-                "_blank"
-            );
         },
         clickCreate(recordId = null) {
             this.recordId = recordId;
@@ -445,59 +345,6 @@ export default {
         clickDownloadGeneral() {
             window.open(`/${this.resource}/report`, "_blank");
         },
-        clickDownloadProducts(id, type, is_garage = false) {
-            if (type == "excel") {
-                window.open(
-                    `/${this.resource}/report/products-excel/${id}`,
-                    "_blank"
-                );
-                return;
-            }
-
-            window.open(
-                `/${this.resource}/report/products/${id}/${is_garage}`,
-                "_blank"
-            );
-            // window.open(`/${this.resource}/report/products/${id}`, '_blank');
-        },
-        clickDownloadReportCash(id, type) {
-            if (type == "excel") {
-                window.open(
-                    `/${this.resource}/report/cash-excel/${id}`,
-                    "_blank"
-                );
-                return;
-            }
-
-            window.open(`/${this.resource}/report/products/${id}`, "_blank");
-        },
-        clickDownloadReportIncomeEgress(id) {
-            window.open(
-                `/${this.resource}/report-cash-income-egress/${id}`,
-                "_blank"
-            );
-        },
-        clickReportSummaryDailyOperations(id) {
-            window.open(
-                `/cash-reports/summary-daily-operations/${id}`,
-                "_blank"
-            );
-        },
-        clickReportPaymentsAssociatedCash(id) {
-            window.open(
-                `/cash-reports/payments-associated-cash/${id}`,
-                "_blank"
-            );
-        },
-        clickReportCashWithPayments(id) {
-            window.open(`/cash-reports/general-with-payments/${id}`, "_blank");
-        },
-        clickCashPaymentReportExcel(id) {
-            window.open(
-                `/cash-reports/cash-payment-report-excel/${id}`,
-                "_blank"
-            );
-        }
     }
 };
 </script>

@@ -32,8 +32,6 @@
                 </el-option>
                 <el-option v-if="ShowTicket58" value="ticket_58" label="58MM">
                 </el-option>
-                <el-option v-if="ShowTicket50" value="ticket_50" label="50MM">
-                </el-option>
                 <el-option value="a5" label="A5"> </el-option>
               </el-select>
             </div>
@@ -92,19 +90,6 @@
           this.config.show_ticket_80 !== null
         ) {
           return this.config.show_ticket_80;
-        }
-        return false;
-      },
-      ShowTicket50: function () {
-        if (this.config === undefined) return false;
-        if (this.config == null) return false;
-        if (this.config.show_ticket_50 === undefined) return false;
-        if (this.config.show_ticket_50 == null) return false;
-        if (
-          this.config.show_ticket_50 !== undefined &&
-          this.config.show_ticket_50 !== null
-        ) {
-          return this.config.show_ticket_50;
         }
         return false;
       },

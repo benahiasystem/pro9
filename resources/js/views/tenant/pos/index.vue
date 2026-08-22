@@ -1,4 +1,3 @@
-<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="pos container-fluid p-0">
         <span class="module-title-marker" data-page-title="Punto de Venta"></span>
@@ -331,6 +330,9 @@
                                             class="measuring-unit text-end"
                                             style="width: 45%;"
                                             >
+                                            <el-tag v-if="item.variations_count > 0" size="mini" class="me-1">
+                                                {{ item.variations_count }} var.
+                                            </el-tag>
                                             <el-tag type="primary" size="mini">
                                                 {{ item.unit_type_id }}
                                             </el-tag>
@@ -390,6 +392,7 @@
                                             v-model="item.edit_sale_unit_price"
                                             class="mt-1 mb-2"
                                             size="mini"
+                                            @focus="$event.target.select()"
                                         >
                                         </el-input>
                                         <div class="btn-edit-price-container d-flex">
@@ -751,12 +754,11 @@
                     </div>
                 </div>
             </div>
-            <!-- ########### INICIO CAMBIO POS VENEZUELA -->
             <div
                 class="col-lg-4 col-md-6 bg-white m-0 p-0 d-flex flex-column pos-checkout-column"
                 style="height: calc(100vh - 110px)"
             >
-                <div class="flex-grow-1 pos-cart-items" style="overflow-y: auto; min-height: 0">
+                <div class="h-60" style="overflow-y: auto">
                     <div class="row py-1 m-0 p-0">
                         <div class="col-12">
                             <table
@@ -822,6 +824,7 @@
                                                                 :style="{ width: Math.min(120, Math.max(70, String(item.total == null ? '' : item.total).length * 9 + 24)) + 'px' }"
                                                                 @blur="changeRowTotal(index)"
                                                                 :readonly="!edit_unit_price && !item.item.calculate_quantity"
+                                                                @focus="$event.target.select()"
                                                             ></el-input>
                                                         </span>
                                                     </template>
@@ -837,11 +840,7 @@
                         </div>
                     </div>
                 </div>
-                <div
-                    class="bg-light border-top-dashed d-flex flex-column pos-checkout-summary"
-                    style="flex: 0 0 44%; min-height: 0"
-                >
-                    <div class="flex-grow-1 pos-checkout-details" style="overflow-y: auto; min-height: 0">
+                <div class="h-40 bg-light border-top-dashed flex-grow-1 pos-checkout-details" style="overflow-y: auto">
                     <div class="row py-3 border-bottom m-0 p-0">
                         <div class="col-10">
                             <el-select
@@ -954,13 +953,11 @@
                         </div>
 
                     </div>
-                    </div>
 
-                    <div class="m-2 flex-shrink-0">
-                        <button
-                            type="button"
-                            data-testid="pos-open-payment"
+                    <div class="m-2 ">
+                        <div
                             class="btn py-3 col-12"
+                            data-testid="pos-open-payment"
                             @click="clickPayment"
                             v-bind:class="[
                                 form.total > 0
@@ -974,11 +971,10 @@
                                 {{ form.total.toFixed(2) }}</b
                             >
                             <i class="fas fa-arrow-right ms-2"></i>
-                        </button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <!-- ########### FIN CAMBIO POS VENEZUELA -->
 
             <person-form
                 :showDialog.sync="showDialogNewPerson"
@@ -1035,8 +1031,16 @@
             :warehouses="warehousesDetail"
             :unit_type="unittypeDetail"
             :item_unit_types="[]"
+            :variations="variationsDetail"
         >
         </warehouses-detail>
+
+        <variations-modal
+            :showDialog.sync="showDialogVariations"
+            :parent="selectedVariationParent"
+            @select="selectVariationFromModal"
+        >
+        </variations-modal>
 
         <item-unit-types
             :showDialog.sync="showDialogItemUnitTypes"
@@ -1236,6 +1240,7 @@ import WarehousesDetail from "../items/partials/warehouses.vue";
 import queryString from "query-string";
 import TableItems from "./partials/table.vue";
 import ItemUnitTypes from "./partials/item_unit_types.vue";
+import VariationsModal from "./partials/variations_modal.vue";
 import { mapState, mapActions } from "vuex/dist/vuex.mjs";
 
 export default {
@@ -1255,6 +1260,7 @@ export default {
         PersonForm,
         WarehousesDetail,
         ItemUnitTypes,
+        VariationsModal,
         Keypress,
         TableItems
     },
@@ -1272,6 +1278,9 @@ export default {
             is_print: true,
             warehousesDetail: [],
             unittypeDetail: [],
+            variationsDetail: [],
+            showDialogVariations: false,
+            selectedVariationParent: null,
             input_person: {},
             showDialogHistoryPurchases: false,
             showDialogHistorySales: false,
@@ -1653,8 +1662,21 @@ export default {
                     : 1,
                 input_item: this.input_item,
                 cat: this.category_selected,
-                limit: this.limit
+                limit: this.limit,
+                group_variations: 1
             });
+        },
+        async selectVariationFromModal(variation) {
+            try {
+                const response = await this.$http.get(`/${this.resource}/item/${variation.id}`);
+                const row = (response.data.data || [])[0];
+                if (!row) {
+                    return this.$message.error("No se pudo cargar la variación seleccionada");
+                }
+                await this.clickAddItem(row, null);
+            } catch (error) {
+                this.$message.error("No se pudo cargar la variación seleccionada");
+            }
         },
         getColor(i) {
             return this.colors[i % this.colors.length];
@@ -1772,6 +1794,7 @@ export default {
         clickWarehouseDetail(item) {
             this.unittypeDetail = item.unit_type;
             this.warehousesDetail = item.warehouses;
+            this.variationsDetail = item.variations || [];
             this.showWarehousesDetail = true;
         },
         clickHistoryPurchases(item_id) {
@@ -1935,9 +1958,7 @@ export default {
                 }
                 this.form.retention = {
                     base: base,
-                    // ########## INICIO CAMBIO IGV A IVA
                     code: "62", //Código de Retención del IVA
-                    // ######### FIN CAMBIO IGV A IVA
                     amount: amount,
                     percentage: percentage,
                     currency_type_id: this.form.currency_type_id,
@@ -2238,6 +2259,13 @@ export default {
             }
         },
         async clickAddItem(item, index, input = false) {
+            // El padre con variaciones no es vendible: se elige una variación en el modal
+            if (item.variations_count > 0) {
+                this.selectedVariationParent = item;
+                this.showDialogVariations = true;
+                return;
+            }
+
             //Validar precio mínimo
 
             if (parseFloat(item.sale_unit_price) < 0.1) {
@@ -2732,7 +2760,7 @@ export default {
                 this.loading = true;
                 let parameters = `input_item=${this.input_item}&cat=${
                     this.category_selected
-                }`;
+                }&group_variations=1`;
 
                 await this.$http
                     .get(`/${this.resource}/search_items_cat?${parameters}`)
@@ -3180,4 +3208,3 @@ export default {
   text-overflow: ellipsis;
 }
 </style>
-<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

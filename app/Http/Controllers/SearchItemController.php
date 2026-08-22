@@ -142,7 +142,7 @@
             $search_item_by_barcode_presentation = $request->has('search_item_by_barcode_presentation') && (bool)$request->search_item_by_barcode_presentation;
 
             // $item = Item:: whereIsActive();
-            $item = Item::query()->with('item_unit_types.prices');
+            $item = Item::query()->with('item_unit_types.prices')->withCount('variations');
             $ItemToSearchBySeries = Item:: whereIsActive();
 
             if ($service == false) {
@@ -218,6 +218,15 @@
 
                     } else {
                         self::setFilter($item, $request);
+                        // Las variaciones no aparecen como resultado raíz (se anidan bajo su padre),
+                        // salvo que el texto sea exactamente su código interno o barcode.
+                        $item->where(function ($query) use ($input) {
+                            $query->whereNull('parent_item_id');
+                            if (!empty($input)) {
+                                $query->orWhere('internal_id', $input)
+                                    ->orWhere('barcode', $input);
+                            }
+                        });
                     }
 
                     $item->whereNotHiddenSearch();
@@ -265,25 +274,37 @@
 
                 if($search_factory_code_items) $whereItem[] = ['factory_code', 'like', '%' . $input . '%'];
 
-                foreach ($whereItem as $index => $wItem) {
-                    if ($index < 1) {
-                        $item->Where([$wItem]);
-                    } else {
-                        $item->orWhere([$wItem]);
+                // Padres cuyas variaciones coinciden con la búsqueda. Se resuelven en una consulta
+                // previa (índice de parent_item_id, solo filas de variaciones); un exists correlacionado
+                // dentro del grupo de or es inviable en tablas de items grandes.
+                $variation_parent_ids = Item::whereNotNull('parent_item_id')
+                    ->where(function ($query) use ($input) {
+                        $query->where('description', 'like', '%' . str_replace(' ', '%', $input) . '%')
+                            ->orWhere('internal_id', 'like', '%' . $input . '%')
+                            ->orWhere('barcode', $input);
+                    })
+                    ->distinct()
+                    ->pluck('parent_item_id');
+
+                // Agrupadas para que los or no anulen los filtros previos (servicio, activo, variaciones)
+                $item->where(function ($query) use ($whereItem, $input, $variation_parent_ids) {
+
+                    foreach ($whereItem as $index => $wItem) {
+                        if ($index < 1) {
+                            $query->Where([$wItem]);
+                        } else {
+                            $query->orWhere([$wItem]);
+                        }
                     }
-                }
 
-                // if (!empty($whereExtra)) {
-                //     $item
-                //         ->orWhereHas('brand', function ($query) use ($whereExtra) {
-                //             $query->where($whereExtra);
-                //         })
-                //         ->orWhereHas('category', function ($query) use ($whereExtra) {
-                //             $query->where($whereExtra);
-                //         });
-                // }
+                    $query->OrWhereJsonContains('attributes', ['value' => $input]);
 
-                $item->OrWhereJsonContains('attributes', ['value' => $input]);
+                    // Buscar el código/descripción de una variación devuelve a su padre (se expande en el dropdown)
+                    if ($variation_parent_ids->isNotEmpty()) {
+                        $query->orWhereIn('id', $variation_parent_ids->all());
+                    }
+                });
+
                 //  Limita los resultados de busqueda, inicial 250, puede modificarse en el .env con NUMBER_SEARCH_ITEMS
                 $item->take(\Config('extra.number_items_in_search'));
 

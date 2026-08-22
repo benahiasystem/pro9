@@ -3,7 +3,8 @@
         :visible="showDialog"
         @open="create"
         @opened="opened"
-        width="60%"
+        width="70%"
+        top="4vh"
         :close-on-click-modal="false"
         :close-on-press-escape="false"
         :show-close="false"
@@ -55,10 +56,10 @@
                             <embed
                                 v-if="config !== null && config.show_ticket_80"
                                 id="nemo"
+                                class="pos-ticket-embed"
                                 :src="form.print_ticket"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                         <el-tab-pane
@@ -68,39 +69,26 @@
                         >
                             <embed
                                 v-if="config.show_ticket_58"
+                                class="pos-ticket-embed"
                                 :src="form.print_ticket_58"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
-                            />
-                        </el-tab-pane>
-                        <el-tab-pane
-                            label="Ticket 50mm"
-                            name="third"
-                            v-if="config.show_ticket_50"
-                        >
-                            <embed
-                                v-if="config.show_ticket_50"
-                                :src="form.print_ticket_50"
-                                type="application/pdf"
-                                width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                         <el-tab-pane label="A4" name="quarter" v-if="!isNrus">
                             <embed
+                                class="pos-ticket-embed"
                                 :src="form.print_a4"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                         <el-tab-pane label="A5" name="fifth" v-if="!isNrus">
                             <embed
+                                class="pos-ticket-embed"
                                 :src="form.print_a5"
                                 type="application/pdf"
                                 width="100%"
-                                height="450px"
                             />
                         </el-tab-pane>
                     </el-tabs>
@@ -143,19 +131,6 @@
                             </button>
                             <p>Ticket 58</p>
                         </div>
-                        <div
-                            v-if="config.show_ticket_50"
-                            class="col text-center font-weight-bold mt-3"
-                        >
-                            <button
-                                class="btn btn-lg btn-info waves-effect waves-light"
-                                type="button"
-                                @click="clickPrint(form.print_ticket_50)"
-                            >
-                                <i class="fa fa-receipt"></i>
-                            </button>
-                            <p>Ticket 50</p>
-                        </div>
                         <div v-if="!isNrus" class="col text-center font-weight-bold mt-3">
                             <button
                                 class="btn btn-lg btn-info waves-effect waves-light"
@@ -173,6 +148,7 @@
                         <el-input
                             v-model="form.customer_email"
                             ref="ref_customer_email"
+                            @focus="$event.target.select()"
                             @keyup.native="keyupCustomerEmail"
                         >
                             <el-button
@@ -195,7 +171,7 @@
                             <span>+58</span>
                             <!-- ########### FIN CAMBIO TELEFONÍA VENEZUELA -->
                         </div>
-                        <el-input v-model="form.customer_telephone">
+                        <el-input v-model="form.customer_telephone" @focus="$event.target.select()">
                             <template slot="prepend"
                                 >+58</template
                             >
@@ -223,9 +199,7 @@
                             :wsData="form.pdf_a4_data"
                         />
                     </template>
-
-                    <div class="col-md-6 mt-4"></div>
-                    <div class="col-md-6 mt-4">
+                    <div class="col-12 mt-4 d-flex justify-content-end">
                         <el-button
                             type="primary"
                             class="float-right"
@@ -258,6 +232,11 @@
 <style>
 .code-number-container {
     display: none;
+}
+.pos-ticket-embed {
+    display: block;
+    height: calc(92vh - 330px);
+    min-height: 420px;
 }
 </style>
 <script>
@@ -358,9 +337,6 @@ export default {
                 case "second":
                     format = "ticket_58";
                     break;
-                case "third":
-                    format = "ticket_50";
-                    break;
                 case "quarter":
                     format = "a4";
                     break;
@@ -414,7 +390,6 @@ export default {
                 print_a4: null,
                 print_a5: null,
                 print_ticket: null,
-                print_ticket_50: null,
                 print_ticket_58: null,
                 external_id: null,
                 number: null,
@@ -485,24 +460,12 @@ export default {
         },
         changeActiveName() {
             this.loadConfiguration();
-            this.activeName =
-                this.config !== null && this.config.show_ticket_80
-                    ? "first"
-                    : "quarter";
-            if (
-                (!this.config.show_ticket_80 && this.config.show_ticket_50) ||
-                (!this.config.show_ticket_80 && !this.config.show_ticket_50)
-            ) {
-                this.activeName =
-                    this.config !== null && this.config.show_ticket_58
-                        ? "second"
-                        : "third";
-            }
-            if (!this.config.show_ticket_58 && !this.config.show_ticket_80) {
-                this.activeName =
-                    this.config !== null && this.config.show_ticket_50
-                        ? "third"
-                        : "quarter";
+            if (this.config !== null && this.config.show_ticket_80) {
+                this.activeName = "first";
+            } else if (this.config !== null && this.config.show_ticket_58) {
+                this.activeName = "second";
+            } else {
+                this.activeName = "quarter";
             }
         }
         ,

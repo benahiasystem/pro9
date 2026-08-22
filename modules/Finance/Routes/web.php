@@ -55,7 +55,7 @@ if($hostname) {
                     Route::get('/unpaidall', 'UnpaidController@unpaidall')->name('unpaidall');
                     Route::get('/report-payment-method-days', 'UnpaidController@reportPaymentMethodDays');
                     Route::get('/pdf', 'UnpaidController@pdf');
-                    Route::get('/print/{document_id}/{type}/{format}', 'UnpaidController@toPrint');
+                    Route::get('/print/{document_id}/{type}/{format?}', 'UnpaidController@toPrint');
                     
                     Route::get('/customer-expired-days/{customer_id}', 'UnpaidController@customerExpiredDays');
                 });

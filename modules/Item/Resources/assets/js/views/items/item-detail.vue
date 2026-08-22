@@ -18,9 +18,7 @@
                                         class="">
                                         <div :class="{'has-danger': errors.has_igv}"
                                             class="form-group">
-                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
                                             <el-checkbox v-model="form.has_igv">Incluye IVA
-                                            <!-- ######### FIN CAMBIO IGV A IVA -->
                                             </el-checkbox>
                                             <br>
                                             <small v-if="errors.has_igv"
@@ -786,6 +784,16 @@
                                                     Marca
                                                 </label>
 
+                                                <a v-if="form_brand.add == false"
+                                                   href="#"
+                                                   @click.prevent="form_brand.add = true">[ + Nueva]</a>
+                                                <a v-if="form_brand.add == true"
+                                                   href="#"
+                                                   @click.prevent="saveBrand">[ Guardar]</a>
+                                                <a v-if="form_brand.add == true"
+                                                   href="#"
+                                                   @click.prevent="cancelBrand">[ Cancelar]</a>
+
                                                 <el-input v-if="form_brand.add == true"
                                                         v-model="form_brand.name"
                                                         dusk="item_code"
@@ -894,9 +902,7 @@
                                     class="col-md-4 center-el-checkbox pt-2">
                                     <div :class="{'has-danger': errors.purchase_has_igv}"
                                         class="form-group">
-                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
                                         <el-checkbox v-model="form.purchase_has_igv">Incluye IVA</el-checkbox>
-                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <br>
                                         <small v-if="errors.purchase_has_igv"
                                             class="form-control-feedback"
@@ -1096,9 +1102,7 @@
                                     class="col-md-4 center-el-checkbox pt-2">
                                     <div :class="{'has-danger': errors.purchase_has_igv}"
                                         class="form-group">
-                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
                                         <el-checkbox v-model="form.purchase_has_igv">Incluye IVA</el-checkbox>
-                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                         <br>
                                         <small v-if="errors.purchase_has_igv"
                                             class="form-control-feedback"
@@ -1827,6 +1831,7 @@ this.activeName =  'first'
                     if (response.data.success) {
                         this.$message.success(response.data.message)
                         this.brands.push(response.data.data)
+                        this.form.brand_id = response.data.data.id
                         this.form_brand.name = null
 
                     } else {
@@ -1838,6 +1843,10 @@ this.activeName =  'first'
                 })
 
 
+        },
+        cancelBrand() {
+            this.form_brand.add = false
+            this.form_brand.name = null
         },
         changeAttributeType(index) {
             let attribute_type_id = this.form.attributes[index].attribute_type_id

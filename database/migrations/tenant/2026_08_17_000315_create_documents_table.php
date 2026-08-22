@@ -83,7 +83,7 @@
  * - `filename`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `unique_filename`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `hash`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `qr`: longtext; NULL; COLLATE utf8mb4_unicode_ci — 
+ * - `qr`: longtext; NULL; COLLATE utf8mb4_unicode_ci —
  * - `reference_data`: varchar(500); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `agent_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
  * - `has_xml`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.

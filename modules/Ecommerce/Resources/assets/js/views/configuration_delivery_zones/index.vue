@@ -238,7 +238,7 @@
       layout="total, prev, pager, next" background small></el-pagination>
 
     <div class="form-group bg-danger-light rounded p-3 coverage-config-message mt-3">
-      <label class="control-label mb-0 text-nowrap">Mensaje sin cobertura:</label>
+      <label class="mt-2 mb-0 text-nowrap">Mensaje sin cobertura:</label>
       <div class="input-group">
         <el-input v-model="noCoverageMessage"
           placeholder="Ej: Lo sentimos, por ahora no contamos con delivery en tu zona." style="flex: 1;"></el-input>

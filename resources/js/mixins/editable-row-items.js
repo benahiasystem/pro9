@@ -1,4 +1,3 @@
-// ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
 import { checkPermissionEditPrices } from '@mixins/check-permission-edit-prices'
 
 export const editableRowItems = {
@@ -36,7 +35,7 @@ export const editableRowItems = {
         },
         setRowValuesFreeAffectationIgv(row, total_plastic_bag_taxes)
         {
-            if (row.affectation_igv_type.free)
+            if (row.affectation_igv_type && row.affectation_igv_type.free)
             {
                 row.price_type_id = '02'
                 row.unit_value = 0
@@ -244,4 +243,3 @@ export const editableRowItems = {
     }
 
 }
-// ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

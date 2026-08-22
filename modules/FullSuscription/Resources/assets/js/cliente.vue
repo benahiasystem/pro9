@@ -1,5 +1,4 @@
 <template>
-    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :append-to-body="true"
                :close-on-click-modal="false"
                :title="titleDialog"
@@ -56,30 +55,9 @@
                                      class="form-group">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
 
-                                    <div v-if="api_service_token != false">
-                                        <x-input-service v-model="form.number"
-                                                         :identity_document_type_id="form.identity_document_type_id"
-                                                         @search="searchNumber"></x-input-service>
-                                    </div>
-                                    <div v-else style="display: flex;">
-                                        <el-input v-model="form.number"
-                                                :maxlength="maxLength"
-                                                dusk="number"
-                                                style="flex: 1;">
-                                        </el-input>
-                                        
-                                        <el-button v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'"
-                                                class="sunat-button"
-                                                :loading="loading_search"
-                                                icon="el-icon-search"
-                                                type="primary"
-                                                style="border-radius: 0 4px 4px 0; margin-left: -1px; height: 40px;"
-                                                @click.prevent="searchCustomer">
-                                            <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                            <template>Buscar</template>
-                                            <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                        </el-button>
-                                    </div>
+                                    <x-input-service v-model="form.number"
+                                                     :identity_document_type_id="form.identity_document_type_id"
+                                                     @search="searchNumber"></x-input-service>
 
                                     <small v-if="errors.number"
                                            class="form-control-feedback"
@@ -157,11 +135,11 @@
                                            v-text="errors.country_id[0]"></small>
                                 </div>
                             </div>
-                            <!-- Estado -->
+                            <!-- Departamento -->
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.department_id}"
                                      class="form-group">
-                                    <label class="control-label">Estado</label>
+                                    <label class="control-label">Departamento</label>
                                     <el-select v-model="form.department_id"
                                                dusk="department_id"
                                                filterable
@@ -177,11 +155,11 @@
                                            v-text="errors.department_id[0]"></small>
                                 </div>
                             </div>
-                            <!-- Municipio -->
+                            <!-- Provincia -->
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
-                                    <label class="control-label">Municipio</label>
+                                    <label class="control-label">Provincia</label>
                                     <el-select v-model="form.province_id"
                                                dusk="province_id"
                                                filterable
@@ -197,11 +175,11 @@
                                            v-text="errors.province_id[0]"></small>
                                 </div>
                             </div>
-                            <!-- Parroquia -->
+                            <!-- Distrito -->
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
-                                    <label class="control-label">Parroquia</label>
+                                    <label class="control-label">Distrito</label>
                                     <el-select v-model="form.district_id"
                                                dusk="district_id"
                                                filterable
@@ -660,9 +638,7 @@
     </el-dialog>
 </template>
 
-    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
-// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../mixins/functions'
@@ -799,11 +775,7 @@ export default {
 
             if (this.external && this.input_person) {
                 if (this.form.number.length === 8 || this.form.number.length === 11) {
-                    if (this.api_service_token != false) {
-                        await this.$eventHub.$emit('enableClickSearch')
-                    } else {
-                        this.searchCustomer()
-                    }
+                    await this.$eventHub.$emit('enableClickSearch')
                 }
             }
 
@@ -1090,7 +1062,6 @@ export default {
 
     }
 }
-// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
 
 <style scoped>

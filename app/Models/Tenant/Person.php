@@ -982,6 +982,20 @@ use Illuminate\Support\Facades\DB;
 
         /**
          *
+         * Determina si es el cliente varios por defecto (no se puede eliminar)
+         *
+         * @return bool
+         */
+        public function isVariousClients()
+        {
+            return (string) $this->identity_document_type_id === '0'
+                && (string) $this->number === '99999999'
+                && $this->type === 'customers';
+        }
+
+
+        /**
+         *
          * Obtener puntos acumulados
          *
          * @param Builder $query

@@ -133,7 +133,8 @@ html .card-primary .card-header,
 .card-header.bg-info{
     background: var(--primary-color) !important;
 }
-.support-header {
+.support-header,
+.theme-sidebar-header {
     background: var(--primary-color);
 }
 .btn-custom {
@@ -2052,7 +2053,8 @@ html.dark .db-seg,
 html.dark .db-count {
     background-color: var(--md-input-dark);
 }
-html.dark .db-thumb {
+html.dark .db-thumb,
+html.dark .detail-drawer__inner {
     background-color: var(--md-content-dark);
 }
 html.dark .db-seg button.active {
@@ -2081,6 +2083,16 @@ html.dark .so-action-item,
 html.dark .so-collapse .el-collapse-item__header{
     background: var(--md-input-dark);
     border: 1px solid var(--md-border-dark);
+}
+html.dark .detail-drawer__customer-field:first-child,
+html.dark .detail-drawer__customer-field,
+html.dark .detail-drawer__customer-summary,
+html.dark .detail-drawer__operation-card,
+html.dark .detail-drawer__operation-seller,
+html.dark .detail-drawer__totals-summary-card,
+html.dark .detail-drawer__totals-card,
+html.dark .detail-drawer__totals-row {
+    border-color: var(--md-border-dark);
 }
 @media only screen and (max-width: 991px){
     .d-lg-block{

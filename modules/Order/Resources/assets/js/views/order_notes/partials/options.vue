@@ -124,8 +124,8 @@
                 <div class="form-group">
                     <el-checkbox v-model="document.is_receivable" class="font-weight-bold">¿Es venta por cobrar?</el-checkbox>
                 </div>
-            </div> 
-            
+            </div>
+
             <template v-if="isInvoiceDocument">
                 <div class="col-lg-6">
                     <div :class="{'has-danger': errors.payment_condition_id}" class="form-group">
@@ -143,7 +143,7 @@
             </template>
 
             <br>
-            
+
             <div class="col-lg-12 mt-3">
 
                 <template v-if="isInvoiceDocument">
@@ -244,7 +244,7 @@
                         </table>
                     </template>
 
-                    
+
                     <!-- Contado -->
                     <template  v-if="document.payment_condition_id == '01'">
                         <table>
@@ -463,16 +463,16 @@ export default {
             return ['02', '03'].includes(this.document.payment_condition_id)
         },
     },
-    methods: 
+    methods:
     {
-        clickRemoveFee(index) 
+        clickRemoveFee(index)
         {
             this.document.fee.splice(index, 1)
             this.calculateFee()
         },
-        clickAddFeeNew() 
+        clickAddFeeNew()
         {
-            if (this.credit_payment_method_types.length > 0) 
+            if (this.credit_payment_method_types.length > 0)
             {
                 const first_credit_payment_metod = this.credit_payment_method_types[0]
 
@@ -491,7 +491,7 @@ export default {
                 this.calculateFee()
             }
         },
-        clickAddFee() 
+        clickAddFee()
         {
             this.document.fee.push({
                 id: null,
@@ -502,7 +502,7 @@ export default {
 
             this.calculateFee()
         },
-        calculateFee() 
+        calculateFee()
         {
             let total = this.document.total
             let accumulated = 0
@@ -518,38 +518,38 @@ export default {
                 row.amount = amount;
             })
         },
-        changePaymentCondition() 
+        changePaymentCondition()
         {
             this.document.fee = []
             this.document.payments = []
-            
+
             if (this.document.payment_condition_id === '01')
             {
                 this.clickAddPayment()
             }
 
-            if (this.document.payment_condition_id === '02') 
+            if (this.document.payment_condition_id === '02')
             {
                 this.clickAddFeeNew()
             }
 
-            if (this.document.payment_condition_id === '03') 
+            if (this.document.payment_condition_id === '03')
             {
                 this.clickAddFee()
             }
 
         },
-        changeCreditPaymentMethodType(index) 
+        changeCreditPaymentMethodType(index)
         {
             const payment_method_type = _.find(this.payment_method_types, {id: this.document.fee[index].payment_method_type_id})
 
-            if (payment_method_type.number_days) 
+            if (payment_method_type.number_days)
             {
                 this.document.date_of_due = moment(this.document.date_of_issue).add(payment_method_type.number_days, 'days').format('YYYY-MM-DD')
 
                 const date = moment(this.document.date_of_issue).add(payment_method_type.number_days, 'days').format('YYYY-MM-DD')
 
-                for (let index = 0; index < this.document.fee.length; index++) 
+                for (let index = 0; index < this.document.fee.length; index++)
                 {
                     this.document.fee[index].date = date
                 }
@@ -570,12 +570,12 @@ export default {
             this.document.total_tips = 0
             this.$eventHub.$emit('eventInitTip')
         },
-        clickCancel(index) 
+        clickCancel(index)
         {
             this.document.payments.splice(index, 1);
             this.calculatePayments()
         },
-        clickAddPayment() 
+        clickAddPayment()
         {
             let payment_method_type_id = null
 
@@ -601,7 +601,7 @@ export default {
             this.calculatePayments()
 
         },
-        calculatePayments() 
+        calculatePayments()
         {
             // const total = this.document.total
             const total = this.form.order_note.total
@@ -766,7 +766,7 @@ export default {
                 this.document.prefix = null;
                 this.resource_documents = "documents";
             }
-            
+
             const temp_payment_condition_id = this.document.payment_condition_id
             // Condicion de pago Credito con cuota pasa a credito
             if (this.document.payment_condition_id === '03') this.document.payment_condition_id = '02'
@@ -1000,7 +1000,7 @@ export default {
             // ########## INICIO CAMBIO SUNAT A SENIAT
             /*
             0		Doc.sin.rif
-            1		DNI
+            1		Cédula
             */
             // ######### FIN CAMBIO SUNAT A SENIAT
             let customer = _.find(this.customers, {

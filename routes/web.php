@@ -39,6 +39,7 @@ if ($hostname) {
             Route::get('keep-alive', function () {
                 return response()->noContent(); // 204
             });
+            Route::get('notifications/header', 'Tenant\NotificationController@header');
             // Route::get('catalogs', 'Tenant\CatalogController@index')->name('tenant.catalogs.index');
             Route::get('list-reports', 'Tenant\SettingController@listReports');
             Route::get('list-extras', 'Tenant\SettingController@listExtras');
@@ -74,6 +75,7 @@ if ($hostname) {
             Route::get('orders/record/{order}', 'Tenant\OrderController@record');
             //Route::get('orders/print/{external_id}/{format?}', 'Tenant\OrderController@toPrint');
             Route::post('statusOrder/update', 'Tenant\OrderController@updateStatusOrders');
+            Route::post('orders/tracking-code', 'Tenant\OrderController@updateTrackingCode');
             Route::get('orders/pdf/{id}', 'Tenant\OrderController@pdf');
 
             //warehouse
@@ -688,6 +690,8 @@ if ($hostname) {
             Route::get('quotations/table/{table}', 'Tenant\QuotationController@table');
             Route::post('quotations', 'Tenant\QuotationController@store');
             Route::post('quotations/update', 'Tenant\QuotationController@update');
+            Route::get('quotations/prices/{id}', 'Tenant\QuotationController@pricesRecord');
+            Route::post('quotations/update-prices', 'Tenant\QuotationController@updatePrices');
             Route::get('quotations/record/{quotation}', 'Tenant\QuotationController@record');
             Route::get('quotations/anular/{id}', 'Tenant\QuotationController@anular');
             Route::get('quotations/item/tables', 'Tenant\QuotationController@item_tables');
@@ -777,6 +781,7 @@ if ($hostname) {
             Route::get('pos/status_configuration', 'Tenant\PosController@status_configuration');
             Route::get('pos/validate_stock/{item}/{quantity}', 'Tenant\PosController@validate_stock');
             Route::get('pos/items', 'Tenant\PosController@item');
+            Route::get('pos/item/{id}', 'Tenant\PosController@singleItem')->where('id', '[0-9]+');
             Route::get('pos/search_items_cat', 'Tenant\PosController@search_items_cat');
 
             Route::get('cash', 'Tenant\CashController@index')->name('tenant.cash.index')->middleware('redirect.level');
@@ -790,7 +795,6 @@ if ($hostname) {
             Route::post('cash', 'Tenant\CashController@store');
             Route::post('cash/cash_document', 'Tenant\CashController@cash_document');
             Route::get('cash/close/{cash}', 'Tenant\CashController@close');
-            Route::get('cash/report/{cash}', 'Tenant\CashController@report');
             Route::get('cash/report', 'Tenant\CashController@report_general');
 
             Route::get('cash/record/{cash}', 'Tenant\CashController@record');
@@ -801,7 +805,6 @@ if ($hostname) {
 
             Route::get('cash/report/products/{cash}/{is_garage?}', 'Tenant\CashController@report_products');
             Route::get('cash/report/products-excel/{cash}', 'Tenant\CashController@report_products_excel');
-            Route::get('cash/report/cash-excel/{cash}', 'Tenant\CashController@report_cash_excel');
 
             //POS VENTA RAPIDA
             Route::get('pos/fast', 'Tenant\PosController@fast')->name('tenant.pos.fast');
@@ -1066,6 +1069,15 @@ if ($hostname) {
             Route::get('plans/record/{plan}', 'System\PlanController@record');
             Route::post('plans', 'System\PlanController@store');
             Route::delete('plans/{plan}', 'System\PlanController@destroy');
+
+            //Giro de negocio
+            Route::get('business-turns', 'System\BusinessTurnController@index')->name('system.business-turns.index');
+            Route::get('business-turns/records', 'System\BusinessTurnController@records');
+            Route::get('business-turns/tables', 'System\BusinessTurnController@tables');
+            Route::get('business-turns/record/{business_turn}', 'System\BusinessTurnController@record');
+            Route::post('business-turns', 'System\BusinessTurnController@store');
+            Route::post('business-turns/change-active', 'System\BusinessTurnController@changeActive');
+            Route::delete('business-turns/{business_turn}', 'System\BusinessTurnController@destroy');
 
             //Pagos
             Route::get('payment-orders', 'System\PaymentOrderController@index')->name('system.payments.index');

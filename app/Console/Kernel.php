@@ -35,6 +35,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('tenancy:run suscription:check-expired')->dailyAt('08:30')->timezone('America/Caracas')->appendOutputTo(storage_path('logs/suscription_expired.log'));
         // $schedule->command('tenancy:run suscription:send-reminders')->everyMinute()->appendOutputTo(storage_path('logs/suscription_reminders.log'));
         $schedule->command('tenancy:run suscription:send-reminders') ->everyMinute() ->sendOutputTo(storage_path('logs/suscription_reminders.log'));
+        $schedule->command('tenancy:run ecommerce:expire-discount-campaigns')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->sendOutputTo(storage_path('logs/discount_campaigns_expired.log'));
         // Limpieza de órdenes de impresión ya impresas (status=2) — pdf_b64 es pesado
         $schedule->command('tenancy:run print-orders:prune')->dailyAt('04:00')->timezone('America/Caracas')->appendOutputTo(storage_path('logs/print_orders_prune.log'));
         // Marketplace: minimización de retención (Ley 29733) — purga contactos e IPs viejas

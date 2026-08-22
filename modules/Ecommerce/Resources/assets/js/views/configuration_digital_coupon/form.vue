@@ -1,4 +1,3 @@
-<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <el-dialog
         :title="titleDialog"
@@ -10,34 +9,35 @@
     >
         <form autocomplete="off" @submit.prevent="submit">
             <div class="form-body">
-
-                <!-- Código del cupón -->
-                <div class="form-group" :class="{'has-danger': errors.code}">
-                    <label class="control-label">CÓDIGO DEL CUPÓN</label>
-                    <div class="input-group">
-                        <el-input
-                            v-model="form.code"
-                            placeholder="Ej: VERANO20"
-                            style="flex: 1;"
-                            :maxlength="20"
-                        ></el-input>
-                        <el-button
-                            type="warning"
-                            plain
-                            class="ms-2"
-                            style="white-space: nowrap;"
-                            @click.prevent="generateCode"
-                        >
-                            <i class="fa fa-bolt me-1"></i> Generar
-                        </el-button>
+                <div class="d-flex">
+                    <!-- Código del cupón -->
+                    <div class="form-group w-100" :class="{'has-danger': errors.code}">
+                        <label class="control-label">Código de cupón</label>
+                        <div class="input-group">
+                            <el-input
+                                v-model="form.code"
+                                placeholder="Ej: VERANO20"
+                                style="flex: 1;"
+                                :maxlength="20"
+                            ></el-input>
+                        </div>
+                        <small class="form-control-feedback" v-if="errors.code" v-text="errors.code[0]"></small>
                     </div>
-                    <small class="form-control-feedback" v-if="errors.code" v-text="errors.code[0]"></small>
+                    <el-button
+                        type="warning"
+                        plain
+                        class="ms-2 mt-auto"
+                        style="white-space: nowrap;"
+                        @click.prevent="generateCode"
+                    >
+                        <i class="fa fa-bolt me-1"></i> Generar
+                    </el-button>
                 </div>
 
                 <div class="row py-0 align-items-center">
                   <!-- Tipo y valor del descuento -->
-                  <div class="form-group col-9 px-0" :class="{'has-danger': errors.amount || errors.type}">
-                      <label class="control-label">TIPO Y VALOR DEL DESCUENTO</label>
+                  <div class="form-group col-4 px-0" :class="{'has-danger': errors.amount || errors.type}">
+                      <label class="control-label">Tipo y valor del descuento</label>
                       <div class="d-flex align-items-center gap-2">
                           <el-input
                               v-model.number="form.amount"
@@ -45,19 +45,19 @@
                               min="0"
                               step="0.01"
                               :placeholder="form.type === 'percentage' ? '% 0' : 'Bs. 0'"
-                              style="width: 130px;"
                           ></el-input>
-                          <el-radio-group v-model="form.type" size="small">
-                              <el-radio-button label="percentage">% Porcentaje</el-radio-button>
-                              <el-radio-button label="fixed">Bs. Fijo</el-radio-button>
-                          </el-radio-group>
                       </div>
                       <small class="form-control-feedback" v-if="errors.amount" v-text="errors.amount[0]"></small>
                       <small class="form-control-feedback" v-if="errors.type" v-text="errors.type[0]"></small>
                   </div>
 
                   <!-- Envío gratis -->
-                  <div class="form-group mb-0 col-3">
+                  <div class="form-group mb-0 col-8 d-flex flex-column mt-2 gap-1">
+                      <el-radio-group v-model="form.type" size="small">
+                          <el-radio-button label="percentage">% Porcentaje</el-radio-button>
+                          <el-radio-button label="fixed">Bs. Fijo</el-radio-button>
+                      </el-radio-group>
+
                       <el-checkbox v-model="form.free_shipping">
                           <span class="fw-semibold">Envío gratis</span>
                       </el-checkbox>
@@ -75,7 +75,7 @@
                     <div v-if="form.has_purchase_limits" class="row mt-3">
                         <div class="col-6">
                             <div class="form-group mb-0" :class="{'has-danger': errors.min_amount}">
-                                <label class="control-label">MONTO MÍNIMO</label>
+                                <label class="control-label">Monto mínimo</label>
                                 <el-input
                                     v-model.number="form.min_amount"
                                     type="number"
@@ -88,7 +88,7 @@
                         </div>
                         <div class="col-6">
                             <div class="form-group mb-0" :class="{'has-danger': errors.max_amount}">
-                                <label class="control-label">MONTO MÁXIMO</label>
+                                <label class="control-label">Monto máximo</label>
                                 <el-input
                                     v-model.number="form.max_amount"
                                     type="number"
@@ -113,7 +113,7 @@
                     <div v-if="form.has_usage_limits" class="row mt-3">
                         <div class="col-4">
                             <div class="form-group mb-0" :class="{'has-danger': errors.max_total_uses}">
-                                <label class="control-label">USOS TOTALES</label>
+                                <label class="control-label">Usos totales</label>
                                 <el-input
                                     v-model.number="form.max_total_uses"
                                     type="number"
@@ -125,7 +125,7 @@
                         </div>
                         <div class="col-4">
                             <div class="form-group mb-0" :class="{'has-danger': errors.max_uses_per_customer}">
-                                <label class="control-label">USOS POR CLIENTE</label>
+                                <label class="control-label">Usos por cliente</label>
                                 <el-input
                                     v-model.number="form.max_uses_per_customer"
                                     type="number"
@@ -137,13 +137,13 @@
                         </div>
                         <div class="col-4">
                             <div class="form-group mb-0" :class="{'has-danger': errors.expires_at}">
-                                <label class="control-label">FECHA DE VENCIMIENTO</label>
+                                <label class="control-label">Fecha de vencimiento</label>
                                 <el-date-picker
                                     v-model="form.expires_at"
-                                    type="date"
-                                    format="dd/MM/yyyy"
-                                    value-format="yyyy-MM-dd"
-                                    placeholder="dd/mm/aaaa"
+                                    type="datetime"
+                                    format="dd/MM/yyyy HH:mm"
+                                    value-format="yyyy-MM-dd HH:mm:ss"
+                                    placeholder="dd/mm/aaaa hh:mm"
                                     style="width: 100%;"
                                 ></el-date-picker>
                                 <small class="form-control-feedback" v-if="errors.expires_at" v-text="errors.expires_at[0]"></small>
@@ -163,7 +163,7 @@
                     :loading="loading"
                     class="ms-1"
                 >
-                    <i class="fa fa-check me-1"></i> Guardar Cupón
+                    Guardar Cupón
                 </el-button>
             </div>
         </form>
@@ -268,5 +268,3 @@ export default {
     },
 };
 </script>
-
-<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

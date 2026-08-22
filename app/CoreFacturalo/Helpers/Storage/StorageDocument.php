@@ -111,7 +111,11 @@ trait StorageDocument
                 break;
             case 'income':
                 $extension = 'pdf';
+                break;
             case 'expense':
+                $extension = 'pdf';
+                break;
+            case 'unpaid':
                 $extension = 'pdf';
                 break;
         }

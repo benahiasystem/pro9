@@ -19,7 +19,7 @@
             :visible.sync="dialogVisible"
             :close-on-click-modal="false"
             :append-to-body="true"
-            width="480px"
+            width="640px"
             custom-class="checkout-mp-dialog"
             @opened="mountBrick"
             @closed="unmountBrick"
@@ -303,7 +303,15 @@ export default {
     white-space: nowrap;
 }
 .checkout-mp-brick {
-    min-height: 200px;
+    min-height: 280px;
+    width: 100%;
+}
+
+@media (max-width: 576px) {
+    .checkout-mp-dialog {
+        width: 94vw !important;
+        margin: 0 auto;
+    }
 }
 </style>
 

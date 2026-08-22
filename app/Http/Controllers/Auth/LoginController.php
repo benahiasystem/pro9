@@ -8,6 +8,8 @@ use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Skin;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class LoginController extends Controller
 {
@@ -46,6 +48,15 @@ class LoginController extends Controller
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
+    }
+
+    protected function authenticated(Request $request, $user)
+    {
+        if (app()->environment('local') && $request->headers->has('x-forwarded-host')) {
+            $request->session()->forget('url.intended');
+
+            return new RedirectResponse('/dashboard');
+        }
     }
 
     /**

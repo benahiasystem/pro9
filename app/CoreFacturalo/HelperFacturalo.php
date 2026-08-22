@@ -101,7 +101,7 @@ class HelperFacturalo
      */
     public function isAllowedAddDispatchTicket($format_pdf, $type, $document)
     {
-        return in_array($format_pdf, ['ticket', 'ticket_58', 'ticket_50']) && in_array($type, ['invoice', 'sale-note']) && (bool) $document->dispatch_ticket_pdf;
+        return in_array($format_pdf, ['ticket', 'ticket_58']) && in_array($type, ['invoice', 'sale-note']) && (bool) $document->dispatch_ticket_pdf;
     }
 
     /**
@@ -116,7 +116,7 @@ class HelperFacturalo
     public function isAllowedAddDispatchTicketIndividual($format_pdf, $type)
     {
         $config = Configuration::first();
-        return in_array($format_pdf, ['ticket', 'ticket_58', 'ticket_50']) && in_array($type, ['invoice', 'sale-note']) && (bool) $config->enabled_dispatch_ticket_pdf_individual;
+        return in_array($format_pdf, ['ticket', 'ticket_58']) && in_array($type, ['invoice', 'sale-note']) && (bool) $config->enabled_dispatch_ticket_pdf_individual;
     }
 
 

@@ -19,6 +19,19 @@ class DiscountCouponUsage extends ModelTenant
         'order_id',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (DiscountCouponUsage $usage) {
+            DiscountCoupon::whereKey($usage->discount_coupon_id)->increment('uses_count');
+        });
+
+        static::deleted(function (DiscountCouponUsage $usage) {
+            DiscountCoupon::whereKey($usage->discount_coupon_id)
+                ->where('uses_count', '>', 0)
+                ->decrement('uses_count');
+        });
+    }
+
     public function coupon()
     {
         return $this->belongsTo(DiscountCoupon::class, 'discount_coupon_id');

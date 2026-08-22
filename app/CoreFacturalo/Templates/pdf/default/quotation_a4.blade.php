@@ -8,7 +8,7 @@
     $accounts = \App\Models\Tenant\BankAccount::all();
     //$accounts = (new TemplatePdf)->getBankAccountsForPdf($document->establishment_id);
 
-    $tittle = $document->prefix.'-'.str_pad($document->id, 8, '0', STR_PAD_LEFT);
+    $tittle = $document->pdf_title;
 
     $logo = "storage/uploads/logos/{$company->logo}";
     if($establishment->logo) {
@@ -379,7 +379,7 @@
                     @endforeach
                 @endif
 
-                @if($row->item->is_set == 1)
+                @if(($row->item->is_set ?? 0) == 1)
                     <br>
                     @inject('itemSet', 'App\Services\ItemSetService')
                     @foreach ($itemSet->getItemsSet($row->item_id) as $item)

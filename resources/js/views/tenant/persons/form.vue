@@ -1,12 +1,11 @@
 <template>
-    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :close-on-click-modal="false"
                :title="titleDialog"
                :visible="showDialog"
                :append-to-body="true"
                @open="create"
                @opened="opened"
-               :close-on-press-escape="false" 
+               :close-on-press-escape="false"
                @close="handleCloseDialog">
         <form autocomplete="off"
               @submit.prevent="submit">
@@ -42,26 +41,22 @@
                                            v-text="errors.identity_document_type_id[0]"></small>
                                 </div>
                             </div>
-                            <!-- ########### INICIO CAMBIO CLIENTES VENEZUELA -->
+                            <!-- ######## INICIO CLIENTES VENEZUELA ######## -->
                             <div v-if="type !== 'customers' || isForeignDocument" class="col-md-2">
-                                <div :class="{'has-danger': errors.nationality_id}"
+                                <div :class="{'has-danger': errors.country_id}"
                                      class="form-group">
-                                    <label class="control-label">
-                                        Nacionalidad
-                                        <span v-if="type === 'customers'" class="text-danger">*</span>
-                                    </label>
+                                    <label class="control-label">Nacionalidad</label>
                                     <el-select v-model="form.nationality_id"
-                                               dusk="nationality_id"
-                                               clearable
+                                               dusk="country_id"
                                                filterable>
-                                        <el-option v-for="option in nationalityOptions"
+                                        <el-option v-for="option in countries"
                                                    :key="option.id"
                                                    :label="option.description"
                                                    :value="option.id"></el-option>
                                     </el-select>
-                                    <small v-if="errors.nationality_id"
+                                    <small v-if="errors.country_id"
                                            class="form-control-feedback"
-                                           v-text="errors.nationality_id[0]"></small>
+                                           v-text="errors.country_id[0]"></small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -69,39 +64,19 @@
                                      class="form-group">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
 
-                                    <div v-if="api_service_token != false && form.country_id !== 'VE'">
-                                        <x-input-service ref="input_service"
-                                                         v-model="form.number"
-                                                         :identity_document_type_id="form.identity_document_type_id"
-                                                         @search="searchNumber"></x-input-service>
-                                    </div>
-                                    <div v-else class="sunat-row">
-                                        <el-input class="sunat-input" v-model="form.number"
-                                                  :maxlength="maxLength"
-                                                  dusk="number"></el-input>
-
-                                        <el-button v-if="form.country_id !== 'VE' && (form.identity_document_type_id === '6' || form.identity_document_type_id === '1')"
-                                                   class="sunat-service-button"
-                                                   :loading="loading_search"
-                                                   icon="el-icon-search"
-                                                   type="primary"
-                                                   @click.prevent="searchCustomer">
-                                            {{ form.identity_document_type_id === '6' ? 'SUNAT' : 'RENIEC' }}
-                                        </el-button>
-                                        <small v-else-if="form.country_id === 'VE'" class="text-muted">
-                                            Validar RIF o cédula con la fuente oficial autorizada.
-                                        </small>
-                                    </div>
+                                    <x-input-service v-model="form.number"
+                                                     :identity_document_type_id="form.identity_document_type_id"
+                                                     @search="searchNumber"></x-input-service>
 
                                     <small v-if="errors.number"
                                            class="form-control-feedback"
                                            v-text="errors.number[0]"></small>
                                 </div>
                             </div>
-                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
+                            <!-- ######## FIN CLIENTES VENEZUELA ######## -->
                         </div>
 
-                        <!-- Establecimientos SUNAT (solo con token ApiPeru y RUC consultado) -->
+                        <!-- Establecimientos SUNAT (solo con token ApiPeru y RIF consultado) -->
                         <div v-if="canQueryEstablishments" class="row mt-2">
                             <div class="col-12 text-end">
                                 <el-button icon="el-icon-office-building"
@@ -200,6 +175,8 @@
                             <span v-if="addressesBadgeCount > 0" class="tab-count-badge">{{ addressesBadgeCount }}</span>
                         </span>
 
+                        <!-- Datos de la direccion principal: ahora se cargan desde addresses[0]. -->
+                        <template v-if="show_main_address_fields">
                         <div class="row mb-3 section-header section-header-first">
                             <div class="col-12">
                                 <h5 class="section-title">Dirección principal</h5>
@@ -217,14 +194,12 @@
                                 <!-- Nacionalidad -->
                             <!-- País -->
 
-                            <!-- ########### INICIO CAMBIO CLIENTES VENEZUELA -->
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.country_id}"
                                      class="form-group">
                                     <label class="control-label">País</label>
                                     <el-select v-model="form.country_id"
-                                               filterable
-                                               :disabled="type === 'customers'">
+                                               filterable>
                                         <el-option v-for="option in countries"
                                                    :key="option.id"
                                                    :label="option.description"
@@ -240,7 +215,7 @@
                                 <div :class="{'has-danger': errors.location_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Estado / Municipio / Parroquia
+                                        Ubigeo
                                         <span v-if="form.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="form.location_id"
@@ -255,20 +230,16 @@
                                     <small v-if="form.country_id === 'VE'" class="text-muted">
                                         Campo obligatorio
                                     </small>
-                                </div>
-                            </div>
-                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
                                     <small v-if="form.country_id !== 'VE'" class="text-muted">
-                                        Estado/Municipio/Parroquia solo disponible para Venezuela
+                                        Ubigeo solo disponible para Perú
                                     </small>
                                 </div>
                             </div>
-                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
-                            <!-- Estado -->
+                            <!-- Departamento -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.department_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Estado</label>-->
+<!--                                    <label class="control-label">Departamento</label>-->
 <!--                                    <el-select v-model="form.department_id"-->
 <!--                                               dusk="department_id"-->
 <!--                                               filterable-->
@@ -284,11 +255,11 @@
 <!--                                           v-text="errors.department_id[0]"></small>-->
 <!--                                </div>-->
 <!--                            </div>-->
-                            <!-- Municipio -->
+                            <!-- Provincia -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.province_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Municipio</label>-->
+<!--                                    <label class="control-label">Provincia</label>-->
 <!--                                    <el-select v-model="form.province_id"-->
 <!--                                               dusk="province_id"-->
 <!--                                               filterable-->
@@ -304,11 +275,11 @@
 <!--                                           v-text="errors.province_id[0]"></small>-->
 <!--                                </div>-->
 <!--                            </div>-->
-                            <!-- Parroquia -->
+                            <!-- Distrito -->
 <!--                            <div class="col-md-3">-->
 <!--                                <div :class="{'has-danger': errors.province_id}"-->
 <!--                                     class="form-group">-->
-<!--                                    <label class="control-label">Parroquia</label>-->
+<!--                                    <label class="control-label">Distrito</label>-->
 <!--                                    <el-select v-model="form.district_id"-->
 <!--                                               dusk="district_id"-->
 <!--                                               filterable-->
@@ -347,10 +318,8 @@
                                 </div>
                             </div>
                         </div>
-                        </div>
 
-                        <div class="subsection-panel">
-                            <div class="row section-subgroup">
+                            <div class="row mt-2">
                                 <div class="col-12 mb-2">
                                     <h6 class="section-subtitle-sm">Detalles de dirección</h6>
                                 </div>
@@ -431,10 +400,11 @@
                             <!-- Correos electronicos alterno -->
                         </div>
                         </div>
+                        </template>
                         <div class="row mt-3 section-header">
                             <div class="col-12">
-                                <h5 class="section-title">Direcciones adicionales</h5>
-                                <p class="section-subtitle">Agregar una o varias direcciones secundarias del cliente/proveedor</p>
+                                <h5 class="section-title">Direcciones</h5>
+                                <p class="section-subtitle">La primera es la dirección principal; puede agregar una o varias secundarias</p>
                             </div>
                         </div>
                         <div class="row mt-1">
@@ -448,26 +418,31 @@
                             </div>
                         </div>
                         <div v-for="(row, index) in form.addresses"
-                             :key="row.id || ('new-address-' + index)"
-                             class="row m-t-10">
-                            <div class="col-md-12">
-                                <label class="control-label">
-                                    Dirección secundaria # {{ index + 1 }}
-                                    <el-button class="btn-default-danger"
-                                               icon="el-icon-minus"
-                                               size="mini"
-                                               @click.prevent="clickRemoveAddress(index)">Eliminar dirección
-                                    </el-button>
-                                </label>
+                             :key="'person-address-' + index"
+                             class="address-card">
+                            <div class="address-card__header">
+                                <span class="address-card__title">
+                                    <template v-if="index === 0">Dirección principal</template>
+                                    <template v-else>Dirección secundaria #{{ index }}</template>
+                                </span>
+                                <el-button v-if="index !== 0"
+                                           class="address-card__remove"
+                                           type="danger"
+                                           plain
+                                           icon="el-icon-delete"
+                                           size="mini"
+                                           @click.prevent="clickRemoveAddress(index)">
+                                    Eliminar dirección
+                                </el-button>
                             </div>
-                            <!-- ########### INICIO CAMBIO CLIENTES VENEZUELA -->
+                            <div class="row">
                             <div class="col-md-4">
                                 <div :class="{'has-danger': errors.country_id}"
                                      class="form-group">
                                     <label class="control-label">País</label>
                                     <el-select v-model="row.country_id"
                                                filterable
-                                               :disabled="type === 'customers'">
+                                               @change="handleCountryChange(row, index)">
                                         <el-option v-for="option in countries"
                                                    :key="option.id"
                                                    :label="option.description"
@@ -482,10 +457,11 @@
                                 <div :class="{'has-danger': errors.location_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Estado / Municipio / Parroquia
+                                        Ubigeo
                                         <span v-if="row.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="row.location_id"
+                                                 :key="`address-ubigeo-${index}-${locations.length}`"
                                                  :clearable="true"
                                                  :options="locations"
                                                  :disabled="row.country_id !== 'VE'"
@@ -497,11 +473,10 @@
                                         Campo obligatorio
                                     </small>
                                     <small v-else class="text-muted">
-                                        Estado/Municipio/Parroquia solo disponible para Venezuela
+                                        Ubigeo solo disponible para Perú
                                     </small>
                                 </div>
                             </div>
-                            <!-- ########### FIN CAMBIO CLIENTES VENEZUELA -->
                             <div class="col-md-6">
                                 <div :class="{'has-danger': errors.address}"
                                      class="form-group">
@@ -559,7 +534,7 @@
                                         <a
                                         href="#"
                                         @click.prevent="showDialogConsignedForm = true">[+ Nuevo]</a></label>
-                                    <el-select class="w-100" 
+                                    <el-select class="w-100"
                                             v-model="row.consigned_id"
                                             filterable
                                             placeholder="Seleccionar consignado">
@@ -572,6 +547,7 @@
                                         class="invalid-feedback"
                                         v-text="errors.consigned_id[0]"></small>
                                 </div>
+                            </div>
                             </div>
                         </div>
                     </el-tab-pane>
@@ -838,9 +814,7 @@
 
 </template>
 
-    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
-// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../mixins/functions'
@@ -868,9 +842,12 @@ export default {
             titleTabDialog: null,
             typeDialog: null,
             resource: 'persons',
-            showDialogConsignedForm: false, 
+            showDialogConsignedForm: false,
             errors: {},
             api_service_token: false,
+            // Los campos de la direccion principal viven en addresses[0]; estos inputs
+            // quedan ocultos y se rellenan por espejo desde esa fila.
+            show_main_address_fields: false,
             form: {
                 optional_email: []
             },
@@ -935,33 +912,16 @@ export default {
             'person',
             'parentPerson',
         ]),
-        // ########### INICIO CAMBIO CLIENTES VENEZUELA
-        maxLength: function () {
-            if (this.form.identity_document_type_id === '6') {
-                return 10
-            }
-            if (this.form.identity_document_type_id === '1') {
-                return 8
-            }
-            return 20
-        },
-        isForeignDocument() {
-            return this.form.identity_document_type_id === '4'
-        },
-        nationalityOptions() {
-            return this.isForeignDocument
-                ? this.countries.filter(country => country.id !== 'VE')
-                : this.countries
-        },
         canQueryEstablishments() {
             return this.api_service_token != false
-                && this.form.country_id !== 'VE'
                 && this.form.identity_document_type_id === '6'
                 && !!this.form.name
                 && !!this.form.number
                 && this.form.number.length === 11
         },
-        // ########### FIN CAMBIO CLIENTES VENEZUELA
+        isForeignDocument() {
+            return this.form.identity_document_type_id === '4'
+        },
         establishmentsNote() {
             const selected = this.establishments.filter(e => e.selected).length
             const principal = this.establishments.find(e => e.codigo === this.principal_establishment_code)
@@ -971,23 +931,31 @@ export default {
         addressesBadgeCount() {
             // Dirección principal (columnas de la persona) + direcciones adicionales.
             // Al guardar, si no hay adicionales la principal se persiste como 1 dirección.
-            const additional = (this.form.addresses || []).length
+            const rows = this.form.addresses || []
             const hasMain = !!(this.form.address
                 && Array.isArray(this.form.location_id)
                 && this.form.location_id.length === 3
                 && this.form.location_id.every(x => x))
-            if (additional === 0) return hasMain ? 1 : 0
-            return additional + (hasMain ? 1 : 0)
+            // Si la principal ya figura dentro de addresses no se vuelve a sumar.
+            const mainAlreadyInRows = rows.some(row => row.main === true)
+            if (rows.length === 0) return hasMain ? 1 : 0
+            return rows.length + (hasMain && !mainAlreadyInRows ? 1 : 0)
         },
     },
     watch: {
         'form.country_id': function(newValue) {
-            // ########### INICIO CAMBIO CLIENTES VENEZUELA
             if (newValue !== 'VE' && this.form.location_id && this.form.location_id.length > 0) {
                 this.form.location_id = [];
             }
-            // ########### FIN CAMBIO CLIENTES VENEZUELA
-        }
+        },
+        // addresses[0] es la direccion principal: cualquier cambio se refleja en las
+        // columnas de la persona, que ahora no tienen inputs visibles.
+        'form.addresses': {
+            deep: true,
+            handler() {
+                this.syncMainAddressToForm()
+            },
+        },
     },
     methods: {
         handleCloseDialog() {
@@ -1040,10 +1008,8 @@ export default {
                 number: '',
                 name: null,
                 trade_name: null,
-                // ########### INICIO CAMBIO CLIENTES VENEZUELA
                 country_id: 'VE',
                 nationality_id: 'VE',
-                // ########### FIN CAMBIO CLIENTES VENEZUELA
                 location_id: [],
                 password: null,
                 password_confirmation: null,
@@ -1072,6 +1038,7 @@ export default {
             }
             this.updateEmail()
             this.resetEstablishments()
+            this.ensureMainAddressRow()
             this.originalForm = JSON.stringify(this.form)
 
         },
@@ -1079,14 +1046,7 @@ export default {
 
             if (this.external && this.input_person) {
                 if (this.form.number.length === 8 || this.form.number.length === 11) {
-                    if (this.api_service_token != false) {
-                        await this.$nextTick()
-                        if (this.$refs.input_service) {
-                            await this.$refs.input_service.clickSearch()
-                        }
-                    } else {
-                        this.searchCustomer()
-                    }
+                    await this.$eventHub.$emit('enableClickSearch')
                 }
             }
 
@@ -1142,13 +1102,191 @@ export default {
                                 phone: null,
                             }
                         }
-                        // this.filterProvinces()
-                        // this.filterDistricts()
+                        this.form.location_id = this.normalizeAddressLocationId(
+                            this.form.location_id,
+                            this.form.department_id,
+                            this.form.province_id,
+                            this.form.district_id
+                        )
+                        this.normalizeFormAddresses()
+                        this.filterProvinces()
+                        this.filterDistricts()
                     }).then(() => {
                     this.updateEmail()
 
                 })
             }
+        },
+        normalizeAddressLocationId(locationId, departmentId, provinceId, districtId) {
+            const filtered = Array.isArray(locationId)
+                ? locationId.filter(value => value !== null && value !== '' && value !== undefined)
+                : []
+
+            if (filtered.length === 3) {
+                return filtered
+            }
+
+            if (departmentId && provinceId && districtId) {
+                return [departmentId, provinceId, districtId]
+            }
+
+            return []
+        },
+        normalizeFormAddresses() {
+            if (!Array.isArray(this.form.addresses)) {
+                this.form.addresses = []
+                this.ensureMainAddressRow()
+                return
+            }
+
+            this.form.addresses = this.form.addresses.map(row => ({
+                ...row,
+                location_id: this.normalizeAddressLocationId(
+                    row.location_id,
+                    row.department_id,
+                    row.province_id,
+                    row.district_id
+                ),
+            }))
+
+            this.ensureMainAddressRow()
+        },
+        buildDefaultAddressRow(main = false) {
+            return {
+                'id': null,
+                'country_id': 'VE',
+                'location_id': [],
+                'address': null,
+                'email': null,
+                'phone': null,
+                'main': main,
+                'establishment_code': main ? (this.form.establishment_code || '0000') : '0000',
+                'has_consigned': false,
+                'consigned_id': null,
+            }
+        },
+        ensureMainAddressRow() {
+            // La direccion principal siempre existe como addresses[0]: es el unico lugar
+            // donde se cargan pais, ubigeo, direccion, telefono y correo de la persona.
+            if (!Array.isArray(this.form.addresses)) this.form.addresses = []
+
+            if (this.form.addresses.length > 0 && this.form.addresses[0].main === true) return
+
+            const existing = this.form.addresses.find(row => row.main === true)
+            if (existing) {
+                this.moveMainAddressFirst(existing)
+                return
+            }
+
+            // En registros anteriores a este flujo los datos viven en las columnas de
+            // la persona: se usan para estrenar la fila.
+            this.form.addresses.unshift({
+                ...this.buildDefaultAddressRow(true),
+                ...this.buildMainAddressPayload(),
+                main: true,
+            })
+        },
+        syncMainAddressToForm() {
+            const row = (this.form.addresses || [])[0]
+            if (!row || row.main !== true) return
+
+            this.form.country_id = row.country_id || 'VE'
+            this.form.location_id = Array.isArray(row.location_id) ? [...row.location_id] : []
+            this.form.address = row.address || null
+            this.form.establishment_code = row.establishment_code || null
+            this.form.telephone = row.phone || null
+            this.form.email = row.email || null
+        },
+        isEmptyAddressRow(row) {
+            if (!row) return true
+            // Una fila ya guardada no se descarta: quitarla del envio la borraria en el backend.
+            if (row.id) return false
+
+            return !this.hasAddressValue(row.address)
+                && !this.hasAddressValue(row.phone)
+                && !this.hasAddressValue(row.email)
+                && !this.hasAddressValue(row.location_id)
+        },
+        hasAddressValue(value) {
+            if (value === null || value === undefined) return false
+            if (Array.isArray(value)) return value.length > 0 && value.every(item => item)
+            if (typeof value === 'string') return value.trim() !== ''
+            return true
+        },
+        onlyFilledValues(source) {
+            // Solo se propagan los campos realmente cargados: los vacios no deben
+            // pisar lo que ya estaba guardado en la fila.
+            const filled = {}
+            Object.keys(source).forEach(key => {
+                if (this.hasAddressValue(source[key])) filled[key] = source[key]
+            })
+            return filled
+        },
+        buildMainAddressPayload(overrides = {}) {
+            return this.onlyFilledValues({
+                address: this.form.address,
+                location_id: this.form.location_id,
+                phone: this.form.telephone,
+                email: this.form.email,
+                country_id: this.form.country_id,
+                establishment_code: this.form.establishment_code,
+                ...this.onlyFilledValues(overrides),
+            })
+        },
+        findMainAddressRow(payload) {
+            // Se busca por la marca main y, si no existe (registros anteriores a este flujo),
+            // por la direccion. No se compara establishment_code: las direcciones cargadas a
+            // mano tambien nacen con '0000' y se estaria pisando una secundaria.
+            const rows = this.form.addresses
+            const normalize = value => (value || '').toString().trim().toLowerCase()
+
+            return rows.find(row => row.main === true)
+                || rows.find(row => normalize(row.address) === normalize(payload.address))
+                || null
+        },
+        upsertMainAddress(overrides = {}) {
+            if (!Array.isArray(this.form.addresses)) this.form.addresses = []
+
+            const payload = this.buildMainAddressPayload(overrides)
+
+            // Sin direccion no hay nada que registrar.
+            if (!this.hasAddressValue(payload.address)) return
+
+            const existing = this.findMainAddressRow(payload)
+
+            if (existing) {
+                Object.keys(payload).forEach(key => this.$set(existing, key, payload[key]))
+                this.$set(existing, 'main', true)
+                this.moveMainAddressFirst(existing)
+                return
+            }
+
+            // Una fila nueva de VE sin ubigeo completo bloquearia el guardado
+            // (misma validacion que corre en submit), asi que no se crea todavia.
+            const country_id = payload.country_id || 'VE'
+            const location_id = payload.location_id || []
+            if (country_id === 'VE' && (location_id.length !== 3 || !location_id.every(item => item))) return
+
+            // La vista rotula addresses[0] como "Direccion principal": va al inicio.
+            this.form.addresses.unshift({
+                'id': null,
+                'country_id': 'VE',
+                'location_id': [],
+                'address': null,
+                'email': null,
+                'phone': null,
+                'main': true,
+                'establishment_code': '0000',
+                'has_consigned': false,
+                'consigned_id': null,
+                ...payload,
+            })
+        },
+        moveMainAddressFirst(row) {
+            const index = this.form.addresses.indexOf(row)
+            if (index <= 0) return
+            this.form.addresses.splice(index, 1)
+            this.form.addresses.unshift(row)
         },
         clickAddAddress() {
             /* this.form.more_address.push({
@@ -1156,20 +1294,7 @@ export default {
                  address: null,
              })*/
 
-            this.form.addresses.push({
-                'id': null,
-                // ########### INICIO CAMBIO CLIENTES VENEZUELA
-                'country_id': 'VE',
-                // ########### FIN CAMBIO CLIENTES VENEZUELA
-                'location_id': [],
-                'address': null,
-                'email': null,
-                'phone': null,
-                'main': false,
-                'establishment_code':'0000',
-                'has_consigned': false,
-                'consigned_id': null,
-            });
+            this.form.addresses.push(this.buildDefaultAddressRow(false));
         },
         validateEmail(email) {
             var re = /\S+@\S+\.\S+/;
@@ -1226,21 +1351,41 @@ export default {
 
         },
         validateDigits() {
-            // ########### INICIO CAMBIO CLIENTES VENEZUELA
+
+            const pattern_number = new RegExp('^[0-9]+$', 'i');
+
             if (this.form.identity_document_type_id === '6') {
-                if (!/^[VEJGP][0-9]{9}$/i.test(this.form.number)) {
+
+                if (this.form.number.length !== 11) {
                     return {
                         success: false,
-                        message: `El RIF debe contener una letra (V, E, J, G o P) y 9 dígitos.`
+                        message: `El campo número debe tener 11 dígitos.`
                     }
                 }
-            }
 
-            if (this.form.identity_document_type_id === '1') {
-                if (!/^[0-9]{6,8}$/.test(this.form.number)) {
+                if (!pattern_number.test(this.form.number)) {
                     return {
                         success: false,
-                        message: `La cédula debe contener entre 6 y 8 dígitos.`
+                        message: `El campo número debe contener solo números`
+                    }
+                }
+
+            }
+
+
+            if (this.form.identity_document_type_id === '1') {
+
+                if (this.form.number.length !== 8) {
+                    return {
+                        success: false,
+                        message: `El campo número debe tener 8 dígitos.`
+                    }
+                }
+
+                if (!pattern_number.test(this.form.number)) {
+                    return {
+                        success: false,
+                        message: `El campo número debe contener solo números`
                     }
                 }
             }
@@ -1263,7 +1408,6 @@ export default {
             return {
                 success: true
             }
-            // ########### FIN CAMBIO CLIENTES VENEZUELA
         },
         async submit() {
 
@@ -1284,8 +1428,11 @@ export default {
             /*if (this.is_dispatch) {
                if (this.form.location_id.length !== 3 || !this.form.address) {
                     return this.$message.error('Falta agregar Ubigeo o dirección');
-               } 
+               }
             }*/
+
+            // La direccion principal se registra tambien dentro de addresses.
+            this.upsertMainAddress()
 
             let hasErrorInAdditionalAddresses = false;
             let addressWithError = null;
@@ -1293,18 +1440,28 @@ export default {
             if (this.form.addresses && this.form.addresses.length > 0) {
                 for (let i = 0; i < this.form.addresses.length; i++) {
                     const address = this.form.addresses[i];
-                    // ########### INICIO CAMBIO CLIENTES VENEZUELA
-                    if (address.country_id === 'VE' && (!address.location_id || address.location_id.length !== 3)) {
+                    // Una fila sin ningun dato no se guarda, asi que tampoco se valida.
+                    if (this.isEmptyAddressRow(address)) continue;
+                    if (
+                        address.country_id === 'VE'
+                        && (
+                            !address.location_id
+                            || address.location_id.length !== 3
+                            || !address.location_id.every(value => value)
+                        )
+                    ) {
                         hasErrorInAdditionalAddresses = true;
-                        addressWithError = i + 1;
+                        addressWithError = i;
                         break;
                     }
-                    // ########### FIN CAMBIO CLIENTES VENEZUELA
                 }
             }
 
             if (hasErrorInAdditionalAddresses) {
-                return this.$message.error(`Falta registrar Estado / Municipio / Parroquia en la Dirección secundaria #${addressWithError}`);
+                const label = addressWithError === 0
+                    ? 'la Dirección principal'
+                    : `la Dirección secundaria #${addressWithError}`;
+                return this.$message.error(`Falta registrar el ubigeo en ${label}`);
             }
 
             // if(this.form.location_id.length===3 && this.form.identity_document_type_id === '6'){
@@ -1313,12 +1470,21 @@ export default {
             //     }
             // }
 
-            // La dirección principal se persiste en person.address; no duplicar en person_addresses.
-            // Las secundarias provienen del panel de establecimientos o del alta manual.
+            // La dirección principal se persiste en person.address y además se registra
+            // como addresses[0] (ver upsertMainAddress). Las secundarias provienen del
+            // panel de establecimientos o del alta manual.
 
             this.loading_submit = true
             this.form.parent_id = parseInt(this.parent);
-            await this.$http.post(`/${this.resource}`, this.form)
+
+            // La fila principal siempre existe en pantalla; si quedo vacia no se envia
+            // para no crear una direccion en blanco.
+            const payload = {
+                ...this.form,
+                addresses: (this.form.addresses || []).filter(row => !this.isEmptyAddressRow(row)),
+            }
+
+            await this.$http.post(`/${this.resource}`, payload)
                 .then(response => {
                     if (response.data.success) {
                         this.$message.success(response.data.message)
@@ -1345,12 +1511,9 @@ export default {
                 })
         },
         changeIdentityDocType() {
-            // ########### INICIO CAMBIO CLIENTES VENEZUELA
-            if (this.type === 'customers') {
-                this.form.country_id = 'VE'
-                this.form.nationality_id = this.isForeignDocument ? null : 'VE'
+            if (!this.isForeignDocument) {
+                this.form.nationality_id = 'VE'
             }
-            // ########### FIN CAMBIO CLIENTES VENEZUELA
             (this.recordId == null) ? this.setDataDefaultCustomer() : null
         },
         setDataDefaultCustomer() {
@@ -1368,9 +1531,6 @@ export default {
             this.$eventHub.$emit('initInputPerson')
             this.$emit('update:showDialog', false)
             this.initForm()
-        },
-        searchCustomer() {
-            this.searchServiceNumberByType()
         },
         searchNumber(data) {
             //cambios apiperu
@@ -1391,6 +1551,9 @@ export default {
 //                this.form.addresses[0].telephone = data.telefono;
             // Mostrar el domicilio fiscal (0000) como primera y única opción del listado
             this.setPrincipalFromRuc(data)
+            // El domicilio fiscal tambien queda dentro de addresses,
+            // con el telefono de la consulta si es que vino.
+            this.upsertMainAddress({phone: data.telefono})
         },
         clickRemoveAddress(index) {
             this.form.addresses.splice(index, 1);
@@ -1407,7 +1570,7 @@ export default {
             return (this.form.addresses || []).some(a => a.id && a.establishment_code === code)
         },
         setPrincipalFromRuc(data) {
-            // Construye el domicilio fiscal (0000) con la data de la consulta RUC
+            // Construye el domicilio fiscal (0000) con la data de la consulta RIF
             // y lo muestra como primera y única opción del listado de establecimientos.
             const location_id = Array.isArray(data.location_id) ? data.location_id : []
             const code = this.form.establishment_code || '0000'
@@ -1445,14 +1608,14 @@ export default {
         },
         async consultEstablishments() {
             if (!this.form.number || this.form.number.length !== 11) {
-                return this.$message.error('Ingresar un RUC válido de 11 dígitos')
+                return this.$message.error('Ingresar un RIF válido de 11 dígitos')
             }
             this.loading_establishments = true
             try {
                 const response = await this.$http.get(`/service/ruc-establecimientos/${this.form.number}`)
                 if (response.data.success) {
                     const anexos = response.data.data || []
-                    // Conservar el domicilio fiscal (0000) que vino de la consulta RUC como primera fila
+                    // Conservar el domicilio fiscal (0000) que vino de la consulta RIF como primera fila
                     const rucPrincipal = this.establishments.find(e => e.is_ruc_principal)
                     const merged = []
                     if (rucPrincipal) merged.push(rucPrincipal)
@@ -1462,7 +1625,7 @@ export default {
                         merged.push(est)
                     })
                     if (merged.length === 0) {
-                        return this.$message.info('No se encontraron establecimientos para este RUC')
+                        return this.$message.info('No se encontraron establecimientos para este RIF')
                     }
                     this.establishments = merged
                     // Principal por defecto: el domicilio fiscal; si no tiene dirección, el primer registro utilizable
@@ -1515,9 +1678,7 @@ export default {
         buildAddressFromEstablishment(est, main) {
             return {
                 id: null,
-                // ########### INICIO CAMBIO CLIENTES VENEZUELA
                 country_id: 'VE',
-                // ########### FIN CAMBIO CLIENTES VENEZUELA
                 location_id: est.location_id,
                 address: est.direccion,
                 email: null,
@@ -1552,6 +1713,12 @@ export default {
                 .map(e => this.buildAddressFromEstablishment(e, false))
 
             this.form.addresses = [...preserved, ...secondary]
+
+            // Se refresca addresses[0] con la principal recien elegida antes de que el
+            // watcher espejo copie la fila hacia las columnas de la persona; de lo
+            // contrario el espejo devolveria el valor anterior.
+            this.ensureMainAddressRow()
+            this.upsertMainAddress()
         },
 
         saveZone() {
@@ -1574,47 +1741,16 @@ export default {
 
 
         },
-        // ########### INICIO CAMBIO CLIENTES VENEZUELA
         handleCountryChange(row, index) {
             if (row.country_id !== 'VE' && row.location_id && row.location_id.length > 0) {
                 this.$set(this.form.addresses[index], 'location_id', []);
             }
         },
-        // ########### FIN CAMBIO CLIENTES VENEZUELA
     }
 }
-// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>
 
 <style scoped>
-.sunat-row {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-}
-
-.sunat-input {
-  flex: 1;
-  width: 100%;
-}
-
-.sunat-service-button {
-  min-width: 95px !important;
-  border-top-left-radius: 0 !important;
-  border-bottom-left-radius: 0 !important;
-  border-top-right-radius: 6px !important;
-  border-bottom-right-radius: 6px !important;
-  margin-left: -1px !important;
-  white-space: nowrap !important;
-}
-
-.sunat-input .el-input__suffix,
-.sunat-input .el-input__append {
-  display: none !important;
-}
-
-
-
 .section-title {
   font-size: 1.05rem;
   font-weight: 700;
@@ -1676,6 +1812,47 @@ export default {
   font-weight: 600;
   color: #1f3a8a;
   font-size: 0.98rem;
+}
+
+/* ---- Tarjetas de direcciones adicionales ---- */
+.address-card {
+  border: 1px solid #dbe9f8;
+  border-radius: 8px;
+  background: #fbfdff;
+  padding: 1rem 1rem 0.35rem;
+  margin-top: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.address-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #e7eff9;
+}
+
+.address-card__title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1f3a8a;
+  line-height: 1.3;
+}
+
+.address-card__remove.el-button--danger.is-plain {
+  color: #c45656;
+  background: #fff5f5;
+  border-color: #f0c0c0;
+}
+
+.address-card__remove.el-button--danger.is-plain:hover,
+.address-card__remove.el-button--danger.is-plain:focus {
+  color: #fff;
+  background: #f56c6c;
+  border-color: #f56c6c;
 }
 
 .section-subtitle-sm {

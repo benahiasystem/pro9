@@ -1,5 +1,4 @@
 <template>
-    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog
         :title="titleDialog"
         :visible="showDialog"
@@ -75,43 +74,13 @@
                                 <label class="control-label">
                                     Número
                                 </label>
-                                <div v-if="api_service_token != false">
-                                    <x-input-service
-                                        v-model="form.number"
-                                        :identity_document_type_id="
-                                            form.identity_document_type_id
-                                        "
-                                        @search="searchNumber"
-                                    ></x-input-service>
-                                </div>
-                                <div v-else>
-                                    <el-input
-                                        v-model="form.number"
-                                        :maxlength="maxLength"
-                                        dusk="number"
-                                    >
-                                        <template
-                                            v-if="
-                                                form.identity_document_type_id ===
-                                                    '6' ||
-                                                    form.identity_document_type_id ===
-                                                        '1'
-                                            "
-                                        >
-                                            <el-button
-                                                slot="append"
-                                                :loading="loading_search"
-                                                icon="el-icon-search"
-                                                type="primary"
-                                                @click.prevent="searchCustomer"
-                                            >
-                                                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                <template>Buscar</template>
-                                                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                            </el-button>
-                                        </template>
-                                    </el-input>
-                                </div>
+                                <x-input-service
+                                    v-model="form.number"
+                                    :identity_document_type_id="
+                                        form.identity_document_type_id
+                                    "
+                                    @search="searchNumber"
+                                ></x-input-service>
 
                                 <small
                                     v-if="errors.number"
@@ -315,9 +284,9 @@
                     </div>
                 </el-tab-pane>
                 <!-- País -->
-                <!-- Estado -->
-                <!-- Municipio -->
-                <!-- Parroquia -->
+                <!-- Departamento -->
+                <!-- Provincia -->
+                <!-- Distrito -->
                 <!-- Direccion -->
                 <!-- Telefono -->
                 <!-- Correo electronico contacto -->
@@ -327,9 +296,9 @@
                              name="second">
                     <span slot="label">Dirección</span>
                     <!-- País -->
-                    <!-- Estado -->
-                    <!-- Municipio -->
-                    <!-- Parroquia -->
+                    <!-- Departamento -->
+                    <!-- Provincia -->
+                    <!-- Distrito -->
                     <!-- Direccion -->
                     <div class="row">
                         <!-- País -->
@@ -359,14 +328,14 @@
                                 ></small>
                             </div>
                         </div>
-                        <!-- Estado -->
+                        <!-- Departamento -->
                         <div class="col-md-3">
                             <div
                                 :class="{ 'has-danger': errors.department_id }"
                                 class="form-group"
                             >
                                 <label class="control-label"
-                                >Estado</label
+                                >Departamento</label
                                 >
                                 <el-select
                                     v-model="form.department_id"
@@ -389,13 +358,13 @@
                                 ></small>
                             </div>
                         </div>
-                        <!-- Municipio -->
+                        <!-- Provincia -->
                         <div class="col-md-3">
                             <div
                                 :class="{ 'has-danger': errors.province_id }"
                                 class="form-group"
                             >
-                                <label class="control-label">Municipio</label>
+                                <label class="control-label">Provincia</label>
                                 <el-select
                                     v-model="form.province_id"
                                     dusk="province_id"
@@ -417,13 +386,13 @@
                                 ></small>
                             </div>
                         </div>
-                        <!-- Parroquia -->
+                        <!-- Distrito -->
                         <div class="col-md-3">
                             <div
                                 :class="{ 'has-danger': errors.province_id }"
                                 class="form-group"
                             >
-                                <label class="control-label">Parroquia</label>
+                                <label class="control-label">Distrito</label>
                                 <el-select
                                     v-model="form.district_id"
                                     dusk="district_id"
@@ -910,7 +879,7 @@
                                 <div :class="{'has-danger': errors.department_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Estado
+                                        Departamento
                                     </label>
                                     <el-select
                                         v-model="form.department_id"
@@ -934,7 +903,7 @@
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Municipio
+                                        Provincia
                                     </label>
                                     <el-select
                                         v-model="form.province_id"
@@ -960,7 +929,7 @@
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Parroquia
+                                        Distrito
                                     </label>
                                     <el-select
                                         v-model="form.district_id"
@@ -1248,9 +1217,7 @@
     </el-dialog>
 </template>
 
-    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
-// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import PersonForm from "./person.vue";
 import {serviceNumber} from "../../../../../../resources/js/mixins/functions";
@@ -1692,5 +1659,4 @@ export default {
         }
     }
 };
-// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

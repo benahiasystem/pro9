@@ -8,7 +8,8 @@
                      class="form-group">
                     <label class="control-label">Código de observación DIGEMID</label>
                     <el-input v-model="formPharmacy.cod_digemid"
-                              placeholder="Ingrese el código DIGEMID de la empresa"></el-input>
+                              placeholder="Ingrese el código DIGEMID de la empresa"
+                              @focus="$event.target.select()"></el-input>
                     <small v-if="errorsPharmacy.cod_digemid"
                            class="form-control-feedback d-block"
                            v-text="errorsPharmacy.cod_digemid[0]"></small>

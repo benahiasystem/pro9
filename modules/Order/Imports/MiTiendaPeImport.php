@@ -1,7 +1,5 @@
 <?php
 
-// ######## INICIO ADAPTACIÓN VENEZUELA
-
 
     namespace Modules\Order\Imports;
 
@@ -138,12 +136,8 @@
 
                 $internal_id = trim($row[11] ?? null);
                 $quantity = $row[12] ?? null;
-                // ########## INICIO CAMBIO IGV A IVA
-                // $amountWithOutIGV = $row[13] ?? 0; // precio SIN IVA
-                // ######### FIN CAMBIO IGV A IVA
-                // ########## INICIO CAMBIO IGV A IVA
-                $amountWithOutIGV = $row[17] ?? 0; // precio SIN IVA
-                // ######### FIN CAMBIO IGV A IVA
+                // $amountWithOutIGV = $row[13] ?? 0; // precio sin igv
+                $amountWithOutIGV = $row[17] ?? 0; // precio sin igv
                 //
                 $total_igv = $row[14] ?? 0; // igv del producto
                 $igv = $row[15] ?? 18; // igv
@@ -230,12 +224,13 @@
                     // Crear nuevo cliente
                     $customer = new Person($dataCustomer);
                     // ########## INICIO CAMBIO SUNAT A SENIAT
-                    $customer->identity_document_type_id = IdentityDocumentType::where('description', 'Doc.sin.rif')->first()->id;
+                    // El ID contractual 0 corresponde a Doc.sin.rif.
+                    $customer->identity_document_type_id = '0';
                     // ######### FIN CAMBIO SUNAT A SENIAT
                     if (strlen($identificationNumber) == 11) {
-                        $customer->identity_document_type_id = IdentityDocumentType::where('description', 'RUC')->first()->id;
+                        $customer->identity_document_type_id = IdentityDocumentType::where('description', 'RIF')->first()->id;
                     } elseif (strlen($identificationNumber) == 8) {
-                        $customer->identity_document_type_id = IdentityDocumentType::where('description', 'DNI')->first()->id;
+                        $customer->identity_document_type_id = IdentityDocumentType::where('description', 'Cédula')->first()->id;
                     }
                     $province = Department::where('description', $region)->first();
                     if (!empty($province)) {
@@ -580,12 +575,13 @@
                 // Crear nuevo cliente
                 $customer = new Person($dataCustomer);
                 // ########## INICIO CAMBIO SUNAT A SENIAT
-                $customer->identity_document_type_id = IdentityDocumentType::where('description', 'Doc.sin.rif')->first()->id;
+                // El ID contractual 0 corresponde a Doc.sin.rif.
+                $customer->identity_document_type_id = '0';
                 // ######### FIN CAMBIO SUNAT A SENIAT
                 if (strlen($identificationNumber) == 11) {
-                    $customer->identity_document_type_id = IdentityDocumentType::where('description', 'RUC')->first()->id;
+                    $customer->identity_document_type_id = IdentityDocumentType::where('description', 'RIF')->first()->id;
                 } elseif (strlen($identificationNumber) == 8) {
-                    $customer->identity_document_type_id = IdentityDocumentType::where('description', 'DNI')->first()->id;
+                    $customer->identity_document_type_id = IdentityDocumentType::where('description', 'Cédula')->first()->id;
                 }
                 $province = Department::where('description', $region)->first();
                 if (!empty($province)) {
@@ -752,4 +748,3 @@
         }
 
     }
-// ######## FIN ADAPTACIÓN VENEZUELA

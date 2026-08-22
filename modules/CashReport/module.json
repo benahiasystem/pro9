@@ -1,0 +1,14 @@
+{
+    "name": "CashReport",
+    "alias": "cashreport",
+    "description": "Generación centralizada de reportes de caja chica (lógica interna, sin interfaz propia)",
+    "keywords": [],
+    "active": 1,
+    "order": 0,
+    "providers": [
+        "Modules\\CashReport\\Providers\\CashReportServiceProvider"
+    ],
+    "aliases": {},
+    "files": [],
+    "requires": []
+}

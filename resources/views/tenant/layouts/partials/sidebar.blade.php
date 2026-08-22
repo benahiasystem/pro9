@@ -2137,7 +2137,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
     .list-config {
         position: absolute;
-        z-index: 1;
+        z-index: 2;
         display: none;
         background-color: #fff;
         min-width: 230px;
@@ -2190,7 +2190,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         right: 12px;
         top: 50%;
         transform: translateY(-50%);
-        z-index: 2;
+        z-index: 1;
         padding: 2px 6px;
         line-height: 1.2;
     }

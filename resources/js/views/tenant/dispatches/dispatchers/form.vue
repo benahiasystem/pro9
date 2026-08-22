@@ -23,23 +23,8 @@
                             <!-- <el-input v-model="form.number" :maxlength="maxLength" dusk="number">
                             </el-input> -->
 
-                            <div v-if="api_service_token != false">
-                                <x-input-service :identity_document_type_id="form.identity_document_type_id"
-                                                 v-model="form.number" @search="searchNumber"></x-input-service>
-                            </div>
-                            <div v-else>
-                                <el-input v-model="form.number" :maxlength="maxLength" dusk="number">
-                                    <template
-                                        v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'">
-                                        <el-button type="primary" slot="append" :loading="loading_search"
-                                                   icon="el-icon-search" @click.prevent="searchCustomer">
-                                            <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                            <template>Buscar</template>
-                                            <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                        </el-button>
-                                    </template>
-                                </el-input>
-                            </div>
+                            <x-input-service :identity_document_type_id="form.identity_document_type_id"
+                                             v-model="form.number" @search="searchNumber"></x-input-service>
 
                             <small class="form-control-feedback" v-if="errors.number" v-text="errors.number[0]"></small>
                         </div>
@@ -117,16 +102,6 @@ export default {
             })
 
     },
-    computed: {
-        maxLength: function () {
-            if (this.form.identity_document_type_id === '6') {
-                return 11
-            }
-            if (this.form.identity_document_type_id === '1') {
-                return 8
-            }
-        }
-    },
     methods: {
         initForm() {
             this.errors = {}
@@ -165,13 +140,13 @@ export default {
             const hasLetter = /[A-Za-zÁÉÍÓÚáéíóúÑñ]/
 
             if (!this.form.identity_document_type_id || this.form.identity_document_type_id !== '6') {
-                errors.identity_document_type_id = ['El transportista solo puede registrarse con RUC.']
+                errors.identity_document_type_id = ['El transportista solo puede registrarse con RIF.']
             }
 
             if (!number) {
                 errors.number = ['El número es obligatorio.']
             } else if (!/^(10|15|16|17|20)\d{9}$/.test(number)) {
-                errors.number = ['El RUC debe tener 11 dígitos y un prefijo válido (10, 15, 16, 17 o 20).']
+                errors.number = ['El RIF debe tener 11 dígitos y un prefijo válido (10, 15, 16, 17 o 20).']
             }
 
             if (!name) {
@@ -233,9 +208,6 @@ export default {
         close() {
             this.$emit('update:showDialog', false)
             this.initForm()
-        },
-        searchCustomer() {
-            this.searchServiceNumberByType()
         },
         searchNumber(data) {
 

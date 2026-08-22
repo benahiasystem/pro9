@@ -1450,6 +1450,7 @@
             :total="form.total"
             :isUpdateDocument="isUpdateDocument"
             :detractionDecimalQuantity="detractionDecimalQuantity"
+            :configuration="configuration"
             @addDocumentDetraction="addDocumentDetraction"></document-detraction>
     </div>
 </template>

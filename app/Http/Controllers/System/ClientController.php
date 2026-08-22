@@ -1,7 +1,5 @@
 <?php
 
-// ######## INICIO ADAPTACIÓN VENEZUELA
-
     namespace App\Http\Controllers\System;
 
     use App\CoreFacturalo\Helpers\Certificate\GenerateCertificate;
@@ -12,6 +10,7 @@
     // ######### FIN CAMBIO RIF SUPER ADMIN
     use App\Http\Resources\System\ClientCollection;
     use App\Http\Resources\System\ClientResource;
+    use App\Models\System\BusinessTurn;
     use App\Models\System\Client;
     use App\Models\System\Configuration;
     use App\Models\System\Module;
@@ -59,8 +58,8 @@ use Illuminate\Support\Facades\Mail;
 
         // ########## INICIO CAMBIO RIF SUPER ADMIN
         public function tables(RifLookupService $rifLookupService)
-        {
         // ######### FIN CAMBIO RIF SUPER ADMIN
+        {
 
             $url_base = '.' . config('tenant.app_url_base');
             $plans = Plan::all();
@@ -83,56 +82,9 @@ use Illuminate\Support\Facades\Mail;
                     return $this->prepareModules($module);
                 });
 
-            // luego se podria crear grupos mediante algun modulo, de momento se pasan los id de manera directa
-            $group_basic = Module::with('levels')
-                ->whereIn('id', [7,1,6,17,18,5,14])
-                ->orderBy('sort')
-                ->get()
-                ->each(function ($module) {
-                    return $this->prepareModules($module);
-                });
-            $group_hotel = Module::with('levels')
-                ->whereIn('id', [7,1,6,17,18,5,14,8,4])
-                ->orderBy('sort')
-                ->get()
-                ->each(function ($module) {
-                    return $this->prepareModules($module);
-                });
-            $group_pharmacy = Module::with('levels')
-                ->whereIn('id', [7,1,6,17,18,5,14,8,4])
-                ->orderBy('sort')
-                ->get()
-                ->each(function ($module) {
-                    return $this->prepareModules($module);
-                });
-            $group_restaurant = Module::with('levels')
-                ->whereIn('id', [7,1,6,17,18,5,14,8,4])
-                ->orderBy('sort')
-                ->get()
-                ->each(function ($module) {
-                    return $this->prepareModules($module);
-                });
-            $group_hotel_apps = Module::with('levels')
-                ->whereIn('id', [15])
-                ->orderBy('sort')
-                ->get()
-                ->each(function ($module) {
-                    return $this->prepareModules($module);
-                });
-            $group_pharmacy_apps = Module::with('levels')
-                ->whereIn('id', [19])
-                ->orderBy('sort')
-                ->get()
-                ->each(function ($module) {
-                    return $this->prepareModules($module);
-                });
-            $group_restaurant_apps = Module::with('levels')
-                ->whereIn('id', [23])
-                ->orderBy('sort')
-                ->get()
-                ->each(function ($module) {
-                    return $this->prepareModules($module);
-                });
+            // Giros de negocio administrables desde el panel system.
+            $business_turns = BusinessTurn::formOptions();
+
             $plan_periods = PlanPeriod::all();
 
             $config = Configuration::first();
@@ -164,15 +116,8 @@ use Illuminate\Support\Facades\Mail;
                 'certificate_admin',
                 'soap_username',
                 'soap_password',
-                'group_basic',
-                'group_hotel',
-                'group_pharmacy',
-                'group_restaurant',
-                'group_hotel_apps',
-                'group_pharmacy_apps',
+                'business_turns',
                 'regex_password_client',
-                'group_restaurant_apps',
-                'group_restaurant_apps',
                 'global_smtp_config',
                 // ########## INICIO CAMBIO RIF SUPER ADMIN
                 'rif_lookup_available');
@@ -226,7 +171,9 @@ use Illuminate\Support\Facades\Mail;
             }
 
             if (!$this->planMeetsNrusLimits($plan)) {
+                // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
                 return 'El plan seleccionado no cumple los límites NRUS (ventas máx. Bs. 8000 y 1 sucursal, sin límites ilimitados).';
+                // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
             }
 
             return null;
@@ -579,8 +526,8 @@ use Illuminate\Support\Facades\Mail;
          */
         // ########## INICIO CAMBIO RIF SUPER ADMIN
         public function update(ClientUpdateRequest $request)
-        {
         // ######### FIN CAMBIO RIF SUPER ADMIN
+        {
             /**
              * @var Collection $valueModules
              * @var Collection $valueLevels
@@ -1065,7 +1012,7 @@ use Illuminate\Support\Facades\Mail;
             $advancedStatuses = [
                 // === ESTADOS FINANCIEROS (Payment) ===
                 ['description' => 'Pago pendiente', 'color' => '#ffc107', 'is_initial' => true, 'is_final' => false, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => false, 'sort_order' => 1],
-                ['description' => 'Pago completado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => true, 'sort_order' => 2],
+                ['description' => 'Pago completado', 'color' => '#28a745', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_mark_payment' => true, 'action_generate_document' => true, 'sort_order' => 2],
                 ['description' => 'Pago rechazado', 'color' => '#dc3545', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 3],
                 ['description' => 'Reembolso', 'color' => '#6c757d', 'is_initial' => false, 'is_final' => true, 'is_payment_status' => true, 'is_shipping_status' => false, 'is_order_status' => false, 'action_send_email' => true, 'sort_order' => 4],
 
@@ -1095,10 +1042,12 @@ use Illuminate\Support\Facades\Mail;
             \Log::info('Insertando establishment...');
             $establishment_id = DB::connection('tenant')->table('establishments')->insertGetId([
                 'description' => 'Oficina Principal',
+                // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
                 'country_id' => 'VE',
                 'department_id' => '14',
                 'province_id' => '0229',
                 'district_id' => '000619',
+                // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
                 'address' => '-',
                 'email' => $request->input('email'),
                 'telephone' => '-',
@@ -1636,4 +1585,3 @@ use Illuminate\Support\Facades\Mail;
             }
         }
     }
-// ######## FIN ADAPTACIÓN VENEZUELA

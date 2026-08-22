@@ -1,4 +1,3 @@
-{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
 @php
     $configurationModel = \App\Models\Tenant\Configuration::first();
     $defaultImage = $configurationModel->product_default_image ?? 'imagen-no-disponible.jpg';
@@ -9,10 +8,26 @@
 
 <style>
 /* ── Dropdown panel ── */
+@media (max-width: 575.98px) {
+    .header .header-right {
+        position: relative;
+    }
+
+    .header .header-right .minicart-dropdown {
+        position: static;
+    }
+
+    .header .header-right .minicart-dropdown > .dropdown-menu {
+        right: 0 !important;
+        left: auto !important;
+        width: calc(100vw - 30px);
+        max-width: 340px;
+    }
+}
 
 </style>
 
-<div class="dropdown cart-dropdown">
+<div class="dropdown cart-dropdown minicart-dropdown">
     <a href="#"
        class="dropdown-toggle"
        role="button"
@@ -68,7 +83,7 @@
             </div>
 
             {{-- Total --}}
-            <div class="dropdown-cart-total m-0">
+            <div class="dropdown-cart-total m-0" id="cart-dd-total-row">
                 <span>Total</span>
                 <span class="cart-total-price">Bs. 0.00</span>
             </div>
@@ -86,6 +101,10 @@
 @push('scripts')
 <script type="text/javascript">
 
+    function storefrontShowsPrices() {
+        return window.__storefront_show_prices !== false && window.__storefront_show_prices !== 0;
+    }
+
     function remove(id) {
         let array = localStorage.getItem('products_cart');
         array = JSON.parse(array);
@@ -97,6 +116,12 @@
     }
 
     function calculatetotal() {
+        let $totalRow = $("#cart-dd-total-row");
+        if (!storefrontShowsPrices()) {
+            $totalRow.hide();
+            return;
+        }
+        $totalRow.show();
         let array = localStorage.getItem('products_cart');
         array = JSON.parse(array);
         let total = 0;
@@ -115,6 +140,7 @@
         let array = localStorage.getItem('products_cart');
         array = JSON.parse(array);
         let count = array.length;
+        const showPrices = storefrontShowsPrices();
 
         const defaultImagePath = '{{ $defaultImagePath }}';
 
@@ -140,6 +166,9 @@
                 const imagePath = (element.image_small && element.image_small !== 'imagen-no-disponible.jpg')
                     ? `/storage/uploads/items/${element.image_small}`
                     : defaultImagePath;
+                const priceHtml = showPrices
+                    ? `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> × Bs. ${parseFloat(element.sale_unit_price).toFixed(2)}</span>`
+                    : `<span class="cart-product-info"><span class="cart-product-qty">${qty}</span> und.</span>`;
                 $(".dropdown-cart-products").append(`
                     <div class="product cart-product-row">
                         <figure class="product-image-container">
@@ -157,9 +186,7 @@
                             <h4 class="product-title">
                                 <a href="#">${element.description}</a>
                             </h4>
-                            <span class="cart-product-info">
-                                <span class="cart-product-qty">${qty}</span> × Bs. ${parseFloat(element.sale_unit_price).toFixed(2)}
-                            </span>
+                            ${priceHtml}
                         </div>
                     </div>
                 `);
@@ -185,5 +212,3 @@
     });
 </script>
 @endpush
-
-{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

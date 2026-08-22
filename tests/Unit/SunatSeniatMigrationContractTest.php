@@ -65,9 +65,19 @@ class SunatSeniatMigrationContractTest extends TestCase
     {
         foreach ($this->identityViews() as $path) {
             $source = $this->source($path);
-            self::assertStringContainsString('Buscar', $source, $path);
+            $rendersSearchDirectly = str_contains($source, 'Buscar');
+            $delegatesToSharedInput = str_contains($source, '<x-input-service');
+
+            self::assertTrue(
+                $rendersSearchDirectly || $delegatesToSharedInput,
+                "{$path} debe mostrar Buscar directamente o delegar al componente compartido."
+            );
             self::assertDoesNotMatchRegularExpression('/>[\s]*(SUNAT|RENIEC)[\s]*</i', $source, $path);
             self::assertDoesNotMatchRegularExpression('/buttonText\s*=\s*[\'\"](?:SUNAT|RENIEC)[\'\"]/', $source, $path);
+        }
+
+        foreach ($this->identityLabelSources() as $path) {
+            self::assertStringContainsString('Buscar', $this->source($path), $path);
         }
     }
 
@@ -134,7 +144,7 @@ class SunatSeniatMigrationContractTest extends TestCase
     {
         $paths = array_values(array_unique(array_merge(
             $this->exchangeRateViews(),
-            $this->identityViews(),
+            $this->identityLabelSources(),
             [
                 'modules/Digemid/Resources/assets/js/view/index.vue',
                 'modules/Ecommerce/Resources/assets/js/views/item_sets/form.vue',
@@ -223,6 +233,19 @@ class SunatSeniatMigrationContractTest extends TestCase
         self::assertFileExists(base_path($path));
 
         return (string) file_get_contents(base_path($path));
+    }
+
+    /** @return list<string> */
+    private function identityLabelSources(): array
+    {
+        return [
+            'resources/js/components/InputService.vue',
+            'modules/ApiPeruDev/Resources/assets/js/components/InputService.vue',
+            'modules/ApiPeruDev/Resources/assets/js/components/InputServiceGuest.vue',
+            'resources/views/tenant/ecommerce/cart/detail.blade.php',
+            'resources/views/tenant/ecommerce/cart/detail2.blade.php',
+            'modules/Ecommerce/Resources/views/cart/detail2.blade.php',
+        ];
     }
 }
 // ######### FIN CAMBIO SUNAT A SENIAT

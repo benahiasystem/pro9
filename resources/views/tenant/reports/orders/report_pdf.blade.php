@@ -30,7 +30,7 @@
       <td class="text-center pb-3 border-top"><b>Comprobante de pedido</b></td>
     </tr>
     <tr>
-      <td class="text-center pb-3 border-bottom"><h3>{{ str_pad($records->id, 6, "0", STR_PAD_LEFT) }}</h3></td>
+      <td class="text-center pb-3 border-bottom"><h3>{{ $records->publicNumber() }}</h3></td>
     </tr>
 </table>
 

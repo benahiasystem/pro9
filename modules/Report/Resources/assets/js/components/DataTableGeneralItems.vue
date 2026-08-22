@@ -17,15 +17,17 @@
                 <div class="row mt-2 mx-0">
                         <div class="col-md-2 form-group">
                             <label class="control-label">Tipo de usuario</label>
-                            <el-select v-model="form.user_type" clearable
+                            <el-select v-model="form.user_type"
                                        @change="ChangedSalesnote">
+                                <el-option :value="null" label="TODOS"></el-option>
                                 <el-option key="CREADOR" value="CREADOR" label="Registrado por"></el-option>
                                 <el-option v-show="form.document_type_id !== '80'" key="VENDEDOR" value="VENDEDOR" label="Vendedor asignado"></el-option>
                             </el-select>
                         </div>
                         <div class="col-md-2 form-group">
                             <label class="control-label">{{ form.user_type === 'CREADOR' ? 'Usuario' : 'Vendedor' }}</label>
-                            <el-select v-model="form.user_id" clearable>
+                            <el-select v-model="form.user_id" filterable>
+                                <el-option :value="null" label="TODOS"></el-option>
                                 <el-option v-for="user in users" :key="user.id" :value="user.id" :label="user.name"></el-option>
                             </el-select>
                         </div>
@@ -474,8 +476,8 @@
                     month_start: moment().format('YYYY-MM'),
                     month_end: moment().format('YYYY-MM'),
                     category_id: '',
-                    user_type: '',
-                    user_id: '',
+                    user_type: null,
+                    user_id: null,
                     apply_conversion_to_pen: this.applyConversionToPen
                 }
 

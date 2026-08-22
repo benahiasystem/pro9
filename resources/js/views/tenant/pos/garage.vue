@@ -1,4 +1,3 @@
-<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="garage container-fluid p-0">
         <span class="module-title-marker" data-page-title="Venta Rápida"></span>
@@ -139,6 +138,7 @@
                         @keyup.enter.native="keyupEnterAddItem"
                         class="m-bottom mt-3 input-search-pos"
                         ref="ref_search_items"
+                        @focus="$event.target.select()"
                     >
                         <template v-if="validteCreateProduct">
                             <el-button
@@ -248,6 +248,9 @@
                                         </el-tooltip>
 
                                         <small class="measuring-unit text-end" style="width: 45%;">
+                                            <el-tag v-if="item.variations_count > 0" size="mini" class="me-1">
+                                                {{ item.variations_count }} var.
+                                            </el-tag>
                                             <el-tag
                                                 type="primary"
                                                 size="mini"
@@ -304,6 +307,7 @@
                                             v-model="item.edit_sale_unit_price"
                                             class="mt-1 mb-2 px-2"
                                             size="mini"
+                                            @focus="$event.target.select()"
                                         >
                                         </el-input>
                                         <div class="btn-edit-price-container d-flex">
@@ -756,6 +760,7 @@
                                             @input="calculateQuantity(index)"
                                             @blur="blurCalculateQuantity(index)"
                                             class="pos-total-input"
+                                            @focus="$event.target.select()"
                                         />
                                     </template>
                                     <span v-else class="pos-cart-price">{{ currency_type.symbol }} {{ item.total }}</span>
@@ -777,6 +782,7 @@
                                     </button>
                                     <el-input
                                         v-model="item.item.aux_quantity"
+                                        @focus="$event.target.select()"
                                         @input="clickAddItem(item, index, true)"
                                         @keyup.enter.native="keyupEnterQuantity"
                                         class="pos-qty-field"
@@ -844,8 +850,16 @@
             :warehouses="warehousesDetail"
             :unit_type="unittypeDetail"
             :item_unit_types="[]"
+            :variations="variationsDetail"
         >
         </warehouses-detail>
+
+        <variations-modal
+            :showDialog.sync="showDialogVariations"
+            :parent="selectedVariationParent"
+            @select="selectVariationFromModal"
+        >
+        </variations-modal>
 
         <item-unit-types
             :showDialog.sync="showDialogItemUnitTypes"
@@ -979,6 +993,7 @@ import WarehousesDetail from "../items/partials/warehouses.vue";
 import queryString from "query-string";
 import TableItems from "./partials/table.vue";
 import ItemUnitTypes from "./partials/item_unit_types.vue";
+import VariationsModal from "./partials/variations_modal.vue";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 
 export default {
@@ -998,6 +1013,7 @@ export default {
         PersonForm,
         WarehousesDetail,
         ItemUnitTypes,
+        VariationsModal,
         Keypress,
         TableItems
     },
@@ -1011,6 +1027,9 @@ export default {
             search_item_by_barcode: false,
             warehousesDetail: [],
             unittypeDetail: [],
+            variationsDetail: [],
+            showDialogVariations: false,
+            selectedVariationParent: null,
             input_person: {},
             showDialogHistoryPurchases: false,
             showDialogHistorySales: false,
@@ -1177,7 +1196,7 @@ export default {
                 return;
             }
 
-            // Precio unitario bruto (con IGV) desde el total
+            // Precio unitario bruto (con IVA) desde el total
             const newUnitPrice = newTotal / quantity;
             item.item.unit_price = newUnitPrice;
 
@@ -1371,7 +1390,8 @@ export default {
                     : 1,
                 input_item: this.input_item,
                 cat: this.category_selected,
-                limit: this.limit
+                limit: this.limit,
+                group_variations: 1
             };
 
             if (this.businessTurns && [true, 1, "1"].includes(this.businessTurns.active)) {
@@ -1488,7 +1508,20 @@ export default {
         clickWarehouseDetail(item) {
             this.unittypeDetail = item.unit_type;
             this.warehousesDetail = item.warehouses;
+            this.variationsDetail = item.variations || [];
             this.showWarehousesDetail = true;
+        },
+        async selectVariationFromModal(variation) {
+            try {
+                const response = await this.$http.get(`/${this.resource}/item/${variation.id}`);
+                const row = (response.data.data || [])[0];
+                if (!row) {
+                    return this.$message.error("No se pudo cargar la variación seleccionada");
+                }
+                await this.clickAddItem(row, null);
+            } catch (error) {
+                this.$message.error("No se pudo cargar la variación seleccionada");
+            }
         },
         clickHistoryPurchases(item_id) {
             this.history_item_id = item_id;
@@ -1881,6 +1914,13 @@ export default {
             this.setFormPosLocalStorage();
         },
         async clickAddItem(item, index, input = false) {
+            // El padre con variaciones no es vendible: se elige una variación en el modal
+            if (item.variations_count > 0) {
+                this.selectedVariationParent = item;
+                this.showDialogVariations = true;
+                return;
+            }
+
             //Validar precio mínimo
 
             if (parseFloat(item.sale_unit_price) < 0.1) {
@@ -2248,7 +2288,7 @@ export default {
                 this.loading = true;
                 let parameters = `input_item=${this.input_item}&cat=${
                     this.category_selected
-                }`;
+                }&group_variations=1`;
 
                 if (this.businessTurns && [true, 1, "1"].includes(this.businessTurns.active)) {
                     parameters += '&garage=1';
@@ -2437,5 +2477,3 @@ export default {
     }
 };
 </script>
-
-<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

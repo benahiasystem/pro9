@@ -1,5 +1,4 @@
 <template>
-    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :append-to-body="true"
                :close-on-click-modal="false"
                :title="titleDialog"
@@ -43,30 +42,9 @@
                                         <span class="text-danger">*</span>
                                         </label>
 
-                                    <div v-if="api_service_token != false">
-                                        <x-input-service v-model="form.number"
-                                                         :identity_document_type_id="form.identity_document_type_id"
-                                                         @search="searchNumber"></x-input-service>
-                                    </div>
-                                    <div v-else>
-                                        <el-input v-model="form.number"
-                                                  :maxlength="maxLength"
-                                                  dusk="number">
-                                            <template
-                                                v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'">
-                                                <el-button slot="append"
-                                                           :loading="loading_search"
-                                                           :disabled="loading_data"
-                                                           icon="el-icon-search"
-                                                           type="primary"
-                                                           @click.prevent="searchCustomer">
-                                                    <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                    <template>Buscar</template>
-                                                    <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                </el-button>
-                                            </template>
-                                        </el-input>
-                                    </div>
+                                    <x-input-service v-model="form.number"
+                                                     :identity_document_type_id="form.identity_document_type_id"
+                                                     @search="searchNumber"></x-input-service>
 
                                     <small v-if="errors.number"
                                            class="form-control-feedback"
@@ -243,7 +221,7 @@
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.department_id}"
                                      class="form-group">
-                                    <label class="control-label">Estado</label>
+                                    <label class="control-label">Departamento</label>
                                     <el-select v-model="form.department_id"
                                                dusk="department_id"
                                                filterable
@@ -262,7 +240,7 @@
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
-                                    <label class="control-label">Municipio</label>
+                                    <label class="control-label">Provincia</label>
                                     <el-select v-model="form.province_id"
                                                dusk="province_id"
                                                filterable
@@ -281,7 +259,7 @@
                             <div class="col-md-3">
                                 <div :class="{'has-danger': errors.province_id}"
                                      class="form-group">
-                                    <label class="control-label">Parroquia</label>
+                                    <label class="control-label">Distrito</label>
                                     <el-select v-model="form.district_id"
                                                dusk="district_id"
                                                filterable
@@ -542,9 +520,7 @@
     </el-dialog>
 </template>
 
-    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
-// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../../../../resources/js/mixins/functions'
@@ -691,11 +667,7 @@ export default {
 
             if (this.external && this.input_person) {
                 if (this.form.number.length === 8 || this.form.number.length === 11) {
-                    if (this.api_service_token != false) {
-                        await this.$eventHub.$emit('enableClickSearch')
-                    } else {
-                        this.searchCustomer()
-                    }
+                    await this.$eventHub.$emit('enableClickSearch')
                 }
             }
 
@@ -1003,5 +975,4 @@ this.loading_data = true;
         }
     }
 }
-// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

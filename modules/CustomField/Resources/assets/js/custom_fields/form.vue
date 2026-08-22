@@ -21,6 +21,7 @@
               <el-input
                 v-model="form_data.name"
                 placeholder="Ej: Color, Talla, Modelo..."
+                @focus="$event.target.select()"
               ></el-input>
               <small
                 v-if="errors.name"

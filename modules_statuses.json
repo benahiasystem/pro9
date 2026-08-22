@@ -45,5 +45,7 @@
     "ItemFormLayout": true,
     "DocumentFormLayout": true,
     "Webhook": true,
-    "Marketplace": true
+    "ExtraServices": true,
+    "Marketplace": true,
+    "CashReport": true
 }

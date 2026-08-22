@@ -323,11 +323,20 @@
                                 <el-radio-group v-model="business" @change="changeModules">
                                     <el-radio v-if="business === 0" :label="0">Personalizado</el-radio>
                                     <el-radio :label="5">Completo</el-radio>
-                                    <el-radio :label="1">Básico</el-radio>
-                                    <el-radio :label="2">Farmacia</el-radio>
-                                    <el-radio :label="3">Hotel</el-radio>
-                                    <el-radio :label="4">Restaurante</el-radio>
-                                    <el-radio v-if="showNrusBusinessOption" :label="6">NRUS</el-radio>
+                                    <el-radio
+                                        v-for="turn in visibleBusinessTurns"
+                                        :key="turn.id"
+                                        :label="turn.id">
+                                        {{ turn.name }}
+                                        <el-tooltip
+                                            v-if="turn.description"
+                                            class="item"
+                                            :content="turn.description"
+                                            effect="dark"
+                                            placement="top">
+                                            <i class="fa fa-info-circle"></i>
+                                        </el-tooltip>
+                                    </el-radio>
                                 </el-radio-group>
                             </div>
                             <div class="col-md-6">
@@ -816,6 +825,7 @@ export default {
             plan_periods: [],
             modules: [],
             apps: [],
+            business_turns: [],
             types: [],
             soap_sends: [{value: '01', text: 'Sunat'}, {value: '02', text: 'Ose'}],
             soap_types: [{id: "01", description: "Demo"}, {id: "02", description: "Producción"}],
@@ -851,6 +861,17 @@ export default {
         }
     },
     computed: {
+        /**
+         * Giros administrables: se ocultan los inactivos (salvo que el cliente ya
+         * lo tenga asignado) y NRUS cuando el plan no cumple sus limites.
+         */
+        visibleBusinessTurns() {
+            return this.business_turns.filter(turn => {
+                if (turn.id === 6 && !this.showNrusBusinessOption) return false;
+
+                return turn.active || turn.id === this.business;
+            });
+        },
         visibleModules() {
             if (this.business === 6) {
                 return this.modules.filter(m => this.nrusSpec.modules[m.id] !== undefined);
@@ -899,13 +920,7 @@ export default {
                 this.certificate_admin = response.data.certificate_admin
                 this.soap_username = response.data.soap_username
                 this.soap_password = response.data.soap_password
-                this.group_basic = response.data.group_basic
-                this.group_hotel = response.data.group_hotel
-                this.group_pharmacy = response.data.group_pharmacy
-                this.group_restaurant = response.data.group_restaurant
-                this.group_hotel_apps = response.data.group_hotel_apps
-                this.group_pharmacy_apps = response.data.group_pharmacy_apps
-                this.group_restaurant_apps = response.data.group_restaurant_apps
+                this.business_turns = response.data.business_turns || []
                 this.regex_password_client = response.data.regex_password_client
                 this.plan_periods = response.data.plan_periods
                 this.global_smtp_config = response.data.global_smtp_config || {}
@@ -1292,37 +1307,23 @@ export default {
                 });
                 return;
             }
+
             var group = {
                 modules: [],
                 levels: [],
                 apps: [],
             };
-            if(this.business == 1){
-                group.modules = this.getIds(this.group_basic);
-                group.modules.push(12);
-                group.levels = ['12-16'];
-            }
-            if(this.business == 2){
-                group.modules = this.getIds(this.group_pharmacy);
-                group.apps = this.getIds(this.group_pharmacy_apps);
-                group.modules.push(12);
-                group.levels = ['12-16'];
-            }
-            if(this.business == 3){
-                group.modules = this.getIds(this.group_hotel);
-                group.apps = this.getIds(this.group_hotel_apps);
-                group.modules.push(12);
-                group.levels = ['12-16'];
-            }
-            if(this.business == 4){
-                group.modules = this.getIds(this.group_restaurant);
-                group.apps = this.getIds(this.group_restaurant_apps);
-                group.modules.push(12);
-                group.levels = ['12-16'];
-            }
-            if(this.business == 5){
+
+            if (this.business === 5) {
                 group.modules = this.getIds(this.modules);
                 group.apps = this.getIds(this.apps);
+            } else {
+                const turn = this.business_turns.find(t => t.id === this.business);
+                if (turn) {
+                    group.modules = turn.modules || [];
+                    group.levels = turn.levels || [];
+                    group.apps = [...(turn.apps || []), ...(turn.app_levels || [])];
+                }
             }
 
             this.$nextTick(() => {

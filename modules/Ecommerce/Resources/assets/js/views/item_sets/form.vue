@@ -606,6 +606,7 @@ import ItemSetFormItem from './partials/item.vue'
                         if (response.data.success) {
                             this.$message.success(response.data.message)
                             this.brands.push(response.data.data)
+                            this.form.brand_id = response.data.data.id
                             this.form_brand.name = null
 
                         } else {

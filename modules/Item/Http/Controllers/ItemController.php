@@ -30,7 +30,8 @@ use Illuminate\Http\Request;
     use Illuminate\Support\Carbon;
     use Modules\Item\Imports\{
         ItemUpdatePriceImport,
-        ItemUpdatePriceEstablishmentImport
+        ItemUpdatePriceEstablishmentImport,
+        ItemVariationsImport
     };
     use Modules\Purchase\Helpers\WeightedAverageCostHelper;
     use Modules\Item\Exports\PricesEstablishmentFormatExport;
@@ -335,6 +336,42 @@ use Maatwebsite\Excel\Facades\Excel as FacadesExcel;
                     ];
                 }
             }
+            return [
+                'success' => false,
+                'message' => __('app.actions.upload.error'),
+            ];
+        }
+
+        /**
+         * Importar variaciones de producto por código interno (Excel aparte).
+         *
+         * @param Request $request
+         * @return array
+         */
+        public function importItemVariations(Request $request)
+        {
+            if ($request->hasFile('file')) {
+                try {
+                    $import = new ItemVariationsImport();
+                    $import->import($request->file('file'), null, Excel::XLSX);
+                    $data = $import->getData();
+                    $message = !empty($data['message'])
+                        ? $data['message']
+                        : __('app.actions.upload.success');
+
+                    return [
+                        'success' => true,
+                        'message' => $message,
+                        'data' => $data
+                    ];
+                } catch (Exception $e) {
+                    return [
+                        'success' => false,
+                        'message' => $e->getMessage()
+                    ];
+                }
+            }
+
             return [
                 'success' => false,
                 'message' => __('app.actions.upload.error'),

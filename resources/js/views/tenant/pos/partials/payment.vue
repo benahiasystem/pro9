@@ -284,6 +284,7 @@
                                         <el-input ref="enter_amount"
                                                   v-model="enter_amount"
                                                   @input="enterAmount()"
+                                                  @focus="$event.target.select()"
                                                   @keyup.enter.native="keyupEnterAmount()">
                                         </el-input>
 
@@ -319,6 +320,7 @@
                                             </label>
                                             <el-input v-model="discount_amount"
                                                       :disabled="!enabled_discount"
+                                                      @focus="$event.target.select()"
                                                       @change="inputDiscountAmount()"
                                                       >
                                             </el-input>
@@ -400,14 +402,14 @@
                                 <div class="col-lg-8">
                                     <div class="form-group">
                                         <label class="control-label">Empleado</label>
-                                        <el-input v-model="form.worker_full_name_tips"></el-input>
+                                        <el-input v-model="form.worker_full_name_tips" @focus="$event.target.select()"></el-input>
                                     </div>
                                 </div>
 
                                 <div class="col-lg-4">
                                     <div class="form-group">
                                         <label class="control-label">Monto</label>
-                                        <el-input-number v-model="form.total_tips" :min="0" controls-position="right"></el-input-number>
+                                        <el-input-number v-model="form.total_tips" :min="0" controls-position="right" @focus="$event.target.select()"></el-input-number>
                                     </div>
                                 </div>
                             </div>
@@ -513,14 +515,14 @@
                                 >
                                     <div class="form-group">
                                         <label class="control-label">Datos de referencia</label>
-                                        <el-input v-model="form.reference_data" type="textarea"></el-input>
+                                        <el-input v-model="form.reference_data" type="textarea" @focus="$event.target.select()"></el-input>
                                     </div>
                                 </div>
 
                                 <div class="col-md-4 col-lg-4" v-if="isBusinessTurnActive">
                                     <div class="form-group">
                                         <label class="control-label">N° Placa</label>
-                                        <el-input v-model="form.plate_number" type="text"></el-input>
+                                        <el-input v-model="form.plate_number" type="text" @focus="$event.target.select()"></el-input>
                                     </div>
                                 </div>
                                 <!-- ########### FIN CAMBIO TURNOS POS VENEZUELA -->

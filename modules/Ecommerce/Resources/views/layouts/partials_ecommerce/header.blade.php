@@ -1,5 +1,6 @@
-{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
-
+<script>
+    window.__storefront_show_prices = {!! json_encode($storefront_show_prices ?? true) !!};
+</script>
 <style>
 #header_bar .header-menu {
     max-height: 300px !important;
@@ -221,7 +222,8 @@ div.cart-dropdown {
                             <span class="search_title d-flex align-items-end ml-3" style="font-size: 1.0em;"> @{{ result.description }} </span>
                         </a>
                         <div class="col-5 px-0 d-flex justify-content-between align-items-center">
-                            <span>@{{ result.sale_unit_price }}</span>
+                            <span v-if="showPrices">@{{ result.sale_unit_price }}</span>
+                            <span v-else></span>
                             <div>
                                 <button class="btn-add-cart btn-success" v-if="!getCartQuantity(result.id)" @click.stop.prevent="addToCart(result)">
                                     Agregar al carrito
@@ -259,6 +261,10 @@ div.cart-dropdown {
 <header class="header">
     <div class="header-middle">
         <div class="container">
+            <button class="mobile-menu-toggler" type="button">
+                <i class="icon-menu"></i>
+            </button>
+
             <div class="header-left">
                 <a href="{{ route("tenant.ecommerce.index") }}" class="logo" style="max-width: 180px">
                     @php
@@ -348,9 +354,6 @@ div.cart-dropdown {
             </div>
 
             <div class="header-right">
-                <button class="mobile-menu-toggler" type="button">
-                    <i class="icon-menu"></i>
-                </button>
                 @include('ecommerce::layouts.partials_ecommerce.cart_dropdown')
                 @include('ecommerce::partials.headers.session')
             </div>
@@ -446,6 +449,7 @@ div.cart-dropdown {
                     resource: 'ecommerce',
                     results: [],
                     cartQuantities: {},
+                    showPrices: window.__storefront_show_prices !== false && window.__storefront_show_prices !== 0,
                 },
                 created() {
                     this.getItems();
@@ -484,36 +488,48 @@ div.cart-dropdown {
                         this.value = item.description;
                     },
                     addToCart(item) {
+                        var imageSmall = 'imagen-no-disponible.jpg';
+                        if (item.image_url_small) {
+                            imageSmall = item.image_url_small.split(/[\\/]/).pop();
+                        }
+
+                        let priceClean = item.sale_unit_price;
+                        if (typeof priceClean === 'string') {
+                            priceClean = priceClean.replace(/[^\d.,-]/g, '').replace(',', '.');
+                        }
+                        priceClean = parseFloat(priceClean) || 0;
+
+                        const cartItem = {
+                            id: item.id,
+                            description: item.description,
+                            sale_unit_price: priceClean,
+                            original_price: priceClean,
+                            sale_unit_price_display: item.sale_unit_price,
+                            image_small: imageSmall,
+                            image: imageSmall,
+                            sale_affectation_igv_type_id: item.sale_affectation_igv_type_id || '10',
+                            currency_type_id: item.currency_type_id || 'VES',
+                            currency_type_symbol: item.currency_type_symbol || 'Bs.',
+                            unit_type_id: item.unit_type_id || 'NIU',
+                            internal_id: item.internal_id || '',
+                            quantity: 1,
+                            stock: item.stock != null ? parseInt(item.stock, 10) : undefined,
+                        };
+
                         let array = localStorage.getItem('products_cart');
                         array = array ? JSON.parse(array) : [];
-                        if (!array.some(x => x.id == item.id)) {
-                            var imageSmall = 'imagen-no-disponible.jpg';
-                            if (item.image_url_small) {
-                                imageSmall = item.image_url_small.split(/[\\/]/).pop();
-                            }
+                        const found = array.some(x => x.id == item.id);
 
-                            let priceClean = item.sale_unit_price;
-                            if (typeof priceClean === 'string') {
-                                priceClean = priceClean.replace(/[^\d.,-]/g, '').replace(',', '.');
-                            }
-                            priceClean = parseFloat(priceClean) || 0;
-
-                            array.push({
-                                id: item.id,
-                                description: item.description,
-                                sale_unit_price: priceClean,
-                                sale_unit_price_display: item.sale_unit_price,
-                                image_small: imageSmall,
-                                image: imageSmall,
-                                // campos que necesita detail.blade.php
-                                sale_affectation_igv_type_id: item.sale_affectation_igv_type_id || '10',
-                                currency_type_id: item.currency_type_id || 'VES',
-                                currency_type_symbol: item.currency_type_symbol || 'Bs.',
-                                unit_type_id: item.unit_type_id || 'NIU',
-                                internal_id: item.internal_id || '',
-                                quantity: 1
+                        if (typeof cartAddOrUpdateItem === 'function') {
+                            cartAddOrUpdateItem(cartItem, {
+                                quantity: 1,
+                                mode: found ? 'exists' : 'added',
                             });
+                            return;
+                        }
 
+                        if (!found) {
+                            array.push(cartItem);
                             localStorage.setItem('products_cart', JSON.stringify(array));
                             this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: 1 });
                             window.dispatchEvent(new Event('productAddedToCart'));
@@ -584,5 +600,3 @@ div.cart-dropdown {
 
 })();
 </script>
-
-{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

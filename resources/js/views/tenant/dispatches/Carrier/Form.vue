@@ -427,7 +427,7 @@
                                         <label class="control-label">Tipo Doc. Identidad<span class="text-danger"> *</span></label>
                                         <el-select v-model="form.payer.identity_document_type_id" @change="changeDocumentTypeDescriptionPayer" filterable>
                                             <template v-if="form.payer.description=='Subcontratador'">
-                                                <el-option :key="'6'" :value="'6'" :label="'RUC'"></el-option>
+                                                <el-option :key="'6'" :value="'6'" :label="'RIF'"></el-option>
                                             </template>
                                             <template v-else>
                                                 <el-option v-for="option in identityDocumentTypes" :key="option.id" :value="option.id" :label="option.description"></el-option>
@@ -438,15 +438,9 @@
                                 <div class="col-lg-4">
                                     <div class="form-group">
                                         <label class="control-label">Número<span class="text-danger"> *</span></label>
-                                        <el-input v-model="form.payer.number" :maxlength="11" placeholder="Número...">
-                                            <template v-if="form.payer.identity_document_type_id === '6' || form.payer.identity_document_type_id === '1'">
-                                                <el-button type="primary" slot="append" :loading="loading_search" icon="el-icon-search" @click.prevent="searchPayer">
-                                                    <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                    <template>Buscar</template>
-                                                    <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                </el-button>
-                                            </template>
-                                        </el-input>
+                                        <x-input-service v-model="form.payer.number"
+                                                         :identity_document_type_id="form.payer.identity_document_type_id"
+                                                         @search="searchPayer"></x-input-service>
                                     </div>
                                 </div>
                                 <div class="col-lg-4">
@@ -535,7 +529,7 @@
                                                                 effect="dark"
                                                                 placement="bottom">
                                                                 <el-button
-                                                                    class="btn-search-default-carrier btn-search-border w-100 h-100"                                                                    
+                                                                    class="btn-search-default-carrier btn-search-border w-100 h-100"
                                                                     @click.prevent="clickWarehouseDetail()">
                                                                     <i class="fa fa-search"></i>
                                                                 </el-button>
@@ -1400,7 +1394,7 @@ export default {
 
             if (this.senders.length > 0) {
                 let sender = this.senders.find(e => e.id === this.form.sender_id);
-            
+
                 if (sender) {
                     if (sender.identity_document_type_id == '6') {
                         this.supplier_data = {
@@ -1543,24 +1537,8 @@ export default {
                 this.form.payer.number=null;
             }
         },
-        async searchPayer() {
-            if(this.form.payer.number === '') {
-                this.$message.error('Ingresar el número a buscar')
-                return
-            }
-            let identity_document_type_name = ''
-            this.loading_search = true
-            identity_document_type_name = (this.form.payer.identity_document_type_id === '6')?'ruc':'dni'
-
-            let response = await this.$http.get(`/service/${identity_document_type_name}/${this.form.payer.number}`)
-            if(response.data.success) {
-                let data = response.data.data
-                this.form.payer.name = data.name
-            } else {
-                this.$message.error(response.data.message)
-            }
-
-            this.loading_search = false
+        searchPayer(data) {
+            this.form.payer.name = data.name
         },
         setDefaultSeries() {
             if (this.series.length > 0) {

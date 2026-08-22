@@ -27,7 +27,8 @@
                         <div class="form-group"  :class="{'has-danger': errors.start_number}">
                             <label class="control-label">Número inicial<span class="text-danger"> *</span></label> 
                             <el-input placeholder="Ingresar"
-                                v-model="search.start_number">
+                                v-model="search.start_number"
+                                @focus="$event.target.select()">
                             </el-input>
                             <small class="form-control-feedback" v-if="errors.start_number" v-text="errors.start_number[0]"></small>
                         </div>
@@ -36,7 +37,8 @@
                         <div class="form-group"  >
                             <label class="control-label">Número final</label> 
                             <el-input placeholder="Ingresar"
-                                v-model="search.end_number">
+                                v-model="search.end_number"
+                                @focus="$event.target.select()">
                             </el-input>
                         </div>
                     </div> 

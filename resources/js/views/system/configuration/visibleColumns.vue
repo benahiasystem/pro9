@@ -288,6 +288,7 @@ const MODULES = {
             customer:                { title: 'Cliente',            visible: true,  type: 'customer' },
             state_type:              { title: 'Estado',             visible: true,  type: 'status'   },
             identifier:              { title: 'Cotización',         visible: true,  type: 'document' },
+            source:                  { title: 'Origen',             visible: true,  type: 'status'   },
             documents:               { title: 'Comprobantes',       visible: false, type: 'document' },
             sale_notes:              { title: 'Notas de venta',     visible: false, type: 'document' },
             order_note:              { title: 'Pedidos',            visible: false, type: 'document' },

@@ -4,7 +4,7 @@
 <section class="auth">
     @include('tenant.auth.partials.side_left')
     <article class="auth__form">
-        <form class="form-material" id="loginform" method="POST" action="{{ route('password.update') }}">
+        <form class="form-material" id="loginform" method="POST" action="{{ route('password.update', [], false) }}">
             @include('tenant.auth.partials.form_logo')
             <h1 class="auth__title">Bienvenido a<br>{{ $company->trade_name }}</h1>
             <p>
@@ -52,7 +52,7 @@
             <div class="form-group text-center">
                 <button type="submit" class="btn btn-signin btn-block">REINICIAR CONTRASEÑA</button>
                 <br>
-                <a href="{{ route('login') }}" class="btn btn-link">
+                <a href="{{ route('login', [], false) }}" class="btn btn-link">
                     <i class="fa fa-arrow-left mr-2"></i> Regresar al login
                 </a>
             </div>

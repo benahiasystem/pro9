@@ -53,5 +53,67 @@ class StatusOrder extends ModelTenant
     {
         return $this->hasMany(Order::class, 'shipping_status_order_id');
     }
+
+    /**
+     * Estado inicial del flujo de pedido (operativo).
+     */
+    public static function resolveInitialOrderStatusId(): ?int
+    {
+        $status = self::where('is_order_status', true)
+            ->where('is_initial', true)
+            ->orderBy('sort_order')
+            ->first()
+            ?: self::where('is_order_status', true)->orderBy('sort_order')->first();
+
+        return $status ? (int) $status->id : null;
+    }
+
+    /**
+     * Estado de pago pendiente (is_initial).
+     */
+    public static function resolveInitialPaymentStatusId(): ?int
+    {
+        $status = self::where('is_payment_status', true)
+            ->where('is_initial', true)
+            ->orderBy('sort_order')
+            ->first()
+            ?: self::where('is_payment_status', true)->orderBy('sort_order')->first();
+
+        return $status ? (int) $status->id : null;
+    }
+
+    /**
+     * Estado de pago recibido/completado (action_mark_payment), igual que Culqi.
+     */
+    public static function resolvePaidPaymentStatusId(): ?int
+    {
+        $status = self::where('is_payment_status', true)
+            ->where('action_mark_payment', true)
+            ->first();
+
+        if (! $status) {
+            $status = self::where('is_payment_status', true)
+                ->where('is_initial', false)
+                ->orderBy('sort_order')
+                ->first()
+                ?: self::where('is_payment_status', true)->orderBy('sort_order')->first();
+        }
+
+        return $status ? (int) $status->id : null;
+    }
+
+    /**
+     * Estado inicial del flujo de envío.
+     */
+    public static function resolveInitialShippingStatusId(): ?int
+    {
+        $status = self::where('is_shipping_status', true)
+            ->where('is_initial', true)
+            ->orderBy('sort_order')
+            ->first()
+            ?: self::where('is_shipping_status', true)->orderBy('sort_order')->first();
+
+        return $status ? (int) $status->id : null;
+    }
 }
 

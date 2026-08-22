@@ -35,9 +35,9 @@
                                 class="form-group">
                             <label class="control-label">Número <span class="text-danger">*</span></label>
 
-                            <el-input v-model="form.number"
-                                        :maxlength="maxLength">
-                            </el-input>
+                            <x-input-service v-model="form.number"
+                                             :identity_document_type_id="form.identity_document_type_id"
+                                             @search="searchNumber"></x-input-service>
 
                             <small v-if="errors.number"
                                     class="form-control-feedback"
@@ -185,16 +185,6 @@ export default {
             })
 
     },
-    computed: {
-        maxLength: function () {
-            if (this.form.identity_document_type_id === '6') {
-                return 11
-            }
-            if (this.form.identity_document_type_id === '1') {
-                return 8
-            }
-        },
-    },
     methods: {
         initForm() {
             this.errors = {}
@@ -250,6 +240,10 @@ export default {
                 })
         },
         changeIdentityDocType() {
+        },
+        searchNumber(data) {
+            this.form.name = (this.form.identity_document_type_id === '1') ? data.nombre_completo : data.nombre_o_razon_social
+            if (data.address) this.form.address = data.address
         },
         close() {
             this.$emit('update:showDialog', false)

@@ -118,28 +118,83 @@
                                             @focus="focusSelectItem"
                                             @visible-change="focusTotalItem"
                                         >
-                                            <el-tooltip
-                                                v-for="option in items"
-                                                :key="option.id"
-                                                placement="left"
-                                            >
-                                                <div
-                                                    slot="content"
-                                                    v-html="
-                                                        ItemSlotTooltipView(
-                                                            option
-                                                        )
-                                                    "
-                                                ></div>
-                                                <el-option
-                                                    :label="
-                                                        ItemOptionDescriptionView(
-                                                            option
-                                                        )
-                                                    "
-                                                    :value="option.id"
-                                                ></el-option>
-                                            </el-tooltip>
+                                            <template v-for="option in items">
+                                                <el-tooltip
+                                                    :key="option.id"
+                                                    :disabled="option.variations_count > 0"
+                                                    placement="left"
+                                                >
+                                                    <div
+                                                        slot="content"
+                                                        v-html="
+                                                            ItemSlotTooltipView(
+                                                                option
+                                                            )
+                                                        "
+                                                    ></div>
+                                                    <el-option
+                                                        :label="
+                                                            ItemOptionDescriptionView(
+                                                                option
+                                                            )
+                                                        "
+                                                        :value="option.id"
+                                                    >
+                                                        <div v-if="option.variations_count > 0"
+                                                             class="d-flex align-items-center justify-content-between"
+                                                             @click.stop="toggleExpandVariations(option)">
+                                                            <span>
+                                                                {{ ItemOptionDescriptionView(option) }}
+                                                                <el-tag type="info">{{ option.variations_count }} variaciones</el-tag>
+                                                            </span>
+                                                            <span class="d-flex align-items-center">
+                                                                <small class="me-2"
+                                                                       :class="variationsTotalStock(option) > 0 ? 'text-success' : 'text-danger'">
+                                                                    Stock en variaciones: {{ variationsTotalStock(option) }}
+                                                                </small>
+                                                                <i :class="expanded_parent_ids.includes(option.id) ? 'el-icon-arrow-up' : 'el-icon-arrow-down'"></i>
+                                                            </span>
+                                                        </div>
+                                                    </el-option>
+                                                </el-tooltip>
+                                                <template v-if="option.variations_count > 0 && expanded_parent_ids.includes(option.id)">
+                                                    <template v-for="group in variationGroups(option)">
+                                                        <div v-if="group.name"
+                                                             :key="'variation-group-' + option.id + '-' + group.key"
+                                                             class="variation-group-header">
+                                                            <span v-if="group.color"
+                                                                  class="variation-group-header__dot"
+                                                                  :style="{ background: group.color }"></span>
+                                                            <span class="variation-group-header__name">{{ group.name }}</span>
+                                                            <small class="text-muted">{{ formatVariationStock(group.stock) }} en stock</small>
+                                                        </div>
+                                                        <el-option
+                                                            v-for="variation in group.variations"
+                                                            :key="'variation-' + variation.id"
+                                                            :label="variation.description"
+                                                            :value="variation.id"
+                                                            class="variation-child-option"
+                                                        >
+                                                            <div class="d-flex align-items-center justify-content-between"
+                                                                 @click.stop="selectVariation(variation)">
+                                                                <span class="d-flex align-items-center">
+                                                                    <variation-chips v-if="variation.rest_attributes.length"
+                                                                                     :attributes="variation.rest_attributes"></variation-chips>
+                                                                    <template v-else>{{ variation.variation_label || variation.description }}</template>
+                                                                    <small class="text-muted ms-2">{{ variation.internal_id }}<template v-if="variation.barcode"> · {{ variation.barcode }}</template></small>
+                                                                </span>
+                                                                <span class="text-end" style="line-height: 1.3;">
+                                                                    {{ option.currency_type_symbol }} {{ variation.sale_unit_price }}
+                                                                    <small class="d-block" :class="variationStockClass(variation)">
+                                                                        <template v-if="variation.stock > 0">{{ formatVariationStock(variation.stock) }} disponibles</template>
+                                                                        <template v-else>Sin stock</template>
+                                                                    </small>
+                                                                </span>
+                                                            </div>
+                                                        </el-option>
+                                                    </template>
+                                                </template>
+                                            </template>
                                             <template slot="empty">
                                                 <p v-if="loading_search" class="el-select-dropdown__empty">
                                                     Cargando...
@@ -971,6 +1026,46 @@
     margin-right: 5% !important;
     max-width: 80% !important;
 }
+.el-select-items .variation-child-option {
+    padding-left: 34px;
+    background: #faf9ff;
+    height: auto;
+    line-height: 1.4;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+.el-select-items .variation-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 20px 5px 20px;
+    background: #f2f2f5;
+    font-size: 12px;
+    font-weight: 600;
+    color: #606266;
+}
+.el-select-items .variation-group-header small {
+    margin-left: auto;
+    font-weight: 400;
+}
+.el-select-items .variation-group-header__dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+.el-select-items .variation-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b3fd4;
+    background: #eceafd;
+    border-radius: 99px;
+    padding: 1px 8px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
 .el-button + .el-button {
     margin-left: 0;
 }
@@ -981,6 +1076,7 @@
 
 <script>
 import ItemForm from "../../items/form.vue";
+import VariationChips from "../../items/partials/variation_chips.vue";
 import LotsGroup from "./lots_group.vue";
 
 import { calculateRowItem } from "../../../../helpers/functions";
@@ -1027,6 +1123,7 @@ export default {
     ],
     components: {
         ItemForm,
+        VariationChips,
         WarehousesDetail,
         Keypress,
         LotsGroup,
@@ -1071,6 +1168,7 @@ export default {
             warehousesDetail: [],
             showListStock: false,
             search_item_by_barcode: false,
+            expanded_parent_ids: [],
             isUpdateWarehouseId: null,
             showDialogLots: false,
             showDialogSelectLots: false,
@@ -1461,13 +1559,19 @@ export default {
                     .get(`/${this.resource}/search-items/`, { params })
                     .then(response => {
                         this.items = response.data.items;
-                        this.loading_search = false;
                         this.enabledSearchItemsBarcode(input);
                         this.enabledSearchItemBySeries(input);
                         if (this.items.length == 0) {
                             this.filterItems();
                             this.items = [];
                         }
+                    })
+                    .catch(() => {
+                        this.$message.error('No se pudo completar la búsqueda de productos');
+                    })
+                    .then(() => {
+                        // se ejecuta siempre: evita que el "Cargando..." quede colgado si la petición falla
+                        this.loading_search = false;
                     });
             } else {
                 await this.filterItems();
@@ -1844,7 +1948,100 @@ export default {
             this.initForm();
             this.$emit("update:showDialog", false);
         },
+        toggleExpandVariations(option) {
+            const index = this.expanded_parent_ids.indexOf(option.id)
+            if (index === -1) {
+                this.expanded_parent_ids.push(option.id)
+            } else {
+                this.expanded_parent_ids.splice(index, 1)
+            }
+        },
+        variationsTotalStock(option) {
+            return (option.variations || []).reduce((total, variation) => total + parseFloat(variation.stock || 0), 0)
+        },
+        variationGroups(option) {
+            const groups = []
+            const index = {}
+
+            ;(option.variations || []).forEach(variation => {
+                const attributes = variation.variation_attributes || []
+                const color_attribute = attributes.find(attribute => attribute.color)
+                const key = color_attribute ? `color-${color_attribute.value}` : 'sin-color'
+
+                if (!index[key]) {
+                    index[key] = {
+                        key,
+                        name: color_attribute ? color_attribute.value : null,
+                        color: color_attribute ? color_attribute.color : null,
+                        stock: 0,
+                        variations: [],
+                    }
+                    groups.push(index[key])
+                }
+
+                index[key].stock += parseFloat(variation.stock || 0)
+                index[key].variations.push({
+                    ...variation,
+                    rest_attributes: attributes.filter(attribute => attribute !== color_attribute),
+                })
+            })
+
+            return groups
+        },
+        formatVariationStock(stock) {
+            const value = parseFloat(stock || 0)
+            return Number.isInteger(value) ? `${value}` : `${parseFloat(value.toFixed(2))}`
+        },
+        variationStockClass(variation) {
+            const stock = parseFloat(variation.stock || 0)
+            if (stock <= 0) return 'text-danger'
+            const stock_min = parseFloat(variation.stock_min || 0)
+            return stock <= stock_min ? 'text-warning' : 'text-success'
+        },
+        async selectVariation(variation) {
+            this.loading_search = true
+            try {
+                const response = await this.$http.get(`/${this.resource}/search/item/${variation.id}`)
+                const full_item = (response.data.items || [])[0]
+                if (!full_item) {
+                    return this.$message.error('No se pudo cargar la variación seleccionada')
+                }
+                if (!this.items.find(row => row.id === full_item.id)) {
+                    this.items.push(full_item)
+                }
+                this.form.item_id = full_item.id
+                if (this.$refs.selectSearchNormal) {
+                    this.$refs.selectSearchNormal.blur()
+                }
+                await this.changeItem()
+            } finally {
+                this.loading_search = false
+            }
+        },
         async changeItem() {
+            const selected_item = _.find(this.items, {'id': this.form.item_id});
+            if (!selected_item) {
+                return;
+            }
+
+            // El padre con variaciones no es vendible: se expande para elegir una variación
+            if (selected_item.variations_count > 0) {
+                this.form.item_id = null;
+                if (this.showDialog && !this.search_item_by_barcode) {
+                    if (!this.expanded_parent_ids.includes(selected_item.id)) {
+                        this.expanded_parent_ids.push(selected_item.id);
+                    }
+                    this.$nextTick(() => {
+                        if (this.$refs.selectSearchNormal) {
+                            this.$refs.selectSearchNormal.visible = true;
+                        }
+                    });
+                } else {
+                    this.$message.warning('Este producto tiene variaciones: selecciona una variación específica');
+                }
+                return;
+            }
+
             this.clearExtraInfoItem();
 
             this.clearExtraInfoItem()

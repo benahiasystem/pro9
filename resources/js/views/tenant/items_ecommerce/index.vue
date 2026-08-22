@@ -101,7 +101,7 @@
                         <td class="text-center">
                             <el-checkbox
                                 size="medium"
-                                @change="visibleStore($event, row.id)"
+                                @change="visibleStore($event, row.id, row)"
                                 v-model="row.apply_store"
                             ></el-checkbox>
                         </td>
@@ -273,9 +273,31 @@ export default {
             this.recordImages.image_url_small = row.image_url_small;
             this.showImageDetail = true;
         },
-        visibleStore(apply_store, id) {
+        visibleStore(apply_store, id, row = null) {
+            const variations_count = row && row.variations_count ? row.variations_count : 0;
+
+            if (!apply_store && variations_count > 0) {
+                this.$confirm(
+                    `Se deshabilitarán también sus ${variations_count} variaciones de la tienda. ¿Continuar?`,
+                    'Confirmar',
+                    {
+                        confirmButtonText: 'Deshabilitar todo',
+                        cancelButtonText: 'Cancelar',
+                        type: 'warning'
+                    }
+                ).then(() => {
+                    this.postVisibleStore(apply_store, id, 1);
+                }).catch(() => {
+                    if (row) row.apply_store = true;
+                });
+                return;
+            }
+
+            this.postVisibleStore(apply_store, id, 0);
+        },
+        postVisibleStore(apply_store, id, cascade) {
             this.$http
-                .post(`/${this.resource}/visible_store`, { id, apply_store })
+                .post(`/${this.resource}/visible_store`, { id, apply_store, cascade })
                 .then(response => {
                     if (response.data.success) {
                         if (apply_store) {

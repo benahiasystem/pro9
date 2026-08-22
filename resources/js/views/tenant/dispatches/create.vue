@@ -370,7 +370,9 @@
                             <div v-if="form.is_transport_m1l" class="col-lg-4">
                                 <div :class="{ 'has-danger': errors.license_plate_m1l }" class="form-group mb-0">
                                     <label class="control-label">Número de placa<span class="text-danger"> *</span></label>
-                                    <el-input v-model="form.license_plate_m1l"></el-input>
+                                    <x-input-service v-model="form.license_plate_m1l"
+                                                     service_type="placa"
+                                                     @search="searchLicensePlateM1l"></x-input-service>
                                     <small v-if="errors.license_plate_m1l" class="form-control-feedback" v-text="errors.license_plate_m1l[0]"></small>
                                 </div>
                             </div>
@@ -498,7 +500,9 @@
                                 <div class="col-lg-3" v-if="form.transport_mode_type_id === '02'">
                                     <div class="form-group">
                                         <label class="control-label">N° placa semirremolque</label>
-                                        <el-input v-model="form.secondary_license_plates.semitrailer"></el-input>
+                                        <x-input-service v-model="form.secondary_license_plates.semitrailer"
+                                                         service_type="placa"
+                                                         @search="searchSemitrailerPlate"></x-input-service>
                                     </div>
                                 </div>
                             </template>
@@ -1160,6 +1164,24 @@ export default {
 
     },
     methods: {
+        // Consulta de placa del vehículo M1 o L.
+        searchLicensePlateM1l(data) {
+            if (!data) return
+
+            if (data.plate_number) this.form.license_plate_m1l = data.plate_number
+
+            const detail = [data.brand, data.model].filter(v => v).join(' ')
+            if (detail) this.$message.success(`Vehículo: ${detail}`)
+        },
+        // Consulta de placa del semirremolque.
+        searchSemitrailerPlate(data) {
+            if (!data) return
+
+            if (data.plate_number) this.form.secondary_license_plates.semitrailer = data.plate_number
+
+            const detail = [data.brand, data.model].filter(v => v).join(' ')
+            if (detail) this.$message.success(`Semirremolque: ${detail}`)
+        },
         addReferenceDocument(row) {
             this.form.reference_documents.push(JSON.parse(JSON.stringify(row)))
         },

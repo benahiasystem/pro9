@@ -25,7 +25,7 @@
                     <div class="col-md-6">
                         <div class="form-group" :class="{'has-danger': errors.number}">
                             <label class="control-label">Número (Correlativo a iniciar)</label>
-                            <el-input v-model="form.number"  ></el-input>
+                            <el-input v-model="form.number" @focus="$event.target.select()"></el-input>
                             <small class="form-control-feedback" v-if="errors.number" v-text="errors.number[0]"></small>
                         </div>
                     </div>

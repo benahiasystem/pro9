@@ -1,5 +1,4 @@
 <template>
-    <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <el-dialog :close-on-click-modal="false"
         :title="titleDialog"
         :visible="showDialog"
@@ -37,29 +36,9 @@
                                 <div :class="{'has-danger': errors.number}"
                                      class="form-group">
                                     <label class="control-label">Número <span class="text-danger">*</span></label>
-                                    <div v-if="api_service_token != false">
-                                        <x-input-service v-model="form.number"
-                                            :identity_document_type_id="form.identity_document_type_id"
-                                            @search="searchNumber"></x-input-service>
-                                    </div>
-                                    <div v-else>
-                                        <el-input v-model="form.number"
-                                            :maxlength="maxLength"
-                                            dusk="number">
-                                            <template
-                                                v-if="form.identity_document_type_id === '6' || form.identity_document_type_id === '1'">
-                                                <el-button slot="append"
-                                                    :loading="loading_search"
-                                                    icon="el-icon-search"
-                                                    type="primary"
-                                                    @click.prevent="searchCustomer">
-                                                    <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                    <template>Buscar</template>
-                                                    <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                </el-button>
-                                            </template>
-                                        </el-input>
-                                    </div>
+                                    <x-input-service v-model="form.number"
+                                        :identity_document_type_id="form.identity_document_type_id"
+                                        @search="searchNumber"></x-input-service>
                                     <small v-if="errors.number"
                                         class="invalid-feedback"
                                         v-text="errors.number[0]"></small>
@@ -145,9 +124,7 @@
     </el-dialog>
 </template>
 
-    <!-- ######## FIN CAMBIO GEOPOLITICO VENEZUELA -->
 <script>
-// ######## INICIO SCRIPT GEOPOLITICO VENEZUELA
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 import {serviceNumber} from '../../../../mixins/functions'
@@ -188,14 +165,6 @@ export default {
             'person',
             'parentPerson',
         ]),
-        maxLength: function () {
-            if (this.form.identity_document_type_id === '6') {
-                return 11
-            }
-            if (this.form.identity_document_type_id === '1') {
-                return 8
-            }
-        },
     },
     methods: {
         customFilterMethod(node, keyword) {
@@ -316,7 +285,7 @@ export default {
             if (this.form.location_id.length === 0 || !this.form.address ) {
                 return this.$message.error('Falta ingresar el ubigeo o la dirección');
             }
-            
+
             this.form.person_id = (this.personId) ? this.personId: null;
             this.loading_submit = true
 
@@ -361,14 +330,10 @@ export default {
             this.$emit('update:showDialog', false)
             this.initForm()
         },
-        searchCustomer() {
-            this.searchServiceNumberByType()
-        },
         async searchNumber(data) {
             this.form.name = data.name;
         },
 
     }
 }
-// ######## FIN SCRIPT GEOPOLITICO VENEZUELA
 </script>

@@ -1,4 +1,3 @@
-{{-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## --}}
   <h2 class="carousel-title">Featured Products</h2>
 
 
@@ -23,7 +22,7 @@
               <h2 class="product-title  tony">
                   <a href="#">{{$item->name}}</a>
               </h2>
-              <div class="price-box">
+              <div class="price-box" @if(!($storefront_show_prices ?? true)) style="display:none" @endif>
                   <span class="product-price">Bs. {{ number_format($item->sale_unit_price, 2) }}</span>
               </div><!-- End .price-box -->
 
@@ -32,7 +31,7 @@
                       <span>Add to Wishlist</span>
                   </a>
 
-                  <a href="#" data-product="{{ json_encode( $item ) }}" class="paction add-cart" title="Add to Cart">
+                  <a href="javascript:void(0)" role="button" data-product="{{ json_encode( $item ) }}" class="paction add-cart" title="Add to Cart">
                       <span>Add to Cart</span>
                   </a>
 
@@ -54,5 +53,3 @@
 
 
   </div><!-- End .featured-proucts -->
-
-{{-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## --}}

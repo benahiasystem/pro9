@@ -1,10 +1,10 @@
 <template>
   <div>
-    <div class="image-container">
+    <div class="image-container" style="max-height: 150px;">
       <img
         :src="imageUrl"
         alt="Vista previa"
-        class="img-fluid img-thumbnail w-100"
+        class="img-fluid img-thumbnail img-thumbnail-system w-100"
       />
       <div class="overlay">
         <el-button
@@ -128,5 +128,9 @@ export default {
 
 .change-btn:active {
   transform: translateY(0);
+}
+.img-thumbnail-system {
+  height: 160px;
+  object-fit: contain;
 }
 </style>

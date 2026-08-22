@@ -232,7 +232,8 @@ a:focus {
 .card-header {
     background: #ffffff;
 }
-.support-header {
+.support-header,
+.theme-sidebar-header {
     background: var(--black-primary);
 }
 .support-right strong {
@@ -3397,7 +3398,7 @@ html.dark .fp-doc-tab.active {
     color: var(--black-light);
 }
 .minitour-tooltip p {
-    color: var(--black-muted) !important;
+    color: var(--accent-color) !important;
 }
 .minitour-tooltip p b {
     color: var(--black-light) !important;
@@ -3460,6 +3461,23 @@ html.dark .el-tooltip__popper.is-dark{
 }
 .el-tooltip__popper{
   border-radius:8px !important;
+}
+.detail-drawer__customer-field-label,
+.detail-drawer__operation-label,
+.detail-drawer__totals-label,
+.detail-drawer__totals-row-icon,
+.detail-drawer__totals-row-label {
+    color: var(--black-accent);
+}
+html.dark .detail-drawer__customer-field:first-child,
+html.dark .detail-drawer__customer-field,
+html.dark .detail-drawer__customer-summary,
+html.dark .detail-drawer__operation-card,
+html.dark .detail-drawer__operation-seller,
+html.dark .detail-drawer__totals-summary-card,
+html.dark .detail-drawer__totals-card,
+html.dark .detail-drawer__totals-row {
+    border-color: var(--black-border-dark);
 }
 /* ############################ ESTILOS MODO OSCURO ########################### */
 html.dark, html.dark body {
@@ -3996,7 +4014,8 @@ html.dark .style-switcher{
 }
 html.dark .el-table,
 html.dark .el-table th,
-html.dark .el-table tr{
+html.dark .el-table tr,
+html.dark .detail-drawer__inner {
     background-color: var(--black-bg-dark);
 }
 html.dark .el-table th.is-leaf,

@@ -10,7 +10,7 @@
 
                         <div class="row">
                             <div class="col-md-7 col-lg-5 bg-yape text-center pr-0">
-                                <img :src="'/logo/yape-logo.png'" class="my-1" style="max-width:80px;" alt="Yape">
+                                <img :src="'/logo/yape.svg'" class="my-1" style="max-width:80px;" alt="Yape">
                                 <div class="card mx-4">
                                     <div class="card-body">
                                         <div class="p-2">

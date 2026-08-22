@@ -32,6 +32,7 @@ use App\Models\Tenant\Promotion;
 use Modules\ApiPeruDev\Data\ServiceData;
 use App\Models\Tenant\Document;
 use Modules\Item\Models\Category;
+use Modules\Item\Models\Brand;
 use App\Models\Tenant\Catalogs\Department;
 use Modules\Ecommerce\Models\Tenant\DeliveryZone;
 use Modules\Ecommerce\Models\Tenant\DeliveryZoneLocation;
@@ -39,9 +40,13 @@ use Modules\Ecommerce\Models\Tenant\DiscountCoupon;
 use Modules\Ecommerce\Models\Tenant\DiscountCouponUsage;
 use Modules\Ecommerce\Models\Tenant\PickupBranch;
 use App\Models\Tenant\PersonAddress;
-
+use Modules\Payment\Models\PaymentConfiguration;
 use App\Models\System\Configuration as SystemConfiguration;
 use Modules\Ecommerce\Jobs\SendOrderStatusEmail;
+use Illuminate\Support\Facades\Log;
+use Exception;
+use App\Services\Tenant\OrderDocumentFromStatusService;
+use Modules\Ecommerce\Services\CampaignPriceService;
 
 
 class EcommerceController extends Controller
@@ -61,13 +66,16 @@ class EcommerceController extends Controller
      * @return Response
      */
     public function __construct(){
-        // Compartir variable records
-        view()->share('records', Item::where('apply_store', 1)->orderBy('id', 'DESC')->take(2)->get());
+        // Compartir variable records (los padres de variaciones no se listan en tienda)
+        view()->share('records', Item::where('apply_store', 1)->whereDoesntHave('variations')->orderBy('id', 'DESC')->take(2)->get());
 
         // Compartir descripción ecommerce globalmente usando el modelo Company
         $companyModel = \App\Models\Tenant\Company::first();
         $ecommerceDescription = self::getEcommerceDescription($companyModel);
         view()->share('ecommerceDescription', $ecommerceDescription);
+
+        // Visibilidad de precios en listados / ficha / header (ambos modos de cotización)
+        view()->share('storefront_show_prices', ConfigurationEcommerce::storefrontShowsPrices());
     }
 
     // public function index()
@@ -76,7 +84,7 @@ class EcommerceController extends Controller
     //   $configuration = InventoryConfiguration::first();
     //   return view('ecommerce::index', ['dataPaginate' => $dataPaginate, 'configuration' => $configuration->stock_control]);
     // }
-    public function index($name = null)
+    public function index($name = null, $brand = null)
     {
         if ($name) {
             $name = str_replace('-', ' ', $name);
@@ -95,8 +103,13 @@ class EcommerceController extends Controller
 
         $order = request()->get('order');
 
-        // Query base
-        $query = Item::where([['apply_store', 1], ['internal_id', '!=', null]]);
+        // Query base (los padres de variaciones se ocultan; sus variaciones son cards normales)
+        $query = Item::with('brand')->where([['apply_store', 1], ['internal_id', '!=', null]])
+            ->whereDoesntHave('variations');
+
+        if ($brand) {
+            $query->where('brand_id', $brand->id);
+        }
 
         // Filtrar solo productos disponibles si está activado
         if (isset($preferences['only_available_products']) && $preferences['only_available_products'] == 1) {
@@ -128,10 +141,14 @@ class EcommerceController extends Controller
             : 16;
 
         $dataPaginate = $query->category($category ? $category->id : null)
-            ->paginate($perPage);
+            ->paginate($perPage)
+            ->withQueryString();
 
         $configuration = InventoryConfiguration::first();
-        $categories_filtered = Category::has('items')->get();
+        // Mostrar también las categorías recién creadas aunque todavía no tengan
+        // productos asociados. Antes `has('items')` hacía que desaparecieran de
+        // la navegación y de la sección "Nuestras Categorías".
+        $categories_filtered = Category::orderBy('name')->get();
 
         // Obtener los anuncios publicitarios (spots) activos
         $spots = Promotion::where('apply_restaurant', 0)
@@ -155,9 +172,25 @@ class EcommerceController extends Controller
             'company' => $company,
             'customLinks' => $customLinks,
             'category' => $category,
+            'brand' => $brand,
             'categories' => $categories_filtered,
             'categories_list' => $categories_filtered
         ]);
+    }
+
+    public function brand($id, $slug = null)
+    {
+        $brand = Brand::findOrFail((int) $id);
+        $canonicalSlug = Str::slug($brand->name);
+
+        if ($canonicalSlug !== '' && $slug !== $canonicalSlug) {
+            return redirect()->route('tenant.ecommerce.brand', [
+                'id' => $brand->id,
+                'slug' => $canonicalSlug,
+            ], 301);
+        }
+
+        return $this->index(null, $brand);
     }
 
     /**
@@ -202,6 +235,7 @@ class EcommerceController extends Controller
         }
 
         $items = Item::where([['apply_store', 1], ['internal_id', '!=', null]])
+            ->whereDoesntHave('variations')
             ->select('id', 'description', 'updated_at')
             ->orderBy('id', 'DESC')
             ->get();
@@ -239,10 +273,28 @@ class EcommerceController extends Controller
     public function item(Request $request, $id, $slug = null)
     {
         $id = (int) $id;
-        $row = Item::find($id);
+        $row = Item::with(['brand', 'category', 'items_sets'])->find($id);
 
         if (!$row) {
             abort(404);
+        }
+
+        // Un padre con variaciones no es vendible: redirige a una variación publicada
+        if ($row->variations()->exists()) {
+            $target = $row->variations()
+                ->where('active', 1)
+                ->where('apply_store', 1)
+                ->orderByDesc('stock')
+                ->first();
+
+            if (!$target) {
+                abort(404);
+            }
+
+            return redirect()->route('tenant.ecommerce.item', [
+                'id' => $target->id,
+                'slug' => Str::slug($target->description),
+            ]);
         }
 
         $promotion_id = $request->query('promotion');
@@ -272,6 +324,7 @@ class EcommerceController extends Controller
             'unit_type_id' => $row->unit_type_id,
             'description' => $description,
             'category' => $row->category,
+            'brand' => $row->brand,
             'stock' => $row->getStockByWarehouseMain(),
             // 'description' => $row->description,
             'technical_specifications' => $row->technical_specifications,
@@ -290,20 +343,121 @@ class EcommerceController extends Controller
             'images' => $row->images,
             'attributes' => $row->attributes ? $row->attributes : [],
             'promotion_id' => $promotion_id,
+            'variation_selector' => $this->getVariationSelector($row),
+            'components' => $row->items_sets->map(function ($component) {
+                return (object) [
+                    'id' => $component->id,
+                    'name' => $component->description,
+                    'description' => $component->name,
+                    'quantity' => (float) $component->pivot->quantity,
+                    'unit_type_id' => $component->unit_type_id,
+                    'image' => $component->image,
+                    'image_medium' => $component->image_medium,
+                    'image_small' => $component->image_small,
+                ];
+            })->values(),
         ];
+
+        if ($request->expectsJson()) {
+            return response()->json(['data' => $record]);
+        }
+
+        // El servicio requiere el modelo Eloquent, no el DTO usado por la vista.
+        $campaignPricing = app(CampaignPriceService::class)->forItem($row);
         $categories = \Modules\Item\Models\Category::has('items')->get();
         return view('ecommerce::items.record', compact('record', 'categories'));
     }
 
+    /**
+     * Estructura para el selector de variantes del detalle: variables con sus valores
+     * y el mapa combinación → variación hermana (elegir otra combinación navega a su URL).
+     */
+    private function getVariationSelector($row)
+    {
+        if (!$row->parent_item_id) {
+            return null;
+        }
+
+        $siblings = Item::where('parent_item_id', $row->parent_item_id)
+            ->where('active', 1)
+            ->where('apply_store', 1)
+            ->with('variationValues.value.variable')
+            ->orderBy('id')
+            ->get();
+
+        if ($siblings->count() < 2) {
+            return null;
+        }
+
+        $variables = [];
+        $combinations = [];
+
+        foreach ($siblings as $sibling) {
+            $value_ids = [];
+
+            foreach ($sibling->variationValues as $variation_value) {
+                $value = $variation_value->value;
+                $variable = $value ? $value->variable : null;
+                if (!$value || !$variable) {
+                    continue;
+                }
+
+                if (!isset($variables[$variable->id])) {
+                    $variables[$variable->id] = [
+                        'id' => $variable->id,
+                        'name' => $variable->name,
+                        'value_type' => $variable->value_type,
+                        'values' => [],
+                    ];
+                }
+                $variables[$variable->id]['values'][$value->id] = [
+                    'id' => $value->id,
+                    'value' => $value->value,
+                    'color' => $value->color,
+                ];
+
+                $value_ids[] = (int) $value->id;
+            }
+
+            sort($value_ids);
+            $combinations[] = [
+                'variation_id' => $sibling->id,
+                'value_ids' => array_values($value_ids),
+                'stock' => $sibling->getStockByWarehouseMain(),
+                'url' => route('tenant.ecommerce.item', ['id' => $sibling->id, 'slug' => Str::slug($sibling->description)]),
+            ];
+        }
+
+        $current = $siblings->firstWhere('id', $row->id);
+        $current_value_ids = $current
+            ? $current->variationValues->pluck('product_variable_value_id')->map(function ($value_id) {
+                return (int) $value_id;
+            })->sort()->values()->all()
+            : [];
+
+        return [
+            'variables' => array_map(function ($variable) {
+                $variable['values'] = array_values($variable['values']);
+                return $variable;
+            }, array_values($variables)),
+            'combinations' => $combinations,
+            'current_value_ids' => $current_value_ids,
+        ];
+    }
+
     public function items()
     {
-        $records = Item::where('apply_store', 1)->get();
+        $records = Item::with('brand')->where('apply_store', 1)->whereDoesntHave('variations')->get();
         return view('ecommerce::items.index', compact('records'));
     }
 
     public function itemsBar()
     {
-        $records = Item::where('apply_store', 1)->get();
+        $records = Item::with('brand')->where('apply_store', 1)
+            ->when(request('brand_id'), function ($query, $brandId) {
+                $query->where('brand_id', (int) $brandId);
+            })
+            ->whereDoesntHave('variations')->get();
         // return new ItemCollection($records);
         return new ItemBarCollection($records);
 
@@ -324,23 +478,24 @@ class EcommerceController extends Controller
         $systemConfig = Configuration::with('globalDiscountType')->first();
         $global_discount_type = $systemConfig->globalDiscountType;
 
-        // Obtener la primera dirección guardada del cliente autenticado para pre-cargar el modal
+        // Dirección de envío del cliente autenticado (person_addresses + contact.shipping)
         $userAddress = null;
+        $userAddresses = [];
         if ($ecommerceUser = auth('ecommerce')->user()) {
-            $firstAddress = $ecommerceUser->addresses()->first();
-            if ($firstAddress) {
-                $userAddress = [
-                    'address'       => $firstAddress->address,
-                    'department_id' => $firstAddress->department_id,
-                    'province_id'   => $firstAddress->province_id,
-                    'district_id'   => $firstAddress->district_id,
-                    'phone'         => $firstAddress->phone,
-                ];
-            }
+            $ecommerceUser = $ecommerceUser->fresh();
+            $userAddress = $this->buildUserShippingAddressPayload($ecommerceUser);
+            $userAddresses = $this->getUserShippingAddresses($ecommerceUser);
         }
 
         $enable_electronic_documents = (bool) ($configuration->enable_electronic_documents ?? false);
         $enable_store_pickup          = (bool) ($configuration->enable_store_pickup ?? false);
+        $quotation_settings           = ConfigurationEcommerce::storefrontQuotationConfig();
+        $quotation_enabled            = $quotation_settings['enabled'];
+        $quotation_mode               = $quotation_settings['mode'];
+        $quotation_show_prices        = $quotation_settings['show_prices'];
+        $quotation_success_message    = $quotation_settings['success_message'];
+        $quotation_validity_days      = $quotation_settings['validity_days'];
+        $quotation_terms              = $quotation_settings['terms'];
         $enable_yape                  = (bool) ($configuration->enable_yape ?? false);
         $enable_transfer              = (bool) ($configuration->enable_transfer ?? false);
 
@@ -349,10 +504,12 @@ class EcommerceController extends Controller
             ? PickupBranch::active()->orderBy('name')->get(['id', 'name', 'address'])->toArray()
             : [];
 
-        $payment_configuration = \Modules\Payment\Models\PaymentConfiguration::first();
-
-        // Obtener solo las cuentas que el administrador haya habilitado para el E-commerce
-        $preferences = $configuration->preferences ?: [];
+        $payment_configuration = PaymentConfiguration::first();
+        $gateway_availability = PaymentConfiguration::getEcommerceGatewayAvailability();
+        $enable_yape = $enable_yape && $gateway_availability['yape'];
+        $preferences = $configuration->preferences
+            ? (is_string($configuration->preferences) ? json_decode($configuration->preferences, true) : $configuration->preferences)
+            : [];
 
         // Validación estricta: Si el switch de Ecommerce está apagado, forzamos false en las credenciales
         // en memoria para asegurarnos que la vista no intente inyectar scripts de pasarelas no autorizadas.
@@ -366,15 +523,41 @@ class EcommerceController extends Controller
             $payment_configuration->enabled_culqi = false;
         }
 
-        $ecommerce_bank_account_ids = $preferences['ecommerce_bank_account_ids'] ?? [];
+        $ecommerce_bank_account_ids = array_values(array_filter(array_map(
+            'intval',
+            (array) ($preferences['ecommerce_bank_account_ids'] ?? [])
+        )));
 
         if (count($ecommerce_bank_account_ids) > 0) {
-            $bank_accounts = \App\Models\Tenant\BankAccount::whereIn('id', $ecommerce_bank_account_ids)->get();
+            $bank_accounts = \App\Models\Tenant\BankAccount::with('bank', 'currency_type')
+                ->whereIn('id', $ecommerce_bank_account_ids)
+                ->get();
         } else {
-            $bank_accounts = collect(); // Por seguridad, si no selecciona ninguna, no se muestran
+            $bank_accounts = collect();
         }
 
-        return view('ecommerce::cart.detail', compact('configuration', 'categories', 'global_discount_type', 'userAddress', 'enable_electronic_documents', 'enable_store_pickup', 'pickup_branches', 'enable_yape', 'enable_transfer', 'payment_configuration', 'bank_accounts', 'preferences'));
+        return view('ecommerce::cart.detail', compact(
+            'configuration',
+            'categories',
+            'global_discount_type',
+            'userAddress',
+            'userAddresses',
+            'enable_electronic_documents',
+            'enable_store_pickup',
+            'quotation_enabled',
+            'quotation_mode',
+            'quotation_show_prices',
+            'quotation_success_message',
+            'quotation_validity_days',
+            'quotation_terms',
+            'pickup_branches',
+            'enable_yape',
+            'enable_transfer',
+            'payment_configuration',
+            'bank_accounts',
+            'preferences',
+            'gateway_availability'
+        ));
     }
 
     public function orderList()
@@ -422,8 +605,8 @@ class EcommerceController extends Controller
                 $records = $records->whereBetween('created_at', [$date_of_start, $date_of_end]);
             }
 
-            // Obtener los resultados paginados
-            $records = $records->paginate(config('tenant.items_per_page', 10));
+            // Obtener los resultados paginados (más recientes primero)
+            $records = $records->orderByDesc('id')->paginate(config('tenant.items_per_page', 10));
 
             // Transformar los datos manteniendo la estructura de paginación
             $records->getCollection()->transform(function ($row) {
@@ -515,9 +698,27 @@ class EcommerceController extends Controller
         return view('ecommerce::cart.pay');
     }
 
-    public function showLogin()
+    public function showLogin(Request $request)
     {
-        return view('ecommerce::user.login');
+        // Auth real = modal #login_register_modal. Evitar vista inexistente ecommerce::user.login (500).
+        $path = '/ecommerce';
+        $referer = $request->headers->get('referer');
+
+        if (is_string($referer) && $referer !== '') {
+            $parts = parse_url($referer);
+            $refPath = isset($parts['path']) ? $parts['path'] : '';
+            if (
+                is_string($refPath)
+                && strpos($refPath, '/ecommerce') !== false
+                && strpos($refPath, '/ecommerce/login') === false
+            ) {
+                $path = $refPath;
+            }
+        }
+
+        $separator = strpos($path, '?') !== false ? '&' : '?';
+
+        return redirect($path . $separator . 'open_login=1');
     }
 
     public function login(Request $request)
@@ -675,14 +876,6 @@ class EcommerceController extends Controller
      */
     public function validateCoupon(Request $request)
     {
-        // Bloquear reaplicación acumulativa si el cliente ya tiene cupón activo
-        if (filter_var($request->input('coupon_already_applied', false), FILTER_VALIDATE_BOOLEAN)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.'
-            ], 422);
-        }
-
         $codes = [];
         if ($request->codes && is_array($request->codes)) {
             $codes = $request->codes;
@@ -712,8 +905,6 @@ class EcommerceController extends Controller
             if (!$coupon->canBeUsedBy($person_id, $order_total)) continue;
 
             $discount = $coupon->calculateDiscountAmount($order_total);
-            // Nunca descontar más que el total (evita totales negativos)
-            $discount = min($discount, max(0, $order_total));
             $validCoupons[] = [
                 'coupon' => $coupon,
                 'discount' => $discount
@@ -760,14 +951,6 @@ class EcommerceController extends Controller
             return response()->json(['success' => false, 'message' => 'Orden no encontrada'], 404);
         }
 
-        // Un solo cupón por orden: idempotente / bloqueante tras el primero
-        if ($order->discount_coupon_id || $order->discount_coupon_code) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Ya tienes un cupón aplicado. Elimínalo para aplicar otro.'
-            ], 422);
-        }
-
         $user = auth('ecommerce')->user();
         $person_id = $user?->id;
 
@@ -787,7 +970,6 @@ class EcommerceController extends Controller
         }
 
         $discount = $coupon->calculateDiscountAmount($order->total);
-        $discount = min($discount, max(0, (float) $order->total));
 
         // Actualizar la orden (un solo cupón por venta)
         $order->total_discount = $discount;
@@ -808,19 +990,40 @@ class EcommerceController extends Controller
 
     public function paymentCash(Request $request)
     {
+        if ($blocked = $this->rejectPurchaseIfQuoteOnly()) {
+            return $blocked;
+        }
 
-        $validator = Validator::make($request->customer, [
-            'telefono' => 'required|numeric',
-            'direccion' => 'required',
-            'codigo_tipo_documento_identidad' => 'required|numeric',
-            'numero_documento' => 'required|numeric',
-            'identity_document_type_id' => 'required|numeric'
-        ]);
+        if (
+            $request->input('reference_payment') === 'yape'
+            && ! PaymentConfiguration::isYapeConfigured()
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Yape está deshabilitado o incompleto en la configuración global de pagos.',
+            ], 422);
+        }
+
+        $customer = $this->extractPaymentCustomerFromRequest($request);
+        $shippingAddress = (string) $request->input('shipping_address', '');
+        $customer = $this->normalizePaymentCustomerData($customer, $shippingAddress);
+        $request->merge(['customer' => $customer]);
+
+        $validator = $this->makePaymentCustomerValidator($customer, $shippingAddress);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         } else {
             try {
+                // Los padres de variaciones no son vendibles: rechaza carritos manipulados
+                $item_ids = collect($request->items)->pluck('id')->filter()->all();
+                if (count($item_ids) > 0 && Item::whereIn('id', $item_ids)->whereHas('variations')->exists()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El carrito contiene un producto con variaciones: seleccione una variación específica.',
+                    ], 422);
+                }
+
                 $type = ($request->purchase["datos_del_cliente_o_receptor"]["codigo_tipo_documento_identidad"]=='6')?'ruc':'dni';
                 $document_number = $request->purchase["datos_del_cliente_o_receptor"]["numero_documento"];
 
@@ -851,16 +1054,32 @@ class EcommerceController extends Controller
                     ?: StatusOrder::where('is_payment_status', true)->orderBy('sort_order')->first();
                 $initialPaymentStatusId = $initialPaymentStatus ? $initialPaymentStatus->id : null;
 
+                $purchase = is_string($request->purchase)
+                    ? (json_decode($request->purchase, true) ?: [])
+                    : (array) $request->purchase;
+
+                $isGuestOverride = $request->has('is_guest')
+                    ? filter_var($request->input('is_guest'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+                    : (isset($purchase['checkout']['is_guest'])
+                        ? (bool) $purchase['checkout']['is_guest']
+                        : null);
+                if ($isGuestOverride === true) {
+                    $user = null;
+                }
+                $purchase = Order::attachEcommerceCheckoutMeta($purchase, $user, $isGuestOverride);
+
+                $authoritativeItems = $this->applyAuthoritativeCampaignPrices((array) $request->items);
                 $order = Order::create([
                     'external_id' => Str::uuid()->toString(),
                     'customer' =>  $request->customer,
                     'shipping_address' => $request->input('shipping_address', ''),
-                    'items' =>  $request->items,
+                    'items' => $authoritativeItems,
                     'total' => $request->precio_culqi,
                     'reference_payment' => $request->input('reference_payment', 'efectivo'),
                     'status_order_id' => $initialStatusId,
                     'payment_status_order_id' => $initialPaymentStatusId,
-                    'purchase' => $request->purchase
+                    'shipping_status_order_id' => StatusOrder::resolveInitialShippingStatusId(),
+                    'purchase' => $purchase,
                 ]);
 
                 // Si se envía cupón en la petición, aplicarlo inmediatamente
@@ -931,6 +1150,11 @@ class EcommerceController extends Controller
                 $document->product = $request->producto;
                 $document->total = $request->precio_culqi;
                 $document->items = $request->items;
+                $document->id = $order->id;
+                $document->order_number = $order->publicNumber();
+                $document->tracking_url = route('tenant_ecommerce_order_tracking', [
+                    'pedido' => $document->order_number,
+                ]);
 
                 if (!empty($contact['email'])) {
                     $this->paymentCashEmail($contact['email'], $document);
@@ -950,6 +1174,257 @@ class EcommerceController extends Controller
                 ];
             }
         }
+    }
+
+    public function paymentMercadoPago(Request $request)
+    {
+        if ($blocked = $this->rejectPurchaseIfQuoteOnly()) {
+            return $blocked;
+        }
+        if (! PaymentConfiguration::isMercadoPagoConfigured()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mercado Pago está deshabilitado o incompleto en la configuración global de pagos.',
+            ], 422);
+        }
+
+        $paymentConfig = PaymentConfiguration::first();
+        $publicKeyIsTest = str_starts_with(trim((string) $paymentConfig->public_key_mp), 'TEST-');
+        $accessTokenIsTest = str_starts_with(trim((string) $paymentConfig->access_token_mp), 'TEST-');
+
+        if ($publicKeyIsTest !== $accessTokenIsTest) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Las credenciales de Mercado Pago pertenecen a entornos distintos. La Public Key y el Access Token deben ser ambos de prueba o ambos de producción.',
+            ], 422);
+        }
+
+        // TODO: quitar tras depurar el payload del Payment Brick
+        Log::info('MercadoPago ecommerce request payload', $request->all());
+
+        $customer = is_string($request->customer)
+            ? json_decode($request->customer, true)
+            : (array) $request->customer;
+
+        $formData = $request->input('form_data') ?? $request->input('formData');
+        if (is_string($formData)) {
+            $formData = json_decode($formData, true);
+        }
+        if (is_array($formData) && isset($formData['formData'])) {
+            $formData = $formData['formData'];
+        }
+
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'form_data' => $formData,
+        ]);
+
+        $mpController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $mpController->mercadoPagoCreatePayment($paymentReq);
+
+        if (!empty($result['paid']) || !empty($result['pending'])) {
+            // Igual que Culqi: pago aprobado → action_mark_payment; pendiente → estado inicial de pago.
+            $paymentStatusId = ! empty($result['paid'])
+                ? StatusOrder::resolvePaidPaymentStatusId()
+                : StatusOrder::resolveInitialPaymentStatusId();
+
+            $purchase = is_string($request->purchase)
+                ? (json_decode($request->purchase, true) ?: [])
+                : (array) ($request->purchase ?? []);
+
+            $ecommerceUser = auth('ecommerce')->user();
+            $isGuestOverride = $request->has('is_guest')
+                ? filter_var($request->input('is_guest'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+                : (isset($purchase['checkout']['is_guest'])
+                    ? (bool) $purchase['checkout']['is_guest']
+                    : null);
+            if ($isGuestOverride === true) {
+                $ecommerceUser = null;
+            }
+            $purchase = Order::attachEcommerceCheckoutMeta($purchase, $ecommerceUser, $isGuestOverride);
+
+            $rawItems = is_string($request->items) ? json_decode($request->items, true) : $request->items;
+            $order = Order::create([
+                'external_id' => Str::uuid()->toString(),
+                'customer' => $customer,
+                'shipping_address' => $request->input('shipping_address', ''),
+                'items' => $this->applyAuthoritativeCampaignPrices((array) $rawItems),
+                'total' => $request->precio_culqi,
+                'reference_payment' => $request->input('reference_payment', 'mp'),
+                'status_order_id' => StatusOrder::resolveInitialOrderStatusId(),
+                'payment_status_order_id' => $paymentStatusId,
+                'shipping_status_order_id' => StatusOrder::resolveInitialShippingStatusId(),
+                'purchase' => $purchase,
+            ]);
+
+            if (! empty($result['paid'])) {
+                try {
+                    $result['document'] = app(OrderDocumentFromStatusService::class)
+                        ->afterGatewayPaymentCompleted($order);
+                } catch (\Throwable $e) {
+                    Log::error('MercadoPago: cobro OK pero falló emitir comprobante del pedido '.$order->id.': '.$e->getMessage());
+                    $result['document'] = [
+                        'generated' => false,
+                        'message' => $e->getMessage(),
+                        'type' => 'warning',
+                    ];
+                }
+                $order->refresh();
+            }
+
+            $result['order'] = $order;
+            $result['thank_you_url'] = route('tenant_ecommerce_thank_you', [
+                'external_id' => $order->external_id,
+            ]);
+        } elseif (!empty($result['success'])) {
+            // La petición llegó a Mercado Pago, pero el pago no fue aprobado.
+            $result['success'] = false;
+            $result['message'] = 'El pago no fue aprobado por Mercado Pago.';
+        }
+
+        return response()->json($result);
+    }
+
+    public function paymentIzipay(Request $request)
+    {
+        if ($blocked = $this->rejectPurchaseIfQuoteOnly()) {
+            return $blocked;
+        }
+
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        if (\App\Support\Venezuela\Localization::nationalCurrencyId() === 'VES') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Izipay no está habilitado para cobros en bolívares.',
+            ], 422);
+        }
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
+
+        if (! PaymentConfiguration::isIzipayConfigured()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Izipay está deshabilitado o incompleto en la configuración global de pagos.',
+            ], 422);
+        }
+
+        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array) $request->customer;
+
+        $purchase = is_string($request->purchase)
+            ? (json_decode($request->purchase, true) ?: [])
+            : (array) ($request->purchase ?? []);
+
+        $ecommerceUser = auth('ecommerce')->user();
+        $isGuestOverride = $request->has('is_guest')
+            ? filter_var($request->input('is_guest'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            : (isset($purchase['checkout']['is_guest'])
+                ? (bool) $purchase['checkout']['is_guest']
+                : null);
+        if ($isGuestOverride === true) {
+            $ecommerceUser = null;
+        }
+        $purchase = Order::attachEcommerceCheckoutMeta($purchase, $ecommerceUser, $isGuestOverride);
+
+        // Pedido previo al formulario: inicia en pago pendiente hasta confirmar PAID.
+        $rawItems = is_string($request->items) ? json_decode($request->items, true) : $request->items;
+        $order = Order::create([
+            'external_id' => Str::uuid()->toString(),
+            'customer' => $customer,
+            'shipping_address' => $request->input('shipping_address', ''),
+            'items' => $this->applyAuthoritativeCampaignPrices((array) $rawItems),
+            'total' => $request->precio_culqi,
+            'reference_payment' => 'izipay',
+            'status_order_id' => StatusOrder::resolveInitialOrderStatusId(),
+            'payment_status_order_id' => StatusOrder::resolveInitialPaymentStatusId(),
+            'shipping_status_order_id' => StatusOrder::resolveInitialShippingStatusId(),
+            'purchase' => $purchase,
+        ]);
+
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'amount' => round((float) $request->precio_culqi * 100),
+            'currency' => \App\Support\Venezuela\Localization::nationalCurrencyId(),
+            'orderId' => $order->external_id,
+            'customer' => [
+                'email' => $customer['correo_electronico'] ?? null,
+                'billingDetails' => [
+                    'firstName' => $customer['apellidos_y_nombres_o_razon_social'] ?? null,
+                    'phoneNumber' => $customer['telefono'] ?? null,
+                ],
+            ],
+        ]);
+
+        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $izipayController->izipayCreatePayment($paymentReq);
+
+        return response()->json([
+            'success' => $result['success'],
+            'formToken' => $result['formToken'] ?? null,
+            'publickey_izipay' => \Modules\Payment\Models\PaymentConfiguration::getKryptonPublicKeyIzipay(),
+            'order' => $order,
+        ]);
+    }
+
+    public function transactionIzipay(Request $request)
+    {
+        $paymentReq = new Request([
+            'isTenant' => true,
+            'uuid' => $request->uuid,
+        ]);
+
+        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
+        $result = $izipayController->izipayTransaction($paymentReq);
+
+        // Pago confirmado (PAID): asignar estado con action_mark_payment, igual que Culqi.
+        if (! empty($result['paid'])) {
+            $externalId = $request->input('external_id')
+                ?: data_get($result, 'result.answer.orderDetails.orderId')
+                ?: data_get($result, 'result.answer.orderId');
+
+            $order = $externalId
+                ? Order::where('external_id', $externalId)->first()
+                : null;
+
+            if ($order) {
+                $paidPaymentStatusId = StatusOrder::resolvePaidPaymentStatusId();
+                $dirty = false;
+
+                if ($paidPaymentStatusId && (int) $order->payment_status_order_id !== $paidPaymentStatusId) {
+                    $order->payment_status_order_id = $paidPaymentStatusId;
+                    $dirty = true;
+                }
+
+                if (! $order->status_order_id) {
+                    $order->status_order_id = StatusOrder::resolveInitialOrderStatusId();
+                    $dirty = true;
+                }
+
+                if ($dirty) {
+                    $order->save();
+                }
+
+                try {
+                    $result['document'] = app(OrderDocumentFromStatusService::class)
+                        ->afterGatewayPaymentCompleted($order);
+                } catch (\Throwable $e) {
+                    Log::error('Izipay: cobro OK pero falló emitir comprobante del pedido '.$order->id.': '.$e->getMessage());
+                    $result['document'] = [
+                        'generated' => false,
+                        'message' => $e->getMessage(),
+                        'type' => 'warning',
+                    ];
+                }
+                $result['order'] = $order->fresh(['sale_note', 'payment_status_order']);
+            }
+        }
+
+        return response()->json($result);
+    }
+
+    public function izipayRecord()
+    {
+        return response()->json([
+            'publickey_izipay' => \Modules\Payment\Models\PaymentConfiguration::getKryptonPublicKeyIzipay(),
+        ]);
     }
 
     public function paymentCashEmail($customer_email, $document)
@@ -1019,13 +1494,17 @@ class EcommerceController extends Controller
 
     }
 
-    private function getExchangeRateSale(){
+    private function getExchangeRateSale()
+    {
+        try {
+            $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
 
-        $exchange_rate = app(ServiceController::class)->exchangeRateTest(date('Y-m-d'));
-
-        return (array_key_exists('sale', $exchange_rate)) ? $exchange_rate['sale'] : 1;
-
-
+            return (is_array($exchange_rate) && array_key_exists('sale', $exchange_rate) && $exchange_rate['sale'])
+                ? $exchange_rate['sale']
+                : 1;
+        } catch (\Throwable $e) {
+            return 1;
+        }
     }
 
     public function account()
@@ -1113,6 +1592,687 @@ class EcommerceController extends Controller
 
     }
 
+    /**
+     * Devuelve la lista actualizada de direcciones del cliente autenticado (consulta directa a BD).
+     */
+    public function listShippingAddresses()
+    {
+        $user = auth('ecommerce')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe iniciar sesión para ver sus direcciones.',
+            ], 401);
+        }
+
+        $freshUser = $user->fresh();
+
+        return response()->json([
+            'success'   => true,
+            'address'   => $this->buildUserShippingAddressPayload($freshUser),
+            'addresses' => $this->getUserShippingAddresses($freshUser),
+        ]);
+    }
+
+    /**
+     * Guarda la dirección de envío del checkout (mapa + referencia) en el usuario autenticado.
+     * No exige campos de perfil (nombre/email): solo datos de dirección.
+     */
+    public function saveShippingAddress(Request $request)
+    {
+        $user = auth('ecommerce')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe iniciar sesión para guardar la dirección.',
+            ], 401);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'address_id'    => 'nullable|string|max:64',
+            'address'       => 'required|string|max:500',
+            'reference'     => 'nullable|string|max:500',
+            'full_address'  => 'nullable|string|max:700',
+            'latitude'      => 'nullable|numeric',
+            'longitude'     => 'nullable|numeric',
+            'department_id' => 'nullable|string|max:2',
+            'province_id'   => 'nullable|string|max:4',
+            'district_id'   => 'nullable|string|max:6',
+            'telephone'     => 'nullable|string|max:30',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first(),
+            ], 422);
+        }
+
+        $street = trim((string) $request->input('address'));
+        $reference = trim((string) $request->input('reference', ''));
+        $fullAddress = trim((string) $request->input('full_address', ''));
+
+        $normalizedInput = $this->buildShippingAddressRecord([
+            'address'       => $street,
+            'reference'     => $reference,
+            'full_address'  => $fullAddress,
+            'latitude'      => $request->input('latitude'),
+            'longitude'     => $request->input('longitude'),
+            'department_id' => $request->input('department_id'),
+            'province_id'   => $request->input('province_id'),
+            'district_id'   => $request->input('district_id'),
+        ]);
+
+        $street = $normalizedInput['address'];
+        $reference = $normalizedInput['reference'];
+        $fullAddress = $normalizedInput['full_address'];
+
+        if ($request->filled('telephone')) {
+            $user->telephone = $request->input('telephone');
+        }
+
+        $user->address = $fullAddress;
+
+        $contact = $this->getContactArray($user);
+
+        $recordData = $normalizedInput;
+
+        $addresses = $this->getUserShippingAddresses($user);
+        $requestedAddressId = trim((string) $request->input('address_id', ''));
+        $updated = false;
+
+        if ($requestedAddressId !== '') {
+            $recordData['id'] = $requestedAddressId;
+            $addressRecord = $this->buildShippingAddressRecord($recordData);
+
+            foreach ($addresses as $index => $item) {
+                if (($item['id'] ?? null) === $requestedAddressId) {
+                    $addresses[$index] = $addressRecord;
+                    $updated = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$updated) {
+            $recordData['id'] = $this->generateNewShippingAddressId();
+            $addressRecord = $this->buildShippingAddressRecord($recordData);
+            $addresses[] = $addressRecord;
+        }
+
+        $personAddressId = $this->persistPersonAddressRecord($user, [
+            'address'       => $street,
+            'department_id' => $request->input('department_id'),
+            'province_id'   => $request->input('province_id'),
+            'district_id'   => $request->input('district_id'),
+            'phone'         => $request->input('telephone') ?: $user->telephone,
+        ], $requestedAddressId !== '' ? $requestedAddressId : null, !$updated);
+
+        if ($personAddressId !== null) {
+            $numericId = (string) $personAddressId;
+            if (($addressRecord['id'] ?? '') !== $numericId) {
+                foreach ($addresses as $index => $item) {
+                    if (($item['id'] ?? null) === $addressRecord['id']) {
+                        $addresses[$index]['id'] = $numericId;
+                        break;
+                    }
+                }
+                $addressRecord['id'] = $numericId;
+            }
+        }
+
+        $contact['shipping'] = $addressRecord;
+        $contact['shipping_addresses'] = array_values($addresses);
+        $user->contact = $contact;
+        $user->save();
+
+        $freshUser = $user->fresh();
+
+        return response()->json([
+            'success'   => true,
+            'message'   => 'Dirección de envío guardada correctamente',
+            'address'   => $this->buildUserShippingAddressPayload($freshUser),
+            'addresses' => $this->getUserShippingAddresses($freshUser),
+        ]);
+    }
+
+    /**
+     * Elimina una dirección guardada del perfil del cliente (contact.shipping_addresses).
+     */
+    public function deleteShippingAddress(Request $request)
+    {
+        $user = auth('ecommerce')->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Debe iniciar sesión para eliminar la dirección.',
+            ], 401);
+        }
+
+        $addressId = trim((string) $request->input('address_id', ''));
+        if ($addressId === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Identificador de dirección inválido.',
+            ], 422);
+        }
+
+        $contact = $this->getContactArray($user);
+        $addresses = $this->getUserShippingAddresses($user);
+        $remaining = array_values(array_filter($addresses, function ($item) use ($addressId) {
+            return ($item['id'] ?? null) !== $addressId;
+        }));
+
+        if (count($remaining) === count($addresses)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró la dirección solicitada.',
+            ], 404);
+        }
+
+        $contact['shipping_addresses'] = $remaining;
+
+        $activeShipping = !empty($contact['shipping']) && is_array($contact['shipping'])
+            ? $contact['shipping']
+            : [];
+
+        if (empty($remaining)) {
+            unset($contact['shipping']);
+            $user->address = null;
+            $this->clearPersonAddressRecord($user);
+        } elseif (($activeShipping['id'] ?? null) === $addressId) {
+            $next = $remaining[0];
+            $contact['shipping'] = $next;
+            $user->address = $next['full_address'] ?? $next['address'] ?? '';
+        }
+
+        if (ctype_digit($addressId)) {
+            try {
+                $user->addresses()->where('id', (int) $addressId)->delete();
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        }
+
+        $user->contact = $contact;
+        $user->save();
+
+        $freshUser = $user->fresh();
+        $freshAddresses = $this->getUserShippingAddresses($freshUser);
+
+        return response()->json([
+            'success'   => true,
+            'message'   => 'Dirección eliminada correctamente',
+            'address'   => !empty($freshAddresses)
+                ? $this->buildUserShippingAddressPayload($freshUser)
+                : null,
+            'addresses' => $freshAddresses,
+        ]);
+    }
+
+    /**
+     * Payload de dirección de envío activa para precargar el checkout.
+     */
+    private function buildUserShippingAddressPayload($ecommerceUser): ?array
+    {
+        $addresses = $this->getUserShippingAddresses($ecommerceUser);
+        $contact = $this->getContactArray($ecommerceUser);
+
+        if (empty($addresses)) {
+            return null;
+        }
+
+        $activeId = !empty($contact['shipping']['id'])
+            ? (string) $contact['shipping']['id']
+            : null;
+
+        if ($activeId) {
+            foreach ($addresses as $addr) {
+                if (($addr['id'] ?? null) === $activeId) {
+                    return $this->appendPhoneToAddressPayload($addr, $ecommerceUser);
+                }
+            }
+        }
+
+        $ecommerceUser->load(['addresses' => function ($query) {
+            $query->orderByDesc('main')->orderByDesc('id');
+        }]);
+
+        $mainAddress = $ecommerceUser->addresses->firstWhere('main', true)
+            ?? $ecommerceUser->addresses->first();
+
+        if ($mainAddress) {
+            $mainId = (string) $mainAddress->id;
+            foreach ($addresses as $addr) {
+                if (($addr['id'] ?? null) === $mainId) {
+                    return $this->appendPhoneToAddressPayload($addr, $ecommerceUser, $mainAddress->phone);
+                }
+            }
+        }
+
+        return $this->appendPhoneToAddressPayload($addresses[0], $ecommerceUser);
+    }
+
+    /**
+     * Agrega teléfono al payload de dirección de envío.
+     */
+    private function appendPhoneToAddressPayload(array $address, $ecommerceUser, ?string $fallbackPhone = null): array
+    {
+        $address['phone'] = $ecommerceUser->telephone ?: ($fallbackPhone ?: ($address['phone'] ?? null));
+
+        return $address;
+    }
+
+    /**
+     * Convierte contact (object|array|null) en array asociativo profundo.
+     */
+    private function getContactArray($ecommerceUser): array
+    {
+        if (!$ecommerceUser || !$ecommerceUser->contact) {
+            return [];
+        }
+
+        $decoded = json_decode(json_encode($ecommerceUser->contact), true);
+
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    /**
+     * Lista de direcciones del cliente: person_addresses (BD) enriquecidas con contact.shipping_addresses.
+     */
+    private function getUserShippingAddresses($ecommerceUser): array
+    {
+        if (!$ecommerceUser) {
+            return [];
+        }
+
+        $ecommerceUser->load(['addresses' => function ($query) {
+            $query->orderByDesc('main')->orderByDesc('id');
+        }]);
+
+        $contact = $this->getContactArray($ecommerceUser);
+        $contactAddresses = $this->extractContactShippingAddresses($contact);
+        $personAddresses = $ecommerceUser->addresses;
+
+        if ($personAddresses->isNotEmpty()) {
+            $addresses = [];
+
+            foreach ($personAddresses as $personAddress) {
+                $contactMatch = $this->findMatchingContactAddress($contactAddresses, $personAddress);
+                $record = $this->buildShippingAddressFromPersonAddress($personAddress, $contactMatch);
+
+                if (!empty($record['address']) || !empty($record['full_address'])) {
+                    $addresses[] = $record;
+                }
+            }
+
+            return $addresses;
+        }
+
+        if (!empty($contactAddresses)) {
+            return $contactAddresses;
+        }
+
+        // Listado explícitamente vacío (p. ej. el usuario eliminó todas sus direcciones).
+        if (array_key_exists('shipping_addresses', $contact)) {
+            return [];
+        }
+
+        $street = trim((string) ($ecommerceUser->address ?? ''));
+        if ($street === '') {
+            return [];
+        }
+
+        return [$this->buildShippingAddressRecord([
+            'address'      => $street,
+            'full_address' => $street,
+        ])];
+    }
+
+    /**
+     * Normaliza direcciones almacenadas en contact.shipping_addresses.
+     */
+    private function extractContactShippingAddresses(array $contact): array
+    {
+        $addresses = [];
+
+        if (empty($contact['shipping_addresses']) || !is_array($contact['shipping_addresses'])) {
+            return $addresses;
+        }
+
+        foreach ($contact['shipping_addresses'] as $item) {
+            if (is_object($item)) {
+                $item = (array) $item;
+            }
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $normalized = $this->buildShippingAddressRecord($item);
+            if (!empty($normalized['address']) || !empty($normalized['full_address'])) {
+                $addresses[] = $normalized;
+            }
+        }
+
+        return $addresses;
+    }
+
+    /**
+     * Convierte un registro de person_addresses al formato del checkout.
+     */
+    private function buildShippingAddressFromPersonAddress(PersonAddress $personAddress, ?array $contactMatch = null): array
+    {
+        $parsedPerson = $this->splitAddressReference($personAddress->address ?? '');
+        $street = $parsedPerson['street'];
+        $reference = $parsedPerson['reference'];
+
+        $record = [
+            'id'            => (string) $personAddress->id,
+            'address'       => $street,
+            'reference'     => $reference,
+            'full_address'  => $this->composeFullAddress($street, $reference),
+            'latitude'      => null,
+            'longitude'     => null,
+            'department_id' => $personAddress->department_id,
+            'province_id'   => $personAddress->province_id,
+            'district_id'   => $personAddress->district_id,
+            'phone'         => $personAddress->phone,
+        ];
+
+        if (!$contactMatch) {
+            $record['location_id'] = $this->buildLocationIdArray(
+                $record['department_id'] ?? null,
+                $record['province_id'] ?? null,
+                $record['district_id'] ?? null
+            );
+
+            return $record;
+        }
+
+        $parsedContact = $this->splitAddressReference($contactMatch['address'] ?? '');
+        $parsedContactFull = $this->splitAddressReference($contactMatch['full_address'] ?? '');
+
+        if ($street === '') {
+            $street = $parsedContact['street'] ?: $parsedContactFull['street'];
+        }
+
+        $contactReference = trim((string) ($contactMatch['reference'] ?? ''));
+        if ($contactReference === '') {
+            $contactReference = $parsedContact['reference'] ?: $parsedContactFull['reference'];
+        }
+
+        if ($contactReference !== '') {
+            $reference = $contactReference;
+        }
+
+        $record['address'] = $street;
+        $record['reference'] = $reference;
+        $record['full_address'] = $this->composeFullAddress($street, $reference);
+
+        if (isset($contactMatch['latitude']) && $contactMatch['latitude'] !== null && $contactMatch['latitude'] !== '') {
+            $record['latitude'] = (float) $contactMatch['latitude'];
+        }
+        if (isset($contactMatch['longitude']) && $contactMatch['longitude'] !== null && $contactMatch['longitude'] !== '') {
+            $record['longitude'] = (float) $contactMatch['longitude'];
+        }
+
+        $record = array_merge($record, $this->resolveUbigeoIds($record));
+
+        if (!$record['department_id'] && $contactMatch) {
+            $contactUbigeo = $this->resolveUbigeoIds($contactMatch);
+            if ($contactUbigeo['department_id']) {
+                $record['department_id'] = $contactUbigeo['department_id'];
+                $record['province_id'] = $contactUbigeo['province_id'];
+                $record['district_id'] = $contactUbigeo['district_id'];
+            }
+        }
+
+        $record['location_id'] = $this->buildLocationIdArray(
+            $record['department_id'] ?? null,
+            $record['province_id'] ?? null,
+            $record['district_id'] ?? null
+        );
+
+        return $record;
+    }
+
+    /**
+     * Busca en contact.shipping_addresses la entrada que corresponde a una fila de person_addresses.
+     */
+    private function findMatchingContactAddress(array $contactAddresses, PersonAddress $personAddress): ?array
+    {
+        $personId = (string) $personAddress->id;
+        $normalizedPersonAddress = $this->normalizeAddressText($personAddress->address);
+
+        foreach ($contactAddresses as $contactAddress) {
+            $contactId = (string) ($contactAddress['id'] ?? '');
+            if ($contactId !== '' && $contactId === $personId) {
+                return $contactAddress;
+            }
+        }
+
+        foreach ($contactAddresses as $contactAddress) {
+            $candidates = [
+                $contactAddress['address'] ?? '',
+                $contactAddress['full_address'] ?? '',
+            ];
+
+            foreach ($candidates as $candidate) {
+                if ($normalizedPersonAddress !== '' && $this->normalizeAddressText($candidate) === $normalizedPersonAddress) {
+                    return $contactAddress;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normaliza texto de dirección para comparaciones.
+     */
+    private function normalizeAddressText(?string $value): string
+    {
+        $normalized = trim((string) $value);
+        $normalized = preg_replace('/\s*-\s*Ref:.*$/i', '', $normalized);
+
+        return mb_strtolower(preg_replace('/\s+/', ' ', $normalized));
+    }
+
+    /**
+     * Genera un identificador único para una nueva dirección de envío.
+     */
+    private function generateNewShippingAddressId(): string
+    {
+        return 'addr_' . bin2hex(random_bytes(8));
+    }
+
+    /**
+     * Separa calle y referencia cuando vienen concatenadas en un solo texto.
+     */
+    private function splitAddressReference(?string $text): array
+    {
+        $raw = trim((string) $text);
+        if ($raw === '') {
+            return ['street' => '', 'reference' => ''];
+        }
+
+        if (preg_match('/\s*-\s*Ref[.:]?\s*(.+)$/iu', $raw, $matches)) {
+            return [
+                'street'    => trim(preg_replace('/\s*-\s*Ref[.:]?\s*.+$/iu', '', $raw)),
+                'reference' => trim($matches[1]),
+            ];
+        }
+
+        return ['street' => $raw, 'reference' => ''];
+    }
+
+    /**
+     * Construye la dirección completa sin duplicar la referencia.
+     */
+    private function composeFullAddress(string $street, string $reference): string
+    {
+        $street = trim($street);
+        $reference = trim($reference);
+
+        if ($street === '') {
+            return $reference !== '' ? 'Ref: ' . $reference : '';
+        }
+
+        if ($reference === '') {
+            return $street;
+        }
+
+        return $street . ' - Ref: ' . $reference;
+    }
+
+    /**
+     * Normaliza un registro de dirección de envío para contact.shipping_addresses.
+     */
+    private function buildShippingAddressRecord(array $data): array
+    {
+        $streetInput = trim((string) ($data['address'] ?? ''));
+        $referenceInput = trim((string) ($data['reference'] ?? ''));
+        $fullInput = trim((string) ($data['full_address'] ?? ''));
+
+        $fromStreet = $this->splitAddressReference($streetInput);
+        $fromFull = $this->splitAddressReference($fullInput);
+
+        $street = $fromStreet['street'] ?: $fromFull['street'];
+        $reference = $referenceInput ?: ($fromStreet['reference'] ?: $fromFull['reference']);
+        $fullAddress = $this->composeFullAddress($street, $reference);
+        $ubigeo = $this->resolveUbigeoIds($data);
+
+        $id = trim((string) ($data['id'] ?? ''));
+        if ($id === '') {
+            $seed = $fullAddress ?: $street;
+            $id = 'addr_' . substr(md5($seed), 0, 16);
+        }
+
+        return [
+            'id'            => $id,
+            'address'       => $street,
+            'reference'     => $reference,
+            'full_address'  => $fullAddress,
+            'latitude'      => isset($data['latitude']) && $data['latitude'] !== null && $data['latitude'] !== ''
+                ? (float) $data['latitude']
+                : null,
+            'longitude'     => isset($data['longitude']) && $data['longitude'] !== null && $data['longitude'] !== ''
+                ? (float) $data['longitude']
+                : null,
+            'department_id' => $ubigeo['department_id'],
+            'province_id'   => $ubigeo['province_id'],
+            'district_id'   => $ubigeo['district_id'],
+            'location_id'   => $this->buildLocationIdArray(
+                $ubigeo['department_id'],
+                $ubigeo['province_id'],
+                $ubigeo['district_id']
+            ),
+        ];
+    }
+
+    /**
+     * Resuelve department/province/district desde campos sueltos o location_id.
+     */
+    private function resolveUbigeoIds(array $data): array
+    {
+        $departmentId = $data['department_id'] ?? null;
+        $provinceId = $data['province_id'] ?? null;
+        $districtId = $data['district_id'] ?? null;
+
+        $locationId = $data['location_id'] ?? null;
+        if (is_array($locationId) && count($locationId) === 3) {
+            if (!empty($locationId[0]) && !empty($locationId[1]) && !empty($locationId[2])) {
+                $departmentId = $locationId[0];
+                $provinceId = $locationId[1];
+                $districtId = $locationId[2];
+            }
+        }
+
+        return [
+            'department_id' => $departmentId ?: null,
+            'province_id'   => $provinceId ?: null,
+            'district_id'   => $districtId ?: null,
+        ];
+    }
+
+    /**
+     * Construye el arreglo location_id solo cuando los tres niveles están presentes.
+     */
+    private function buildLocationIdArray($departmentId, $provinceId, $districtId): array
+    {
+        if (empty($departmentId) || empty($provinceId) || empty($districtId)) {
+            return [];
+        }
+
+        return [$departmentId, $provinceId, $districtId];
+    }
+
+    /**
+     * Elimina los registros de person_addresses del cliente (best-effort).
+     */
+    private function clearPersonAddressRecord($user): void
+    {
+        try {
+            $user->addresses()->delete();
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * Actualiza o crea el registro en person_addresses (best-effort; no bloquea si falta ubigeo).
+     */
+    private function persistPersonAddressRecord($user, array $data, ?string $addressId = null, bool $forceCreate = false): ?int
+    {
+        $address = trim((string) ($data['address'] ?? ''));
+        if ($address === '') {
+            return null;
+        }
+
+        $payload = [
+            // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+            'country_id'    => 'VE',
+            // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
+            'address'       => $address,
+            'phone'         => $data['phone'] ?? $user->telephone,
+            'main'          => true,
+            'department_id' => $data['department_id'] ?: null,
+            'province_id'   => $data['province_id'] ?: null,
+            'district_id'   => $data['district_id'] ?: null,
+        ];
+
+        try {
+            if ($addressId !== null && $addressId !== '' && ctype_digit($addressId)) {
+                $existing = $user->addresses()->find((int) $addressId);
+                if ($existing) {
+                    $existing->fill($payload);
+                    $existing->save();
+
+                    return (int) $existing->id;
+                }
+            }
+
+            if (!$forceCreate) {
+                $existing = $user->addresses()->orderByDesc('id')->first();
+                if ($existing) {
+                    $existing->fill($payload);
+                    $existing->save();
+
+                    return (int) $existing->id;
+                }
+            }
+
+            $created = $user->addresses()->create($payload);
+
+            return (int) $created->id;
+        } catch (\Throwable $e) {
+            // Ubigeo inválido u otras FKs: la dirección ya quedó en persons.address / contact.shipping
+            report($e);
+        }
+
+        return null;
+    }
+
     public function searchDocument($type, $number)
     {
         return (new ServiceData)->service($type, $number);
@@ -1132,8 +2292,11 @@ class EcommerceController extends Controller
     /**
      * Consulta pública de RUC/DNI para autocompletar el nombre / razón social
      * en el formulario de registro del ecommerce (invitados, sin auth).
+     *
+     * Con ?checkout=1 devuelve datos del cliente existente para autocompletar
+     * el checkout invitado sin crear registros duplicados.
      */
-    public function searchDocumentPublic($number)
+    public function searchDocumentPublic(Request $request, $number)
     {
         $number = preg_replace('/\D/', '', (string) $number);
 
@@ -1148,9 +2311,22 @@ class EcommerceController extends Controller
             ];
         }
 
-        $exists = Person::where('number', $number)->exists();
+        $isCheckout = $request->boolean('checkout')
+            || $request->get('context') === 'checkout';
 
-        if ($exists) {
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $telephone = preg_replace('/\D/', '', (string) $request->input('telephone', ''));
+        $requestedDocTypeId = (string) $request->input('identity_document_type_id', '');
+        $hasTripleInput = $isCheckout
+            && $email !== ''
+            && strlen($telephone) >= 7
+            && in_array($requestedDocTypeId, ['1', '6'], true);
+
+        $person = Person::where('number', $number)
+            ->where('type', 'customers')
+            ->first();
+
+        if ($person && !$isCheckout) {
             return [
                 'success' => false,
                 'exists' => true,
@@ -1158,27 +2334,227 @@ class EcommerceController extends Controller
             ];
         }
 
-        try {
-            $result = $this->searchDocument($type, $number);
-        } catch (\Throwable $e) {
-            return [
-                'success' => false,
-                'message' => 'No se pudo consultar el documento. Intente nuevamente.',
+        if ($person && $isCheckout) {
+            $response = $this->buildCheckoutDocumentLookupResponse($person, $type);
+        } else {
+            try {
+                $result = $this->searchDocument($type, $number);
+            } catch (\Throwable $e) {
+                return [
+                    'success' => false,
+                    'message' => 'No se pudo consultar el documento. Intente nuevamente.',
+                ];
+            }
+
+            if (empty($result['success'])) {
+                return [
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Datos no encontrados.',
+                ];
+            }
+
+            $response = [
+                'success' => true,
+                'type' => $type,
+                'name' => $result['data']['name'] ?? '',
             ];
         }
 
-        if (empty($result['success'])) {
-            return [
-                'success' => false,
-                'message' => $result['message'] ?? 'Datos no encontrados.',
-            ];
+        if ($isCheckout && $hasTripleInput) {
+            $tripleResult = $this->resolveGuestCheckoutTripleMatch(
+                $number,
+                $requestedDocTypeId,
+                $email,
+                $telephone,
+                $person
+            );
+
+            $response['triple_match'] = $tripleResult['triple_match'];
+
+            if ($tripleResult['triple_match'] && !empty($tripleResult['is_registered_customer'])) {
+                $response['exists'] = true;
+                $response['from_database'] = true;
+                $response['is_registered_customer'] = true;
+                $response['message'] = 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.';
+            } elseif ($tripleResult['triple_match'] && !empty($tripleResult['address'])) {
+                $response['address_loaded'] = true;
+                $response['is_returning_guest'] = !empty($tripleResult['is_returning_guest']);
+                $response['address'] = $tripleResult['address'];
+                $response['department_id'] = $tripleResult['department_id'] ?? null;
+                $response['province_id'] = $tripleResult['province_id'] ?? null;
+                $response['district_id'] = $tripleResult['district_id'] ?? null;
+            }
         }
 
-        return [
+        return $response;
+    }
+
+    /**
+     * Respuesta inicial de checkout invitado al consultar solo el documento (sin triple validación).
+     */
+    protected function buildCheckoutDocumentLookupResponse(Person $person, string $type): array
+    {
+        $response = [
             'success' => true,
             'type' => $type,
-            'name' => $result['data']['name'] ?? '',
+            'name' => $person->name,
         ];
+
+        if (!empty($person->password)) {
+            $response['exists'] = true;
+            $response['from_database'] = true;
+            $response['is_registered_customer'] = true;
+            $response['message'] = 'Encontramos tus datos registrados. Puedes actualizarlos si lo necesitas para esta compra.';
+        }
+
+        return $response;
+    }
+
+    /**
+     * Valida coincidencia exacta de documento + correo + teléfono y recupera dirección guardada.
+     */
+    protected function resolveGuestCheckoutTripleMatch(
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone,
+        ?Person $person = null
+    ): array {
+        if (!$this->guestDocumentTypeMatchesNumber($docTypeId, $number)) {
+            return ['triple_match' => false];
+        }
+
+        if ($person) {
+            if (!$this->personMatchesGuestTriple($person, $number, $docTypeId, $email, $telephone)) {
+                return ['triple_match' => false];
+            }
+
+            if (!empty($person->password)) {
+                return [
+                    'triple_match' => true,
+                    'is_registered_customer' => true,
+                ];
+            }
+
+            $addressData = $this->extractPersonShippingAddress($person);
+            if (!empty($addressData['address'])) {
+                return array_merge([
+                    'triple_match' => true,
+                    'is_returning_guest' => true,
+                ], $addressData);
+            }
+        } else {
+            $orderAddress = $this->findGuestOrderAddressByTripleMatch($number, $docTypeId, $email, $telephone);
+            if ($orderAddress && !empty($orderAddress['address'])) {
+                return array_merge([
+                    'triple_match' => true,
+                    'is_returning_guest' => true,
+                ], $orderAddress);
+            }
+
+            return ['triple_match' => false];
+        }
+
+        $orderAddress = $this->findGuestOrderAddressByTripleMatch($number, $docTypeId, $email, $telephone);
+        if ($orderAddress && !empty($orderAddress['address'])) {
+            return array_merge([
+                'triple_match' => true,
+                'is_returning_guest' => true,
+            ], $orderAddress);
+        }
+
+        return ['triple_match' => true];
+    }
+
+    protected function guestDocumentTypeMatchesNumber(string $docTypeId, string $number): bool
+    {
+        if ($docTypeId === '1') {
+            return strlen($number) === 8;
+        }
+
+        if ($docTypeId === '6') {
+            return strlen($number) === 11;
+        }
+
+        return false;
+    }
+
+    protected function personMatchesGuestTriple(
+        Person $person,
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone
+    ): bool {
+        $personNumber = preg_replace('/\D/', '', (string) $person->number);
+        $personDocType = (string) ($person->identity_document_type_id ?? (strlen($personNumber) === 11 ? '6' : '1'));
+        $personEmail = strtolower(trim((string) ($person->email ?? '')));
+        $personPhone = preg_replace('/\D/', '', (string) ($person->telephone ?? ''));
+
+        return $personNumber === $number
+            && $personDocType === $docTypeId
+            && $personEmail === $email
+            && $personPhone === $telephone;
+    }
+
+    protected function extractPersonShippingAddress(Person $person): array
+    {
+        $firstAddress = $person->addresses()->first();
+
+        return [
+            'address' => $firstAddress->address ?? $person->address,
+            'department_id' => $firstAddress->department_id ?? $person->department_id,
+            'province_id' => $firstAddress->province_id ?? $person->province_id,
+            'district_id' => $firstAddress->district_id ?? $person->district_id,
+        ];
+    }
+
+    protected function findGuestOrderAddressByTripleMatch(
+        string $number,
+        string $docTypeId,
+        string $email,
+        string $telephone
+    ): ?array {
+        $orders = Order::query()
+            ->whereNotNull('shipping_address')
+            ->where('shipping_address', '!=', '')
+            ->orderByDesc('id')
+            ->limit(300)
+            ->get(['customer', 'shipping_address']);
+
+        foreach ($orders as $order) {
+            $customer = $order->customer;
+            if (!$customer) {
+                continue;
+            }
+
+            $customerNumber = preg_replace('/\D/', '', (string) ($customer->numero_documento ?? ''));
+            $customerDocType = (string) ($customer->identity_document_type_id ?? $customer->codigo_tipo_documento_identidad ?? '');
+            $customerEmail = strtolower(trim((string) ($customer->correo_electronico ?? '')));
+            $customerPhone = preg_replace('/\D/', '', (string) ($customer->telefono ?? ''));
+
+            if ($customerNumber !== $number) {
+                continue;
+            }
+            if ($customerDocType !== $docTypeId) {
+                continue;
+            }
+            if ($customerEmail !== $email) {
+                continue;
+            }
+            if ($customerPhone !== $telephone) {
+                continue;
+            }
+
+            return [
+                'address' => $order->shipping_address,
+                'department_id' => null,
+                'province_id' => null,
+                'district_id' => null,
+            ];
+        }
+
+        return null;
     }
 
     public function getGoogleMaps()
@@ -1262,6 +2638,330 @@ class EcommerceController extends Controller
         return view('ecommerce::cart.thank_you', compact(
             'order', 'categories', 'paymentLabel', 'deliveryLabel', 'isPickup', 'itemsCount'
         ));
+    }
+
+    /**
+     * Página pública de seguimiento del pedido (estado de envío).
+     */
+    public function orderTracking(Request $request)
+    {
+        $categories = Category::has('items')->get();
+        $initialPedido = trim((string) $request->query('pedido', ''));
+
+        $ecommerceConfiguration = ConfigurationEcommerce::first();
+        $configurationModel = Configuration::first();
+        $phoneWhatsapp = optional($ecommerceConfiguration)->phone_whatsapp
+            ?: optional($configurationModel)->phone_whatsapp;
+        $whatsappPhone = $phoneWhatsapp ? preg_replace('/\D+/', '', (string) $phoneWhatsapp) : '';
+        $showWhatsapp = $whatsappPhone !== '';
+        $storeUrl = route('tenant.ecommerce.index');
+
+        return view('ecommerce::cart.order_tracking', compact(
+            'categories',
+            'initialPedido',
+            'showWhatsapp',
+            'whatsappPhone',
+            'storeUrl'
+        ));
+    }
+
+    /**
+     * Lookup de seguimiento: N° de pedido + DNI/documento del comprador.
+     */
+    public function orderTrackingLookup(Request $request)
+    {
+        $denied = [
+            'success' => false,
+            'message' => 'No encontramos ese pedido o los datos no coinciden.',
+        ];
+
+        $raw = trim((string) $request->query('pedido', ''));
+        $document = preg_replace('/\D+/', '', (string) $request->query('documento', $request->query('dni', '')));
+
+        if (preg_replace('/\D+/', '', $raw) === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ingresa un número de pedido válido.',
+            ]);
+        }
+
+        if ($document === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ingresa tu DNI / documento para verificar el pedido.',
+            ]);
+        }
+
+        $order = Order::with(['shipping_status_order', 'payment_status_order'])->findByPublicNumber($raw);
+        if (! $order || ! $this->orderTrackingDocumentMatches($order, $document)) {
+            return response()->json($denied);
+        }
+
+        // Sesión ecommerce: solo pedidos de la misma cuenta (correo).
+        $ecommerceUser = auth('ecommerce')->user();
+        if ($ecommerceUser && ! $this->orderTrackingBelongsToUser($order, $ecommerceUser)) {
+            return response()->json($denied);
+        }
+
+        $paymentLabels = [
+            'efectivo'      => 'Efectivo',
+            'yape'          => 'Yape',
+            'transferencia' => 'Transferencia',
+            'culqi'         => 'Tarjeta (VISA)',
+            'culqui'        => 'Tarjeta (VISA)',
+            'paypal'        => 'PayPal',
+            'mp'            => 'Mercado Pago',
+            'izipay'        => 'Izipay',
+        ];
+        $refPayment = strtolower((string) ($order->reference_payment ?? 'efectivo'));
+        $paymentLabel = $paymentLabels[$refPayment] ?? ucfirst($refPayment);
+
+        $shipping = (string) ($order->shipping_address ?? '');
+        $isPickup = stripos($shipping, 'Recojo en tienda') === 0;
+        $deliveryLabel = $isPickup ? ($shipping ?: 'Recojo en tienda') : 'Envío a domicilio';
+
+        $items = [];
+        $rawItems = $order->items;
+        if (is_string($rawItems)) {
+            $rawItems = json_decode($rawItems, true);
+        }
+        if (is_object($rawItems)) {
+            $rawItems = (array) $rawItems;
+        }
+        if (is_array($rawItems)) {
+            foreach ($rawItems as $item) {
+                $row = is_object($item) ? (array) $item : $item;
+                if (! is_array($row)) {
+                    continue;
+                }
+                $qty = (float) ($row['cantidad'] ?? $row['quantity'] ?? 1);
+                $price = (float) ($row['sale_unit_price'] ?? $row['unit_price'] ?? $row['price'] ?? 0);
+                $image = $row['image'] ?? $row['image_url'] ?? null;
+                if (is_string($image) && $image !== '' && $image !== 'imagen-no-disponible.jpg' && ! preg_match('#^https?://#i', $image)) {
+                    $image = asset('storage/uploads/items/'.$image);
+                }
+                if (! is_string($image) || $image === '' || $image === 'imagen-no-disponible.jpg') {
+                    $image = asset('logo/imagen-no-disponible.jpg');
+                }
+                $items[] = [
+                    'description' => (string) ($row['description'] ?? $row['name'] ?? 'Producto'),
+                    'quantity' => $qty > 0 ? $qty : 1,
+                    'unit_price' => round($price, 2),
+                    'total' => round($qty * $price, 2),
+                    'image' => $image,
+                ];
+            }
+        }
+
+        $allShippingStatuses = StatusOrder::where('is_shipping_status', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get([
+                'id',
+                'description',
+                'color',
+                'sort_order',
+                'is_initial',
+                'is_final',
+                'action_notify_dispatch',
+            ]);
+
+        $currentShipping = $order->shipping_status_order;
+        $currentShippingId = $order->shipping_status_order_id
+            ? (int) $order->shipping_status_order_id
+            : null;
+
+        // Fin del flujo normal (p. ej. "Entregado"). Estados con sort_order mayor
+        // son excepciones (p. ej. "Entrega pendiente") y no van en el timeline
+        // salvo que el admin los haya asignado manualmente a este pedido.
+        $finalSortOrder = $allShippingStatuses
+            ->where('is_final', true)
+            ->min('sort_order');
+
+        $currentIsSideStatus = $currentShippingId
+            && $finalSortOrder !== null
+            && $allShippingStatuses->contains(function ($status) use ($currentShippingId, $finalSortOrder) {
+                return (int) $status->id === $currentShippingId
+                    && (int) $status->sort_order > (int) $finalSortOrder;
+            });
+
+        $shippingStatuses = $allShippingStatuses
+            ->filter(function ($status) use ($currentShippingId, $finalSortOrder, $currentIsSideStatus, $isPickup) {
+                $isCurrent = $currentShippingId && (int) $status->id === $currentShippingId;
+                $isSide = $finalSortOrder !== null
+                    && (int) $status->sort_order > (int) $finalSortOrder;
+
+                // Excepción (p. ej. Entrega pendiente): solo si es el estado actual
+                if ($isSide) {
+                    return $isCurrent;
+                }
+
+                // Si el pedido está en excepción, ocultar el final ("Entregado")
+                if ($currentIsSideStatus && $status->is_final) {
+                    return false;
+                }
+
+                // Timeline según modo: domicilio sin recojo; recojo sin "En camino".
+                if ($isPickup && $this->isDeliveryOnlyShippingStatus($status)) {
+                    return false;
+                }
+                if (! $isPickup && $this->isPickupOnlyShippingStatus($status)) {
+                    return false;
+                }
+
+                return true;
+            })
+            ->map(function ($status) use ($finalSortOrder) {
+                $isSide = $finalSortOrder !== null
+                    && (int) $status->sort_order > (int) $finalSortOrder;
+
+                return [
+                    'id' => (int) $status->id,
+                    'description' => $status->description,
+                    'color' => $status->color ?: '#ff7a00',
+                    'sort_order' => (int) $status->sort_order,
+                    'is_initial' => (bool) $status->is_initial,
+                    'is_final' => (bool) $status->is_final,
+                    'is_side_status' => $isSide,
+                ];
+            })
+            ->values();
+
+        // Si aún no tiene estado, usar el inicial del catálogo como "pendiente actual"
+        if (! $currentShippingId && $shippingStatuses->isNotEmpty()) {
+            $initial = $shippingStatuses->firstWhere('is_initial', true) ?: $shippingStatuses->first();
+            $currentShippingId = $initial ? (int) $initial['id'] : null;
+        }
+
+        // Progreso visual del timeline: si el estado real no pertenece a este flujo
+        // (p. ej. "Listo para recojo" en domicilio), avanzar al siguiente paso válido.
+        $timelineShippingStatusId = $currentShippingId;
+        if (
+            $currentShippingId
+            && $shippingStatuses->isNotEmpty()
+            && ! $shippingStatuses->contains('id', $currentShippingId)
+        ) {
+            $currentSort = (int) optional(
+                $allShippingStatuses->firstWhere('id', $currentShippingId)
+            )->sort_order;
+
+            $next = $shippingStatuses->first(function ($status) use ($currentSort) {
+                return (int) $status['sort_order'] > $currentSort;
+            });
+            $prev = $shippingStatuses
+                ->filter(function ($status) use ($currentSort) {
+                    return (int) $status['sort_order'] < $currentSort;
+                })
+                ->last();
+
+            $timelineShippingStatusId = $next['id'] ?? ($prev['id'] ?? null);
+        }
+
+        $catalogCurrent = $currentShippingId
+            ? ($shippingStatuses->firstWhere('id', $currentShippingId)
+                ?: $allShippingStatuses->firstWhere('id', $currentShippingId))
+            : null;
+
+        if ($catalogCurrent && ! is_array($catalogCurrent)) {
+            $catalogCurrent = [
+                'description' => $catalogCurrent->description,
+                'color' => $catalogCurrent->color ?: '#ff7a00',
+            ];
+        }
+
+        // Timeline de tienda: Pendiente → Pago completado → estados de envío.
+        // Evita marcar "Pendiente" con check al pagar (paso aparte).
+        $paymentStatus = $order->payment_status_order;
+        $isPaymentCompleted = (bool) optional($paymentStatus)->action_mark_payment;
+        $pendingPaymentStatus = StatusOrder::where('is_payment_status', true)
+            ->where(function ($q) {
+                $q->where('action_mark_payment', false)->orWhereNull('action_mark_payment');
+            })
+            ->orderByDesc('is_initial')
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->first();
+        $paidPaymentStatus = StatusOrder::where('is_payment_status', true)
+            ->where('action_mark_payment', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->first();
+
+        $timelineStatuses = collect();
+        if ($pendingPaymentStatus) {
+            $timelineStatuses->push([
+                'id' => (int) $pendingPaymentStatus->id,
+                'description' => 'Pendiente',
+                'color' => $pendingPaymentStatus->color ?: '#f59e0b',
+                'sort_order' => -2,
+                'is_initial' => true,
+                'is_final' => false,
+                'is_side_status' => false,
+                'kind' => 'payment_pending',
+            ]);
+        }
+        if ($paidPaymentStatus) {
+            $timelineStatuses->push([
+                'id' => (int) $paidPaymentStatus->id,
+                'description' => 'Pago completado',
+                'color' => $paidPaymentStatus->color ?: '#16a34a',
+                'sort_order' => -1,
+                'is_initial' => false,
+                'is_final' => false,
+                'is_side_status' => false,
+                'kind' => 'payment_completed',
+            ]);
+        }
+        $timelineStatuses = $timelineStatuses
+            ->concat($shippingStatuses->map(function (array $status) {
+                $status['kind'] = 'shipping';
+
+                return $status;
+            }))
+            ->values();
+
+        if (! $isPaymentCompleted && $pendingPaymentStatus) {
+            $timelineStatusId = (int) $pendingPaymentStatus->id;
+            $badgeDescription = 'Pendiente';
+            $badgeColor = $pendingPaymentStatus->color ?: '#f59e0b';
+        } elseif ($isPaymentCompleted && $paidPaymentStatus && ! $timelineShippingStatusId) {
+            // Pagado, pero aún sin estado de envío útil: resaltar "Pago completado".
+            $timelineStatusId = (int) $paidPaymentStatus->id;
+            $badgeDescription = 'Pago completado';
+            $badgeColor = $paidPaymentStatus->color ?: '#16a34a';
+        } else {
+            $timelineStatusId = $timelineShippingStatusId;
+            $badgeDescription = $currentShipping->description
+                ?? ($catalogCurrent['description'] ?? 'Pendiente');
+            $badgeColor = $currentShipping->color
+                ?? ($catalogCurrent['color'] ?? '#ff7a00');
+        }
+
+        return response()->json([
+            'success' => true,
+            'order' => [
+                'id' => (int) $order->id,
+                'number' => '#' . $order->publicNumber(),
+                'order_code' => $order->order_code,
+                'total' => round((float) $order->total, 2),
+                'payment_label' => $paymentLabel,
+                'delivery_label' => $deliveryLabel,
+                'is_pickup' => $isPickup,
+                'payment_completed' => $isPaymentCompleted,
+                'items' => $items,
+                'items_count' => count($items),
+                'shipping_status_order_id' => $currentShippingId,
+                'timeline_status_order_id' => $timelineStatusId,
+                'shipping_status_description' => $badgeDescription,
+                'shipping_status_color' => $badgeColor,
+                'tracking_code' => $order->tracking_code
+                    ? (string) $order->tracking_code
+                    : null,
+                'created_at' => optional($order->created_at)->format('d/m/Y H:i'),
+            ],
+            'shipping_statuses' => $shippingStatuses,
+            'timeline_statuses' => $timelineStatuses,
+        ]);
     }
 
     public function privacyPolicy()
@@ -1365,81 +3065,164 @@ class EcommerceController extends Controller
         ]);
     }
 
-    public function paymentIzipay(Request $request)
+    /**
+     * Bloquea compras cuando la tienda está en modo solo cotización.
+     */
+    private function rejectPurchaseIfQuoteOnly()
     {
-        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array)$request->customer;
-
-        $order = Order::create([
-            'external_id' => Str::uuid()->toString(),
-            'customer' => $customer,
-            'shipping_address' => $request->input('shipping_address', ''),
-            'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
-            'total' => $request->precio_culqi,
-            'reference_payment' => 'izipay',
-            'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase
-        ]);
-
-        $paymentReq = new Request([
-            'isTenant' => true,
-            'amount' => round((float)$request->precio_culqi * 100),
-            'currency' => 'VES',
-            'orderId' => $order->external_id,
-            'customer' => [
-                'email' => $customer['correo_electronico'] ?? null,
-                'billingDetails' => [
-                    'firstName' => $customer['apellidos_y_nombres_o_razon_social'] ?? null,
-                    'phoneNumber' => $customer['telefono'] ?? null,
-                ]
-            ]
-        ]);
-
-        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
-        $result = $izipayController->izipayCreatePayment($paymentReq);
-
-        return [
-            'success' => $result['success'],
-            'formToken' => $result['formToken'] ?? null,
-            'order' => $order
-        ];
-    }
-
-    public function transactionIzipay(Request $request)
-    {
-        $paymentReq = new Request([
-            'isTenant' => true,
-            'uuid' => $request->uuid
-        ]);
-        $izipayController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
-        $result = $izipayController->izipayTransaction($paymentReq);
-        return $result;
-    }
-
-    public function paymentMercadoPago(Request $request)
-    {
-        $customer = is_string($request->customer) ? json_decode($request->customer, true) : (array)$request->customer;
-
-        $paymentReq = new Request([
-            'isTenant' => true,
-            'form_data' => $request->form_data,
-        ]);
-
-        $mpController = app(\Modules\Payment\Http\Controllers\PaymentGatewayController::class);
-        $result = $mpController->mercadoPagoCreatePayment($paymentReq);
-
-        if (!empty($result['paid']) || !empty($result['pending'])) {
-            $order = Order::create([
-                'external_id' => Str::uuid()->toString(),
-                'customer' => $customer,
-                'shipping_address' => $request->input('shipping_address', ''),
-                'items' => is_string($request->items) ? json_decode($request->items, true) : $request->items,
-                'total' => $request->precio_culqi,
-                'reference_payment' => 'mp',
-                'purchase' => is_string($request->purchase) ? json_decode($request->purchase, true) : $request->purchase
-            ]);
-            $result['order'] = $order;
+        if (! ConfigurationEcommerce::isStorefrontQuoteOnly()) {
+            return null;
         }
 
-        return $result;
+        return response()->json([
+            'success' => false,
+            'message' => 'La tienda está en modo solo cotización. No es posible realizar compras.',
+        ], 403);
+    }
+
+    /**
+     * Normaliza el payload customer del checkout (invitado o autenticado).
+     */
+    private function extractPaymentCustomerFromRequest(Request $request): array
+    {
+        $customer = $request->customer;
+
+        if (is_string($customer)) {
+            $customer = json_decode($customer, true) ?? [];
+        } elseif (is_object($customer)) {
+            $customer = (array) $customer;
+        } elseif (!is_array($customer)) {
+            $customer = [];
+        }
+
+        return $customer;
+    }
+
+    /**
+     * Valida DNI/documento del comprador del pedido (seguimiento público).
+     */
+    private function orderTrackingDocumentMatches(Order $order, string $document): bool
+    {
+        if ($document === '') {
+            return false;
+        }
+
+        $customer = $order->customer;
+        $orderDoc = preg_replace(
+            '/\D+/',
+            '',
+            (string) (data_get($customer, 'numero_documento')
+                ?? data_get($customer, 'number')
+                ?? data_get($customer, 'identity_document_number')
+                ?? '')
+        );
+
+        return $orderDoc !== '' && hash_equals($orderDoc, $document);
+    }
+
+    /**
+     * @deprecated Usar orderTrackingDocumentMatches (pedido + DNI).
+     */
+    private function orderTrackingIdentityMatches(Order $order, string $email, string $document): bool
+    {
+        if ($document !== '') {
+            return $this->orderTrackingDocumentMatches($order, $document);
+        }
+
+        $customer = $order->customer;
+        $orderEmail = strtolower(trim((string) data_get($customer, 'correo_electronico', '')));
+        if ($orderEmail === '') {
+            $orderEmail = strtolower(trim((string) data_get($customer, 'email', '')));
+        }
+
+        return $email !== '' && $orderEmail !== '' && hash_equals($orderEmail, $email);
+    }
+
+    /**
+     * Comprueba que el pedido pertenece al cliente autenticado en la tienda.
+     */
+    private function orderTrackingBelongsToUser(Order $order, $user): bool
+    {
+        $userEmail = strtolower(trim((string) ($user->email ?? '')));
+        if ($userEmail === '') {
+            return false;
+        }
+
+        $orderEmail = strtolower(trim((string) data_get($order->customer, 'correo_electronico', '')));
+        if ($orderEmail === '') {
+            $orderEmail = strtolower(trim((string) data_get($order->customer, 'email', '')));
+        }
+
+        return $orderEmail !== '' && hash_equals($orderEmail, $userEmail);
+    }
+
+    private function isPickupOnlyShippingStatus($status): bool
+    {
+        $description = mb_strtolower(trim((string) ($status->description ?? '')), 'UTF-8');
+
+        return str_contains($description, 'recojo')
+            || str_contains($description, 'pickup')
+            || str_contains($description, 'para recoger');
+    }
+
+    /**
+     * Estado de envío propio de domicilio (p. ej. "En camino").
+     */
+    private function isDeliveryOnlyShippingStatus($status): bool
+    {
+        if (! empty($status->action_notify_dispatch)) {
+            return true;
+        }
+
+        $description = mb_strtolower(trim((string) ($status->description ?? '')), 'UTF-8');
+
+        return str_contains($description, 'en camino')
+            || str_contains($description, 'en tránsito')
+            || str_contains($description, 'en transito')
+            || str_contains($description, 'despachado')
+            || str_contains($description, 'en ruta');
+    }
+
+    private function isPickupShippingAddress(?string $shippingAddress): bool
+    {
+        return stripos(trim((string) $shippingAddress), 'Recojo en tienda') === 0;
+    }
+
+    private function normalizePaymentCustomerData(array $customer, ?string $shippingAddress = null): array
+    {
+        $customer['telefono'] = preg_replace('/\D/', '', (string) ($customer['telefono'] ?? ''));
+
+        $docType = (string) ($customer['identity_document_type_id']
+            ?? $customer['codigo_tipo_documento_identidad']
+            ?? '0');
+        $customer['codigo_tipo_documento_identidad'] = $docType;
+        $customer['identity_document_type_id'] = $docType;
+        $customer['numero_documento'] = preg_replace('/\D/', '', (string) ($customer['numero_documento'] ?? '0')) ?: '0';
+
+        $direccion = trim((string) ($customer['direccion'] ?? ''));
+        if ($direccion === '' && $this->isPickupShippingAddress($shippingAddress)) {
+            $customer['direccion'] = trim((string) $shippingAddress) ?: 'Recojo en tienda';
+        }
+
+        return $customer;
+    }
+
+    private function makePaymentCustomerValidator(array $customer, ?string $shippingAddress = null)
+    {
+        $rules = [
+            'telefono' => 'required|numeric',
+            'codigo_tipo_documento_identidad' => 'required|numeric',
+            'numero_documento' => 'required|numeric',
+            'identity_document_type_id' => 'required|numeric',
+        ];
+
+        if (!$this->isPickupShippingAddress($shippingAddress)) {
+            $rules['direccion'] = 'required|string';
+        } else {
+            $rules['direccion'] = 'nullable|string';
+        }
+
+        return Validator::make($customer, $rules);
     }
 
     /**
@@ -1486,6 +3269,37 @@ class EcommerceController extends Controller
             'email' => $email,
             'name' => $name,
         ];
+    }
+
+    private function applyAuthoritativeCampaignPrices(array $lines): array
+    {
+        if (empty($lines)) {
+            return [];
+        }
+
+        $items = Item::whereIn('id', collect($lines)->pluck('id')->filter()->unique())->get()->keyBy('id');
+        $pricingService = app(CampaignPriceService::class);
+
+        return collect($lines)->map(function ($line) use ($items, $pricingService) {
+            $line = is_object($line) ? (array) $line : $line;
+            $item = $items->get($line['id'] ?? null);
+            if (! $item) {
+                return $line;
+            }
+
+            $pricing = $pricingService->forItem($item);
+            $quantity = max(1, (float) ($line['cantidad'] ?? $line['quantity'] ?? 1));
+            $line['original_price'] = $pricing['base_price'];
+            $line['compare_at_price'] = $pricing['compare_at_price'];
+            $line['sale_unit_price'] = $pricing['final_price'];
+            $line['sub_total'] = round($pricing['final_price'] * $quantity, 2);
+            $line['discount_campaign_id'] = $pricing['discount_campaign_id'];
+            $line['discount_campaign_name'] = $pricing['discount_campaign_name'];
+            $line['campaign_discount_percent'] = $pricing['real_discount_percentage'];
+            $line['campaign_discount_embedded'] = $pricing['has_real_discount'];
+
+            return $line;
+        })->values()->all();
     }
 }
 // ######## FIN ADAPTACIÓN VENEZUELA

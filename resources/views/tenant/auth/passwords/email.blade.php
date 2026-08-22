@@ -4,7 +4,7 @@
 <section class="auth">
     @include('tenant.auth.partials.side_left')
     <article class="auth__form">
-        <form class="form-material" id="loginform" method="POST" action="{{ route('password.email') }}">
+        <form class="form-material" id="loginform" method="POST" action="{{ route('password.email', [], false) }}">
             @include('tenant.auth.partials.form_logo')
             <h1 class="auth__title">Bienvenido a<br>{{ $company->trade_name }}</h1>
             <p>Ingrese su correo electrónico y le enviaremos instrucciones para restablecer su contraseña</p>
@@ -35,7 +35,7 @@
                 <button class="btn btn-signin btn-block" type="submit">ENVIAR LINK</button>
                 <br>
                 @endif
-                <a href="{{ route('login') }}" class="btn btn-link">
+                <a href="{{ route('login', [], false) }}" class="btn btn-link">
                     <i class="fa fa-arrow-left mr-2"></i> Regresar al login
                 </a>
             </div>

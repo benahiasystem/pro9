@@ -44,7 +44,7 @@ class TenantMigrationDataSeederTest extends TestCase
         $identityDocumentRenameMigrations = glob(database_path('migrations/tenant/*_rename_undomiciled_tax_document_to_doc_sin_rif.php')) ?: [];
         // ######### FIN CAMBIO SUNAT A SENIAT
 
-        self::assertCount(327, $createMigrations);
+        self::assertCount(331, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
         self::assertCount(1, $currencyMigrations);
         self::assertCount(1, $existingTenantMigrations);
@@ -53,7 +53,7 @@ class TenantMigrationDataSeederTest extends TestCase
         // ######### FIN CAMBIO AFECTACIÓN IVA
         // ########## INICIO CAMBIO SUNAT A SENIAT
         self::assertCount(1, $identityDocumentRenameMigrations);
-        self::assertCount(332, glob(database_path('migrations/tenant/*.php')) ?: []);
+        self::assertCount(352, glob(database_path('migrations/tenant/*.php')) ?: []);
         // ######### FIN CAMBIO SUNAT A SENIAT
     }
 

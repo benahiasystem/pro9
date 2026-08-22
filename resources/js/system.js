@@ -51,6 +51,7 @@ import SystemReportLoginLockout from '@viewsModuleReport/system/report_login_loc
 import SystemUserNotChangePassword from '@viewsModuleReport/system/user_not_change_password/index.vue';
 import SystemPlansIndex from './views/system/plans/index.vue';
 import SystemPlansForm from './views/system/plans/form.vue';
+import SystemBusinessTurnsIndex from './views/system/business_turns/index.vue';
 import SystemWahaServersIndex from './views/system/waha_servers/index.vue';
 import SystemWhatsappProviderConfiguration from './views/system/configuration/whatsappProviderConfiguration.vue';
 import SystemConfigurationCronOrderPayments from './views/system/configuration/cronOrderPayments.vue';
@@ -67,7 +68,9 @@ import SystemGuestRegisterPlanPanel from './views/system/guest-register/plan-pan
 import XImportServiceGuest from './../../modules/ApiPeruDev/Resources/assets/js/components/InputServiceGuest.vue'
 import SystemConfigurationThemes from './views/system/configuration/themes.vue'
 import SystemsVisibleColumns from './views/system/configuration/visibleColumns.vue'
+import SystemConfigurationSections from './views/system/configuration/sections.vue'
 import SystemStorageManagement from './views/system/storage-management/index.vue'
+import SystemExtraServicesIndex from '@viewsModuleExtraServices/index.vue';
 
 locale.use(lang)
 
@@ -149,6 +152,9 @@ Vue.component('system-user-not-change-password-index', SystemUserNotChangePasswo
 Vue.component('system-plans-index', SystemPlansIndex);
 Vue.component('system-plans-form', SystemPlansForm);
 
+// Giro de negocio (system)
+Vue.component('system-business-turns-index', SystemBusinessTurnsIndex);
+
 // WAHA (proveedor de conexión WhatsApp alternativo a Evolution)
 Vue.component('system-waha-servers-index', SystemWahaServersIndex);
 Vue.component('system-whatsapp-provider-configuration', SystemWhatsappProviderConfiguration);
@@ -176,8 +182,10 @@ Vue.component('checkout-guest', CheckoutGuest)
 
 Vue.component('system-configuration-themes', SystemConfigurationThemes)
 Vue.component('system-configuration-visible-columns', SystemsVisibleColumns)
+Vue.component('system-configuration-sections', SystemConfigurationSections)
 
 Vue.component('system-storage-management-index', SystemStorageManagement)
+Vue.component('system-extra-services-index', SystemExtraServicesIndex);
 
 import VueClipboard from 'vue-clipboard2'
 Vue.use(VueClipboard)

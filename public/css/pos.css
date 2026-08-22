@@ -100,7 +100,7 @@ html.sidebar-light:not(.dark) .page-header h2 {
     html.fixed .inner-wrapper:has(.pos-payment) {
         padding-top: 60px;
     }
-    .pos .pos-payment > div {
+    .pos .pos-payment > div:not(.el-dialog__wrapper) {
         height: calc(-60px + 100vh);
     }
 }

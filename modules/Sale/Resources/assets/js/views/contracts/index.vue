@@ -1,4 +1,3 @@
-<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div>
         <div class="page-header pr-0">
@@ -41,9 +40,7 @@
                             <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
                             <th v-if="col.visible && col.key === 'total_exonerated'" :key="col.key" class="text-end">T.Exonerado</th>
                             <th v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end">T.Gravado</th>
-                            <!-- ########## INICIO CAMBIO IGV A IVA -->
-                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.IVA</th>
-                            <!-- ######### FIN CAMBIO IGV A IVA -->
+                            <th v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end">T.Igv</th>
                             <th v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end">Total</th>
                             <th v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">Acciones</th>
                         </template>
@@ -53,8 +50,15 @@
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">{{ row.date_of_issue | toDate }}</td>
                             <td v-if="col.visible && col.key === 'delivery_date'" :key="col.key" class="text-center">{{ row.delivery_date | toDate }}</td>
                             <td v-if="col.visible && col.key === 'seller'" :key="col.key">{{ row.user_name }}</td>
-                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
-                            <td v-if="col.visible && col.key === 'state_type'" :key="col.key">
+                            <td v-if="col.visible && col.key === 'customer'" :key="col.key">
+                                <span
+                                    role="button"
+                                    tabindex="0"
+                                    @keyup.enter.prevent="clickDetail(row)"
+                                >{{ row.customer_name }}</span>
+                                <br/><small v-text="row.customer_number"></small>
+                            </td>
+                            <td v-if="col.visible && col.key === 'state_type'" :key="col.key" @click.stop>
                                 <template v-if="row.state_type_id == '11'">{{ row.state_type_description }}</template>
                                 <template v-else>
                                     <el-select v-model="row.state_type_id" @change="changeStateType(row)" style="width:120px !important">
@@ -62,7 +66,12 @@
                                     </el-select>
                                 </template>
                             </td>
-                            <td v-if="col.visible && col.key === 'number'" :key="col.key">{{ row.number_full }}</td>
+                            <td v-if="col.visible && col.key === 'number'" :key="col.key">
+                                <span class="customer-link" @click="clickDetail(row)">
+                                    <svg data-v-e4dd5c75="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-list-details" style="margin-top: -2px;"><path data-v-e4dd5c75="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-e4dd5c75="" d="M13 5h8"></path><path data-v-e4dd5c75="" d="M13 9h5"></path><path data-v-e4dd5c75="" d="M13 15h8"></path><path data-v-e4dd5c75="" d="M13 19h5"></path><path data-v-e4dd5c75="" d="M3 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path><path data-v-e4dd5c75="" d="M3 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4"></path></svg>
+                                    {{ row.number_full }}
+                                </span>
+                            </td>
                             <td v-if="col.visible && col.key === 'quotation'" :key="col.key">{{ row.quotation_number_full }}</td>
                             <td v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">{{ row.currency_type_id }}</td>
                             <td v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_exportation) }}</td>
@@ -72,14 +81,21 @@
                             <td v-if="col.visible && col.key === 'total_taxed'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_taxed) }}</td>
                             <td v-if="col.visible && col.key === 'total_igv'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total_igv) }}</td>
                             <td v-if="col.visible && col.key === 'total'" :key="col.key" class="text-end text-nowrap">{{ row.currency_type_id === 'VES' ? 'Bs.' : '$' }} {{ formatDecimal(row.total) }}</td>
-                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end">
+                            <td v-if="col.visible && col.key === 'actions'" :key="col.key" class="text-end" @click.stop>
                                 <el-dropdown trigger="click" @command="(command) => handleRowAction(command, row)">
                                     <el-button class="btn-dropdown">
                                         <i class="fas fa-ellipsis-v"></i>
                                         <i class="fas fa-ellipsis-h" style="display: none;"></i>
                                     </el-button>
                                     <el-dropdown-menu slot="dropdown">
-                                        <el-dropdown-item v-if="row.state_type_id != '11'" command="edit">
+                                        <el-dropdown-item command="detail">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg>
+                                            Ver detalle
+                                        </el-dropdown-item>
+
+                                        <el-dropdown-item divided />
+
+                                        <el-dropdown-item v-if="canEditContract(row)" command="edit">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
                                             Editar
                                         </el-dropdown-item>
@@ -87,8 +103,8 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
                                             Opciones
                                         </el-dropdown-item>
-                                        <el-dropdown-item v-if="row.state_type_id != '11'" divided></el-dropdown-item>
-                                        <el-dropdown-item v-if="row.state_type_id != '11'" command="void" class="text-danger option-delete">
+                                        <el-dropdown-item v-if="canAnulateContract(row)" divided></el-dropdown-item>
+                                        <el-dropdown-item v-if="canAnulateContract(row)" command="void" class="text-danger option-delete">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-x me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"></path><path d="M10 10l4 4m0 -4l-4 4"></path></svg>
                                             Anular
                                         </el-dropdown-item>
@@ -104,6 +120,16 @@
             <quotation-options-pdf :showDialog.sync="showDialogOptionsPdf"
                               :contractNewId="recordId"
                               :showClose="true"></quotation-options-pdf>
+
+            <contract-detail-drawer
+                :showDrawer.sync="showDetailDrawer"
+                :recordId="detailRecordId"
+                :initialRow.sync="detailInitialRow"
+                :resource="resource"
+                :canEditRow="canEditContract"
+                :canAnulateRow="canAnulateContract"
+                @edit="openEditFromDrawer"
+            ></contract-detail-drawer>
         </div>
     </div>
 </template>
@@ -115,13 +141,14 @@
 <script>
 
     import QuotationOptionsPdf from './partials/options_pdf.vue'
+    import ContractDetailDrawer from './partials/detail-drawer.vue'
     import DataTable from '@components/DataTable.vue'
     import {deletable} from '@mixins/deletable'
 
     export default {
         props:['typeUser'],
         mixins: [deletable],
-        components: {DataTable, QuotationOptionsPdf},
+        components: {DataTable, QuotationOptionsPdf, ContractDetailDrawer},
         computed: {
             orderedColumns() {
                 return Object.entries(this.columns)
@@ -135,6 +162,9 @@
                 recordId: null,
                 showDialogOptions: false,
                 showDialogOptionsPdf: false,
+                showDetailDrawer: false,
+                detailRecordId: null,
+                detailInitialRow: null,
                 state_types: [],
                 columns: {
                     date_of_issue:     { title: 'Fecha Emisión', visible: true,  order: 0  },
@@ -150,9 +180,7 @@
                     total_unaffected:  { title: 'T.Inafecto',    visible: false, order: 10 },
                     total_exonerated:  { title: 'T.Exonerado',   visible: false, order: 11 },
                     total_taxed:       { title: 'T.Gravado',     visible: true,  order: 12 },
-                    // ########## INICIO CAMBIO IGV A IVA
-                    total_igv:         { title: 'T.IVA',         visible: true,  order: 13 },
-                    // ######### FIN CAMBIO IGV A IVA
+                    total_igv:         { title: 'T.Igv',         visible: true,  order: 13 },
                     total:             { title: 'Total',         visible: true,  order: 14 },
                     actions:           { title: 'Acciones',      visible: true,  order: 15 },
                 },
@@ -234,6 +262,11 @@
                 this.showDialogOptionsPdf = true
             },
             handleRowAction(command, row) {
+                if (command === 'detail') {
+                    this.clickDetail(row)
+                    return
+                }
+
                 if (command === 'edit') {
                     window.location.href = `/${this.resource}/create/${row.id}`
                     return
@@ -248,6 +281,30 @@
                     this.clickOptionsPdf(row.id)
                 }
             },
+            clickDetail(row) {
+                this.detailRecordId = row.id
+                this.detailInitialRow = { ...row }
+                this.showDetailDrawer = true
+            },
+            openEditFromDrawer(recordId) {
+                this.showDetailDrawer = false
+                window.location.href = `/${this.resource}/create/${recordId}`
+            },
+            canEditContract(row) {
+                if (!row || String(row.state_type_id) === '11') {
+                    return false
+                }
+
+                if (String(row.state_type_id) === '01') {
+                    return true
+                }
+
+                const description = String(row.state_type_description || '').toLowerCase()
+                return description.includes('registrado') || description.includes('pendiente')
+            },
+            canAnulateContract(row) {
+                return row && String(row.state_type_id) !== '11'
+            },
             clickVoided(id)
             {
                 this.voided(`/${this.resource}/voided/${id}`).then(() =>
@@ -257,5 +314,3 @@
         }
     }
 </script>
-
-<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->
