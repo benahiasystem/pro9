@@ -119,7 +119,8 @@ class ExpenseController extends Controller
         $expense_types = ExpenseType::get();
         $expense_method_types = ExpenseMethodType::all();
         $expense_reasons = ExpenseReason::all();
-        $payment_destinations = $this->getBankAccounts();
+        // Incluye la opcion CAJA GENERAL cuando hay caja abierta (igual que ingresos)
+        $payment_destinations = $this->getPaymentDestinations();
 
         return compact('suppliers', 'establishment','currency_types', 'expense_types', 'expense_method_types', 'expense_reasons', 'payment_destinations');
     }
@@ -166,8 +167,11 @@ class ExpenseController extends Controller
             foreach ($data['payments'] as $row)
             {
                 $record_payment = $doc->payments()->create($row);
-                
+
+                // Metodo 1 (efectivo) va a caja; el resto respeta el destino elegido
+                if (($row['expense_method_type_id'] ?? null) == 1) {
                     $row['payment_destination_id'] = 'cash';
+                }
 
                 $this->createGlobalPayment($record_payment, $row);
             }

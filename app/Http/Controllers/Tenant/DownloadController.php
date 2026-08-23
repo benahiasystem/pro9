@@ -115,6 +115,14 @@ class DownloadController extends Controller
     public function toPrint($model, $external_id, $format = 'a4') {
         $document_type = $model;
 
+        // Ingresos y gastos (finanzas) viven en modulos y resuelven su propio PDF.
+        // Se atienden aqui para exponerlos por la ruta publica print/* (con CORS), como cotizaciones.
+        if ($document_type == 'income') {
+            return app(\Modules\Finance\Http\Controllers\IncomeController::class)->toPrint($external_id, $format ?? 'a4');
+        } elseif ($document_type == 'expense') {
+            return app(\Modules\Expense\Http\Controllers\ExpenseController::class)->toPrint($external_id, $format ?? 'a4');
+        }
+
         $model = "App\\Models\\Tenant\\".ucfirst($model);
 
         $document = $model::where('external_id', $external_id)->first();

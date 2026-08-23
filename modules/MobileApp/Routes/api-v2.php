@@ -79,6 +79,17 @@ if ($hostname)
                 Route::post('adjust', 'Api\InventoryController@adjust');
             });
 
+            // finanzas: movimientos unificados de ingresos/egresos, registro de ingresos y gastos
+            Route::prefix('finances')->group(function () {
+                Route::get('tables', 'Api\FinanceController@tables');
+                Route::get('movements-scroll', 'Api\FinanceController@movementsByScroll');
+                Route::get('movements-summary', 'Api\FinanceController@movementsSummary');
+                Route::post('income', 'Api\FinanceController@storeIncome');
+                Route::post('income/{id}/void', 'Api\FinanceController@voidIncome');
+                Route::post('expense', 'Api\FinanceController@storeExpense');
+                Route::post('expense/{id}/void', 'Api\FinanceController@voidExpense');
+            });
+
             Route::prefix('cash')->group(function () {
                 Route::get('records-scroll', 'Api\CashController@byScroll');
             });
