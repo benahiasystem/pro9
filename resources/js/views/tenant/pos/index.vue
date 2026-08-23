@@ -1919,14 +1919,13 @@ export default {
 
             this.validateCustomerRetention(customer.identity_document_type_id);
 
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             if (this.configuration.default_document_type_80) {
                 this.form.document_type_id = "80";
-            } else if (this.configuration.default_document_type_03) {
-                this.form.document_type_id = "03";
             } else {
-                this.form.document_type_id =
-                    customer.identity_document_type_id === "6" ? "01" : "03";
+                this.form.document_type_id = "01";
             }
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
             if (this.form.has_retention && this.form.total > 700) {
                 this.changeRetention();
@@ -2065,7 +2064,9 @@ export default {
         initForm() {
             this.form = {
                 establishment_id: null,
-                document_type_id: "03",
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                document_type_id: "01",
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 series_id: null,
                 prefix: null,
                 number: "#",

@@ -13,7 +13,6 @@ class CreateDocumentTool implements ToolInterface
     private const IGV_RATE = 0.16;
     // ######### FIN CAMBIO AFECTACIÓN IVA
     private const DOC_TYPE_FACTURA = '01';
-    private const DOC_TYPE_BOLETA = '03';
 
     public function name(): string
     {
@@ -26,18 +25,24 @@ class CreateDocumentTool implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $this->name(),
-                'description' => 'Prepara un comprobante (boleta o factura) para emisión. NO emite todavía. Devuelve un resumen para que el vendedor confirme.',
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                'description' => 'Prepara una factura para emisión. NO emite todavía. Devuelve un resumen para que el vendedor confirme.',
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
                         'document_type' => [
                             'type' => 'string',
-                            'enum' => ['boleta', 'factura'],
-                            'description' => 'Tipo de comprobante a emitir.',
+                            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                            'enum' => ['factura'],
+                            'description' => 'Tipo de comprobante a emitir: factura.',
+                            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                         ],
                         'customer_id' => [
-                            'type' => ['integer', 'null'],
-                            'description' => 'ID del cliente (id de Person). Null solo para boleta a consumidor final sin DNI.',
+                            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                            'type' => 'integer',
+                            'description' => 'ID del cliente con RIF (id de Person).',
+                            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                         ],
                         'items' => [
                             'type' => 'array',
@@ -60,7 +65,7 @@ class CreateDocumentTool implements ToolInterface
                             'description' => 'Descuento global en bolívares (monto fijo). Se aplica al total y reduce la base del IGV. Solo úsalo si el vendedor pidió un descuento explícito (ej. "con Bs. 9 de descuento", "descuéntale 10 bolívares"). Debe ser menor al subtotal antes de IGV.',
                         ],
                     ],
-                    'required' => ['document_type', 'items'],
+                    'required' => ['document_type', 'customer_id', 'items'],
                 ],
             ],
         ];
@@ -74,22 +79,25 @@ class CreateDocumentTool implements ToolInterface
         $observations = trim((string) ($arguments['observations'] ?? ''));
         $discountAmount = round((float) ($arguments['discount_amount'] ?? 0), 2);
 
-        if (!in_array($documentType, ['boleta', 'factura'], true)) {
-            return ['status' => 'error', 'error' => 'document_type debe ser "boleta" o "factura".'];
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        if ($documentType !== 'factura') {
+            return ['status' => 'error', 'error' => 'document_type debe ser "factura".'];
         }
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         if (empty($items)) {
             return ['status' => 'error', 'error' => 'Debes incluir al menos un item.'];
         }
 
-        $documentTypeId = $documentType === 'factura' ? self::DOC_TYPE_FACTURA : self::DOC_TYPE_BOLETA;
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $documentTypeId = self::DOC_TYPE_FACTURA;
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
-        $customer = null;
-        if ($customerId) {
-            $customer = Person::find($customerId);
-            if (!$customer) {
-                return ['status' => 'error', 'error' => "Cliente id={$customerId} no encontrado."];
-            }
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $customer = $customerId ? Person::find($customerId) : null;
+        if (!$customer) {
+            return ['status' => 'error', 'error' => "Cliente id={$customerId} no encontrado."];
         }
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         $lines = [];
         $totalValue = 0.0;

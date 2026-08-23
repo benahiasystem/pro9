@@ -1065,11 +1065,12 @@ export default {
             affectations_exonerated_igv: ["10", "20"],
             searchFromBarcode: false,
             current_series_count: 0,
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             doc_type_tabs: [
-                { id: '03', label: 'Boleta' },
                 { id: '01', label: 'Factura' },
                 { id: '80', label: 'N. Venta' },
             ],
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             customerError: false,
         };
     },
@@ -1700,17 +1701,13 @@ export default {
             });
             this.customer = customer;
 
-            if (this.configuration.default_document_type_80) {
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            if (this.configuration.default_document_type_80 || this.isNrus) {
                 this.form.document_type_id = "80";
-            } else if (this.configuration.default_document_type_03) {
-                this.form.document_type_id = "03";
-            } else if (this.isNrus) {
-                // NRUS no emite Factura, siempre Boleta
-                this.form.document_type_id = "03";
             } else {
-                this.form.document_type_id =
-                    customer.identity_document_type_id == "6" ? "01" : "03";
+                this.form.document_type_id = "01";
             }
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
             // console.log(this.customer);
 
@@ -1803,7 +1800,9 @@ export default {
         initForm() {
             this.form = {
                 establishment_id: null,
-                document_type_id: "03",
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                document_type_id: "01",
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 series_id: null,
                 prefix: null,
                 number: "#",

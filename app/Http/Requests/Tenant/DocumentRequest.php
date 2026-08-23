@@ -23,6 +23,12 @@ class DocumentRequest extends FormRequest
     {
         $id = $this->input('id');
         return [
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            'document_type_id' => [
+                'required',
+                'not_in:03',
+            ],
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             'customer_id' => [
                 'required',
             ],

@@ -93,7 +93,9 @@
                 </header>
                 <div class="card-body text-center">
                     <h3 class="font-weight-semibold mt-3 text-center">App Móvil</h3>
-                    <p class="text-center">Descarga la aplicación para tu teléfono Android y genera comprobantes como Facturas, Boletas y más.</p>
+                    {{-- ########## INICIO CAMBIO QUITAR BOLETA --}}
+                    <p class="text-center">Descarga la aplicación para tu teléfono Android y genera comprobantes como Facturas y más.</p>
+                    {{-- ######### FIN CAMBIO QUITAR BOLETA --}}
                     <span class="badge badge-success">
                         Activo
                     </span>

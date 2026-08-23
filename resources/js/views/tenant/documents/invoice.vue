@@ -1738,11 +1738,9 @@ export default {
         const clientfromDispatchesOrNotes = localStorage.getItem('client');
         if (clientfromDispatchesOrNotes) {
             const client = JSON.parse(clientfromDispatchesOrNotes);
-            if (client.identity_document_type_id == 1) {
-                this.form.document_type_id = '03'
-            } else if (client.identity_document_type_id == 6) {
-                this.form.document_type_id = '01'
-            }
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            this.form.document_type_id = '01'
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             this.searchRemoteCustomers(client.number);
             this.form.customer_id = client.id;
             this.changeEstablishment();
@@ -2266,7 +2264,9 @@ export default {
 
         },
         selectDocumentType() {
-            this.form.document_type_id = (this.select_first_document_type_03) ? '03' : '01'
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            this.form.document_type_id = '01'
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         },
         keyupCustomer() {
 

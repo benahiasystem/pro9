@@ -206,6 +206,12 @@
 
         public function generateDocuments(Request $request)
         {
+            // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
+            $request->validate([
+                'documents' => ['required', 'array', 'min:1'],
+                'documents.*.document_type_id' => ['required', 'in:01,80'],
+            ]);
+            // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
 
             DB::connection('tenant')->transaction(function () use ($request) {
 
@@ -399,7 +405,11 @@
         {
             $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
             $series = app(SeriesResolver::class)->applyContext(Series::where('establishment_id', $establishment->id))->get();
-            $document_types_invoice = DocumentType::whereIn('id', ['01', '03', '80'])->get();
+            // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            $document_types_invoice = DocumentType::whereIn('id', ['01', '80'])->get();
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
             $payment_method_types = PaymentMethodType::getPaymentMethodTypes();
             $payment_destinations = $this->getPaymentDestinations();
 

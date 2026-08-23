@@ -195,10 +195,12 @@ class PosController extends Controller
     {
 
         // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         $series = app(SeriesResolver::class)->applyContext(
-            Series::whereIn('document_type_id', ['01', '03', '80'])
+            Series::whereIn('document_type_id', ['01', '80'])
                 ->where([['establishment_id', auth()->user()->establishment_id], ['contingency', false]])
         )->get();
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         $payment_method_types = PaymentMethodType::NotCredit()->get();
         $cards_brand = CardBrand::all();

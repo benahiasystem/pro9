@@ -30,7 +30,9 @@
             </h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Comprobantes</span></li>
-                <li><span class="text-muted">Facturas - Boletas</span></li>
+                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                <li><span class="text-muted">Facturas</span></li>
+                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
             </ol>
             <div class="right-wrapper pull-right">
                 <!--<a :href="`/${resource}/create`" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fa fa-plus-circle"></i> Nuevo</a>-->

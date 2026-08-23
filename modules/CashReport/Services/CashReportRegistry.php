@@ -130,7 +130,9 @@ class CashReportRegistry
             ],
             'payments_associated' => [
                 'label' => 'Pagos asociados a caja',
-                'description' => 'Facturas, boletas y notas de venta pagadas en efectivo con destino caja. Excel: ingresos y egresos por moneda.',
+                // ########## INICIO CAMBIO QUITAR BOLETA
+                'description' => 'Facturas y notas de venta pagadas en efectivo con destino caja. Excel: ingresos y egresos por moneda.',
+                // ######### FIN CAMBIO QUITAR BOLETA
                 'category' => 'payments',
                 'builder' => Builders\PaymentsAssociatedCashBuilder::class,
                 'views' => [

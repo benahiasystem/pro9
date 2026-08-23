@@ -21,7 +21,9 @@ class EstablishmentController extends Controller
      */
     public function withSeries()
     {
-        $document_type_ids = ['01', '03', '80'];
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $document_type_ids = ['01', '80'];
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         $series_by_establishment = app(SeriesResolver::class)->applyContext(Series::whereIn('document_type_id', $document_type_ids))
             ->get()

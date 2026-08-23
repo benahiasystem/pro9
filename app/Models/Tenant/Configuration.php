@@ -764,7 +764,9 @@ use Illuminate\Support\Facades\Log;
                 'global_igv_handling' => (bool)$this->global_igv_handling,
                 'product_only_location' => (bool)$this->product_only_location,
                 'legend_footer' => (bool)$this->legend_footer,
-                'default_document_type_03' => (bool)$this->default_document_type_03,
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                'default_document_type_03' => false,
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 'header_image' => $this->header_image,
                 'destination_sale' => (bool)$this->destination_sale,
                 'quotation_allow_seller_generate_sale' => $this->quotation_allow_seller_generate_sale,
@@ -2239,7 +2241,9 @@ use Illuminate\Support\Facades\Log;
          */
         public function isDefaultDocumentType03(): ?bool
         {
-            return (bool)$this->default_document_type_03;
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            return false;
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         }
 
         /**
@@ -2249,7 +2253,9 @@ use Illuminate\Support\Facades\Log;
          */
         public function setDefaultDocumentType03(?bool $default_document_type_03): Configuration
         {
-            $this->default_document_type_03 = (bool)$default_document_type_03;
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            $this->default_document_type_03 = false;
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             return $this;
         }
 

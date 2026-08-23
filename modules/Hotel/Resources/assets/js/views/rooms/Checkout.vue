@@ -601,22 +601,14 @@ export default {
             'loadConfiguration',
         ]),
         validateIdentityDocumentType() {
-
-            let identity_document_types = ["0", "1"];
-            let customer = this.document.customer;
-
-            if (
-                identity_document_types.includes(customer.identity_document_type_id)
-            ) {
-
-                this.document_types = this.all_document_types.filter((row) => {
-                    return ['03', '80'].includes(row.id)
-                })
-
-                // this.document_types = _.filter(this.all_document_types, { id: "03" });
-            } else {
-                this.document_types = this.all_document_types;
-            }
+            // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA HOTEL
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            const allowedOrder = ['80', '01'];
+            this.document_types = allowedOrder
+                .map(id => this.all_document_types.find(row => row.id === id))
+                .filter(Boolean);
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA HOTEL
 
             this.document.document_type_id =
                 this.document_types.length > 0 ? this.document_types[0].id : null;

@@ -422,7 +422,9 @@ class DocumentController extends Controller
         $series = $user->getSeries();
         // $prepayment_documents = $this->table('prepayment_documents');
         $establishments = Establishment::where('id', $establishment_id)->get();// Establishment::all();
-        $document_types_invoice = DocumentType::whereIn('id', ['01', '03'])->get();
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $document_types_invoice = DocumentType::whereIn('id', ['01'])->get();
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         $document_types_note = DocumentType::whereIn('id', ['07', '08'])->get();
         $note_credit_types = NoteCreditType::whereActive()->orderByDescription()->get();
         $note_debit_types = NoteDebitType::whereActive()->orderByDescription()->get();
@@ -441,7 +443,9 @@ class DocumentController extends Controller
         $business_turns = BusinessTurn::where('active', true)->get();
         $enabled_discount_global = config('tenant.enabled_discount_global');
         $is_client = $this->getIsClient();
-        $select_first_document_type_03 = config('tenant.select_first_document_type_03');
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $select_first_document_type_03 = false;
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         $payment_conditions = PaymentCondition::all();
         $restaurant_tip_factor = optional(Configuration::first())->restaurant_tip_factor;
         $is_restaurant_active = DB::connection('tenant')->table('business_turns')
@@ -1763,14 +1767,16 @@ class DocumentController extends Controller
 
     public function importExcelTables()
     {
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         $document_types = DocumentType::query()
-            ->whereIn('id', ['01', '03'])
+            ->whereIn('id', ['01'])
             ->get();
 
         $series = app(SeriesResolver::class)->applyContext(Series::query()
-            ->whereIn('document_type_id', ['01', '03'])
+            ->whereIn('document_type_id', ['01'])
             ->where('establishment_id', auth()->user()->establishment_id))
             ->get();
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         return [
             'document_types' => $document_types,

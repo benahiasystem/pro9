@@ -634,10 +634,11 @@
                                    class="text-end">OP.GRAVADA: {{ currency_type.symbol }} {{
                                         formatDecimal(form.total_taxed)
                                                                }}</p>
-                                <p v-if="form.total_igv > 0"
-                                   <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                   class="text-end">IVA: {{ currency_type.symbol }} {{ formatDecimal(form.total_igv) }}</p>
-                                   <!-- ######### FIN CAMBIO IGV A IVA -->
+                                <p v-if="form.total_igv > 0" class="text-end">
+                                    <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                    IVA: {{ currency_type.symbol }} {{ formatDecimal(form.total_igv) }}
+                                    <!-- ######### FIN CAMBIO IGV A IVA -->
+                                </p>
 
                                 <p v-if="form.total_isc > 0"
                                    class="text-end">ISC: {{ currency_type.symbol }} {{ formatDecimal(form.total_isc) }}</p>

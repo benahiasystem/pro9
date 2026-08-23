@@ -499,6 +499,10 @@ class ConfigurationController extends Controller
 
     public function store(ConfigurationRequest $request)
     {
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $request->merge(['default_document_type_03' => false]);
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+
         $cp = Company::query()
             ->select('id', 'number')
             ->first();
@@ -1004,4 +1008,3 @@ class ConfigurationController extends Controller
 
 
 }
-

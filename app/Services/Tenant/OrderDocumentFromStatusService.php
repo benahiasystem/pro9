@@ -57,7 +57,9 @@ class OrderDocumentFromStatusService
         $order->loadMissing('sale_note');
 
         $purchase = json_decode(json_encode($order->purchase), true) ?: [];
-        $tipoDoc = $purchase['codigo_tipo_documento'] ?? '03';
+        // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
+        $tipoDoc = $purchase['codigo_tipo_documento'] ?? '01';
+        // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
 
         $alreadyHasDocument = $tipoDoc == '80'
             ? (bool) $order->sale_note
@@ -85,6 +87,15 @@ class OrderDocumentFromStatusService
         }
 
         try {
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            if (! in_array($tipoDoc, ['01', '80'], true)) {
+                return array_merge($empty, [
+                    'message' => 'El pedido sólo puede generar Factura o Nota de venta',
+                    'type' => 'warning',
+                ]);
+            }
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+
             $emitterUser = User::query()
                 ->whereNotNull('establishment_id')
                 ->orderBy('id')

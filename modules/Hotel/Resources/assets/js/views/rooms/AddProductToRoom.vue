@@ -144,24 +144,17 @@
                                             <strong>SUBTOTAL</strong>
                                         </td>
                                         <td class="text-end">
-                                           <strong>{{ this.form.subtotal | toDecimals }}</strong>
+                                            <strong>{{ this.form.subtotal | toDecimals }}</strong>
                                         </td>
-
-                                        <!-- <td class="text-right">
-                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                            <strong>IVA</strong>
-                                            <!-- ######### FIN CAMBIO IGV A IVA -->
-                                        </td>
-                                        <td class="text-right">
-                                            <strong>{{ this.form.igv | toDecimals }}</strong>
-                                        </td> -->
-
+                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
                                         <td class="text-end">
                                             <strong>TOTAL</strong>
                                         </td>
                                         <td class="text-end">
                                             <strong>{{ this.form.total | toDecimals }}</strong>
                                         </td>
+                                        <td colspan="5"></td>
+                                        <!-- ######### FIN CAMBIO IGV A IVA -->
                                     </tr>
                                     <tr>
                                         <td></td>

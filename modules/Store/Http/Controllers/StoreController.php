@@ -80,7 +80,9 @@ class StoreController extends Controller
 
 
         $rec = $record->toArray();
-        $document_type_id = $person->identity_document_type_id === '6' ? '01' : '03';
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $document_type_id = '01';
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
         $series = app(SeriesResolver::class)->applyContext(Series::query()

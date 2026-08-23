@@ -7,6 +7,7 @@ use App\Models\Tenant\Catalogs\DocumentType;
 use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Series;
 use App\Services\SeriesCodeGenerator;
+use App\Services\SalesDocumentTypePolicy;
 use Illuminate\Http\Request;
 use Modules\Document\Models\SeriesConfiguration;
 
@@ -172,8 +173,22 @@ class SeriesController extends Controller
      */
     public function validateSeries(SeriesRequest $request)
     {
+        // ########## INICIO CAMBIO QUITAR BOLETAS A CRÉDITO
+        if (SalesDocumentTypePolicy::isProhibitedNewSeries(
+            (string) $request->document_type_id,
+            (string) $request->number
+        )) {
+            return [
+                'success' => false,
+                'message' => 'No se permiten nuevas series de Boleta ni series BC/BD asociadas a Boleta.',
+            ];
+        }
+        // ######### FIN CAMBIO QUITAR BOLETAS A CRÉDITO
+
         if ($this->isNrus() && ! in_array($request->document_type_id, SeriesCodeGenerator::nrusDocumentTypeIds(), true)) {
-            return ['success' => false, 'message' => 'Para empresas NRUS solo están disponibles las series de Boleta de venta electrónica y Nota de venta.'];
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            return ['success' => false, 'message' => 'Para empresas NRUS sólo está disponible la serie de Nota de venta.'];
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         }
 
         $query = Series::where([

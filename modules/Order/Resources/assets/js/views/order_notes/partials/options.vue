@@ -996,39 +996,26 @@ export default {
             }
         },
         async validateIdentityDocumentType() {
-            let identity_document_types = ["0", "1"];
             // ########## INICIO CAMBIO SUNAT A SENIAT
-            /*
-            0		Doc.sin.rif
-            1		Cédula
-            */
+            // La identidad 0 continúa identificándose como Doc.sin.rif; ya no habilita Boleta.
             // ######### FIN CAMBIO SUNAT A SENIAT
-            let customer = _.find(this.customers, {
-                id: this.document.customer_id
-            });
-
-            if (identity_document_types.includes(customer.identity_document_type_id)) {
-                this.document_types = _.filter(this.all_document_types,
-                    _.overSome(
-                        [
-                            // {'id': '01'}, // Factura
-                            {
-                                'id': '03'
-                            }, // Boleta
-                            ['id', '80'] // Nota de venta
-                        ]
-                    )
-                );
-                // this.document_types = _.filter(this.all_document_types, {id: "03"});
-            } else {
-                this.document_types = this.all_document_types;
-            }
+            // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            this.document_types = this.all_document_types.filter(row =>
+                ['01', '80'].includes(row.id)
+            );
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
 
             // recorrer items para determinar si hay productos de exportacion
             let item_export = this.form.order_note.items.filter(item => item.affectation_igv_type_id == 40)
             // calcular cantidad y asignar true a exportacion para habilitar factura
             if(item_export.length > 0) {
-                this.document_types = this.all_document_types
+                // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
+                this.document_types = this.all_document_types.filter(row =>
+                    ['01', '80'].includes(row.id)
+                )
+                // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
                 this.document.operation_type_id = '0200'
             }
 

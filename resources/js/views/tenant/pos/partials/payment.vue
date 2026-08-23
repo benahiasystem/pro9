@@ -243,11 +243,12 @@
 
                     <div>
                         <!-- ########### INICIO CAMBIO DOCUMENTOS POS VENEZUELA -->
+                        <!-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
                         <el-radio-group v-model="form.document_type_id" size="small">
                             <el-radio-button v-if="!isNrus" label="01" @click.native="selectDocumentType('01')">FACTURA</el-radio-button>
-                            <el-radio-button label="03" @click.native="selectDocumentType('03')">BOLETA</el-radio-button>
                             <el-radio-button label="80" @click.native="selectDocumentType('80')">N. VENTA</el-radio-button>
                         </el-radio-group>
+                        <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
                         <!-- ########### FIN CAMBIO DOCUMENTOS POS VENEZUELA -->
                     </div>
                 </div>
@@ -758,10 +759,11 @@ export default {
 
             if (this.default_document_type !== null) {
                 this.form.document_type_id = this.default_document_type;
-                // En NRUS no se permite Factura; forzar Boleta
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 if (this.isNrus && this.form.document_type_id === '01') {
-                    this.form.document_type_id = '03';
+                    this.form.document_type_id = '80';
                 }
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 this.filterSeries()
                 let alt = _.find(this.all_series, { id: this.default_series_type });
 
@@ -814,19 +816,14 @@ export default {
         },
         handleFn113() {
             const code = this.form.document_type_id
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             if (this.isNrus) {
-                // En NRUS solo Boleta (03) y N. Venta (80); se omite Factura
-                this.form.document_type_id = (code == '03') ? '80' : '03'
+                this.form.document_type_id = '80'
                 this.filterSeries()
                 return
             }
-            if (code == '01') {
-                this.form.document_type_id = '03'
-            } else if (code == '03') {
-                this.form.document_type_id = '80'
-            } else if (code == '80') {
-                this.form.document_type_id = '01'
-            }
+            this.form.document_type_id = code == '01' ? '80' : '01'
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
             this.filterSeries()
         },

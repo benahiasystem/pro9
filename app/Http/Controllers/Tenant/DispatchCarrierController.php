@@ -656,7 +656,9 @@ class DispatchCarrierController extends Controller
 
         // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
         $series = app(SeriesResolver::class)->applyContext(Series::where('establishment_id', $establishment->id))->get();
-        $document_types_invoice = DocumentType::whereIn('id', ['01', '03'])->get();
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $document_types_invoice = DocumentType::whereIn('id', ['01'])->get();
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         // $document_types_invoice = DocumentType::whereIn('id', ['01', '03', '80'])->get();
         $payment_method_types = PaymentMethodType::all();
         $payment_destinations = $this->getPaymentDestinations();

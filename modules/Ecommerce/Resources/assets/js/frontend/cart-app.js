@@ -202,8 +202,10 @@ var app_cart = new Vue({
         // Método de pago seleccionado: 'culqi' | 'cash' | null
         selectedPaymentMethod: null,
 
-        // Controla si se emiten documentos electrónicos (factura/boleta) o solo notas de venta
+        // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+        // Controla si se emiten facturas electrónicas o notas de venta
         enable_electronic_documents: window.__ecommerce_config?.enable_electronic_documents || false,
+        // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
         // Recojo en tienda
         enableStorePickup: window.__ecommerce_config?.enable_store_pickup || false,
         // Cotizaciones en tienda virtual
@@ -526,9 +528,11 @@ var app_cart = new Vue({
         // Etiqueta del tipo de documento inferido del número del usuario (usado en modo solo-lectura)
         invoiceTypeLabel: function () {
             const num = this.user && this.user.number ? String(this.user.number).trim() : '';
-            if (num.length === 8)  return 'Boleta de Venta';
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            if (num.length === 8)  return 'Nota de Venta';
             if (num.length === 11) return 'Factura';
             return 'Nota de Venta';
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
         },
         showWhatsapp: function () {
             return this.enable_whatsapp && !!this.phone_whatsapp;
@@ -646,9 +650,11 @@ var app_cart = new Vue({
         },
         guestInvoiceTypeLabel() {
             const docType = String(this.guest_form.identity_document_type_id || '0');
-            if (docType === '1') return 'Boleta de venta';
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            if (docType === '1') return 'Nota de venta';
             if (docType === '6') return 'Factura de venta';
             return 'Nota de venta';
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
         },
         guestInvoiceNotice() {
             if (!this.showGuestForm || this.isLoggedIn || !this.enable_electronic_documents) {
@@ -656,13 +662,15 @@ var app_cart = new Vue({
             }
 
             const docType = String(this.guest_form.identity_document_type_id || '0');
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
             if (docType === '1') {
-                return 'Al ingresar tu Cédula se generará automáticamente tu Boleta de venta electrónica.';
+                return 'Al ingresar tu Cédula se generará automáticamente una Nota de venta.';
             }
             if (docType === '6') {
                 return 'Al ingresar tu RIF se generará automáticamente tu Factura electrónica.';
             }
             return 'Sin Cédula ni RIF se emitirá una Nota de venta.';
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
         },
         guestDocumentTypeOptions() {
             return [
@@ -1419,7 +1427,9 @@ var app_cart = new Vue({
             }
 
             if (docType === '1') {
-                this.form_document.codigo_tipo_documento = '03';
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                this.form_document.codigo_tipo_documento = '80';
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 this.typeDocuments = '1';
             } else if (docType === '6') {
                 this.form_document.codigo_tipo_documento = '01';
@@ -4039,13 +4049,13 @@ var app_cart = new Vue({
             if (descuentos.length > 0) {
                 doc.descuentos = descuentos;
             }
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
             if (doc.codigo_tipo_documento == '01') {
                 doc.serie_documento = 'F001';
-            } else if (doc.codigo_tipo_documento == '03') {
-                doc.serie_documento = 'B001';
             } else {
                 doc.serie_documento = null;
             }
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
             return doc;
         },
         async getDescuentos() {
@@ -5084,7 +5094,9 @@ var app_cart = new Vue({
                 "fecha_de_emision": moment().format('YYYY-MM-DD'),
                 "hora_de_emision": moment().format('HH:mm:ss'),
                 "codigo_tipo_operacion": "0101",
-                "codigo_tipo_documento": "03",
+                // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+                "codigo_tipo_documento": "80",
+                // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
                 "codigo_tipo_moneda": "VES",
                 "fecha_de_vencimiento": moment().format('YYYY-MM-DD'),
                 "datos_del_cliente_o_receptor": {
@@ -5137,7 +5149,7 @@ var app_cart = new Vue({
         },
         // Establece el tipo de documento y los datos del cliente según la configuración de documentos electrónicos.
         // Si está desactivado: fuerza nota de venta (código 80) con los datos del usuario.
-        // Si está activado: infiere el tipo según la longitud del número (8 dígitos=boleta, 11=factura).
+        // Si está activado: usa Nota de venta para Cédula y Factura para RIF.
         applyDocumentDefaults() {
             if (!this.enable_electronic_documents) {
                 const userNumber = (this.user && this.user.number) ? String(this.user.number).trim() : '0';
@@ -5157,8 +5169,10 @@ var app_cart = new Vue({
             const numStr = String(this.user.number).trim();
 
             if (numStr.length === 8) {
-                // Cédula → Boleta
-                this.form_document.codigo_tipo_documento = '03';
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                // Cédula → Nota de venta
+                this.form_document.codigo_tipo_documento = '80';
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 this.typeDocuments = '1';
                 this.numberDocument = numStr;
                 if (this.form_document.datos_del_cliente_o_receptor) {

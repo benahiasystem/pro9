@@ -205,11 +205,13 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Mostrar cantidad unificada al agregar un mismo producto
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Al agregar un mismo producto más de una vez, se unificará en una sola línea sumando las cantidades - Disponible para Factura, Boleta y Notas de venta"
+                                                    content="Al agregar un mismo producto más de una vez, se unificará en una sola línea sumando las cantidades - Disponible para Factura y Notas de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.show_unify_amount_items }" class="form-group">
                                                 <el-switch v-model="form.show_unify_amount_items"
@@ -239,11 +241,13 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Agregar descripción al producto
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Boleta, Cotización y Notas de venta."
+                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Cotización y Notas de venta."
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
 
                                             <div :class="{ 'has-danger': errors.add_description_to_document_item }"
@@ -309,11 +313,13 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Habilitar opción "Ver" detalles y características completas del producto
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para Factura, Boleta, Cotización y Notas de venta (Productos agregados y Buscar/Agregar productos)"
+                                                    content="Disponible para Factura, Cotización y Notas de venta (Productos agregados y Buscar/Agregar productos)"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
 
                                             <div :class="{ 'has-danger': errors.show_all_item_details }" class="form-group">
@@ -327,11 +333,13 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Mostrar detalle de Conjuntos/Packs/Promociones
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Descripción de los productos individuales del pack. Disponible para Factura, Boleta, Cotización y Notas de venta."
+                                                    content="Descripción de los productos individuales del pack. Disponible para Factura, Cotización y Notas de venta."
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
 
                                             <div :class="{ 'has-danger': errors.show_item_description_pack }" class="form-group">
@@ -345,12 +353,14 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Habilitar consignados
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para boleta, factura y nota de venta"
+                                                    content="Disponible para factura y nota de venta"
                                                     effect="dark"
                                                     placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.enable_consigned }" class="form-group">
                                                 <el-switch v-model="form.enable_consigned"
@@ -477,12 +487,14 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Habilitar peso por producto en guias
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para boleta, factura y nota de venta"
+                                                    content="Disponible para factura y nota de venta"
                                                     effect="dark"
                                                     placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.enable_weight_in_dispatches }" class="form-group">
                                                 <el-switch v-model="form.enable_weight_in_dispatches"
@@ -548,11 +560,13 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Buscar/Agregar productos en formulario principal (Venta rápida)
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para Factura, Boleta, Cotización y Notas de venta"
+                                                    content="Disponible para Factura, Cotización y Notas de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.search_items_main_form }" class="form-group">
                                                 <el-switch v-model="form.search_items_main_form"
@@ -937,10 +951,12 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Redondear monto de detracción a valor entero
-                                                <el-tooltip class="item" content="Disponible Nuevo CPE (Facturas/Boletas)"
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                                <el-tooltip class="item" content="Disponible Nuevo CPE (Facturas)"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.detraction_amount_rounded_int }" class="form-group">
                                                 <el-switch v-model="form.detraction_amount_rounded_int"
@@ -1251,11 +1267,13 @@
                                     <div class="row mx-0 adv-conf-container">
                                         <div class="col-12">
                                             <label class="control-label">Nombre producto PDF para XML
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Registra el campo nombre producto pdf en el XML - Disponible Nuevo CPE (Facturas/Boletas)"
+                                                    content="Registra el campo nombre producto pdf en el XML - Disponible Nuevo CPE (Facturas)"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.name_product_pdf_to_xml }" class="form-group">
                                                 <el-switch v-model="form.name_product_pdf_to_xml"
@@ -1267,11 +1285,13 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Agregar leyenda al XML (Amazonía)
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Registra la leyenda 2001 en el XML - Disponible Nuevo CPE (Facturas/Boletas)"
+                                                    content="Registra la leyenda 2001 en el XML - Disponible Nuevo CPE (Facturas)"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
 
                                             <div :class="{ 'has-danger': errors.legend_forest_to_xml }" class="form-group">
@@ -1292,7 +1312,9 @@
                                                         <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
                                                         identificación del concepto tributario. <br>
                                                         <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                        - Disponible para Facturas y Boletas. <br>
+                                                        <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                                        - Disponible para Facturas. <br>
+                                                        <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     </div>
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -1308,11 +1330,13 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Modificar valores en previsualización del documento
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Cantidad, precios, totales - Disponible para Factura, Boleta, Cotización y Notas de venta"
+                                                    content="Cantidad, precios, totales - Disponible para Factura, Cotización y Notas de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.change_values_preview_document }" class="form-group">
                                                 <el-switch v-model="form.change_values_preview_document"
@@ -1529,9 +1553,11 @@
                                         <div class="col-12">
                                             <label class="control-label">Mostrar ticket 58mm
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <div slot="content">Disponible para Ventas (Facturas/Boletas/Notas de
+                                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                                    <div slot="content">Disponible para Ventas (Facturas/Notas de
                                                         Crédito-Débito)
                                                     </div>
+                                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
@@ -1548,9 +1574,11 @@
                                         <div class="col-12">
                                             <label class="control-label">Mostrar ticket 80mm
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <div slot="content">Disponible para Ventas (Facturas/Boletas/Notas de
+                                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                                    <div slot="content">Disponible para Ventas (Facturas/Notas de
                                                         Crédito-Débito)
                                                     </div>
+                                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
@@ -1585,11 +1613,13 @@
                                     <div class="row mx-0 adv-conf-container">
                                         <div class="inputs-column">
                                             <label class="control-label">Imágen para encabezado - pdf
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para facturas y boletas en formato a4, usando la plantilla header_image_full_width"
+                                                    content="Disponible para facturas en formato A4, usando la plantilla header_image_full_width"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div class="form-group flex-column">
                                                 <el-input v-model="form.header_image" :readonly="true">
@@ -1661,7 +1691,9 @@
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
                                                     <div slot="content">Leyenda: Bienes transferidos y/o servicios prestados
                                                         en la Amazonía para ser consumidos en la misma<br />Disponible
-                                                        para facturas, boletas, notas y cotizaciones
+                                                        <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                                        para facturas, notas y cotizaciones
+                                                        <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     </div>
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -1678,11 +1710,13 @@
                                             <a class="text-center font-weight-bold text-info" href="#"
                                                 @click.prevent="showDialogLegendFooterSales = true">[+ Leyenda footer - Ventas]
                                             </a>
+                                            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                             <el-tooltip class="item"
-                                                        content="Disponible para boleta y factura"
+                                                        content="Disponible para factura"
                                                         effect="dark" placement="top-start">
                                                         <i class="ms-2 fa fa-info-circle text-info"></i>
                                             </el-tooltip>
+                                            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                         </div>
                                     </div>
                                 </div>
@@ -1708,11 +1742,13 @@
                                                 @click.prevent="showDialogTermsConditionSales = true">[+ Términos y condiciones -
                                                 Ventas]
                                             </a>
+                                            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                             <el-tooltip class="item"
-                                                content="Disponible para boleta y factura"
+                                                content="Disponible para factura"
                                                 effect="dark" placement="top-start">
                                                 <i class="ms-2 fa fa-info-circle text-info"></i>
                                             </el-tooltip>
+                                            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                         </div>
 
                                         <div class="inputs-column">
@@ -1720,20 +1756,24 @@
                                                 @click.prevent="showDialogTermsCondition = true">[+ Términos y condiciones -
                                                 Cotización]
                                             </a>
+                                            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                             <el-tooltip class="item"
-                                                content="Disponible para boleta y factura"
+                                                content="Disponible para factura"
                                                 effect="dark" placement="top-start">
                                                 <i class="ms-2 fa fa-info-circle text-info"></i>
                                             </el-tooltip>
+                                            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                         </div>
 
                                         <div class="col-12">
                                             <label class="control-label">Afectacion de terminos y condiciones - ventas en todos los
                                                 comprobantes
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <div slot="content">Leyenda: facturas, boletas, notas de ventas, guias de
+                                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                                    <div slot="content">Leyenda: facturas, notas de ventas y guías de
                                                         remision
                                                     </div>
+                                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
@@ -1875,10 +1915,12 @@
                                             <label class="control-label">
                                                 Usar la descripcion como nombre del producto PDF
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
+                                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                     <div slot="content">
-                                                        En factura/boleta, cotizacion y nota de venta, se usará la descripcion
+                                                        En factura, cotización y nota de venta, se usará la descripción
                                                         como nombre del producto PDF por defecto.
                                                     </div>
+                                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
@@ -1894,11 +1936,13 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Modificar cantidad de decimales
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para el precio unitario de Facturas/Boletas en formato A4/A5, usando la plantilla pdf Default"
+                                                    content="Disponible para el precio unitario de Facturas en formato A4/A5, usando la plantilla pdf Default"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.change_decimal_quantity_unit_price_pdf }"
                                                 class="form-group">
@@ -2100,7 +2144,6 @@
                                             <div :class="{ 'has-danger': errors.default_document_type_03 || errors.default_document_type_80 }" class="form-group mb-0 text-right" style="width: 200px;">
                                                 <el-select v-model="selectedDefaultDocument" class="w-100">
                                                     <el-option label="Factura" value="01"></el-option>
-                                                    <el-option label="Boleta" value="03"></el-option>
                                                     <el-option label="Nota de venta" value="80"></el-option>
                                                 </el-select>
                                                 <small v-if="errors.default_document_type_03" class="form-control-feedback"
@@ -2752,7 +2795,9 @@
                                         </div>
                                         <div>
                                             <span class="text-muted">
-                                                Reglas para el envío automático de boletas, facturas y notas relacionadas.
+                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                                Reglas para el envío automático de facturas y notas relacionadas.
+                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </span>
                                         </div>
                                     </div>
@@ -2776,7 +2821,9 @@
                                         </div>
 
                                         <div v-if="typeUser != 'integrator'" class="col-12">
-                                            <label class="control-label">Enviar boletas y notas asociadas (Crédito y Débito) de forma individual</label>
+                                            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                            <label class="control-label">Enviar facturas y notas asociadas (Crédito y Débito) de forma individual</label>
+                                            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             <div :class="{ 'has-danger': errors.ticket_single_shipment }" class="form-group">
                                                 <el-switch v-model="form.ticket_single_shipment" @change="submit"></el-switch>
                                                 <small v-if="errors.ticket_single_shipment" class="form-control-feedback"
@@ -3352,13 +3399,16 @@ export default {
         },
         selectedDefaultDocument: {
             get() {
-                if (this.form.default_document_type_03) return '03';
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 if (this.form.default_document_type_80) return '80';
-                return '80';
+                return '01';
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             },
             set(value) {
-                this.form.default_document_type_03 = value === '03';
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                this.form.default_document_type_03 = false;
                 this.form.default_document_type_80 = value === '80';
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 this.submit();
             }
         }

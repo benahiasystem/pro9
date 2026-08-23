@@ -1037,18 +1037,13 @@ export default {
             }
         },
         async validateIdentityDocumentType() {
-            let identity_document_types = ["0", "1"];
             let customer = _.find(this.customers, {id: this.document.customer_id});
             if (!customer) {
                 return;
             }
-            if (
-                identity_document_types.includes(customer.identity_document_type_id)
-            ) {
-                this.document_types = _.filter(this.all_document_types, {id: "03"});
-            } else {
-                this.document_types = this.all_document_types;
-            }
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            this.document_types = _.filter(this.all_document_types, {id: "01"});
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
             this.document.document_type_id =
                 this.document_types.length > 0 ? this.document_types[0].id : null;

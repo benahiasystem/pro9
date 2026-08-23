@@ -171,7 +171,9 @@
                 if ($documentType == 'Factura') {
                     $documentType = DocumentType::where('short', 'FT')->first();
                 } elseif ($documentType == 'Boleta') {
-                    $documentType = DocumentType::where('short', 'BV')->first();
+                    // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                    throw new \RuntimeException('La importación no admite nuevas Boletas; use Factura o Nota de venta.');
+                    // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 }
                 $names = trim($names);
                 $email = trim($email);

@@ -4,6 +4,7 @@ namespace App\CoreFacturalo;
 
 use App\Http\Controllers\Tenant\EmailController;
 use App\Models\Tenant\DispatchItem;
+use App\Services\SalesDocumentTypePolicy;
 use Exception;
 use Mpdf\Mpdf;
 use Mpdf\HTMLParserMode;
@@ -132,6 +133,12 @@ class Facturalo
     {
         $this->actions = array_key_exists('actions', $inputs)?$inputs['actions']:[];
         $this->type = $inputs['type'];
+
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        if ($this->type === 'invoice') {
+            SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($inputs['document_type_id'] ?? null);
+        }
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         switch ($this->type) {
             case 'debit':
@@ -1050,7 +1057,9 @@ class Facturalo
     /**
      * deprecated
      * Evaluar si se debe firmar el xml y enviar cdr al PSE
-     * Disponible para facturas, boletas, anulaciones de facturas
+     * ########## INICIO CAMBIO QUITAR BOLETA
+     * Disponible para facturas y anulaciones de facturas
+     * ######### FIN CAMBIO QUITAR BOLETA
      *
      * @return bool
      */

@@ -48,6 +48,7 @@
  * - `calculate_quantity`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `sale_unit_price_set`: decimal(16,6); NULL — Sin comentario definido en el esquema fuente.
  * - `is_set`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
+ * - `parent_item_id`: int(10) unsigned; NULL — Producto padre para variantes; contrato requerido por todos los buscadores.
  * - `favorite`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `category_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
  * - `brand_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
@@ -87,6 +88,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // ########### INICIO CONTRATO FLUJO DE PRODUCTOS ###########
         DB::unprepared(<<<'SQL'
 CREATE TABLE `items` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -131,6 +133,7 @@ CREATE TABLE `items` (
   `calculate_quantity` tinyint(1) NOT NULL DEFAULT '0',
   `sale_unit_price_set` decimal(16,6) DEFAULT NULL,
   `is_set` tinyint(1) NOT NULL DEFAULT '0',
+  `parent_item_id` int(10) unsigned DEFAULT NULL,
   `favorite` tinyint(1) NOT NULL DEFAULT '0',
   `category_id` int(10) unsigned DEFAULT NULL,
   `brand_id` int(10) unsigned DEFAULT NULL,
@@ -178,6 +181,7 @@ CREATE TABLE `items` (
   KEY `items_item_code_index` (`item_code`),
   KEY `items_web_platform_id_foreign` (`web_platform_id`),
   KEY `items_purchase_system_isc_type_id_foreign` (`purchase_system_isc_type_id`),
+  KEY `items_parent_item_id_index` (`parent_item_id`),
   KEY `items_favorite_index` (`favorite`),
   KEY `items_factory_code_index` (`factory_code`),
   KEY `items_barcode_index` (`barcode`),
@@ -186,6 +190,7 @@ CREATE TABLE `items` (
   FULLTEXT KEY `items_text_filter_fulltext` (`text_filter`)
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
+        // ########### FIN CONTRATO FLUJO DE PRODUCTOS ###########
     }
 
     public function down(): void

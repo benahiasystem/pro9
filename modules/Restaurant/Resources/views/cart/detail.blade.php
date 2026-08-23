@@ -129,9 +129,10 @@
 
                 <select v-model="form_document.codigo_tipo_documento" class="form-control" @change="optionDocument">
                     <option value="" disabled>Tipo de comprobante</option>
+                    {{-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA --}}
                     <option value="01">Factura</option>
-                    <option value="03">Boleta</option>
                     <option value="80">Nota de venta</option>
+                    {{-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA --}}
                 </select>
 
                 <small class="form-control-feedback" v-if="errors.codigo_tipo_documento">El campo Comprobante es obligatorio.</small>
@@ -650,7 +651,9 @@
                     "fecha_de_emision": moment().format('YYYY-MM-DD'),
                     "hora_de_emision": moment().format('HH:mm:ss'),
                     "codigo_tipo_operacion": "0101",
-                    "codigo_tipo_documento": "03",
+                    {{-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA --}}
+                    "codigo_tipo_documento": "80",
+                    {{-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA --}}
                     "codigo_tipo_moneda": "VES",
                     "fecha_de_vencimiento": moment().format('YYYY-MM-DD'),
                     "datos_del_cliente_o_receptor": {

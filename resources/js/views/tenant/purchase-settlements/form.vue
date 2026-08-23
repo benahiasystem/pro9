@@ -384,10 +384,11 @@
                                    class="text-end">OP.GRAVADA: {{ currency_type.symbol }} {{
                                         form.total_taxed
                                                                }}</p>
-                                <p v-if="form.total_igv > 0"
-                                   <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                   class="text-end">IVA: {{ currency_type.symbol }} {{ form.total_igv }}</p>
-                                   <!-- ######### FIN CAMBIO IGV A IVA -->
+                                <p v-if="form.total_igv > 0" class="text-end">
+                                    <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                    IVA: {{ currency_type.symbol }} {{ form.total_igv }}
+                                    <!-- ######### FIN CAMBIO IGV A IVA -->
+                                </p>
     
                                 <h3 v-if="form.total > 0"
                                     class="text-end"><b>TOTAL: </b>{{ currency_type.symbol }} {{ form.total }}

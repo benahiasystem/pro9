@@ -80,15 +80,23 @@ export default {
   flex: 1 1 auto;
   gap: 0.75rem;
   min-height: 0;
+  overflow: hidden;
 }
 .wg-kpi-main {
-  flex-shrink: 0;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  justify-content: center;
   min-width: 0;
+  overflow: hidden;
 }
 .wg-kpi-value {
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .wg-kpi-delta {
   align-items: center;
@@ -96,14 +104,20 @@ export default {
   font-size: 0.8rem;
   font-weight: 600;
   gap: 0.3rem;
+  line-height: 1.1;
   margin-top: 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .wg-kpi-delta-label {
   color: #9ca3af;
   font-weight: 500;
 }
 .wg-kpi-spark {
+  align-self: stretch;
   flex: 1 1 auto;
   min-width: 60px;
+  overflow: hidden;
 }
 </style>

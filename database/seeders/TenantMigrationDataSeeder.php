@@ -43,6 +43,10 @@ class TenantMigrationDataSeeder extends Seeder
         $tables = $this->normalizePayloadLocationReferences($tables);
         // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 
+        // ########## INICIO CAMBIO QUITAR BOLETA
+        $tables = $this->withoutNewReceiptGroup($tables);
+        // ######### FIN CAMBIO QUITAR BOLETA
+
         $connection = DB::connection();
         $connection->unprepared('SET FOREIGN_KEY_CHECKS=0');
 
@@ -185,5 +189,21 @@ class TenantMigrationDataSeeder extends Seeder
         }
     }
     // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
+
+    // ########## INICIO CAMBIO QUITAR BOLETA
+    private function withoutNewReceiptGroup(array $tables): array
+    {
+        if (! isset($tables['groups']['rows']) || ! is_array($tables['groups']['rows'])) {
+            return $tables;
+        }
+
+        $tables['groups']['rows'] = array_values(array_filter(
+            $tables['groups']['rows'],
+            static fn (array $row): bool => ($row['id'] ?? null) !== '02'
+        ));
+
+        return $tables;
+    }
+    // ######### FIN CAMBIO QUITAR BOLETA
 }
 // ########### FIN CAMBIO RECONSTRUCCIÓN MIGRACIONES TENANT

@@ -4,10 +4,10 @@
     <div class="kpi-col col">
       <div class="card card-dashboard h-100">
         <div class="card-body card-kpi justify-content-start">
-          <small class="text-muted">{{ salesTitle }}</small>
+          <small class="kpi-title text-muted">{{ salesTitle }}</small>
           <div class="kpi-main">
             <div class="kpi-values">
-              <h3 class="font-weight-bold m-0 text-nowrap">Bs. {{ monthly_sales | formatNumber }}</h3>
+              <h3 class="kpi-amount font-weight-bold m-0">Bs. {{ monthly_sales | formatNumber }}</h3>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.monthly_sales" :labels="trend.labels" color="#0f766e"></kpi-sparkline>
           </div>
@@ -25,10 +25,10 @@
     <div class="kpi-col col">
       <div class="card card-dashboard h-100">
         <div class="card-body card-kpi justify-content-start">
-          <small class="text-muted">Ticket promedio</small>
+          <small class="kpi-title text-muted">Ticket promedio</small>
           <div class="kpi-main">
             <div class="kpi-values">
-              <h3 class="font-weight-bold m-0 text-nowrap">Bs. {{ average_ticket | formatNumber }}</h3>
+              <h3 class="kpi-amount font-weight-bold m-0">Bs. {{ average_ticket | formatNumber }}</h3>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.average_ticket" :labels="trend.labels" color="#0d9488"></kpi-sparkline>
           </div>
@@ -46,10 +46,10 @@
     <div class="kpi-col col">
       <div class="card card-dashboard h-100">
         <div class="card-body card-kpi justify-content-start">
-          <small class="text-muted">Por cobrar</small>
+          <small class="kpi-title text-muted">Por cobrar</small>
           <div class="kpi-main">
             <div class="kpi-values">
-              <h3 class="font-weight-bold m-0 text-nowrap">Bs. {{ accounts_receivable | formatNumber }}</h3>
+              <h3 class="kpi-amount font-weight-bold m-0">Bs. {{ accounts_receivable | formatNumber }}</h3>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.accounts_receivable" :labels="trend.labels" color="#f59e0b"></kpi-sparkline>
           </div>
@@ -67,10 +67,10 @@
     <div class="kpi-col col">
       <div class="card card-dashboard h-100">
         <div class="card-body card-kpi justify-content-start">
-          <small class="text-muted">Utilidad neta</small>
+          <small class="kpi-title text-muted">Utilidad neta</small>
           <div class="kpi-main">
             <div class="kpi-values">
-              <h3 class="font-weight-bold m-0 text-nowrap">Bs. {{ net_utility | formatNumber }}</h3>
+              <h3 class="kpi-amount font-weight-bold m-0">Bs. {{ net_utility | formatNumber }}</h3>
             </div>
             <kpi-sparkline class="kpi-spark" :data="trend.net_utility" :labels="trend.labels" color="#16a34a"></kpi-sparkline>
           </div>
@@ -249,30 +249,54 @@ export default {
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
+  gap: 1rem;
 }
-.card-kpi {
+.kpi-row .kpi-col,
+.kpi-row .card.card-dashboard {
+  min-width: 0;
+}
+.kpi-row .card.card-dashboard {
+  overflow: hidden;
+}
+.kpi-row .card-kpi {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  gap: 0.3rem;
+  justify-content: flex-start;
+  min-height: 96px;
+  padding: 1rem 1.1rem;
 }
-.kpi-row .card-kpi small {
+.kpi-row .card-kpi .kpi-title {
   display: block;
+  line-height: 1.15;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
   letter-spacing: 0.04em;
   font-size: 0.72rem;
-}
-.kpi-row .card-kpi h3 {
-  font-size: 1.6rem;
 }
 .kpi-row .kpi-main {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.75rem;
+  justify-content: space-between;
+  min-width: 0;
+  width: 100%;
 }
 .kpi-row .kpi-values {
   flex: 1 1 auto;
   min-width: 0;
-  margin-top: auto;
+  overflow: hidden;
+}
+.kpi-row .kpi-amount {
+  font-size: clamp(1.25rem, 1.7vw, 1.6rem);
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .kpi-row .kpi-spark {
   flex: 0 0 96px;
@@ -286,6 +310,9 @@ export default {
   font-size: 0.74rem;
   font-weight: 600;
   margin: 4px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .kpi-row .card-kpi .kpi-change.is-up {
   color: var(--success);
@@ -296,6 +323,16 @@ export default {
 .kpi-row .card-kpi .kpi-change .kpi-change-label {
   font-weight: 400;
   margin-left: 4px;
+}
+@media (max-width: 575px) {
+  .kpi-row .card-kpi {
+    min-height: 90px;
+  }
+  .kpi-row .kpi-spark {
+    flex-basis: 76px;
+    max-width: 76px;
+    width: 76px;
+  }
 }
 </style>
 

@@ -15,6 +15,10 @@ use App\Models\Tenant\Series;
  */
 class SeriesCodeGenerator
 {
+    // ########## INICIO CAMBIO QUITAR BOLETAS A CRÉDITO
+    public const PROHIBITED_NEW_SERIES_KEYS = ['receipt', 'credit_note_receipt', 'debit_note_receipt'];
+    // ######### FIN CAMBIO QUITAR BOLETAS A CRÉDITO
+
     /**
      * Tipos de serie disponibles para empresas NRUS.
      */
@@ -56,7 +60,9 @@ class SeriesCodeGenerator
      */
     public static function defaultTenantSeries(int $establishment_id): array
     {
-        $keys = ['invoice', 'receipt', 'credit_note_invoice', 'credit_note_receipt', 'debit_note_invoice', 'debit_note_receipt', 'sale_note'];
+        // ########## INICIO CAMBIO QUITAR BOLETAS A CRÉDITO
+        $keys = ['invoice', 'credit_note_invoice', 'debit_note_invoice', 'sale_note'];
+        // ######### FIN CAMBIO QUITAR BOLETAS A CRÉDITO
         $rows = [];
 
         foreach (self::SERIES_TYPES as $type) {
@@ -98,13 +104,19 @@ class SeriesCodeGenerator
      */
     public static function availableTypes(bool $is_nrus = false): array
     {
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $availableTypes = array_values(array_filter(self::SERIES_TYPES, function ($type) {
+            return ! in_array($type['key'], self::PROHIBITED_NEW_SERIES_KEYS, true);
+        }));
+
         if (! $is_nrus) {
-            return self::SERIES_TYPES;
+            return $availableTypes;
         }
 
-        return array_values(array_filter(self::SERIES_TYPES, function ($type) {
+        return array_values(array_filter($availableTypes, function ($type) {
             return in_array($type['key'], self::NRUS_SERIES_KEYS, true);
         }));
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
     }
 
     /**

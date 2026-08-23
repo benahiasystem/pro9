@@ -39,11 +39,15 @@ class DocumentNotSentCollection extends ResourceCollection
 
             if ($row->group_id === '02') {
                 if ($row->state_type_id === '01') {
-                    $text_tooltip = 'Envíe mediante resúmen de boletas';
+                    // ########## INICIO CAMBIO QUITAR BOLETA
+                    $text_tooltip = 'Envíe mediante resumen';
+                    // ######### FIN CAMBIO QUITAR BOLETA
                 }
 
                 if ($row->state_type_id === '03') {
-                    $text_tooltip = 'Consulte el ticket del resúmen de boletas';
+                    // ########## INICIO CAMBIO QUITAR BOLETA
+                    $text_tooltip = 'Consulte el ticket del resumen';
+                    // ######### FIN CAMBIO QUITAR BOLETA
                 }
             }
 

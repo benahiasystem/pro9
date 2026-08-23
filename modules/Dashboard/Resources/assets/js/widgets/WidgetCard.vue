@@ -10,13 +10,16 @@
     ></component>
 
     <section v-else class="card card-dashboard wg-card">
-      <div class="card-body card-body-border-radius wg-body">
+      <div
+        class="card-body card-body-border-radius wg-body"
+        :class="{ 'wg-body-kpi': isKpi }"
+      >
         <template v-if="loading">
           <loader-graph :rows="4" :columns="1" :radius="50"></loader-graph>
         </template>
 
         <template v-else-if="hasError">
-          <div class="wg-head">
+          <div class="wg-head" :class="{ 'wg-head-kpi': isKpi }">
             <div>
               <h5 class="wg-title m-0">{{ title }}</h5>
             </div>
@@ -25,7 +28,7 @@
         </template>
 
         <template v-else-if="dataset">
-          <div class="wg-head">
+          <div class="wg-head" :class="{ 'wg-head-kpi': isKpi }">
             <div>
               <h5 class="wg-title m-0">{{ title }}</h5>
               <small v-if="subtitle" class="text-muted">{{ subtitle }}</small>
@@ -173,6 +176,9 @@ export default {
       if (this.dataset && this.dataset.meta && this.dataset.meta.subtitle) return this.dataset.meta.subtitle
       return this.source ? this.source.description || this.source.module_label : ''
     },
+    isKpi() {
+      return this.widget.type === 'kpi' || this.widget.type === 'kpi_spark'
+    },
     hasError() {
       return !!(this.dataset && this.dataset.error)
     },
@@ -243,7 +249,7 @@ export default {
       // El sparkline (al costado del valor) se estira a toda la altura libre
       // del card: sin franjas vacías arriba/abajo del contenido.
       const cell = this.rowSpan * GRID_ROW_HEIGHT + (this.rowSpan - 1) * GRID_GAP
-      return Math.max(56, cell - 100)
+      return Math.max(40, cell - 44)
     },
     sizeLabel() {
       return this.widget.cols ? this.widget.cols + 'c' : (this.widget.size || 'm').toUpperCase()
@@ -312,12 +318,30 @@ export default {
   min-height: 0;
   overflow: hidden;
 }
+.wg-body-kpi {
+  padding: 0.5rem 0.875rem !important;
+}
 .wg-head {
   align-items: flex-start;
   display: flex;
   gap: 1rem;
   justify-content: space-between;
   margin-bottom: 0.75rem;
+}
+.wg-head-kpi {
+  flex: 0 0 auto;
+  line-height: 1.15;
+  margin-bottom: 0.15rem;
+  min-height: 0;
+}
+.wg-head-kpi > div {
+  min-width: 0;
+}
+.wg-head-kpi .wg-title {
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .wg-title {
   font-size: 1rem;

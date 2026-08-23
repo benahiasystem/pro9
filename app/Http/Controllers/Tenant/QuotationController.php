@@ -252,7 +252,9 @@ class QuotationController extends Controller
         $series = app(SeriesResolver::class)
             ->applyContext(Series::where('establishment_id', $establishment->id))
             ->get();
-        $document_types_invoice = DocumentType::whereIn('id', ['01', '03'])->get();
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        $document_types_invoice = DocumentType::whereIn('id', ['01'])->get();
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         // $payment_method_types = PaymentMethodType::all();
         $payment_method_types = PaymentMethodType::getPaymentMethodTypes();
         $payment_destinations = $this->getPaymentDestinations();

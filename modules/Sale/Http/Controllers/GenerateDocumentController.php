@@ -15,6 +15,7 @@
     use App\Models\Tenant\SaleNote;
     use App\Models\Tenant\Series;
     use App\Services\SeriesResolver;
+    use App\Services\SalesDocumentTypePolicy;
     use App\Http\Controllers\Controller;
     use Exception;
     use Illuminate\Database\Eloquent\HigherOrderBuilderProxy;
@@ -34,11 +35,14 @@
         {
             $establishment = Establishment::query()->where('id', auth()->user()->establishment_id)->first();
             $series = app(SeriesResolver::class)->applyContext(Series::query()->where('establishment_id', $establishment->id))->get();
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             $document_types = [
                 ['id' => '01', 'name' => 'Factura'],
-                ['id' => '03', 'name' => 'Boleta'],
                 ['id' => 'nv', 'name' => 'Nota de venta'],
             ];
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
             $payment_method_types = PaymentMethodType::all();
             $payment_destinations = $this->getPaymentDestinations();
 
@@ -77,6 +81,13 @@
 
         public function store(Request $request)
         {
+            // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+            SalesDocumentTypePolicy::assertAllowedForFlow(
+                $request->input('document_type_id'),
+                SalesDocumentTypePolicy::TECHNICAL_SERVICE_DOCUMENT_TYPE_IDS
+            );
+            // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
+
             DB::connection('tenant')->beginTransaction();
             try {
                 $inputs = $request->all();
@@ -108,7 +119,8 @@
                     }
                 }
                 //$inputs['items'][0]['item_id'] = $this->storeItem($request->input('items')[0]);
-                if (in_array($request->input('document_type_id'), ['01', '03'])) {
+                // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
+                if ($request->input('document_type_id') === SalesDocumentTypePolicy::INVOICE) {
                     $documentController = new DocumentController();
                     $doc_input = DocumentInput::set($inputs);
                     $res = $documentController->storeWithData($doc_input);
@@ -118,6 +130,7 @@
                     $inputs['quantity_period'] = null;
                     $res = (new SaleNoteController())->storeWithData($inputs);
                 }
+                // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
 
                 DB::connection('tenant')->commit();
                 return $res;

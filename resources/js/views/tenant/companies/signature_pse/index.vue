@@ -2,13 +2,15 @@
     <div class="card card-config">
         <div class="card-header bg-info">
             <h3 class="my-0">Servicio PSE
+                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                 <el-tooltip
                     class="item"
-                    content="Solicitar datos al PSE - Disponible en facturas, boletas, resúmenes, anulaciones, guías"
+                    content="Solicitar datos al PSE - Disponible en facturas, resúmenes, anulaciones y guías"
                     effect="dark"
                     placement="top-start">
                     <i class="fa fa-info-circle"></i>
                 </el-tooltip>
+                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
             </h3>
         </div>
         <div class="card-body">

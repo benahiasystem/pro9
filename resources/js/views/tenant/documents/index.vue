@@ -29,7 +29,9 @@
             </h2>
             <ol class="breadcrumbs">
                 <li class="active"><span>Listado de comprobantes</span></li>
-                <!-- <li><span class="text-muted">Facturas - Notas <small>(crédito y débito)</small> - Boletas - Anulaciones</span></li> -->
+                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                <!-- <li><span class="text-muted">Facturas - Notas <small>(crédito y débito)</small> - Anulaciones</span></li> -->
+                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
             </ol>
             <div
                 class="right-wrapper pull-right"

@@ -4,10 +4,15 @@ namespace App\CoreFacturalo\Requests\Api\Validation;
 
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\User;
+use App\Services\SalesDocumentTypePolicy;
 
 class DocumentValidation
 {
     public static function validation($inputs) {
+        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+        SalesDocumentTypePolicy::assertNewFiscalDocumentAllowed($inputs['document_type_id'] ?? null);
+        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+
         // Tienda / invitado: auth() puede ser null (pago ecommerce sin sesión admin).
         $authUser = auth()->user();
         if ($authUser && ! empty($authUser->establishment_id)) {

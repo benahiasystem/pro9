@@ -53,7 +53,13 @@ class TenantMigrationDataSeederTest extends TestCase
         // ######### FIN CAMBIO AFECTACIÓN IVA
         // ########## INICIO CAMBIO SUNAT A SENIAT
         self::assertCount(1, $identityDocumentRenameMigrations);
-        self::assertCount(352, glob(database_path('migrations/tenant/*.php')) ?: []);
+        // ########### INICIO CONTRATO FLUJO DE PRODUCTOS ###########
+        self::assertCount(
+            1,
+            glob(database_path('migrations/tenant/*_repair_items_parent_item_contract.php')) ?: []
+        );
+        self::assertCount(353, glob(database_path('migrations/tenant/*.php')) ?: []);
+        // ########### FIN CONTRATO FLUJO DE PRODUCTOS ###########
         // ######### FIN CAMBIO SUNAT A SENIAT
     }
 

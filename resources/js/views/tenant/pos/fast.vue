@@ -1271,16 +1271,12 @@ export default {
             this.setFormPosLocalStorage();
         },
         resolveDefaultDocumentTypeId(customer = null) {
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             if (this.configuration.default_document_type_80) {
                 return "80";
             }
-            if (this.configuration.default_document_type_03) {
-                return "03";
-            }
-            if (customer && customer.identity_document_type_id == "6") {
-                return "01";
-            }
-            return "03";
+            return "01";
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         },
 
         getLocalStorageIndex(key, re_default = null) {

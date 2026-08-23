@@ -706,6 +706,7 @@ export default {
             this.attribute_types = response.data.attribute_types
             this.warehouses = response.data.warehouses
             this.$store.commit('setConfiguration', response.data.configuration)
+            this.form.warehouse_id = this.defaultWarehouseId(response.data.configuration)
             this.initFilterItems()
         });
         this.getExtraInfoOfItems();
@@ -831,10 +832,7 @@ export default {
         },
         initForm() {
             this.errors = {}
-            let warehouse = 1;
-            if (this.config !== undefined && this.config.warehouse_id !== undefined) {
-                warehouse = this.config.warehouse_id;
-            }
+            const warehouse = this.defaultWarehouseId()
             this.form = {
                 item_id: null,
                 barcode: null,
@@ -868,6 +866,14 @@ export default {
             this.lot_code = null
 
             this.initQuantityForBarcode()
+        },
+        defaultWarehouseId(configuration = this.config) {
+            const configuredWarehouseId = configuration?.warehouse_id
+            const configuredWarehouse = this.warehouses.find(
+                warehouse => String(warehouse.id) === String(configuredWarehouseId)
+            )
+
+            return configuredWarehouse ? configuredWarehouse.id : (this.warehouses[0]?.id ?? null)
         },
         clickAddDiscount() {
             this.form.discounts.push({

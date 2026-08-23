@@ -143,7 +143,9 @@ class BotOrchestrator
                     $greeting = "Retomamos donde lo dejamos. ¿En qué te ayudo?";
                 } else {
                     $greeting = "Hola {$user->name}. Soy el asistente de {$company->trade_name}. "
-                        . "Puedo buscarte productos, clientes registrados, información del negocio y preparar boletas/facturas. "
+                        // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                        . "Puedo buscarte productos, clientes registrados, información del negocio y preparar facturas. "
+                        // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                         . "Cuando termines, escribe {$exit}.";
                 }
                 $this->sender->sendText($fromPhone, $greeting, $session->id);

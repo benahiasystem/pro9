@@ -7,11 +7,12 @@
         <div class="col-12">
             <div class="row">
                 <div class="col-6">
+                    <!-- ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
                     <el-radio-group v-model="form.document_type_id" size="small" @change="filterSeries">
                         <el-radio-button label="01">FACTURA</el-radio-button>
-                        <el-radio-button label="03">BOLETA</el-radio-button>
                         <el-radio-button label="80">N. VENTA</el-radio-button>
                     </el-radio-group>
+                    <!-- ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA -->
                 </div>
                 <div class="col-2 px-0">
                     <el-select v-model="form.series_id" class="c-width" style="height: 30px;">
@@ -327,13 +328,9 @@ export default {
     methods: {
         handleFn113() {
             const code = this.form.document_type_id
-            if (code == '01') {
-                this.form.document_type_id = '03'
-            } else if (code == '03') {
-                this.form.document_type_id = '80'
-            } else if (code == '80') {
-                this.form.document_type_id = '01'
-            }
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            this.form.document_type_id = code == '01' ? '80' : '01'
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
             this.filterSeries()
         },

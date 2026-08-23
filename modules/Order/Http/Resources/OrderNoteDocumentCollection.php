@@ -19,13 +19,16 @@ class OrderNoteDocumentCollection extends ResourceCollection
     {
 
         $all_series = app(SeriesResolver::class)->applyContext(Series::where('establishment_id', auth()->user()->establishment_id))->get();
-        $all_document_types_invoice = DocumentType::whereIn('id', ['01', '03', '80'])->get();
+        // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
+        $all_document_types_invoice = DocumentType::whereIn('id', ['01', '80'])->get();
+        // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
 
         return $this->collection->transform(function($row, $key) use($all_series, $all_document_types_invoice){
 
-            $document_types = ($row->customer->identity_document_type_id !== '6') ? $all_document_types_invoice->filter(function($row){ return in_array($row->id, ['03', '80']);}) : $all_document_types_invoice;
-
-            $series = ($row->customer->identity_document_type_id !== '6') ? $all_series->filter(function($row){ return ($row->document_type_id == '03') ;}) : $all_series->filter(function($row){ return ($row->document_type_id == '01');});
+            // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
+            $document_types = $all_document_types_invoice->values();
+            $series = $all_series->filter(function($row){ return $row->document_type_id === '01'; })->values();
+            // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
 
             return [
                 'id' => null,
@@ -37,7 +40,9 @@ class OrderNoteDocumentCollection extends ResourceCollection
                 'customer_number' => $row->customer->number,
                 'total' => number_format($row->total,2),
                 'selected' => false,
-                'document_type_id' => ($row->customer->identity_document_type_id !== '6') ? '03' : '01',
+                // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
+                'document_type_id' => '01',
+                // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA EN PEDIDOS
                 'series_id' => count($series) > 0 ? $series->first()->id : null,
                 'series' => $series,
                 'document_types' => $document_types,

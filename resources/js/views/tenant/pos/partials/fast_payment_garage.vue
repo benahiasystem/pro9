@@ -454,17 +454,13 @@ export default {
 
             // Solo cambia el tipo de documento si el usuario no ha seleccionado manualmente
             if (!this.userSelectedDocType) {
-                if (this.configuration.default_document_type_80) {
+                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                if (this.configuration.default_document_type_80 || this.isNrus) {
                     this.form.document_type_id = "80";
-                } else if (this.configuration.default_document_type_03) {
-                    this.form.document_type_id = "03";
-                } else if (this.isNrus) {
-                    // NRUS no emite Factura, siempre Boleta
-                    this.form.document_type_id = "03";
                 } else {
-                    this.form.document_type_id =
-                        customer.identity_document_type_id == "6" ? "01" : "03";
+                    this.form.document_type_id = "01";
                 }
+                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             }
 
             // console.log(this.customer);
@@ -530,19 +526,14 @@ export default {
         },
         handleFn113() {
             const code = this.form.document_type_id
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             if (this.isNrus) {
-                // En NRUS solo Boleta (03) y N. Venta (80); se omite Factura
-                this.form.document_type_id = (code == '03') ? '80' : '03'
+                this.form.document_type_id = '80'
                 this.filterSeries()
                 return
             }
-            if (code == '01') {
-                this.form.document_type_id = '03'
-            } else if (code == '03') {
-                this.form.document_type_id = '80'
-            } else if (code == '80') {
-                this.form.document_type_id = '01'
-            }
+            this.form.document_type_id = code == '01' ? '80' : '01'
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
             this.filterSeries()
         },

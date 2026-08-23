@@ -179,7 +179,9 @@
                             <div class="col-md-6 mt-4">
 
                                 <label class="control-label">
-                                    ¿Generar automaticamente las Boleta/Factura?
+                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
+                                    ¿Generar automáticamente las Facturas?
+                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
 
                                     <el-tooltip
                                         class="item"

@@ -279,7 +279,13 @@ class HotelRentController extends Controller
         $payment_method_types = PaymentMethodType::getPaymentMethodTypes();
         $payment_destinations = $this->getPaymentDestinations();
         $series = app(SeriesResolver::class)->applyContext(Series::where('establishment_id',  auth()->user()->establishment_id))->get();
-        $document_types_invoice = DocumentType::whereIn('id', ['01', '03', '80'])->get();
+        // ########## INICIO CAMBIO FACTURAS Y NOTAS DE VENTA HOTEL
+        // Orden explícito: Nota de venta primero, luego Factura.
+        $document_types_invoice = DocumentType::whereIn('id', ['01', '80'])
+          ->get()
+          ->sortBy(fn ($type) => array_search($type->id, ['80', '01'], true))
+          ->values();
+        // ######### FIN CAMBIO FACTURAS Y NOTAS DE VENTA HOTEL
     	$affectation_igv_types = AffectationIgvType::whereActive()->get();
 		$payments = HotelRentItemPayment::whereHas('associated_record_payment', function ($query) use($rentId) {
 			$query->whereHas('hotel_rent', function ($query) use ($rentId) {

@@ -4458,11 +4458,12 @@ export default {
             return !!(this.config && this.config.is_nrus);
         },
         documentTypesAvailable() {
-            // En NRUS solo se permite emitir Boleta (03)
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             if (this.isNrus) {
-                return this.document_types.filter(dt => dt.id === "03");
+                return [];
             }
-            return this.document_types;
+            return this.document_types.filter(dt => dt.id === "01");
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         },
         credit_payment_metod: function() {
             return _.filter(this.payment_method_types, { is_credit: true });
@@ -4715,13 +4716,9 @@ export default {
         const clientfromDispatchesOrNotes = localStorage.getItem("client");
         if (clientfromDispatchesOrNotes) {
             const client = JSON.parse(clientfromDispatchesOrNotes);
-            if (this.isNrus) {
-                this.form.document_type_id = "03";
-            } else if (client.identity_document_type_id == 1 || client.identity_document_type_id == 0) {
-                this.form.document_type_id = "03";
-            } else if (client.identity_document_type_id == 6 ) {
-                this.form.document_type_id = "01";
-            }
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+            this.form.document_type_id = this.isNrus ? null : "01";
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             this.searchRemoteCustomers(client.number);
             this.form.customer_id = client.id;
             this.changeEstablishment();
@@ -5994,13 +5991,13 @@ export default {
             }
         },
         selectDocumentType() {
+            // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             if (this.isNrus) {
-                this.form.document_type_id = "03";
+                this.form.document_type_id = null;
                 return;
             }
-            this.form.document_type_id = this.select_first_document_type_03
-                ? "03"
-                : "01";
+            this.form.document_type_id = "01";
+            // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
         },
         keyupCustomer() {
             if (this.input_person.number) {
