@@ -2,13 +2,205 @@
 
 namespace App\Services\System;
 
+use App\Models\System\Configuration;
 use Illuminate\Support\Facades\Http;
 
 class GitRemoteService
 {
+    private ?Configuration $configuration = null;
+
+    private bool $configurationLoaded = false;
+
     public function __construct(
         private GitProcessRunner $git,
     ) {
+    }
+
+    /**
+     * Valor guardado desde Sistema > Configuraciones > Integraciones.
+     * Devuelve null si no está configurado o si la tabla aún no existe.
+     */
+    private function fromDatabase(string $column): ?string
+    {
+        if (! $this->configurationLoaded) {
+            $this->configurationLoaded = true;
+
+            try {
+                $this->configuration = Configuration::first();
+            } catch (\Throwable $e) {
+                $this->configuration = null;
+            }
+        }
+
+        if ($this->configuration === null) {
+            return null;
+        }
+
+        $value = trim((string) ($this->configuration->{$column} ?? ''));
+
+        return $value !== '' ? $value : null;
+    }
+
+    /**
+     * Proveedor del repositorio: define endpoints y cabecera de autenticación.
+     * Se toma de la configuración; si no está definido se deduce del host y,
+     * como último recurso, se asume GitLab (comportamiento histórico del .env).
+     */
+    public function provider(): string
+    {
+        $provider = strtolower((string) $this->fromDatabase('git_provider'));
+
+        if ($provider === 'github' || $provider === 'gitlab') {
+            return $provider;
+        }
+
+        $host = strtolower((string) parse_url($this->plainRemoteUrl(), PHP_URL_HOST));
+
+        if ($host !== '' && str_contains($host, 'github')) {
+            return 'github';
+        }
+
+        return 'gitlab';
+    }
+
+    public function providerLabel(): string
+    {
+        return $this->provider() === 'github' ? 'GitHub' : 'GitLab';
+    }
+
+    /**
+     * Cabeceras de autenticación de la API según proveedor.
+     *
+     * @return array<string, string>
+     */
+    public function apiHeaders(): array
+    {
+        $token = $this->token();
+
+        if ($token === null) {
+            return [];
+        }
+
+        if ($this->provider() === 'github') {
+            return [
+                'Authorization' => 'Bearer '.$token,
+                'Accept' => 'application/vnd.github+json',
+                'X-GitHub-Api-Version' => '2022-11-28',
+            ];
+        }
+
+        return ['PRIVATE-TOKEN' => $token];
+    }
+
+    /**
+     * URL de la API del proyecto derivada de la URL remota configurada.
+     * Solo aplica cuando la URL se guardó desde el panel; si no, manda el .env.
+     */
+    private function projectApiBaseUrlFromRemote(): ?string
+    {
+        $remote = $this->fromDatabase('git_remote_url');
+
+        if ($remote === null) {
+            return null;
+        }
+
+        $parts = parse_url($remote);
+
+        if (! isset($parts['host'], $parts['path'])) {
+            return null;
+        }
+
+        $path = trim((string) preg_replace('/\.git$/i', '', $parts['path']), '/');
+
+        if ($path === '') {
+            return null;
+        }
+
+        $scheme = $parts['scheme'] ?? 'https';
+        $host = $parts['host'];
+        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+
+        if ($this->provider() === 'github') {
+            // github.com usa api.github.com; GitHub Enterprise expone /api/v3 en el propio host.
+            if (in_array(strtolower($host), ['github.com', 'www.github.com'], true)) {
+                return 'https://api.github.com/repos/'.$path;
+            }
+
+            return $scheme.'://'.$host.$port.'/api/v3/repos/'.$path;
+        }
+
+        return $scheme.'://'.$host.$port.'/api/v4/projects/'.rawurlencode($path);
+    }
+
+    public function tagsApiUrl(): ?string
+    {
+        $base = $this->projectApiBaseUrl();
+
+        if ($base === null) {
+            return null;
+        }
+
+        return $this->provider() === 'github' ? $base.'/tags' : $base.'/repository/tags';
+    }
+
+    public function branchesApiUrl(): ?string
+    {
+        $base = $this->projectApiBaseUrl();
+
+        if ($base === null) {
+            return null;
+        }
+
+        return $this->provider() === 'github' ? $base.'/branches' : $base.'/repository/branches';
+    }
+
+    /**
+     * Valida el token contra la API del proveedor (usado por el pre-check del auto-update).
+     *
+     * @return array{valid: bool, message: string}
+     */
+    public function verifyToken(): array
+    {
+        $token = $this->token();
+
+        if ($token === null) {
+            return [
+                'valid' => false,
+                'message' => 'Token no configurado. Defínelo en Configuraciones > Integraciones > Repositorio remoto (o GIT_TOKEN en .env).',
+            ];
+        }
+
+        $tagsUrl = $this->tagsApiUrl();
+
+        if ($tagsUrl === null) {
+            return [
+                'valid' => false,
+                'message' => 'Falta la URL del repositorio. Defínela en Configuraciones > Integraciones > Repositorio remoto (o GIT_PROJECT_TAGS_URL en .env).',
+            ];
+        }
+
+        try {
+            $response = Http::withHeaders($this->apiHeaders())
+                ->timeout(15)
+                ->get($tagsUrl, ['per_page' => 1]);
+
+            if ($response->successful()) {
+                return [
+                    'valid' => true,
+                    'message' => 'Token válido y activo con '.$this->providerLabel(),
+                ];
+            }
+
+            return [
+                'valid' => false,
+                'message' => 'Token inválido o sin permisos suficientes (código '.$response->status().')',
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'valid' => false,
+                'message' => 'Error al conectar con '.$this->providerLabel().': '.$e->getMessage(),
+            ];
+        }
     }
 
     public function hasToken(): bool
@@ -18,7 +210,7 @@ class GitRemoteService
 
     public function token(): ?string
     {
-        $token = config('git.token');
+        $token = $this->fromDatabase('git_token') ?? config('git.token');
 
         if ($token === null || $token === '') {
             return null;
@@ -29,7 +221,7 @@ class GitRemoteService
 
     public function user(): string
     {
-        $user = config('git.user');
+        $user = $this->fromDatabase('git_user') ?? config('git.user');
 
         return ($user !== null && $user !== '') ? trim((string) $user) : 'oauth2';
     }
@@ -39,6 +231,12 @@ class GitRemoteService
      */
     public function plainRemoteUrl(): string
     {
+        $configured = $this->fromDatabase('git_remote_url');
+
+        if ($configured !== null) {
+            return $this->stripCredentialsFromUrl($configured);
+        }
+
         $result = $this->git->run(['remote', 'get-url', 'origin']);
 
         if ($result->successful && $result->outputTrimmed() !== '') {
@@ -112,31 +310,31 @@ class GitRemoteService
         if ($token === null) {
             return [
                 'connected' => false,
-                'message' => 'GIT_TOKEN no está cargado (revisa .env y ejecuta php artisan config:clear).',
-                'method' => 'none',
-            ];
-        }
-
-        if (! config('git.project_tags_url')) {
-            return [
-                'connected' => false,
-                'message' => 'Configura GIT_PROJECT_TAGS_URL en .env (URL API de tags del proyecto en GitLab).',
+                'message' => 'Token no configurado. Defínelo en Configuraciones > Integraciones > Repositorio remoto (o GIT_TOKEN en .env).',
                 'method' => 'none',
             ];
         }
 
         $projectUrl = $this->projectApiBaseUrl();
 
+        if ($projectUrl === null && $this->plainRemoteUrl() === '') {
+            return [
+                'connected' => false,
+                'message' => 'Configura la URL remota en Configuraciones > Integraciones > Repositorio remoto (o GIT_PROJECT_TAGS_URL / GIT_REMOTE_URL en .env).',
+                'method' => 'none',
+            ];
+        }
+
         if ($projectUrl !== null) {
             try {
-                $response = Http::withHeaders([
-                    'PRIVATE-TOKEN' => $token,
-                ])->timeout(15)->get($projectUrl);
+                $response = Http::withHeaders($this->apiHeaders())
+                    ->timeout(15)
+                    ->get($projectUrl);
 
                 if ($response->successful()) {
                     return [
                         'connected' => true,
-                        'message' => 'Acceso al repositorio verificado con GitLab API',
+                        'message' => 'Acceso al repositorio verificado con la API de '.$this->providerLabel(),
                         'method' => 'api',
                     ];
                 }
@@ -150,7 +348,7 @@ class GitRemoteService
         if ($remote === '') {
             return [
                 'connected' => false,
-                'message' => 'No se pudo obtener la URL del repositorio. Revisa GIT_PROJECT_TAGS_URL o define GIT_REMOTE_URL en .env.',
+                'message' => 'No se pudo obtener la URL del repositorio. Revísala en Configuraciones > Integraciones > Repositorio remoto.',
                 'method' => 'none',
             ];
         }
@@ -176,6 +374,12 @@ class GitRemoteService
 
     public function projectApiBaseUrl(): ?string
     {
+        $fromRemote = $this->projectApiBaseUrlFromRemote();
+
+        if ($fromRemote !== null) {
+            return $fromRemote;
+        }
+
         $tagsUrl = config('git.project_tags_url');
 
         if (! $tagsUrl) {
@@ -246,7 +450,7 @@ class GitRemoteService
             return $this->listReleaseTags();
         }
 
-        $branches = $this->listProtectedBranchesFromGitLabApi();
+        $branches = $this->listProtectedBranchesFromApi();
         $branches = array_values(array_unique($branches));
         sort($branches, SORT_NATURAL | SORT_FLAG_CASE);
 
@@ -284,16 +488,16 @@ class GitRemoteService
     public function isProtectedBranch(string $branch): bool
     {
         $token = $this->token();
-        $base = $this->projectApiBaseUrl();
+        $branchesUrl = $this->branchesApiUrl();
 
-        if ($token === null || $base === null || $branch === '') {
+        if ($token === null || $branchesUrl === null || $branch === '') {
             return false;
         }
 
         try {
-            $response = Http::withHeaders([
-                'PRIVATE-TOKEN' => $token,
-            ])->timeout(15)->get($base.'/repository/branches/'.rawurlencode($branch));
+            $response = Http::withHeaders($this->apiHeaders())
+                ->timeout(15)
+                ->get($branchesUrl.'/'.rawurlencode($branch));
         } catch (\Throwable $e) {
             return false;
         }
@@ -310,26 +514,35 @@ class GitRemoteService
     /**
      * @return list<string>
      */
-    private function listProtectedBranchesFromGitLabApi(): array
+    private function listProtectedBranchesFromApi(): array
     {
         $token = $this->token();
-        $base = $this->projectApiBaseUrl();
+        $branchesUrl = $this->branchesApiUrl();
 
-        if ($token === null || $base === null) {
+        if ($token === null || $branchesUrl === null) {
             return [];
+        }
+
+        $query = [
+            'per_page' => 100,
+            'page' => 1,
+        ];
+
+        // GitHub filtra en el servidor; GitLab devuelve todas y se filtra por 'protected'.
+        if ($this->provider() === 'github') {
+            $query['protected'] = 'true';
         }
 
         $names = [];
         $page = 1;
 
         do {
+            $query['page'] = $page;
+
             try {
-                $response = Http::withHeaders([
-                    'PRIVATE-TOKEN' => $token,
-                ])->timeout(20)->get($base.'/repository/branches', [
-                    'per_page' => 100,
-                    'page' => $page,
-                ]);
+                $response = Http::withHeaders($this->apiHeaders())
+                    ->timeout(20)
+                    ->get($branchesUrl, $query);
             } catch (\Throwable $e) {
                 break;
             }
@@ -365,9 +578,9 @@ class GitRemoteService
     private function listReleaseTags(): array
     {
         $token = $this->token();
-        $tagsUrl = config('git.project_tags_url');
+        $tagsUrl = $this->tagsApiUrl();
 
-        if ($token === null || ! $tagsUrl) {
+        if ($token === null || $tagsUrl === null) {
             return [];
         }
 
@@ -376,12 +589,12 @@ class GitRemoteService
 
         do {
             try {
-                $response = Http::withHeaders([
-                    'PRIVATE-TOKEN' => $token,
-                ])->timeout(20)->get($tagsUrl, [
-                    'per_page' => 100,
-                    'page' => $page,
-                ]);
+                $response = Http::withHeaders($this->apiHeaders())
+                    ->timeout(20)
+                    ->get($tagsUrl, [
+                        'per_page' => 100,
+                        'page' => $page,
+                    ]);
             } catch (\Throwable $e) {
                 break;
             }

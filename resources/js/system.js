@@ -25,6 +25,7 @@ import CheckoutGuest from './components/checkouts/CheckoutGuest.vue'
 import SystemSupportConfiguration from './views/system/configuration/supportConfiguration.vue';
 import SystemConfigurationOpenAi from './views/system/configuration/openAiConfiguration.vue'
 import SystemGoogleMapsConfiguration from './views/system/configuration/googleMapsConfiguration.vue'
+import SystemGitRepositoryConfiguration from './views/system/configuration/gitRepositoryConfiguration.vue'
 import SystemTermsConfiguration from './views/system/configuration/termsConfiguration.vue'
 import SystemClientsIndex from './views/system/clients/index.vue';
 import SystemClientsForm from './views/system/clients/form.vue';
@@ -115,6 +116,7 @@ Vue.component('system-support-configuration', SystemSupportConfiguration);
 Vue.component('system-clients-index', SystemClientsIndex);
 Vue.component('system-openai-configuration', SystemConfigurationOpenAi);
 Vue.component('system-google-maps-configuration', SystemGoogleMapsConfiguration);
+Vue.component('system-git-repository-configuration', SystemGitRepositoryConfiguration);
 Vue.component('system-terms-configuration', SystemTermsConfiguration);
 Vue.component('system-clients-form', SystemClientsForm);
 Vue.component('system-users-form', SystemUsersform);

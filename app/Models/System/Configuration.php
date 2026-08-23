@@ -70,6 +70,10 @@ class Configuration extends Model
         'terms_url',
         'mozo_configuration',
         'vendeya_configuration',
+        'git_remote_url',
+        'git_provider',
+        'git_user',
+        'git_token',
     ];
 
 

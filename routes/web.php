@@ -1202,6 +1202,10 @@ if ($hostname) {
             Route::post('waha-servers/{wahaServer}/set-default', 'System\WahaServerController@setDefault');
             Route::post('configurations/google-maps', 'System\ConfigurationController@googleMaps');
 
+            // Repositorio remoto (GitHub/GitLab) para el auto-update
+            Route::get('configurations/git-repository', 'System\ConfigurationController@gitRepository');
+            Route::post('configurations/git-repository', 'System\ConfigurationController@storeGitRepository');
+
             // Número de WhatsApp conectado al superadmin (envío de notificaciones)
             Route::post('configurations/whatsapp-notify/connect', 'System\WhatsAppNotifyController@connect');
             Route::get('configurations/whatsapp-notify/qr', 'System\WhatsAppNotifyController@qr');

@@ -66,6 +66,9 @@
                 <div :class="colClass('ruc')" v-show="isVisible('ruc')">
                     <slot name="ruc"></slot>
                 </div>
+                <div :class="colClass('git')" v-show="isVisible('git')">
+                    <slot name="git"></slot>
+                </div>
 
                 <div :class="colClass('gateway')" v-show="isVisible('gateway')">
                     <slot name="gateway"></slot>
@@ -163,6 +166,7 @@ export default {
                 {key: 'openai', category: 'integraciones', label: 'Configuración de IA', keywords: 'openai ia inteligencia artificial token chatgpt', half: false},
                 {key: 'maps', category: 'integraciones', label: 'Google Maps', keywords: 'google maps mapa api key ubicacion', half: false},
                 {key: 'ruc', category: 'integraciones', label: 'Consulta RUC/DNIe', keywords: 'ruc dni sunat reniec token api consulta', half: false},
+                {key: 'git', category: 'integraciones', label: 'Repositorio remoto (GitHub/GitLab)', keywords: 'git github gitlab repositorio remoto token acceso usuario url actualizacion auto update', half: false},
 
                 {key: 'gateway', category: 'pagos', label: 'Pasarela de pago', keywords: 'pago pasarela culqi mercadopago niubiz metodo', half: true},
                 {key: 'cron', category: 'pagos', label: 'Tareas automáticas', keywords: 'cron tareas automaticas pagos pedidos programado', half: true},

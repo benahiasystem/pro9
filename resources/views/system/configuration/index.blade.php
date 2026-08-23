@@ -25,6 +25,7 @@
         <system-openai-configuration slot="openai"></system-openai-configuration>
         <system-google-maps-configuration slot="maps" :configuration='@json($configuration)'></system-google-maps-configuration>
         <system-configuration-token slot="ruc"></system-configuration-token>
+        <system-git-repository-configuration slot="git"></system-git-repository-configuration>
 
         {{-- Pagos --}}
         <system-configuration-payment-gateway slot="gateway"></system-configuration-payment-gateway>
