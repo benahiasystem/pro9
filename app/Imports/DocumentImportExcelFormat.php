@@ -121,7 +121,9 @@ class DocumentImportExcelFormat implements ToCollection
                     "precio_unitario" => $unit_price,
                     "codigo_tipo_afectacion_igv" => "10",
                     "total_base_igv" => $subtotal,
-                    "porcentaje_igv" => "18",
+                    // ########## INICIO CAMBIO AFECTACIÓN IVA
+                    "porcentaje_igv" => (string) \App\Support\Venezuela\Localization::taxPercentage(),
+                    // ######### FIN CAMBIO AFECTACIÓN IVA
                     "total_igv" => $total_igv,
                     "total_impuestos" => $total_igv,
                     "total_valor_item" => $subtotal,

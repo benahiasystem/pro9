@@ -1016,7 +1016,9 @@ class QuotationController extends Controller
                 'internal_id' => $itemJson['internal_id'] ?? null,
                 'quantity' => (float) $row->quantity,
                 'affectation_igv_type_id' => $row->affectation_igv_type_id ?: '10',
-                'percentage_igv' => (float) ($row->percentage_igv ?: 18),
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                'percentage_igv' => (float) ($row->percentage_igv ?: \App\Support\Venezuela\Localization::taxPercentage()),
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 'unit_price' => (float) $row->unit_price,
                 'suggested_unit_price' => $suggested,
                 'discount_percentage' => $this->extractItemDiscountPercentage($row->discounts),
@@ -1119,7 +1121,9 @@ class QuotationController extends Controller
                         $quantity,
                         $discountPercentage,
                         $row->affectation_igv_type_id ?: '10',
-                        (float) ($row->percentage_igv ?: 18)
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        (float) ($row->percentage_igv ?: \App\Support\Venezuela\Localization::taxPercentage())
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                     );
 
                     $affectation = $row->affectation_igv_type_id ?: '10';

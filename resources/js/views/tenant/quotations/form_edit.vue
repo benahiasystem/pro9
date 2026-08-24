@@ -971,7 +971,9 @@ export default {
                         this.recordDiscountsGlobal = discounts[0];
                         let discount_type_id = discounts[0].discount_type_id
                         this.total_global_discount = discount_type_id !== "02" ? dato.total_discount :
-                        _.round(Number(dato.total_discount * 1.18).toFixed(3), 2);
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        _.round(Number(dato.total_discount * (1 + this.percentage_igv)).toFixed(3), 2);
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                     }
                     this.calculateTotal()
                 })

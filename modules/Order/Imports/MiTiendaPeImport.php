@@ -140,12 +140,14 @@
                 $amountWithOutIGV = $row[17] ?? 0; // precio sin igv
                 //
                 $total_igv = $row[14] ?? 0; // igv del producto
-                $igv = $row[15] ?? 18; // igv
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                $igv = $row[15] ?? \App\Support\Venezuela\Localization::taxPercentage(); // igv
 
 
                 if (!is_numeric($igv)) {
-                    $igv = 18;
+                    $igv = \App\Support\Venezuela\Localization::taxPercentage();
                 }
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 $discount = $row[16] ?? null;
                 // $total = $row[13]??null;
                 $stotal = $row[17] ?? null;

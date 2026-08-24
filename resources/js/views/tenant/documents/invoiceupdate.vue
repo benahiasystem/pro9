@@ -2382,7 +2382,9 @@ export default {
 
                     this.form.total_discount = _.round(amount, 2)
                     this.form.total_taxed = _.round(this.form.total_taxed - amount, 2)
-                    this.form.total_igv = _.round(this.form.total_taxed * 0.18, 2)
+                    // ########## INICIO CAMBIO AFECTACIÓN IVA
+                    this.form.total_igv = _.round(this.form.total_taxed * this.percentage_igv, 2)
+                    // ######### FIN CAMBIO AFECTACIÓN IVA
                     this.form.total_taxes = _.round(this.form.total_igv, 2)
                     this.form.total = _.round(this.form.total_taxed + this.form.total_taxes, 2)
 
@@ -2404,7 +2406,9 @@ export default {
 
                         this.form.total_discount = _.round(amount, 2)
                         this.form.total_taxed = _.round(this.form.total_taxed - amount, 2)
-                        this.form.total_igv = _.round(this.form.total_taxed * 0.18, 2)
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        this.form.total_igv = _.round(this.form.total_taxed * this.percentage_igv, 2)
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                         this.form.total_taxes = _.round(this.form.total_igv, 2)
                         this.form.total = _.round(this.form.total_taxed + this.form.total_taxes, 2)
 

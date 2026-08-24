@@ -851,7 +851,9 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                     $total_discount_line = 0;
                     foreach ($row->discounts as $disto) {
                         if (optional($disto)->from_global_distribution) continue;
-                        $amount = $disto->discount_type_id == "00" ? $disto->amount_without_rounded * 1.18 : $disto->amount;
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        $amount = $disto->discount_type_id == "00" ? $disto->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier() : $disto->amount;
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                         $total_discount_line = $total_discount_line + $amount;
                     }
                     @endphp
@@ -865,7 +867,9 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
                 @endphp
                 @if ($global)
                     @php
-                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * 1.18 : $global->amount;
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        $global_discount_amount = $global->discount_type_id == "00" ? $global->amount_without_rounded * \App\Support\Venezuela\Localization::taxMultiplier() : $global->amount;
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                     @endphp
                     <td class="text-right align-top">{{ number_format($row->total + $global_discount_amount, 2) }}</td>
                 @else 

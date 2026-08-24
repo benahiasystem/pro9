@@ -562,11 +562,13 @@ export default {
             return this.record?.currency_type_id === 'USD' ? '$' : 'Bs.';
         },
         igvPercentage() {
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
             const percentage = this.record?.percentage_igv
                 ?? this.record?.igv_percentage
-                ?? 18;
+                ?? 16;
 
-            return Number(percentage) || 18;
+            return Number(percentage) || 16;
+            // ######### FIN CAMBIO AFECTACIÓN IVA
         },
         lineItems() {
             const items = Array.isArray(this.record?.items) ? this.record.items : [];

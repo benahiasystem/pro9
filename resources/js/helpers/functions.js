@@ -1,12 +1,16 @@
 // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
-function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pigv) {
+// ########## INICIO CAMBIO AFECTACIÓN IVA
+function calculateRowItem(row_old, currency_type_id_new, exchange_rate_sale, pigv = 0.16) {
+// ######### FIN CAMBIO AFECTACIÓN IVA
     // console.log(currency_type_id_new, exchange_rate_sale)
 
     let currency_type_id_old = row_old.item.currency_type_id
     let unit_price = parseFloat(row_old.item.unit_price)
+    // ########## INICIO CAMBIO AFECTACIÓN IVA
     // } else {
-    //     unit_price = parseFloat(row_old.item.unit_price) * 1.18
+    //     unit_price = parseFloat(row_old.item.unit_price) * (1 + pigv)
     // }
+    // ######### FIN CAMBIO AFECTACIÓN IVA
     let warehouse_id = row_old.warehouse_id
 
     // console.log(row_old)

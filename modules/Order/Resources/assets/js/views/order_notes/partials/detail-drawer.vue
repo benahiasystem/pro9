@@ -443,8 +443,10 @@ export default {
             return this.record?.currency_type_id === 'USD' ? '$' : 'Bs.';
         },
         igvPercentage() {
-            const percentage = this.record?.percentage_igv ?? this.record?.igv_percentage ?? 18;
-            return Number(percentage) || 18;
+            // ########## INICIO CAMBIO AFECTACIÓN IVA
+            const percentage = this.record?.percentage_igv ?? this.record?.igv_percentage ?? 16;
+            return Number(percentage) || 16;
+            // ######### FIN CAMBIO AFECTACIÓN IVA
         },
         paymentConditionLabel() {
             if (this.record?.payment_method_type?.description) {

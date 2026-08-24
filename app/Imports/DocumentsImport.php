@@ -152,7 +152,9 @@ class DocumentsImport implements ToCollection
                             "precio_unitario" => $row[25],
                             "codigo_tipo_afectacion_igv" => "10",
                             "total_base_igv" => $row[26] != null ? $row[26] : $mtosubtotal,
-                            "porcentaje_igv" => "18",
+                            // ########## INICIO CAMBIO AFECTACIÓN IVA
+                            "porcentaje_igv" => (string) \App\Support\Venezuela\Localization::taxPercentage(),
+                            // ######### FIN CAMBIO AFECTACIÓN IVA
                             "total_igv" => $row[27] != null ? $row[27] : $mtoimpuesto,
                             "total_impuestos" => $row[27] != null ? $row[27] : $mtoimpuesto,
                             "total_valor_item" => $row[26] != null ? $row[26] : $mtosubtotal,
@@ -185,7 +187,9 @@ class DocumentsImport implements ToCollection
                             "precio_unitario" => $row[30],
                             "codigo_tipo_afectacion_igv" => "10",
                             "total_base_igv" => $row[31],
-                            "porcentaje_igv" => "18",
+                            // ########## INICIO CAMBIO AFECTACIÓN IVA
+                            "porcentaje_igv" => (string) \App\Support\Venezuela\Localization::taxPercentage(),
+                            // ######### FIN CAMBIO AFECTACIÓN IVA
                             "total_igv" => $row[32],
                             "total_impuestos" => $row[32],
                             "total_valor_item" => $row[31],

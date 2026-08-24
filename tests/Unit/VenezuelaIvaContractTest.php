@@ -2,7 +2,12 @@
 
 namespace Tests\Unit;
 
+use App\Models\Tenant\PurchaseSettlementItem;
 use App\Support\Venezuela\Localization;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 // ########## INICIO CAMBIO AFECTACIÓN IVA
@@ -79,6 +84,105 @@ class VenezuelaIvaContractTest extends TestCase
     }
 
     /** @test */
+    public function current_operation_structure_prepares_and_persists_sixteen_percent_iva(): void
+    {
+        $calculator = (string) file_get_contents(resource_path('js/helpers/functions.js'));
+        self::assertStringContainsString('pigv = 0.16', $calculator);
+        self::assertStringContainsString('percentage_igv: pigv * 100', $calculator);
+
+        $quotation = (string) file_get_contents(app_path('Http/Controllers/Tenant/QuotationController.php'));
+        self::assertStringContainsString('Localization::taxPercentage()', $quotation);
+
+        foreach ([
+            'app/Models/Tenant/DocumentItem.php',
+            'app/Models/Tenant/SaleNoteItem.php',
+            'app/Models/Tenant/PurchaseItem.php',
+            'app/Models/Tenant/QuotationItem.php',
+            'app/Models/Tenant/PurchaseSettlementItem.php',
+            'app/Models/Tenant/TechnicalServiceItem.php',
+            'modules/Order/Models/OrderNoteItem.php',
+            'modules/Purchase/Models/FixedAssetPurchaseItem.php',
+            'modules/Purchase/Models/PurchaseOrderItem.php',
+            'modules/Sale/Models/ContractItem.php',
+            'modules/Sale/Models/SaleOpportunityItem.php',
+            'modules/Suscription/Models/Tenant/ItemRelSuscriptionPlan.php',
+            'modules/FullSuscription/Models/Tenant/ItemRelSuscriptionPlan.php',
+        ] as $path) {
+            $model = (string) file_get_contents(base_path($path));
+            self::assertStringContainsString("'percentage_igv'", $model, $path);
+            self::assertStringContainsString("'total_igv'", $model, $path);
+        }
+    }
+
+    /** @test */
+    public function an_operation_detail_really_saves_the_sixteen_percent_rate_and_amount(): void
+    {
+        config(['database.connections.tenant' => [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+            'foreign_key_constraints' => true,
+        ]]);
+
+        DB::purge('tenant');
+        Schema::connection('tenant')->create('iva_contract_items', function (Blueprint $table): void {
+            $table->increments('id');
+            $table->string('affectation_igv_type_id', 2);
+            $table->decimal('total_base_igv', 12, 2);
+            $table->decimal('percentage_igv', 12, 2);
+            $table->decimal('total_igv', 12, 2);
+            $table->decimal('total_taxes', 12, 2);
+        });
+
+        $base = 100.0;
+        $iva = round($base * Localization::taxRate(), 2);
+
+        $detail = new PurchaseSettlementItem();
+        $detail->setTable('iva_contract_items');
+        $detail->fill([
+            'affectation_igv_type_id' => '10',
+            'total_base_igv' => $base,
+            'percentage_igv' => Localization::taxPercentage(),
+            'total_igv' => $iva,
+            'total_taxes' => $iva,
+        ]);
+        Model::withoutEvents(function () use ($detail): void {
+            $detail->save();
+        });
+
+        $stored = DB::connection('tenant')->table('iva_contract_items')->first();
+        self::assertEquals(16.0, (float) $stored->percentage_igv);
+        self::assertEquals(16.0, (float) $stored->total_igv);
+        self::assertEquals(16.0, (float) $stored->total_taxes);
+
+        DB::disconnect('tenant');
+    }
+
+    /** @test */
+    public function corrected_creation_flows_do_not_keep_the_obsolete_eighteen_percent_rate(): void
+    {
+        foreach ([
+            'app/Http/Controllers/Tenant/QuotationController.php',
+            'app/Imports/DocumentImportExcelFormat.php',
+            'app/Imports/DocumentsImport.php',
+            'app/Imports/DocumentsImportTwoFormat.php',
+            'modules/Order/Imports/MiTiendaPeImport.php',
+            'modules/Ecommerce/Http/Resources/ItemBarCollection.php',
+            'modules/Ecommerce/Resources/assets/js/frontend/cart-app.js',
+            'modules/Ecommerce/Resources/views/cart/detail2.blade.php',
+            'resources/js/views/tenant/documents/invoiceupdate.vue',
+            'resources/js/views/tenant/pos/partials/form.vue',
+            'resources/js/views/tenant/quotations/form.vue',
+            'resources/js/views/tenant/quotations/form_edit.vue',
+            'resources/js/views/tenant/quotations/partials/define_prices.vue',
+        ] as $path) {
+            $source = (string) file_get_contents(base_path($path));
+            self::assertDoesNotMatchRegularExpression('/(?<![\d.])(?:0\.18|1\.18)(?![\d.])/', $source, $path);
+            self::assertDoesNotMatchRegularExpression('/(?:percentage_igv|porcentaje_igv)[^\n]{0,40}(?:\?\?|\?:|=|:)\s*[\'\"]?18\b/', $source, $path);
+        }
+    }
+
+    /** @test */
     public function blade_markers_do_not_break_raw_php_blocks(): void
     {
         foreach ([
@@ -125,6 +229,18 @@ class VenezuelaIvaContractTest extends TestCase
         self::assertSame(1, substr_count($source, '<td>IVA</td>'));
         self::assertStringNotContainsString('<div class="col-12 text-right px-0" v-if="form.total_igv > 0">', $source);
         self::assertStringNotContainsString('</div> -->', $source);
+    }
+
+    /** @test */
+    public function garage_pos_displays_the_dynamic_sixteen_percent_iva_rate(): void
+    {
+        $garage = (string) file_get_contents(resource_path('js/views/tenant/pos/garage.vue'));
+        $payment = (string) file_get_contents(resource_path('js/views/tenant/pos/partials/fast_payment_garage.vue'));
+
+        self::assertStringContainsString(':percentage-igv="percentage_igv"', $garage);
+        self::assertSame(2, substr_count($payment, 'IVA ({{ ivaPercentageLabel }}%)'));
+        self::assertStringContainsString('(Number(this.percentageIgv) || 0.16) * 100', $payment);
+        self::assertStringNotContainsString('IVA (18%)', $payment);
     }
 
     /** @test */

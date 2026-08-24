@@ -92,7 +92,9 @@
                     </div>
                     <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
                         <!-- ########### INICIO CAMBIO IVA VENEZUELA -->
-                        <span class="fp-total-label">IVA (18%)</span>
+                        <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
+                        <span class="fp-total-label">IVA ({{ ivaPercentageLabel }}%)</span>
+                        <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
                     </div>
                     <div class="fp-total-row d-flex justify-content-between py-1">
@@ -110,7 +112,9 @@
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_taxed).toFixed(2) }}</span>
                     </div>
                     <div class="fp-total-row d-flex justify-content-between py-1" v-if="!isNrus">
-                        <span class="fp-total-label">IVA (18%)</span>
+                        <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
+                        <span class="fp-total-label">IVA ({{ ivaPercentageLabel }}%)</span>
+                        <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
                         <!-- ########### FIN CAMBIO IVA VENEZUELA -->
                         <span class="fp-total-val">{{ currencyTypeActive.symbol }} {{ Number(form.total_igv).toFixed(2) }}</span>
                     </div>
@@ -268,6 +272,9 @@ export default {
         'form',
         'customer',
         'currencyTypeActive',
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        'percentageIgv',
+        // ######### FIN CAMBIO AFECTACIÓN IVA
         'exchangeRateSale',
         'is_payment',
         'soapCompany',
@@ -387,6 +394,12 @@ export default {
         this.checkPaymentGarage()
     },
     computed: {
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        ivaPercentageLabel()
+        {
+            return Number((Number(this.percentageIgv) || 0.16) * 100).toFixed(0);
+        },
+        // ######### FIN CAMBIO AFECTACIÓN IVA
         isNrus()
         {
             return !!((this.configuration && this.configuration.is_nrus) || (this.config && this.config.is_nrus));

@@ -437,10 +437,12 @@
                     "total_operaciones_inafectas": 0.00,
                     "total_operaciones_exoneradas": 0.00,
                     "total_operaciones_gratuitas": 0.00,
-                    "total_igv": 18.00,
-                    "total_impuestos": 18.00,
+                    // ########## INICIO CAMBIO AFECTACIÓN IVA
+                    "total_igv": 16.00,
+                    "total_impuestos": 16.00,
                     "total_valor": 100,
-                    "total_venta": 118
+                    "total_venta": 116
+                    // ######### FIN CAMBIO AFECTACIÓN IVA
                 }
             },
             getItemsDocument() {
@@ -456,11 +458,13 @@
                         "precio_unitario": item.sale_unit_price,
                         "codigo_tipo_afectacion_igv": "10",
                         "total_base_igv": 100.00,
-                        "porcentaje_igv": 18,
-                        "total_igv": 18,
-                        "total_impuestos": 18,
+                        // ########## INICIO CAMBIO AFECTACIÓN IVA
+                        "porcentaje_igv": @json(\App\Support\Venezuela\Localization::taxPercentage()),
+                        "total_igv": 16,
+                        "total_impuestos": 16,
+                        // ######### FIN CAMBIO AFECTACIÓN IVA
                         "total_valor_item": 100,
-                        "total_item": 118
+                        "total_item": 116
                     }
                 })
 
@@ -521,7 +525,9 @@
                 })
 
                 this.summary.subtotal = subtotal.toFixed(2)
-                let tax = (subtotal * 0.18)
+                // ########## INICIO CAMBIO AFECTACIÓN IVA
+                let tax = subtotal * @json(\App\Support\Venezuela\Localization::taxRate())
+                // ######### FIN CAMBIO AFECTACIÓN IVA
                 this.summary.tax = tax.toFixed(2)
                 this.summary.total = (subtotal + tax).toFixed(2)
                 $("#total_amount").data('total', this.summary.total);

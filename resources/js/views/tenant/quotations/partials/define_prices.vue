@@ -151,7 +151,9 @@ export default {
                 total += line;
 
                 if ((row.affectation_igv_type_id || "10") === "10") {
-                    const base = line / (1 + (Number(row.percentage_igv || 18) / 100));
+                    // ########## INICIO CAMBIO AFECTACIÓN IVA
+                    const base = line / (1 + (Number(row.percentage_igv || 16) / 100));
+                    // ######### FIN CAMBIO AFECTACIÓN IVA
                     taxed += base;
                     igv += line - base;
                 }

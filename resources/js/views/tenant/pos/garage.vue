@@ -799,12 +799,14 @@
                 <!-- ── BOTTOM: Sección de pago ── -->
                 <div class="payment-container-pos border-0">
                     <template v-if="show_fast_payment_garage">
+                        <!-- ########## INICIO CAMBIO AFECTACIÓN IVA -->
                         <fast-payment
                             :is_payment.sync="is_payment"
                             :form="form"
                             :currency-type-id-active="form.currency_type_id"
                             :currency-type-active="currency_type"
                             :exchange-rate-sale="form.exchange_rate_sale"
+                            :percentage-igv="percentage_igv"
                             :customer.sync="customer"
                             :soapCompany="soapCompany"
                             :businessTurns="businessTurns"
@@ -816,6 +818,7 @@
                             @series-filtered="current_series_count = $event"
                             @customer-required="customerError = true"
                         ></fast-payment>
+                        <!-- ######### FIN CAMBIO AFECTACIÓN IVA -->
                     </template>
                 </div>
             </div>
