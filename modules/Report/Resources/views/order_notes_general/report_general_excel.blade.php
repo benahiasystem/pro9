@@ -37,7 +37,9 @@
                                 <th  class="celda">Precio unitario</th>
                                 
                                 <th  class="celda">Documento Asociado</th>
-                                <th  class="celda">Guia de remision</th>
+                                {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
+                                <th class="celda">Guía de despacho</th>
+                                {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                             </tr>
                         </thead>
                         <tbody>

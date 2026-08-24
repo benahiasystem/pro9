@@ -168,7 +168,9 @@
                             <th v-if="col.visible && col.key === 'customer'" :key="col.key">Cliente</th>
                             <th v-if="col.visible && col.key === 'number'" :key="col.key">Número</th>
                             <th v-if="col.visible && col.key === 'notes'" :key="col.key">Notas C/D</th>
-                            <th v-if="col.visible && col.key === 'dispatch'" :key="col.key">Guía de Remisión</th>
+                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                            <th v-if="col.visible && col.key === 'dispatch'" :key="col.key">Guía de despacho</th>
+                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                             <th v-if="col.visible && col.key === 'sales_note'" :key="col.key">Nota de venta</th>
                             <th v-if="col.visible && col.key === 'order_note'" :key="col.key">Pedidos</th>
                             <th v-if="col.visible && col.key === 'send_it'" :key="col.key">Email Enviado</th>
@@ -757,7 +759,9 @@ export default {
                 customer:           { title: "Cliente",                        visible: true,  order: 4  },
                 number:             { title: "Número",                         visible: true,  order: 5  },
                 notes:              { title: "Notas C/D",                      visible: false, order: 6  },
-                dispatch:           { title: "Guía de Remisión",               visible: false, order: 7  },
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                dispatch:           { title: "Guía de despacho",               visible: false, order: 7  },
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 sales_note:         { title: "Nota de ventas",                 visible: false, order: 8  },
                 order_note:         { title: "Pedidos",                        visible: false, order: 9  },
                 send_it:            { title: "Correo enviado al destinatario", visible: false, order: 10 },

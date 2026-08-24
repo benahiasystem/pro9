@@ -32,10 +32,11 @@ return [
     ],
     'tenant' => [
         'document_types' => [
-            '01' => 'Factura electrónica',
-            '03' => 'Boleta electrónica',
-            '07' => 'Nota de crédito electrónica',
-            '08' => 'Nota de débito electrónica',
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            '01' => 'Factura de venta',
+            '07' => 'Nota de crédito',
+            '08' => 'Nota de débito',
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ]
     ],
 ];

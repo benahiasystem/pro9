@@ -33,16 +33,20 @@ class SeriesCodeGenerator
      * @var array<int, array<string, string>>
      */
     public const SERIES_TYPES = [
-        ['key' => 'invoice',             'document_type_id' => '01', 'prefix' => 'FF', 'category' => 'basic',    'label' => 'FACTURA ELECTRÓNICA'],
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        ['key' => 'invoice',             'document_type_id' => '01', 'prefix' => 'FF', 'category' => 'basic',    'label' => 'FACTURA DE VENTA'],
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ['key' => 'receipt',             'document_type_id' => '03', 'prefix' => 'BB', 'category' => 'basic',    'label' => 'BOLETA DE VENTA ELECTRÓNICA'],
         ['key' => 'credit_note_invoice', 'document_type_id' => '07', 'prefix' => 'FC', 'category' => 'basic',    'label' => 'NOTA DE CRÉDITO (factura)'],
         ['key' => 'credit_note_receipt', 'document_type_id' => '07', 'prefix' => 'BC', 'category' => 'basic',    'label' => 'NOTA DE CRÉDITO (boleta)'],
         ['key' => 'debit_note_invoice',  'document_type_id' => '08', 'prefix' => 'FD', 'category' => 'basic',    'label' => 'NOTA DE DÉBITO (factura)'],
         ['key' => 'debit_note_receipt',  'document_type_id' => '08', 'prefix' => 'BD', 'category' => 'basic',    'label' => 'NOTA DE DÉBITO (boleta)'],
-        ['key' => 'retention',           'document_type_id' => '20', 'prefix' => 'RR', 'category' => 'advanced', 'label' => 'COMPROBANTE DE RETENCIÓN ELECTRÓNICA'],
-        ['key' => 'perception',          'document_type_id' => '40', 'prefix' => 'PP', 'category' => 'advanced', 'label' => 'COMPROBANTE DE PERCEPCIÓN ELECTRÓNICA'],
-        ['key' => 'dispatch_sender',     'document_type_id' => '09', 'prefix' => 'TT', 'category' => 'advanced', 'label' => 'GUÍA DE REMISIÓN REMITENTE'],
-        ['key' => 'dispatch_carrier',    'document_type_id' => '31', 'prefix' => 'VV', 'category' => 'advanced', 'label' => 'GUÍA DE REMISIÓN TRANSPORTISTA'],
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        ['key' => 'retention',           'document_type_id' => '20', 'prefix' => 'RR', 'category' => 'advanced', 'label' => 'COMPROBANTE DE RETENCIÓN'],
+        ['key' => 'perception',          'document_type_id' => '40', 'prefix' => 'PP', 'category' => 'advanced', 'label' => 'COMPROBANTE DE PERCEPCIÓN'],
+        ['key' => 'dispatch_sender',     'document_type_id' => '09', 'prefix' => 'TT', 'category' => 'advanced', 'label' => 'GUÍA DE DESPACHO REMITENTE'],
+        ['key' => 'dispatch_carrier',    'document_type_id' => '31', 'prefix' => 'VV', 'category' => 'advanced', 'label' => 'GUÍA DE DESPACHO TRANSPORTISTA'],
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ['key' => 'purchase_settlement', 'document_type_id' => '04', 'prefix' => 'LL', 'category' => 'advanced', 'label' => 'LIQUIDACIÓN DE COMPRA'],
         ['key' => 'sale_note',           'document_type_id' => '80', 'prefix' => 'NV', 'category' => 'internal', 'label' => 'NOTA DE VENTA'],
         ['key' => 'warehouse_entry',     'document_type_id' => 'U2', 'prefix' => 'AI', 'category' => 'internal', 'label' => 'GUÍA DE INGRESO ALMACÉN'],

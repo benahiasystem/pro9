@@ -57,7 +57,9 @@ class CompanyController extends Controller
                 } else if ($model === SaleNote::class) {
                    array_unshift($message, 'Nota de Venta'); 
                 } else if ($model === Dispatch::class) {
-                   array_unshift($message, 'Guía de Remisión'); 
+                   // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                   array_unshift($message, 'Guía de despacho');
+                   // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 }
 
                 $verifyDocumentsInDemo['success'] = true;

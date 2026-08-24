@@ -242,7 +242,9 @@
                             class="form-group"
                         >
                             <!-- ########## INICIO CAMBIO IGV A IVA -->
-                            <label class="control-label">Afectación IVA</label>
+                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                            <label class="control-label">%IVA</label>
+                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                             <!-- ######### FIN CAMBIO IGV A IVA -->
                             <el-select
                                 v-model="form.affectation_igv_type_id"

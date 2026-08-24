@@ -32,6 +32,9 @@ return [
     'visible_fiscal_features' => [
         'isc' => false,
         'detractions' => false,
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        'ubl_attributes' => false,
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     ],
     // ######### FIN SIN DETRACCIONES E ISC
 

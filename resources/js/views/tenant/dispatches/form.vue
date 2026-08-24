@@ -2,7 +2,9 @@
     <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div class="card mb-0 pt-2 pt-md-0">
         <div class="card-header bg-info">
-            <h3 class="my-0">Nueva Guía de Remisión 1</h3>
+            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+            <h3 class="my-0">Nueva Guía de despacho</h3>
+            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
         </div>
         <div class="card-body">
             <form autocomplete="off" @submit.prevent="submit">

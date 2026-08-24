@@ -387,7 +387,9 @@ const MODULES = {
             customer:          { title: 'Cliente',                    visible: true,  type: 'customer' },
             number:            { title: 'Número',                     visible: true,  type: 'document' },
             notes:             { title: 'Notas C/D',                  visible: false, type: 'document' },
-            dispatch:          { title: 'Guía de Remisión',           visible: false, type: 'document' },
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            dispatch:          { title: 'Guía de despacho',           visible: false, type: 'document' },
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             sales_note:        { title: 'Nota de ventas',             visible: false, type: 'document' },
             order_note:        { title: 'Pedidos',                    visible: false, type: 'document' },
             send_it:           { title: 'Correo enviado',             visible: false, type: 'boolean'  },

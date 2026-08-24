@@ -126,7 +126,9 @@
                             <div :class="{'has-danger': errors.affectation_igv_type_id}"
                                  class="form-group">
                                 <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                <label class="control-label">Afectación IVA</label>
+                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                            <label class="control-label">%IVA</label>
+                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                 <!-- ######### FIN CAMBIO IGV A IVA -->
                                 <el-select v-model="form.affectation_igv_type_id"
                                            :disabled="!change_affectation_igv_type_id"
@@ -373,7 +375,9 @@
                 </div>
             </div>
 
-            <div class="form-body" v-if="config.show_item_discounts_charges_attributes !== false">
+            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+            <div class="form-body" v-if="show_ubl_attributes && config.show_item_discounts_charges_attributes !== false">
+            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                 <div class="row">
                     <div class="col-md-12 mt-3">
                             <el-collapse v-model="activeNameCollapse" accordion>
@@ -673,6 +677,9 @@ export default {
             discount_types: [],
             charge_types: [],
             attribute_types: [],
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            show_ubl_attributes: false,
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             use_price: 1,
             lot_code: null,
             change_affectation_igv_type_id: false,
@@ -704,6 +711,9 @@ export default {
             this.discount_types = response.data.discount_types
             this.charge_types = response.data.charge_types
             this.attribute_types = response.data.attribute_types
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            this.show_ubl_attributes = response.data.show_ubl_attributes === true
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             this.warehouses = response.data.warehouses
             this.$store.commit('setConfiguration', response.data.configuration)
             this.form.warehouse_id = this.defaultWarehouseId(response.data.configuration)

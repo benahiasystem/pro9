@@ -48,7 +48,9 @@ return array (
         array (
           'id' => 1,
           'value' => 'invoice',
-          'description' => 'Factura electrónica',
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'description' => 'Factura de venta',
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'order_menu' => 1,
           'created_at' => NULL,
           'updated_at' => NULL,
@@ -850,7 +852,9 @@ return array (
         10 =>
         array (
           'id' => '30',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'exportation' => 0,
           'free' => 0,
           'description' => 'Inafecto - Operación Onerosa',
@@ -1534,7 +1538,9 @@ return array (
         2 =>
         array (
           'id' => '02',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'base' => 1,
           'level' => 'global',
           'type' => 'discount',
@@ -1545,7 +1551,9 @@ return array (
         3 =>
         array (
           'id' => '03',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'base' => 0,
           'level' => 'global',
           'type' => 'discount',
@@ -1603,7 +1611,9 @@ return array (
         9 =>
         array (
           'id' => '47',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'base' => 1,
           'level' => 'item',
           'type' => 'charge',
@@ -1614,7 +1624,9 @@ return array (
         10 =>
         array (
           'id' => '48',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'base' => 0,
           'level' => 'item',
           'type' => 'charge',
@@ -1625,7 +1637,9 @@ return array (
         11 =>
         array (
           'id' => '49',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'base' => 1,
           'level' => 'global',
           'type' => 'charge',
@@ -1636,7 +1650,9 @@ return array (
         12 =>
         array (
           'id' => '50',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'base' => 0,
           'level' => 'global',
           'type' => 'charge',
@@ -1721,7 +1737,9 @@ return array (
           'id' => '01',
           'active' => 1,
           'short' => 'FT',
-          'description' => 'FACTURA ELECTRÓNICA',
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'description' => 'FACTURA DE VENTA',
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'is_sunat' => 1,
         ),
         1 =>
@@ -1769,7 +1787,9 @@ return array (
           'id' => '09',
           'active' => 1,
           'short' => NULL,
-          'description' => 'GUIA DE REMISIÓN REMITENTE',
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'description' => 'GUÍA DE DESPACHO REMITENTE',
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'is_sunat' => 1,
         ),
         7 =>
@@ -1785,7 +1805,9 @@ return array (
           'id' => '20',
           'active' => 1,
           'short' => NULL,
-          'description' => 'COMPROBANTE DE RETENCIÓN ELECTRÓNICA',
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'description' => 'COMPROBANTE DE RETENCIÓN',
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'is_sunat' => 1,
         ),
         9 =>
@@ -1793,7 +1815,9 @@ return array (
           'id' => '31',
           'active' => 1,
           'short' => NULL,
-          'description' => 'GUÍA DE REMISIÓN TRANSPORTISTA',
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'description' => 'GUÍA DE DESPACHO TRANSPORTISTA',
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'is_sunat' => 1,
         ),
         10 =>
@@ -1801,7 +1825,9 @@ return array (
           'id' => '40',
           'active' => 1,
           'short' => NULL,
-          'description' => 'COMPROBANTE DE PERCEPCIÓN ELECTRÓNICA',
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'description' => 'COMPROBANTE DE PERCEPCIÓN',
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'is_sunat' => 1,
         ),
         11 =>
@@ -1973,19 +1999,25 @@ return array (
         3 =>
         array (
           'id' => '2001',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'BIENES TRANSFERIDOS EN LA AMAZONÍA REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA',
         ),
         4 =>
         array (
           'id' => '2002',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'SERVICIOS PRESTADOS EN LA AMAZONÍA  REGIÓN SELVA PARA SER CONSUMIDOS EN LA MISMA',
         ),
         5 =>
         array (
           'id' => '2003',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'CONTRATOS DE CONSTRUCCIÓN EJECUTADOS  EN LA AMAZONÍA REGIÓN SELVA',
         ),
         6 =>
@@ -1997,37 +2029,49 @@ return array (
         7 =>
         array (
           'id' => '2005',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Venta realizada por emisor itinerante',
         ),
         8 =>
         array (
           'id' => '2006',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Operación sujeta a detracción',
         ),
         9 =>
         array (
           'id' => '2007',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Operación sujeta al IVAP',
         ),
         10 =>
         array (
           'id' => '2008',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'VENTA EXONERADA DEL IGV-ISC-IPM. PROHIBIDA LA VENTA FUERA DE LA ZONA COMERCIAL DE TACNA',
         ),
         11 =>
         array (
           'id' => '2009',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'PRIMERA VENTA DE MERCANCÍA IDENTIFICABLE ENTRE USUARIOS DE LA ZONA COMERCIAL',
         ),
         12 =>
         array (
           'id' => '2010',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Restitucion Simplificado de Derechos Arancelarios',
         ),
       ),
@@ -2396,7 +2440,9 @@ return array (
         8 =>
         array (
           'id' => '2003',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Detracciones',
         ),
         9 =>
@@ -2414,7 +2460,9 @@ return array (
         11 =>
         array (
           'id' => '3001',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'FISE (Ley 29852) Fondo Inclusión Social Energético',
         ),
       ),
@@ -2466,19 +2514,25 @@ return array (
         6 =>
         array (
           'id' => '007',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Cheques con la cláusula de "NO NEGOCIABLE", "INTRANSFERIBLES", "NO A LA ORDEN" u otra equivalente, a que se refiere el inciso g) del artículo 5° de la ley',
         ),
         7 =>
         array (
           'id' => '008',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Efectivo, por operaciones en las que no existe obligación de utilizar medio de pago',
         ),
         8 =>
         array (
           'id' => '009',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Efectivo, en los demás casos',
         ),
         9 =>
@@ -2490,19 +2544,25 @@ return array (
         10 =>
         array (
           'id' => '011',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Documentos emitidos por las EDPYMES y las cooperativas de ahorro y crédito no autorizadas a captar depósitos del público',
         ),
         11 =>
         array (
           'id' => '012',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Tarjeta de crédito emitida en el país o en el exterior por una empresa no perteneciente al sistema financiero, cuyo objeto principal sea la emisión y administración de tarjetas de crédito',
         ),
         12 =>
         array (
           'id' => '013',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Tarjetas de crédito emitidas en el exterior por empresas bancarias o financieras no domiciliadas',
         ),
         13 =>
@@ -2538,19 +2598,25 @@ return array (
         18 =>
         array (
           'id' => '106',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Remesa documentaria - Comercio exterior',
         ),
         19 =>
         array (
           'id' => '107',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Carta de crédito simple - Comercio exterior',
         ),
         20 =>
         array (
           'id' => '108',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Carta de crédito documentario - Comercio exterior',
         ),
         21 =>
@@ -2579,14 +2645,18 @@ return array (
         1 =>
         array (
           'id' => '02',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'percentage' => '1.00',
           'description' => 'Percepción a la adquisición de combustible',
         ),
         2 =>
         array (
           'id' => '03',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'percentage' => '0.50',
           'description' => 'Percepción realizada al agente de percepción con tasa especial',
         ),
@@ -2721,7 +2791,9 @@ return array (
         2 =>
         array (
           'id' => '03',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Número SCOP',
         ),
         3 =>
@@ -2733,7 +2805,9 @@ return array (
         4 =>
         array (
           'id' => '05',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Número de constancia de detracción',
         ),
         5 =>
@@ -2767,19 +2841,25 @@ return array (
         2 =>
         array (
           'id' => '03',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Boleta de Venta – emitida por anticipos',
         ),
         3 =>
         array (
           'id' => '04',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Ticket de Salida - ENAPU',
         ),
         4 =>
         array (
           'id' => '05',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Código SCOP',
         ),
         5 =>
@@ -2965,7 +3045,9 @@ return array (
         12 =>
         array (
           'id' => '18',
-          'active' => 1,
+          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+          'active' => 0,
+          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'description' => 'Traslado emisor itinerante de comprobantes de pago Aquí no se está considerando el traslado a zona primaria.',
           'discount_stock' => 0,
         ),

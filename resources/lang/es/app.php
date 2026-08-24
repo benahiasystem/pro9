@@ -45,10 +45,14 @@ return [
     'fields.retail_unit_price' => 'Precio unitario x menor',
     'fields.internal_id' => 'Código interno',
     // ########## INICIO CAMBIO IGV A IVA
-    'fields.affectation_igv_type_id' => 'Tipo Afectación IVA',
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'fields.affectation_igv_type_id' => 'Tipo %IVA',
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     // ######### FIN CAMBIO IGV A IVA
     // ########## INICIO CAMBIO IGV A IVA
-    'fields.affectation_igv_type_description' => 'Tipo Afectación IVA',
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    'fields.affectation_igv_type_description' => 'Tipo %IVA',
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     // ######### FIN CAMBIO IGV A IVA
     'fields.add_charge_or_discount' => 'Agregar Cargo o Descuento',
     'fields.charge_or_discount_type_id' => 'Tipo Cargo / Descuento',

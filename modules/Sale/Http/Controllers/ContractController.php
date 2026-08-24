@@ -199,6 +199,9 @@ class ContractController extends Controller
 
         $operation_types = OperationType::whereActive()->get();
         $is_client = $this->getIsClient();
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $show_ubl_attributes = \App\Services\LocalFiscalDocumentPolicy::showUblAttributes();
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         return compact(
             'items',
@@ -210,7 +213,8 @@ class ContractController extends Controller
             'charge_types',
             'attribute_types',
             'operation_types',
-            'is_client'
+            'is_client',
+            'show_ubl_attributes'
         );
     }
 

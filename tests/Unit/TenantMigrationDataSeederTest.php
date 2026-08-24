@@ -43,6 +43,9 @@ class TenantMigrationDataSeederTest extends TestCase
         // ########## INICIO CAMBIO SUNAT A SENIAT
         $identityDocumentRenameMigrations = glob(database_path('migrations/tenant/*_rename_undomiciled_tax_document_to_doc_sin_rif.php')) ?: [];
         // ######### FIN CAMBIO SUNAT A SENIAT
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $catalogNameMigrations = glob(database_path('migrations/tenant/*_configure_venezuela_catalog_names.php')) ?: [];
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         self::assertCount(331, $createMigrations);
         self::assertCount(1, $foreignKeyMigrations);
@@ -53,12 +56,17 @@ class TenantMigrationDataSeederTest extends TestCase
         // ######### FIN CAMBIO AFECTACIÓN IVA
         // ########## INICIO CAMBIO SUNAT A SENIAT
         self::assertCount(1, $identityDocumentRenameMigrations);
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        self::assertCount(1, $catalogNameMigrations);
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         // ########### INICIO CONTRATO FLUJO DE PRODUCTOS ###########
         self::assertCount(
             1,
             glob(database_path('migrations/tenant/*_repair_items_parent_item_contract.php')) ?: []
         );
-        self::assertCount(353, glob(database_path('migrations/tenant/*.php')) ?: []);
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        self::assertCount(354, glob(database_path('migrations/tenant/*.php')) ?: []);
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         // ########### FIN CONTRATO FLUJO DE PRODUCTOS ###########
         // ######### FIN CAMBIO SUNAT A SENIAT
     }

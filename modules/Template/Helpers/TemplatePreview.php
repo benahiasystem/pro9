@@ -130,7 +130,9 @@ class TemplatePreview
         $environment = environment_active();
         $url_cpe = (is_null($environment->url_cpe) || $environment->url_cpe === '') ? 'buscar' : $environment->url_cpe;
 
-        $footer_text_1 = 'Representación impresa de la FACTURA ELECTRÓNICA';
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $footer_text_1 = 'Representación impresa de la FACTURA DE VENTA';
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         $footer_text_2 = 'Para consultar el comprobante ingresar a ' . $url_cpe;
 
 

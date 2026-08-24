@@ -62,9 +62,19 @@ class TemplatePdf
             $footer_text_3 = null;
         } else {
             if($model === 'dispatch') {
-                $document->document_type_name = 'GUÍA DE REMISIÓN ELECTRÓNICA - REMITENTE';
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                $document->document_type_name = 'GUÍA DE DESPACHO REMITENTE';
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             } else {
-                $document->document_type_name .= ' ELECTRÓNICA';
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                $documentNames = [
+                    '01' => 'FACTURA DE VENTA',
+                    '07' => 'NOTA DE CRÉDITO',
+                    '08' => 'NOTA DE DÉBITO',
+                ];
+                $documentTypeId = (string) ($document->document_type_id ?? '');
+                $document->document_type_name = $documentNames[$documentTypeId] ?? $document->document_type_name;
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             }
             $footer_text_1 = $document->print_footer_text;
             $footer_text_2 = 'Representación impresa de la ' . $document->document_type_name;

@@ -123,9 +123,12 @@ class FixedAssetPurchaseController extends Controller
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();
         $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $show_ubl_attributes = \App\Services\LocalFiscalDocumentPolicy::showUblAttributes();
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         return compact('fixed_asset_items', 'affectation_igv_types', 'system_isc_types', 'price_types',
-                        'discount_types', 'charge_types', 'attribute_types');
+                        'discount_types', 'charge_types', 'attribute_types', 'show_ubl_attributes');
     }
 
     public function record($id)

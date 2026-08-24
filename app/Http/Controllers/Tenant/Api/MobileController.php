@@ -798,7 +798,9 @@ class MobileController extends Controller
                 'document_related' => [
                     'documento'=>[
                         'id' =>  $document->document_type_id,
-                        'descripcion' => ($document->document_type_id=='01')?'Factura Electrónica':'Boleta Electrónica'
+                        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                        'descripcion' => ($document->document_type_id=='01') ? 'Factura de venta' : 'Boleta de venta histórica'
+                        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                     ],
                     'document_type_id' => $document->document_type_id,
                     'serie' => $document->series,

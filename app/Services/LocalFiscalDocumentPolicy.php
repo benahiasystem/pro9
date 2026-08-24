@@ -37,6 +37,13 @@ final class LocalFiscalDocumentPolicy
     {
         return (bool) config('venezuela.visible_fiscal_features.detractions', false);
     }
+
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    public static function showUblAttributes(): bool
+    {
+        return (bool) config('venezuela.visible_fiscal_features.ubl_attributes', false);
+    }
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     // ######### FIN SIN DETRACCIONES E ISC
 }
 // ######### FIN CAMBIO SIN XML CDR SUNAT

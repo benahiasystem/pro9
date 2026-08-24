@@ -667,7 +667,9 @@ var app_cart = new Vue({
                 return 'Al ingresar tu Cédula se generará automáticamente una Nota de venta.';
             }
             if (docType === '6') {
-                return 'Al ingresar tu RIF se generará automáticamente tu Factura electrónica.';
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                return 'Al ingresar tu RIF se generará automáticamente tu Factura de venta.';
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             }
             return 'Sin Cédula ni RIF se emitirá una Nota de venta.';
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA

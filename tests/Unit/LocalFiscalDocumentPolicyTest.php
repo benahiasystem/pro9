@@ -31,9 +31,15 @@ class LocalFiscalDocumentPolicyTest extends TestCase
     {
         config()->set('venezuela.visible_fiscal_features.isc', false);
         config()->set('venezuela.visible_fiscal_features.detractions', false);
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        config()->set('venezuela.visible_fiscal_features.ubl_attributes', false);
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         self::assertFalse(LocalFiscalDocumentPolicy::showIsc());
         self::assertFalse(LocalFiscalDocumentPolicy::showDetractions());
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        self::assertFalse(LocalFiscalDocumentPolicy::showUblAttributes());
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
 }
 // ######### FIN CAMBIO SIN XML CDR SUNAT

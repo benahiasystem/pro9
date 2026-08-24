@@ -44,7 +44,9 @@
                     <div class="col-md-6" v-if="affectation_igv_types.length > 1">
                         <div class="form-group" :class="{'has-danger': errors.affectation_igv_type_id}">
                             <!-- ########## INICIO CAMBIO IGV A IVA -->
-                            <label class="control-label">Afectación IVA</label>
+                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                            <label class="control-label">%IVA</label>
+                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                             <!-- ######### FIN CAMBIO IGV A IVA -->
                             <el-select v-model="form.affectation_igv_type_id" :disabled="!change_affectation_igv_type_id" filterable>
                                 <el-option v-for="option in affectation_igv_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
@@ -69,7 +71,9 @@
                             <small class="form-control-feedback" v-if="errors.unit_price" v-text="errors.unit_price[0]"></small>
                         </div>
                     </div>
-                    <div class="col-md-12 mt-3" v-if="config.show_item_discounts_charges_attributes !== false">
+                    <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                    <div class="col-md-12 mt-3" v-if="show_ubl_attributes && config.show_item_discounts_charges_attributes !== false">
+                    <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                         <section :class="['card mb-2 card-transparent', {'card-collapsed': !showAdditionalInfo}]" id="card-section">
                                 <header class="hoverable bg-light border-top rounded-0 py-1 d-flex align-items-center justify-content-between" style="cursor: pointer; padding: 4px 0 !important;" id="card-click" @click="toggleAdditionalInfo">
                                     <p class="ps-1 m-0">Información adicional atributos UBL 2.1</p>
@@ -236,6 +240,9 @@
                 change_affectation_igv_type_id: false,
                 charge_types: [],
                 attribute_types: [],
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                show_ubl_attributes: false,
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 showAdditionalInfo: false,
                 loading_search: false,
                 itemSearchTerm: '',
@@ -266,6 +273,9 @@
                 this.discount_types = response.data.discount_types
                 this.charge_types = response.data.charge_types
                 this.attribute_types = response.data.attribute_types
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                this.show_ubl_attributes = response.data.show_ubl_attributes === true
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             })
 
             this.$eventHub.$on('reloadDataFixedAssetItems', (fixed_asset_item_id) => {

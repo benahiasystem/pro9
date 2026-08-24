@@ -419,7 +419,9 @@ class DispatchController extends Controller
             }
         }
 
-        $message = "Se creo la guía de remisión {$document->series}-{$document->number}";
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $message = "Se creó la guía de despacho {$document->series}-{$document->number}";
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         return [
             'success' => true,

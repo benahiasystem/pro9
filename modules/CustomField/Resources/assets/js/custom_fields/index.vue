@@ -35,7 +35,9 @@
                 <th>Requerido</th>
                 <th>Factura/Boleta</th>
                 <th>Nota de venta</th>
-                <th>Guía de remisión</th>
+                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                <th>Guía de despacho</th>
+                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                 <th>Pedido</th>
                 <th>Cotización</th>
                 <th>Acciones</th>

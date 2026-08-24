@@ -119,7 +119,9 @@ export default {
       ]
     } else {
       this.document_types = [
-        { id: '09', description: 'Guía de remisión remitente' }
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        { id: '09', description: 'Guía de despacho remitente' }
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
       ]
     }
     if (Object.keys(this.$props.document_data).length > 0) {

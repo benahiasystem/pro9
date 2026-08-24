@@ -7,13 +7,17 @@
                 <svg  xmlns="http://www.w3.org/2000/svg" style="margin-top: -5px;" width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-truck"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" /></svg>
             </a></h2>
             <ol class="breadcrumbs">
-                <li class="active"><span> Nueva Guía de Remisión </span></li>
+                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                <li class="active"><span>Nueva Guía de despacho</span></li>
+                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
             </ol>
         </div>
         <div class="card tab-content tab-content-default row-new mb-0 pt-2 pt-md-0 mt-5">
             <!-- <div class="card-header bg-info">
 
-                <h3 class="my-0">Nueva Guía de Remisión</h3>
+                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                <h3 class="my-0">Nueva Guía de despacho</h3>
+                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
             </div> -->
             <div class="invoice p-3 invoice-dispatch">
                 <form autocomplete="off" @submit.prevent="submit">

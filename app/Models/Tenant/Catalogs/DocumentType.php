@@ -64,7 +64,10 @@
     {
         use UsesTenantConnection;
 
-        public const SALE_DOCUMENT_TYPES = ['01', '03', '80'];
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        public const SALE_DOCUMENT_TYPES = ['01', '80'];
+        public const HISTORICAL_SALE_DOCUMENT_TYPES = ['01', '03', '80'];
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         public const DOCUMENT_TYPE_NOTES = ['07', '08'];
         public const CREDIT_NOTE_ID = '07';
@@ -149,7 +152,9 @@
          */
         public function scopeOnlyAvaibleDocuments($query)
         {
-            return $query->OnlyActive()->wherein('id', ['01', '03', '07', '08', '09', '20', '40', '80', '04', 'U2', 'U3', 'U4', '31']);
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            return $query->OnlyActive()->wherein('id', ['01', '07', '08', '09', '20', '40', '80', '04', 'U2', 'U3', 'U4', '31']);
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         }
 
         /**

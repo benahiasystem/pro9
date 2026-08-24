@@ -471,11 +471,13 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Visualizar precio de productos en GRE Remitente
+                                                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                                                 <el-tooltip class="item"
-                                                    content="Muestra el precio y total de un producto al generar una guía de remisión remitente"
+                                                    content="Muestra el precio y total de un producto al generar una guía de despacho del remitente"
                                                     effect="dark" placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.enabled_price_items_dispatch }" class="form-group">
                                                 <el-switch v-model="form.enabled_price_items_dispatch" @change="submit"></el-switch>
@@ -1843,11 +1845,13 @@
                                         <div class="col-12">
                                             <label class="control-label">Mostrar el nombre del PDF
 
+                                                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                                                 <el-tooltip class="item"
-                                                    content="Muestra el nombre del producto que se ingresa en el pdf, en vez del nombre del producto. Disponible para CPE, Cotización, Guía de Remisión, Compra y Nota de venta"
+                                                    content="Muestra el nombre del producto que se ingresa en el pdf, en vez del nombre del producto. Disponible para CPE, Cotización, Guía de despacho, Compra y Nota de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.show_pdf_name }" class="form-group">
                                                 <el-switch v-model="form.show_pdf_name"
@@ -2787,7 +2791,9 @@
                                         </div>
 
                                         <div class="col-12">
-                                            <label class="control-label">Envío de guía de remisión automático</label>
+                                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                                            <label class="control-label">Envío de guía de despacho automático</label>
+                                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                             <div :class="{ 'has-danger': errors.auto_send_dispatchs_to_sunat }" class="form-group">
                                                 <el-switch v-model="form.auto_send_dispatchs_to_sunat" @change="submit"></el-switch>
                                                 <small v-if="errors.auto_send_dispatchs_to_sunat" class="form-control-feedback"
@@ -2815,7 +2821,9 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="fw-semibold m-0 d-flex align-items-center gap-2">
                                                 <span class="dot"></span>
-                                                <span class="text-primary text-uppercase">Guías de Remisión</span>
+                                                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
+                                                <span class="text-primary text-uppercase">Guías de despacho</span>
+                                                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                             </h5>
                                         </div>
                                         <div>
@@ -2858,11 +2866,13 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Visualizar precio de productos en GRE Remitente
+                                                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                                                 <el-tooltip class="item"
-                                                    content="Muestra el precio y total de un producto al generar una guía de remisión remitente"
+                                                    content="Muestra el precio y total de un producto al generar una guía de despacho del remitente"
                                                     effect="dark" placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
+                                                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.enabled_price_items_dispatch }" class="form-group">
                                                 <el-switch v-model="form.enabled_price_items_dispatch" @change="submit"></el-switch>

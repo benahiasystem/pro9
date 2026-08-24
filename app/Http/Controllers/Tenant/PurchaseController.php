@@ -271,6 +271,9 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             $is_client = $this->getIsClient();
             $configuration = Configuration::first();
             $configuration = $configuration->getCollectionData();
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            $show_ubl_attributes = \App\Services\LocalFiscalDocumentPolicy::showUblAttributes();
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
             return compact(
                 'items',
@@ -284,7 +287,8 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 'warehouses',
                 'operation_types',
                 'is_client',
-                'configuration'
+                'configuration',
+                'show_ubl_attributes'
             );
         }
 
@@ -1362,4 +1366,3 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             return $purchaseOrder;
         }
     }
-

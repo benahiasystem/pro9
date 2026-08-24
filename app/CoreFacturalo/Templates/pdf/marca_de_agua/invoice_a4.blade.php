@@ -361,7 +361,9 @@
                 @if($document->guides)
                     <tr>
                         <td class="font-sm" width="100px">
-                            <strong>Guía de Remisión</strong>
+                            {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
+                            <strong>Guía de despacho</strong>
+                            {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                         </td>
                         <td class="font-sm" width="8px">:</td>
                         <td class="font-sm" colspan="4">

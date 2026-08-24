@@ -831,7 +831,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                         <button
                                             type="button"
                                             class="{{ ($firstLevel === 'dispatches') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"
-                                            title="Nueva guía de remisión"
+                                            {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
+                                            title="Nueva guía de despacho"
+                                            {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                                             onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ url('dispatches/create') }}';"
                                         >
                                             Crear
@@ -844,7 +846,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                         <button
                                             type="button"
                                             class="{{ ($firstLevel === 'dispatch_carrier') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"
-                                            title="Nueva guía de remisión"
+                                            {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
+                                            title="Nueva guía de despacho"
+                                            {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                                             onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ url('dispatch_carrier/create') }}';"
                                         >
                                             Crear

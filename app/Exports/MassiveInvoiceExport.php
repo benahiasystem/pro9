@@ -139,7 +139,9 @@ class MassiveInvoiceExport extends DefaultValueBinder implements
     protected function tipoComprobante(?string $tipo): string
     {
         $tipos = [
-            '01' => 'FACTURA ELECTRÓNICA',
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            '01' => 'FACTURA DE VENTA',
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             '03' => 'BOLETA DE VENTA ELECTRÓNICA',
         ];
 
