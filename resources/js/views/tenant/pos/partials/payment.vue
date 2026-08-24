@@ -351,31 +351,10 @@
                                 </div>
                             </div>
 
-                            <div v-if="form_payment.payment_method_type_id=='01'"
-                                     class="col-lg-12 mt-3">
-                                    <div class="row">
-                                        <div class="col-lg-3">
-                                            <button class="btn btn-block btn-secondary"
-                                                    @click="setAmountCash(10)">{{ currencyTypeActive.symbol }}10
-                                            </button>
-                                        </div>
-                                        <div class="col-lg-3">
-                                            <button class="btn btn-block btn-secondary"
-                                                    @click="setAmountCash(20)">{{ currencyTypeActive.symbol }}20
-                                            </button>
-                                        </div>
-                                        <div class="col-lg-3">
-                                            <button class="btn btn-block btn-secondary"
-                                                    @click="setAmountCash(50)">{{ currencyTypeActive.symbol }}50
-                                            </button>
-                                        </div>
-                                        <div class="col-lg-3">
-                                            <button class="btn btn-block btn-secondary"
-                                                    @click="setAmountCash(100)">{{ currencyTypeActive.symbol }}100
-                                            </button>
-                                        </div>
-                                    </div>
-                            </div>
+                            <!-- ########## INICIO CAMBIO QUITAR SELECCIÓN DE BILLETES -->
+                            <!-- Se retiraron los accesos rápidos de denominaciones del pago en efectivo. -->
+                            <!-- El monto recibido se conserva en el campo manual superior y el vuelto no cambia. -->
+                            <!-- ######### FIN CAMBIO QUITAR SELECCIÓN DE BILLETES -->
                         </div>
                     </div>
                 </div>
