@@ -205,7 +205,6 @@ export default {
   box-sizing: border-box;
   max-width: 100%;
   min-width: 0;
-  overflow-x: hidden;
   padding: 0;
 }
 .wg-hint-bar {
@@ -241,9 +240,8 @@ export default {
 .wg-grid {
   box-sizing: border-box;
   display: grid;
-  gap: 16px;
+  gap: 10px;
   grid-auto-flow: dense;
-  grid-auto-rows: 96px;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   max-width: 100%;
   min-width: 0;

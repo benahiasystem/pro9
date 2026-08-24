@@ -9,14 +9,21 @@
             </div>
             <div class="d-flex align-items-center h-100">
               {{ filterLabel }}
-              <el-tooltip :content="showLegacyDashboard ? 'Probar el nuevo dashboard de widgets' : 'Volver al dashboard clásico'" placement="bottom">
+              <el-tooltip :content="dashboardToggleTooltip" placement="bottom">
                 <el-button
                   size="small"
-                  class="mx-2 p-2 btn-dashboard-filter"
+                  :plain="showLegacyDashboard"
+                  class="ms-2 p-2 btn-dashboard-filter"
+                  :class="{ 'is-widgets': !showLegacyDashboard }"
                   style="padding: 8px !important;"
+                  :aria-pressed="showLegacyDashboard ? 'false' : 'true'"
                   @click="toggleDashboardVersion"
                 >
-                  <i class="ti ti-layout-dashboard" style="font-size: 20px;"></i>
+                  <i
+                    class="ti"
+                    :class="showLegacyDashboard ? 'ti-layout-grid' : 'ti-layout-dashboard'"
+                    style="font-size: 20px;"
+                  ></i>
                 </el-button>
               </el-tooltip>
               <el-button
@@ -886,6 +893,11 @@ export default {
     },
 
   computed: {
+    dashboardToggleTooltip() {
+      return this.showLegacyDashboard
+        ? 'Dashboard clásico activo · cambiar al de widgets'
+        : 'Dashboard de widgets activo · volver al clásico';
+    },
     filterLabel() {
       switch(this.form.period) {
         case 'all':
