@@ -31,6 +31,8 @@ if ($hostname)
             // factura, boleta, nota de venta
             Route::prefix('documents')->group(function () {
                 Route::get('records-scroll', 'Api\DocumentCentralizedController@byScroll');
+                // catalogos de "operacion sujeta a detraccion" (1001)
+                Route::get('detraction-tables', 'Api\DocumentCentralizedController@detractionTables');
             });
 
             // pagos de comprobantes (factura, boleta)
