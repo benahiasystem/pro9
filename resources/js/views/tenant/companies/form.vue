@@ -324,16 +324,9 @@
                         </div>
                         <div class="row mt-4">
                             <h4 class="col-12 m-0 fw-medium">Campos adicionales</h4>
-                            <div class="col-md-6">
-                                <div :class="{'has-danger': errors.detraction_account}"
-                                     class="form-group">
-                                    <label class="control-label">N° Cuenta de detracción</label>
-                                    <el-input v-model="form.detraction_account"></el-input>
-                                    <small v-if="errors.detraction_account"
-                                           class="form-control-feedback"
-                                           v-text="errors.detraction_account[0]"></small>
-                                </div>
-                            </div>
+                            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                            <!-- La cuenta de detracción se conserva como dato compatible, sin control editable. -->
+                            <!-- ######### FIN SIN DETRACCIONES E ISC -->
                             <div class="col-md-6">
                                 <div :class="{'has-danger': errors.mtc_code}"
                                      class="form-group">

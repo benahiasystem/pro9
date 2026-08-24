@@ -79,21 +79,9 @@
                         <i class="fa fa-money-bill-wave-alt"></i> Reporte de
                         Pagos <span class="caret"></span>
                     </button>
-                    <!-- validadores apiperu  -->
-                    <a
-                        href="#"
-                        @click.prevent="showDialogApiPeruDevValidate = true"
-                        v-if="view_apiperudev_validator_cpe"
-                        class="btn btn-custom btn-sm  mt-2 me-2"
-                        ><i class="fa fa-check"></i> Validación masiva</a
-                    >
-                    <a
-                        href="#"
-                        @click.prevent="showDialogValidate = true"
-                        v-if="view_validator_cpe"
-                        class="btn btn-custom btn-sm  mt-2 me-2"
-                        ><i class="fa fa-file"></i> Validar CPE</a
-                    >
+                    <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                    <!-- La operación local no ofrece validación CPE individual ni masiva. -->
+                    <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
                     <div
                         class="dropdown-menu"
@@ -332,9 +320,10 @@
                             <td v-if="col.visible && col.key === 'balance'" :key="col.key" class="text-end" :class="{ 'text-warning': row.balance > 0, 'text-success': row.balance == 0 }">{{ row.currency_type_symbol }} {{ formatDecimal(row.balance) }}</td>
                             <td v-if="col.visible && col.key === 'purchase_order'" :key="col.key">{{ row.purchase_order }}</td>
                             <td v-if="col.visible && col.key === 'downloads'" :key="col.key" class="text-center col-downloads" @click.stop>
-                                <button v-if="row.has_xml" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_xml)">XML</button>
+                                <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                                <!-- XML y CDR se omiten; PDF permanece disponible. -->
+                                <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                                 <button v-if="row.has_pdf" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_pdf)">PDF</button>
-                                <button v-if="row.has_cdr" type="button" style="min-width: 41px" class="btn waves-effect waves-light btn-xs btn-info m-1__2 me-2" @click.prevent="clickDownload(row.download_cdr)">CDR</button>
                             </td>
                             <td v-if="col.visible && col.key === 'actions' && typeUser != 'integrator'" :key="col.key" class="text-end" @click.stop>
                             <el-dropdown trigger="click" size="small">
@@ -352,14 +341,9 @@
 
                                   <!-- Descargas: en celular la columna XML/PDF/CDR se oculta
                                        (hacía filas de ~300px) y sus acciones viven aquí -->
-                                  <el-dropdown-item
-                                    v-if="row.has_xml"
-                                    class="mobile-item-only"
-                                    @click.native="clickDownload(row.download_xml)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-code me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M10 13l-1 2l1 2" /><path d="M14 13l1 2l-1 2" /></svg>
-                                    Descargar XML
-                                  </el-dropdown-item>
+                                  <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                                  <!-- El menú móvil tampoco ofrece XML ni CDR. -->
+                                  <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
                                   <el-dropdown-item
                                     v-if="row.has_pdf"
@@ -370,14 +354,6 @@
                                     Descargar PDF
                                   </el-dropdown-item>
 
-                                  <el-dropdown-item
-                                    v-if="row.has_cdr"
-                                    class="mobile-item-only"
-                                    @click.native="clickDownload(row.download_cdr)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-check me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 15l2 2l4 -4" /></svg>
-                                    Descargar CDR
-                                  </el-dropdown-item>
 
                                   <el-dropdown-item
                                     v-if="configuration.permission_to_edit_cpe && row.state_type_id === '01' && userPermissionEditCpe && row.is_editable"
@@ -397,13 +373,9 @@
                                     </a>
                                   </el-dropdown-item>
 
-                                  <el-dropdown-item
-                                    v-if="row.btn_resend && !isClient"
-                                    @click.native="clickResend(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-forward-up me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M15 14l4 -4l-4 -4" /><path d="M19 10h-11a4 4 0 1 0 0 8h1" /></svg>
-                                    Reenviar
-                                  </el-dropdown-item>
+                                  <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                                  <!-- El reenvío fiscal no se ofrece en operación local. -->
+                                  <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
                                   <el-dropdown-item
                                     v-if="row.btn_recreate_document"
@@ -460,20 +432,9 @@
                                     </a>
                                   </el-dropdown-item>
 
-                                  <el-dropdown-item
-                                    v-if="row.btn_constancy_detraction"
-                                    @click.native="clickCDetraction(row.id)"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-file-text me-2">
-                                      <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                      <path d="M14 3v4a1 1 0 0 0 1 1h4"></path>
-                                      <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z"></path>
-                                      <line x1="9" y1="9" x2="10" y2="9"></line>
-                                      <line x1="9" y1="13" x2="15" y2="13"></line>
-                                      <line x1="9" y1="17" x2="15" y2="17"></line>
-                                    </svg>
-                                    C. Detracción
-                                  </el-dropdown-item>
+                                  <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                                  <!-- La constancia de detracción no se ofrece desde el listado. -->
+                                  <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
                                   <el-dropdown-item
                                     v-if="isClient && !row.send_server"
@@ -571,69 +532,6 @@
                                 </el-dropdown-menu>
                             </el-dropdown> -->
 
-                            <!-- <button type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-danger m-1__2"
-                                    @click.prevent="clickDeleteDocument(row.id)"
-                                    v-if="row.btn_delete_doc_type_03">
-                                Eliminar
-                            </button>
-                            <button type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickChangeToRegisteredStatus(row.id)"
-                                    v-if="row.btn_change_to_registered_status">
-                                Cambiar a estado registrado
-                            </button>
-                            <button type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickReStore(row.id)"
-                                    v-if="row.btn_recreate_document">
-                                Volver a recrear
-                            </button>
-                            <button type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-danger m-1__2"
-                                    @click.prevent="clickVoided(row.id)"
-                                    v-if="row.btn_voided">
-                                Anular
-                            </button>
-                            <a :href="`/${resource}/note/${row.id}`"
-                               class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
-                               v-if="row.btn_note">
-                                Nota
-                            </a>
-                            <a :href="`/dispatches/create/${row.id}`"
-                               class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
-                               v-if="row.btn_guide">
-                                Guía
-                            </a>
-                            <button type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickResend(row.id)"
-                                    v-if="row.btn_resend && !isClient">
-                                Reenviar
-                            </button>
-                            <button type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickSendOnline(row.id)"
-                                    v-if="isClient && !row.send_server">
-                                Enviar Servidor
-                            </button>
-                            <button type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickCheckOnline(row.id)"
-                                    v-if="isClient && row.send_server && (row.state_type_id === '01' || row.state_type_id === '03')">
-                                Consultar Servidor
-                            </button>
-                            <button type="button"
-                                    class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                    @click.prevent="clickOptions(row.id)">
-                                Opciones
-                            </button>
-                            <button type="button"
-                                    v-if="row.btn_constancy_detraction"
-                                    class="btn waves-effect waves-light btn-xs btn-success m-1__2"
-                                    @click.prevent="clickCDetraction(row.id)">
-                                C. Detracción
-                            </button> -->
                         </td>
                         </template>
                     </tr>
@@ -664,10 +562,9 @@
                 :configuration="configuration"
             ></document-payments>
 
-            <document-constancy-detraction
-                :showDialog.sync="showDialogCDetraction"
-                :recordId="recordId"
-            ></document-constancy-detraction>
+            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+            <!-- El diálogo de constancia de detracción no se monta. -->
+            <!-- ######### FIN SIN DETRACCIONES E ISC -->
             <report-payment
                 :showDialog.sync="showDialogReportPayment"
             ></report-payment>
@@ -676,13 +573,9 @@
                 :showDialog.sync="showDialogReportPaymentComplete"
             ></report-payment-complete>
 
-            <DocumentValidate
-                :showDialogValidate.sync="showDialogValidate"
-            ></DocumentValidate>
-
-            <massive-validate-cpe
-                :showDialogValidate.sync="showDialogApiPeruDevValidate"
-            ></massive-validate-cpe>
+            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+            <!-- Los validadores CPE no se montan en operación local. -->
+            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
             <document-import-excel
                 :showDialog.sync="showImportExcelDialog"
@@ -777,11 +670,14 @@ import DocumentImportExcel from "./partials/ImportExcel.vue";
 import DataTable from "../../../components/DataTableDocuments.vue";
 import ItemsImport from "./import.vue";
 import { deletable } from "../../../mixins/deletable";
-import DocumentConstancyDetraction from "./partials/constancy_detraction.vue";
+// ########## INICIO SIN DETRACCIONES E ISC
+// El componente exclusivo de constancia de detracción no se importa.
+// ######### FIN SIN DETRACCIONES E ISC
 import ReportPayment from "./partials/report_payment.vue";
 import ReportPaymentComplete from "./partials/report_payment_complete.vue";
-import DocumentValidate from "./partials/validate.vue";
-import MassiveValidateCpe from "../../../../../modules/ApiPeruDev/Resources/assets/js/components/MassiveValidateCPE.vue";
+// ########## INICIO CAMBIO SIN XML CDR SUNAT
+// Los validadores CPE no forman parte de la operación local.
+// ######### FIN CAMBIO SIN XML CDR SUNAT
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import DocumentRetention from "./partials/retention.vue";
 import DocumentDetailDrawer from "./partials/detail-drawer.vue";
@@ -819,24 +715,30 @@ export default {
         DocumentOptions,
         DocumentPayments,
         DataTable,
-        DocumentConstancyDetraction,
+        // ########## INICIO SIN DETRACCIONES E ISC
+        // El diálogo de detracción no se registra.
+        // ######### FIN SIN DETRACCIONES E ISC
         ReportPayment,
         ReportPaymentComplete,
-        DocumentValidate,
-        MassiveValidateCpe,
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // Los componentes de validación fiscal no se registran.
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         DocumentImportExcel,
         DocumentRetention,
         DocumentDetailDrawer
     },
     data() {
         return {
-            showDialogApiPeruDevValidate: false,
-            showDialogValidate: false,
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // No se mantiene estado para diálogos de validación fiscal.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             showDialogReportPayment: false,
             showDialogReportPaymentComplete: false,
             showDialogVoided: false,
             showImportDialog: false,
-            showDialogCDetraction: false,
+            // ########## INICIO SIN DETRACCIONES E ISC
+            // No se mantiene estado para constancias de detracción.
+            // ######### FIN SIN DETRACCIONES E ISC
             showImportSecondDialog: false,
             showImportExcelDialog: false,
             showDialogRetention: false,
@@ -1011,21 +913,9 @@ export default {
         clickDownload(download) {
             window.open(download, "_blank");
         },
-        clickResend(document_id) {
-            this.$http
-                .get(`/${this.resource}/send/${document_id}`)
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(response.data.message);
-                        this.$eventHub.$emit("reloadData");
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    this.$message.error(error.response.data.message);
-                });
-        },
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // El listado no conserva un método de reenvío fiscal.
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         clickSendOnline(document_id) {
             this.$http
                 .get(`/${this.resource}/send_server/${document_id}/1`)
@@ -1060,10 +950,9 @@ export default {
                     this.$message.error(error.response.data.message);
                 });
         },
-        clickCDetraction(recordId) {
-            this.recordId = recordId;
-            this.showDialogCDetraction = true;
-        },
+        // ########## INICIO SIN DETRACCIONES E ISC
+        // La acción de constancia de detracción se retiró del listado.
+        // ######### FIN SIN DETRACCIONES E ISC
         clickOptions(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptions = true;

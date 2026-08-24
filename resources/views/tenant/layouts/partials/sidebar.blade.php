@@ -904,24 +904,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                 <span>Comprobantes pendientes</span>
                             </a>
                             <ul class="nav nav-children">
-                                @if(in_array('comprobante', $vc_modules) && $vc_company->soap_type_id != '03')
-                                    @if(in_array('document_not_sent', $vc_module_levels))
-                                        <li
-                                            class="{{ ($firstLevel === 'documents' && $secondLevel === 'not-sent') ? 'nav-active' : '' }}">
-                                            <a class="nav-link" href="{{route('tenant.documents.not_sent')}}">
-                                                Comprobantes no enviados
-                                            </a>
-                                        </li>
-                                    @endif
-                                    @if(in_array('regularize_shipping', $vc_module_levels))
-                                        <li
-                                            class="{{ ($firstLevel === 'documents' && $secondLevel === 'regularize-shipping') ? 'nav-active' : '' }}">
-                                            <a class="nav-link" href="{{route('tenant.documents.regularize_shipping')}}">
-                                                CPE pendientes de rectificación
-                                            </a>
-                                        </li>
-                                    @endif
-                                @endif
+                                {{-- ########## INICIO CAMBIO SIN XML CDR SUNAT --}}
+                                {{-- Sin bandejas de envío ni rectificación fiscal en la operación local. --}}
+                                {{-- ######### FIN CAMBIO SIN XML CDR SUNAT --}}
                                 @if(in_array('summary_voided', $vc_module_levels) && $vc_company->soap_type_id != '03')
 
                                     <li class="{{ ($firstLevel === 'summaries') ? 'nav-active' : '' }}">

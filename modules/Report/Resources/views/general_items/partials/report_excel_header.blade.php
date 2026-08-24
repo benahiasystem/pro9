@@ -61,8 +61,12 @@
 {{-- ########## INICIO CAMBIO IGV A IVA --}}
 <th> IVA</th>
 {{-- ######### FIN CAMBIO IGV A IVA --}}
-<th> TIPO DE ISC</th>
-<th> ISC</th>
+{{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+@if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
+    <th> TIPO DE ISC</th>
+    <th> ISC</th>
+@endif
+{{-- ######### FIN SIN DETRACCIONES E ISC --}}
 <th> IMPUESTO BOLSAS</th>
 <th> TOTAL</th>
 @if($type == 'sale')
@@ -74,4 +78,3 @@
 
 <th> TIPO CAMBIO</th>
 <th> ALMACÉN</th>
-

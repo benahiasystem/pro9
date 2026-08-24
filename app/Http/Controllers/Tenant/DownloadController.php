@@ -11,12 +11,18 @@ use App\Models\Tenant\Configuration;
 use Mpdf\Mpdf;
 use Exception;
 use Illuminate\Support\Facades\Storage;
+use App\Services\LocalFiscalDocumentPolicy;
 
 class DownloadController extends Controller
 {
     use StorageDocument;
 
     public function downloadExternal($model, $type, $external_id, $format = null) {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled() && in_array($type, ['xml', 'cdr', 'cdr_xml'], true)) {
+            abort(404);
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $document_type = $model;
         $model = "App\\Models\\Tenant\\".ucfirst($model);
         $document = $model::where('external_id', $external_id)->first();
@@ -78,6 +84,11 @@ class DownloadController extends Controller
     }
 
     public function download($type, $document) {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled() && in_array($type, ['xml', 'cdr', 'cdr_xml'], true)) {
+            abort(404);
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         switch ($type) {
             case 'pdf':
                 $folder = 'pdf';

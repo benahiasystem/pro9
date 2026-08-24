@@ -190,16 +190,9 @@
                     Route::get('commercial-analysis/columns', 'ReportCommercialAnalysisController@columns');
                     Route::get('no_paid/excel', 'ReportUnpaidController@excel')->name('tenant.reports.no_paid.excel');
 
-                    Route::get('document-detractions', 'ReportDocumentDetractionController@index')
-                         ->name('tenant.reports.document_detractions.index');
-                    Route::get('document-detractions/pdf', 'ReportDocumentDetractionController@pdf')
-                         ->name('tenant.reports.document_detractions.pdf');
-                    Route::get('document-detractions/excel', 'ReportDocumentDetractionController@excel')
-                         ->name('tenant.reports.document_detractions.excel');
-                    Route::get('document-detractions/filter', 'ReportDocumentDetractionController@filter')
-                         ->name('tenant.reports.document_detractions.filter');
-                    Route::get('document-detractions/records', 'ReportDocumentDetractionController@records')
-                         ->name('tenant.reports.document_hotels.records');
+                    // ########## INICIO ELIMINAR DETRACCIONES DE REPORTES
+                    // El reporte dedicado, sus datos y sus exportaciones no se registran.
+                    // ######### FIN ELIMINAR DETRACCIONES DE REPORTES
 
 
                    /**

@@ -106,11 +106,12 @@ class SunatSeniatMigrationContractTest extends TestCase
     }
 
     /** @test */
-    public function active_internal_sunat_contracts_are_not_misrepresented_as_seniat(): void
+    public function internal_fiscal_contracts_remain_named_but_are_not_exposed_as_active_shipping_routes(): void
     {
-        self::assertStringContainsString("Route::post('/sendSunat/{document}'", $this->source('routes/web.php'));
+        self::assertStringNotContainsString("Route::post('/sendSunat/{document}'", $this->source('routes/web.php'));
         self::assertStringContainsString('function sendDispatchToSunat', $this->source('app/Http/Controllers/Tenant/DispatchController.php'));
         self::assertStringContainsString("env('SUNAT_ALTERNATE_SERVER'", $this->source('config/configuration.php'));
+        self::assertStringContainsString('LocalFiscalDocumentPolicy::enabled()', $this->source('app/CoreFacturalo/Facturalo.php'));
         self::assertDirectoryDoesNotExist(base_path('app/CoreFacturalo/WS-BK'));
     }
 

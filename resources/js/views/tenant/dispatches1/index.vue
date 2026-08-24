@@ -27,9 +27,10 @@
                         <td>{{ row.number }}</td>
                         <td class="text-center">{{ row.date_of_shipping }}</td>
                         <td class="text-center">
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickDownload(row.download_external_xml)">XML</button>
+                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                            <!-- XML y CDR se omiten; PDF permanece disponible. -->
+                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickDownload(row.download_external_pdf)">PDF</button>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickDownload(row.download_external_cdr)">CDR</button>
                         </td>
                     </tr>
                 </data-table>

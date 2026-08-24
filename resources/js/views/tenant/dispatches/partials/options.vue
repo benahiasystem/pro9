@@ -19,24 +19,9 @@
             </div>
         </div>
 
-        <div v-if="form.send_to_pse"
-             class="row">
-
-            <div v-if="form.response_signature_pse"
-                 class="col-lg-12 col-md-12 col-sm-12">
-                <el-alert :title="`Firma Xml PSE: ${form.response_signature_pse}`"
-                          show-icon
-                          type="success"></el-alert>
-            </div>
-
-            <div v-if="form.response_send_cdr_pse"
-                 class="col-lg-12 col-md-12 col-sm-12 mt-3">
-                <el-alert :title="`Envio CDR PSE: ${form.response_send_cdr_pse}`"
-                          show-icon
-                          type="success"></el-alert>
-            </div>
-
-        </div>
+        <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+        <!-- Las opciones locales no muestran firma, envío ni respuesta CDR. -->
+        <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
         <div class="row">
 
@@ -69,15 +54,9 @@
                     </button>
                     <p>58MM</p>
                 </div>
-                <div v-if="form && form.external_id && form.external_id != null"
-                     class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
-                    <button class="btn btn-lg btn-info waves-effect waves-light"
-                            type="button"
-                            @click="clickDownloadCdr()">
-                        <i class="fa fa-file-download"></i>
-                    </button>
-                    <p>Descargar CDR</p>
-                </div>
+                <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                <!-- Sólo se ofrecen formatos PDF locales. -->
+                <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
             </template>
             <template v-else>
                 <div class="col-lg-12 col-md-12 col-sm-12 text-center font-weight-bold mt-3">
@@ -209,9 +188,9 @@ export default {
                 soap_type_id: null,
             }
         },
-        clickDownloadCdr() {
-            window.open(this.form.download_cdr, '_blank');
-        },
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // La descarga CDR fue retirada de las opciones de guía.
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         async create() {
             await this.$http.get(`/${this.resource}/record/${this.recordId}`).then(response => {
                 this.form = response.data.data;

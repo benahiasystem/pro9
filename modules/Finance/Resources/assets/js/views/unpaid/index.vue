@@ -678,19 +678,9 @@
                                                                                 <template
                                                                                     slot-scope="scope"
                                                                                 >
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        class="btn waves-effect waves-light btn-xs btn-info"
-                                                                                        @click.prevent="
-                                                                                            clickDownloadDispatch(
-                                                                                                scope
-                                                                                                    .row
-                                                                                                    .download_external_xml
-                                                                                            )
-                                                                                        "
-                                                                                    >
-                                                                                        XML
-                                                                                    </button>
+                                                                                    <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                                                                                    <!-- Las guías asociadas ofrecen únicamente PDF. -->
+                                                                                    <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                                                                                     <button
                                                                                         type="button"
                                                                                         class="btn waves-effect waves-light btn-xs btn-info"
@@ -703,19 +693,6 @@
                                                                                         "
                                                                                     >
                                                                                         PDF
-                                                                                    </button>
-                                                                                    <button
-                                                                                        type="button"
-                                                                                        class="btn waves-effect waves-light btn-xs btn-info"
-                                                                                        @click.prevent="
-                                                                                            clickDownloadDispatch(
-                                                                                                scope
-                                                                                                    .row
-                                                                                                    .download_external_cdr
-                                                                                            )
-                                                                                        "
-                                                                                    >
-                                                                                        CDR
                                                                                     </button>
                                                                                 </template>
                                                                             </el-table-column>

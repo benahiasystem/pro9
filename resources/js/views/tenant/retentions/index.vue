@@ -35,18 +35,11 @@
                         <td class="text-end">{{ row.total_retention }}</td>
                         <td class="text-end">{{ row.total }}</td>
                         <td class="text-end">
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                    @click.prevent="clickDownload(row.download_external_xml)">XML</button>
+                            <!-- ########## INICIO CAMBIO DESCARGAS XML/CDR -->
+                            <!-- XML, CDR y sus opciones se omiten; PDF permanece disponible. -->
+                            <!-- ######### FIN CAMBIO DESCARGAS XML/CDR -->
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info me-1"
                                     @click.prevent="clickDownload(row.download_external_pdf)">PDF</button>
-
-                                    
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                    @click.prevent="clickOptions(row.id)"
-                                    v-if="row.has_cdr">CDR</button>
-
-                            <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
-                                    @click.prevent="clickDownload(row.download_external_cdr)">CDR</button> -->
                         </td>
                     </tr>
                 </data-table>

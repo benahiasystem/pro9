@@ -99,9 +99,9 @@
                             <!-- ########## INICIO CAMBIO IGV A IVA -->
                             <th class="">Total IVA</th>
                             <!-- ######### FIN CAMBIO IGV A IVA -->
-                            <th class="" v-if="columns.total_isc.visible">
-                                Total ISC
-                            </th>
+                            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                            <!-- La columna Total ISC no se presenta. -->
+                            <!-- ######### FIN SIN DETRACCIONES E ISC -->
                             <th class="">Total</th>
                             <th class="">Por Pagar</th>
                         </tr>
@@ -231,19 +231,9 @@
                                         : row.total_igv
                                 }}
                             </td>
-                            <td v-if="columns.total_isc.visible">
-                                {{
-                                    row.document_type_id == "07"
-                                        ? row.total_isc == 0
-                                            ? "0.00"
-                                            : "-" + row.total_isc
-                                        : row.document_type_id != "07" &&
-                                          (row.state_type_id == "11" ||
-                                              row.state_type_id == "09")
-                                        ? "0.00"
-                                        : row.total_isc
-                                }}
-                            </td>
+                            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                            <!-- El dato ISC se conserva en la respuesta, pero no se renderiza. -->
+                            <!-- ######### FIN SIN DETRACCIONES E ISC -->
                             <td>
                                 {{
                                     row.document_type_id == "07"
@@ -307,10 +297,9 @@ export default {
                     title: "Opciones",
                     visible: false
                 },
-                total_isc: {
-                    title: "Total ISC",
-                    visible: false
-                },
+                // ########## INICIO SIN DETRACCIONES E ISC
+                // Total ISC no se ofrece como columna configurable.
+                // ######### FIN SIN DETRACCIONES E ISC
                 total_charge: {
                     title: "Total Cargos",
                     visible: false

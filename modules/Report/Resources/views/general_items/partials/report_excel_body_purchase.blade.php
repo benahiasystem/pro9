@@ -80,8 +80,12 @@
     <td class="celda"> {{$value->affectation_igv_type_id}}</td>
     <td class="celda"> {{$total_igv}}</td>
     {{-- <td class="celda"> {{$iscType}}</td> --}}
-    <td class="celda">{{optional($value->system_isc_type)->description}}</td>
-    <td class="celda"> {{$total_isc}}</td>
+    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
+        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+        <td class="celda">{{optional($value->system_isc_type)->description}}</td>
+        <td class="celda"> {{$total_isc}}</td>
+        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
+    @endif
     <td class="celda"> {{$value->total_plastic_bag_taxes}}</td>
     <td class="celda"> {{$total}}</td>
 

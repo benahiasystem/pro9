@@ -242,7 +242,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             {{-- ######### FIN CAMBIO IGV A IVA --}}
                         @endif
 
-                        @if ($columns->total_isc->visible)
+                        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                        @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
+                        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                         <th style="padding: 5px; text-align: center;">Total ISC</th>
                         @endif
                         @if ($columns->total->visible)
@@ -429,7 +431,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                             <td style="padding: 5px; text-align: center;" class="celda">0</td>
                                             <td style="padding: 5px; text-align: center;" class="celda">0</td>
                                             <td style="padding: 5px; text-align: center;" class="celda">0</td>
-                                            @if ($columns->total_isc->visible)
+                                            {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                                            @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
+                                            {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                                             <td style="padding: 5px; text-align: center;" class="celda">0</td>
                                             @endif
                                             <td style="padding: 5px; text-align: center;" class="celda">0</td>
@@ -456,7 +460,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                             <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_igv}}</td>
                                         @endif
 
-                                        @if ($columns->total_isc->visible)
+                                        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                                        @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
+                                        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                                             <td style="padding: 5px; text-align: center;" class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_isc}}</td>
                                         @endif
                                         @if ($columns->total->visible)
@@ -490,7 +496,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                         <td style="padding: 5px; text-align: center;" class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_igv}}</td>
                                     @endif
 
-                                    @if ($columns->total_isc->visible)
+                                    {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                                    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
+                                    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                                     <td style="padding: 5px; text-align: center;" class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_isc}}</td>
                                     @endif
                                     @if ($columns->total->visible)
@@ -625,7 +633,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             <td>{{$acum_total_igv}}</td>
                             @endif
 
-                            @if ($columns->total_isc->visible)
+                            {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                            @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
+                            {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                             <td></td>
                             @endif
                             @if ($columns->total->visible)
@@ -657,7 +667,9 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             <td>{{$acum_total_igv_usd}}</td>
                             @endif
 
-                            @if ($columns->total_isc->visible)
+                            {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                            @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($columns->total_isc->visible))
+                            {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                             <td></td>
                             @endif
                             @if ($columns->total->visible)

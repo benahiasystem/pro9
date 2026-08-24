@@ -394,7 +394,9 @@ if ($hostname) {
             Route::get('documents/record/{document}', 'Tenant\DocumentController@record');
             Route::post('documents', 'Tenant\DocumentController@store');
             Route::post('documents/{id}/update', 'Tenant\DocumentController@update');
-            Route::get('documents/send/{document}', 'Tenant\DocumentController@send');
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // El reenvío fiscal manual no se registra en operación local.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             // Route::get('documents/remove/{document}', 'Tenant\DocumentController@remove');
             // Route::get('documents/consult_cdr/{document}', 'Tenant\DocumentController@consultCdr');
             Route::post('documents/email', 'Tenant\DocumentController@email');
@@ -451,12 +453,12 @@ if ($hostname) {
             Route::get('summaries/records', 'Tenant\SummaryController@records');
             Route::post('summaries/documents', 'Tenant\SummaryController@documents');
             Route::post('summaries', 'Tenant\SummaryController@store');
-            Route::get('summaries/status/{summary}', 'Tenant\SummaryController@status');
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // Se retiraron consulta de estado, regularización y cancelación fiscal.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             Route::get('summaries/columns', 'Tenant\SummaryController@columns');
             Route::delete('summaries/{summary}', 'Tenant\SummaryController@destroy');
             Route::get('summaries/record/{summary}', 'Tenant\SummaryController@record');
-            Route::get('summaries/regularize/{summary}', 'Tenant\SummaryController@regularize');
-            Route::get('summaries/cancel-regularize/{summary}', 'Tenant\SummaryController@cancelRegularize');
             Route::get('summaries/tables', 'Tenant\SummaryController@tables');
 
             //Voided
@@ -465,8 +467,9 @@ if ($hostname) {
             Route::get('voided/records', 'Tenant\VoidedController@records');
             Route::post('voided', 'Tenant\VoidedController@store');
             //            Route::get('voided/download/{type}/{voided}', 'Tenant\VoidedController@download')->name('tenant.voided.download');
-            Route::get('voided/status/{voided}', 'Tenant\VoidedController@status');
-            Route::get('voided/status_masive', 'Tenant\VoidedController@status_masive');
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // Las consultas de ticket/CDR de anulaciones no existen en operación local.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
 
             Route::delete('voided/{voided}', 'Tenant\VoidedController@destroy');
             //            Route::get('voided/ticket/{voided_id}/{group_id}', 'Tenant\VoidedController@ticket');
@@ -512,7 +515,9 @@ if ($hostname) {
                 Route::post('/tables', 'Tenant\DispatchController@tables');
                 Route::post('', 'Tenant\DispatchController@store');
                 Route::get('/record/{id}', 'Tenant\DispatchController@record');
-                Route::post('/sendSunat/{document}', 'Tenant\DispatchController@sendDispatchToSunat');
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                // La guía se registra localmente y no expone envío SUNAT.
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 Route::post('/email', 'Tenant\DispatchController@email');
                 Route::get('/generate/{sale_note}', 'Tenant\DispatchController@generate');
                 Route::get('/record/{id}/tables', 'Tenant\DispatchController@generateDocumentTables');
@@ -523,7 +528,9 @@ if ($hostname) {
                 Route::get('/data_table', 'Tenant\DispatchController@data_table');
                 Route::get('/search/customers', 'Tenant\DispatchController@searchCustomers');
                 Route::get('/search/customer/{id}', 'Tenant\DispatchController@searchClientById');
-                Route::post('/status_ticket', 'Tenant\Api\DispatchController@statusTicket');
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                // No se consulta ticket fiscal para guías locales.
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 Route::get('create_new/{table}/{id}', 'Tenant\DispatchController@createNew');
                 Route::get('/get_origin_addresses/{establishment_id}', 'Tenant\DispatchController@getOriginAddresses');
                 Route::get('/get_addresses_other_establishments/{establishment_id}', 'Tenant\DispatchController@getAddressesOtherEstablishments');
@@ -538,7 +545,9 @@ if ($hostname) {
                 Route::post('/tables', 'Tenant\DispatchCarrierController@tables');
                 Route::post('', 'Tenant\DispatchCarrierController@store');
                 Route::get('/record/{id}', 'Tenant\DispatchCarrierController@record');
-                Route::post('/sendSunat/{document}', 'Tenant\DispatchCarrierController@sendDispatchToSunat');
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                // La guía del transportista no expone envío SUNAT.
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 Route::post('/email', 'Tenant\DispatchCarrierController@email');
                 Route::get('/generate/{sale_note}', 'Tenant\DispatchCarrierController@generate');
                 Route::get('/record/{id}/tables', 'Tenant\DispatchCarrierController@generateDocumentTables');
@@ -549,7 +558,9 @@ if ($hostname) {
                 Route::get('/data_table', 'Tenant\DispatchCarrierController@data_table');
                 Route::get('/search/customers', 'Tenant\DispatchCarrierController@searchCustomers');
                 Route::get('/search/customer/{id}', 'Tenant\DispatchCarrierController@searchClientById');
-                Route::post('/status_ticket', 'Tenant\Api\DispatchCarrierController@statusTicket');
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                // La operación local no consulta tickets fiscales de guías.
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 Route::get('create_new/{table}/{id}', 'Tenant\DispatchCarrierController@createNew');
                 Route::get('/get_origin_addresses/{establishment_id}', 'Tenant\DispatchCarrierController@getOriginAddresses');
                 Route::get('/get_delivery_addresses/{person_id}', 'Tenant\DispatchCarrierController@getDeliveryAddresses');

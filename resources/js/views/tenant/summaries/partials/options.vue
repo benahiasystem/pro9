@@ -36,14 +36,9 @@
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-lg-12 col-md-12 col-sm-12 text-center font-weight-bold mt-3">
-                    <button type="button" class="btn btn-lg btn-info waves-effect waves-light" @click="clickDownload()">
-                        <i class="fa fa-file-download"></i>
-                    </button>
-                    <p>Descargar CDR</p>
-                </div>  
-            </div>   
+            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+            <!-- El resumen local no expone descargas CDR. -->
+            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
         </template>
 
         <span slot="footer" class="dialog-footer">
@@ -68,9 +63,9 @@
             this.initForm() 
         },
         methods: {
-            clickDownload() {
-                window.open(this.form.download_cdr, '_blank');
-            }, 
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // La descarga CDR fue retirada de la operación local.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             initForm() {
                 this.errors = {};
                 this.form = {

@@ -418,7 +418,9 @@
                     {!! \App\CoreFacturalo\Helpers\Template\TemplateHelper::stripLeadingItemCode($row->item->description, $item_code) !!}
                 @endif
 
-                @if($row->total_isc > 0)
+                {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
+                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                     <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)
                 @endif
 
@@ -605,7 +607,9 @@
         </tr>
     @endif
 
-    @if($document->total_isc > 0)
+    {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
+    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
         <tr>
             <td colspan="2" class="m27-total-label m27-total-label-sm">ISC:</td>
             <td class="m27-total-value m27-total-value-sm">{{ $document->currency_type->symbol }} {{ number_format($document->total_isc, 2) }}</td>

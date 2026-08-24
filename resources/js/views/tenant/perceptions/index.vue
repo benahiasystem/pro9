@@ -33,12 +33,11 @@
                         <td class="text-start">{{ row.perception_type_description }}</td>
                         <td class="text-end">{{ row.total }}</td>
                         <td class="text-end">
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                    @click.prevent="clickDownload(row.download_external_xml)">XML</button>
+                            <!-- ########## INICIO CAMBIO DESCARGAS XML/CDR -->
+                            <!-- XML y CDR no se ofrecen; PDF permanece disponible. -->
+                            <!-- ######### FIN CAMBIO DESCARGAS XML/CDR -->
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info me-1"
                                     @click.prevent="clickDownload(row.download_external_pdf)">PDF</button>
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                    @click.prevent="clickDownload(row.download_external_cdr)">CDR</button>
                         </td>
                     </tr>
                 </data-table>

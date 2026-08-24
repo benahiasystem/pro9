@@ -218,15 +218,9 @@
                         <td class="text-end">{{ row.total_igv }}</td>
                         <td class="text-end">{{ row.total }}</td>
                         <td class="text-center">
-                            <button
-                                type="button"
-                                style="min-width: 41px"
-                                class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                @click.prevent="clickDownload(row.download_xml)"
-                                v-if="row.has_xml"
-                            >
-                                XML
-                            </button>
+                            <!-- ########## INICIO CAMBIO DESCARGAS XML/CDR -->
+                            <!-- XML y CDR no se ofrecen; PDF y las demás acciones permanecen. -->
+                            <!-- ######### FIN CAMBIO DESCARGAS XML/CDR -->
                             <button
                                 type="button"
                                 style="min-width: 41px"
@@ -235,15 +229,6 @@
                                 v-if="row.has_pdf"
                             >
                                 PDF
-                            </button>
-                            <button
-                                type="button"
-                                style="min-width: 41px"
-                                class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                @click.prevent="clickDownload(row.download_cdr)"
-                                v-if="row.has_cdr"
-                            >
-                                CDR
                             </button>
                         </td>
                         <!--<td class="text-center">-->
@@ -264,14 +249,9 @@
                                     v-if="row.btn_voided"  >Anular</button>
                             <a :href="`/${resource_documents}/note/${row.id}`" class="btn waves-effect waves-light btn-xs btn-warning m-1__2"
                                v-if="row.btn_note">Nota</a> -->
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info m-1__2"
-                                @click.prevent="clickResend(row.id)"
-                                v-if="row.btn_resend && !isClient"
-                            >
-                                Reenviar
-                            </button>
+                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                            <!-- El registro local no ofrece reenvío fiscal. -->
+                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                             <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-info m-1__2"
                                     @click.prevent="clickSendOnline(row.id)"
                                     v-if="isClient && !row.send_server">Enviar Servidor</button>
@@ -389,21 +369,9 @@ export default {
         clickDownload(download) {
             window.open(download, "_blank");
         },
-        clickResend(document_id) {
-            this.$http
-                .get(`/${this.resource_documents}/send/${document_id}`)
-                .then(response => {
-                    if (response.data.success) {
-                        this.$message.success(response.data.message);
-                        this.$eventHub.$emit("reloadData");
-                    } else {
-                        this.$message.error(response.data.message);
-                    }
-                })
-                .catch(error => {
-                    this.$message.error(error.response.data.message);
-                });
-        },
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // El listado no conserva un método de reenvío fiscal.
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         clickSendOnline(document_id) {
             this.$http
                 .get(`/${this.resource_documents}/send_server/${document_id}/1`)

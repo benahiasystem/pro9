@@ -64,7 +64,7 @@
                         :applyCustomer="true"
                         :resource="resource"
                         :visibleColumns="columns"
-                        :colspanFootSales="numberColums"
+                        :salesColumnKeys="salesVisibleColumnKeys"
                     >
                         <tr slot="heading">
                             <th class="">#</th>
@@ -181,9 +181,9 @@
                                 Total IVA
                                 <!-- ######### FIN CAMBIO IGV A IVA -->
                             </th>
-                            <th class="" v-if="columns.total_isc.visible">
-                                Total ISC
-                            </th>
+                            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                            <!-- La columna Total ISC no se presenta. -->
+                            <!-- ######### FIN SIN DETRACCIONES E ISC -->
                             <th v-if="columns.total.visible" class="">Total</th>
 
                             <template v-if="configuration.enabled_sales_agents">
@@ -383,19 +383,9 @@
                                         : row.total_igv
                                 }}
                             </td>
-                            <td v-if="columns.total_isc.visible">
-                                {{
-                                    row.document_type_id == "07"
-                                        ? row.total_isc == 0
-                                            ? "0.00"
-                                            : "-" + row.total_isc
-                                        : row.document_type_id != "07" &&
-                                          (row.state_type_id == "11" ||
-                                              row.state_type_id == "09")
-                                        ? "0.00"
-                                        : row.total_isc
-                                }}
-                            </td>
+                            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                            <!-- El dato ISC se conserva en la respuesta, pero no se renderiza. -->
+                            <!-- ######### FIN SIN DETRACCIONES E ISC -->
                             <td v-if="columns.total.visible">
                                 {{
                                     row.document_type_id == "07"
@@ -470,10 +460,9 @@ export default {
                     title: "Plataformas web",
                     visible: false
                 },
-                total_isc: {
-                    title: "Total ISC",
-                    visible: false
-                },
+                // ########## INICIO SIN DETRACCIONES E ISC
+                // Total ISC no se ofrece como columna configurable.
+                // ######### FIN SIN DETRACCIONES E ISC
                 total_charge: {
                     title: "Total Cargos",
                     visible: false
@@ -540,10 +529,9 @@ export default {
                     // ######### FIN CAMBIO IGV A IVA
                     visible: true
                 },
-                total_isc: {
-                    title: "Total ISC",
-                    visible: true
-                },
+                // ########## INICIO SIN DETRACCIONES E ISC
+                // Total ISC no se ofrece como columna configurable.
+                // ######### FIN SIN DETRACCIONES E ISC
                 total: {
                     title: "Total",
                     visible: true
@@ -587,8 +575,7 @@ export default {
 
             },
             showDialogProducts: false,
-            recordsItems: [],
-            numberColums: 7
+            recordsItems: []
         };
     },
     created() {
@@ -604,7 +591,58 @@ export default {
             return true;
           })
         );
+      },
+      // ########## INICIO CAMBIO IGV A IVA
+      salesVisibleColumnKeys() {
+        const orderedColumns = [
+          { key: "index", visible: true },
+          { key: "user_seller", visible: this.columns.user_seller.visible },
+          { key: "document_type", visible: true },
+          { key: "series", visible: true },
+          { key: "number", visible: true },
+          { key: "date_of_issue", visible: true },
+          { key: "date_of_due", visible: true },
+          { key: "guides", visible: this.columns.guides.visible },
+          { key: "options", visible: this.columns.options.visible },
+          { key: "doc_affect", visible: this.columns.doc_affect.visible },
+          { key: "quote", visible: this.columns.quote.visible },
+          { key: "case", visible: this.columns.case.visible },
+          { key: "district", visible: this.columns.district.visible },
+          { key: "department", visible: this.columns.department.visible },
+          { key: "province", visible: this.columns.province.visible },
+          { key: "client_direction", visible: this.columns.client_direction.visible },
+          { key: "customer", visible: true },
+          { key: "ruc", visible: this.columns.ruc.visible },
+          { key: "items", visible: this.columns.items.visible },
+          { key: "state", visible: true },
+          { key: "currency_type_id", visible: this.columns.currency_type_id.visible },
+          { key: "web_platforms", visible: this.columns.web_platforms.visible },
+          { key: "purchase_order", visible: this.columns.purchase_order.visible },
+          { key: "note_sale", visible: this.columns.note_sale.visible },
+          { key: "date_note", visible: this.columns.date_note.visible },
+          { key: "payment_form", visible: this.columns.payment_form.visible },
+          { key: "payment_method", visible: this.columns.payment_method.visible },
+          { key: "total_charge", visible: this.columns.total_charge.visible },
+          { key: "total_exonerated", visible: this.columns.total_exonerated.visible },
+          { key: "total_unaffected", visible: this.columns.total_unaffected.visible },
+          { key: "total_free", visible: this.columns.total_free.visible },
+          { key: "total_taxed", visible: this.columns.total_taxed.visible },
+          { key: "total_igv", visible: this.columns.total_igv.visible },
+          { key: "total", visible: this.columns.total.visible },
+          {
+            key: "agent",
+            visible: Boolean(this.configuration.enabled_sales_agents && this.columns.agent.visible)
+          },
+          {
+            key: "reference_data",
+            visible: Boolean(this.configuration.enabled_sales_agents && this.columns.reference_data.visible)
+          },
+          { key: "plate", visible: this.columns.plate.visible }
+        ];
+
+        return orderedColumns.filter(column => column.visible).map(column => column.key);
       }
+      // ######### FIN CAMBIO IGV A IVA
     },
     methods: {
         formatDate(date) {
@@ -632,42 +670,22 @@ export default {
                 .then(response => {
                     if (updated === undefined) {
                         let currentCols = response.data.columns;
-                        if (currentCols !== undefined) {
-                            this.columns = currentCols;
-                            this.getNumberColumns();
+                        if (currentCols && typeof currentCols === "object") {
+                            // ########## INICIO SIN DETRACCIONES E ISC
+                            // Fusionar preferencias históricas sin reintroducir ISC ni perder columnas actuales.
+                            this.columns = Object.keys(this.columns).reduce((columns, key) => {
+                                columns[key] = currentCols[key]
+                                    ? { ...this.columns[key], ...currentCols[key] }
+                                    : this.columns[key];
+                                return columns;
+                            }, {});
+                            // ######### FIN SIN DETRACCIONES E ISC
                         }
                     }
                 })
                 .catch(error => {
                     console.error(error);
                 });
-        },
-        getNumberColumns() {
-            let numColumns = 0;
-            let arrayColumns = Object.values(this.columns);
-            //console.log(Array.isArray(this.columns))
-            arrayColumns.filter(function(num) {
-                switch (num.title) {
-                    case "Total":
-                    // ########## INICIO CAMBIO IGV A IVA
-                    case "Total IVA":
-                    // ######### FIN CAMBIO IGV A IVA
-                    case "Total Gratuito":
-                    case "Total Gravado":
-                    case "Total Exonerado":
-                    case "Total Inafecto":
-                        return (numColumns = this.numberColums);
-                        break;
-                    default:
-                        if (num) {
-                            if (num.visible) {
-                                numColumns = numColumns + 1;
-                                return this.numberColums + numColumns;
-                            }
-                        }
-                        break;
-                }
-            });
         }
     }
 };

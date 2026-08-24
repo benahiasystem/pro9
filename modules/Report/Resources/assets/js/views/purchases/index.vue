@@ -55,7 +55,9 @@
                             <th class="text-center">Moneda</th>
                             <th>Percepcion</th>
 
-                            <th class="">T. ISC</th>
+                            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                            <!-- La columna T. ISC no se presenta. -->
+                            <!-- ######### FIN SIN DETRACCIONES E ISC -->
                             <th class="">T. Exonerado</th>
 
                             <th class="">T. Inafecta</th>
@@ -118,13 +120,9 @@
                                         : "0.00"
                                 }}
                             </td>
-                            <td>
-                                {{
-                                    row.state_type_id == "11"
-                                        ? "0.00"
-                                        : row.total_isc
-                                }}
-                            </td>
+                            <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                            <!-- El dato ISC se conserva en la respuesta, pero no se renderiza. -->
+                            <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
                             <td>
                                 {{

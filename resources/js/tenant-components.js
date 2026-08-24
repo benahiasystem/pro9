@@ -136,7 +136,8 @@ import TenantInventoryExtraInfoList from '../../modules/Inventory/Resources/asse
 import TenantInventoryDevolutionsIndex from '../../modules/Inventory/Resources/assets/js/devolutions/index.vue'
 import TenantInventoryDevolutionsForm from '../../modules/Inventory/Resources/assets/js/devolutions/form.vue'
 
-import TenantDocumentsNotSent from '../../modules/Document/Resources/assets/js/views/documents/not_sent.vue'
+// ########## INICIO CAMBIO SIN XML CDR SUNAT
+// Las vistas exclusivas de envío, validación y regularización fiscal no se registran.
 import TenantReportPurchasesIndex from '../../modules/Report/Resources/assets/js/views/purchases/index.vue'
 import TenantReportDocumentsIndex from '../../modules/Report/Resources/assets/js/views/documents/index.vue'
 import TenantStateAccountIndex from '../../modules/Report/Resources/assets/js/views/state_account/index.vue'
@@ -156,8 +157,9 @@ import TenantReportHotelsIndex from '../../modules/Report/Resources/assets/js/vi
 import TenantReportCommercialAnalysisIndex from '../../modules/Report/Resources/assets/js/views/commercial_analysis/index.vue'
 import TenantOfflineConfigurationsIndex from '../../modules/Offline/Resources/assets/js/views/offline_configurations/index.vue'
 import TenantSeriesConfigurationsIndex from '../../modules/Document/Resources/assets/js/views/series_configurations/index.vue'
-import TenantValidateDocumentsIndex from '../../modules/Document/Resources/assets/js/views/validate_documents/index.vue'
-import TenantReportDocumentDetractionsIndex from '../../modules/Report/Resources/assets/js/views/document-detractions/index.vue'
+// ########## INICIO ELIMINAR DETRACCIONES DE REPORTES
+// El componente exclusivo del reporte de detracciones no se importa.
+// ######### FIN ELIMINAR DETRACCIONES DE REPORTES
 import TenantReportCommissionsIndex from '../../modules/Report/Resources/assets/js/views/commissions/index.vue'
 import TenantReportOrderNotesConsolidatedIndex from '../../modules/Report/Resources/assets/js/views/order_notes_consolidated/index.vue'
 import TenantReportGeneralItemsIndex from '../../modules/Report/Resources/assets/js/views/general_items/index.vue'
@@ -166,7 +168,7 @@ import TenantReportSalesConsolidatedIndex from '../../modules/Report/Resources/a
 import TenantReportUserCommissionsIndex from '../../modules/Report/Resources/assets/js/views/user_commissions/index.vue'
 import TenantReportFixedAssetPurchasesIndex from '../../modules/Report/Resources/assets/js/views/fixed-asset-purchases/index.vue'
 import TenantReportMassiveDownloadsIndex from '../../modules/Report/Resources/assets/js/views/massive-downloads/index.vue'
-import TenantDocumentsRegularizeShipping from '../../modules/Document/Resources/assets/js/views/documents/regularize_shipping.vue'
+// ######### FIN CAMBIO SIN XML CDR SUNAT
 import TenantReportCommissionsDetailIndex from '../../modules/Report/Resources/assets/js/views/commissions_detail/index.vue'
 
 import TenantReportTipsIndex from '../../modules/Report/Resources/assets/js/views/tips/index.vue'
@@ -550,7 +552,6 @@ Vue.component('tenant-inventory-extra-info-list', TenantInventoryExtraInfoList)
 Vue.component('tenant-inventory-devolutions-index', TenantInventoryDevolutionsIndex)
 Vue.component('tenant-inventory-devolutions-form', TenantInventoryDevolutionsForm)
 
-Vue.component('tenant-documents-not-sent', TenantDocumentsNotSent)
 Vue.component('tenant-report-purchases-index', TenantReportPurchasesIndex)
 Vue.component('tenant-report-documents-index', TenantReportDocumentsIndex)
 Vue.component('tenant-state-account-index', TenantStateAccountIndex)
@@ -570,8 +571,9 @@ Vue.component('tenant-report_hotels-index', TenantReportHotelsIndex)
 Vue.component('tenant-report-commercial_analysis-index', TenantReportCommercialAnalysisIndex)
 Vue.component('tenant-offline-configurations-index', TenantOfflineConfigurationsIndex)
 Vue.component('tenant-series-configurations-index', TenantSeriesConfigurationsIndex)
-Vue.component('tenant-validate-documents-index', TenantValidateDocumentsIndex)
-Vue.component('tenant-report-document-detractions-index', TenantReportDocumentDetractionsIndex)
+// ########## INICIO ELIMINAR DETRACCIONES DE REPORTES
+// El componente exclusivo del reporte de detracciones no se registra.
+// ######### FIN ELIMINAR DETRACCIONES DE REPORTES
 Vue.component('tenant-report-commissions-index', TenantReportCommissionsIndex)
 Vue.component('tenant-report-order-notes-consolidated-index', TenantReportOrderNotesConsolidatedIndex)
 Vue.component('tenant-report-general-items-index', TenantReportGeneralItemsIndex)
@@ -580,7 +582,6 @@ Vue.component('tenant-report-sales-consolidated-index', TenantReportSalesConsoli
 Vue.component('tenant-report-user-commissions-index', TenantReportUserCommissionsIndex)
 Vue.component('tenant-report-fixed-asset-purchases-index', TenantReportFixedAssetPurchasesIndex)
 Vue.component('tenant-report-massive-downloads-index', TenantReportMassiveDownloadsIndex)
-Vue.component('tenant-documents-regularize-shipping', TenantDocumentsRegularizeShipping)
 Vue.component('tenant-report-commissions-detail-index', TenantReportCommissionsDetailIndex)
 
 Vue.component('tenant-report-tips-index', TenantReportTipsIndex)

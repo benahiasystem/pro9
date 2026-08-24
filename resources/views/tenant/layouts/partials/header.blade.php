@@ -88,33 +88,9 @@
                 <li class="li-title-mobile">
                     <h4>Pendientes</h4>
                 </li>
-                @if($vc_document > 0)
-                    <li>
-                        <a href="{{route('tenant.documents.not_sent')}}"
-                            class="notification-icon text-secondary navigation-options" data-toggle="tooltip"
-                            data-placement="bottom" title="Comprobantes no enviados/por enviar">
-                            <span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-bell">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path
-                                        d="M10 5a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
-                                    <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
-                                </svg>
-                                <span class="ms-2">Comprobantes no enviados</span>
-                                <span
-                                    class="badge badge-pill badge-danger badge-up cart-item-count">{{ $vc_document }}</span>
-                            </span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M9 6l6 6l-6 6" />
-                            </svg>
-                        </a>
-                    </li>
-                @endif
+                {{-- ########## INICIO CAMBIO SIN XML CDR SUNAT --}}
+                {{-- La operación local no muestra pendientes de transmisión fiscal. --}}
+                {{-- ######### FIN CAMBIO SIN XML CDR SUNAT --}}
                 @if(in_array('cuenta', $vc_modules))
                     @if(in_array('account_users_list', $vc_module_levels))
                         <li>

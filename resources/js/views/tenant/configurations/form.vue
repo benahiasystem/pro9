@@ -949,34 +949,9 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-12">
-                                            <label class="control-label">Redondear monto de detracción a valor entero
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                                                <el-tooltip class="item" content="Disponible Nuevo CPE (Facturas)"
-                                                    effect="dark" placement="top-start">
-                                                    <i class="fa fa-info-circle"></i>
-                                                </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
-                                            </label>
-                                            <div :class="{ 'has-danger': errors.detraction_amount_rounded_int }" class="form-group">
-                                                <el-switch v-model="form.detraction_amount_rounded_int"
-                                                            @change="submit"></el-switch>
-                                                <small v-if="errors.detraction_amount_rounded_int" class="form-control-feedback"
-                                                    v-text="errors.detraction_amount_rounded_int[0]"></small>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12">
-                                            <label class="control-label">Habilitar venta con detracción para montos inferiores a 700</label>
-                                            <div :class="{ 'has-danger': errors.available_detraction_for_amount_minor}"
-                                                    class="form-group">
-                                                <el-switch v-model="form.available_detraction_for_amount_minor"
-                                                               @change="submit"></el-switch>
-                                                <small v-if="errors.available_detraction_for_amount_minor"
-                                                        class="form-control-feedback"
-                                                        v-text="errors.available_detraction_for_amount_minor[0]"></small>
-                                            </div>
-                                        </div>
+                                        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                                        <!-- Las opciones de redondeo y umbral de detracción no se exponen. -->
+                                        <!-- ######### FIN SIN DETRACCIONES E ISC -->
                                         <div class="col-12">
                                             <label class="control-label">Habilitar fondo de garantia para detracción o retención</label>
                                             <div :class="{ 'has-danger': errors.enabled_guarantee_fund}"

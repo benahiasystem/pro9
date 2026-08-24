@@ -31,9 +31,11 @@ $plus = $plus ?? 4;
 <th style="width:{{$plus+1}}%;">CANTIDAD</th>
 <th style="width:5%;">PRECIO UNITARIO</th>
 
-@if($type == 'purchase')
-<th> TIPO DE ISC</th>
-<th> ISC</th>
+@if($type == 'purchase' && \App\Services\LocalFiscalDocumentPolicy::showIsc())
+    {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+    <th> TIPO DE ISC</th>
+    <th> ISC</th>
+    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
 @endif
 
 <th style="width:5%;">TOTAL</th>

@@ -17,51 +17,9 @@
                 </el-alert>
             </div>
         </div>
-        <div v-if="sendSunat">
-            <!-- <div>Enviando comprobante a sunat</div> -->
-            <!-- <div>{{ response_sunat_send.message }}</div> -->
-            <template v-if="response_sunat_send.success">
-                <!-- <div>Consultando ticket a sunat</div> -->
-                <template v-if="response_sunat_status_ticket">
-                    <el-alert class="mt-2"
-                              :closable="false"
-                              :title="statusTicketTitle"
-                              :type="statusTicketType"
-                              show-icon>
-                        <div v-if="statusTicketCode" class="mt-1">
-                            <small><strong>Código SUNAT:</strong> {{ statusTicketCode }}</small>
-                        </div>
-                        <ul v-if="statusTicketNotes.length" class="mt-1 mb-0 pl-3">
-                            <li v-for="(note, index) in statusTicketNotes"
-                                :key="index">
-                                <small>{{ note }}</small>
-                            </li>
-                        </ul>
-                    </el-alert>
-                    <div v-if="showRetryStatusTicket" class="mt-2">
-                        <el-button class="list"
-                                   :loading="loading_sunat_status_ticket"
-                                   @click="clickStatusTicket">Consultar ticket
-                        </el-button>
-                    </div>
-                </template>
-            </template>
-        </div>
-
-        <div v-if="form.send_to_pse" class="row">
-            <div v-if="form.response_signature_pse"
-                 class="col-lg-12 col-md-12 col-sm-12">
-                <el-alert :title="`Firma Xml PSE: ${form.response_signature_pse}`"
-                          show-icon
-                          type="success"></el-alert>
-            </div>
-            <div v-if="form.response_send_cdr_pse"
-                 class="col-lg-12 col-md-12 col-sm-12 mt-3">
-                <el-alert :title="`Envio CDR PSE: ${form.response_send_cdr_pse}`"
-                          show-icon
-                          type="success"></el-alert>
-            </div>
-        </div>
+        <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+        <!-- El cierre de la guía local no muestra firma, envío, ticket ni CDR fiscal. -->
+        <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
         <template v-if="showDocumentActions">
             <div class="row">
@@ -89,14 +47,9 @@
                     </button>
                     <p>58MM</p>
                 </div>
-                <div v-if="sendSunat && showDownloadCdr" class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
-                    <button class="btn btn-lg btn-info waves-effect waves-light"
-                            type="button"
-                            @click="clickDownloadCdr()">
-                        <i class="fa fa-file-download"></i>
-                    </button>
-                    <p>Descargar CDR</p>
-                </div>
+                <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                <!-- Sólo se ofrecen formatos PDF locales. -->
+                <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
             </div>
             <div class="row mt-3">
                 <div class="col-md-12">
@@ -170,7 +123,6 @@ import QrApi from '@viewsModuleQrApi/QrApiTemplate.vue'
 export default {
     props: ['showDialog',
         'recordId',
-        'sendSunat',
         'showClose'
     ],
     components: {
@@ -242,11 +194,9 @@ export default {
             return !response.success || response.state_type_id === '03'
         },
         showDocumentActions() {
-            if (!this.sendSunat) return true
-
-            const response = this.response_sunat_status_ticket
-
-            return !!(response && response.success && response.state_type_id !== '03')
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            return true
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
         },
         showDownloadCdr() {
             const response = this.response_sunat_status_ticket
@@ -304,9 +254,9 @@ export default {
             window.open(`https://wa.me/58${phone}?text=${encodeURIComponent(this.form.message_text)}`, '_blank');
             // ########### FIN CAMBIO TELEFONÍA VENEZUELA
         },
-        clickDownloadCdr() {
-            window.open(this.form.download_cdr, '_blank');
-        },
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // La descarga CDR fue retirada del cierre de guía.
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         timeout(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
         },
@@ -317,17 +267,9 @@ export default {
                 this.form = response.data.data;
                 this.titleDialog = 'Guía: ' + this.form.number;
             });
-            if (this.sendSunat) {
-                await this.$http.get(`/service/dispatch/send/${this.form.external_id}`)
-                    .then(response => {
-                        this.response_sunat_send = response.data;
-                    });
-
-                if (this.response_sunat_send.success) {
-                    await this.timeout(3000);
-                    await this.clickStatusTicket();
-                }
-            }
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // La guía ya está registrada localmente; no se envía ni consulta ticket.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             this.loading_sunat_send = false;
         },
         clickPrint(format) {
@@ -374,29 +316,10 @@ export default {
         },
         clickClose() {
             this.$emit('update:showDialog', false);
-        },
-        async clickStatusTicket() {
-            this.loading_sunat_status_ticket = true;
-            await this.$http.get(`/service/dispatch/status_ticket/${this.form.external_id}`)
-                .then(response => {
-                    this.response_sunat_status_ticket = response.data;
-                })
-                .catch(error => {
-                    this.response_sunat_status_ticket = {
-                        success: false,
-                        response_type: 'error',
-                        state_description: null,
-                        sunat_code: null,
-                        notes: [],
-                        message: (error.response && error.response.data && error.response.data.message)
-                            ? error.response.data.message
-                            : 'No fue posible consultar el ticket, vuelva a intentarlo.'
-                    };
-                })
-                .then(() => {
-                    this.loading_sunat_status_ticket = false;
-                });
         }
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // El cierre local termina con PDF, correo y navegación; no consulta tickets.
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
     }
 }
 </script>

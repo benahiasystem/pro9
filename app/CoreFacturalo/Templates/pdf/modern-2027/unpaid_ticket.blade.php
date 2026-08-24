@@ -122,7 +122,9 @@
                 {!!$row->item->description!!}
             @endif
 
-            @if($row->total_isc > 0)
+            {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+            @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
+            {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                 <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)
             @endif
 
@@ -253,7 +255,9 @@
             <td class="text-right font-bold">{{ number_format($document->total_igv, 2) }}</td>
         </tr>
 
-        @if($document->total_isc > 0)
+        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+        @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
+        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
         <tr>
             <td colspan="4" class="text-right font-bold desc">ISC: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ number_format($document->total_isc, 2) }}</td>

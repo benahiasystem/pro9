@@ -392,37 +392,26 @@
                         <tfoot v-if="resource == 'reports/sales' || resource == 'reports/purchases' || resource == 'reports/fixed-asset-purchases'">
 
                             <template v-if="resource == 'reports/sales'">
-                                <tr>
-                                    <td :colspan="colspanFootSales"></td>
-                                    <td v-if="visibleColumns.guides.visible"></td>
-                                    <td v-if="visibleColumns.options.visible"></td>
-                                    <td v-if="visibleColumns.web_platforms.visible"></td>
-                                    <td v-if="visibleColumns.total_charge.visible"></td>
-                                    <td><strong>Totales VES</strong></td>
-                                    <td v-if="visibleColumns.total_exonerated.visible">{{ totals.acum_total_exonerated }}</td>
-                                    <td v-if="visibleColumns.total_unaffected.visible">{{ totals.acum_total_unaffected }}</td>
-                                    <td v-if="visibleColumns.total_free.visible">{{ totals.acum_total_free }}</td>
-
-                                    <td v-if="visibleColumns.total_taxed.visible">{{ totals.acum_total_taxed }}</td>
-                                    <td v-if="visibleColumns.total_igv.visible">{{ totals.acum_total_igv }}</td>
-                                    <td v-if="visibleColumns.total_isc.visible"></td>
-                                    <td v-if="visibleColumns.total.visible">{{ totals.acum_total }}</td>
+                                <!-- ########## INICIO CAMBIO IGV A IVA -->
+                                <tr v-for="currency in ['VES', 'USD']" :key="currency">
+                                    <td
+                                        v-for="columnKey in salesColumnKeys"
+                                        :key="`${currency}-${columnKey}`"
+                                        :class="{
+                                            'text-end': columnKey === salesFooterLabelColumnKey,
+                                            'text-start': isSalesTotalColumn(columnKey),
+                                            'text-nowrap': columnKey === salesFooterLabelColumnKey
+                                        }"
+                                    >
+                                        <strong v-if="columnKey === salesFooterLabelColumnKey">
+                                            Totales {{ currency }}
+                                        </strong>
+                                        <span v-else-if="isSalesTotalColumn(columnKey)">
+                                            {{ salesFooterValue(columnKey, currency) }}
+                                        </span>
+                                    </td>
                                 </tr>
-                                <tr>
-                                    <td :colspan="colspanFootSales"></td>
-                                    <td v-if="visibleColumns.guides.visible"></td>
-                                    <td v-if="visibleColumns.options.visible"></td>
-                                    <td v-if="visibleColumns.web_platforms.visible"></td>
-                                    <td v-if="visibleColumns.total_charge.visible"></td>
-                                    <td><strong>Totales USD</strong></td>
-                                    <td v-if="visibleColumns.total_exonerated.visible"></td>
-                                    <td v-if="visibleColumns.total_unaffected.visible"></td>
-                                    <td v-if="visibleColumns.total_free.visible"></td>
-                                    <td v-if="visibleColumns.total_taxed.visible">{{ totals.acum_total_taxed_usd }}</td>
-                                    <td v-if="visibleColumns.total_igv.visible">{{ totals.acum_total_igv_usd }}</td>
-                                    <td v-if="visibleColumns.total_isc.visible"></td>
-                                    <td v-if="visibleColumns.total.visible">{{ totals.acum_total_usd }}</td>
-                                </tr>
+                                <!-- ######### FIN CAMBIO IGV A IVA -->
 
                             </template>
                             <template v-else>
@@ -502,10 +491,10 @@ export default {
             required: false,
             default: false
         },
-        colspanFootSales: {
-            type: Number,
+        salesColumnKeys: {
+            type: Array,
             required: false,
-            default: 7
+            default: () => []
         },
     },
     data() {
@@ -558,7 +547,27 @@ export default {
         cantChoiseUserWithUserType(){
             if(this.form.user_type && this.form.user_type.length > 1) return false;
             return true;
+        },
+        // ########## INICIO CAMBIO IGV A IVA
+        salesTotalColumnKeys() {
+            return [
+                'total_charge',
+                'total_exonerated',
+                'total_unaffected',
+                'total_free',
+                'total_taxed',
+                'total_igv',
+                'total'
+            ]
+        },
+        salesFooterLabelColumnKey() {
+            const firstTotalIndex = this.salesColumnKeys.findIndex(columnKey =>
+                this.salesTotalColumnKeys.includes(columnKey)
+            )
+
+            return firstTotalIndex > 0 ? this.salesColumnKeys[firstTotalIndex - 1] : null
         }
+        // ######### FIN CAMBIO IGV A IVA
     },
     created() {
         this.initForm()
@@ -653,88 +662,33 @@ export default {
             this.persons = this.all_persons
         },
         getTotals(records) {
-
             this.initTotals()
-            // console.log(records)
 
             records.forEach(row => {
+                if (!['VES', 'USD'].includes(row.currency_type_id)) return
 
-                let signal = row.document_type_id;
-                let state = row.state_type_id;
+                const suffix = row.currency_type_id === 'USD' ? '_usd' : ''
+                const isCreditNote = row.document_type_id === '07'
+                const isRejected = ['09', '11'].includes(row.state_type_id)
+                const factor = isCreditNote
+                    ? (row.state_type_id === '11' ? 0 : -1)
+                    : (isRejected ? 0 : 1)
 
-                if (row.currency_type_id == 'VES') {
-
-                    if ((signal == '07' && state != '11')) {
-
-                        this.totals.acum_total += parseFloat(-row.total);
-                        this.totals.acum_total_taxed += parseFloat(-row.total_taxed);
-                        this.totals.acum_total_igv += parseFloat(-row.total_igv);
-
-
-                        this.totals.acum_total_exonerated += parseFloat(-row.total_exonerated);
-                        this.totals.acum_total_unaffected += parseFloat(-row.total_unaffected);
-                        this.totals.acum_total_free += parseFloat(-row.total_free);
-
-
-                    } else if (signal != '07' && state == '11') {
-
-                        this.totals.acum_total += 0;
-                        this.totals.acum_total_taxed += 0;
-                        this.totals.acum_total_igv += 0;
-
-                        this.totals.acum_total_exonerated += 0;
-                        this.totals.acum_total_unaffected += 0;
-                        this.totals.acum_total_free += 0;
-
-                    } else {
-
-                        this.totals.acum_total += parseFloat(row.total);
-                        this.totals.acum_total_taxed += parseFloat(row.total_taxed);
-                        this.totals.acum_total_igv += parseFloat(row.total_igv);
-
-                        this.totals.acum_total_exonerated += parseFloat(row.total_exonerated);
-                        this.totals.acum_total_unaffected += parseFloat(row.total_unaffected);
-                        this.totals.acum_total_free += parseFloat(row.total_free);
-                    }
-
-
-                } else if (row.currency_type_id == 'USD') {
-
-                    if ((signal == '07' && state != '11')) {
-
-                        this.totals.acum_total_usd += parseFloat(-row.total);
-                        this.totals.acum_total_taxed_usd += parseFloat(-row.total_taxed);
-                        this.totals.acum_total_igv_usd += parseFloat(-row.total_igv);
-
-
-                    } else if (signal != '07' && state == '11') {
-
-                        this.totals.acum_total_usd += 0;
-                        this.totals.acum_total_taxed_usd += 0;
-                        this.totals.acum_total_igv_usd += 0;
-
-
-                    } else {
-
-                        this.totals.acum_total_usd += parseFloat(row.total);
-                        this.totals.acum_total_taxed_usd += parseFloat(row.total_taxed);
-                        this.totals.acum_total_igv_usd += parseFloat(row.total_igv);
-
-                    }
-
-
-                }
-                this.totals.acum_total_taxed = _.round(this.totals.acum_total_taxed, 2)
-                this.totals.acum_total_igv = _.round(this.totals.acum_total_igv, 2)
-                this.totals.acum_total = _.round(this.totals.acum_total, 2)
-                this.totals.acum_total_exonerated = _.round(this.totals.acum_total_exonerated, 2)
-                this.totals.acum_total_unaffected = _.round(this.totals.acum_total_unaffected, 2)
-                this.totals.acum_total_free = _.round(this.totals.acum_total_free, 2)
-
-                this.totals.acum_total_taxed_usd = _.round(this.totals.acum_total_taxed_usd, 2)
-                this.totals.acum_total_igv_usd = _.round(this.totals.acum_total_igv_usd, 2)
-                this.totals.acum_total_usd = _.round(this.totals.acum_total_usd, 2)
+                this.salesTotalColumnKeys.forEach(columnKey => {
+                    const totalKey = `acum_${columnKey}${suffix}`
+                    const value = Number.parseFloat(row[columnKey]) || 0
+                    this.totals[totalKey] = _.round(this.totals[totalKey] + (factor * value), 2)
+                })
             })
+        },
+        isSalesTotalColumn(columnKey) {
+            return this.salesTotalColumnKeys.includes(columnKey)
+        },
+        salesFooterValue(columnKey, currency) {
+            const suffix = currency === 'USD' ? '_usd' : ''
+            const value = this.totals[`acum_${columnKey}${suffix}`] || 0
+
+            return Number(value).toFixed(2)
         },
         clickDownload(type) {
             let query = queryString.stringify({
@@ -771,19 +725,12 @@ export default {
 
         },
         initTotals() {
+            this.totals = this.salesTotalColumnKeys.reduce((totals, columnKey) => {
+                totals[`acum_${columnKey}`] = 0
+                totals[`acum_${columnKey}_usd`] = 0
 
-            this.totals = {
-                acum_total_taxed: 0,
-                acum_total_igv: 0,
-                acum_total: 0,
-                acum_total_exonerated: 0,
-                acum_total_unaffected: 0,
-                acum_total_free: 0,
-
-                acum_total_taxed_usd: 0,
-                acum_total_igv_usd: 0,
-                acum_total_usd: 0,
-            }
+                return totals
+            }, {})
         },
         customIndex(index) {
             return (this.pagination.per_page * (this.pagination.current_page - 1)) + index + 1

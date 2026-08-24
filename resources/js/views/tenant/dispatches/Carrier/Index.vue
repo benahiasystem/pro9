@@ -96,15 +96,9 @@
                         <!--                        </td>-->
 
                         <td class="text-center">
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                @click.prevent="
-                                    clickDownload(row.download_external_xml)
-                                "
-                            >
-                                XML
-                            </button>
+                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                            <!-- La guía local ofrece únicamente PDF. -->
+                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                             <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info me-1"
@@ -115,31 +109,14 @@
                             >
                                 PDF
                             </button>
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                @click.prevent="
-                                    clickDownload(row.download_external_cdr)
-                                "
-                                v-if="row.has_cdr"
-                            >
-                                CDR
-                            </button>
                         </td>
                         <td class="text-center">
                             <!--                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info"-->
                             <!--                                    @click.prevent="onGenerateDocument(row.id)" v-if="row.btn_generate_document">Generar comprobante-->
                             <!--                            </button>-->
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                @click.prevent="
-                                    btnStatusTicket(row.external_id)
-                                "
-                                v-if="row.btn_status_ticket"
-                            >
-                                Consultar ticket
-                            </button>
+                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                            <!-- Envío y consulta de ticket fiscal no se ofrecen. -->
+                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                             <button
                                 type="button"
                                 class="btn waves-effect waves-light btn-xs btn-info me-1"
@@ -147,14 +124,6 @@
                                 v-if="row.btn_options"
                             >
                                 Opciones
-                            </button>
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                @click.prevent="sendSunat(row.external_id)"
-                                v-if="row.btn_send"
-                            >
-                                Enviar a Sunat
                             </button>
                             <!--                            <a :href="`/dispatches/create_new/dispatch/${row.id}`"-->
                             <!--                               class="btn waves-effect waves-light btn-xs btn-warning m-1__2" v-if="row.btn_edit">Editar</a>-->
@@ -224,58 +193,9 @@ export default {
                 ? parsedDate.format("DD-MM-YYYY")
                 : null;
         },
-        showSentSunat(row) {
-            let data = row.soap_shipping_response;
-            if (this.configuration.auto_send_dispatchs_to_sunat === true)
-                return false;
-            if (data === undefined || data === null) return true;
-            if (data.sent === null || data.sent === false) return true;
-            return false;
-        },
-        async sendSunat(external_id) {
-            await this.$http
-                .get(`/service/dispatch/send/${external_id}`)
-                .then(response => {
-                    // console.log(response.data);
-                    let data = response.data;
-                    if (data.success) {
-                        this.$notify.success({
-                            title: "Se ha realizado el envio",
-                            message: data.message
-                        });
-                    } else {
-                        this.$notify.error({
-                            title: "Envio no realizado",
-                            message: data.message
-                        });
-                    }
-                })
-                .then(() => {
-                    //this.loading_sunat_send = false;
-                });
-            this.$eventHub.$emit("reloadData");
-
-            // this.$http.post(`/dispatches/sendSunat/${id}`)
-            //     .then((result) => {
-            //         let data = result.data;
-            //         if (data.sent === false) {
-            //             this.$notify.error({
-            //                 title: 'Envio no realizado',
-            //                 message: data.description,
-            //             });
-            //         } else {
-            //             this.$notify.success({
-            //                 title: 'Se ha realizado el envio',
-            //                 message: data.description,
-            //             });
-            //         }
-            //     }).catch(() => {
-            //     this.$notify.success({
-            //         title: 'Error',
-            //         message: 'Error desconocido',
-            //     });
-            // })
-        },
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // El listado local no conserva acciones de envío ni consulta fiscal.
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         onGenerateDocument(dispatchId) {
             this.recordId = dispatchId;
             this.showDialogGenerateDocument = true;
@@ -289,27 +209,6 @@ export default {
         },
         clickPrint(external_id) {
             window.open(`/print/dispatch/${external_id}/a4`, "_blank");
-        },
-        btnStatusTicket(external_id) {
-            this.$http
-                .post(`/dispatches/status_ticket`, {
-                    external_id: external_id
-                })
-                .then(result => {
-                    let data = result.data;
-                    if (data.success) {
-                        this.$message.success(data.message);
-                    } else {
-                        this.$message.error(data.message);
-                    }
-                    this.$eventHub.$emit("reloadData");
-                })
-                .catch(() => {
-                    this.$notify.success({
-                        title: "Error",
-                        message: "Error desconocido"
-                    });
-                });
         }
     }
 };

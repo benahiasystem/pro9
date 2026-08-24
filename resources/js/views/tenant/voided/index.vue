@@ -76,22 +76,9 @@
                         <td>{{ row.ticket }}</td>
                         <td>{{ row.state_type_description }}</td>
                         <td class="text-center">
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                @click.prevent="clickDownload(row.download_xml)"
-                                v-if="row.has_xml"
-                            >
-                                XML
-                            </button>
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info"
-                                @click.prevent="clickDownload(row.download_cdr)"
-                                v-if="row.has_cdr"
-                            >
-                                CDR
-                            </button>
+                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                            <!-- Las anulaciones locales no ofrecen XML ni CDR. -->
+                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                         </td>
                         <td class="text-end">
                             <el-tooltip

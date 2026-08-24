@@ -5,6 +5,7 @@ namespace App\CoreFacturalo;
 use App\Http\Controllers\Tenant\EmailController;
 use App\Models\Tenant\DispatchItem;
 use App\Services\SalesDocumentTypePolicy;
+use App\Services\LocalFiscalDocumentPolicy;
 use Exception;
 use Mpdf\Mpdf;
 use Mpdf\HTMLParserMode;
@@ -86,6 +87,13 @@ class Facturalo
     {
         $this->configuration = Configuration::first();
         $this->company = Company::active();
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        $this->actions = [];
+        $this->response = LocalFiscalDocumentPolicy::registeredResponse();
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $this->isDemo = ($this->company->soap_type_id === '01')?true:false;
         $this->isOse = ($this->company->soap_send_id === '02')?true:false;
         $this->signer = new XmlSigned();
@@ -251,6 +259,12 @@ class Facturalo
 
     public function createXmlUnsigned()
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            $this->xmlUnsigned = null;
+            return $this;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $template = new Template();
         $this->xmlUnsigned = XmlFormat::format($template->xml($this->type, $this->company, $this->document));
         $this->uploadFile($this->xmlUnsigned, 'unsigned');
@@ -263,6 +277,13 @@ class Facturalo
      */
     public function signXmlUnsigned($pse_xml_signed = null)
     {
+
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            $this->xmlSigned = null;
+            return $this;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
 
         //validar si es que el documento se enviara al pse para la agregar la firma
         if($pse_xml_signed !== null){
@@ -286,6 +307,11 @@ class Facturalo
      */
     public function servicePseSendXml()
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return LocalFiscalDocumentPolicy::registeredResponse();
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $company = Company::first();
         if ($company->pse_provider_id == 4) {
             $service = new ServiceSendFact();
@@ -311,6 +337,11 @@ class Facturalo
 
     public function updateHash($pse_hash = null)
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         if($pse_hash == null){
             $this->document->update([
                 'hash' => $this->getHash(),
@@ -343,6 +374,24 @@ class Facturalo
         ]);
 
     }
+
+    // ########## INICIO CAMBIO SIN XML CDR SUNAT
+    private function registerLocally(bool $updateRelatedDocuments = false): void
+    {
+        $this->response = LocalFiscalDocumentPolicy::registeredResponse();
+
+        if ($this->document) {
+            $this->document->update([
+                'state_type_id' => self::REGISTERED,
+                'soap_shipping_response' => null,
+            ]);
+
+            if ($updateRelatedDocuments) {
+                $this->updateStateDocuments(self::REGISTERED);
+            }
+        }
+    }
+    // ######### FIN CAMBIO SIN XML CDR SUNAT
 
     public function updateSoap($soap_type_id, $type)
     {
@@ -1021,6 +1070,12 @@ class Facturalo
 
     public function loadXmlSigned()
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            $this->xmlSigned = null;
+            return $this;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $this->xmlSigned = $this->getStorage($this->document->filename, 'signed');
 //        dd($this->xmlSigned);
         return $this;
@@ -1038,6 +1093,12 @@ class Facturalo
 
     public function senderXmlSignedBill($service_pse_code = null)
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            $this->registerLocally();
+            return $this;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         if(!$this->actions['send_xml_signed']) {
             $this->response = [
                 'sent' => false,
@@ -1050,6 +1111,11 @@ class Facturalo
 
     public function hasPseSend()
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return false;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         return $this->company->send_document_to_pse;
     }
 
@@ -1065,6 +1131,11 @@ class Facturalo
      */
     public function sendToPse()
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return false;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $send_to_pse = false;
 
         if($this->company->send_document_to_pse)
@@ -1085,6 +1156,11 @@ class Facturalo
 
     public function sendCdrToPse($cdr_zip, $document)
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         if($this->sendToPse())
         {
             $this->sendDocumentPse->sendCdr($cdr_zip, $document);
@@ -1093,6 +1169,12 @@ class Facturalo
 
     public function onlySenderXmlSignedBill($service_pse_code = null)
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            $this->registerLocally();
+            return $this->response;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $company = Company::first();
         $serviceose = new ServiceOseSendFact();
         if ($company->pse_provider_id == 4) {
@@ -1312,6 +1394,12 @@ class Facturalo
 
     public function senderXmlSignedSummary()
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            $this->registerLocally(true);
+            return $this;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $company = Company::first();
         $serviceose = new ServiceOseSendFact();
         if ($company->pse_provider_id == 4) {
@@ -1567,6 +1655,12 @@ class Facturalo
 
     public function consultCdr()
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            $this->response = LocalFiscalDocumentPolicy::registeredResponse();
+            return $this;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $this->wsClient = new WsClient($this->endpoint);
         $this->wsClient->setCredentials($this->soapUsername, $this->soapPassword);
         $this->wsClient->setService($this->endpoint);
@@ -1598,6 +1692,11 @@ class Facturalo
 
     private function setDataSoapType()
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $this->setSoapCredentials();
         $this->wsClient->setCredentials($this->soapUsername, $this->soapPassword);
         $this->wsClient->setService($this->endpoint);
@@ -1635,6 +1734,11 @@ class Facturalo
 
     public static function validateCertificate(): bool
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return false;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $company = Company::first();
 
         if ($company->soap_type_id == '02' && !$company->send_document_to_pse ) {

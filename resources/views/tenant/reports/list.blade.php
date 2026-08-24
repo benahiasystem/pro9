@@ -41,11 +41,9 @@
                                     Consistencia documentos
                                 </a>
                             </li>
-                            <li>
-                                <a href="{{route('tenant.validate_documents.index')}}">
-                                    Validador de documentos
-                                </a>
-                            </li>
+                            {{-- ########## INICIO CAMBIO SIN XML CDR SUNAT --}}
+                            {{-- No se ofrece validación contra una autoridad fiscal externa. --}}
+                            {{-- ######### FIN CAMBIO SIN XML CDR SUNAT --}}
                         @endif
                         @if(in_array('hotel', $vc_business_turns))
                             <li>
@@ -161,11 +159,9 @@
                         <li>
                             <a href="{{route('tenant.reports.sale_notes.index')}}">Notas de Venta</a>
                         </li>
-                        @if($vc_company->soap_type_id != '03')
-                            <li>
-                                <a href="{{route('tenant.reports.document_detractions.index')}}">Detracciones</a>
-                            </li>
-                        @endif
+                        {{-- ########## INICIO ELIMINAR DETRACCIONES DE REPORTES --}}
+                        {{-- El reporte de detracciones no forma parte de la navegación. --}}
+                        {{-- ######### FIN ELIMINAR DETRACCIONES DE REPORTES --}}
                         <li>
                             <a href="{{route('tenant.reports.sales_consolidated.index')}}">Consolidado de items</a>
                         </li>

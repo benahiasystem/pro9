@@ -117,7 +117,11 @@
                     {{-- ########## INICIO CAMBIO IGV A IVA --}}
                     <th>Total IVA</th>
                     {{-- ######### FIN CAMBIO IGV A IVA --}}
-                    <th>Total ISC</th>
+                    {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
+                        <th>Total ISC</th>
+                    @endif
+                    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                     <th>Total</th>
                     <th>Saldo / Por pagar</th>
                     <th>Total de productos</th>
@@ -206,7 +210,9 @@
                                 <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_taxed}}</td>
                                 <td class="celda">{{$value->total_discount}}</td>
                                 <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_igv}}</td>
-                                <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_isc}}</td>
+                                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
+                                    <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total_isc}}</td>
+                                @endif
                                 <td class="celda">{{$signal == '07' ? "-" : ""  }}{{$value->total}}</td>
                             @endif
 
@@ -219,7 +225,9 @@
                             <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_taxed}}</td>
                             <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_discount}}</td>
                             <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_igv}}</td>
-                            <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_isc}}</td>
+                            @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
+                                <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total_isc}}</td>
+                            @endif
                             <td class="celda">{{ (in_array($document_type->id,['01','03']) && in_array($value->state_type_id,['09','11'])) ? 0 : $value->total}}</td>
 
                         @endif

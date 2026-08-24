@@ -129,12 +129,9 @@
                                 <div :class="{'has-danger': errors.operation_type_id}"
                                      class="form-group">
                                     <label class="control-label">Tipo Operación
-                                        <template
-                                            v-if="(form.operation_type_id == '1001' || form.operation_type_id == '1004') && has_data_detraction">
-                                            <a class="text-center font-weight-bold text-info"
-                                               href="#"
-                                               @click.prevent="showDialogDocumentDetraction = true"> [+ Ver datos]</a>
-                                        </template>
+                                        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                                        <!-- Los datos de detracción históricos no son editables desde emisión. -->
+                                        <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
                                     </label>
                                     <el-select v-model="form.operation_type_id"
@@ -1441,17 +1438,9 @@
             @addDocumentTransport="addDocumentTransport"
         ></document-transport-form>
 
-        <document-detraction
-            :currency-type-id-active="form.currency_type_id"
-            :detraction="form.detraction"
-            :exchange-rate-sale="form.exchange_rate_sale"
-            :operation-type-id="form.operation_type_id"
-            :showDialog.sync="showDialogDocumentDetraction"
-            :total="form.total"
-            :isUpdateDocument="isUpdateDocument"
-            :detractionDecimalQuantity="detractionDecimalQuantity"
-            :configuration="configuration"
-            @addDocumentDetraction="addDocumentDetraction"></document-detraction>
+        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+        <!-- El editor de detracciones no se monta; el objeto histórico se conserva. -->
+        <!-- ######### FIN SIN DETRACCIONES E ISC -->
     </div>
 </template>
 
@@ -1491,7 +1480,9 @@ import {calculateRowItem, showNamePdfOfDescription} from '../../../helpers/funct
 import Logo from '../companies/logo.vue'
 import DocumentHotelForm from '../../../../../modules/BusinessTurn/Resources/assets/js/views/hotels/form.vue'
 import DocumentTransportForm from '../../../../../modules/BusinessTurn/Resources/assets/js/views/transports/form.vue'
-import DocumentDetraction from './partials/detraction.vue'
+// ########## INICIO SIN DETRACCIONES E ISC
+// El editor de detracciones no se importa.
+// ######### FIN SIN DETRACCIONES E ISC
 import moment from 'moment'
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import Keypress from "vue-keypress";
@@ -1513,7 +1504,9 @@ export default {
         Logo,
         DocumentHotelForm,
         Keypress,
-        DocumentDetraction,
+        // ########## INICIO SIN DETRACCIONES E ISC
+        // El editor de detracciones no se registra.
+        // ######### FIN SIN DETRACCIONES E ISC
         DocumentTransportForm
     },
     mixins: [functions, exchangeRate],

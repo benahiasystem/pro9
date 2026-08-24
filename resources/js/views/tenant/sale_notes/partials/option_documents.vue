@@ -623,11 +623,9 @@
                         if (response.data.success) {
                             this.documentNewId = response.data.data.id;
                             let response_sent = response
-                            if (this.configuration.send_auto && this.document.document_type_id === '01') {
-                                response_sent = await this.sendDocument(this.documentNewId); 
-                            } else if (this.configuration.ticket_single_shipment && this.document.document_type_id === '03') {
-                                response_sent = await this.sendDocument(this.documentNewId); 
-                            }
+                            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                            // El documento convertido queda registrado localmente sin reenvío fiscal.
+                            // ######### FIN CAMBIO SIN XML CDR SUNAT
 
                             this.showDialogDocumentOptions = true;
                             this.$http.get(`/${this.resource}/changed/${this.form.id}`).then(() => {
@@ -661,11 +659,9 @@
                         })
                     });
             },
-            async sendDocument(id)
-            {
-                return await this.$http
-                    .get(`/documents/send/${id}`)
-            },
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // No se expone un método de envío fiscal tras convertir la nota.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             validatePaymentDates(){
 
                 var valid = _.filter(this.document.payments, (item) => {

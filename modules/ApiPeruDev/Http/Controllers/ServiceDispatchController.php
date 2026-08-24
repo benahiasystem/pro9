@@ -18,6 +18,7 @@ use Modules\PseService\Http\Gior\Service as GiorService;
 use Modules\PseService\Http\Gior\ServiceSendFact as ServiceSendFact; 
 use Exception;
 use Modules\PseService\Http\Gior\ServiceOseSendFact;
+use App\Services\LocalFiscalDocumentPolicy;
 
 class ServiceDispatchController extends Controller
 {
@@ -225,6 +226,11 @@ class ServiceDispatchController extends Controller
 
     public function send($external_id)
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            abort(404);
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         DB::connection('tenant')->beginTransaction();
         try {
 
@@ -687,6 +693,11 @@ class ServiceDispatchController extends Controller
 
     public function createXmlUnsigned($document)
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled()) {
+            return null;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         $template = new Template();
         $template_name = ($document['document_type_id'] === '31')?'dispatch_carrier':'dispatch';
         Log::info($template_name);

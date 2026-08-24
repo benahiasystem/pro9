@@ -41,19 +41,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="">
-                                        <div :class="{'has-danger': errors.has_plastic_bag_taxes}"
-                                            class="form-group">
-                                            <el-checkbox v-model="form.has_plastic_bag_taxes">Impuesto a la Bolsa Plástica
-                                            </el-checkbox>
-                                            <br>
-                                            <small v-if="errors.has_plastic_bag_taxes"
-                                                class="form-control-feedback"
-                                                v-text="errors.has_plastic_bag_taxes[0]"></small>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- ########## INICIO CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
+                                <!-- El control se omite sin alterar el dato histórico. -->
+                                <!-- ######### FIN CAMBIO: OCULTAR IMPUESTO A LA BOLSA PLÁSTICA -->
                                 <div class="col-md-6">
                                     <div :class="{'has-danger': errors.description}"
                                         class="form-group">
@@ -442,65 +432,9 @@
                                     </div>
                                 </div>
 
-                                <div class="col-md-3">
-                                    <div :class="{'has-danger': errors.has_isc}"
-                                        class="form-group">
-                                        <el-checkbox v-model="form.has_isc"
-                                                    @change="changeIsc">Incluye ISC
-                                        </el-checkbox>
-                                        <br>
-                                        <small v-if="errors.has_isc"
-                                            class="form-control-feedback"
-                                            v-text="errors.has_isc[0]"></small>
-                                    </div>
-                                </div>
-
-                                <template v-if="form.has_isc">
-                                    <div class="col-md-3">
-                                        <div :class="{'has-danger': errors.system_isc_type_id}"
-                                            class="form-group">
-                                            <label class="control-label">Tipo de sistema ISC</label>
-                                            <el-select
-                                                v-model="form.system_isc_type_id"
-                                                filterable>
-                                                <el-option
-                                                    v-for="option in system_isc_types"
-                                                    :key="option.id"
-                                                    :label="option.description"
-                                                    :value="option.id"
-                                                ></el-option>
-                                            </el-select>
-                                            <small
-                                                v-if="errors.system_isc_type_id"
-                                                class="form-control-feedback"
-                                                v-text="errors.system_isc_type_id[0]"></small>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <div :class="{'has-danger': errors.percentage_isc}"
-                                            class="form-group">
-                                            <label class="control-label">Porcentaje ISC</label>
-                                            <el-input v-model="form.percentage_isc"></el-input>
-                                            <small
-                                                v-if="errors.percentage_isc"
-                                                class="form-control-feedback"
-                                                v-text="errors.percentage_isc[0]"></small>
-                                        </div>
-                                    </div>
-                                </template>
-
-
-                                <div class="col-md-3">
-                                    <div :class="{'has-danger': errors.subject_to_detraction}"
-                                        class="form-group">
-                                        <el-checkbox v-model="form.subject_to_detraction">Sujeto a detracción</el-checkbox>
-                                        <br>
-                                        <small v-if="errors.subject_to_detraction"
-                                            class="form-control-feedback"
-                                            v-text="errors.subject_to_detraction[0]"></small>
-                                    </div>
-                                </div>
+                                <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                                <!-- ISC y detracción permanecen como datos compatibles, sin controles editables. -->
+                                <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
 
                                 <div class="col-md-3" v-if="showRestrictSaleItemsCpe">
@@ -930,55 +864,9 @@
                                     </div>
                                 </div>
 
-                                <!-- isc compras -->
-                                <div class="col-md-4">
-                                    <div :class="{'has-danger': errors.purchase_has_isc}"
-                                        class="form-group">
-                                        <el-checkbox v-model="form.purchase_has_isc"
-                                                    @change="purchaseChangeIsc">Incluye ISC
-                                        </el-checkbox>
-                                        <br>
-                                        <small v-if="errors.purchase_has_isc"
-                                            class="form-control-feedback"
-                                            v-text="errors.purchase_has_isc[0]"></small>
-                                    </div>
-                                </div>
-
-                                <template v-if="form.purchase_has_isc">
-                                    <div class="col-md-4">
-                                        <div :class="{'has-danger': errors.purchase_system_isc_type_id}"
-                                            class="form-group">
-                                            <label class="control-label">Tipo de sistema ISC</label>
-                                            <el-select
-                                                v-model="form.purchase_system_isc_type_id"
-                                                filterable>
-                                                <el-option
-                                                    v-for="option in system_isc_types"
-                                                    :key="option.id"
-                                                    :label="option.description"
-                                                    :value="option.id"
-                                                ></el-option>
-                                            </el-select>
-                                            <small
-                                                v-if="errors.purchase_system_isc_type_id"
-                                                class="form-control-feedback"
-                                                v-text="errors.purchase_system_isc_type_id[0]"></small>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-4">
-                                        <div :class="{'has-danger': errors.purchase_percentage_isc}"
-                                            class="form-group">
-                                            <label class="control-label">Porcentaje ISC</label>
-                                            <el-input v-model="form.purchase_percentage_isc"></el-input>
-                                            <small
-                                                v-if="errors.purchase_percentage_isc"
-                                                class="form-control-feedback"
-                                                v-text="errors.purchase_percentage_isc[0]"></small>
-                                        </div>
-                                    </div>
-                                </template>
-                                <!-- isc compras -->
+                                <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                                <!-- Los controles ISC de compra se omiten y sus campos compatibles se conservan. -->
+                                <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
                             </div>
                         </el-tab-pane>

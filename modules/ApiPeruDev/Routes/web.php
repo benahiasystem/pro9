@@ -8,9 +8,9 @@ if($current_hostname) {
     Route::domain($current_hostname->fqdn)->group(function () {
         Route::middleware(['auth', 'locked.tenant'])->group(function () {
             Route::prefix('apiperudev')->group(function () {
-                Route::get('massive_validate_cpe/tables', 'MassiveValidateController@tables');
-                Route::post('massive_validate_cpe', 'MassiveValidateController@validate');
-                Route::post('massive_validate_cpe_2', 'MassiveValidateV2Controller@validate');
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                // La validación masiva CPE no se registra en operación local.
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
             });
             //ruta distinta a la version actual
             Route::prefix('service')->group(function () {
@@ -18,8 +18,9 @@ if($current_hostname) {
                 Route::get('ruc-establecimientos/{number}', 'ServiceController@establishments');
                 Route::get('{type}/{number}', 'ServiceController@service');
 
-                Route::get('dispatch/send/{external_id}', 'ServiceDispatchController@send');
-                Route::get('dispatch/status_ticket/{external_id}', 'ServiceDispatchController@statusTicket');
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                // Las guías locales no publican envío ni consulta de ticket fiscal.
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
             });
         });
     });

@@ -2,6 +2,7 @@
 
 namespace App\CoreFacturalo\Helpers\Storage;
 
+use App\Services\LocalFiscalDocumentPolicy;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
@@ -12,6 +13,12 @@ trait StorageDocument
 
     public function uploadStorage($filename, $file_content, $file_type, $root = null)
     {
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        if (LocalFiscalDocumentPolicy::enabled() && $this->isFiscalXmlFileType($file_type)) {
+            return null;
+        }
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
+
         $this->setData($filename, $file_type, $root);
         if($file_type == 'cdr_b64') {
             $cdr_xml = base64_decode($file_content);
@@ -139,5 +146,12 @@ trait StorageDocument
         $this->setData($filename, $file_type, $root);
         return Storage::disk('tenant')->exists($this->_folder.DIRECTORY_SEPARATOR.$this->_filename);
     }
+
+    // ########## INICIO CAMBIO SIN XML CDR SUNAT
+    private function isFiscalXmlFileType(string $fileType): bool
+    {
+        return in_array($fileType, ['unsigned', 'signed', 'cdr', 'cdr_xml', 'cdr_b64'], true);
+    }
+    // ######### FIN CAMBIO SIN XML CDR SUNAT
 
 }

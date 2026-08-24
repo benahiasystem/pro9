@@ -80,9 +80,10 @@
                         <td>{{ record.number }}</td>
                         <td class="text-right">{{ record.total }}</td>
                         <td class="text-right">
-                            <a :href="record.download_xml">XML</a>
+                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                            <!-- La búsqueda conserva sólo la descarga PDF. -->
+                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                             <a :href="record.download_pdf">PDF</a>
-                            <a :href="record.download_cdr">CDR</a>
                             <!--<button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickCreate(row.id)">Editar</button>-->
                             <!--<button type="button" class="btn waves-effect waves-light btn-xs btn-danger" @click.prevent="clickDelete(row.id)">Eliminar</button>-->
                         </td>

@@ -62,17 +62,19 @@ if ($hostname) {
             Route::post('voided', 'Tenant\Api\VoidedController@store');
             Route::post('retentions', 'Tenant\Api\RetentionController@store');
             Route::post('dispatches', 'Tenant\Api\DispatchController@store');
-            Route::post('documents/send', 'Tenant\Api\DocumentController@send');
-            Route::post('summaries/status', 'Tenant\Api\SummaryController@status');
-            Route::post('voided/status', 'Tenant\Api\VoidedController@status');
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // La API local no publica envío, consulta de resúmenes ni tickets de anulación.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             Route::get('services/ruc/{number}', 'Tenant\Api\ServiceController@ruc');
             Route::get('services/dni/{number}', 'Tenant\Api\ServiceController@dni');
-            Route::post('services/consult_cdr_status', 'Tenant\Api\ServiceController@consultCdrStatus');
-            Route::post('services/validate_cpe', 'Tenant\Api\ServiceController@validateCpe');
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // Consulta CDR y validación CPE no están disponibles en operación local.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             Route::post('perceptions', 'Tenant\Api\PerceptionController@store');
 
-            Route::post('dispatches/send', 'Tenant\Api\DispatchController@send');
-            Route::post('dispatches/status_ticket', 'Tenant\Api\DispatchController@statusTicket');
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // La API de guías conserva el registro local sin transmisión ni ticket.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             Route::get('dispatches/tables', 'Tenant\Api\DispatchController@tables');
             Route::get('dispatches/records', 'Tenant\Api\DispatchController@records');
 

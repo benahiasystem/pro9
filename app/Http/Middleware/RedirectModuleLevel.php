@@ -332,7 +332,9 @@
                     return redirect()->route('tenant.documents.index');
 
                 case 'document_not_sent':
-                    return redirect()->route('tenant.documents.not_sent');
+                    // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                    return redirect()->route('tenant.documents.index');
+                    // ######### FIN CAMBIO SIN XML CDR SUNAT
 
                 case 'document_contingengy':
                     return redirect()->route('tenant.contingencies.index');
@@ -379,7 +381,9 @@
                 case 'bank_loan':
                     return redirect()->route('tenant.bank_loan.index');
                 case 'regularize_shipping':
-                    return redirect()->route('tenant.documents.regularize_shipping');
+                    // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                    return redirect()->route('tenant.documents.index');
+                    // ######### FIN CAMBIO SIN XML CDR SUNAT
                 case 'advanced_purchase_settlements':
                     return redirect()->route('tenant.purchase-settlements.index');
                 case 'advanced_order_forms':

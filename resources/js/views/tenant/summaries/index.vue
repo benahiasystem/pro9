@@ -41,16 +41,9 @@
                         </td>
                         <td>{{ row.ticket }}</td>
                         <td class="text-center">
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
-                                    @click.prevent="clickDownload(row.download_xml)"
-                                    v-if="row.has_xml">XML</button> 
-                            <!-- <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
-                                    @click.prevent="clickDownload(row.download_cdr)"
-                                    v-if="row.has_cdr">CDR</button> -->
-                                    
-                            <button type="button" class="btn waves-effect waves-light btn-xs btn-info"
-                                    @click.prevent="clickOptions(row.id)"
-                                    v-if="row.has_cdr">CDR</button>
+                            <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                            <!-- Los resúmenes locales no ofrecen XML, CDR ni opciones de ticket. -->
+                            <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                         </td>
                         <td class="text-end">
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-warning"

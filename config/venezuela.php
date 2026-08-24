@@ -20,6 +20,21 @@ return [
     ],
     // ######### FIN CAMBIO AFECTACIÓN IVA
 
+    // ########## INICIO CAMBIO SIN XML CDR SUNAT
+    'local_document_emission' => [
+        'enabled' => true,
+        'status_code' => 'LOCAL_REGISTERED',
+        'status_description' => 'Documento registrado localmente sin transmisión fiscal.',
+    ],
+    // ######### FIN CAMBIO SIN XML CDR SUNAT
+
+    // ########## INICIO SIN DETRACCIONES E ISC
+    'visible_fiscal_features' => [
+        'isc' => false,
+        'detractions' => false,
+    ],
+    // ######### FIN SIN DETRACCIONES E ISC
+
     'locations' => [
         'labels' => [
             'department' => 'Estado',

@@ -220,8 +220,12 @@ $isSaleNote = ($document_type_id != '80' && $type == 'sale') ? true : false;
     <td class="celda">{{ $total_value }}</td>
     <td class="celda">{{ $value->affectation_igv_type_id }}</td>
     <td class="celda">{{ $igv }}</td>
-    <td class="celda">{{ $system_isc_type_id }}</td>
-    <td class="celda">{{ $total_isc }}</td>
+    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
+        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+        <td class="celda">{{ $system_isc_type_id }}</td>
+        <td class="celda">{{ $total_isc }}</td>
+        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
+    @endif
     <td class="celda">{{ $total_plastic_bag_taxes }}</td>
     <td class="celda">{{(!empty($total)?$pack_price_prefix:'')}}{{ $total }}</td>
     <td class="celda">{{(!empty($total_item_purchase)?$pack_price_prefix:'')}}{{ $total_item_purchase }}</td>

@@ -56,8 +56,12 @@
     <td class="celda">{{number_format($value->quantity, 2)}}</td>
     
     <td class="celda">{{round($unit_price, 6)}}</td>
-    <td class="celda">{{optional($value->system_isc_type)->description}}</td>
-    <td class="celda"> {{$total_isc > 0 ? $total_isc : ''}}</td>
+    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc())
+        {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+        <td class="celda">{{optional($value->system_isc_type)->description}}</td>
+        <td class="celda"> {{$total_isc > 0 ? $total_isc : ''}}</td>
+        {{-- ######### FIN SIN DETRACCIONES E ISC --}}
+    @endif
 
     <td class="celda">{{round($total, 2)}}</td>
     {{-- <td class="celda"></td> --}}

@@ -11,14 +11,9 @@
             </div>
         </div>
 
-        <div class="row" v-if="form.state_type_id == '05'">
-            <div class="col-lg-12 col-md-12 col-sm-12 text-center font-weight-bold mt-3">
-                <button type="button" class="btn btn-lg btn-info waves-effect waves-light" @click="clickDownload()">
-                    <i class="fa fa-file-download"></i>
-                </button>
-                <p>Descargar CDR</p>
-            </div>  
-        </div>   
+        <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+        <!-- El diálogo no expone descargas CDR. -->
+        <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
         <span slot="footer" class="dialog-footer">
             <template v-if="showClose">
                 <el-button class="second-buton" @click="clickClose">Cerrar</el-button>
@@ -47,9 +42,9 @@
             this.initForm() 
         },
         methods: {
-            clickDownload() {
-                window.open(this.form.download_cdr, '_blank');
-            }, 
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // La descarga CDR fue retirada de la operación local.
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             initForm() {
                 this.errors = {};
                 this.form = {

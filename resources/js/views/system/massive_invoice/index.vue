@@ -78,11 +78,9 @@
                                         title="Descargar PDF">
                                         <i class="fas fa-file-pdf"></i>
                                     </button>
-                                    <button @click="downloadFile(record.id, 'xml')"
-                                        class="btn btn-sm btn-secondary"
-                                        title="Descargar XML">
-                                        <i class="fas fa-file-code"></i>
-                                    </button>
+                                    <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
+                                    <!-- La facturación masiva conserva únicamente la descarga PDF local. -->
+                                    <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                                 </td>
                             </tr>
                         </tbody>

@@ -361,7 +361,9 @@
                     <br/><span style="font-weight: normal; font-size: 8px; color:#8a8a8a; text-transform: none;">{!! implode(' &middot; ', $meta_parts) !!}</span>
                 @endif
 
-                @if($row->total_isc > 0)
+                {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
+                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                     <br/>ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)
                 @endif
 

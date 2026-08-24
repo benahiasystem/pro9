@@ -2,8 +2,6 @@
 
 namespace App\Http\Helpers;
 
-use App\Models\Tenant\Company;
-use App\Models\Tenant\Document;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Order;
 use App\Models\Tenant\Quotation;
@@ -19,12 +17,13 @@ class HeaderNotifications
     {
         $notifications = [];
 
-        $this->safeAppend($notifications, 'appendDocumentsNotSent');
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // No se anuncian documentos pendientes ni alertas de un servicio fiscal inexistente.
         $this->safeAppend($notifications, 'appendPaymentDueToday');
         $this->safeAppend($notifications, 'appendLowStock');
         $this->safeAppend($notifications, 'appendPendingOrders');
         $this->safeAppend($notifications, 'appendPendingEcommerceQuotations');
-        $this->safeAppend($notifications, 'appendSystemAlerts');
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
 
         usort($notifications, function ($a, $b) {
             return ($b['sort_at'] ?? 0) <=> ($a['sort_at'] ?? 0);
@@ -153,36 +152,6 @@ class HeaderNotifications
         } catch (\Throwable $exception) {
             return $fallback;
         }
-    }
-
-    private function appendDocumentsNotSent(array &$notifications): void
-    {
-        $count = Document::whereNotSent()->count();
-
-        if ($count <= 0) {
-            return;
-        }
-
-        $latest = Document::whereNotSent()->latest('updated_at')->first();
-        $timestamp = optional($latest)->updated_at;
-
-        $notifications[] = [
-            'id' => 'documents_not_sent',
-            'type' => 'comprobantes',
-            'icon' => 'send',
-            'icon_bg' => 'yellow',
-            'title' => "{$count} comprobante" . ($count === 1 ? '' : 's') . ' sin enviar',
-            'description_parts' => [
-                ['text' => (string) $count, 'bold' => true],
-                ['text' => ' comprobante' . ($count === 1 ? '' : 's') . ' ', 'bold' => false],
-                ['text' => 'están pendientes de envío a SUNAT.', 'bold' => false],
-            ],
-            'time_ago' => $this->timeAgo($timestamp),
-            'unread' => true,
-            'url' => $this->safeRoute('tenant.documents.not_sent', '/documents/not-sent'),
-            'count' => $count,
-            'sort_at' => $timestamp ? $timestamp->timestamp : now()->timestamp,
-        ];
     }
 
     private function appendPaymentDueToday(array &$notifications): void
@@ -364,66 +333,6 @@ class HeaderNotifications
             'url' => $this->safeRoute('tenant.quotations.index', '/quotations'),
             'count' => $count,
             'sort_at' => $timestamp ? $timestamp->timestamp : now()->timestamp,
-        ];
-    }
-
-    private function appendSystemAlerts(array &$notifications): void
-    {
-        $company = Company::first();
-
-        if (!$company) {
-            return;
-        }
-
-        if ($company->soap_type_id === '01') {
-            $notifications[] = [
-                'id' => 'system_demo',
-                'type' => 'sistema',
-                'icon' => 'cloud-alert',
-                'icon_bg' => 'red',
-                'title' => 'Modo demostración activo',
-                'tag' => 'SISTEMA',
-                'description_parts' => [
-                    ['text' => 'Estás conectado al entorno de demostración SUNAT. Los comprobantes emitidos no tienen validez fiscal.', 'bold' => false],
-                ],
-                'time_ago' => $this->timeAgo(now()->subMinutes(3)),
-                'unread' => true,
-                'url' => $this->safeRoute('tenant.companies.create', '/companies/create'),
-                'sort_at' => now()->subMinutes(3)->timestamp,
-            ];
-
-            return;
-        }
-
-        $rejectedCount = Document::where('state_type_id', '09')
-            ->where('date_of_issue', '>=', Carbon::now()->subDays(7)->format('Y-m-d'))
-            ->count();
-
-        if ($rejectedCount <= 0) {
-            return;
-        }
-
-        $latest = Document::where('state_type_id', '09')
-            ->where('date_of_issue', '>=', Carbon::now()->subDays(7)->format('Y-m-d'))
-            ->latest('updated_at')
-            ->first();
-
-        $timestamp = optional($latest)->updated_at ?? now();
-
-        $notifications[] = [
-            'id' => 'system_sunat_rejected',
-            'type' => 'sistema',
-            'icon' => 'cloud-alert',
-            'icon_bg' => 'red',
-            'title' => 'SUNAT con intermitencia',
-            'tag' => 'SISTEMA',
-            'description_parts' => [
-                ['text' => "El servicio de SUNAT presenta {$rejectedCount} rechazo" . ($rejectedCount === 1 ? '' : 's') . ' reciente' . ($rejectedCount === 1 ? '' : 's') . '. Tus comprobantes se reenviarán automáticamente.', 'bold' => false],
-            ],
-            'time_ago' => $this->timeAgo($timestamp),
-            'unread' => true,
-            'url' => $this->safeRoute('tenant.documents.not_sent', '/documents/not-sent'),
-            'sort_at' => $timestamp->timestamp,
         ];
     }
 

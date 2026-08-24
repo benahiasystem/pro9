@@ -419,7 +419,9 @@ foreach ($document->items as $row) {
                     {!!$row->item->description!!}
                 @endif
 
-                @if($row->total_isc > 0)
+                {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+                @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($row->total_isc > 0))
+                {{-- ######### FIN SIN DETRACCIONES E ISC --}}
                     <br/><span style="font-size: 9px">ISC : {{ $row->total_isc }} ({{ $row->percentage_isc }}%)</span>
                 @endif
 
@@ -613,7 +615,9 @@ foreach ($document->items as $row) {
         <td class="text-right font-bold">{{ number_format($document->total_igv, 2) }}</td>
     </tr>
 
-    @if($document->total_isc > 0)
+    {{-- ########## INICIO SIN DETRACCIONES E ISC --}}
+    @if(\App\Services\LocalFiscalDocumentPolicy::showIsc() && ($document->total_isc > 0))
+    {{-- ######### FIN SIN DETRACCIONES E ISC --}}
         <tr>
             <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">ISC: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ number_format($document->total_isc, 2) }}</td>

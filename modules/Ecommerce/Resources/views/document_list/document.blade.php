@@ -194,7 +194,10 @@
                         </td>
                         <td class="text-success">Bs. @{{ row.total }}</td>
                         <td class="text-right">
-                            <template v-if="row.download_pdf || row.download_xml">
+                            {{-- ########## INICIO CAMBIO SIN XML CDR SUNAT --}}
+                            {{-- Ecommerce ofrece únicamente el PDF del documento local. --}}
+                            {{-- ######### FIN CAMBIO SIN XML CDR SUNAT --}}
+                            <template v-if="row.download_pdf">
                                 <el-dropdown trigger="click" placement="bottom-end">
                                     <el-button type="primary" size="small">
                                         Documentos <i class="el-icon-arrow-down el-icon--right"></i>
@@ -202,9 +205,6 @@
                                     <el-dropdown-menu slot="dropdown">
                                         <el-dropdown-item v-if="row.download_pdf">
                                             <a :href="row.download_pdf" target="_blank" style="text-decoration: none; color: inherit;">PDF</a>
-                                        </el-dropdown-item>
-                                        <el-dropdown-item v-if="row.download_xml">
-                                            <a :href="row.download_xml" target="_blank" style="text-decoration: none; color: inherit;">XML</a>
                                         </el-dropdown-item>
                                     </el-dropdown-menu>
                                 </el-dropdown>

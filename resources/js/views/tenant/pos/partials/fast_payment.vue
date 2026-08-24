@@ -815,13 +815,9 @@ export default {
 
                     } else {
 
-                        if (this.configuration.send_auto && this.form.document_type_id === '01') {
-                            response_sent = await this.sendDocument(response.data.data.id);
-                            this.statusDocument = response_sent.data.response
-                        } else if (this.configuration.ticket_single_shipment && this.form.document_type_id === '03') {
-                            response_sent = await this.sendDocument(response.data.data.id);
-                            this.statusDocument = response_sent.data.response
-                        }
+                        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                        // El alta ya termina registrada localmente; no se ejecuta un segundo envío fiscal.
+                        // ######### FIN CAMBIO SIN XML CDR SUNAT
 
                         // this.form_payment.document_id = response.data.data.id;
                         this.form_cash_document.document_id = response.data.data.id;
@@ -878,11 +874,9 @@ export default {
                 console.log(error);
             })
         },
-        async sendDocument(id)
-        {
-            return await this.$http
-                .get(`/documents/send/${id}`)
-        },
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // No se expone un método de envío fiscal en el pago rápido local.
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
         async printticket(){
             //getUpdatedConfig();
             await this.sleep(400);
