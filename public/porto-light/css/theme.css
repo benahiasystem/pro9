@@ -24723,3 +24723,57 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
         justify-self: start;
     }
 }
+.card-kpi {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.card-kpi small {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.card-kpi h3 {
+    font-size: 1.6rem;
+}
+.card-kpi .kpi-main {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+}
+.card-kpi .kpi-values {
+    flex: 1 1 auto;
+    margin-top: auto;
+    min-width: 0;
+}
+.card-kpi .kpi-values h3 {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.card-kpi .kpi-spark {
+    flex: 0 0 96px;
+    max-width: 96px;
+    width: 96px;
+}
+.card-kpi .kpi-change {
+    display: block;
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: normal;
+    margin: 4px 0 0;
+    text-transform: none;
+}
+.card-kpi .kpi-change.is-up {
+    color: var(--success);
+}
+.card-kpi .kpi-change.is-down {
+    color: var(--danger);
+}
+.card-kpi .kpi-change .kpi-change-label {
+    font-weight: 400;
+    margin-left: 4px;
+}
+.ti {
+    line-height: inherit !important;
+}

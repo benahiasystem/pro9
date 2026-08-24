@@ -10,7 +10,10 @@
     ></component>
 
     <section v-else class="card card-dashboard wg-card">
-      <div class="card-body card-body-border-radius wg-body">
+      <div
+        class="card-body card-body-border-radius"
+        :class="{ 'card-kpi': isKpi, 'justify-content-start': isKpi }"
+      >
         <template v-if="loading">
           <loader-graph :rows="4" :columns="1" :radius="50"></loader-graph>
         </template>
@@ -25,7 +28,9 @@
         </template>
 
         <template v-else-if="dataset">
-          <div class="wg-head">
+          <small v-if="isKpi" class="text-muted">{{ title }}</small>
+
+          <div v-else class="wg-head">
             <div>
               <h5 class="wg-title m-0">{{ title }}</h5>
               <small v-if="subtitle" class="text-muted">{{ subtitle }}</small>
@@ -39,7 +44,7 @@
           </div>
 
           <kpi-renderer
-            v-if="widget.type === 'kpi' || widget.type === 'kpi_spark'"
+            v-if="isKpi"
             :dataset="dataset"
             :spark="widget.type === 'kpi_spark'"
             :spark-height="kpiSparkHeight"
@@ -273,18 +278,13 @@ export default {
   },
 }
 </script>
-
 <style scoped>
 .wg-cell {
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  overflow: hidden;
   position: relative;
-}
-.wg-cell.is-edit {
-  overflow: visible;
 }
 .wg-cell.is-edit .wg-card,
 .wg-cell.is-edit .wg-custom {
@@ -301,18 +301,15 @@ export default {
   flex: 1 1 auto;
   margin-bottom: 0 !important;
   min-height: 0;
-  overflow: hidden;
 }
 .wg-custom {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
 }
 .wg-custom > .card,
 .wg-custom.card {
   height: 100%;
   margin-bottom: 0 !important;
-  overflow: hidden;
 }
 .wg-body {
   box-sizing: border-box;
@@ -341,20 +338,11 @@ export default {
 .wg-cell.is-kpi .wg-body {
   padding: 12px 16px 10px;
 }
-.wg-cell.is-kpi .wg-head {
-  margin-bottom: 0.1rem;
-}
-.wg-cell.is-kpi .wg-title {
-  color: #9ca3af;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
 .wg-custom >>> .card-body {
   box-sizing: border-box;
   height: 100%;
   margin: 0;
+  overflow: hidden;
 }
 .wg-empty {
   padding: 2rem 0;

@@ -8,8 +8,8 @@
     @close="$emit('close')"
   >
     <template slot="title">
-      <div class="wg-modal-title">
-        <span class="wg-modal-dot"></span> Nuevo widget
+      <div class="el-dialog__title">
+        Nuevo widget
       </div>
     </template>
 
@@ -89,8 +89,12 @@
             <div v-if="previewLoading" class="wg-preview-loading">
               <loader-graph :rows="3" :columns="1" :radius="40"></loader-graph>
             </div>
+            <div v-else-if="note" class="wg-note" :class="'is-' + noteRec">
+              <i :class="['ti', noteRec === 'bad' ? 'ti-alert-triangle' : 'ti-thumb-up']"></i>
+              {{ note }}
+            </div>
             <widget-card
-              v-else-if="previewDataset"
+              v-if="previewDataset"
               :widget="previewWidget"
               :source="selectedSource"
               :dataset="previewDataset"
@@ -98,10 +102,6 @@
               :col-span="12"
               :row-span="previewWidget.type === 'kpi' || previewWidget.type === 'kpi_spark' ? 2 : 3"
             ></widget-card>
-            <div v-if="note" class="wg-note" :class="'is-' + noteRec">
-              <i :class="['ti', noteRec === 'bad' ? 'ti-alert-triangle' : 'ti-thumb-up']"></i>
-              {{ note }}
-            </div>
           </div>
         </div>
       </div>
@@ -110,7 +110,7 @@
     <template slot="footer">
       <div class="wg-modal-footer">
         <small class="text-muted text-truncate">{{ summary }}</small>
-        <el-button type="primary" size="small" @click="add">Añadir widget →</el-button>
+        <el-button type="primary" size="small" @click="add">Añadir widget</el-button>
       </div>
     </template>
   </el-dialog>
@@ -197,7 +197,7 @@ export default {
         if (['line', 'area', 'bar'].includes(this.selection.type)) {
           return `Esta métrica es categórica (${catN} datos): una serie temporal la hace ilegible. Prueba torta, barras horizontales, ranking o tabla.`
         }
-        return `Con ${catN} categorías esta gráfica se vuelve ilegible: prueba barras horizontales, ranking o tabla.`
+        return `Con ${catN} categorías esta gráfica se vuelve ilegible: prueba con otro gráfico recomendado.`
       }
       if (this.noteRec === 'rec') {
         const focus = this.selectedSource && this.selectedSource.focus
