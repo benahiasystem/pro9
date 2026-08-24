@@ -94,7 +94,12 @@ export default {
         chart: { toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, animations: { enabled: false }, parentHeightOffset: 0, background: 'transparent' },
         dataLabels: { enabled: false },
         grid: { borderColor: theme.grid, strokeDashArray: 4 },
-        tooltip: { y: { formatter: v => formatValue(v, this.unit) } },
+        // Tema dark: texto blanco legible (evita tooltip negro/ilegible en pie/donut).
+        tooltip: {
+          theme: 'dark',
+          style: { fontSize: '12px' },
+          y: { formatter: v => formatValue(v, this.unit) },
+        },
       }
 
       if (this.type === 'line' || this.type === 'area') {
@@ -191,5 +196,18 @@ export default {
 .wg-apex {
   flex: 1 1 auto;
   min-height: 0;
+}
+/* Contraste forzado: montos visibles al hover (sobre todo segmentos claros/naranja). */
+.wg-apex ::v-deep .apexcharts-tooltip {
+  background: rgba(33, 37, 41, 0.96) !important;
+  border: 0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  color: #fff !important;
+}
+.wg-apex ::v-deep .apexcharts-tooltip *,
+.wg-apex ::v-deep .apexcharts-tooltip-title {
+  color: #fff !important;
+  background: transparent !important;
+  border: 0 !important;
 }
 </style>

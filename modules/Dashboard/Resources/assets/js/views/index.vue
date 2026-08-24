@@ -675,10 +675,29 @@
 .sn-empty {
   padding: 2rem 0 1.5rem;
 }
-.sn-panel .apexcharts-tooltip,
+.sn-panel .apexcharts-tooltip {
+  background: rgba(33, 37, 41, 0.96) !important;
+  border: 0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  color: #fff !important;
+}
 .sn-panel .apexcharts-tooltip *,
 .sn-panel .apexcharts-tooltip-title {
   color: #fff !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+.gt-panel .apexcharts-tooltip {
+  background: rgba(33, 37, 41, 0.96) !important;
+  border: 0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  color: #fff !important;
+}
+.gt-panel .apexcharts-tooltip *,
+.gt-panel .apexcharts-tooltip-title {
+  color: #fff !important;
+  background: transparent !important;
+  border: 0 !important;
 }
 .gt-panel {
   height: 100%;
@@ -1014,6 +1033,8 @@ export default {
           },
         },
         tooltip: {
+          theme: "dark",
+          style: { fontSize: "12px" },
           y: {
             formatter: (val) =>
               "S/ " +
@@ -1101,6 +1122,8 @@ export default {
           },
         },
         tooltip: {
+          theme: "dark",
+          style: { fontSize: "12px" },
           y: {
             formatter: (val) =>
               "S/ " +
@@ -1198,6 +1221,8 @@ export default {
           },
         },
         tooltip: {
+          theme: "dark",
+          style: { fontSize: "12px" },
           y: {
             formatter: (val) =>
               "S/ " +
