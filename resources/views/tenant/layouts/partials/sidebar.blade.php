@@ -205,15 +205,17 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             <nav id="menu" class="nav-main" role="navigation">
                 <section id="sidebar-favorites" class="sidebar-favorites" aria-label="Accesos favoritos">
                     <div class="sidebar-favorites-header">
-                        <span class="sidebar-favorites-title">
-                            <i class="fas fa-thumbtack" aria-hidden="true"></i>
-                            <span>Favoritos</span>
-                            <button id="sidebar-search-trigger" type="button" class="sidebar-search-trigger" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
-                                <i class="fas fa-search" aria-hidden="true"></i>
-                            </button>
-                            <button id="sidebar-menu-config-quick-trigger" type="button" class="sidebar-menu-config-quick-trigger" title="Configurar menú" aria-label="Abrir configuración del menú">
-                                <i class="fas fa-pencil-alt" aria-hidden="true"></i>
-                            </button>
+                        <span class="sidebar-favorites-title text-muted">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" /><path d="M9 15l-4.5 4.5" /><path d="M14.5 4l5.5 5.5" /></svg>
+                            <span class="text-uppercase">Favoritos</span>
+                            <div class="ms-auto">
+                                <button id="sidebar-search-trigger" type="button" class="sidebar-search-trigger text-muted" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                                </button>
+                                <button id="sidebar-menu-config-quick-trigger" type="button" class="sidebar-menu-config-quick-trigger text-muted" title="Configurar menú" aria-label="Abrir configuración del menú">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                                </button>
+                            </div>
                         </span>
                     </div>
                     <ul id="sidebar-pinned-items" class="nav nav-main sidebar-pinned-items"></ul>
@@ -221,31 +223,13 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                         Usa “Configurar menú” para agregar tus accesos favoritos.
                     </p>
                     <small id="sidebar-preferences-status" class="sidebar-preferences-status" role="status" aria-live="polite"></small>
-                    <button id="sidebar-preferences-retry" type="button" class="sidebar-preferences-retry">
-                        <i class="fas fa-sync-alt" aria-hidden="true"></i>
-                        Reintentar sincronización
-                    </button>
-                </section>
-                <div id="sidebar-advanced-search" class="sidebar-search-overlay" aria-hidden="true">
-                    <div class="sidebar-search-dialog" role="dialog" aria-modal="true" aria-labelledby="sidebar-search-title">
-                        <div class="sidebar-search-heading">
-                            <div>
-                                <strong id="sidebar-search-title">Buscar en el sistema</strong>
-                                <small>Encuentra módulos, opciones y acciones por nombre o sinónimos.</small>
-                            </div>
-                            <button id="sidebar-search-close" type="button" aria-label="Cerrar buscador">
-                                <i class="fas fa-times" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                        <div class="sidebar-search-input-wrap">
-                            <i class="fas fa-search" aria-hidden="true"></i>
-                            <input id="sidebar-search-input" type="search" autocomplete="off" placeholder="Ej. sucursal, almacén, ventas..." aria-controls="sidebar-search-results">
-                            <kbd>Esc</kbd>
-                        </div>
-                        <div id="sidebar-search-summary" class="sidebar-search-summary">Escribe para buscar entre las opciones disponibles.</div>
-                        <div id="sidebar-search-results" class="sidebar-search-results" role="listbox"></div>
+                    <div class="w-100 px-3">
+                        <button id="sidebar-preferences-retry" type="button" class="sidebar-preferences-retry mt-2">
+                            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                            Reintentar sincronización
+                        </button>
                     </div>
-                </div>
+                </section>
                 <ul class="nav nav-main nav-main-mobile">
                     @if(in_array('dashboard', $vc_modules))
                         <li class="{{ ($firstLevel === 'dashboard') ? 'nav-active' : '' }}">
@@ -1893,55 +1877,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     @endif
 </aside>
 
-<div id="sidebar-menu-config-modal" class="sidebar-menu-config-overlay" aria-hidden="true">
-    <div class="sidebar-menu-config-dialog" role="dialog" aria-modal="true" aria-labelledby="sidebar-menu-config-title">
-        <header class="sidebar-menu-config-header">
-            <div>
-                <h4 id="sidebar-menu-config-title" class="mb-1">Configurar menú</h4>
-                <p class="mb-0">Organiza tus favoritos y elige qué accesos mantener a la vista.</p>
-            </div>
-            <button id="sidebar-menu-config-close" type="button" aria-label="Cerrar configuración del menú">
-                <i class="fas fa-times" aria-hidden="true"></i>
-            </button>
-        </header>
-        <div class="sidebar-menu-config-toolbar">
-            <label class="sidebar-menu-config-compact">
-                <input id="sidebar-menu-config-filter-favorites" type="checkbox">
-                <span class="sidebar-switch" aria-hidden="true"></span>
-                <span>Mostrar únicamente los favoritos en el menú lateral</span>
-            </label>
-            <div class="sidebar-menu-config-search">
-                <i class="fas fa-search" aria-hidden="true"></i>
-                <input id="sidebar-menu-config-search" type="search" autocomplete="off" placeholder="Buscar una opción del menú...">
-            </div>
-        </div>
-        <div id="sidebar-menu-config-content" class="sidebar-menu-config-content">
-            <section class="sidebar-menu-config-section sidebar-menu-config-section-available">
-                <div class="sidebar-menu-config-section-title">
-                    <strong>Opciones disponibles</strong>
-                    <small>Selecciona los módulos que quieres mantener visibles.</small>
-                </div>
-                <div id="sidebar-menu-config-available" class="sidebar-menu-config-list sidebar-menu-config-available"></div>
-            </section>
-            <section class="sidebar-menu-config-section sidebar-menu-config-section-selected">
-                <div class="sidebar-menu-config-section-title">
-                    <strong>Elementos seleccionados / activos</strong>
-                    <small>Arrastra desde los tres puntos para cambiar la prioridad.</small>
-                </div>
-                <div id="sidebar-menu-config-pinned" class="sidebar-menu-config-list"></div>
-            </section>
-        </div>
-        <footer class="sidebar-menu-config-footer">
-            <small>Los cambios se guardan automáticamente.</small>
-            <button id="sidebar-menu-config-done" type="button" class="btn btn-primary">Listo</button>
-        </footer>
-    </div>
-</div>
 
 <style>
     #sidebar-left,
-    .sidebar-menu-config-overlay,
-    .sidebar-search-overlay {
+    .sidebar-menu-config-el-dialog,
+    .sidebar-search-el-dialog {
         --menu-primary: var(--primary-color, var(--bs-primary, LinkText));
         --menu-surface: var(--bs-body-bg, Canvas);
         --menu-surface-muted: var(--bs-tertiary-bg, var(--bs-light, Canvas));
@@ -1956,11 +1896,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         --menu-on-primary: var(--bs-white, Canvas);
     }
     html.dark #sidebar-left,
-    html.dark .sidebar-menu-config-overlay,
-    html.dark .sidebar-search-overlay,
+    html.dark .sidebar-menu-config-el-dialog,
+    html.dark .sidebar-search-el-dialog,
     html.sidebarMode-dark #sidebar-left,
-    html.sidebarMode-dark .sidebar-menu-config-overlay,
-    html.sidebarMode-dark .sidebar-search-overlay {
+    html.sidebarMode-dark .sidebar-menu-config-el-dialog,
+    html.sidebarMode-dark .sidebar-search-el-dialog {
         --menu-surface: var(--bs-dark, Canvas);
         --menu-surface-muted: color-mix(in srgb, var(--bs-dark, Canvas) 84%, var(--bs-white, CanvasText));
         --menu-text: var(--bs-white, CanvasText);
@@ -1968,25 +1908,27 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         --menu-border: color-mix(in srgb, var(--bs-white, CanvasText) 18%, transparent);
         --menu-shadow: color-mix(in srgb, var(--bs-dark, Canvas) 55%, transparent);
     }
-    .sidebar-favorites {
-        margin: 0 10px 6px;
-        padding: 8px;
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius-sm);
-        background: var(--accent-color);
+    .sidebar-favorites,
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-favorites {
+        margin: 0 15px 8px;
+        border: 1px solid color-mix(in srgb, var(--primary) 20%, #fff);
+        border-radius: 8px;
+        padding-bottom: 8px;
+        background: transparent;
         box-shadow: none;
         transition: padding .18s ease, border-color .18s ease, background-color .18s ease;
     }
-    html.dark .sidebar-favorites,
-    html.sidebarMode-dark .sidebar-favorites {
-        border-color: var(--borders-dark);
-        background: var(--contents-dark);
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-favorites-header, 
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-pinned-empty, 
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-preferences-status {
+        display: flex;
     }
     #sidebar-left.sidebar-only-active .sidebar-favorites {
         padding: 4px 0 6px;
-        border-color: transparent;
+        border-color: transparent !important;
         border-radius: 0;
-        background: transparent;
+        background: transparent !important;
+        margin: 0 0px 8px !important;
     }
     .sidebar-favorites-header,
     .sidebar-favorites-title {
@@ -1997,7 +1939,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         justify-content: space-between;
         gap: 8px;
         margin-bottom: 5px;
-        padding: 0 4px;
+        padding: 8px 10px 0 10px;
         min-width: 0;
     }
     .sidebar-favorites-title {
@@ -2009,6 +1951,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         font-size: 12px;
         text-overflow: ellipsis;
         white-space: nowrap;
+        border-bottom: 1px solid color-mix(in srgb, var(--primary) 20%, #fff);
     }
     .sidebar-search-trigger,
     .sidebar-menu-config-quick-trigger {
@@ -2021,39 +1964,14 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         border: 0;
         border-radius: 6px;
         color: inherit;
-        background: var(--menu-border);
-    }
-    .sidebar-menu-config-quick-trigger {
-        color: var(--menu-primary);
-        background: var(--menu-hover);
+        background: transparent
     }
     .sidebar-search-trigger:hover,
     .sidebar-search-trigger:focus,
     .sidebar-menu-config-quick-trigger:hover,
     .sidebar-menu-config-quick-trigger:focus {
-        color: var(--menu-primary);
-        background: var(--menu-hover);
-    }
-    .sidebar-switch {
-        position: relative;
-        flex: 0 0 28px;
-        width: 28px;
-        height: 16px;
-        border-radius: 10px;
-        background: var(--bs-secondary, GrayText);
-        transition: background-color .2s ease;
-    }
-    .sidebar-switch::after {
-        content: '';
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--menu-on-primary);
-        box-shadow: 0 1px 3px var(--menu-shadow);
-        transition: transform .2s ease;
+        color: var(--primary) !important;
+        background: color-mix(in srgb, var(--primary) 10%, #ffffff00);
     }
     .sidebar-pinned-items {
         display: flex;
@@ -2082,32 +2000,16 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-pinned-items > li.drag-after {
         box-shadow: inset 0 -2px 0 var(--menu-primary);
     }
-    .sidebar-pinned-items li > .nav-link {
-        display: flex;
-        align-items: center;
-        min-height: 40px;
-        min-width: 0;
-        margin: 0 !important;
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
     .sidebar-pinned-items li > .nav-link > svg,
     .sidebar-pinned-items li > .nav-link > i,
     .sidebar-pinned-items li > .nav-link::after {
         flex: 0 0 auto;
     }
-    .sidebar-pinned-items .nav-children {
-        display: block !important;
-        max-height: 0;
-        margin: 0 !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-        overflow: hidden;
-        opacity: 0;
-        transition: max-height .28s ease, opacity .2s ease;
+    .sidebar-pinned-items > li > .nav-link > .sidebar-fav-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: .5rem;
+        vertical-align: middle;
     }
     .sidebar-pinned-items .nav-parent.nav-expanded > .nav-children {
         max-height: 900px;
@@ -2136,11 +2038,10 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-preferences-retry {
         display: none;
         width: 100%;
-        margin-top: 4px;
         padding: 5px 8px;
-        border: 1px solid var(--menu-danger);
+        border: 1px solid var(--danger);
         border-radius: 6px;
-        color: var(--menu-danger);
+        color: var(--danger);
         background: transparent;
         font-size: 10px;
         transition: color .16s ease, background-color .16s ease;
@@ -2148,475 +2049,10 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-preferences-retry:hover,
     .sidebar-preferences-retry:focus {
         color: var(--menu-on-primary);
-        background: var(--menu-danger);
+        background: var(--danger);
     }
     .sidebar-preferences-retry.is-visible {
         display: block;
-    }
-    .sidebar-menu-config-overlay {
-        position: fixed !important;
-        z-index: 2147483000 !important;
-        inset: 0 !important;
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 18px;
-        background: var(--menu-overlay);
-        backdrop-filter: blur(3px);
-    }
-    .sidebar-menu-config-overlay.is-open {
-        display: flex;
-    }
-    .sidebar-menu-config-dialog {
-        display: flex;
-        flex-direction: column;
-        width: min(920px, 100%);
-        height: min(720px, 88vh);
-        max-height: 88vh;
-        overflow: hidden;
-        border: 1px solid var(--menu-border);
-        border-radius: 14px;
-        color: var(--menu-text);
-        background: var(--menu-surface);
-        box-shadow: 0 28px 80px var(--menu-shadow);
-    }
-    .sidebar-menu-config-header,
-    .sidebar-menu-config-toolbar,
-    .sidebar-menu-config-footer,
-    .sidebar-menu-config-row,
-    .sidebar-menu-config-row-actions,
-    .sidebar-menu-config-compact,
-    .sidebar-menu-config-search {
-        display: flex;
-        align-items: center;
-    }
-    .sidebar-menu-config-header {
-        justify-content: space-between;
-        gap: 16px;
-        padding: 18px 20px;
-        border-bottom: 1px solid var(--menu-border);
-    }
-    .sidebar-menu-config-header p,
-    .sidebar-menu-config-section-title small,
-    .sidebar-menu-config-footer small,
-    .sidebar-menu-config-row-path {
-        color: var(--menu-text-muted);
-    }
-    .sidebar-menu-config-header > button {
-        width: 32px;
-        height: 32px;
-        border: 0;
-        border-radius: 8px;
-        color: var(--menu-text);
-        background: var(--menu-surface-muted);
-    }
-    .sidebar-menu-config-toolbar {
-        justify-content: space-between;
-        gap: 14px;
-        padding: 12px 20px;
-        border-bottom: 1px solid var(--menu-border);
-        background: var(--menu-surface-muted);
-    }
-    .sidebar-menu-config-compact {
-        gap: 8px;
-        margin: 0;
-        cursor: pointer;
-    }
-    .sidebar-menu-config-compact input {
-        position: absolute;
-        opacity: 0;
-    }
-    .sidebar-menu-config-compact.is-disabled {
-        opacity: .55;
-        cursor: not-allowed;
-    }
-    .sidebar-menu-config-compact input:checked + .sidebar-switch {
-        background: var(--menu-primary);
-    }
-    .sidebar-menu-config-compact input:checked + .sidebar-switch::after {
-        transform: translateX(12px);
-    }
-    .sidebar-menu-config-search {
-        gap: 8px;
-        width: min(360px, 100%);
-        padding: 0 11px;
-        border: 1px solid var(--menu-border);
-        border-radius: 9px;
-        background: var(--menu-surface);
-    }
-    .sidebar-menu-config-search:focus-within {
-        border-color: var(--menu-primary);
-        box-shadow: 0 0 0 3px var(--menu-focus);
-    }
-    .sidebar-menu-config-search input {
-        flex: 1;
-        min-width: 0;
-        height: 38px;
-        border: 0;
-        outline: 0;
-        background: transparent;
-    }
-    .sidebar-menu-config-content {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 16px;
-        flex: 1;
-        min-height: 0;
-        padding: 16px 20px;
-        overflow: hidden;
-    }
-    .sidebar-menu-config-section {
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        border: 1px solid var(--menu-border);
-        border-radius: 10px;
-        overflow: hidden;
-    }
-    .sidebar-menu-config-section-title {
-        padding: 11px 13px;
-        border-bottom: 1px solid var(--menu-border);
-        background: var(--menu-surface-muted);
-    }
-    .sidebar-menu-config-section-title strong,
-    .sidebar-menu-config-section-title small,
-    .sidebar-menu-config-row-name,
-    .sidebar-menu-config-row-path {
-        display: block;
-    }
-    .sidebar-menu-config-list {
-        flex: 1;
-        min-height: 180px;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        padding: 7px;
-    }
-    .sidebar-menu-config-group {
-        margin-bottom: 7px;
-        border: 1px solid var(--menu-border);
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .sidebar-menu-config-group:last-child {
-        margin-bottom: 0;
-    }
-    .sidebar-menu-config-group-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        width: 100%;
-        min-width: 0;
-        min-height: 42px;
-        padding: 7px 9px;
-        border: 0;
-        color: inherit;
-        background: var(--menu-surface-muted);
-        text-align: left;
-    }
-    .sidebar-menu-config-group-toggle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 24px;
-        width: 24px;
-        height: 24px;
-        border: 0;
-        color: var(--menu-text-muted);
-        background: transparent;
-    }
-    .sidebar-menu-config-group-toggle i {
-        transition: transform .18s ease;
-    }
-    .sidebar-menu-config-group.is-expanded .sidebar-menu-config-group-toggle i {
-        transform: rotate(90deg);
-    }
-    .sidebar-menu-config-group-copy {
-        flex: 1;
-        width: 0;
-        min-width: 0;
-    }
-    .sidebar-menu-config-group-name,
-    .sidebar-menu-config-group-count {
-        display: block;
-    }
-    .sidebar-menu-config-group-name {
-        overflow: hidden;
-        font-weight: 600;
-        font-size: 12px;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .sidebar-menu-config-group-count {
-        color: var(--menu-text-muted);
-        font-size: 10px;
-    }
-    .sidebar-menu-config-group-select {
-        display: inline-flex;
-        align-items: center;
-        flex: 0 0 auto;
-        gap: 6px;
-        margin: 0;
-        font-size: 10px;
-        cursor: pointer;
-    }
-    .sidebar-menu-config-group-select input {
-        accent-color: var(--menu-primary);
-    }
-    .sidebar-menu-config-group-items {
-        display: none;
-        padding: 4px;
-        border-top: 1px solid var(--menu-border);
-    }
-    .sidebar-menu-config-group.is-expanded .sidebar-menu-config-group-items {
-        display: block;
-    }
-    .sidebar-menu-config-row {
-        gap: 9px;
-        width: 100%;
-        min-height: 48px;
-        min-width: 0;
-        padding: 7px 8px;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    .sidebar-menu-config-row:hover {
-        background: var(--menu-hover);
-    }
-    .sidebar-menu-config-row.is-dragging {
-        opacity: .45;
-    }
-    .sidebar-menu-config-row.drag-before {
-        box-shadow: inset 0 2px 0 var(--menu-primary);
-    }
-    .sidebar-menu-config-row.drag-after {
-        box-shadow: inset 0 -2px 0 var(--menu-primary);
-    }
-    .sidebar-menu-config-list.is-drop-target {
-        box-shadow: inset 0 0 0 2px var(--menu-primary);
-    }
-    .sidebar-menu-config-drag-handle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 24px;
-        width: 24px;
-        height: 28px;
-        border-radius: 6px;
-        color: var(--menu-text-muted);
-        cursor: grab;
-        touch-action: none;
-    }
-    .sidebar-menu-config-drag-handle:active {
-        cursor: grabbing;
-    }
-    .sidebar-menu-config-row-copy {
-        flex: 1;
-        width: 0;
-        min-width: 0;
-    }
-    .sidebar-menu-config-row-name,
-    .sidebar-menu-config-row-path {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .sidebar-menu-config-row-name {
-        font-weight: 600;
-        font-size: 12px;
-    }
-    .sidebar-menu-config-row-path {
-        margin-top: 2px;
-        font-size: 10px;
-    }
-    .sidebar-menu-config-row-actions {
-        flex: 0 0 auto;
-        gap: 4px;
-        white-space: nowrap;
-    }
-    .sidebar-menu-config-row-actions button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 28px;
-        width: 28px;
-        height: 28px;
-        padding: 0;
-        border: 0;
-        border-radius: 6px;
-        color: var(--menu-text-muted);
-        background: var(--menu-surface-muted);
-    }
-    .sidebar-menu-config-row-actions button:hover:not(:disabled) {
-        color: var(--menu-on-primary);
-        background: var(--menu-primary);
-    }
-    .sidebar-menu-config-row-actions button:disabled {
-        opacity: .35;
-    }
-    .sidebar-menu-config-empty {
-        padding: 28px 12px;
-        color: var(--menu-text-muted);
-        text-align: center;
-        font-size: 12px;
-    }
-    .sidebar-menu-config-footer {
-        justify-content: space-between;
-        gap: 12px;
-        padding: 12px 20px;
-        border-top: 1px solid var(--menu-border);
-    }
-    @media (max-width: 767px) {
-        .sidebar-menu-config-dialog { height: min(760px, 92vh); max-height: 92vh; }
-        .sidebar-menu-config-toolbar { align-items: stretch; flex-direction: column; }
-        .sidebar-menu-config-search { width: 100%; }
-        .sidebar-menu-config-content { grid-template-columns: 1fr; overflow-y: auto; }
-        .sidebar-menu-config-section { min-height: 220px; }
-        .sidebar-menu-config-list { min-height: 0; max-height: 260px; }
-    }
-    .sidebar-search-overlay {
-        position: fixed !important;
-        z-index: 2147483000 !important;
-        inset: 0 !important;
-        width: 100vw;
-        height: 100vh;
-        height: 100dvh;
-        display: none;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 9vh 16px 20px;
-        background: var(--menu-overlay);
-        backdrop-filter: blur(3px);
-    }
-    .sidebar-search-overlay.is-open {
-        display: flex;
-    }
-    .sidebar-search-dialog {
-        width: min(680px, 100%);
-        max-height: 78vh;
-        overflow: hidden;
-        border: 1px solid var(--menu-border);
-        border-radius: 14px;
-        color: var(--menu-text);
-        background: var(--menu-surface);
-        box-shadow: 0 24px 70px var(--menu-shadow);
-    }
-    .sidebar-search-heading {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 16px 18px 10px;
-    }
-    .sidebar-search-heading strong,
-    .sidebar-search-heading small {
-        display: block;
-    }
-    .sidebar-search-heading small,
-    .sidebar-search-summary,
-    .sidebar-search-path {
-        color: var(--menu-text-muted);
-    }
-    .sidebar-search-heading button {
-        width: 30px;
-        height: 30px;
-        border: 0;
-        border-radius: 7px;
-        color: var(--menu-text);
-        background: var(--menu-surface-muted);
-    }
-    .sidebar-search-input-wrap {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin: 0 18px;
-        padding: 0 12px;
-        border: 2px solid var(--menu-focus);
-        border-radius: 10px;
-        background: var(--menu-surface);
-    }
-    .sidebar-search-input-wrap:focus-within {
-        border-color: var(--menu-primary);
-        box-shadow: 0 0 0 3px var(--menu-focus);
-    }
-    .sidebar-search-input-wrap input {
-        flex: 1;
-        min-width: 0;
-        height: 46px;
-        border: 0;
-        outline: 0;
-        color: inherit;
-        background: transparent;
-        font-size: 15px;
-    }
-    .sidebar-search-input-wrap kbd {
-        padding: 2px 6px;
-        border: 1px solid var(--menu-border);
-        border-radius: 5px;
-        color: var(--menu-text-muted);
-        background: var(--menu-surface-muted);
-        font-size: 10px;
-    }
-    .sidebar-search-summary {
-        padding: 10px 19px 7px;
-        font-size: 11px;
-    }
-    .sidebar-search-results {
-        max-height: calc(78vh - 150px);
-        overflow-y: auto;
-        padding: 0 10px 12px;
-    }
-    .sidebar-search-result {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        width: 100%;
-        padding: 10px;
-        border: 0;
-        border-radius: 9px;
-        color: inherit;
-        text-align: left;
-        background: transparent;
-    }
-    .sidebar-search-result:hover,
-    .sidebar-search-result.is-selected {
-        color: inherit;
-        background: var(--menu-hover);
-    }
-    .sidebar-search-result-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 34px;
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        color: var(--menu-primary);
-        background: var(--menu-hover);
-    }
-    .sidebar-search-result-copy {
-        min-width: 0;
-    }
-    .sidebar-search-result-name,
-    .sidebar-search-path {
-        display: block;
-    }
-    .sidebar-search-result-name {
-        font-weight: 600;
-    }
-    .sidebar-search-path {
-        margin-top: 2px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 11px;
-    }
-    .sidebar-search-empty {
-        padding: 32px 16px;
-        color: var(--menu-text-muted);
-        text-align: center;
     }
     .sidebar-only-active #menu > .nav-main-mobile {
         display: none !important;
@@ -2630,12 +2066,28 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         display: none;
     }
     html.sidebar-left-collapsed .sidebar-favorites {
-        margin: 5px;
-        padding: 3px;
+        margin: 5px 0;
+        padding: 3px 0;
         border-color: transparent;
         background: transparent;
     }
+    html.sidebar-left-collapsed .sidebar-left .sidebar-favorites a.nav-link {
+        padding-right: 0 !important;
+    }
+    html.sidebar-left-collapsed .sidebar-left .sidebar-pinned-items > li.nav-item-with-action > .nav-action {
+        display: none;
+    }
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-pinned-items > li.nav-item-with-action > .nav-action {
+        display: inline-flex;
+    }
 </style>
+
+{{-- Puntos de montaje de los modales del menu (Vue + el-dialog).
+     Ver resources/js/views/tenant/components/sidebar_search.vue y sidebar_menu_config.vue --}}
+<div id="sidebar-search-root"></div>
+<div id="sidebar-menu-config-root"></div>
+
+@include('tenant.layouts.partials.sidebar-favorite-icons')
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -2648,37 +2100,14 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         const retryButton = document.getElementById('sidebar-preferences-retry');
         const searchTrigger = document.getElementById('sidebar-search-trigger');
         const menuConfigQuickTrigger = document.getElementById('sidebar-menu-config-quick-trigger');
-        const searchOverlay = document.getElementById('sidebar-advanced-search');
-        const searchClose = document.getElementById('sidebar-search-close');
-        const searchInput = document.getElementById('sidebar-search-input');
-        const searchResults = document.getElementById('sidebar-search-results');
-        const searchSummary = document.getElementById('sidebar-search-summary');
         const menuConfigTrigger = document.getElementById('sidebar-menu-config-trigger');
-        const menuConfigModal = document.getElementById('sidebar-menu-config-modal');
-        const menuConfigClose = document.getElementById('sidebar-menu-config-close');
-        const menuConfigDone = document.getElementById('sidebar-menu-config-done');
-        const menuConfigFilterFavorites = document.getElementById('sidebar-menu-config-filter-favorites');
-        const menuConfigContent = document.getElementById('sidebar-menu-config-content');
-        const menuConfigSearch = document.getElementById('sidebar-menu-config-search');
-        const menuConfigPinned = document.getElementById('sidebar-menu-config-pinned');
-        const menuConfigAvailable = document.getElementById('sidebar-menu-config-available');
         const endpoint = @json(url('api/user/menu-preferences'));
         const storageKey = @json('menu-preferences:' . request()->getHost() . ':' . auth()->id());
         const expansionStorageKey = @json('sidebar-menu-state:' . request()->getHost() . ':' . auth()->id());
+        const favoriteIcons = window.sidebarFavoriteIcons || {};
+        const favoriteIconFallback = window.sidebarFavoriteIconFallback || '';
 
         if (!sidebar || !originalList || !pinnedList) return;
-
-        // Los overlays nacen dentro de .inner-wrapper junto al sidebar. Ese
-        // contenedor y el header crean contextos de apilamiento independientes,
-        // por lo que aumentar z-index no basta para cubrir la barra superior.
-        // Al montarlos directamente en body comparten el contexto raíz y cubren
-        // de forma consistente toda la interfaz.
-        if (searchOverlay && searchOverlay.parentElement !== document.body) {
-            document.body.appendChild(searchOverlay);
-        }
-        if (menuConfigModal && menuConfigModal.parentElement !== document.body) {
-            document.body.appendChild(menuConfigModal);
-        }
 
         let preferences = { pinned_items: [], menu_order: [], show_only_active_menu: false };
         let saveTimer = null;
@@ -2686,14 +2115,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         let syncInProgress = false;
         let syncQueued = false;
         let searchIndex = [];
-        let selectedSearchIndex = -1;
         let menuExpansionState = {};
         let menuConfigurationEntries = [];
-        let menuConfigExpandedGroups = new Set();
-        let menuConfigDraggedKey = null;
-        let menuConfigDragSource = null;
         let configMode = false;
-        let menuConfigReturnFocus = menuConfigTrigger;
 
         const synonymGroups = [
             ['sucursal', 'sede', 'establecimiento', 'local', 'tienda', 'agencia', 'punto de venta', 'almacen'],
@@ -2824,6 +2248,63 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             });
         }
 
+        function buildFavoriteIcon(markup) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"'
+                + ' fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"'
+                + ' class="icon icon-tabler sidebar-fav-icon" aria-hidden="true">' + markup + '</svg>';
+            return wrapper.firstElementChild;
+        }
+
+        function inheritedIcon(item) {
+            let parent = item.parentElement ? item.parentElement.closest('li') : null;
+            while (parent) {
+                const anchor = directAnchor(parent);
+                const icon = anchor ? anchor.querySelector(':scope > svg') : null;
+                if (icon) return icon.cloneNode(true);
+                parent = parent.parentElement ? parent.parentElement.closest('li') : null;
+            }
+            return null;
+        }
+
+        function resolveMenuIcon(item, key) {
+            const anchor = directAnchor(item);
+            const own = anchor ? anchor.querySelector(':scope > svg, :scope > i') : null;
+            if (own) return own.cloneNode(true);
+            if (key && favoriteIcons[key]) return buildFavoriteIcon(favoriteIcons[key]);
+            const inherited = inheritedIcon(item);
+            if (inherited) return inherited;
+            return favoriteIconFallback ? buildFavoriteIcon(favoriteIconFallback) : null;
+        }
+
+        function wrapPinnedLabel(anchor) {
+            const hasElement = Array.from(anchor.childNodes).some(function (node) {
+                return node.nodeType === 1;
+            });
+            if (hasElement) return;
+
+            const label = anchor.textContent.replace(/\s+/g, ' ').trim();
+            if (!label) return;
+
+            const span = document.createElement('span');
+            span.textContent = label;
+            anchor.textContent = '';
+            anchor.appendChild(span);
+        }
+
+        function ensurePinnedIcon(clone, key, original) {
+            const anchor = directAnchor(clone);
+            if (!anchor || anchor.querySelector(':scope > svg, :scope > i')) return;
+
+            wrapPinnedLabel(anchor);
+
+            const icon = resolveMenuIcon(original, key);
+            if (!icon) return;
+
+            icon.classList.add('sidebar-fav-icon');
+            anchor.insertBefore(icon, anchor.firstChild);
+        }
+
         function closestPinnedItem(target) {
             const item = target && target.closest ? target.closest('li.sidebar-pinned-item') : null;
             return item && item.parentElement === pinnedList ? item : null;
@@ -2881,10 +2362,12 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             pinnedList.innerHTML = '';
 
             validKeys.forEach(function (key) {
-                const clone = items.get(key).cloneNode(true);
+                const original = items.get(key);
+                const clone = original.cloneNode(true);
                 clone.dataset.menuPreferenceKey = key;
                 clone.classList.add('sidebar-pinned-item');
                 clone.setAttribute('draggable', configMode ? 'true' : 'false');
+                ensurePinnedIcon(clone, key, original);
                 pinnedList.appendChild(clone);
             });
             restoreMenuExpansionState(pinnedList);
@@ -2896,9 +2379,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             const hasFavorites = preferences.pinned_items.length > 0;
             if (!hasFavorites) preferences.show_only_active_menu = false;
             const showOnlyFavorites = hasFavorites && !!preferences.show_only_active_menu;
-            menuConfigFilterFavorites.checked = showOnlyFavorites;
-            menuConfigFilterFavorites.disabled = !hasFavorites;
-            menuConfigFilterFavorites.closest('.sidebar-menu-config-compact').classList.toggle('is-disabled', !hasFavorites);
             sidebar.classList.toggle('sidebar-only-active', showOnlyFavorites);
         }
 
@@ -3011,7 +2491,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
                 const name = hierarchy[hierarchy.length - 1] || menuItemLabel(item);
                 const path = hierarchy.join(' > ');
-                const icon = anchor.querySelector('svg, i');
+                const icon = resolveMenuIcon(item, key);
                 searchIndex.push({
                     key: key,
                     name: name,
@@ -3019,9 +2499,10 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                     normalizedName: normalizeSearchText(name),
                     normalizedPath: normalizeSearchText(path),
                     href: href,
-                    icon: icon ? icon.cloneNode(true) : null
+                    iconHtml: icon ? icon.outerHTML : ''
                 });
             });
+            return searchIndex;
         }
 
         function expandedSearchTerms(query) {
@@ -3089,92 +2570,13 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             });
         }
 
-        function selectSearchResult(index) {
-            const results = Array.from(searchResults.querySelectorAll('.sidebar-search-result'));
-            if (!results.length) {
-                selectedSearchIndex = -1;
-                return;
-            }
-            selectedSearchIndex = Math.max(0, Math.min(index, results.length - 1));
-            results.forEach(function (result, resultIndex) {
-                result.classList.toggle('is-selected', resultIndex === selectedSearchIndex);
-                result.setAttribute('aria-selected', resultIndex === selectedSearchIndex ? 'true' : 'false');
-            });
-            results[selectedSearchIndex].scrollIntoView({ block: 'nearest' });
-        }
+        window.sidebarMenuSearch = {
+            buildIndex: buildSearchIndex,
+            search: searchMenu
+        };
 
-        function navigateToSearchResult(entry) {
-            closeAdvancedSearch();
-            window.location.href = entry.href;
-        }
-
-        function renderSearchResults(query) {
-            const matches = searchMenu(query);
-            searchResults.innerHTML = '';
-            selectedSearchIndex = -1;
-
-            if (!normalizeSearchText(query)) {
-                searchSummary.textContent = 'Escribe para buscar entre ' + searchIndex.length + ' opciones disponibles.';
-                return;
-            }
-            searchSummary.textContent = matches.length
-                ? matches.length + ' resultado(s) ordenados por relevancia.'
-                : 'No encontramos opciones relacionadas con “' + query.trim() + '”.';
-
-            if (!matches.length) {
-                const empty = document.createElement('div');
-                empty.className = 'sidebar-search-empty';
-                empty.innerHTML = '<i class="fas fa-search" aria-hidden="true"></i><br>No hay coincidencias disponibles para tu usuario.';
-                searchResults.appendChild(empty);
-                return;
-            }
-
-            matches.forEach(function (entry, index) {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'sidebar-search-result';
-                button.setAttribute('role', 'option');
-                button.setAttribute('aria-selected', 'false');
-
-                const icon = document.createElement('span');
-                icon.className = 'sidebar-search-result-icon';
-                if (entry.icon) icon.appendChild(entry.icon.cloneNode(true));
-                else icon.innerHTML = '<i class="fas fa-arrow-right" aria-hidden="true"></i>';
-
-                const copy = document.createElement('span');
-                copy.className = 'sidebar-search-result-copy';
-                const name = document.createElement('span');
-                name.className = 'sidebar-search-result-name';
-                name.textContent = entry.name;
-                const path = document.createElement('span');
-                path.className = 'sidebar-search-path';
-                path.textContent = entry.path;
-                copy.appendChild(name);
-                copy.appendChild(path);
-                button.appendChild(icon);
-                button.appendChild(copy);
-                button.addEventListener('mouseenter', function () { selectSearchResult(index); });
-                button.addEventListener('click', function () { navigateToSearchResult(entry); });
-                searchResults.appendChild(button);
-            });
-            selectSearchResult(0);
-        }
-
-        function openAdvancedSearch() {
-            buildSearchIndex();
-            searchOverlay.classList.add('is-open');
-            searchOverlay.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-            searchInput.value = '';
-            renderSearchResults('');
-            window.setTimeout(function () { searchInput.focus(); }, 20);
-        }
-
-        function closeAdvancedSearch() {
-            searchOverlay.classList.remove('is-open');
-            searchOverlay.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-            searchTrigger.focus();
+        function emitSidebarSearch(event) {
+            if (window.$eventHub) window.$eventHub.$emit(event);
         }
 
         function buildMenuConfigurationEntries() {
@@ -3232,10 +2634,27 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         function updateMenuConfiguration() {
             normalizeHierarchicalPreferences();
             renderPinnedItems();
-            renderMenuConfiguration();
             applyCompactMode();
             saveLocalBackup(true);
             persistPreferences();
+            notifyMenuConfigChanged();
+        }
+
+        function menuConfigState() {
+            return {
+                entries: menuConfigurationEntries.slice(),
+                pinned: orderedPinnedKeys().filter(function (key) {
+                    return menuConfigurationEntries.some(function (entry) { return entry.key === key; });
+                }),
+                showOnlyActive: !!preferences.show_only_active_menu,
+                hasFavorites: preferences.pinned_items.length > 0
+            };
+        }
+
+        function notifyMenuConfigChanged() {
+            if (configMode && window.$eventHub) {
+                window.$eventHub.$emit('sidebarMenuConfigChanged', menuConfigState());
+            }
         }
 
         function toggleConfiguredFavorite(key) {
@@ -3275,9 +2694,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             }
             normalizeHierarchicalPreferences();
             updateMenuConfiguration();
-            window.requestAnimationFrame(function () {
-                menuConfigSearch.focus({ preventScroll: true });
-            });
         }
 
         function menuConfigurationTermVariants(term) {
@@ -3325,269 +2741,56 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             return everyTermMatches ? score : 0;
         }
 
-        function createMenuConfigurationRow(entry, pinned) {
-            const row = document.createElement('div');
-            row.className = 'sidebar-menu-config-row';
-            row.dataset.menuConfigKey = entry.key;
-            row.dataset.menuConfigSource = pinned ? 'selected' : 'available';
-            const coveredByParent = !pinned && (entry.ancestorKeys || []).some(function (ancestorKey) {
-                return preferences.pinned_items.includes(ancestorKey);
-            });
-            if (coveredByParent) row.classList.add('is-disabled');
-
-            const dragHandle = document.createElement('span');
-            dragHandle.className = 'sidebar-menu-config-drag-handle';
-            dragHandle.draggable = true;
-            dragHandle.tabIndex = 0;
-            dragHandle.title = pinned ? 'Arrastrar para reordenar o quitar' : 'Arrastrar a elementos seleccionados';
-            dragHandle.setAttribute('aria-label', dragHandle.title);
-            if (coveredByParent) {
-                dragHandle.draggable = false;
-                dragHandle.tabIndex = -1;
-                dragHandle.title = 'Incluido por el módulo completo';
-                dragHandle.setAttribute('aria-label', dragHandle.title);
-            }
-            dragHandle.innerHTML = '<i class="fas fa-ellipsis-v" aria-hidden="true"></i>';
-            dragHandle.addEventListener('dragstart', function (event) {
-                menuConfigDraggedKey = entry.key;
-                menuConfigDragSource = pinned ? 'selected' : 'available';
-                row.classList.add('is-dragging');
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', entry.key);
-            });
-
-            const copy = document.createElement('div');
-            copy.className = 'sidebar-menu-config-row-copy';
-            const name = document.createElement('span');
-            name.className = 'sidebar-menu-config-row-name';
-            name.textContent = entry.name;
-            const path = document.createElement('span');
-            path.className = 'sidebar-menu-config-row-path';
-            path.textContent = entry.path;
-            copy.appendChild(name);
-            copy.appendChild(path);
-
-            const actions = document.createElement('div');
-            actions.className = 'sidebar-menu-config-row-actions';
-            const toggle = document.createElement('button');
-            toggle.type = 'button';
-            toggle.title = pinned ? 'Mover a opciones disponibles' : 'Mover a elementos seleccionados';
-            toggle.setAttribute(
-                'aria-label',
-                pinned ? 'Mover a opciones disponibles' : 'Mover a elementos seleccionados'
-            );
-            toggle.disabled = coveredByParent;
-            if (coveredByParent) {
-                toggle.title = 'Incluido por el módulo completo';
-                toggle.setAttribute('aria-label', toggle.title);
-            }
-            toggle.innerHTML = pinned
-                ? '<i class="fas fa-arrow-left" aria-hidden="true"></i>'
-                : '<i class="fas fa-plus" aria-hidden="true"></i>';
-            toggle.addEventListener('click', function () {
-                toggleConfiguredFavorite(entry.key);
-                if (!pinned) {
-                    window.requestAnimationFrame(function () {
-                        menuConfigSearch.focus({ preventScroll: true });
-                    });
-                }
-            });
-            actions.appendChild(toggle);
-            row.appendChild(dragHandle);
-            row.appendChild(copy);
-            row.appendChild(actions);
-            return row;
-        }
-
-        function createMenuConfigurationGroup(groupName, entries, visibleEntries, forceExpanded) {
-            const group = document.createElement('section');
-            const groupKey = entries[0].groupKey;
-            const isExpanded = forceExpanded || menuConfigExpandedGroups.has(groupKey);
-            group.className = 'sidebar-menu-config-group' + (isExpanded ? ' is-expanded' : '');
-
-            const header = document.createElement('div');
-            header.className = 'sidebar-menu-config-group-header';
-            const expand = document.createElement('button');
-            expand.type = 'button';
-            expand.className = 'sidebar-menu-config-group-toggle';
-            expand.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
-            expand.setAttribute('aria-label', (isExpanded ? 'Contraer ' : 'Expandir ') + groupName);
-            expand.innerHTML = '<i class="fas fa-chevron-right" aria-hidden="true"></i>';
-            expand.addEventListener('click', function () {
-                const expanded = group.classList.toggle('is-expanded');
-                expand.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-                expand.setAttribute('aria-label', (expanded ? 'Contraer ' : 'Expandir ') + groupName);
-                if (expanded) menuConfigExpandedGroups.add(groupKey);
-                else menuConfigExpandedGroups.delete(groupKey);
-            });
-
-            const copy = document.createElement('div');
-            copy.className = 'sidebar-menu-config-group-copy';
-            const name = document.createElement('span');
-            name.className = 'sidebar-menu-config-group-name';
-            name.textContent = groupName;
-            const count = document.createElement('span');
-            count.className = 'sidebar-menu-config-group-count';
-            const selectedCount = entries.filter(function (entry) {
-                return preferences.pinned_items.includes(entry.key);
-            }).length;
-            const parent = entries.find(function (entry) { return (entry.ancestorKeys || []).length === 0; }) || entries[0];
-            const parentSelected = preferences.pinned_items.includes(parent.key);
-            count.textContent = (parentSelected ? entries.length : selectedCount) + ' de ' + entries.length + ' seleccionados';
-            copy.appendChild(name);
-            copy.appendChild(count);
-
-            const selectLabel = document.createElement('label');
-            selectLabel.className = 'sidebar-menu-config-group-select';
-            const select = document.createElement('input');
-            select.type = 'checkbox';
-            select.checked = parentSelected;
-            select.indeterminate = !parentSelected && selectedCount > 0;
-            select.setAttribute('aria-label', 'Seleccionar todo el módulo ' + groupName);
-            select.addEventListener('change', function () {
-                setConfiguredGroupSelection(entries, select.checked);
-            });
-            const selectText = document.createElement('span');
-            selectText.textContent = 'Todo';
-            selectLabel.appendChild(select);
-            selectLabel.appendChild(selectText);
-
-            const items = document.createElement('div');
-            items.className = 'sidebar-menu-config-group-items';
-            visibleEntries.forEach(function (entry) {
-                items.appendChild(createMenuConfigurationRow(entry, false));
-            });
-            if (!visibleEntries.length) {
-                items.innerHTML = '<div class="sidebar-menu-config-empty">Todos los elementos de este bloque están seleccionados.</div>';
-            }
-
-            header.appendChild(expand);
-            header.appendChild(copy);
-            header.appendChild(selectLabel);
-            group.appendChild(header);
-            group.appendChild(items);
-            return group;
-        }
-
-        function renderMenuConfiguration() {
-            if (!menuConfigPinned || !menuConfigAvailable) return;
-            if (!configMode) {
-                menuConfigPinned.innerHTML = '';
-                menuConfigAvailable.innerHTML = '';
-                return;
-            }
-            const entries = new Map(menuConfigurationEntries.map(function (entry) { return [entry.key, entry]; }));
-            const ordered = orderedPinnedKeys().filter(function (key) { return entries.has(key); });
-            const query = normalizeSearchText(menuConfigSearch.value);
-            menuConfigPinned.innerHTML = '';
-            menuConfigAvailable.innerHTML = '';
-
-            ordered.forEach(function (key) {
-                menuConfigPinned.appendChild(createMenuConfigurationRow(entries.get(key), true));
-            });
-            if (!ordered.length) {
-                menuConfigPinned.innerHTML = '<div class="sidebar-menu-config-empty">Todavía no fijaste ningún acceso.</div>';
-            }
-
-            const matchingEntries = menuConfigurationEntries.map(function (entry) {
-                return { entry: entry, score: scoreMenuConfigurationEntry(entry, query) };
-            }).filter(function (result) {
-                return result.score > 0;
-            }).sort(function (left, right) {
-                // La relevancia manda durante la búsqueda. Ante resultados con
-                // el mismo puntaje se conserva el orden visual del dashboard.
-                return right.score - left.score || left.entry.dashboardOrder - right.entry.dashboardOrder;
-            }).map(function (result) {
-                return result.entry;
-            });
-
-            const groupedEntries = new Map();
-            matchingEntries.forEach(function (entry) {
-                if (!groupedEntries.has(entry.group)) groupedEntries.set(entry.group, []);
-                groupedEntries.get(entry.group).push(entry);
-            });
-            groupedEntries.forEach(function (matchedGroupEntries, groupName) {
-                const allGroupEntries = menuConfigurationEntries.filter(function (entry) {
-                    return entry.group === groupName;
+        window.sidebarMenuConfig = {
+            normalize: normalizeSearchText,
+            score: scoreMenuConfigurationEntry,
+            state: menuConfigState,
+            open: function () {
+                configMode = true;
+                pinnedList.querySelectorAll('.sidebar-pinned-item').forEach(function (item) {
+                    item.setAttribute('draggable', 'true');
                 });
-                const visibleEntries = matchedGroupEntries.filter(function (entry) {
-                    return !preferences.pinned_items.includes(entry.key);
+                buildMenuConfigurationEntries();
+                applyCompactMode();
+                document.body.classList.add('sidebar-menu-config-open');
+                return menuConfigState();
+            },
+            close: function () {
+                configMode = false;
+                document.body.classList.remove('sidebar-menu-config-open');
+                pinnedList.querySelectorAll('.sidebar-pinned-item').forEach(function (item) {
+                    item.setAttribute('draggable', 'false');
                 });
-                menuConfigAvailable.appendChild(
-                    createMenuConfigurationGroup(groupName, allGroupEntries, visibleEntries, !!query)
-                );
-            });
-            if (!matchingEntries.length) {
-                menuConfigAvailable.innerHTML = '<div class="sidebar-menu-config-empty">No hay opciones que coincidan con la búsqueda.</div>';
+            },
+            toggle: function (key) {
+                toggleConfiguredFavorite(key);
+            },
+            setGroupSelection: function (groupKey, selected) {
+                const entries = menuConfigurationEntries.filter(function (entry) {
+                    return entry.groupKey === groupKey;
+                });
+                if (entries.length) setConfiguredGroupSelection(entries, selected);
+            },
+            reorder: function (order) {
+                preferences.pinned_items = order.slice();
+                preferences.menu_order = order.slice();
+                updateMenuConfiguration();
+            },
+            unpin: function (key) {
+                preferences.pinned_items = preferences.pinned_items.filter(function (value) { return value !== key; });
+                preferences.menu_order = preferences.menu_order.filter(function (value) { return value !== key; });
+                updateMenuConfiguration();
+            },
+            setShowOnlyActive: function (value) {
+                preferences.show_only_active_menu = !!value;
+                applyCompactMode();
+                persistPreferences();
+                notifyMenuConfigChanged();
             }
-        }
+        };
 
-        function openMenuConfiguration(returnFocus) {
-            menuConfigReturnFocus = returnFocus || menuConfigTrigger;
-            configMode = true;
-            pinnedList.querySelectorAll('.sidebar-pinned-item').forEach(function (item) {
-                item.setAttribute('draggable', 'true');
-            });
-            buildMenuConfigurationEntries();
-            menuConfigSearch.value = '';
-            menuConfigExpandedGroups = new Set();
-            if (menuConfigurationEntries.length) menuConfigExpandedGroups.add(menuConfigurationEntries[0].groupKey);
-            renderMenuConfiguration();
-            applyCompactMode();
-            menuConfigModal.classList.add('is-open');
-            menuConfigModal.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('sidebar-menu-config-open');
-            document.body.style.overflow = 'hidden';
-            window.setTimeout(function () { menuConfigSearch.focus(); }, 20);
-        }
-
-        function closeMenuConfiguration() {
-            configMode = false;
-            clearMenuConfigurationDragState();
-            menuConfigModal.classList.remove('is-open');
-            menuConfigModal.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('sidebar-menu-config-open');
-            document.body.style.overflow = '';
-            menuConfigPinned.innerHTML = '';
-            menuConfigAvailable.innerHTML = '';
-            pinnedList.querySelectorAll('.sidebar-pinned-item').forEach(function (item) {
-                item.setAttribute('draggable', 'false');
-            });
-            if (menuConfigReturnFocus && document.body.contains(menuConfigReturnFocus)) {
-                menuConfigReturnFocus.focus();
-            }
-        }
-
-        function clearMenuConfigurationDragState() {
-            menuConfigContent.querySelectorAll('.is-dragging, .drag-before, .drag-after, .is-drop-target').forEach(function (element) {
-                element.classList.remove('is-dragging', 'drag-before', 'drag-after', 'is-drop-target');
-            });
-            menuConfigDraggedKey = null;
-            menuConfigDragSource = null;
-        }
-
-        function dropMenuConfigurationItemInSelected(event) {
-            if (!menuConfigDraggedKey) return;
-            event.preventDefault();
-            const targetRow = event.target.closest('.sidebar-menu-config-row[data-menu-config-source="selected"]');
-            const order = orderedPinnedKeys().filter(function (key) { return key !== menuConfigDraggedKey; });
-            let targetIndex = targetRow ? order.indexOf(targetRow.dataset.menuConfigKey) : order.length;
-            if (targetIndex < 0) targetIndex = order.length;
-            if (targetRow && event.clientY > targetRow.getBoundingClientRect().top + targetRow.offsetHeight / 2) targetIndex++;
-            order.splice(targetIndex, 0, menuConfigDraggedKey);
-            preferences.pinned_items = order.slice();
-            preferences.menu_order = order.slice();
-            clearMenuConfigurationDragState();
-            updateMenuConfiguration();
-        }
-
-        function dropMenuConfigurationItemInAvailable(event) {
-            if (!menuConfigDraggedKey || menuConfigDragSource !== 'selected') return;
-            event.preventDefault();
-            preferences.pinned_items = preferences.pinned_items.filter(function (key) { return key !== menuConfigDraggedKey; });
-            preferences.menu_order = preferences.menu_order.filter(function (key) { return key !== menuConfigDraggedKey; });
-            clearMenuConfigurationDragState();
-            updateMenuConfiguration();
+        function emitMenuConfigOpen(triggerId) {
+            if (window.$eventHub) window.$eventHub.$emit('sidebarMenuConfigOpen', triggerId);
         }
 
         pinnedList.addEventListener('click', function (event) {
@@ -3662,96 +2865,29 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             persistPreferences(true);
         });
 
-        searchTrigger.addEventListener('click', openAdvancedSearch);
-        searchClose.addEventListener('click', closeAdvancedSearch);
-        searchOverlay.addEventListener('mousedown', function (event) {
-            if (event.target === searchOverlay) closeAdvancedSearch();
-        });
-        searchInput.addEventListener('input', function () {
-            renderSearchResults(searchInput.value);
+        searchTrigger.addEventListener('click', function () {
+            emitSidebarSearch('sidebarSearchOpen');
         });
         menuConfigTrigger.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            openMenuConfiguration(menuConfigTrigger);
+            emitMenuConfigOpen('sidebar-menu-config-trigger');
         });
         menuConfigQuickTrigger.addEventListener('click', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            openMenuConfiguration(menuConfigQuickTrigger);
-        });
-        menuConfigClose.addEventListener('click', closeMenuConfiguration);
-        menuConfigDone.addEventListener('click', closeMenuConfiguration);
-        menuConfigModal.addEventListener('mousedown', function (event) {
-            if (event.target === menuConfigModal) closeMenuConfiguration();
-        });
-        menuConfigSearch.addEventListener('input', renderMenuConfiguration);
-        menuConfigPinned.addEventListener('dragover', function (event) {
-            if (!menuConfigDraggedKey) return;
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            menuConfigPinned.classList.add('is-drop-target');
-            menuConfigPinned.querySelectorAll('.drag-before, .drag-after').forEach(function (row) {
-                row.classList.remove('drag-before', 'drag-after');
-            });
-            const targetRow = event.target.closest('.sidebar-menu-config-row[data-menu-config-source="selected"]');
-            if (targetRow && targetRow.dataset.menuConfigKey !== menuConfigDraggedKey) {
-                const after = event.clientY > targetRow.getBoundingClientRect().top + targetRow.offsetHeight / 2;
-                targetRow.classList.add(after ? 'drag-after' : 'drag-before');
-            }
-        });
-        menuConfigPinned.addEventListener('dragleave', function (event) {
-            if (!menuConfigPinned.contains(event.relatedTarget)) menuConfigPinned.classList.remove('is-drop-target');
-        });
-        menuConfigPinned.addEventListener('drop', dropMenuConfigurationItemInSelected);
-        menuConfigAvailable.addEventListener('dragover', function (event) {
-            if (!menuConfigDraggedKey || menuConfigDragSource !== 'selected') return;
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            menuConfigAvailable.classList.add('is-drop-target');
-        });
-        menuConfigAvailable.addEventListener('dragleave', function (event) {
-            if (!menuConfigAvailable.contains(event.relatedTarget)) menuConfigAvailable.classList.remove('is-drop-target');
-        });
-        menuConfigAvailable.addEventListener('drop', dropMenuConfigurationItemInAvailable);
-        menuConfigContent.addEventListener('dragend', clearMenuConfigurationDragState);
-        menuConfigFilterFavorites.addEventListener('change', function () {
-            preferences.show_only_active_menu = menuConfigFilterFavorites.checked;
-            applyCompactMode();
-            persistPreferences();
+            emitMenuConfigOpen('sidebar-menu-config-quick-trigger');
         });
         document.addEventListener('keydown', function (event) {
             if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
                 event.preventDefault();
-                if (searchOverlay.classList.contains('is-open')) closeAdvancedSearch();
-                else openAdvancedSearch();
+                emitSidebarSearch('sidebarSearchToggle');
                 return;
-            }
-            if (menuConfigModal.classList.contains('is-open') && event.key === 'Escape') {
-                event.preventDefault();
-                closeMenuConfiguration();
-                return;
-            }
-            if (!searchOverlay.classList.contains('is-open')) return;
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                closeAdvancedSearch();
-            } else if (event.key === 'ArrowDown') {
-                event.preventDefault();
-                selectSearchResult(selectedSearchIndex + 1);
-            } else if (event.key === 'ArrowUp') {
-                event.preventDefault();
-                selectSearchResult(selectedSearchIndex - 1);
-            } else if (event.key === 'Enter' && selectedSearchIndex >= 0) {
-                event.preventDefault();
-                const selected = searchResults.querySelectorAll('.sidebar-search-result')[selectedSearchIndex];
-                if (selected) selected.click();
             }
         });
 
         readMenuExpansionState();
         restoreMenuExpansionState(originalList);
-        buildSearchIndex();
         const localBackup = readLocalBackup();
         if (localBackup) {
             preferences = localBackup.preferences;
@@ -4305,7 +3441,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         position: relative;
         z-index: 1;
     }
-
+    .sidebar-pinned-items > li.nav-item-with-action > .nav-action {
+        right: 24px;
+    }
     @keyframes shimmer {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }

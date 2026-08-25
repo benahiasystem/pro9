@@ -1949,11 +1949,28 @@ html.dark .el-tooltip__popper.is-dark{
   color: var(--dark-color) !important;
   border: 1px solid var(--accent-color);
 }
+.sidebar-favorites {
+    border-radius: 6px !important;
+}
+.sidebar-favorites ul.nav-main li.nav-active.sidebar-pinned-item:not(.nav-parent) > a.nav-link {
+    color: #fff !important;
+}
 /* modo oscuro */
 html.dark .table-responsive.payment {
     border: 1px solid var(--inputs-dark);
     background: var(--borders-dark);
     border-radius: 6px;
+}
+html.dark .sidebar-favorites,
+html.dark .sidebar-favorites-title,
+html.dark .sidebar-menu-config-section-title,
+html.dark .sidebar-menu-config-section,
+html.dark .sidebar-menu-config-toolbar,
+html.dark .sidebar-menu-config-group {
+    border-color: var(--borders-dark);
+}
+html.sidebar-left-collapsed.dark .nano.hovered .sidebar-favorites{
+    border-color: var(--borders-dark) !important;
 }
 html.dark .el-tabs--border-card > .el-tabs__header {
     background-color: var(--contents-dark);

@@ -215,6 +215,24 @@ if (sidebarMultiUserRoots && sidebarMultiUserRoots.length) {
     });
 }
 
+const sidebarSearchRoot = document.getElementById('sidebar-search-root');
+if (sidebarSearchRoot) {
+    new Vue({
+        store: store,
+        el: '#sidebar-search-root',
+        template: '<tenant-sidebar-search />',
+    });
+}
+
+const sidebarMenuConfigRoot = document.getElementById('sidebar-menu-config-root');
+if (sidebarMenuConfigRoot) {
+    new Vue({
+        store: store,
+        el: '#sidebar-menu-config-root',
+        template: '<tenant-sidebar-menu-config />',
+    });
+}
+
 const mozoAccessModalRoot = document.getElementById('mozo-access-modal-root');
 if (mozoAccessModalRoot) {
     new Vue({
