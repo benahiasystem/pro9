@@ -45,6 +45,17 @@ class Warehouse extends ModelTenant
     }
 
     /**
+     * Almacen del establecimiento.
+     *
+     * @param  int|string|null  $establishment_id
+     * @return Warehouse|null
+     */
+    public static function forEstablishment($establishment_id)
+    {
+        return static::where('establishment_id', $establishment_id)->first();
+    }
+
+    /**
      * @return int
      */
     public function getEstablishmentId()

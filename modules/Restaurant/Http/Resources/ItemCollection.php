@@ -8,6 +8,24 @@ use Illuminate\Http\Resources\Json\ResourceCollection;
 class ItemCollection extends ResourceCollection
 {
     /**
+     * Configuracion ya resuelta por el controlador, para no volver a consultarla.
+     *
+     * @var Configuration|null
+     */
+    protected $tenant_configuration = null;
+
+    /**
+     * @param  Configuration|null  $configuration
+     * @return $this
+     */
+    public function withConfiguration($configuration)
+    {
+        $this->tenant_configuration = $configuration;
+
+        return $this;
+    }
+
+    /**
      * Transform the resource collection into an array.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -15,10 +33,16 @@ class ItemCollection extends ResourceCollection
      */
     public function toArray($request)
     {
-        $configuration = Configuration::first();
+        $configuration = $this->tenant_configuration ?: Configuration::first();
         $enableListProduct = (bool) optional($configuration)->enable_list_product;
 
         return $this->collection->transform(function($row, $key) use ($configuration, $enableListProduct){
+
+            // Se resuelven una sola vez por fila: antes cada uno se consultaba
+            // dos veces (has_supplies/has_sets y de nuevo en restaurant_stock).
+            $hasSupplies = $row->hasRestaurantSupplies();
+            $hasSets = $row->hasItemSets();
+            $stock = $row->getStockByWarehouse();
 
             $defaultImage = $configuration->product_default_image ?? 'imagen-no-disponible.jpg';
             $defaultImagePath = $defaultImage === 'imagen-no-disponible.jpg'
@@ -38,7 +62,7 @@ class ItemCollection extends ResourceCollection
                 'barcode' => $row->barcode,
                 'item_code' => $row->item_code,
                 'item_code_gs1' => $row->item_code_gs1,
-                'stock' => $row->getStockByWarehouse(),
+                'stock' => $stock,
                 'stock_min' => $row->stock_min,
                 'currency_type_id' => $row->currency_type_id,
                 'currency_type_symbol' => $row->currency_type->symbol,
@@ -59,15 +83,15 @@ class ItemCollection extends ResourceCollection
                 'image_url_small' => $row->image && ($row->image_small === 'imagen-no-disponible.jpg') ?  $defaultImagePath : asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR.$row->image_small),
                 'favorite' => (bool)$row->favorite,
                 'area_print' => $row->preparationArea->printer ?? null,
-                'has_supplies' => $row->restaurantSupplies()->exists(),
+                'has_supplies' => $hasSupplies,
                 'is_dish' => (bool)$row->is_dish,
-                'has_sets' => $row->sets()->exists(),
+                'has_sets' => $hasSets,
                 'items_sets' => $row->items_sets ?? [],
-                'restaurant_stock' => $row->restaurantSupplies()->exists() 
-                    ? $row->getRestaurantStock() 
-                    : ($row->sets()->exists() 
-                        ? $row->getRestaurantStockSet() 
-                        : $row->getStockByWarehouse()),
+                'restaurant_stock' => $hasSupplies
+                    ? $row->getRestaurantStock()
+                    : ($hasSets
+                        ? $row->getRestaurantStockSet()
+                        : $stock),
                 'modifiers' => $row->modifiers ?? [],
                 'item_unit_types' => $enableListProduct
                     ? $row->item_unit_types->map(function ($unitType) {

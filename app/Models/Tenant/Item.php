@@ -591,18 +591,72 @@ class Item extends ModelTenant
      */
     public function getStockByWarehouse()
     {
+        // Listados que ya precargaron el stock con preloadStockByWarehouse().
+        if ($this->preloaded_stock_by_warehouse !== null) {
+            return $this->preloaded_stock_by_warehouse;
+        }
+
         if(auth()->user())
         {
             $establishment_id = auth()->user()->establishment_id;
-            $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
+            $warehouse = Warehouse::forEstablishment($establishment_id);
             if ($warehouse) {
-                $this->unsetRelation('warehouses');
-                $item_warehouse = $this->warehouses->where('warehouse_id', $warehouse->id)->first();
-                return ($item_warehouse) ? $item_warehouse->stock : 0;
+                // El stock se lee siempre fresco de item_warehouse (no de la relacion
+                // cacheada), pero sin recargar warehouses ni su almacen: en listados
+                // eso costaba dos consultas por producto.
+                $stock = ItemWarehouse::where('item_id', $this->id)
+                    ->where('warehouse_id', $warehouse->id)
+                    ->value('stock');
+
+                return ($stock !== null) ? $stock : 0;
             }
         }
 
         return 0;
+    }
+
+    /**
+     * Stock del almacen del usuario precargado para toda una coleccion.
+     * No es un atributo del modelo, asi que no se filtra en toArray().
+     *
+     * @var mixed
+     */
+    public $preloaded_stock_by_warehouse = null;
+
+    /**
+     * Resuelve en una sola consulta el stock de todos los productos de un listado,
+     * en lugar de una consulta por producto dentro de getStockByWarehouse().
+     *
+     * @param  iterable  $items
+     * @return void
+     */
+    public static function preloadStockByWarehouse($items)
+    {
+        if (!auth()->user()) {
+            return;
+        }
+
+        $items = collect($items);
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        // Mismo almacen que resuelve getStockByWarehouse(), para no devolver
+        // el stock de otro establecimiento.
+        $warehouse = Warehouse::forEstablishment(auth()->user()->establishment_id);
+
+        if (!$warehouse) {
+            return;
+        }
+
+        $stocks = ItemWarehouse::where('warehouse_id', $warehouse->id)
+            ->whereIn('item_id', $items->pluck('id')->all())
+            ->pluck('stock', 'item_id');
+
+        foreach ($items as $item) {
+            $item->preloaded_stock_by_warehouse = $stocks->get($item->id, 0);
+        }
     }
 
     /**
@@ -818,6 +872,41 @@ class Item extends ModelTenant
     }
 
     /**
+     * Indica si el producto tiene insumos asignados sin disparar una consulta
+     * cuando la relacion ya fue cargada (listados con eager loading).
+     *
+     * @return bool
+     */
+    public function hasRestaurantSupplies()
+    {
+        if ($this->relationLoaded('restaurantSupplies')) {
+            return $this->restaurantSupplies->isNotEmpty();
+        }
+
+        return $this->restaurantSupplies()->exists();
+    }
+
+    /**
+     * Indica si el producto es un set/combo, reutilizando la relacion cargada.
+     *
+     * @return bool
+     */
+    public function hasItemSets()
+    {
+        if ($this->relationLoaded('sets')) {
+            return $this->sets->isNotEmpty();
+        }
+
+        // items_sets recorre la misma tabla (item_sets) y la FK de
+        // individual_item_id impide filas huerfanas, asi que sirve igual.
+        if ($this->relationLoaded('items_sets')) {
+            return $this->items_sets->isNotEmpty();
+        }
+
+        return $this->sets()->exists();
+    }
+
+    /**
      * Calcula el stock disponible del producto en base a los insumos
      * Retorna la cantidad máxima de productos que se pueden preparar con el stock actual de insumos
      *
@@ -828,7 +917,15 @@ class Item extends ModelTenant
      */
     public function getRestaurantStock()
     {
-        $itemSupplies = $this->restaurantItemSupplies()->with('supply')->get();
+        // En listados la relacion ya viene cargada; se usa esa data en lugar de
+        // volver a consultar los insumos producto por producto.
+        if ($this->relationLoaded('restaurantSupplies')) {
+            $itemSupplies = $this->restaurantSupplies->map(function ($supply) {
+                return (object) ['supply' => $supply, 'quantity' => $supply->pivot->quantity];
+            });
+        } else {
+            $itemSupplies = $this->restaurantItemSupplies()->with('supply')->get();
+        }
 
         // Si no tiene insumos asignados, retorna 0
         if ($itemSupplies->isEmpty()) {
@@ -885,7 +982,7 @@ class Item extends ModelTenant
         $possibleStocks = [];
 
         foreach ($items as $item) {
-            if ($item->restaurantSupplies()->exists()) {
+            if ($item->hasRestaurantSupplies()) {
                 // Si el item del set tiene insumos asignados, se calcula su stock en base a esos insumos
                 $itemStock = $item->getRestaurantStock();
                 $possibleStocks[] = floor($itemStock / $item->pivot->quantity);
