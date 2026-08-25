@@ -28,6 +28,8 @@ if($hostname) {
             Route::prefix('product-variables')->group(function () {
                 Route::get('records', 'ProductVariableController@records');
                 Route::get('record/{id}', 'ProductVariableController@record');
+                Route::get('import/format', 'ProductVariableController@downloadImportFormat');
+                Route::post('import', 'ProductVariableController@import');
                 Route::post('', 'ProductVariableController@store');
                 Route::post('toggle/{id}', 'ProductVariableController@toggle');
                 Route::delete('{id}', 'ProductVariableController@destroy');
