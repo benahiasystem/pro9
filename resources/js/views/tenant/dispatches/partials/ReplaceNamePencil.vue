@@ -1,37 +1,45 @@
 <template>
-  <el-popover
-    v-model="visible"
-    placement="bottom-end"
-    width="340"
-    trigger="manual"
-    popper-class="dispatch-replace-name-popper"
-  >
-    <div class="dispatch-replace-name-body">
-      <label class="control-label d-block mb-1">{{ label }}</label>
-      <el-input
-        ref="input"
-        v-model="localValue"
-        type="textarea"
-        :rows="3"
-        :placeholder="placeholder"
-        @input="onInput"
-      ></el-input>
-      <div class="text-end mt-2">
-        <el-button type="primary" size="mini" @click="close">Listo</el-button>
-      </div>
-    </div>
+  <span class="dispatch-replace-name">
     <button
-      slot="reference"
       type="button"
       class="dispatch-replace-name-btn"
       :class="{ 'is-active': hasValue, 'is-disabled': disabled }"
       :disabled="disabled"
       :title="hasValue ? 'Nombre personalizado activo' : tooltip"
-      @click.stop.prevent="toggle"
+      @click.stop.prevent="open"
     >
       <i class="fas fa-pen" aria-hidden="true"></i>
     </button>
-  </el-popover>
+
+    <el-dialog
+      :title="label"
+      :visible.sync="visible"
+      width="640px"
+      top="8vh"
+      append-to-body
+      :close-on-click-modal="false"
+      custom-class="dispatch-replace-name-dialog"
+      @opened="focusInput"
+      @close="onDialogClose"
+    >
+      <div class="form-body">
+        <div class="form-group mb-0">
+          <label class="control-label">{{ label }}</label>
+          <el-input
+            ref="input"
+            v-model="localValue"
+            type="textarea"
+            :rows="6"
+            :placeholder="placeholder"
+          ></el-input>
+        </div>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="close">Cerrar</el-button>
+        <el-button type="primary" @click="confirm">Listo</el-button>
+      </span>
+    </el-dialog>
+  </span>
 </template>
 
 <script>
@@ -58,39 +66,52 @@ export default {
   },
   computed: {
     hasValue() {
-      return !!(this.localValue && String(this.localValue).trim())
+      return !!(this.value && String(this.value).trim())
     },
   },
   watch: {
     value(val) {
-      this.localValue = val || ''
+      if (!this.visible) {
+        this.localValue = val || ''
+      }
     },
     disabled(val) {
       if (val) this.visible = false
     },
   },
   methods: {
-    toggle() {
+    open() {
       if (this.disabled) return
-      this.visible = !this.visible
-      if (this.visible) {
-        this.$nextTick(() => {
-          const input = this.$refs.input
-          if (input && input.focus) input.focus()
-        })
-      }
+      this.localValue = this.value || ''
+      this.visible = true
     },
-    onInput(val) {
-      this.$emit('input', val)
+    focusInput() {
+      this.$nextTick(() => {
+        const input = this.$refs.input
+        if (input && input.focus) input.focus()
+      })
+    },
+    confirm() {
+      this.$emit('input', this.localValue || '')
+      this.visible = false
     },
     close() {
       this.visible = false
+    },
+    onDialogClose() {
+      // Si cierra con X / ESC sin Listo, no descarta lo ya confirmado;
+      // solo sincroniza el borrador visible al valor actual.
+      this.localValue = this.value || ''
     },
   },
 }
 </script>
 
 <style scoped>
+.dispatch-replace-name {
+  display: inline-flex;
+  vertical-align: middle;
+}
 .dispatch-replace-name-btn {
   display: inline-flex;
   align-items: center;
