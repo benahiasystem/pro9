@@ -2472,6 +2472,43 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             return anchor ? anchor.textContent.replace(/\s+/g, ' ').trim() : '';
         }
 
+        function configurationSectionLabel() {
+            const title = sidebar.querySelector('.more-config .nano-content-config .nav-link span');
+            const label = title ? title.textContent.replace(/\s+/g, ' ').trim() : '';
+            return label || 'Configuración';
+        }
+
+        function configurationItems() {
+            const items = new Map();
+            sidebar.querySelectorAll('.more-config .list-config > li').forEach(function (item) {
+                const anchor = directAnchor(item);
+                if (!anchor) return;
+                const label = menuItemLabel(item);
+                if (!label) return;
+                const key = 'config:' + (itemKey(item) || normalizeLabel(label));
+                if (!items.has(key)) items.set(key, item);
+            });
+            return items;
+        }
+
+        function pushSearchEntry(item, key, hierarchy, options) {
+            const settings = options || {};
+            const name = hierarchy[hierarchy.length - 1] || menuItemLabel(item);
+            if (!name) return;
+            const path = hierarchy.join(' > ');
+            const icon = resolveMenuIcon(item, settings.iconKey || key);
+            searchIndex.push({
+                key: key,
+                name: name,
+                path: path,
+                normalizedName: normalizeSearchText(name),
+                normalizedPath: normalizeSearchText(path),
+                href: settings.href || '',
+                action: settings.action || '',
+                iconHtml: icon ? icon.outerHTML : ''
+            });
+        }
+
         function buildSearchIndex() {
             searchIndex = [];
             availableItems().forEach(function (item, key) {
@@ -2489,19 +2526,22 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                     current = parentList ? parentList.closest('li') : null;
                 }
 
-                const name = hierarchy[hierarchy.length - 1] || menuItemLabel(item);
-                const path = hierarchy.join(' > ');
-                const icon = resolveMenuIcon(item, key);
-                searchIndex.push({
-                    key: key,
-                    name: name,
-                    path: path,
-                    normalizedName: normalizeSearchText(name),
-                    normalizedPath: normalizeSearchText(path),
-                    href: href,
-                    iconHtml: icon ? icon.outerHTML : ''
+                pushSearchEntry(item, key, hierarchy, { href: href });
+            });
+
+            const configurationLabel = configurationSectionLabel();
+            configurationItems().forEach(function (item, key) {
+                const anchor = directAnchor(item);
+                const href = anchor.getAttribute('href') || '';
+                const isMenuConfig = anchor.id === 'sidebar-menu-config-trigger';
+                if ((!href || href === '#') && !isMenuConfig) return;
+
+                pushSearchEntry(item, key, [configurationLabel, menuItemLabel(item)], {
+                    href: isMenuConfig ? '' : href,
+                    action: isMenuConfig ? 'menu-config' : ''
                 });
             });
+
             return searchIndex;
         }
 

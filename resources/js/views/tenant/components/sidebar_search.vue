@@ -145,6 +145,13 @@
             },
             navigateTo(entry) {
                 this.showDialog = false
+                if (entry.action === 'menu-config') {
+                    this.$nextTick(() => {
+                        this.$eventHub.$emit('sidebarMenuConfigOpen', 'sidebar-search-trigger')
+                    })
+                    return
+                }
+                if (!entry.href) return
                 window.location.href = entry.href
             },
         },
