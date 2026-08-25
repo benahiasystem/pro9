@@ -502,7 +502,8 @@
                                                     <div :class="{'has-danger': errors.items}"
                                                          class="form-group" id="custom-select">
 
-                                                        <el-input id="custom-input">
+                                                        <div class="d-flex align-items-stretch gap-1">
+                                                        <el-input id="custom-input" class="flex-grow-1">
 
                                                             <el-select v-model="current_item"
                                                                        id="select-width"
@@ -536,6 +537,13 @@
                                                             </el-tooltip>
 
                                                         </el-input>
+                                                        <replace-name-pencil
+                                                            v-if="canEditNameProduct"
+                                                            v-model="draft_name_product_pdf"
+                                                            :disabled="!current_item"
+                                                            :label="replaceNameLabel"
+                                                        ></replace-name-pencil>
+                                                        </div>
 
                                                         <small v-if="errors.items"
                                                                class="form-control-feedback"
@@ -712,6 +720,7 @@ import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 import WarehousesDetail from '@components/WarehousesDetail.vue'
 import {setDefaultSeriesByMultipleDocumentTypes} from '@mixins/functions'
 import DialogReferenceDocument from './partials/DialogReferenceDocument.vue'
+import ReplaceNamePencil from '../partials/ReplaceNamePencil.vue'
 
 export default {
     props: [
@@ -738,7 +747,8 @@ export default {
         ReceiverAddressForm,
         SelectLotsForm,
         ListLotsGroup,
-        DialogReferenceDocument
+        DialogReferenceDocument,
+        ReplaceNamePencil
     },
     mixins: [setDefaultSeriesByMultipleDocumentTypes],
     computed: {
@@ -748,6 +758,15 @@ export default {
             'items',
             'all_items',
         ]),
+        canEditNameProduct() {
+            return !!(this.config && this.config.edit_name_product)
+        },
+        replaceNameLabel() {
+            if (this.config && this.config.add_description_to_document_item) {
+                return 'Reemplazar nombre'
+            }
+            return 'Nombre producto en PDF'
+        },
         showSeries() {
             if (this.item.id && this.item.series_enabled) {
                 return true
@@ -802,6 +821,7 @@ export default {
             series: [],
             current_item: null,
             quantity: 1,
+            draft_name_product_pdf: '',
             errors: {},
             form: {},
             recordId: null,
@@ -1064,7 +1084,40 @@ export default {
         },
         onChangeItem() {
             this.IdLoteSelected = null;
-            this.$store.commit('setItem', this.items.find(it => it.id == this.current_item))
+            const item = this.items.find(it => it.id == this.current_item)
+            this.$store.commit('setItem', item)
+            this.prefillDraftNameProductPdf(item)
+        },
+        prefillDraftNameProductPdf(item) {
+            if (!this.canEditNameProduct || !item) {
+                this.draft_name_product_pdf = ''
+                return
+            }
+
+            if (this.config && this.config.add_description_to_document_item) {
+                const name = item.description || ''
+                const extra = item.name || ''
+                this.draft_name_product_pdf = [name, extra].filter(Boolean).join('\n')
+                return
+            }
+
+            if (this.config && this.config.item_name_pdf_description && item.name_product_pdf) {
+                this.draft_name_product_pdf = item.name_product_pdf
+                return
+            }
+
+            this.draft_name_product_pdf = ''
+        },
+        formatNameProductPdf(value) {
+            if (!value || !String(value).trim()) return ''
+
+            return String(value)
+                .trim()
+                .split(/\r?\n/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .map(line => `<p>${line}</p>`)
+                .join('')
         },
         filterItems() {
             this.$store.commit('setItems', this.all_items)
@@ -1094,9 +1147,11 @@ export default {
                 this.addItem({
                     item: item,
                     quantity: this.quantity,
+                    name_product_pdf: this.formatNameProductPdf(this.draft_name_product_pdf),
                 })
                 this.$store.commit('setItem', item)
                 this.quantity = 1
+                this.draft_name_product_pdf = ''
                 this.focusDescription()
                 return null;
             }
