@@ -8051,10 +8051,58 @@ const _sfc_main$8 = /* @__PURE__ */ defineComponent({
         }
       }
     };
-    const filteredCustomers = computed(() => {
-      if (!searchQuery.value)
-        return state.customers;
-      return state.customers.filter((customer) => customer.apellidos_y_nombres_o_razon_social.toLowerCase().includes(searchQuery.value.toLowerCase()) || customer.numero_documento.includes(searchQuery.value));
+    const filteredCustomers = ref([]);
+    let customersSearchTimer = null;
+    const normalizeDocNumber = (value) => String(value != null ? value : "").trim();
+    const customerMatchesQuery = (customer, query) => {
+      const q = query.toLowerCase();
+      return String(customer.apellidos_y_nombres_o_razon_social || "").toLowerCase().includes(q) || normalizeDocNumber(customer.numero_documento).includes(query.trim());
+    };
+    const mergeRemoteCustomers = (remoteCustomers) => {
+      const merged = [...state.customers];
+      remoteCustomers.forEach((customer) => {
+        if (!merged.some((c) => c.id == customer.id)) {
+          merged.push(customer);
+        }
+      });
+      state.customers = merged;
+      companySession2.setCustomers(merged);
+    };
+    const refreshFilteredCustomers = (query = searchQuery.value) => {
+      const trimmed = String(query || "").trim();
+      filteredCustomers.value = trimmed ? state.customers.filter((customer) => customerMatchesQuery(customer, trimmed)) : state.customers;
+    };
+    const searchCustomersRemote = async (query) => {
+      const trimmed = String(query || "").trim();
+      if (trimmed.length < 2) {
+        refreshFilteredCustomers(trimmed);
+        return;
+      }
+      try {
+        const identityDocumentTypeId = state.documentSelected === "FACTURA" ? "6" : null;
+        const remoteCustomers = await MasterService.searchCustomers(trimmed, identityDocumentTypeId);
+        mergeRemoteCustomers(remoteCustomers);
+        const combined = state.customers.filter((customer) => customerMatchesQuery(customer, trimmed));
+        remoteCustomers.forEach((customer) => {
+          if (!combined.some((c) => c.id == customer.id)) {
+            combined.push(customer);
+          }
+        });
+        filteredCustomers.value = combined;
+      } catch (error) {
+        refreshFilteredCustomers(trimmed);
+      }
+    };
+    refreshFilteredCustomers("");
+    watch(searchQuery, (query) => {
+      const trimmed = String(query || "").trim();
+      refreshFilteredCustomers(trimmed);
+      if (customersSearchTimer) {
+        clearTimeout(customersSearchTimer);
+      }
+      if (trimmed.length >= 2) {
+        customersSearchTimer = setTimeout(() => searchCustomersRemote(trimmed), 300);
+      }
     });
     const selectCustomer = (customer) => {
       state.customer = customer;
