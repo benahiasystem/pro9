@@ -1,48 +1,71 @@
 <template>
-    <el-dialog :title="titleDialog" :visible="dialogVisible" @open="create" @close="close" top="8vh">
-        <div class="form-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group" :class="{'has-danger': errors.items}">
+    <el-dialog :title="titleDialog" :visible="dialogVisible" @open="create" @close="close" top="8vh" width="640px">
+        <div class="form-body dispatch-add-item">
+            <div class="row align-items-end">
+                <div class="col-md-7">
+                    <div class="form-group mb-0" :class="{'has-danger': errors.items}">
                         <label class="control-label">
                             Producto
                             <a href="#" @click.prevent="showDialogNewItem = true">[+ Nuevo]</a>
                         </label>
-                        <el-select v-model="form.item"
-                                    filterable
-                                    @change="onChangeItem"
-                                    remote
-                                    :remote-method="searchRemoteItems"
-                                    :loading="loading_search">
+                        <el-select
+                            class="w-100"
+                            v-model="form.item"
+                            filterable
+                            @change="onChangeItem"
+                            remote
+                            :remote-method="searchRemoteItems"
+                            :loading="loading_search"
+                        >
                             <el-option v-for="option in items" :key="option.id" :value="option.id" :label="option.full_description"></el-option>
                         </el-select>
                         <small class="form-control-feedback" v-if="errors.items" v-text="errors.items[0]"></small>
                     </div>
                 </div>
-                <div class="col-lg-6">
-                    <div class="form-group" :class="{'has-danger': errors.quantity}">
+                <div class="col-md-5">
+                    <div class="form-group mb-0" :class="{'has-danger': errors.quantity}">
                         <label class="control-label">Cantidad</label>
-                        <el-input-number v-model="form.quantity" :precision="4" :step="1" :min="0.01" :max="99999999"></el-input-number>
+                        <el-input-number
+                            class="w-100 dispatch-qty-input"
+                            v-model="form.quantity"
+                            :precision="4"
+                            :step="1"
+                            :min="0.01"
+                            :max="99999999"
+                            controls-position="right"
+                        ></el-input-number>
                         <small class="form-control-feedback" v-if="errors.quantity" v-text="errors.quantity[0]"></small>
                     </div>
                 </div>
-                <template v-if="item">
-                    <div class="col-12 mt-2" v-if="item.lots_enabled && item.lots_group.length > 0">
-                        <a href="#"  class="text-center font-weight-bold text-info" @click.prevent="clickLotGroup">[&#10004; Seleccionar lote]</a>
-                    </div>
-                </template>
-                <div class="col-lg-6" v-if="showWeightInput">
-                    <div class="form-group" :class="{'has-danger': errors.weight}">
+            </div>
+            <div class="row mt-3" v-if="item && item.lots_enabled && item.lots_group.length > 0">
+                <div class="col-12">
+                    <a href="#" class="text-center font-weight-bold text-info" @click.prevent="clickLotGroup">[&#10004; Seleccionar lote]</a>
+                </div>
+            </div>
+            <div class="row mt-3 align-items-end" v-if="showWeightInput">
+                <div class="col-md-5">
+                    <div class="form-group mb-0" :class="{'has-danger': errors.weight}">
                         <label class="control-label">Peso</label>
-                        <el-input-number v-model="form.weight" :precision="4" :step="1" :min="0.01" :max="99999999"></el-input-number>
+                        <el-input-number
+                            class="w-100 dispatch-qty-input"
+                            v-model="form.weight"
+                            :precision="4"
+                            :step="1"
+                            :min="0.01"
+                            :max="99999999"
+                            controls-position="right"
+                        ></el-input-number>
                         <small class="form-control-feedback" v-if="errors.weight" v-text="errors.weight[0]"></small>
                     </div>
                 </div>
-                <div
-                    v-if="canEditNameProduct && item"
-                    class="col-12 mt-2"
-                >
-                    <div class="form-group">
+            </div>
+            <div
+                v-if="canEditNameProduct && item"
+                class="row mt-3"
+            >
+                <div class="col-12">
+                    <div class="form-group mb-0">
                         <label class="control-label">
                             {{ replaceNameLabel }}
                             <el-tooltip
@@ -80,6 +103,24 @@
         </lots-group>
     </el-dialog>
 </template>
+
+<style scoped>
+.dispatch-add-item .control-label {
+    display: block;
+    min-height: 1.5rem;
+    margin-bottom: 0.35rem;
+}
+.dispatch-add-item .dispatch-qty-input {
+    width: 100%;
+}
+.dispatch-add-item .dispatch-qty-input ::v-deep .el-input-number,
+.dispatch-add-item .dispatch-qty-input.el-input-number {
+    width: 100%;
+}
+.dispatch-add-item .dispatch-qty-input ::v-deep .el-input__inner {
+    text-align: left;
+}
+</style>
 
 <script>
     import itemForm from '../items/form.vue';
