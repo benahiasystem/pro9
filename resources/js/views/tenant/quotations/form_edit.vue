@@ -1391,11 +1391,13 @@ export default {
 
         },
         validatePaymentDestination() {
-
+            // Crédito (05/08/09) no usa destino de caja/cuenta — igual que NV/CPE.
             let error_by_item = 0
 
             this.form.payments.forEach((item) => {
-                if (item.payment_destination_id == null) error_by_item++;
+                if (!['05', '08', '09'].includes(item.payment_method_type_id)) {
+                    if (item.payment_destination_id == null) error_by_item++;
+                }
             })
 
             return {
