@@ -1257,15 +1257,13 @@ export default {
         },
         setDescriptionOfItem(item) {
             let description = "";
-            if (this.config.show_pdf_name) {
-                if (item.item && item.item.name_product_pdf) {
-                    if (item.item.name_product_pdf !== '' && !_.isNull(item.item.name_product_pdf)) {
-                        description = item.item.name_product_pdf;
-                    }
-                } else if (item.name_product_pdf) {
-                    if (item.name_product_pdf !== '' && !_.isNull(item.name_product_pdf)) {
-                        description = item.name_product_pdf;
-                    }
+            if (item.item && item.item.name_product_pdf) {
+                if (item.item.name_product_pdf !== '' && !_.isNull(item.item.name_product_pdf)) {
+                    description = item.item.name_product_pdf;
+                }
+            } else if (item.name_product_pdf) {
+                if (item.name_product_pdf !== '' && !_.isNull(item.name_product_pdf)) {
+                    description = item.name_product_pdf;
                 }
             }
 
@@ -1604,6 +1602,7 @@ export default {
             let it = form.item;
             let qty = form.quantity;
             let total_weight = 0
+            const name_product_pdf = (form.name_product_pdf || it.name_product_pdf || '').trim();
 
             if (it.attributes && it.attributes.length > 0 ) {
                 it.attributes.forEach(attr => {
@@ -1614,7 +1613,10 @@ export default {
             }
             
             this.form.total_weight += total_weight
-            let exist = this.form.items.find((item) => item.id == it.id);
+            // No fusionar si el nombre PDF difiere (mismo producto genérico, descripciones distintas).
+            let exist = this.form.items.find((item) =>
+                item.id == it.id && (item.name_product_pdf || '').trim() === name_product_pdf
+            );
             let attributes = null
             if (exist) {
                 exist.quantity = (it.lots_enabled || it.series_enabled)? form.quantity : exist.quantity + form.quantity;
@@ -1651,7 +1653,8 @@ export default {
                 lots: it.lots || null,
                 unit_price: it.unit_price,
                 total: it.total,
-                weight: it.weight || 0
+                weight: it.weight || 0,
+                name_product_pdf: name_product_pdf,
             });
 
             if (this.config.enable_weight_in_dispatches) {

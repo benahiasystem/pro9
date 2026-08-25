@@ -731,11 +731,17 @@ export default {
 
         },
         validatePaymentDestination() {
+            // Condición crédito / métodos crédito: no exigen destino de pago.
+            if (this.isCreditPaymentCondition) {
+                return { error_by_item: 0 }
+            }
 
             let error_by_item = 0
 
             this.document.payments.forEach((item) => {
-                if (item.payment_destination_id == null) error_by_item++;
+                if (!['05', '08', '09'].includes(item.payment_method_type_id)) {
+                    if (item.payment_destination_id == null) error_by_item++;
+                }
             })
 
             return {
