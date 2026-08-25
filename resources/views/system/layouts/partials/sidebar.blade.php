@@ -224,6 +224,7 @@
             </nav>
             @endif
 
+            @if(Route::has('system.services'))
             <nav id="menu" class="nav-main" role="navigation">
                 <ul class="nav nav-main">
                     <li class="{{ ($path[0] === 'services')?'nav-active':'' }}">
@@ -234,6 +235,7 @@
                     </li>
                 </ul>
             </nav>
+            @endif
 
             @if($sysAdmin && $sysAdmin->canAccessSystemModule('logs'))
             <nav id="menu" class="nav-main" role="navigation">

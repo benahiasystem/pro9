@@ -2720,10 +2720,18 @@ export default {
             };
         },
         validatePaymentDestination() {
+            // Condición crédito: no se muestra destino ni aplica a caja.
+            if (this.payment_condition === '02') {
+                return { error_by_item: 0 };
+            }
+
+            // Métodos crédito (05/08/09) tampoco exigen destino — igual que NV/CPE.
             let error_by_item = 0;
 
             this.form.payments.forEach(item => {
-                if (item.payment_destination_id == null) error_by_item++;
+                if (!["05", "08", "09"].includes(item.payment_method_type_id)) {
+                    if (item.payment_destination_id == null) error_by_item++;
+                }
             });
 
             return {

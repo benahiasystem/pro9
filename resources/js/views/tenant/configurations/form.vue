@@ -239,7 +239,7 @@
                                             <label class="control-label">
                                                 Agregar descripción al producto
                                                 <el-tooltip class="item"
-                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Boleta, Cotización y Notas de venta."
+                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Boleta, Cotización, Notas de venta y Guías de remisión."
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
