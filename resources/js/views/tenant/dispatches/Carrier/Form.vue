@@ -975,15 +975,13 @@ export default {
         },
         setDescriptionOfItem(item) {
             let description = "";
-            if (this.config.show_pdf_name) {
-                if (item.item && item.item.name_product_pdf) {
-                    if (item.item.name_product_pdf !== '' && !_.isNull(item.item.name_product_pdf)) {
-                        description = item.item.name_product_pdf;
-                    }
-                } else if (item.name_product_pdf) {
-                    if (item.name_product_pdf !== '' && !_.isNull(item.name_product_pdf)) {
-                        description = item.name_product_pdf;
-                    }
+            if (item.item && item.item.name_product_pdf) {
+                if (item.item.name_product_pdf !== '' && !_.isNull(item.item.name_product_pdf)) {
+                    description = item.item.name_product_pdf;
+                }
+            } else if (item.name_product_pdf) {
+                if (item.name_product_pdf !== '' && !_.isNull(item.name_product_pdf)) {
+                    description = item.name_product_pdf;
                 }
             }
 
@@ -1153,7 +1151,11 @@ export default {
         addItem(form) {
             let it = form.item;
             let qty = form.quantity;
-            let exist = this.form.items.find((item) => item.id == it.id);
+            const name_product_pdf = (form.name_product_pdf || it.name_product_pdf || '').trim();
+            // No fusionar si el nombre PDF difiere (mismo producto genérico, descripciones distintas).
+            let exist = this.form.items.find((item) =>
+                item.id == it.id && (item.name_product_pdf || '').trim() === name_product_pdf
+            );
             let attributes = null
             if (it.attributes) {
                 attributes = it.attributes
@@ -1188,6 +1190,7 @@ export default {
                 IdLoteSelected: it.IdLoteSelected || '',
                 lot_group: lot_group || null,
                 lots: it.lots || null,
+                name_product_pdf: name_product_pdf,
             });
         },
         keyupCustomer() {

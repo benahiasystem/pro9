@@ -38,6 +38,30 @@
                         <small class="form-control-feedback" v-if="errors.weight" v-text="errors.weight[0]"></small>
                     </div>
                 </div>
+                <div
+                    v-if="canEditNameProduct && item"
+                    class="col-12 mt-2"
+                >
+                    <div class="form-group">
+                        <label class="control-label">
+                            {{ replaceNameLabel }}
+                            <el-tooltip
+                                class="item"
+                                effect="dark"
+                                content="Nombre que se mostrará en la guía (PDF). Útil para un producto genérico y describir materiales distintos sin crearlos en el catálogo."
+                                placement="top-start"
+                            >
+                                <i class="fa fa-info-circle"></i>
+                            </el-tooltip>
+                        </label>
+                        <el-input
+                            v-model="form.name_product_pdf"
+                            type="textarea"
+                            :rows="3"
+                            placeholder="Ej. Materiales varios: fierro, cemento, etc."
+                        ></el-input>
+                    </div>
+                </div>
             </div>
         </div>
         <span slot="footer" class="dialog-footer">
@@ -60,6 +84,7 @@
 <script>
     import itemForm from '../items/form.vue';
     import LotsGroup from '../documents/partials/lots_group.vue';
+    import { mapState } from 'vuex/dist/vuex.mjs';
 
     export default {
         components: {itemForm, LotsGroup},
@@ -78,6 +103,20 @@
                 loading_search:false,
             }
         },
+        computed: {
+            ...mapState(['config']),
+            canEditNameProduct() {
+                return !!(this.config && this.config.edit_name_product);
+            },
+            canAddDescriptionToDocumentItem() {
+                return !!(this.config && this.config.add_description_to_document_item);
+            },
+            replaceNameLabel() {
+                return this.canAddDescriptionToDocumentItem
+                    ? 'Reemplazar nombre'
+                    : 'Nombre producto en PDF';
+            },
+        },
         methods: {
             clickLotGroup() {
                 this.showDialogLots = true
@@ -85,6 +124,27 @@
             onChangeItem() {
                 this.form.IdLoteSelected = null;
                 this.item = this.items.find(it => it.id == this.form.item);
+                this.prefillNameProductPdf();
+            },
+            prefillNameProductPdf() {
+                if (!this.canEditNameProduct || !this.item) {
+                    this.$set(this.form, 'name_product_pdf', '');
+                    return;
+                }
+
+                if (this.canAddDescriptionToDocumentItem) {
+                    const name = this.item.description || '';
+                    const extra = this.item.name || '';
+                    this.$set(this.form, 'name_product_pdf', [name, extra].filter(Boolean).join('\n'));
+                    return;
+                }
+
+                if (this.config.item_name_pdf_description && this.item.name_product_pdf) {
+                    this.$set(this.form, 'name_product_pdf', this.item.name_product_pdf);
+                    return;
+                }
+
+                this.$set(this.form, 'name_product_pdf', '');
             },
             addRowLotGroup(id) {
                 this.form.IdLoteSelected =  id;
@@ -95,7 +155,10 @@
                     this.all_items = this.items
                 });
 
-                this.form = {};
+                this.form = {
+                    name_product_pdf: '',
+                };
+                this.item = null;
             },
             close() {
                 this.$emit('update:dialogVisible', false);
@@ -120,9 +183,12 @@
                     this.$emit('addItem', {
                         item,
                         quantity: this.form.quantity,
+                        name_product_pdf: this.formatNameProductPdf(this.form.name_product_pdf),
                     });
 
-                    this.form = {};
+                    this.form = {
+                        name_product_pdf: '',
+                    };
                     this.item = null;
                     return;
                 }
@@ -132,6 +198,17 @@
                 if (this.form.quantity == null) this.$set(this.errors, 'quantity', ['Digite la cantidad']);
 
                 this.form.IdLoteSelected = null;
+            },
+            formatNameProductPdf(value) {
+                if (!value || !String(value).trim()) return '';
+
+                return String(value)
+                    .trim()
+                    .split(/\r?\n/)
+                    .map(line => line.trim())
+                    .filter(Boolean)
+                    .map(line => `<p>${line}</p>`)
+                    .join('');
             },
             filterItems() {
                 this.items = this.all_items

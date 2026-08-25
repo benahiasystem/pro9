@@ -690,10 +690,8 @@ export default {
             }
         },
         setDescriptionOfItem(item) {
-            if (this.configuration.show_pdf_name) {
-                if (item.name_product_pdf !== '' && !_.isNull(item.name_product_pdf)) {
-                    return item.name_product_pdf;
-                }
+            if (item.name_product_pdf !== '' && !_.isNull(item.name_product_pdf)) {
+                return item.name_product_pdf;
             }
             return item.description;
         },
