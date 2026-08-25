@@ -25,7 +25,8 @@ export const inventory_search_item_barcode = {
                     this.form.item_id = this.items[0].id
 
                     await this.changeItem()
-                    this.form.quantity = parseInt(this.form.quantity) + 1
+                    // parseFloat y no parseInt: al escanear no se pierden los decimales ya ingresados
+                    this.form.quantity = (parseFloat(this.form.quantity) || 0) + 1
 
                     this.setInputFocus()
                 }

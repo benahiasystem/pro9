@@ -160,7 +160,7 @@
 import LotsGroup from '../../../../../../resources/js/views/tenant/documents/partials/lots_group.vue'
 import SelectLotsForm from '../../../../../../resources/js/views/tenant/documents/partials/lots.vue'
 //import SelectLotsForm from './lots.vue'
-import {filterWords} from "@helpers/functions";
+import {filterWords, getQuantityPrecisionByUnitType} from "@helpers/functions";
 import { inventory_search_item_barcode } from '../mixins/functions'
 
 
@@ -192,7 +192,9 @@ export default {
             warehouses: [],
             inventory_transactions: [],
             lotsAll: [],
-            lotsGroupAll: []
+            lotsGroupAll: [],
+            // Sin precisión fija: sólo se limita cuando la unidad del producto es fraccionable
+            precision: undefined
         }
     },
     created() {
@@ -218,6 +220,8 @@ export default {
             // Buscar el producto seleccionado
             let item = await _.find(this.items, { id: this.form.item_id });
             console.log('Producto seleccionado:', item);
+
+            this.precision = getQuantityPrecisionByUnitType(item ? item.unit_type_id : null, undefined);
 
             if (item) {
                 // Configurar las propiedades del formulario según el producto seleccionado
@@ -261,6 +265,7 @@ export default {
         },
         initForm() {
             this.errors = {}
+            this.precision = undefined
             this.form = {
                 id: null,
                 item_id: null,
