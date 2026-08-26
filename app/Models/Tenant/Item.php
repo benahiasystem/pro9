@@ -1517,6 +1517,70 @@ class Item extends ModelTenant
     }
 
     /**
+     * Retorna item_unit_types con sus precios en el formato que consume el POS
+     * (usado por PosCollection y por la busqueda de items por codigo de barras)
+     *
+     * @param Configuration|null $configuration
+     * @param Collection|null $all_prices_label
+     * @return Collection
+     */
+    public function getItemUnitTypesForPos($configuration = null, $all_prices_label = null)
+    {
+        $configuration = $configuration ?? Configuration::first();
+        $all_prices_label = $all_prices_label ?? PriceLabel::all();
+
+        return collect($this->item_unit_types)->transform(function ($row) use ($configuration, $all_prices_label) {
+
+            // ya viene transformado (arreglo plano), se retorna tal cual
+            if (is_array($row)) {
+                return $row;
+            }
+
+            $row->loadMissing('prices.priceLabel');
+            $labels_id = $row->prices->pluck('price_label_id')->toArray();
+            $prices = $row->prices->map(function ($price) use ($row, $configuration) {
+                $price_label = $price->priceLabel;
+
+                return [
+                    'id' => $price->id,
+                    'price_label_id' => $price->price_label_id,
+                    'position' => $price_label->position,
+                    'description' => $row->description,
+                    'unit_type_id' => $row->unit_type_id,
+                    'quantity_unit' => (float)number_format($row->quantity_unit, $configuration->decimal_quantity, ".", ""),
+                    'label' => $price_label->label,
+                    'price' => $price ? number_format($price->price, 2, '.', '') : 0,
+                    'is_active' => $price ? (bool)$price->is_active : false,
+                ];
+            });
+
+            $missingLabel = $all_prices_label->whereNotIn('id', $labels_id)->first();
+
+            if ($missingLabel) {
+                $prices->push([
+                    'id' => null,
+                    'price_label_id' => $missingLabel->id,
+                    'position' => $missingLabel->position,
+                    'label' => $missingLabel->label,
+                    'price' => 0,
+                    'is_active' => $missingLabel->is_active
+                ]);
+            }
+
+            return [
+                'id' => $row->id,
+                'description' => "{$row->description}",
+                'item_id' => $row->item_id,
+                'unit_type_id' => $row->unit_type_id,
+                'quantity_unit' => (float)number_format($row->quantity_unit, $configuration->decimal_quantity, ".", ""),
+                'price_default' => $row->price_default,
+                'barcode' => $row->barcode ?? '',
+                'prices' => $prices->toArray(),
+            ];
+        })->values();
+    }
+
+    /**
      * Obtener item_unit_types con prices dinámicos
      * Maneja tanto arrays (ya transformados) como relaciones Eloquent
      *

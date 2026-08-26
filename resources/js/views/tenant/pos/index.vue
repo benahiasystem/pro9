@@ -1821,6 +1821,8 @@ export default {
             this.items[index].sale_unit_price = price.price;
             this.items[index].unit_type_id = price.unit_type_id;
             this.items[index].presentation = price
+            // se marca la fila para que ChangeSelectedPrice no pise el precio elegido a mano
+            this.$set(this.items[index], 'manual_price_selected', true);
             this.ChangeSelectedPrice()
             this.$message.success("Precio seleccionado");
         },
@@ -2951,11 +2953,14 @@ export default {
 
                             if (presentation && this.barcode_stop_presentation) {
                                 this.items = response.data.items;
+                                this.ChangeSelectedPrice()
                                 this.loading = false;
                                 return
                             }
 
                             this.items = response.data.items;
+                            this.ChangeSelectedPrice()
+
                             this.enabledSearchItemsBarcode();
                             this.loading = false;
                             if (this.items.length == 0) {
@@ -2968,7 +2973,6 @@ export default {
                             this.loading = false;
                         }
 
-                        this.ChangeSelectedPrice()
 
                     });
             } else {
@@ -3011,7 +3015,7 @@ export default {
                 //busqueda comun
                 else {
                     if (this.items.length == 1) {
-                        console.log(this.items)
+                        
                         this.clickAddItem(this.items[0], 0);
                         this.filterItems();
                     }
@@ -3125,6 +3129,7 @@ export default {
             return item.description.length;
         },
         onPriceOptionChange() {
+            this.clearManualPriceSelection();
             this.ChangeSelectedPrice();
             const option = _.find(this.price_options, { id: this.selected_option_price });
             if (option) {
@@ -3135,10 +3140,32 @@ export default {
                 });
             }
         },
+        clearManualPriceSelection() {
+            this.items.forEach(row => {
+                if (row.manual_price_selected) {
+                    this.$set(row, 'manual_price_selected', false);
+                }
+
+                if (Array.isArray(row.item_unit_types)) {
+                    row.item_unit_types.forEach(iut => {
+                        if (iut && Array.isArray(iut.prices)) {
+                            iut.prices.forEach(p => {
+                                if (p && p.selected) {
+                                    this.$set(p, 'selected', false);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        },
         async ChangeSelectedPrice() {
             // recorrer items
             
             this.items.forEach(row => {
+                    // precio elegido manualmente en la fila: la lista de precios no lo sobrescribe
+                    if (row.manual_price_selected) return;
+
                     if(row.item_unit_types && row.item_unit_types.length > 0) {
                         let first_list = row.item_unit_types[0];
                         let original_price = parseFloat(row.sale_unit_price);
@@ -3175,7 +3202,11 @@ export default {
         },
             itemSetSaleUnitPrice(row)
             {
-                
+                // precio elegido manualmente en la fila: se muestra y se usa tal cual
+                if (row && row.manual_price_selected) {
+                    return row.unit_price_value = parseFloat(row.sale_unit_price).toFixed(2);
+                }
+
                 if(!this.configuration.enable_list_product && this.selected_option_price !== 1) {
                     if(Array.isArray( row.item_unit_types) &&  row.item_unit_types.length) {
                         let first_list = row.item_unit_types[0];
