@@ -297,10 +297,19 @@ const syncData = async () => {
   await saveDataCategories();
   await saveDataConfiguration();
 };
+const searchCustomers = async (input, identityDocumentTypeId = null) => {
+  const params = { input: String(input || "").trim(), limit: 30 };
+  if (identityDocumentTypeId) {
+    params.identity_document_type_id = identityDocumentTypeId;
+  }
+  const { data } = await provideApi().get("/company/customers", { params });
+  return data.customers || [];
+};
 const MasterService = {
   syncData,
   saveDataProducts,
-  saveDataConfiguration
+  saveDataConfiguration,
+  searchCustomers
 };
 var masterService = /* @__PURE__ */ Object.freeze({
   __proto__: null,
