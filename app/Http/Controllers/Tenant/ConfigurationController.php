@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Tenant;
 
+use App\Helpers\CacheHelper;
 use App\Http\Requests\Tenant\ConfigurationRequest;
 use App\Http\Resources\Tenant\ConfigurationResource;
 use App\Models\Tenant\Configuration;
@@ -506,7 +507,12 @@ class ConfigurationController extends Controller
         $id = $request->input('id');
         $configuration = Configuration::find($id);
         $configuration->fill($request->all());
+        $listItemsByWarehouseChanged = $configuration->isDirty('list_items_by_warehouse');
         $configuration->save();
+
+        if ($listItemsByWarehouseChanged) {
+            CacheHelper::flush(['items_list']);
+        }
 
         Cache::forget("{$cp->number}_token_sunat");
 

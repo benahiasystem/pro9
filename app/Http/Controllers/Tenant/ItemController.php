@@ -158,6 +158,7 @@ class ItemController extends Controller
     public function records(Request $request)
     {
         // Generar clave de caché basada en todos los filtros
+        $listItemsByWarehouse = (bool) Configuration::getRecordIndividualColumn('list_items_by_warehouse');
         $cacheParams = [
             'column' => $request->column,
             'value' => $request->value,
@@ -171,7 +172,13 @@ class ItemController extends Controller
             'sort_direction' => $request->get('sort_direction', 'desc'),
             'variations_view' => $request->variations_view,
             'page' => $request->get('page', 1),
+            'list_items_by_warehouse' => $listItemsByWarehouse,
         ];
+
+        // El filtro por almacén depende de la sucursal del usuario autenticado
+        if ($listItemsByWarehouse || auth()->user()->type === 'seller') {
+            $cacheParams['establishment_id'] = auth()->user()->establishment_id;
+        }
 
         $cacheKey = 'items_list_' . md5(json_encode($cacheParams));
 
