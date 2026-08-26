@@ -380,16 +380,6 @@
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
                                         <div class="col-12">
-                                            <label class="control-label">Restringir fecha de comprobante</label>
-                                            <div :class="{ 'has-danger': errors.restrict_receipt_date }" class="form-group">
-                                                <el-switch v-model="form.restrict_receipt_date"
-                                                    @change="submit"></el-switch>
-                                                <small v-if="errors.restrict_receipt_date" class="form-control-feedback"
-                                                    v-text="errors.restrict_receipt_date[0]"></small>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12">
                                             <label class="control-label">
                                                 Mostrar totales en el listado de CPE
                                                 <el-tooltip class="item" content="Solo para usuarios tipo admin" effect="dark"
@@ -594,23 +584,6 @@
                                                     :step="1" @change="submit"></el-input-number>
                                                 <small v-if="errors.new_validator_pagination" class="form-control-feedback"
                                                     v-text="errors.new_validator_pagination[0]"></small>
-                                            </div>
-                                        </div>
-
-                                        <div v-if="typeUser != 'integrator'" class="col-md-6">
-                                            <label class="control-label">
-                                                Días de plazo de envío
-                                                <el-tooltip class="item"
-                                                    content="Validar fecha de emisión en Ventas/Comprobante electrónico"
-                                                    effect="dark" placement="top-start">
-                                                    <i class="fa fa-info-circle"></i>
-                                                </el-tooltip>
-                                            </label>
-                                            <div :class="{ 'has-danger': errors.shipping_time_days }" class="form-group w-50">
-                                                <el-input-number v-model="form.shipping_time_days" :min="1" :precision="0"
-                                                    :step="1" @change="submit"></el-input-number>
-                                                <small v-if="errors.shipping_time_days" class="form-control-feedback"
-                                                    v-text="errors.shipping_time_days[0]"></small>
                                             </div>
                                         </div>
 
@@ -1357,16 +1330,48 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="fw-semibold m-0 d-flex align-items-center gap-2">
                                                 <span class="dot"></span>
-                                                <span class="text-primary text-uppercase">Comunicación de Baja (RA)</span>
+                                                <span class="text-primary text-uppercase">Plazos de Envío</span>
                                             </h5>
                                         </div>
                                         <div>
                                             <span class="text-muted">
-                                                Reglas para el envío de comunicaciones de baja a SUNAT.
+                                                Plazos para la fecha del comprobante y para el envío de comunicaciones de baja a SUNAT.
                                             </span>
                                         </div>
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
+                                        <div class="col-12">
+                                            <label class="control-label">Restringir fecha de comprobante
+                                                <el-tooltip class="item"
+                                                    content="Validar fecha de emisión en Ventas/Comprobante electrónico"
+                                                    effect="dark" placement="top-start">
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </label>
+                                            <div :class="{ 'has-danger': errors.restrict_receipt_date }" class="form-group">
+                                                <el-switch v-model="form.restrict_receipt_date"
+                                                    @change="submit"></el-switch>
+                                                <small v-if="errors.restrict_receipt_date" class="form-control-feedback"
+                                                    v-text="errors.restrict_receipt_date[0]"></small>
+                                            </div>
+                                        </div>
+
+                                        <template v-if="typeUser != 'integrator' && form.restrict_receipt_date">
+                                            <div class="inputs-column">
+                                                <label class="control-label">
+                                                    Días de plazo de envío
+                                                </label>
+                                                <div :class="{ 'has-danger': errors.shipping_time_days }"
+                                                    class="form-group w-50">
+                                                    <el-input-number v-model="form.shipping_time_days" :min="1"
+                                                        :precision="0" :step="1" @change="submit"></el-input-number>
+                                                    <small v-if="errors.shipping_time_days" class="form-control-feedback"
+                                                        v-text="errors.shipping_time_days[0]"></small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2"></div>
+                                        </template>
+
                                         <template v-if="typeUser != 'integrator'">
                                             <div class="col-12">
                                                 <label class="control-label">Restringir envío de comunicación de baja (RA)
