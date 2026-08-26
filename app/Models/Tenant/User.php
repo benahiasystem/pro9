@@ -218,6 +218,9 @@ class User extends Authenticatable
         'permission_edit_item_prices',
         'restaurant_pin',
         'from_guest_register',
+        'pinned_items',
+        'menu_order',
+        'show_only_active_menu',
 
     ];
 
@@ -250,6 +253,9 @@ class User extends Authenticatable
         'is_multi_user' => 'boolean',
         'permission_edit_item_prices' => 'boolean',
         'from_guest_register' => 'boolean',
+        'pinned_items' => 'array',
+        'menu_order' => 'array',
+        'show_only_active_menu' => 'boolean',
     ];
 
     public function modules()

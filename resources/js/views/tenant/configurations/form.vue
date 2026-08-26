@@ -7,9 +7,38 @@
                 <li><span class="text-muted">Avanzado</span></li>
             </ol>
         </div>
+        <section class="advanced-search-panel" aria-label="Buscar configuraciones avanzadas">
+            <div class="advanced-search-copy">
+                <span class="advanced-search-icon"><i class="fas fa-search" aria-hidden="true"></i></span>
+                <div>
+                    <strong>Buscar configuraciones</strong>
+                    <small>Filtra por nombre, descripción o términos relacionados.</small>
+                </div>
+            </div>
+            <div class="advanced-search-control">
+                <i class="fas fa-search" aria-hidden="true"></i>
+                <input
+                    v-model="advancedSearchQuery"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Ej. sucursal, almacén, stock..."
+                    aria-label="Buscar dentro de configuración avanzada"
+                    @input="scheduleAdvancedFilter"
+                >
+                <button v-if="advancedSearchQuery" type="button" title="Limpiar búsqueda" @click="clearAdvancedSearch">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div v-if="advancedSearchQuery" class="advanced-search-feedback" aria-live="polite">
+                <span v-if="advancedSearchMatchCount">
+                    {{ advancedSearchMatchCount }} opción(es) encontrada(s) para “{{ advancedSearchQuery }}”.
+                </span>
+                <span v-else>No se encontraron configuraciones relacionadas con “{{ advancedSearchQuery }}”.</span>
+            </div>
+        </section>
         <template>
             <form autocomplete="off">
-                <el-tabs v-model="activeName" type="border-card" class="rounded advanced-settings">                    
+                <el-tabs ref="advancedSettings" v-model="activeName" type="border-card" class="rounded advanced-settings">
                     <el-tab-pane class="mb-3" name="second">
                         <span slot="label">Visual</span>
                         <div class="row switch-configuration-container">
@@ -3290,6 +3319,100 @@
     border-top-right-radius: 5px;
     border-top-left-radius: 5px;
 }
+.advanced-search-panel {
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid #e3e8f2;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 14px rgba(22, 34, 51, .05);
+}
+.advanced-search-copy,
+.advanced-search-control {
+    display: flex;
+    align-items: center;
+}
+.advanced-search-copy {
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.advanced-search-copy strong,
+.advanced-search-copy small {
+    display: block;
+}
+.advanced-search-copy small,
+.advanced-search-feedback {
+    color: #7c8798;
+}
+.advanced-search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    color: var(--primary-color, #4267ef);
+    background: rgba(66, 103, 239, .1);
+}
+.advanced-search-control {
+    gap: 10px;
+    min-height: 46px;
+    padding: 0 13px;
+    border: 2px solid #dfe5ef;
+    border-radius: 10px;
+    background: #fff;
+    transition: border-color .16s ease, box-shadow .16s ease;
+}
+.advanced-search-control:focus-within {
+    border-color: var(--primary-color, #4267ef);
+    box-shadow: 0 0 0 3px rgba(66, 103, 239, .1);
+}
+.advanced-search-control input {
+    flex: 1;
+    min-width: 0;
+    height: 42px;
+    border: 0;
+    outline: 0;
+    color: #263238;
+    background: transparent;
+}
+.advanced-search-control button {
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 7px;
+    color: #707b8c;
+    background: #eef1f6;
+}
+.advanced-search-feedback {
+    margin-top: 9px;
+    font-size: 12px;
+}
+.advanced-settings.is-filtering > .el-tabs__header {
+    display: none;
+}
+.advanced-settings.is-filtering > .el-tabs__content > .el-tab-pane {
+    display: block !important;
+    margin-bottom: 16px;
+}
+.advanced-settings.is-filtering > .el-tabs__content > .el-tab-pane.advanced-pane-empty {
+    display: none !important;
+}
+.advanced-filter-hidden {
+    display: none !important;
+}
+html.dark .advanced-search-panel,
+html.sidebarMode-dark .advanced-search-panel,
+html.dark .advanced-search-control,
+html.sidebarMode-dark .advanced-search-control {
+    color: #eef2f7;
+    background: #202938;
+    border-color: #364154;
+}
+html.dark .advanced-search-control input,
+html.sidebarMode-dark .advanced-search-control input {
+    color: #eef2f7;
+}
 </style>
 
 <script>
@@ -3379,7 +3502,10 @@ export default {
             loadingPrinters: false,
             placeholder: '',
             activeName: 'second',
-            loading_save_mail: false
+            loading_save_mail: false,
+            advancedSearchQuery: '',
+            advancedSearchMatchCount: 0,
+            advancedSearchFrame: null
         }
     },
     created() {
@@ -3418,6 +3544,123 @@ export default {
         ...mapActions([
             'loadConfiguration',
         ]),
+        normalizeAdvancedSearch(value) {
+            return (value || '')
+                .toString()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+        },
+        advancedSynonymGroups() {
+            return [
+                ['sucursal', 'sede', 'establecimiento', 'local', 'tienda', 'agencia', 'punto de venta', 'almacen'],
+                ['almacen', 'bodega', 'deposito', 'inventario', 'stock', 'existencia', 'existencias', 'kardex', 'disponibilidad', 'saldo', 'ubicacion', 'lote'],
+                ['producto', 'articulo', 'item', 'mercaderia', 'mercancia', 'genero', 'bien', 'catalogo', 'existencia'],
+                ['venta', 'facturacion', 'comercializacion', 'transaccion', 'operacion', 'transferencia', 'ingreso', 'pedido'],
+                ['comprobante', 'documento', 'factura', 'boleta', 'ticket', 'recibo', 'cpe', 'nota de credito', 'nota de debito'],
+                ['cliente', 'comprador', 'consumidor', 'adquirente', 'contacto'],
+                ['compra', 'adquisicion', 'abastecimiento', 'aprovisionamiento', 'pedido de compra'],
+                ['proveedor', 'suministrador', 'abastecedor', 'acreedor'],
+                ['usuario', 'cuenta', 'operador', 'perfil', 'acceso', 'credencial'],
+                ['vendedor', 'asesor', 'comercial', 'ejecutivo de ventas', 'representante'],
+                ['pago', 'abono', 'paga', 'cobro', 'reembolso', 'reintegro', 'amortizacion', 'cancelacion'],
+                ['caja', 'efectivo', 'dinero', 'tesoreria', 'arqueo', 'apertura', 'cierre', 'turno'],
+                ['reporte', 'informe', 'estadistica', 'resumen', 'consulta', 'listado', 'analisis'],
+                ['cotizacion', 'presupuesto', 'proforma', 'propuesta', 'oferta', 'estimacion'],
+                ['guia', 'guia de remision', 'despacho', 'envio', 'traslado', 'transporte', 'transportista', 'remitente'],
+                ['devolucion', 'retorno', 'reintegro', 'nota de credito', 'anulacion', 'reversion'],
+                ['serie', 'numeracion', 'correlativo', 'secuencia', 'folio'],
+                ['moneda', 'divisa', 'tipo de cambio', 'cambio', 'conversion'],
+                ['banco', 'entidad financiera', 'cuenta bancaria', 'banca'],
+                ['credito', 'financiamiento', 'cuota', 'pago diferido', 'dias de credito', 'plazo'],
+                ['trabajador', 'empleado', 'personal', 'vendedor', 'colaborador'],
+                ['configuracion', 'ajuste', 'preferencia', 'parametro', 'opcion', 'personalizacion']
+            ].map(group => group.map(this.normalizeAdvancedSearch))
+        },
+        advancedQueryGroups(query) {
+            const synonymGroups = this.advancedSynonymGroups()
+            return this.normalizeAdvancedSearch(query).split(' ').filter(Boolean).map(token => {
+                const synonymGroup = synonymGroups.find(group => group.some(term => term === token || term.includes(token) || token.includes(term)))
+                return synonymGroup || [token]
+            })
+        },
+        advancedTextMatches(text, queryGroups) {
+            const normalizedText = this.normalizeAdvancedSearch(text)
+            return queryGroups.every(group => group.some(term => normalizedText.includes(term)))
+        },
+        scheduleAdvancedFilter() {
+            if (this.advancedSearchFrame) cancelAnimationFrame(this.advancedSearchFrame)
+            this.advancedSearchFrame = requestAnimationFrame(() => {
+                this.advancedSearchFrame = null
+                this.applyAdvancedFilter()
+            })
+        },
+        applyAdvancedFilter() {
+            const tabsComponent = this.$refs.advancedSettings
+            const root = tabsComponent && tabsComponent.$el ? tabsComponent.$el : tabsComponent
+            if (!root) return
+
+            const query = this.normalizeAdvancedSearch(this.advancedSearchQuery)
+            const panes = Array.from(root.querySelectorAll(':scope > .el-tabs__content > .el-tab-pane'))
+            root.querySelectorAll('.advanced-filter-hidden').forEach(element => element.classList.remove('advanced-filter-hidden'))
+            panes.forEach(pane => pane.classList.remove('advanced-pane-empty'))
+
+            if (!query) {
+                root.classList.remove('is-filtering')
+                this.advancedSearchMatchCount = 0
+                return
+            }
+
+            root.classList.add('is-filtering')
+            const queryGroups = this.advancedQueryGroups(query)
+            let matchCount = 0
+
+            panes.forEach(pane => {
+                let paneMatches = 0
+                const containers = Array.from(pane.querySelectorAll('.adv-conf-container'))
+                    .filter(container => !container.closest('.el-dialog__wrapper'))
+
+                containers.forEach(container => {
+                    const cardBody = container.closest('.card-body')
+                    const card = cardBody ? cardBody.parentElement : container.parentElement
+                    const header = cardBody ? cardBody.querySelector('.header-card') : null
+                    const headerMatchesLiteral = header
+                        ? this.normalizeAdvancedSearch(header.textContent).includes(query)
+                        : false
+                    const options = Array.from(container.children).filter(child => child.nodeType === 1)
+                    let cardMatches = 0
+
+                    options.forEach(option => {
+                        const matches = headerMatchesLiteral || this.advancedTextMatches(option.textContent, queryGroups)
+                        option.classList.toggle('advanced-filter-hidden', !matches)
+                        if (matches) {
+                            cardMatches++
+                            paneMatches++
+                            matchCount++
+                        }
+                    })
+                    if (card) card.classList.toggle('advanced-filter-hidden', cardMatches === 0)
+                })
+
+                // Algunos paneles usan componentes o formularios sin adv-conf-container.
+                // Se evalúan como un único bloque para no excluir configuraciones válidas.
+                if (!containers.length) {
+                    const matches = this.advancedTextMatches(pane.textContent, queryGroups)
+                    paneMatches = matches ? 1 : 0
+                    if (matches) matchCount++
+                }
+                pane.classList.toggle('advanced-pane-empty', paneMatches === 0)
+            })
+
+            this.advancedSearchMatchCount = matchCount
+        },
+        clearAdvancedSearch() {
+            this.advancedSearchQuery = ''
+            this.$nextTick(this.applyAdvancedFilter)
+        },
         events() {
 
             this.$eventHub.$on('submitFormConfigurations', (form) => {
