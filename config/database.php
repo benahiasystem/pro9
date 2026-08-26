@@ -157,6 +157,8 @@ return [
             'port'     => env('REDIS_PORT', 6379),
             'database' => 0,
             'prefix'   => '',
+            // Puerto publicado en el host (docker "${REDIS_PUBLIC_PORT}:6379"); lo usa BuhoPrinter para conectarse desde fuera.
+            'public_port' => env('REDIS_PUBLIC_PORT', env('REDIS_PORT', 6379)),
         ],
 
     ],

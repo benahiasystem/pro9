@@ -403,9 +403,9 @@ class DispatchInput
 
     private static function secondary_license_plates($inputs)
     {
-        if (array_key_exists('secondary_license_plates', $inputs)) {
+        if (!empty($inputs['secondary_license_plates']) && is_array($inputs['secondary_license_plates'])) {
             $secondary_license_plates = $inputs['secondary_license_plates'];
-            $semitrailer = $secondary_license_plates['semitrailer'];
+            $semitrailer = $secondary_license_plates['semitrailer'] ?? null;
             return [
                 'semitrailer' => $semitrailer,
             ];

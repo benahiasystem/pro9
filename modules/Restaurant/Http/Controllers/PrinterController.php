@@ -199,7 +199,8 @@ class PrinterController extends Controller
         // Base64 del JSON — BuhoPrinter solo necesita base64_decode para obtener el objeto.
         // El tránsito está protegido por HTTPS; base64 evita que sea legible a simple vista.
         $encryptedBlob = base64_encode(json_encode([
-            'redis_port'   => (int) config('database.redis.default.port', env('REDIS_PORT', 6379)),
+            // Puerto Redis visible desde internet (mapeo publicado en el host), no el interno del contenedor.
+            'redis_port'   => (int) config('database.redis.pubsub.public_port', 6379),
             'fqdn_tenant'  => $fqdn,
             'api_base_url' => $apiBaseUrl,
             'api_token'    => auth()->user()?->api_token,

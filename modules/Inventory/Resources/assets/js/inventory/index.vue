@@ -141,7 +141,7 @@
                             >Ajustar stock</el-dropdown-item
                         >
                     </el-dropdown-menu>
-                </el-dropdown> 
+                </el-dropdown>
                 <data-table :resource="resource" ref="datatable">
                     <tr slot="heading">
                         <th>
