@@ -103,7 +103,11 @@ class QuotationResource extends JsonResource
         try {
             return Carbon::parse($value)->format('Y-m-d');
         } catch (\Throwable $e) {
-            return is_string($value) ? substr($value, 0, 10) : null;
+            // delivery_date y date_of_due guardan texto libre ("4 dias habiles de
+            // fabricacion", "30"), que Carbon no puede parsear. Antes se cortaba a
+            // 10 bytes: eso partia un caracter multibyte a la mitad y la respuesta
+            // entera reventaba con "Malformed UTF-8 characters".
+            return is_string($value) ? $value : null;
         }
     }
 
