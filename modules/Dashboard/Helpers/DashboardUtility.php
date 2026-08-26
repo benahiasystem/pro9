@@ -123,13 +123,16 @@ class DashboardUtility
 
     private function getExpenses($establishment_id, $d_start, $d_end, $enabled_expense)
     {
-        if (!$enabled_expense || !$establishment_id) {
+        if (!$enabled_expense) {
             return null;
         }
 
         $query = Expense::query()
-            ->where('establishment_id', $establishment_id)
             ->where('state_type_id', '!=', '11');
+
+        if ($establishment_id) {
+            $query->where('establishment_id', $establishment_id);
+        }
 
         if ($d_start && $d_end) {
             $query->whereBetween('date_of_issue', [$d_start, $d_end]);

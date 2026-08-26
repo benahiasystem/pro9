@@ -50,7 +50,8 @@ class DashboardController extends Controller
     public function filter()
     {
         return [
-            'establishments' => DashboardView::getEstablishments()
+            'establishments' => DashboardView::getEstablishments(),
+            'establishment_id' => auth()->user()->establishment_id,
         ];
     }
 

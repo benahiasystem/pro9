@@ -14,16 +14,12 @@
                   size="small"
                   :plain="showLegacyDashboard"
                   class="ms-2 p-2 btn-dashboard-filter"
-                  :class="{ 'is-widgets': !showLegacyDashboard }"
                   style="padding: 8px !important;"
                   :aria-pressed="showLegacyDashboard ? 'false' : 'true'"
                   @click="toggleDashboardVersion"
                 >
-                  <i
-                    class="ti"
-                    :class="showLegacyDashboard ? 'ti-layout-grid' : 'ti-layout-dashboard'"
-                    style="font-size: 20px;"
-                  ></i>
+                  <svg v-if="showLegacyDashboard" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-layout-grid"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M14 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M4 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M14 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-layout-dashboard"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 4h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1" /><path d="M5 16h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1" /><path d="M15 12h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1" /><path d="M15 4h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1" /></svg>
                 </el-button>
               </el-tooltip>
               <el-button
@@ -66,6 +62,7 @@
                             <div :class="filterColumnClass" class="form-group">
                                 <label class="control-label">Sucursal</label>
                                 <el-select v-model="form.establishment_id" @change="loadAll">
+                                    <el-option key="all" :value="null" label="Todos"></el-option>
                                     <el-option
                                     v-for="option in establishments"
                                     :key="option.id"
@@ -141,16 +138,16 @@
                                 </div>
                             </template>
                             <!-- Acciones del dashboard de widgets, en la misma fila del filtro (mockup) -->
-                            <div v-if="!showLegacyDashboard" class="col-auto ml-auto wg-filter-actions">
+                            <div v-if="!showLegacyDashboard" class="col-auto ml-auto wg-filter-actions mt-auto mb-3">
                                 <el-tooltip content="Añadir widget" placement="bottom">
-                                    <button type="button" class="wg-action-btn is-primary" @click="widgetStore.openModal()">
+                                    <button type="button" class="btn btn-primary btn-sm" @click="widgetStore.openModal()">
                                         <i class="ti ti-plus"></i>
                                     </button>
                                 </el-tooltip>
                                 <el-tooltip :content="widgetStore.state.editMode ? 'Terminar edición' : 'Personalizar: reordenar, redimensionar o quitar widgets'" placement="bottom">
                                     <button
                                         type="button"
-                                        class="wg-action-btn"
+                                        class="btn second-buton btn-sm"
                                         :class="{ 'is-primary': widgetStore.state.editMode }"
                                         @click="widgetStore.toggleEdit()"
                                     >
@@ -158,7 +155,7 @@
                                     </button>
                                 </el-tooltip>
                                 <el-tooltip content="Restablecer layout" placement="bottom">
-                                    <button type="button" class="wg-action-btn" @click="widgetStore.resetLayout()">
+                                    <button type="button" class="btn second-buton btn-sm" @click="widgetStore.resetLayout()">
                                         <i class="ti ti-history"></i>
                                     </button>
                                 </el-tooltip>
@@ -591,10 +588,8 @@
 .wg-filter-actions {
   align-items: center;
   align-self: center;
-  border-left: 1px solid #e3e6ea;
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
   padding-left: 1rem;
 }
 .wg-action-btn {
@@ -887,8 +882,7 @@ export default {
     this.initLoaders();
     await this.$http.get(`/${this.resource}/filter`).then((response) => {
       this.establishments = response.data.establishments;
-      this.form.establishment_id =
-        this.establishments.length > 0 ? this.establishments[0].id : null;
+      this.form.establishment_id = this.defaultEstablishmentId(response.data.establishment_id);
     });
 
     // El grid de widgets se monta recién con la sucursal resuelta.
@@ -1365,6 +1359,17 @@ export default {
         // Al volver al clásico, recargar sus datos (se omiten mientras está oculto).
         this.loadAll();
       }
+    },
+    defaultEstablishmentId(current_establishment_id) {
+      if (this.establishments.length === 0) {
+        return null;
+      }
+
+      const current = this.establishments.find(
+        (establishment) => String(establishment.id) === String(current_establishment_id)
+      );
+
+      return current ? current.id : this.establishments[0].id;
     },
     updateEstablishment(establishmentId) {
       console.log('Cambiando a sucursal ID:', establishmentId);
