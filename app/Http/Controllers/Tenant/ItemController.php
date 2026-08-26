@@ -1291,19 +1291,44 @@ class ItemController extends Controller
 
     public function duplicate(Request $request)
     {
-        // return $request->id;
         $obj = Item::find($request->id);
 
-        if($obj->lots_enabled){
+        if (!$obj) {
+            return [
+                'success' => false,
+                'message' => 'Producto no encontrado',
+            ];
+        }
+
+        if ($obj->lots_enabled) {
             $obj->date_of_due = null;
             $obj->lot_code = null;
             $obj->stock = 0;
         }
 
+        $userWarehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
+
         $new = $obj->setDescription($obj->getDescription().' (Duplicado)')->replicate();
         // el duplicado nace independiente, sin vínculo con variaciones
         $new->parent_item_id = null;
+        $new->stock = 0;
+
+        // Almacén de la sucursal de quien duplica (el observer Item::created usa este campo)
+        if ($userWarehouse) {
+            $new->warehouse_id = $userWarehouse->id;
+        }
+
         $new->save();
+
+        // Asegurar registro en el almacén de la sucursal actual (stock 0)
+        if ($userWarehouse) {
+            ItemWarehouse::firstOrCreate(
+                ['item_id' => $new->id, 'warehouse_id' => $userWarehouse->id],
+                ['stock' => 0]
+            );
+        }
+
+        CacheHelper::flush(['items_list']);
 
         return [
             'success' => true,
@@ -1311,7 +1336,6 @@ class ItemController extends Controller
                 'id' => $new->id,
             ],
         ];
-
     }
 
     public function disable($id)
