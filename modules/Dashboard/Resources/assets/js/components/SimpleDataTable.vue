@@ -39,6 +39,7 @@ export default {
       records: [],
       pagination: {},
       form: {},
+      filters_ready: false,
     };
   },
   computed: {},
@@ -47,6 +48,7 @@ export default {
 
     this.$eventHub.$on("reloadSimpleDataTable", (establishment_id) => {
       this.form.establishment_id = establishment_id;
+      this.filters_ready = true;
       this.getRecords();
     });
   },
@@ -67,7 +69,7 @@ export default {
       );
     },
     getRecords() {
-      if (this.form.establishment_id) {
+      if (this.filters_ready) {
         return this.$http
           .get(`/${this.resource}/records?${this.getQueryParameters()}`)
           .then((response) => {

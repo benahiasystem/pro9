@@ -71,27 +71,45 @@ class DashboardSalePurchase
         ];
     }
 
+    /**
+     * Filtra por sucursal solo cuando se recibe una; sin valor (opción "Todos")
+     * la consulta abarca todos los establecimientos.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  int|null $establishment_id
+     *
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    private function filterEstablishment($query, $establishment_id)
+    {
+        if ($establishment_id) {
+            $query->where('establishment_id', $establishment_id);
+        }
+
+        return $query;
+    }
+
     private function top_customers($establishment_id, $d_start, $d_end, $enabled_transaction_customer){
 
         // $documents = Document::get();
         // $sale_notes = SaleNote::get();
         if($d_start && $d_end){
 
-            $documents = Document::query()->where('establishment_id', $establishment_id)
+            $documents = $this->filterEstablishment(Document::query(), $establishment_id)
                                     ->whereIn('state_type_id', ['01','03','05','07','13'])
                                     ->whereBetween('date_of_issue', [$d_start, $d_end])->get();
 
 
-            $sale_notes = SaleNote::query()->where([['establishment_id', $establishment_id],['changed',false]])
+            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)->where('changed', false)
                                     ->whereIn('state_type_id', ['01','03','05','07','13'])
                                     ->whereBetween('date_of_issue', [$d_start, $d_end])->get();
         }else{
 
-            $documents = Document::query()->where('establishment_id', $establishment_id)
+            $documents = $this->filterEstablishment(Document::query(), $establishment_id)
                     ->whereIn('state_type_id', ['01','03','05','07','13'])->get();
 
 
-            $sale_notes = SaleNote::query()->where([['establishment_id', $establishment_id],['changed',false]])
+            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)->where('changed', false)
                     ->whereIn('state_type_id', ['01','03','05','07','13'])->get();
 
         }
@@ -288,25 +306,23 @@ class DashboardSalePurchase
     {
         if ($d_start && $d_end) {
 
-            $documents = Document::without(['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'invoice', 'note', 'payments'])
-                        ->where('establishment_id', $establishment_id)
+            $documents = $this->filterEstablishment(Document::without(['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'invoice', 'note', 'payments']), $establishment_id)
                         ->whereIn('state_type_id', ['01','03','05','07','13'])
                         ->whereBetween('date_of_issue', [$d_start, $d_end])->get();
 
 
-            $sale_notes = SaleNote::without(['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments'])
-                        ->where([['establishment_id', $establishment_id],['changed',false]])
+            $sale_notes = $this->filterEstablishment(SaleNote::without(['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments']), $establishment_id)
+                        ->where('changed', false)
                         ->whereIn('state_type_id', ['01','03','05','07','13'])
                         ->whereBetween('date_of_issue', [$d_start, $d_end])->get();
         } else {
 
-            $documents = Document::without(['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'invoice', 'note', 'payments'])
-                        ->where('establishment_id', $establishment_id)
+            $documents = $this->filterEstablishment(Document::without(['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'invoice', 'note', 'payments']), $establishment_id)
                         ->whereIn('state_type_id', ['01','03','05','07','13'])->get();
 
 
-            $sale_notes = SaleNote::without(['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments'])
-                        ->where([['establishment_id', $establishment_id],['changed',false]])
+            $sale_notes = $this->filterEstablishment(SaleNote::without(['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments']), $establishment_id)
+                        ->where('changed', false)
                         ->whereIn('state_type_id', ['01','03','05','07','13'])->get();
 
         }

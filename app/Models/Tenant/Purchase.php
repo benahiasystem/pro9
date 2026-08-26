@@ -513,7 +513,9 @@ class Purchase extends ModelTenant
             ]
         );
         $query->WhereStateTypeAccepted();
-        $query->where('establishment_id', $establishment_id);
+        if ($establishment_id) {
+            $query->where('establishment_id', $establishment_id);
+        }
         $query->select(
             'id', 'state_type_id', 'establishment_id', 'currency_type_id', 'total', 'exchange_rate_sale',
             'total_perception', 'date_of_issue',
