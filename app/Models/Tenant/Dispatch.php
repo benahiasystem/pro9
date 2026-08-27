@@ -657,6 +657,17 @@ class Dispatch extends ModelTenant
             $btn_edit = true;
         }
 
+        $btn_voided = false;
+        $transferReason = $this->transfer_reason_type;
+        if (
+            $this->document_type_id === '09'
+            && $transferReason
+            && $transferReason->discount_stock
+            && !in_array($this->state_type_id, ['09', '11'], true)
+        ) {
+            $btn_voided = true;
+        }
+
 //        if(!is_null($this->reference_sale_note_id) || !is_null($this->reference_document_id) ||
 //            !is_null($this->reference_quotation_id) || !is_null($this->reference_order_form_id) ||
 //            !is_null($this->reference_order_note_id) ) {
@@ -728,6 +739,7 @@ class Dispatch extends ModelTenant
             'btn_pdf' => $btn_pdf,
             'btn_options' => $btn_options,
             'btn_edit' => $btn_edit,
+            'btn_voided' => $btn_voided,
             'has_transport_driver_01'=> $this->has_transport_driver_01,
             'sunat_error_response' => $this->sunat_error_response,
         ];
