@@ -325,11 +325,29 @@
                                     </el-dropdown-item>
                                     <el-dropdown-item
                                         v-if="row.btn_voided"
-                                        class="text-danger option-delete"
+                                        class="text-danger option-delete dispatch-void-item"
                                         @click.native="clickVoided(row.id)"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x-circle me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
-                                        Anular
+                                        <span class="dispatch-void-item-content">
+                                            <span class="dispatch-void-item-label">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x-circle me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                                                Anular
+                                            </span>
+                                            <el-tooltip
+                                                class="item"
+                                                effect="dark"
+                                                placement="left"
+                                            >
+                                                <div slot="content">
+                                                    Anulación solo interna.<br/>
+                                                    No se comunica a SUNAT.
+                                                </div>
+                                                <i
+                                                    class="fas fa-info-circle text-info dispatch-void-info-icon"
+                                                    @click.stop.prevent
+                                                ></i>
+                                            </el-tooltip>
+                                        </span>
                                     </el-dropdown-item>
                                 </el-dropdown-menu>
                             </el-dropdown>
@@ -355,6 +373,23 @@
     </div>
 </template>
 <style>
+.dispatch-void-item-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.dispatch-void-item-label {
+    display: flex;
+    align-items: center;
+}
+
+.dispatch-void-info-icon {
+    cursor: help;
+    font-size: 14px;
+}
+
 @media only screen and (max-width: 390px) {
     .filter-content {
         margin-top: 0px;
@@ -370,10 +405,8 @@ import DataTable from "../../../components/DataTableDispatch.vue";
 import DispatchOptions from "./partials/options.vue";
 import FormGenerateDocument from "./generate-document.vue";
 import ModalGenerateCPE from "./ModalGenerateCPE.vue";
-import { deletable } from "../../../mixins/deletable";
 
 export default {
-    mixins: [deletable],
     components: {
         DataTable,
         DispatchOptions,
@@ -467,9 +500,49 @@ export default {
             this.showDialogOptions = true;
         },
         clickVoided(id) {
-            this.anular(`/${this.resource}/anulate/${id}`).then(() =>
-                this.$eventHub.$emit("reloadData")
-            );
+            this.$confirm(
+                "Esta anulación es únicamente interna y no tiene efecto ante SUNAT. Si la guía descontó stock, se restaurará en inventario.",
+                "Anular guía de remisión",
+                {
+                    confirmButtonText: "Anular",
+                    cancelButtonText: "Cancelar",
+                    type: "warning",
+                }
+            )
+                .then(() => {
+                    this.$http
+                        .get(`/${this.resource}/anulate/${id}`)
+                        .then((res) => {
+                            if (res.data.success) {
+                                this.$message.success(
+                                    res.data.message ||
+                                        "Se anuló correctamente el registro"
+                                );
+                                this.$eventHub.$emit("reloadData");
+                            } else {
+                                this.$message.error(
+                                    res.data.message ||
+                                        "Error al intentar anular"
+                                );
+                            }
+                        })
+                        .catch((error) => {
+                            if (
+                                error.response &&
+                                error.response.status === 500
+                            ) {
+                                this.$message.error(
+                                    "Error al intentar anular"
+                                );
+                            } else if (error.response) {
+                                this.$message.error(
+                                    error.response.data.message ||
+                                        "Error al intentar anular"
+                                );
+                            }
+                        });
+                })
+                .catch(() => {});
         },
         clickDownload(download) {
             window.open(download, "_blank");
