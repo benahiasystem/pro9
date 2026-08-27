@@ -294,22 +294,32 @@
                             >
                                 Opciones
                             </button>
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                @click.prevent="sendSunat(row.external_id)"
-                                v-if="row.btn_send"
+                            <el-dropdown
+                                v-if="row.btn_send || row.btn_edit"
+                                trigger="click"
+                                size="small"
                             >
-                                Enviar a Sunat
-                            </button>
-                            <a
-                                :href="
-                                    `/dispatches/create_new/dispatch/${row.id}`
-                                "
-                                class="btn waves-effect waves-light btn-xs btn-warning m-1__2 me-1"
-                                v-if="row.btn_edit"
-                                >Editar</a
-                            >
+                                <el-button class="btn-dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                    <i class="fas fa-ellipsis-h" style="display: none;"></i>
+                                </el-button>
+                                <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item
+                                        v-if="row.btn_send"
+                                        @click.native="sendSunat(row.external_id)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-send me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 14l11 -11" /><path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5" /></svg>
+                                        Enviar a Sunat
+                                    </el-dropdown-item>
+                                    <el-dropdown-item
+                                        v-if="row.btn_edit"
+                                        @click.native="go(`/dispatches/create_new/dispatch/${row.id}`)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                                        Editar
+                                    </el-dropdown-item>
+                                </el-dropdown-menu>
+                            </el-dropdown>
                         </td>
                     </tr>
                 </data-table>
@@ -371,6 +381,9 @@ export default {
         this.loadCustomFieldsColumns();
     },
     methods: {
+        go(url) {
+            window.location.href = url;
+        },
         formatDate(date) {
             if (!date) return null;
             const parsedDate = moment(date);
