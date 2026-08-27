@@ -1,5 +1,5 @@
 <template>
-    <div class="col-md-12 pr-0 pl-0 mt-1">
+    <div class="col-md-12 px-0 mt-1">
         <div class="form-group">
             <label class="control-label mt-1">Cambiar Sucursal:</label>
 
