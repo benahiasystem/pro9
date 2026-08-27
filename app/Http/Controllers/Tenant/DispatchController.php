@@ -977,4 +977,43 @@ class DispatchController extends Controller
 
         return $records;
     }
+
+    /**
+     * Anulación interna de guía de remisión.
+     * No comunica con SUNAT; solo cambia el estado y restaura stock si el motivo descuenta.
+     */
+    public function anulate($id)
+    {
+        $dispatch = Dispatch::findOrFail($id);
+
+        if ($dispatch->document_type_id !== '09') {
+            return [
+                'success' => false,
+                'message' => 'Solo se pueden anular guías de remisión remitente.',
+            ];
+        }
+
+        $transferReason = $dispatch->transfer_reason_type;
+        if (!$transferReason || !$transferReason->discount_stock) {
+            return [
+                'success' => false,
+                'message' => 'Solo se pueden anular guías que descuentan stock.',
+            ];
+        }
+
+        if (in_array($dispatch->state_type_id, ['09', '11'], true)) {
+            return [
+                'success' => false,
+                'message' => 'La guía ya se encuentra anulada o rechazada.',
+            ];
+        }
+
+        $dispatch->state_type_id = '11';
+        $dispatch->save();
+
+        return [
+            'success' => true,
+            'message' => 'Guía anulada internamente con éxito',
+        ];
+    }
 }

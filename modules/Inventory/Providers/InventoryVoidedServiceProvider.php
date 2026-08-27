@@ -223,13 +223,19 @@ class InventoryVoidedServiceProvider extends ServiceProvider
     {
         Dispatch::updated(function ($dispatch) {
 
+            if (!$dispatch->wasChanged('state_type_id')) {
+                return;
+            }
+
+            if (!in_array($dispatch->state_type_id, ['09', '11'], true)) {
+                return;
+            }
+
             // dd($dispatch, $dispatch['state_type_id'],$dispatch->state_type_id);
             if($dispatch->transfer_reason_type == null) {
                 $dispatch = Dispatch::where('id', $dispatch->id)->first();
             }
             if(isset($dispatch->transfer_reason_type->discount_stock) && $dispatch->transfer_reason_type->discount_stock){
-
-                if(in_array($dispatch->state_type_id, [ '09', '11' ], true)){
 
                     $warehouse = $this->findWarehouse($dispatch->establishment_id);
 
@@ -243,7 +249,6 @@ class InventoryVoidedServiceProvider extends ServiceProvider
 
                         $this->updateDataLots($detail);
                     }
-                }
             }
         });
     }
