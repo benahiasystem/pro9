@@ -37,8 +37,9 @@ class MultiUserCollection extends ResourceCollection
                 'origin_hostname' => $origin_hostname,
                 'client_origin_full_name' => $client_origin_full_name,
                 'destination_hostname' => $destination_hostname,
+                'user_name' => $row->user->name ?? '-',
                 'user_full_name' => $row->email,
-                'description_type' => User::getDescriptionType($row->user->type)
+                'description_type' => User::getDescriptionType($row->user->type ?? null)
             ];
         });
     }

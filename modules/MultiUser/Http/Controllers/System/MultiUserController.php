@@ -35,6 +35,8 @@ class MultiUserController extends Controller
     {
         return [
             'email' => 'Correo electrónico',
+            'origin_client' => 'Empresa origen',
+            'destination_client' => 'Empresa destino',
         ];
     }
 

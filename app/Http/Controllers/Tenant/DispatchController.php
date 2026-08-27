@@ -993,11 +993,10 @@ class DispatchController extends Controller
             ];
         }
 
-        $transferReason = $dispatch->transfer_reason_type;
-        if (!$transferReason || !$transferReason->discount_stock) {
+        if (!$dispatch->discountsPhysicalStock()) {
             return [
                 'success' => false,
-                'message' => 'Solo se pueden anular guías que descuentan stock.',
+                'message' => 'Solo se pueden anular guías que descontaron stock en el sistema.',
             ];
         }
 
