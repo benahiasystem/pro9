@@ -261,6 +261,7 @@ import TenantOrderFormsIndex from '@viewsModuleOrder/order_forms/index.vue'
 import TenantOrderFormsForm from '@viewsModuleOrder/order_forms/form.vue'
 
 import TenantMultiUsersChangeClient from '@viewsModuleMultiUser/tenant/multi-users/change-client.vue'
+import TenantHeaderCloseCash from './components/HeaderCloseCash.vue'
 
 // Hoteles
 import TenantHotelRates from '@viewsModuleHotel/rates/List.vue'
@@ -678,6 +679,7 @@ Vue.component('tenant-order-forms-form', TenantOrderFormsForm)
 
 Vue.component('tenant-report-sales-by-brand-index', TenantReportSaleByBrand);
 Vue.component('tenant-multi-users-change-client', TenantMultiUsersChangeClient)
+Vue.component('tenant-header-close-cash', TenantHeaderCloseCash)
 
 // Hoteles
 Vue.component('tenant-hotel-rates', TenantHotelRates)

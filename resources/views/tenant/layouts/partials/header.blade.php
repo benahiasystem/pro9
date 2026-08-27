@@ -254,6 +254,9 @@
                         </svg>
                     </a>
                 </li>
+                @if(in_array('cash', $vc_module_levels))
+                    <tenant-header-close-cash variant="mobile"></tenant-header-close-cash>
+                @endif
             </ul>
 
             <ul class="log-out-container">
@@ -451,6 +454,9 @@
                             </svg>
                             Estilos y temas</a>
                     </li>
+                    @if(in_array('cash', $vc_module_levels))
+                        <tenant-header-close-cash variant="desktop"></tenant-header-close-cash>
+                    @endif
 
                     @php
                         $establishments = App\Models\Tenant\Establishment::select('id', 'description')->get();
