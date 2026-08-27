@@ -20,6 +20,7 @@ class TransferReasonType extends ModelCatalog
     ];
 
     protected $casts = [
-        'active' => 'boolean'
+        'active' => 'boolean',
+        'discount_stock' => 'boolean',
     ];
 }

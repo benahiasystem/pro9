@@ -615,6 +615,26 @@ class Dispatch extends ModelTenant
 
 
     /**
+     * Indica si la guía descontó stock físico al crearse.
+     * Misma regla que InventoryKardexServiceProvider::dispatch().
+     */
+    public function discountsPhysicalStock(): bool
+    {
+        if ($this->document_type_id !== '09') {
+            return false;
+        }
+
+        $transferReason = $this->getRelationValue('transfer_reason_type');
+        if (!$transferReason || !$transferReason->discount_stock) {
+            return false;
+        }
+
+        return !$this->reference_sale_note_id
+            && !$this->reference_order_note_id
+            && !$this->reference_document_id;
+    }
+
+    /**
      * Retorna un standar de nomenclatura para el modelo
      *
      * @return array
@@ -658,11 +678,8 @@ class Dispatch extends ModelTenant
         }
 
         $btn_voided = false;
-        $transferReason = $this->transfer_reason_type;
         if (
-            $this->document_type_id === '09'
-            && $transferReason
-            && $transferReason->discount_stock
+            $this->discountsPhysicalStock()
             && !in_array($this->state_type_id, ['09', '11'], true)
         ) {
             $btn_voided = true;
