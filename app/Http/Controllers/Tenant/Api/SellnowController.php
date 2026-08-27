@@ -36,6 +36,10 @@ class SellnowController extends Controller
             $unused_relations[] = 'item_unit_types';
         }
 
+        // Agrupar variantes es opt-in (?group_variations=1): el cliente que aun no
+        // implementa el modal sigue recibiendo cada variacion como producto suelto.
+        $group_variations = $request->group_variations == 1;
+
         $itemsQuery = Item::whereNotNull('internal_id')
             ->whereHas('warehouses', function ($query) use ($warehouse_id) {
                 $query->where('warehouse_id', $warehouse_id);
@@ -54,20 +58,56 @@ class SellnowController extends Controller
                     $query->without($unused_relations)->with('restaurantSupplies');
                 },
             ])
+            // Valores de variacion de la propia fila (Talla M, Rojo...): sin esto
+            // variation_label dispara dos consultas por variacion.
+            ->with('variationValues.value.variable')
             ->orderBy('favorite','desc')
             ->whereIsActive();
+
+        if ($group_variations) {
+            // El padre pasa a ser la tarjeta y sus hijas viajan dentro, con la
+            // misma forma de fila para que la elegida se use como cualquier producto.
+            $itemsQuery->whereNull('parent_item_id')
+                ->withCount('variations')
+                ->with(['variations' => function ($query) use ($unused_relations) {
+                    $query->whereIsActive()
+                        ->without($unused_relations)
+                        ->with([
+                            'currency_type',
+                            'preparationArea',
+                            'modifierGroups',
+                            'restaurantSupplies',
+                            'variationValues.value.variable',
+                            'items_sets' => function ($query) use ($unused_relations) {
+                                $query->without($unused_relations)->with('restaurantSupplies');
+                            },
+                        ])
+                        ->orderBy('id');
+                }]);
+        }
 
         if ($enable_list_product) {
             // ItemUnitType trae unit_type por defecto y aqui solo se usa la columna.
             $itemsQuery->with(['item_unit_types' => function ($query) {
                 $query->without('unit_type')->with('prices.priceLabel');
             }]);
+
+            if ($group_variations) {
+                $itemsQuery->with(['variations.item_unit_types' => function ($query) {
+                    $query->without('unit_type')->with('prices.priceLabel');
+                }]);
+            }
         }
 
         $items = $itemsQuery->get();
 
-        // El stock del almacen en una sola consulta, no una por producto.
-        Item::preloadStockByWarehouse($items);
+        // El stock del almacen en una sola consulta, no una por producto. Las
+        // variaciones entran al mismo precargado: su stock es el que decide el modal.
+        $stock_targets = $group_variations
+            ? $items->concat($items->pluck('variations')->filter()->flatten())
+            : $items;
+
+        Item::preloadStockByWarehouse($stock_targets);
 
         $records = (new ItemCollection($items))->withConfiguration($configuration);
 
