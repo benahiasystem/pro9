@@ -103,7 +103,12 @@ class EcommerceController extends Controller
 
         // Query base (los padres de variaciones se ocultan; sus variaciones son cards normales)
         $query = Item::with('brand')->where([['apply_store', 1], ['internal_id', '!=', null]])
-            ->whereDoesntHave('variations');
+            ->with(['variations' => function ($query) {
+                $query->where('active', 1)
+                    ->where('apply_store', 1)
+                    ->with('variationValues.value.variable')
+                    ->orderBy('id');
+            }]);
 
         if ($brand) {
             $query->where('brand_id', $brand->id);
@@ -139,8 +144,28 @@ class EcommerceController extends Controller
             : 16;
 
         $dataPaginate = $query->category($category ? $category->id : null)
+            ->whereNull('parent_item_id')
+            ->withSum('variations as variations_stock', 'stock')
             ->paginate($perPage)
             ->withQueryString();
+
+        // Selector de variantes por producto, consumido por el modal del listado.
+        // Un solo CampaignPriceService para toda la pagina: memoiza las campanas activas.
+        $campaign_price_service = app(CampaignPriceService::class);
+        $main_warehouse = \Modules\Inventory\Models\Warehouse::where('establishment_id', 1)->first();
+        $tenant_configuration = Configuration::first();
+        $default_product_image = optional($tenant_configuration)->product_default_image ?: 'imagen-no-disponible.jpg';
+        $default_image_path = $default_product_image === 'imagen-no-disponible.jpg'
+            ? asset('logo/imagen-no-disponible.jpg')
+            : asset('storage/defaults/' . $default_product_image);
+        $variationSelectors = [];
+
+        foreach ($dataPaginate as $item) {
+            $selector = $this->buildVariationSelectorForParent($item, $campaign_price_service, $main_warehouse, $default_image_path);
+            if ($selector) {
+                $variationSelectors[$item->id] = $selector;
+            }
+        }
 
         $configuration = InventoryConfiguration::first();
         // Mostrar también las categorías recién creadas aunque todavía no tengan
@@ -172,7 +197,8 @@ class EcommerceController extends Controller
             'category' => $category,
             'brand' => $brand,
             'categories' => $categories_filtered,
-            'categories_list' => $categories_filtered
+            'categories_list' => $categories_filtered,
+            'variationSelectors' => $variationSelectors
         ]);
     }
 
@@ -359,7 +385,138 @@ class EcommerceController extends Controller
         // El servicio requiere el modelo Eloquent, no el DTO usado por la vista.
         $campaignPricing = app(CampaignPriceService::class)->forItem($row);
         $categories = \Modules\Item\Models\Category::has('items')->get();
-        return view('ecommerce::items.record', compact('record', 'categories'));
+        return view('ecommerce::items.record', compact('record', 'categories', 'campaignPricing'));
+    }
+
+    /**
+     * Estructura para el selector de variantes del listado: mismas variables y
+     * combinaciones que el detalle, mas el precio, el stock real y el payload de
+     * carrito de cada variacion. Devuelve null si el producto no tiene variantes
+     * publicadas. Requiere variations.variationValues.value.variable precargados.
+     *
+     * @param Item $parent
+     * @param CampaignPriceService $campaign_price_service
+     * @param \Modules\Inventory\Models\Warehouse|null $warehouse
+     *
+     * @return array|null
+     */
+    private function buildVariationSelectorForParent($parent, CampaignPriceService $campaign_price_service, $warehouse, $default_image_path = null)
+    {
+        if (!$parent->relationLoaded('variations') || $parent->variations->isEmpty()) {
+            return null;
+        }
+
+        $variables = [];
+        $combinations = [];
+
+        foreach ($parent->variations as $variation) {
+            $value_ids = [];
+
+            foreach ($variation->variationValues as $variation_value) {
+                $value = $variation_value->value;
+                $variable = $value ? $value->variable : null;
+                if (!$value || !$variable) {
+                    continue;
+                }
+
+                if (!isset($variables[$variable->id])) {
+                    $variables[$variable->id] = [
+                        'id' => $variable->id,
+                        'name' => $variable->name,
+                        'value_type' => $variable->value_type,
+                        'values' => [],
+                    ];
+                }
+                $variables[$variable->id]['values'][$value->id] = [
+                    'id' => (int) $value->id,
+                    'value' => $value->value,
+                    'color' => $value->color,
+                ];
+
+                $value_ids[] = (int) $value->id;
+            }
+
+            // sin valores de variable no se puede elegir la combinacion
+            if (empty($value_ids)) {
+                continue;
+            }
+
+            sort($value_ids);
+
+            // stock real del almacen principal (item_warehouse), no la columna items.stock
+            $item_warehouse = $warehouse
+                ? $variation->warehouses->firstWhere('warehouse_id', $warehouse->id)
+                : null;
+            $stock = $item_warehouse ? (float) $item_warehouse->stock : 0;
+
+            $pricing = $campaign_price_service->forItem($variation);
+            $has_discount = $pricing['has_social_proof_price'] || $pricing['has_real_discount'];
+            $symbol = optional($variation->currency_type)->symbol ?: 'S/';
+            $image_url = ($variation->image && $variation->image !== 'imagen-no-disponible.jpg')
+                ? asset('storage/uploads/items/' . $variation->image)
+                : $default_image_path;
+
+            $combinations[] = [
+                'variation_id' => (int) $variation->id,
+                'value_ids' => array_values($value_ids),
+                'label' => $variation->variation_label,
+                'stock' => $stock,
+                'price' => $pricing['final_price'],
+                'compare_at_price' => $pricing['compare_at_price'],
+                'currency_type_symbol' => $symbol,
+                'image_url' => $image_url,
+                'url' => route('tenant.ecommerce.item', [
+                    'id' => $variation->id,
+                    'slug' => Str::slug($variation->description),
+                ]),
+                'cart' => [
+                    'id' => $variation->id,
+                    'description' => $variation->description,
+                    'sale_unit_price' => $pricing['final_price'],
+                    'original_price' => (float) $variation->sale_unit_price,
+                    'compare_at_price' => $pricing['compare_at_price'],
+                    'discount_campaign_id' => $pricing['discount_campaign_id'],
+                    'discount_campaign_name' => $pricing['discount_campaign_name'],
+                    'campaign_discount_percent' => $pricing['real_discount_percentage'],
+                    'campaign_discount_embedded' => $pricing['has_real_discount'],
+                    'has_discount' => $has_discount,
+                    'discount_percent' => $pricing['real_discount_percentage'],
+                    'image' => $variation->image,
+                    'image_small' => $variation->image_small ?: $variation->image,
+                    'image_medium' => $variation->image_medium ?: $variation->image,
+                    'currency_type_id' => $variation->currency_type_id ?: 'PEN',
+                    'currency_type_symbol' => $symbol,
+                    'sale_affectation_igv_type_id' => $variation->sale_affectation_igv_type_id ?: '10',
+                    'unit_type_id' => $variation->unit_type_id ?: 'NIU',
+                    'internal_id' => $variation->internal_id ?: '',
+                    'stock' => (int) $stock,
+                ],
+            ];
+        }
+
+        if (empty($combinations)) {
+            return null;
+        }
+
+        $parent_image_url = ($parent->image && $parent->image !== 'imagen-no-disponible.jpg')
+            ? asset('storage/uploads/items/' . $parent->image)
+            : $default_image_path;
+
+        return [
+            'product_id' => (int) $parent->id,
+            'product_description' => $parent->description,
+            'product_image_url' => $parent_image_url,
+            'product_url' => route('tenant.ecommerce.item', [
+                'id' => $parent->id,
+                'slug' => Str::slug($parent->description),
+            ]),
+            'currency_type_symbol' => optional($parent->currency_type)->symbol ?: 'S/',
+            'variables' => array_map(function ($variable) {
+                $variable['values'] = array_values($variable['values']);
+                return $variable;
+            }, array_values($variables)),
+            'combinations' => $combinations,
+        ];
     }
 
     /**

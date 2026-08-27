@@ -505,7 +505,7 @@
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('warehouse_id')"><i class="el-icon-top"></i> Fijar arriba</button>
                         </div>
-                        <div v-show="recordId==null && form.unit_type_id !='ZZ' && !isPinned('stock')"
+                        <div v-show="variation_rows.length === 0 && (recordId==null && form.unit_type_id !='ZZ' && !isPinned('stock'))  "
                              class="col-md-3 field-pinnable">
                             <div :class="{'has-danger': errors.stock}"
                                  class="form-group">
