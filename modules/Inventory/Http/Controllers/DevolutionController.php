@@ -24,7 +24,6 @@ use Modules\Inventory\Http\Resources\DevolutionCollection;
 use Modules\Inventory\Http\Requests\DevolutionRequest;
 use App\Models\Tenant\Configuration;
 use Illuminate\Support\Facades\Storage;
-use Modules\Item\Models\ItemLot;
 
 
 class DevolutionController extends Controller
@@ -105,6 +104,11 @@ class DevolutionController extends Controller
             $this->devolution =  Devolution::create($data);
 
             foreach ($data['items'] as $row) {
+                $lots = self::lots($row);
+                $lots_group = $row['lots_group']
+                    ?? ($row['item']['lots_group'] ?? null);
+                $id_lote_selected = $row['IdLoteSelected']
+                    ?? ($row['item']['IdLoteSelected'] ?? $lots_group);
 
                 $this->devolution->items()->create([
                     'item_id' => $row['item_id'],
@@ -112,17 +116,16 @@ class DevolutionController extends Controller
                         'description' => trim($row['item']['description']),
                         'internal_id' => $row['item']['internal_id'],
                         'unit_type_id' => $row['item']['unit_type_id'],
-                        'lots_group_selected' => isset($row['lots_group']) ? $row['lots_group'] : null,
-//                        'lots' => self::lots($row),
-                        'lots_selected' =>  isset($row['item']['lots']) ? $row['item']['lots'] : null
+                        // Series seleccionadas (mismo formato que salidas de inventario)
+                        'lots' => $lots,
+                        'lots_selected' => $lots,
+                        // Lotes de vencimiento / cabecera
+                        'lots_group' => $lots_group,
+                        'lots_group_selected' => $lots_group,
+                        'IdLoteSelected' => $id_lote_selected,
                     ],
                     'quantity' => $row['quantity'],
                 ]);
-                $item_lot = ItemLot::where('item_id', $row['item_id'])->first();
-                if ($item_lot) {
-                    $item_lot->state = 'Inactivo';
-                    $item_lot->save();
-                }
             }
 
             $this->setFilename();

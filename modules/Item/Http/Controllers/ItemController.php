@@ -178,6 +178,11 @@ use Maatwebsite\Excel\Facades\Excel as FacadesExcel;
             $form = json_decode($request->form);
 
             $records = ItemLot::where('has_sale', false)
+                ->where(function ($query) {
+                    $query->where('state', 'Activo')
+                        ->orWhereNull('state')
+                        ->orWhere('state', '');
+                })
                 ->where('item_id', $form->item_id)
                 ->where('warehouse_id', $form->warehouse_id)
                 ->latest();

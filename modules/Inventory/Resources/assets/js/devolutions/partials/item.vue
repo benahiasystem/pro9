@@ -219,22 +219,24 @@ export default {
 
             let IdLoteSelected = this.form.IdLoteSelected
 
-            let select_lots = await _.filter(this.form.item.lots, {'has_sale': true})
-            let un_select_lots = await _.filter(this.form.item.lots, {'has_sale': false})
-
-            // console.log(select_lots.length)
+            // Series seleccionadas (el diálogo de series emite solo las marcadas)
+            let select_lots = _.filter(this.lots || [], {'has_sale': true})
+            if ((!select_lots || select_lots.length === 0) && this.form.item && this.form.item.lots) {
+                select_lots = _.filter(this.form.item.lots, {'has_sale': true})
+            }
 
             if (this.form.item.series_enabled) {
-                if (select_lots.length != this.form.quantity)
-                    return this.$message.error('La cantidad de series seleccionadas son diferentes a la cantidad a vender');
+                if (select_lots.length != this.form.quantity) {
+                    return this.$message.error('La cantidad de series seleccionadas es diferente a la cantidad a devolver');
+                }
+                // Persistir en el ítem para que el backend las desactive
+                this.form.item.lots = select_lots
             }
 
             if (IdLoteSelected) {
                 this.form.item.lot_selected = await _.find(this.form.lots_group, {id: IdLoteSelected, checked: true})
             }
 
-            // this.form.IdLoteSelected = IdLoteSelected
-            // this.form.IdLoteSelected = null;
             this.$emit('add', this.form);
 
             this.initForm();
@@ -252,6 +254,9 @@ export default {
         },
         addRowSelectLot(lots) {
             this.lots = lots
+            if (this.form.item) {
+                this.form.item.lots = lots
+            }
         },
         validateQuantity() {
 

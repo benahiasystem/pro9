@@ -674,32 +674,60 @@ class InventoryKardexServiceProvider extends ServiceProvider
 
             $this->updateStock($devolution_item->item_id, -$devolution_item->quantity, $warehouse->id);
 
-            if(isset($devolution_item->item->IdLoteSelected))
-            {
-                if($devolution_item->item->IdLoteSelected != null)
-                {
-                    $lots = json_decode($devolution_item->item->IdLoteSelected, true);
-                    foreach($lots as $item){
+            // Lotes de vencimiento (cabecera)
+            $lots_group = $devolution_item->item->IdLoteSelected
+                ?? $devolution_item->item->lots_group_selected
+                ?? $devolution_item->item->lots_group
+                ?? null;
+
+            if (!is_null($lots_group) && $lots_group !== '') {
+                if (is_string($lots_group)) {
+                    $lots_group = json_decode($lots_group, true);
+                }
+
+                if (is_array($lots_group)) {
+                    foreach ($lots_group as $item) {
+                        $item = (array) $item;
+                        if (empty($item['id'])) {
+                            continue;
+                        }
                         $lot = ItemLotsGroup::find($item['id']);
+                        if (!$lot) {
+                            continue;
+                        }
+                        $qty = isset($item['compromise_quantity'])
+                            ? (float) $item['compromise_quantity']
+                            : (float) $devolution_item->quantity;
+                        $lot->quantity = $lot->quantity - $qty;
+                        $lot->save();
+                    }
+                } elseif (is_numeric($lots_group)) {
+                    $lot = ItemLotsGroup::find($lots_group);
+                    if ($lot) {
                         $lot->quantity = $lot->quantity - $devolution_item->quantity;
                         $lot->save();
                     }
                 }
             }
 
-            if(isset($devolution_item->item->lots) )
-            {
-                foreach ($devolution_item->item->lots as $it) {
+            // Series: marcar como inactivas las seleccionadas en la devolución
+            $series = $devolution_item->item->lots
+                ?? $devolution_item->item->lots_selected
+                ?? [];
 
-                    if($it->has_sale == true)
-                    {
-                        $r = ItemLot::find($it->id);
-                        $r->has_sale = true;
-                        $r->state = 'Inactivo';
-                        $r->save();
-                    }
-
+            foreach ((array) $series as $it) {
+                $it = (object) $it;
+                // En el selector de series, las elegidas llegan con has_sale = true
+                if (empty($it->id) || empty($it->has_sale)) {
+                    continue;
                 }
+                $r = ItemLot::find($it->id);
+                if (!$r) {
+                    continue;
+                }
+                $r->has_sale = true;
+                $r->state = 'Inactivo';
+                $r->save();
             }
 
         });

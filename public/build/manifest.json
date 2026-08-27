@@ -24,7 +24,7 @@
       "__plugin-vue2_normalizer-2bbd088e.js"
     ]
   },
-  "_index-3744837a.js": {
+  "_index-781ace23.js": {
     "assets": [
       "assets/element-icons-ab40a589.woff",
       "assets/element-icons-a30f5b3b.ttf"
@@ -32,7 +32,7 @@
     "css": [
       "assets/index-fd3e0cf7.css"
     ],
-    "file": "assets/index-3744837a.js",
+    "file": "assets/index-781ace23.js",
     "imports": [
       "_index-e849b4f5.js",
       "_vue.esm-340a2d96.js"
@@ -41,14 +41,14 @@
   "_index-e849b4f5.js": {
     "file": "assets/index-e849b4f5.js"
   },
-  "_vue-clipboard-17fd7700.js": {
+  "_vue-clipboard-89dcb13f.js": {
     "css": [
       "assets/vue-clipboard-f1e89864.css"
     ],
-    "file": "assets/vue-clipboard-17fd7700.js",
+    "file": "assets/vue-clipboard-89dcb13f.js",
     "imports": [
       "_vue.esm-340a2d96.js",
-      "_index-3744837a.js",
+      "_index-781ace23.js",
       "_index-e849b4f5.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ]
@@ -65,11 +65,11 @@
     "src": "index.css"
   },
   "modules/ClaimsBook/Resources/assets/js/app.js": {
-    "file": "assets/app-6bfef7b8.js",
+    "file": "assets/app-fd2d582e.js",
     "imports": [
       "_vue.esm-340a2d96.js",
       "_index-e849b4f5.js",
-      "_index-3744837a.js",
+      "_index-781ace23.js",
       "_claim_form-b0b93a56.js",
       "__plugin-vue2_normalizer-2bbd088e.js"
     ],
@@ -182,11 +182,11 @@
     "css": [
       "assets/app-9043c5e2.css"
     ],
-    "file": "assets/app-72ced941.js",
+    "file": "assets/app-8d300ffb.js",
     "imports": [
-      "_vue-clipboard-17fd7700.js",
+      "_vue-clipboard-89dcb13f.js",
       "_vue.esm-340a2d96.js",
-      "_index-3744837a.js",
+      "_index-781ace23.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_index-e849b4f5.js",
       "_claim_form-b0b93a56.js"
@@ -202,11 +202,11 @@
     "css": [
       "assets/system-e9cba20d.css"
     ],
-    "file": "assets/system-5a94ce3d.js",
+    "file": "assets/system-7ad5e11b.js",
     "imports": [
-      "_vue-clipboard-17fd7700.js",
+      "_vue-clipboard-89dcb13f.js",
       "_vue.esm-340a2d96.js",
-      "_index-3744837a.js",
+      "_index-781ace23.js",
       "__plugin-vue2_normalizer-2bbd088e.js",
       "_index-e849b4f5.js"
     ],
