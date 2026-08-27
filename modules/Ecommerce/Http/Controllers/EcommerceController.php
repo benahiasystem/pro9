@@ -465,6 +465,8 @@ class EcommerceController extends Controller
                 'compare_at_price' => $pricing['compare_at_price'],
                 'currency_type_symbol' => $symbol,
                 'image_url' => $image_url,
+                'internal_id' => $variation->internal_id,
+                'barcode' => $variation->barcode,
                 'url' => route('tenant.ecommerce.item', [
                     'id' => $variation->id,
                     'slug' => Str::slug($variation->description),

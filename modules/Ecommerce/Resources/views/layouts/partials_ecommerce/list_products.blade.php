@@ -260,31 +260,40 @@
 @once
 <div class="vmodal" id="variations-modal" hidden>
     <div class="vmodal__backdrop" data-variations-close></div>
-    <div class="vmodal__dialog" role="dialog" aria-modal="true" aria-labelledby="variations-modal-title">
-        <button type="button" class="vmodal__close" data-variations-close aria-label="Cerrar">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-        </button>
+    <div class="vmodal__dialog" role="dialog" aria-modal="true" aria-labelledby="variations-modal-toptitle">
+        <div class="vmodal__topbar">
+            <h4 class="vmodal__toptitle" id="variations-modal-toptitle">Variaciones · <span id="variations-modal-product"></span></h4>
+            <div class="vmodal__tabs" role="tablist">
+                <button type="button" class="vmodal__tab is-active" data-vtab="attrs" role="tab">Atributos</button>
+                <button type="button" class="vmodal__tab" data-vtab="list" role="tab">Lista</button>
+            </div>
+            <button type="button" class="vmodal__close" data-variations-close aria-label="Cerrar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
 
-        <div class="vmodal__head">
-            <div class="vmodal__thumb">
+        <div class="vmodal__content">
+            <div class="vmodal__media">
                 <img id="variations-modal-image" src="" alt="">
             </div>
-            <div class="vmodal__headinfo">
-                <span class="vmodal__eyebrow">Elige tus opciones</span>
-                <h4 class="vmodal__title" id="variations-modal-title"></h4>
-                <div class="vmodal__price" id="variations-modal-price"></div>
+
+            <div class="vmodal__panel">
+                <div id="variations-modal-attrs">
+                    <h3 class="vmodal__variant" id="variations-modal-variant"></h3>
+                    <div class="vmodal__price" id="variations-modal-price"></div>
+                    <div id="variations-modal-groups"></div>
+                    <hr class="vmodal__divider">
+                    <div class="vmodal__stock" id="variations-modal-stock"></div>
+                    <div class="vmodal__codes" id="variations-modal-codes"></div>
+                </div>
+
+                <div id="variations-modal-list" class="vmodal__list" hidden></div>
             </div>
         </div>
 
-        <div class="vmodal__body" id="variations-modal-groups"></div>
-
         <div class="vmodal__footer">
-            <p class="vmodal__hint" id="variations-modal-hint"></p>
-            <button type="button" class="vmodal__cta" id="variations-modal-submit" disabled>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                <span>Agregar al carrito</span>
-            </button>
-            <a class="vmodal__detail" id="variations-modal-detail" href="#">Ver detalle del producto</a>
+            <button type="button" class="vmodal__btn vmodal__btn--ghost" data-variations-close>Cerrar</button>
+            <button type="button" class="vmodal__btn vmodal__btn--primary" id="variations-modal-submit">Agregar</button>
         </div>
     </div>
 </div>
@@ -293,100 +302,145 @@
     .variation-price-from { font-size: 12px; color: #888; margin-right: 4px; }
 
     .vmodal {
-        /* Se arma desde los componentes HSL del tema, cada uno con su propio
-           fallback: si el tenant no configuro color, --primary-color resolveria
-           a un hsl() invalido y el boton se quedaria sin fondo. */
-        --vm-accent: hsl(var(--primary-h, 28), var(--primary-s, 92%), var(--primary-l, 55%));
-        --vm-ink: #1f2937;
-        --vm-muted: #6b7280;
-        --vm-line: #e5e7eb;
+        --vm-navy: #1b2653;
+        --vm-ink: #1f2430;
+        --vm-muted: #9aa1ad;
+        --vm-line: #e6e8ec;
         position: fixed; inset: 0; z-index: 1090;
-        display: flex; align-items: center; justify-content: center; padding: 20px;
-        font-size: 14px; line-height: 1.45;
+        display: flex; align-items: center; justify-content: center; padding: 24px;
+        font-size: 14px; line-height: 1.5; color: var(--vm-ink);
     }
     .vmodal[hidden] { display: none; }
-    .vmodal__backdrop { position: absolute; inset: 0; background: rgba(17, 24, 39, .55); backdrop-filter: blur(2px); animation: vm-fade .18s ease-out; }
+    .vmodal__backdrop { position: absolute; inset: 0; background: rgba(17, 20, 28, .5); animation: vm-fade .18s ease-out; }
     .vmodal__dialog {
-        position: relative; background: #fff; border-radius: 16px; width: 100%; max-width: 440px;
-        max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
-        box-shadow: 0 24px 60px rgba(0, 0, 0, .28); animation: vm-pop .22s cubic-bezier(.2, .9, .3, 1);
+        position: relative; background: #fff; border-radius: 14px; width: 100%; max-width: 1040px;
+        max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, .3); animation: vm-pop .22s cubic-bezier(.2, .9, .3, 1);
     }
     @keyframes vm-fade { from { opacity: 0 } to { opacity: 1 } }
-    @keyframes vm-pop { from { opacity: 0; transform: translateY(14px) scale(.97) } to { opacity: 1; transform: none } }
+    @keyframes vm-pop { from { opacity: 0; transform: translateY(12px) scale(.98) } to { opacity: 1; transform: none } }
 
+    .vmodal__topbar { display: flex; align-items: center; gap: 16px; padding: 18px 20px 18px 28px; }
+    .vmodal__toptitle {
+        margin: 0; flex: 1 1 auto; min-width: 0; font-size: 19px; font-weight: 600; color: var(--vm-ink);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .vmodal__tabs { display: flex; flex: 0 0 auto; border: 1px solid var(--vm-line); border-radius: 8px; overflow: hidden; }
+    .vmodal__tab {
+        border: 0; background: #fff; color: var(--vm-muted); font-size: 14px; font-weight: 500;
+        padding: 9px 22px; cursor: pointer; transition: .16s;
+    }
+    .vmodal__tab + .vmodal__tab { border-left: 1px solid var(--vm-line); }
+    .vmodal__tab.is-active { background: var(--vm-navy); color: #fff; font-weight: 600; }
     .vmodal__close {
-        position: absolute; top: 12px; right: 12px; z-index: 2;
-        width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .9);
-        color: var(--vm-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: .18s;
+        flex: 0 0 auto; width: 32px; height: 32px; border: 0; background: transparent; color: #b3b8c2;
+        display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 6px; transition: .16s;
     }
     .vmodal__close:hover { background: #f3f4f6; color: var(--vm-ink); }
 
-    .vmodal__head { display: flex; gap: 14px; padding: 20px 52px 16px 20px; border-bottom: 1px solid var(--vm-line); }
-    .vmodal__thumb {
-        width: 76px; height: 76px; flex: 0 0 76px; border-radius: 12px; overflow: hidden;
-        background: #f5f5f5; display: flex; align-items: center; justify-content: center;
+    .vmodal__content { display: flex; gap: 32px; padding: 0 28px 8px; overflow-y: auto; flex: 1 1 auto; }
+    .vmodal__media { flex: 0 0 42%; max-width: 42%; }
+    .vmodal__media img {
+        width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px;
+        background: #f4f5f7; border: 1px solid var(--vm-line); display: block;
     }
-    .vmodal__thumb img { width: 100%; height: 100%; object-fit: cover; }
-    .vmodal__headinfo { min-width: 0; flex: 1 1 auto; }
-    .vmodal__eyebrow { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--vm-muted); margin-bottom: 2px; }
-    .vmodal__title {
-        margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--vm-ink); line-height: 1.3;
-        display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .vmodal__price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
-    .vmodal__price .now { font-size: 20px; font-weight: 800; color: var(--vm-ink); }
-    .vmodal__price .from { font-size: 12px; color: var(--vm-muted); margin-right: -4px; }
-    .vmodal__price .was { font-size: 13px; color: #9ca3af; text-decoration: line-through; }
-    .vmodal__price .off {
-        font-size: 11px; font-weight: 700; color: #fff; background: #dc2626;
-        border-radius: 4px; padding: 2px 6px; letter-spacing: .02em;
-    }
+    .vmodal__panel { flex: 1 1 auto; min-width: 0; padding-top: 4px; }
 
-    .vmodal__body { padding: 18px 20px 4px; overflow-y: auto; flex: 1 1 auto; }
-    .vmodal__group { margin-bottom: 18px; }
-    .vmodal__grouplabel { display: block; font-size: 13px; color: var(--vm-muted); margin-bottom: 9px; }
-    .vmodal__grouplabel b { color: var(--vm-ink); font-weight: 700; }
-    .vmodal__options { display: flex; flex-wrap: wrap; gap: 9px; }
+    .vmodal__variant { margin: 0 0 10px; font-size: 20px; font-weight: 700; line-height: 1.3; color: var(--vm-ink); }
+    .vmodal__price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+    .vmodal__price .now { font-size: 27px; font-weight: 800; letter-spacing: -.01em; }
+    .vmodal__price .was { font-size: 15px; color: var(--vm-muted); text-decoration: line-through; }
+    .vmodal__price .off { font-size: 12px; font-weight: 700; color: #fff; background: #dc2626; border-radius: 4px; padding: 3px 7px; }
+
+    .vmodal__group { margin-bottom: 22px; }
+    .vmodal__grouplabel {
+        display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em;
+        text-transform: uppercase; color: var(--vm-muted); margin-bottom: 12px;
+    }
+    .vmodal__options { display: flex; flex-wrap: wrap; gap: 12px; }
 
     .vmodal__chip {
-        position: relative; display: inline-flex; align-items: center; justify-content: center;
-        min-width: 46px; height: 42px; padding: 0 14px; border: 1.5px solid var(--vm-line); border-radius: 8px;
-        background: #fff; font-size: 13px; font-weight: 600; color: var(--vm-ink); cursor: pointer; transition: .16s;
+        position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+        min-width: 58px; height: 46px; padding: 0 22px; border: 1px solid var(--vm-line); border-radius: 999px;
+        background: #fff; font-size: 14.5px; font-weight: 500; color: var(--vm-ink); cursor: pointer; transition: .16s;
     }
-    .vmodal__chip:hover:not(:disabled) { border-color: #9ca3af; }
-    .vmodal__chip.is-active { border-color: var(--vm-accent); box-shadow: inset 0 0 0 1px var(--vm-accent); color: var(--vm-accent); }
-
-    .vmodal__chip--color { width: 42px; min-width: 42px; padding: 0; border-radius: 50%; }
-    .vmodal__chip--color .dot { width: 100%; height: 100%; border-radius: 50%; border: 2px solid #fff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12); }
-    .vmodal__chip--color.is-active { box-shadow: 0 0 0 2px var(--vm-accent); border-color: #fff; }
+    .vmodal__chip:hover:not(:disabled) { border-color: #c3c8d1; }
+    .vmodal__chip.is-active { border-color: var(--vm-ink); border-width: 2px; font-weight: 600; }
+    .vmodal__chip .dot { width: 15px; height: 15px; border-radius: 50%; flex: 0 0 15px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .16); }
 
     /* combinacion inexistente o sin stock: se marca tachada */
-    .vmodal__chip:disabled { cursor: not-allowed; color: #b6b9be; border-color: #eceef1; }
+    .vmodal__chip:disabled { cursor: not-allowed; color: #c6cad2; border-color: #f0f1f4; }
+    .vmodal__chip:disabled .dot { opacity: .4; }
     .vmodal__chip:disabled::after {
         content: ''; position: absolute; inset: 0; border-radius: inherit;
-        background: linear-gradient(to top left, transparent calc(50% - 1px), #d1d5db calc(50% - 1px), #d1d5db calc(50% + 1px), transparent calc(50% + 1px));
+        background: linear-gradient(to top left, transparent calc(50% - .8px), #dcdfe4 calc(50% - .8px), #dcdfe4 calc(50% + .8px), transparent calc(50% + .8px));
     }
-    .vmodal__chip--color:disabled { opacity: .5; }
 
-    .vmodal__footer { padding: 14px 20px 18px; border-top: 1px solid var(--vm-line); background: #fff; }
-    .vmodal__hint { margin: 0 0 10px; font-size: 12.5px; color: var(--vm-muted); min-height: 18px; }
-    .vmodal__hint.is-urgent { color: #dc2626; font-weight: 600; }
-    .vmodal__cta {
-        width: 100%; height: 48px; border: 0; border-radius: 10px; cursor: pointer;
-        background: var(--vm-accent); color: #fff; font-size: 15px; font-weight: 700;
-        display: flex; align-items: center; justify-content: center; gap: 8px; transition: .18s;
+    .vmodal__divider { border: 0; border-top: 1px solid var(--vm-line); margin: 26px 0 18px; }
+    .vmodal__stock { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 600; }
+    .vmodal__badge { font-size: 12.5px; font-weight: 600; border-radius: 999px; padding: 4px 12px; }
+    .vmodal__badge--ok { background: #eaf6ea; color: #3d8b40; border: 1px solid #cfe8d0; }
+    .vmodal__badge--low { background: #fff4e5; color: #b26a00; border: 1px solid #ffe0b2; }
+    .vmodal__badge--out { background: #fdecec; color: #c62828; border: 1px solid #f7cdcd; }
+    .vmodal__codes { margin-top: 10px; font-size: 13px; color: var(--vm-muted); }
+
+    .vmodal__list { display: flex; flex-direction: column; gap: 8px; padding-top: 4px; }
+    .vmodal__row {
+        display: flex; align-items: center; gap: 12px; width: 100%;
+        border: 1px solid var(--vm-line); border-radius: 10px; background: #fff; padding: 10px 14px; transition: .16s;
     }
-    .vmodal__cta:hover:not(:disabled) { filter: brightness(.93); }
-    .vmodal__cta:disabled { background: #e5e7eb; color: #9ca3af; cursor: not-allowed; }
-    .vmodal__detail { display: block; text-align: center; margin-top: 12px; font-size: 13px; color: var(--vm-muted); text-decoration: underline; }
-    .vmodal__detail:hover { color: var(--vm-ink); }
+    .vmodal__row:hover { border-color: #c3c8d1; background: #fafbfc; }
+    .vmodal__row.is-active { border-color: var(--vm-ink); border-width: 2px; padding: 9px 13px; }
+    .vmodal__row.is-out { opacity: .6; }
+    .vmodal__rowmain {
+        display: flex; align-items: center; gap: 14px; flex: 1 1 auto; min-width: 0;
+        border: 0; background: transparent; padding: 0; text-align: left; cursor: pointer; color: inherit; font: inherit;
+    }
+    .vmodal__rowmain:disabled { cursor: default; }
+    .vmodal__row img { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 8px; object-fit: cover; background: #f4f5f7; }
+    .vmodal__rowinfo { flex: 1 1 auto; min-width: 0; }
+    .vmodal__rowlabel { display: block; font-weight: 600; font-size: 14.5px; }
+    .vmodal__rowcode { display: block; font-size: 12.5px; color: var(--vm-muted); }
+    .vmodal__rowprice { flex: 0 0 auto; text-align: right; }
+    .vmodal__rowprice .now { display: block; font-weight: 700; font-size: 15px; }
+    .vmodal__rowprice .st { display: block; font-size: 12px; color: var(--vm-muted); }
+    .vmodal__rowadd {
+        flex: 0 0 auto; height: 38px; padding: 0 18px; border-radius: 8px; cursor: pointer; transition: .16s;
+        background: var(--vm-navy); border: 1px solid var(--vm-navy); color: #fff; font-size: 13.5px; font-weight: 600;
+    }
+    .vmodal__rowadd:hover:not(:disabled) { filter: brightness(1.18); }
+    .vmodal__rowadd:disabled { background: #eef0f3; border-color: #eef0f3; color: #a6abb5; cursor: not-allowed; }
+    .vmodal__rowadd.is-done { background: #eaf6ea; border-color: #cfe8d0; color: #3d8b40; }
 
-    /* movil: hoja inferior */
-    @media (max-width: 575.98px) {
+    .vmodal__footer { display: flex; justify-content: flex-end; gap: 12px; padding: 18px 28px 24px; }
+    .vmodal__btn {
+        min-width: 118px; height: 46px; padding: 0 26px; border-radius: 8px; font-size: 15px; font-weight: 600;
+        cursor: pointer; transition: .16s; border: 1px solid var(--vm-line); background: #fff; color: var(--vm-ink);
+    }
+    .vmodal__btn--ghost:hover { border-color: #c3c8d1; background: #f7f8fa; }
+    .vmodal__btn--primary { background: var(--vm-navy); border-color: var(--vm-navy); color: #fff; }
+    .vmodal__btn--primary:hover:not(:disabled) { filter: brightness(1.18); }
+    .vmodal__btn--primary:disabled { background: #e5e7eb; border-color: #e5e7eb; color: #a6abb5; cursor: not-allowed; }
+
+    @media (max-width: 767.98px) {
         .vmodal { padding: 0; align-items: flex-end; }
-        .vmodal__dialog { max-width: 100%; border-radius: 18px 18px 0 0; max-height: 92vh; animation: vm-sheet .26s cubic-bezier(.2, .9, .3, 1); }
+        .vmodal__dialog { max-width: 100%; max-height: 94vh; border-radius: 16px 16px 0 0; animation: vm-sheet .26s cubic-bezier(.2, .9, .3, 1); }
         @keyframes vm-sheet { from { transform: translateY(100%) } to { transform: none } }
-        .vmodal__footer { position: sticky; bottom: 0; box-shadow: 0 -6px 18px rgba(0, 0, 0, .06); }
+        .vmodal__topbar { padding: 16px; flex-wrap: wrap; }
+        .vmodal__toptitle { order: 1; flex: 1 1 100%; font-size: 16px; white-space: normal; }
+        .vmodal__tabs { order: 2; flex: 1 1 auto; }
+        .vmodal__tab { flex: 1 1 50%; }
+        .vmodal__close { order: 0; position: absolute; top: 12px; right: 12px; }
+        .vmodal__content { flex-direction: column; gap: 18px; padding: 0 16px 8px; }
+        .vmodal__media { flex: 0 0 auto; max-width: 100%; }
+        .vmodal__media img { aspect-ratio: 4 / 3; }
+        .vmodal__variant { font-size: 17px; }
+        .vmodal__price .now { font-size: 23px; }
+        .vmodal__footer { padding: 14px 16px 20px; position: sticky; bottom: 0; background: #fff; box-shadow: 0 -6px 18px rgba(0, 0, 0, .06); }
+        .vmodal__btn { flex: 1 1 50%; min-width: 0; }
+        .vmodal__row { flex-wrap: wrap; }
+        .vmodal__rowmain { flex: 1 1 100%; }
+        .vmodal__rowadd { flex: 1 1 100%; margin-top: 10px; }
     }
 </style>
 
@@ -397,13 +451,17 @@
     var modal = document.getElementById('variations-modal');
     if (!modal) return;
 
-    var titleEl = document.getElementById('variations-modal-title');
+    var productEl = document.getElementById('variations-modal-product');
     var imageEl = document.getElementById('variations-modal-image');
+    var variantEl = document.getElementById('variations-modal-variant');
     var priceEl = document.getElementById('variations-modal-price');
     var groupsEl = document.getElementById('variations-modal-groups');
-    var hintEl = document.getElementById('variations-modal-hint');
+    var stockEl = document.getElementById('variations-modal-stock');
+    var codesEl = document.getElementById('variations-modal-codes');
+    var attrsView = document.getElementById('variations-modal-attrs');
+    var listView = document.getElementById('variations-modal-list');
     var submitEl = document.getElementById('variations-modal-submit');
-    var detailEl = document.getElementById('variations-modal-detail');
+    var tabs = modal.querySelectorAll('.vmodal__tab');
 
     var selector = null;
     var selected = {};
@@ -417,22 +475,64 @@
         return Number(combination.stock) > 0;
     }
 
-    // Un valor esta disponible si alguna combinacion con stock lo incluye junto a
-    // lo ya elegido en las demas variables.
-    function valueAvailable(variableId, valueId) {
+    // No todas las variantes usan todas las variables: puede existir una "Talla L"
+    // suelta, sin color. Una variable que la variante no usa no la restringe.
+    function combinationUses(combination, variable) {
+        return variable.values.some(function (value) {
+            return combination.value_ids.indexOf(value.id) !== -1;
+        });
+    }
+
+    // Disponibilidad en cascada: cada variable se evalua solo contra lo elegido en
+    // las variables anteriores. Asi la primera (ej: Color) nunca se bloquea y no hay
+    // callejones sin salida; elegir un color re-filtra las tallas, no al reves.
+    function valueAvailable(variableIndex, valueId) {
+        var prior = selector.variables.slice(0, variableIndex);
+
         return selector.combinations.some(function (combination) {
             if (combination.value_ids.indexOf(valueId) === -1) return false;
             if (!inStock(combination)) return false;
-            return Object.keys(selected).every(function (otherVariableId) {
-                if (String(otherVariableId) === String(variableId)) return true;
-                return combination.value_ids.indexOf(selected[otherVariableId]) !== -1;
+            return prior.every(function (variable) {
+                var chosen = selected[variable.id];
+                if (chosen === undefined) return true;
+                if (!combinationUses(combination, variable)) return true;
+                return combination.value_ids.indexOf(chosen) !== -1;
             });
         });
     }
 
+    // Variante que mejor encaja al pulsar un valor: la que conserva mas de lo ya
+    // elegido. Elegir "Talla L" (sin color) aterriza en esa variante y suelta el color.
+    function bestCombinationFor(variableId, valueId) {
+        var best = null;
+        var bestScore = -1;
+
+        selector.combinations.forEach(function (combination) {
+            if (combination.value_ids.indexOf(valueId) === -1) return;
+            if (!inStock(combination)) return;
+
+            var score = 0;
+            selector.variables.forEach(function (variable) {
+                if (String(variable.id) === String(variableId)) return;
+                var chosen = selected[variable.id];
+                if (chosen === undefined) return;
+                if (combination.value_ids.indexOf(chosen) !== -1) score++;
+            });
+
+            if (score > bestScore) {
+                bestScore = score;
+                best = combination;
+            }
+        });
+
+        return best;
+    }
+
+    // Coincide la variante cuyos valores son exactamente los elegidos, sin exigir
+    // un valor por variable: una variante de una sola variable matchea con uno solo.
     function matchedCombination() {
         var ids = Object.keys(selected).map(function (key) { return Number(selected[key]); }).sort(function (a, b) { return a - b; });
-        if (ids.length !== selector.variables.length) return null;
+        if (!ids.length) return null;
 
         return selector.combinations.find(function (combination) {
             return combination.value_ids.length === ids.length &&
@@ -440,52 +540,91 @@
         }) || null;
     }
 
+    function selectCombination(combination) {
+        selected = {};
+        selector.variables.forEach(function (variable) {
+            var match = variable.values.find(function (value) {
+                return combination.value_ids.indexOf(value.id) !== -1;
+            });
+            if (match) selected[variable.id] = match.id;
+        });
+    }
+
     function selectedValueName(variable) {
         var valueId = selected[variable.id];
-        if (!valueId) return null;
+        if (valueId === undefined) return null;
         var value = variable.values.find(function (candidate) { return candidate.id === valueId; });
         return value ? value.value : null;
+    }
+
+    function currentLabel() {
+        return selector.variables
+            .map(selectedValueName)
+            .filter(function (name) { return !!name; })
+            .join(' / ');
+    }
+
+    function addToCart(combination) {
+        if (!combination || !inStock(combination)) return false;
+
+        if (typeof cartAddOrUpdateItem === 'function') {
+            cartAddOrUpdateItem(combination.cart, { quantity: 1 });
+        } else if (typeof cart_add === 'function') {
+            cart_add(combination.cart);
+        } else {
+            return false;
+        }
+        return true;
+    }
+
+    function stockBadge(stock) {
+        if (stock <= 0) return '<span class="vmodal__badge vmodal__badge--out">Sin stock</span>';
+        if (stock <= 5) return '<span class="vmodal__badge vmodal__badge--low">Últimas unidades</span>';
+        return '<span class="vmodal__badge vmodal__badge--ok">En stock</span>';
     }
 
     function renderGroups() {
         groupsEl.innerHTML = '';
 
-        selector.variables.forEach(function (variable) {
+        selector.variables.forEach(function (variable, position) {
             var group = document.createElement('div');
             group.className = 'vmodal__group';
 
             var label = document.createElement('span');
             label.className = 'vmodal__grouplabel';
-            var chosen = selectedValueName(variable);
-            label.innerHTML = variable.name + (chosen ? ': <b>' + chosen + '</b>' : '');
+            label.textContent = variable.name;
             group.appendChild(label);
 
             var options = document.createElement('div');
             options.className = 'vmodal__options';
-            var isColor = variable.value_type === 'color';
 
             variable.values.forEach(function (value) {
                 var chip = document.createElement('button');
                 chip.type = 'button';
-                chip.className = 'vmodal__chip' + (isColor && value.color ? ' vmodal__chip--color' : '');
+                chip.className = 'vmodal__chip';
                 chip.title = value.value;
                 if (selected[variable.id] === value.id) chip.classList.add('is-active');
-                chip.disabled = !valueAvailable(variable.id, value.id);
+                chip.disabled = !valueAvailable(position, value.id);
 
-                if (isColor && value.color) {
+                if (variable.value_type === 'color' && value.color) {
                     var dot = document.createElement('span');
                     dot.className = 'dot';
                     dot.style.background = value.color;
                     chip.appendChild(dot);
-                } else {
-                    chip.appendChild(document.createTextNode(value.value));
                 }
+                chip.appendChild(document.createTextNode(value.value));
 
                 chip.addEventListener('click', function () {
+                    // volver a pulsar el chip activo lo deselecciona
                     if (selected[variable.id] === value.id) {
                         delete selected[variable.id];
                     } else {
-                        selected[variable.id] = value.id;
+                        var best = bestCombinationFor(variable.id, value.id);
+                        if (best) {
+                            selectCombination(best);
+                        } else {
+                            selected[variable.id] = value.id;
+                        }
                     }
                     render();
                 });
@@ -500,57 +639,117 @@
 
     function renderSummary() {
         var combination = matchedCombination();
-        var symbol = selector.currency_type_symbol;
+        var label = currentLabel();
+
+        variantEl.textContent = selector.product_description + (label ? ' · ' + label : '');
 
         if (!combination) {
-            var available = selector.combinations.filter(inStock);
-            var cheapest = available.length
-                ? available.reduce(function (min, row) { return Number(row.price) < Number(min.price) ? row : min; })
-                : null;
-
-            priceEl.innerHTML = cheapest
-                ? '<span class="from">Desde</span><span class="now">' + money(symbol, cheapest.price) + '</span>'
-                : '';
+            priceEl.innerHTML = '';
+            stockEl.innerHTML = '<span>Elige una opción de cada característica</span>';
+            codesEl.textContent = '';
             imageEl.src = selector.product_image_url || '';
-            hintEl.textContent = 'Elige una opción de cada característica.';
-            hintEl.classList.remove('is-urgent');
             submitEl.disabled = true;
-            detailEl.href = selector.product_url || '#';
             return;
         }
 
-        var html = '<span class="now">' + money(combination.currency_type_symbol, combination.price) + '</span>';
+        var symbol = combination.currency_type_symbol;
+        var html = '<span class="now">' + money(symbol, combination.price) + '</span>';
         if (combination.compare_at_price && Number(combination.compare_at_price) > Number(combination.price)) {
             var off = Math.round((1 - Number(combination.price) / Number(combination.compare_at_price)) * 100);
-            html += '<span class="was">' + money(combination.currency_type_symbol, combination.compare_at_price) + '</span>';
+            html += '<span class="was">' + money(symbol, combination.compare_at_price) + '</span>';
             if (off > 0) html += '<span class="off">-' + off + '%</span>';
         }
         priceEl.innerHTML = html;
 
         if (combination.image_url) imageEl.src = combination.image_url;
-        detailEl.href = combination.url || selector.product_url || '#';
 
         var stock = Math.floor(Number(combination.stock));
-        if (stock <= 0) {
-            hintEl.textContent = 'Esta combinación está agotada.';
-            hintEl.classList.add('is-urgent');
-            submitEl.disabled = true;
-            return;
-        }
+        stockEl.innerHTML = '<span>Disponible: ' + stock + '</span>' + stockBadge(stock);
 
-        if (stock <= 5) {
-            hintEl.textContent = stock === 1 ? '¡Última unidad disponible!' : '¡Solo quedan ' + stock + ' unidades!';
-            hintEl.classList.add('is-urgent');
-        } else {
-            hintEl.textContent = stock + ' unidades disponibles';
-            hintEl.classList.remove('is-urgent');
-        }
-        submitEl.disabled = false;
+        var codes = [combination.internal_id, combination.barcode].filter(function (code) { return !!code; });
+        codesEl.textContent = codes.join(' · ');
+
+        submitEl.disabled = stock <= 0;
+    }
+
+    function renderList() {
+        listView.innerHTML = '';
+        var current = matchedCombination();
+
+        selector.combinations.forEach(function (combination) {
+            var stock = Math.floor(Number(combination.stock));
+            var available = stock > 0;
+            var codes = [combination.internal_id, combination.barcode].filter(function (code) { return !!code; });
+
+            var row = document.createElement('div');
+            row.className = 'vmodal__row' + (available ? '' : ' is-out');
+            if (current && current.variation_id === combination.variation_id) row.classList.add('is-active');
+
+            // zona principal: lleva la combinacion a la vista de atributos
+            var main = document.createElement('button');
+            main.type = 'button';
+            main.className = 'vmodal__rowmain';
+            main.disabled = !available;
+            main.innerHTML =
+                '<img src="' + (combination.image_url || selector.product_image_url || '') + '" alt="">' +
+                '<span class="vmodal__rowinfo">' +
+                    '<span class="vmodal__rowlabel">' + (combination.label || '—') + '</span>' +
+                    '<span class="vmodal__rowcode">' + codes.join(' · ') + '</span>' +
+                '</span>' +
+                '<span class="vmodal__rowprice">' +
+                    '<span class="now">' + money(combination.currency_type_symbol, combination.price) + '</span>' +
+                    '<span class="st">' + (available ? stock + ' disp.' : 'Agotado') + '</span>' +
+                '</span>';
+            main.addEventListener('click', function () {
+                selectCombination(combination);
+                setTab('attrs');
+                render();
+            });
+
+            // agregar sin salir de la lista: el modal de confirmacion del carrito
+            // se muestra encima (z-index 11020) y al cerrarlo se sigue en la lista
+            var add = document.createElement('button');
+            add.type = 'button';
+            add.className = 'vmodal__rowadd';
+            add.disabled = !available;
+            add.textContent = available ? 'Agregar' : 'Agotado';
+            add.addEventListener('click', function () {
+                if (!addToCart(combination)) return;
+                selectCombination(combination);
+                renderGroups();
+                renderSummary();
+
+                listView.querySelectorAll('.vmodal__row').forEach(function (other) {
+                    other.classList.remove('is-active');
+                });
+                row.classList.add('is-active');
+                add.textContent = 'Agregado';
+                add.classList.add('is-done');
+                setTimeout(function () {
+                    if (!add.isConnected) return;
+                    add.textContent = 'Agregar';
+                    add.classList.remove('is-done');
+                }, 1800);
+            });
+
+            row.appendChild(main);
+            row.appendChild(add);
+            listView.appendChild(row);
+        });
     }
 
     function render() {
         renderGroups();
         renderSummary();
+        renderList();
+    }
+
+    function setTab(name) {
+        tabs.forEach(function (tab) {
+            tab.classList.toggle('is-active', tab.getAttribute('data-vtab') === name);
+        });
+        attrsView.hidden = name !== 'attrs';
+        listView.hidden = name !== 'list';
     }
 
     function open(data) {
@@ -558,19 +757,14 @@
         selected = {};
         lastFocused = document.activeElement;
 
-        titleEl.textContent = data.product_description || 'Elige una opción';
+        productEl.textContent = data.product_description || '';
         imageEl.alt = data.product_description || '';
 
-        // con una sola variable y una sola opcion con stock, se preselecciona
-        if (data.variables.length === 1) {
-            var only = data.variables[0].values.filter(function (value) {
-                return data.combinations.some(function (combination) {
-                    return combination.value_ids.indexOf(value.id) !== -1 && inStock(combination);
-                });
-            });
-            if (only.length === 1) selected[data.variables[0].id] = only[0].id;
-        }
+        // se abre con la primera combinacion disponible ya elegida
+        var first = data.combinations.find(inStock) || data.combinations[0];
+        if (first) selectCombination(first);
 
+        setTab('attrs');
         render();
         modal.hidden = false;
         document.body.style.overflow = 'hidden';
@@ -584,6 +778,10 @@
         selected = {};
         if (lastFocused && lastFocused.focus) lastFocused.focus();
     }
+
+    tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () { setTab(tab.getAttribute('data-vtab')); });
+    });
 
     document.addEventListener('click', function (event) {
         var trigger = event.target.closest ? event.target.closest('.open-variations') : null;
@@ -610,15 +808,7 @@
     });
 
     submitEl.addEventListener('click', function () {
-        var combination = matchedCombination();
-        if (!combination || !inStock(combination)) return;
-
-        if (typeof cartAddOrUpdateItem === 'function') {
-            cartAddOrUpdateItem(combination.cart, { quantity: 1 });
-        } else if (typeof cart_add === 'function') {
-            cart_add(combination.cart);
-        }
-        close();
+        if (addToCart(matchedCombination())) close();
     });
 })();
 </script>
