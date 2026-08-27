@@ -2943,6 +2943,12 @@ html.sidebar-left-collapsed .sidebar-favorites {
     border-color: transparent;
     background: transparent !important;
 }
+.wg-filter-actions {
+    margin-top: auto !important;
+}
+.dashboard-filter-section {
+    margin-bottom: 10px !important;
+}
 /* --------------------------- tema Oscuro --------------------------- */
 /* html.dark .header .logo-container .topbar-links:hover {
     background: #161d31d1;

@@ -508,6 +508,7 @@ label.control-label {
     margin-top: 8px;
     font-weight: 500;
     color: var(--black-dark);
+    font-size: 13px;
 }
 .el-radio-button__inner:hover {
     color: var(--black-dark) !important;
