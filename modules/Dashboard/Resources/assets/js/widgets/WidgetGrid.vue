@@ -1,5 +1,5 @@
 <template>
-  <div class="widget-dashboard">
+  <div class="">
 
     <div v-if="state.editMode" class="wg-hint-bar">
       <small class="wg-hint">

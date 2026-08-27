@@ -120,7 +120,15 @@ export default {
         chart: { toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, animations: { enabled: false }, parentHeightOffset: 0, background: 'transparent' },
         dataLabels: { enabled: false },
         grid: { borderColor: theme.grid, strokeDashArray: 4 },
-        tooltip: { y: { formatter: v => formatValue(v, this.unit) } },
+        tooltip: {
+          shared: this.sharedTooltip,
+          intersect: !this.sharedTooltip,
+          x: { formatter: this.tooltipXFormatter },
+          y: {
+            formatter: v => formatValue(v, this.unit),
+            title: { formatter: this.seriesTitleFormatter },
+          },
+        },
       }
 
       if (this.type === 'line' || this.type === 'area') {
@@ -217,5 +225,10 @@ export default {
 .wg-apex {
   flex: 1 1 auto;
   min-height: 0;
+}
+.is-series-tooltip >>> .apexcharts-tooltip,
+.is-series-tooltip >>> .apexcharts-tooltip *,
+.is-series-tooltip >>> .apexcharts-tooltip-title {
+  color: #fff !important;
 }
 </style>

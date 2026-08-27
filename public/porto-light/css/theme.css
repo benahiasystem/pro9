@@ -24777,3 +24777,6 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
 .ti {
     line-height: inherit !important;
 }
+.dashboard-filter-section {
+    margin-bottom: 10px !important;
+}
