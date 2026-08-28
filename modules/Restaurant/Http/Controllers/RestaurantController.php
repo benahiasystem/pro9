@@ -286,7 +286,14 @@ class RestaurantController extends Controller
 
         $warehouse_id = auth()->user()->establishment->id;
 
-        $items = Item::where('apply_restaurant', 1)
+        $configuration = Configuration::first();
+        $enable_list_product = (bool) optional($configuration)->enable_list_product;
+
+        // Agrupar variantes es opt-in (?group_variations=1): el cliente que aun no
+        // implementa el modal sigue recibiendo cada variacion como producto suelto.
+        $group_variations = $request->group_variations == 1;
+
+        $itemsQuery = Item::where('apply_restaurant', 1)
             ->whereNotNull('internal_id')
             ->where(function($query) use ($warehouse_id) {
                 $query->whereHas('warehouses', function ($q) use ($warehouse_id) {
@@ -294,9 +301,46 @@ class RestaurantController extends Controller
                 })->orWhereHas('restaurantSupplies');
             })
             ->with(['restaurantSupplies'])
-            ->get();
+            // Valores de variacion de la propia fila (Talla M, Rojo...): sin esto
+            // variation_label y variation_attributes salen vacios.
+            ->with('variationValues.value.variable');
 
-        $records = new ItemCollection($items);
+        if ($group_variations) {
+            // El padre pasa a ser la tarjeta y sus hijas viajan dentro, con la
+            // misma forma de fila para que la elegida se use como cualquier producto.
+            // Sin este eager loading el resource no toca la relacion (evita N+1) y
+            // variation_variables/variations salen vacios.
+            $itemsQuery->whereNull('parent_item_id')
+                ->withCount('variations')
+                ->with(['variations' => function ($query) use ($enable_list_product) {
+                    $query->whereIsActive()
+                        ->with([
+                            'restaurantSupplies',
+                            'variationValues.value.variable',
+                        ])
+                        ->orderBy('id');
+
+                    if ($enable_list_product) {
+                        $query->with('item_unit_types.prices.priceLabel');
+                    }
+                }]);
+        }
+
+        if ($enable_list_product) {
+            $itemsQuery->with('item_unit_types.prices.priceLabel');
+        }
+
+        $items = $itemsQuery->get();
+
+        // El stock del almacen en una sola consulta, no una por producto. Las
+        // variaciones entran al mismo precargado: su stock es el que decide el modal.
+        $stock_targets = $group_variations
+            ? $items->concat($items->pluck('variations')->filter()->flatten())
+            : $items;
+
+        Item::preloadStockByWarehouse($stock_targets);
+
+        $records = (new ItemCollection($items))->withConfiguration($configuration);
 
         return [
             'success' => true,
