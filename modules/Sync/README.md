@@ -16,9 +16,12 @@ Principios de diseño:
   un documento distinto al ticket impreso.
 - **Idempotencia total:** cada evento viaja con un `external_id` (UUID). Un
   lote reenviado (corte de red, reintento) nunca duplica nada.
-- **La emisión online del establecimiento se bloquea** mientras tenga máquinas
-  activas, para impedir conflictos de numeración (bypass interno para los
-  lotes del propio canal).
+- **Bloqueo online POR SERIE**: solo las series asignadas a una máquina quedan
+  fuera del flujo online (su correlativo es autoridad local de la máquina);
+  el resto de series del establecimiento emite online con normalidad. Una
+  serie de máquina revocada sigue bloqueada hasta **Liberar series** en el
+  panel (su cola pendiente puede llegar al reconectar). Bypass interno para
+  los lotes del propio canal.
 
 ## De dónde recibe la información
 
