@@ -67,9 +67,13 @@ class SellnowController extends Controller
         if ($group_variations) {
             // El padre pasa a ser la tarjeta y sus hijas viajan dentro, con la
             // misma forma de fila para que la elegida se use como cualquier producto.
+            // Todo lo de las hijas va dentro de esta closure: un with('variations.algo')
+            // posterior regeneraria la clave 'variations' y, al hacer array_merge,
+            // pisaria estas restricciones (las hijas llegarian sin variationValues
+            // y variation_variables saldria vacio).
             $itemsQuery->whereNull('parent_item_id')
                 ->withCount('variations')
-                ->with(['variations' => function ($query) use ($unused_relations) {
+                ->with(['variations' => function ($query) use ($unused_relations, $enable_list_product) {
                     $query->whereIsActive()
                         ->without($unused_relations)
                         ->with([
@@ -83,6 +87,13 @@ class SellnowController extends Controller
                             },
                         ])
                         ->orderBy('id');
+
+                    if ($enable_list_product) {
+                        // ItemUnitType trae unit_type por defecto y aqui solo se usa la columna.
+                        $query->with(['item_unit_types' => function ($query) {
+                            $query->without('unit_type')->with('prices.priceLabel');
+                        }]);
+                    }
                 }]);
         }
 
@@ -91,12 +102,6 @@ class SellnowController extends Controller
             $itemsQuery->with(['item_unit_types' => function ($query) {
                 $query->without('unit_type')->with('prices.priceLabel');
             }]);
-
-            if ($group_variations) {
-                $itemsQuery->with(['variations.item_unit_types' => function ($query) {
-                    $query->without('unit_type')->with('prices.priceLabel');
-                }]);
-            }
         }
 
         $items = $itemsQuery->get();

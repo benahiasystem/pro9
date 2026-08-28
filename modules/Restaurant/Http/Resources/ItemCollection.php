@@ -3,6 +3,7 @@
 namespace Modules\Restaurant\Http\Resources;
 
 use App\Models\Tenant\Configuration;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class ItemCollection extends ResourceCollection
@@ -36,9 +37,50 @@ class ItemCollection extends ResourceCollection
         $configuration = $this->tenant_configuration ?: Configuration::first();
         $enableListProduct = (bool) optional($configuration)->enable_list_product;
 
+        $this->preloadVariationRelations();
+
         return $this->collection->transform(function($row, $key) use ($configuration, $enableListProduct){
             return $this->transformRow($row, $configuration, $enableListProduct);
         });
+    }
+
+    /**
+     * Red de seguridad para lo que el controlador no haya precargado. Precargar
+     * sigue siendo del controlador (es el unico que puede aplicar whereIsActive,
+     * el orden y el resto de relaciones); esto solo evita que un eager loading
+     * incompleto vacie los chips en silencio, como pasaba cuando un
+     * with('variations.algo') en otra llamada pisaba la closure de 'variations'.
+     *
+     * No fuerza la relacion variations: agruparlas sigue siendo opt-in del
+     * controlador. Son consultas por lote, no una por fila.
+     *
+     * @return void
+     */
+    protected function preloadVariationRelations()
+    {
+        $items = EloquentCollection::make($this->collection->all());
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $items->loadMissing('variationValues.value.variable');
+
+        // Hijas ya cargadas por el controlador: pueden venir sin sus valores si el
+        // eager loading de 'variations' se definio en otra llamada a with().
+        $variations = EloquentCollection::make(
+            $items->filter(function ($item) {
+                return $item->relationLoaded('variations');
+            })
+            ->flatMap(function ($item) {
+                return $item->variations;
+            })
+            ->all()
+        );
+
+        if ($variations->isNotEmpty()) {
+            $variations->loadMissing('variationValues.value.variable');
+        }
     }
 
     /**
