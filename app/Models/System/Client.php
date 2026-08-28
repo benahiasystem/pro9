@@ -10,10 +10,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Config;
-use GuzzleHttp\Client as HttpClient;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Modules\WhatsAppBot\Services\Evolution\EvolutionClient;
+use Modules\WhatsAppBot\Services\WhatsAppProviderFactory;
 
 /**
  * App\Models\System\Client
@@ -467,40 +466,59 @@ class Client extends Model
     }
 
     /**
-     * Envia el mensaje de WhatsApp usando, en orden de preferencia:
-     * 1) el numero conectado por QR al superadmin (Evolution).
-     * 2) el metodo legacy (qr_api_url/qr_api_token, endpoint manual), que se
-     *    mantiene funcionando pero ya no tiene UI propia — solo como
-     *    respaldo para instalaciones que ya lo tenían configurado en BD.
+     * Envia el mensaje por el numero conectado por QR al superadmin, con el
+     * proveedor que quedo congelado al conectarlo (Evolution via proxy/env o
+     * WAHA, ver WhatsAppProviderFactory). Es la unica via de envio: las
+     * credenciales legacy (qr_api_url/qr_api_token) quedaron muertas y ya no
+     * se consultan. Se usa aunque el estado guardado en BD este
+     * desactualizado (se verifica en vivo); si realmente esta desconectado
+     * se lanza un error claro.
      */
     private function sendWhatsappNotification(Configuration $confg, string $msg): void
     {
+        if (!$confg->notify_wa_enabled || empty($confg->notify_wa_instance)) {
+            // validationConfigNotify() corta antes de llegar aca; guardia defensiva.
+            throw new \RuntimeException(
+                'No hay ningún número de WhatsApp conectado para notificaciones. Conéctalo en Configuración → WhatsApp.'
+            );
+        }
+
         $number = '51' . $this->phone_ws;
-
-        if ($confg->notify_wa_enabled && !empty($confg->notify_wa_instance) && $confg->notify_wa_connection_state === 'open') {
-            (new EvolutionClient())->sendText($confg->notify_wa_instance, $number, $msg);
-            return;
-        }
-
-        if (empty($confg->qr_api_url) || empty($confg->qr_api_token)) {
-            return;
-        }
-
-        $client = new HttpClient();
-        $client->post(
-            $confg->qr_api_url . '/api/message/send-text',
-            [
-                'headers' => [
-                    'Authorization' => 'Bearer ' . $confg->qr_api_token,
-                    'Accept'        => 'application/json',
-                ],
-                'json' => [
-                    'number'  => $number,
-                    'message' => $msg,
-                ],
-                'verify' => false,
-            ]
+        $client = WhatsAppProviderFactory::forProviderAndKey(
+            $confg->notify_wa_provider ?: 'evolution',
+            $confg->notify_wa_waha_server_key
         );
+
+        // El estado guardado solo se refresca cuando el admin abre la
+        // pantalla de configuracion; si quedo desactualizado se consulta
+        // el estado real antes de descartar la conexion.
+        $connected = $confg->notify_wa_connection_state === 'open';
+        if (!$connected) {
+            try {
+                $connected = $client::isConnected($client->connectionState($confg->notify_wa_instance));
+            } catch (\Throwable $e) {
+                $connected = false;
+            }
+
+            if ($connected) {
+                $confg->notify_wa_connection_state = 'open';
+                $confg->save();
+            }
+        }
+
+        if (!$connected) {
+            throw new \RuntimeException(
+                "El número de WhatsApp para notificaciones (instancia \"{$confg->notify_wa_instance}\") está desconectado. Reconéctalo en Configuración → WhatsApp."
+            );
+        }
+
+        $response = $client->sendText($confg->notify_wa_instance, $number, $msg);
+
+        // sendText() no lanza excepcion en respuestas HTTP de error, solo
+        // devuelve el body parseado; sin id de mensaje el envio no salio.
+        if (!$client::extractMessageId($response)) {
+            throw new \RuntimeException('El número conectado no confirmó el envío de WhatsApp. Respuesta: ' . json_encode($response));
+        }
     }
 
     public function activeService()

@@ -38,8 +38,6 @@ class Configuration extends Model
         'mail_username',
         'mail_password',
         'mail_encryption',
-        'qr_api_url',
-        'qr_api_token',
         'google_maps_api_key',
         'qr_api_msg',
         'evolution_server_url',
@@ -52,6 +50,8 @@ class Configuration extends Model
         'notify_wa_connected_at',
         'notify_wa_enabled',
         'notify_wa_api_token',
+        'notify_wa_provider',
+        'notify_wa_waha_server_key',
         'active_cron',
         'hour_generate_payment_order',
         'day_before_due',
@@ -159,17 +159,16 @@ class Configuration extends Model
     }
 
     /**
-     * True si hay algun medio configurado para enviar notificaciones por
-     * WhatsApp: el numero conectado por QR al superadmin (preferido) o,
-     * si no, las credenciales manuales legacy (qr_api_url/qr_api_token).
+     * True si hay un numero conectado por QR habilitado para enviar
+     * notificaciones por WhatsApp. Las credenciales legacy
+     * (qr_api_url/qr_api_token) quedaron muertas y ya no cuentan.
      */
     public function hasWhatsappNotifySender(): bool
     {
-        if ($this->notify_wa_enabled && !empty($this->notify_wa_instance) && $this->notify_wa_connection_state === 'open') {
-            return true;
-        }
-
-        return !empty($this->qr_api_url) && !empty($this->qr_api_token);
+        // No se exige connection_state === 'open': ese campo solo se refresca
+        // cuando el admin abre la pantalla de configuracion y puede quedar
+        // desactualizado. El envio verifica el estado real contra el proveedor.
+        return $this->notify_wa_enabled && !empty($this->notify_wa_instance);
     }
 
     public function validationConfigNotify()
@@ -178,8 +177,6 @@ class Configuration extends Model
             'ws' => null,
             'email' => null,
         ];
-        // dd($this->qr_api_url, $this->qr_api_token, $this->mail_host, $this->mail_port, $this->mail_username, $this->mail_password, $this->mail_encryption);
-
         if (!$this->hasWhatsappNotifySender()) {
             $errors['ws'] = 'Falta configurar los parámetros para el envío de notificaciones por WhatsApp';
             return $errors;
