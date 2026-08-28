@@ -355,4 +355,10 @@ class EvolutionClient implements WhatsAppProviderClientInterface
             || ($response['instance']['status'] ?? null) === 'connected'
             || ($response['connected'] ?? false) === true;
     }
+
+    public static function extractMessageId(array $response): ?string
+    {
+        // 'key.id' es el shape crudo de Evolution; 'data.key.id' el del proxy.
+        return data_get($response, 'key.id') ?: data_get($response, 'data.key.id');
+    }
 }

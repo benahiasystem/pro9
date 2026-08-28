@@ -7,18 +7,33 @@ use App\Models\System\Configuration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Modules\WhatsAppBot\Services\Evolution\EvolutionClient;
+use Modules\WhatsAppBot\Services\Contracts\WhatsAppProviderClientInterface;
+use Modules\WhatsAppBot\Services\WhatsAppProviderFactory;
 
 /**
  * Numero de WhatsApp conectado al superadmin (reseller), usado unicamente
  * para ENVIAR notificaciones salientes (recordatorios de pago a los
- * tenants) via Evolution. A diferencia del bot de tenant, no procesa
- * mensajes entrantes: no registra webhook ni necesita instancia adoptada
- * o compartida.
+ * tenants). La conexion se crea con el proveedor por defecto de la
+ * instalacion (Evolution via proxy/env o WAHA, ver WhatsAppProviderFactory)
+ * y queda congelado en notify_wa_provider/notify_wa_waha_server_key.
+ * A diferencia del bot de tenant, no procesa mensajes entrantes: no
+ * registra webhook ni necesita instancia adoptada o compartida.
  */
 class WhatsAppNotifyController extends Controller
 {
     private const NO_INSTANCE_MSG = 'No hay ningún número conectado.';
+
+    /**
+     * Cliente del proveedor congelado al conectar el numero (NULL en
+     * notify_wa_provider = conexion previa a WAHA, o sea Evolution).
+     */
+    private function client(Configuration $config): WhatsAppProviderClientInterface
+    {
+        return WhatsAppProviderFactory::forProviderAndKey(
+            $config->notify_wa_provider ?: 'evolution',
+            $config->notify_wa_waha_server_key
+        );
+    }
 
     public function connect(Request $request)
     {
@@ -30,7 +45,8 @@ class WhatsAppNotifyController extends Controller
         $config = Configuration::first();
 
         try {
-            (new EvolutionClient())->createInstance($instance);
+            $resolved = WhatsAppProviderFactory::forNewConnection();
+            $resolved['client']->createInstance($instance);
         } catch (\Throwable $e) {
             Log::error('[WhatsAppNotify] No se pudo crear instancia', [
                 'instance' => $instance,
@@ -43,6 +59,8 @@ class WhatsAppNotifyController extends Controller
         }
 
         $config->notify_wa_instance = $instance;
+        $config->notify_wa_provider = $resolved['provider'];
+        $config->notify_wa_waha_server_key = $resolved['server_key'];
         $config->notify_wa_connected_phone = null;
         $config->notify_wa_profile_name = null;
         $config->notify_wa_connection_state = 'connecting';
@@ -68,13 +86,14 @@ class WhatsAppNotifyController extends Controller
         }
 
         try {
-            $response = (new EvolutionClient())->connect($config->notify_wa_instance);
-            $qr = EvolutionClient::extractQr($response);
+            $client = $this->client($config);
+            $response = $client->connect($config->notify_wa_instance);
+            $qr = $client::extractQr($response);
 
             return [
                 'success' => $qr !== null,
                 'qr' => $qr,
-                'message' => $qr ? null : 'Evolution no devolvió un QR válido.',
+                'message' => $qr ? null : 'El proveedor no devolvió un QR válido.',
             ];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => 'Error al obtener QR: ' . $e->getMessage()];
@@ -89,9 +108,9 @@ class WhatsAppNotifyController extends Controller
         }
 
         try {
-            $client = new EvolutionClient();
+            $client = $this->client($config);
             $response = $client->connectionState($config->notify_wa_instance);
-            $connected = EvolutionClient::isConnected($response);
+            $connected = $client::isConnected($response);
             $state = data_get($response, 'instance.state') ?: data_get($response, 'state') ?: 'unknown';
 
             if ($connected) {
@@ -165,7 +184,7 @@ class WhatsAppNotifyController extends Controller
         }
 
         try {
-            (new EvolutionClient())->deleteInstance($config->notify_wa_instance);
+            $this->client($config)->deleteInstance($config->notify_wa_instance);
         } catch (\Throwable $e) {
             Log::warning('[WhatsAppNotify] deleteInstance falló (continúo limpiando local)', [
                 'exception' => $e->getMessage(),
@@ -173,6 +192,8 @@ class WhatsAppNotifyController extends Controller
         }
 
         $config->notify_wa_instance = null;
+        $config->notify_wa_provider = null;
+        $config->notify_wa_waha_server_key = null;
         $config->notify_wa_connected_phone = null;
         $config->notify_wa_profile_name = null;
         $config->notify_wa_connection_state = 'disconnected';
@@ -191,7 +212,7 @@ class WhatsAppNotifyController extends Controller
         }
 
         try {
-            (new EvolutionClient())->restartInstance($config->notify_wa_instance);
+            $this->client($config)->restartInstance($config->notify_wa_instance);
             return ['success' => true, 'message' => 'Instancia reiniciada.'];
         } catch (\Throwable $e) {
             return ['success' => false, 'message' => 'No se pudo reiniciar: ' . $e->getMessage()];
@@ -206,7 +227,8 @@ class WhatsAppNotifyController extends Controller
         }
 
         $instance = $config->notify_wa_instance;
-        $client = new EvolutionClient();
+        // Renovar mantiene el proveedor congelado: misma conexion, nuevo QR.
+        $client = $this->client($config);
 
         try {
             $client->deleteInstance($instance);
@@ -260,7 +282,7 @@ class WhatsAppNotifyController extends Controller
         }
 
         try {
-            $client = new EvolutionClient();
+            $client = $this->client($config);
 
             if (!empty($data['file'])) {
                 $response = $client->sendMedia($config->notify_wa_instance, $data['number'], [
@@ -278,18 +300,19 @@ class WhatsAppNotifyController extends Controller
             }
 
             // sendMedia()/sendText() no lanzan excepcion en respuestas HTTP de
-            // error (4xx/5xx) — solo devuelven el body parseado. Si Evolution
-            // rechazo el envio, la respuesta no trae id de mensaje; sin este
-            // chequeo el controlador reportaria "enviado" aunque no llegara.
-            $messageId = data_get($response, 'key.id') ?: data_get($response, 'data.key.id');
+            // error (4xx/5xx) — solo devuelven el body parseado. Si el
+            // proveedor rechazo el envio, la respuesta no trae id de mensaje;
+            // sin este chequeo el controlador reportaria "enviado" aunque no
+            // llegara.
+            $messageId = $client::extractMessageId($response);
             if (!$messageId) {
-                Log::warning('[WhatsAppNotify] send: Evolution no confirmó el envío', [
+                Log::warning('[WhatsAppNotify] send: el proveedor no confirmó el envío', [
                     'has_file' => !empty($data['file']),
                     'response' => $response,
                 ]);
                 return [
                     'success' => false,
-                    'message' => 'Evolution no confirmó el envío. Respuesta: ' . json_encode($response),
+                    'message' => 'El proveedor no confirmó el envío. Respuesta: ' . json_encode($response),
                 ];
             }
 
