@@ -1,0 +1,1431 @@
+/* ============================================================================
+   mobile.css — Capa global de estilos para celular (Digital Buho)
+
+   Se carga en TODOS los layouts (tenant y system) como ÚLTIMA hoja del <head>,
+   después del skin activo, por lo que aplica sin importar el tema o skin.
+
+   Etapa 1: solo CSS — ninguna vista se modifica. Los ajustes que requieran
+   cambios de markup van en la etapa 2.
+
+   Convenciones:
+   - Breakpoint celular:  max-width: 767.98px
+   - Breakpoint tablet:   768px – 991.98px
+   - Usar tokens del sistema (--color-*) con fallback, para respetar el skin.
+   - !important solo cuando haya que ganar a estilos inline o de vendor.
+   - Clases hook exclusivas de móvil: prefijo *-m- (ej. pos-m-search). Se
+     agregan en el markup pero SOLO se estilan aquí, dentro del media query
+     móvil: en escritorio no hacen nada y ningún otro CSS las conoce, así
+     no hay conflictos de especificidad con skins ni hojas existentes.
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   0. Utilidades globales (fuera de media query)
+   Clases de apoyo para la etapa 2; no afectan nada si no se usan.
+   -------------------------------------------------------------------------- */
+.mobile-only {
+    display: none !important;
+}
+
+/* Desplegar/ocultar la lista del carrito: solo celular (en escritorio
+   la lista del carrito lateral siempre está a la vista) */
+.pos-m-cart-toggle {
+    display: none;
+}
+
+/* Atajo flotante a la zona de cobro en Venta Rápida: solo celular, donde
+   el panel queda al final de un listado largo de productos */
+.pos-m-jump-pay {
+    display: none;
+}
+
+/* Opción de menú que solo existe en celular (p. ej. las descargas del
+   comprobante, que en celular se sacan de la fila y viven en el menú) */
+.mobile-item-only {
+    display: none !important;
+}
+
+/* Buscador de clientes: el desplegable se ancla al campo (no al body),
+   si no aparece en la parte superior de la pantalla, lejos del campo.
+   index.vue limita .el-select-dropdown al 80%; aquí se anula con dos
+   clases para que ocupe el ancho del selector. */
+.el-select-dropdown.pos-customer-dropdown {
+    max-width: none !important;
+    margin-right: 0 !important;
+}
+
+/* Estado del carrito sobre la tarjeta de producto (POS): el borde
+   resaltado y la cantidad añadida se ven en TODOS los tamaños; los
+   botones − / + solo aparecen en celular (media query más abajo).
+   El color primario se toma del skin activo: los skins legacy definen
+   --primary-color y los migrados --color-primary. */
+.pos .product-item {
+    position: relative;
+}
+
+.pos .product-item.pos-m-in-cart {
+    outline: 2px solid var(--color-primary, var(--primary-color, #374151));
+    outline-offset: -2px;
+}
+
+.pos .pos-m-card-qty {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 5;
+    padding: 2px;
+    border-radius: 999px;
+    background: var(--color-primary, var(--primary-color, #374151));
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.pos .pos-m-card-qty__num {
+    min-width: 22px;
+    padding: 0 3px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.pos .pos-m-card-qty__btn {
+    display: none; /* solo celular */
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+    transition: transform .08s ease, background-color .08s ease;
+}
+
+/* El toque se acusa al instante, aunque la validación de stock tarde */
+.pos .pos-m-card-qty__btn:active {
+    transform: scale(0.86);
+    background: rgba(255, 255, 255, 0.45);
+}
+
+/* Mientras se valida el stock: el indicador late suavemente */
+.pos .pos-m-card-qty.is-busy {
+    animation: pos-m-pulse .7s ease-in-out infinite;
+}
+
+/* Al confirmarse el cambio: un golpe de escala que llama la atención
+   sin obligar a mirar el número */
+.pos .pos-m-card-qty.is-flash {
+    animation: pos-m-bump .45s ease;
+}
+
+@keyframes pos-m-pulse {
+    50% { opacity: .55; }
+}
+
+@keyframes pos-m-bump {
+    0% { transform: scale(1); }
+    35% { transform: scale(1.22); }
+    100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pos .pos-m-card-qty.is-busy,
+    .pos .pos-m-card-qty.is-flash {
+        animation: none;
+    }
+}
+
+/* ============================================================================
+   CELULAR (≤ 767px)
+   ========================================================================== */
+@media (max-width: 767.98px) {
+
+    /* ------------------------------------------------------------------------
+       1. Base: viewport, tipografía y comportamiento táctil
+       ---------------------------------------------------------------------- */
+    html {
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+    }
+
+    html,
+    body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+
+    /* Comportamiento tipo app: sin resaltado al tocar y sin ampliar con
+       doble toque (el pellizco lo bloquea mobile-app-behavior.js, porque
+       Safari en iOS ignora user-scalable=no del meta viewport) */
+    body {
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .mobile-only {
+        display: initial !important;
+    }
+
+    .mobile-hidden {
+        display: none !important;
+    }
+
+    /* Relleno lateral de los campos: Element UI usa 15px por lado, que en un
+       campo angosto (listas de precios, cantidades dentro de tablas) se come
+       casi todo el espacio y el valor escrito no se llega a ver. Se recorta,
+       salvo en los campos con icono a la izquierda o a la derecha, que
+       necesitan ese espacio para el icono. */
+    .el-input:not(.el-input--prefix) > .el-input__inner {
+        padding-left: 8px;
+    }
+
+    .el-input:not(.el-input--suffix) > .el-input__inner {
+        padding-right: 8px;
+    }
+
+    /* Dentro de tablas los campos son todavía más estrechos */
+    table .el-input:not(.el-input--prefix) > .el-input__inner,
+    .el-table .el-input:not(.el-input--prefix) > .el-input__inner {
+        padding-left: 4px;
+    }
+
+    table .el-input:not(.el-input--suffix) > .el-input__inner,
+    .el-table .el-input:not(.el-input--suffix) > .el-input__inner {
+        padding-right: 4px;
+        text-align: center;
+    }
+
+    /* Listado de precios del producto (Presentaciones): son 5 o más columnas
+       de precio dentro del modal, así que cada campo quedaba en 33px y no
+       cabía ni el valor. Se les da un ancho mínimo utilizable y la tabla se
+       desplaza en horizontal dentro de su contenedor. */
+    .el-dialog table.table-sm input {
+        min-width: 64px;
+    }
+
+    .el-dialog table.table-sm th,
+    .el-dialog table.table-sm td {
+        padding-left: 4px;
+        padding-right: 4px;
+        white-space: nowrap;
+    }
+
+    /* iOS hace zoom al enfocar inputs con fuente < 16px; forzar 16px lo evita */
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="date"],
+    select,
+    textarea,
+    .form-control,
+    .el-input__inner,
+    .el-textarea__inner,
+    .select2-search__field {
+        font-size: 16px !important;
+    }
+
+    /* ------------------------------------------------------------------------
+       2. Contenido y espaciado: aprovechar el ancho completo de la pantalla
+       ---------------------------------------------------------------------- */
+    /* Porto maqueta con display:table-cell, que se ensancha hasta caber el
+       contenido: el contenedor terminaba 20px más ancho que la pantalla y
+       todo quedaba corrido a la derecha (más margen izquierdo que derecho).
+       En celular pasa a bloque, que sí respeta el ancho de la pantalla.
+       Se usa el id porque custom.css fija #main-wrapper { width: auto }. */
+    #main-wrapper.content-body,
+    .content-body,
+    section.content-body {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        padding-left: 10px;
+        padding-right: 10px;
+        /* Espacio para que el botón flotante de WhatsApp no tape los
+           botones de acción que quedan al final de la página */
+        padding-bottom: 76px !important;
+    }
+
+    .card-body,
+    .card .card-body {
+        padding: 12px;
+    }
+
+    .page-header {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    /* ------------------------------------------------------------------------
+       3. Tablas: scroll horizontal en lugar de desbordar la página
+       ---------------------------------------------------------------------- */
+    .table-responsive,
+    .dataTables_wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .el-table {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    /* ------------------------------------------------------------------------
+       4. Modales y diálogos: ancho completo en pantallas chicas
+       ---------------------------------------------------------------------- */
+    .modal-dialog {
+        margin: 8px auto;
+        max-width: calc(100vw - 16px);
+    }
+
+    /* Element UI define width inline (50%, 600px, etc.); hay que ganarle */
+    .el-dialog {
+        width: calc(100vw - 16px) !important;
+        margin-top: 4vh !important;
+    }
+
+    .el-message-box {
+        width: calc(100vw - 24px) !important;
+        max-width: 420px;
+    }
+
+    /* ------------------------------------------------------------------------
+       5. Formularios y botones: objetivos táctiles cómodos
+       ---------------------------------------------------------------------- */
+    /* .nav-action queda fuera: son los botones "Crear" del menú lateral,
+       que deben mantenerse compactos junto al nombre de cada sección */
+    .btn:not(.nav-action),
+    .el-button {
+        min-height: 40px;
+    }
+
+    /* ------------------------------------------------------------------------
+       6. Paginación y controles largos: permitir que envuelvan
+       ---------------------------------------------------------------------- */
+    .pagination,
+    .el-pagination {
+        flex-wrap: wrap;
+        row-gap: 6px;
+    }
+
+    /* ------------------------------------------------------------------------
+       6b. Listados con tabla (todos los módulos: ventas, preventa, clientes,
+           productos, compras, inventario…). Comparten el marcado de los
+           componentes DataTable*, así que estas reglas aplican a todos.
+       ---------------------------------------------------------------------- */
+
+    /* Nombre del módulo en la cabecera: el tema oculta en celular tanto el
+       <h2> como las migas de pan, y la tarjeta superior quedaba vacía. Se
+       muestra el último nivel de las migas (el módulo actual) como título,
+       en la misma fila que el botón de la derecha. */
+    .content-body .page-header:has(.breadcrumbs) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .content-body .page-header .breadcrumbs {
+        display: block !important;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .content-body .page-header .breadcrumbs > li {
+        display: none;
+    }
+
+    .content-body .page-header .breadcrumbs > li:last-child {
+        display: block;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.25;
+        color: var(--color-foreground, inherit);
+    }
+
+    /* Con varios botones (Nuevo, Reporte de Pagos, Validación masiva) no
+       caben junto al título: bajan de línea en vez de montarse encima */
+    .content-body .page-header .breadcrumbs {
+        flex: 1 1 auto;
+    }
+
+    .content-body .page-header .right-wrapper {
+        float: none;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        flex: 0 1 auto;
+        min-width: 0;
+        /* separación del borde: los botones quedaban pegados a la derecha */
+        padding-right: 6px;
+    }
+
+    .content-body .page-header .right-wrapper .btn {
+        margin: 0 !important;
+    }
+
+    /* Fila de herramientas del listado: el contenedor de filtros traía 40px
+       de margen superior y cada botón caía en su propia línea (uno a la
+       izquierda y otro a la derecha). Convertidos en iconos, entran juntos
+       en una sola fila pegada al título. */
+    .content-body .row > .filter-container {
+        margin-top: 0 !important;
+        flex: 0 0 auto;
+        width: auto;
+        max-width: none;
+        padding-right: 0;
+    }
+
+    /* El bloque siguiente (ver todos + selector) conserva el ancho completo
+       y se alinea a la izquierda: si se le deja ancho automático, el
+       selector hereda el desplazamiento de la fila compartida */
+    .content-body .row > .filter-container + [class*="col-"] {
+        /* mismo margen que el contenedor de filtros, para que los iconos
+           queden alineados verticalmente entre sí */
+        padding-left: 10px;
+    }
+
+    .content-body .row > .filter-container + [class*="col-"] > .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .content-body .row > .filter-container + [class*="col-"] .text-end,
+    .content-body .row > .filter-container + [class*="col-"] .w-100 {
+        width: auto !important;
+        text-align: left !important;
+    }
+
+    /* Acciones de la cabecera: sólo queda fuera el botón de crear, como "+";
+       el resto vive en un menú de tres puntos (lo arma mobile-app-behavior.js
+       con copias que reenvían el clic al botón real, que queda oculto). */
+    .m-accion-en-menu {
+        display: none !important;
+    }
+
+    .m-ico-nuevo {
+        font-size: 0 !important;
+        min-width: 42px;
+        padding: 9px 12px !important;
+        margin: 0 !important;
+    }
+
+    .m-ico-nuevo::before {
+        content: "\eb0b";
+        font-family: "tabler-icons";
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .m-ico-nuevo > i,
+    .m-ico-nuevo > svg {
+        display: none !important;
+    }
+
+    .m-menu-acciones {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .m-menu-acciones__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 42px;
+        height: 40px;
+        padding: 0 10px;
+        border: 1px solid var(--color-border, rgba(0, 0, 0, 0.12));
+        border-radius: 10px;
+        background: var(--color-surface, #fff);
+        color: inherit;
+    }
+
+    .m-menu-acciones__btn::before {
+        content: "\ea94";
+        font-family: "tabler-icons";
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .m-menu-acciones__panel {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        z-index: 1050;
+        min-width: 210px;
+        max-width: calc(100vw - 32px);
+        padding: 6px;
+        border-radius: 12px;
+        background: var(--color-surface, #fff);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    .m-menu-acciones.is-open .m-menu-acciones__panel {
+        display: block;
+    }
+
+    .m-menu-acciones__item {
+        display: block;
+        width: 100%;
+        padding: 11px 12px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: inherit;
+        font-size: 14px;
+        text-align: left;
+        white-space: normal;
+    }
+
+    .m-menu-acciones__item:active {
+        background: var(--color-bg, rgba(0, 0, 0, 0.05));
+    }
+
+    /* Leyenda de colores (Boletas / Facturas / Notas de crédito): ocupa una
+       franja entera en celular; los colores siguen visibles en las filas */
+    .documents-legend {
+        display: none !important;
+    }
+
+    /* Botones de herramientas como icono: el texto ocupaba una línea entera
+       cada uno. Los glifos vienen de la fuente Tabler ya cargada. */
+    .m-boton-icono {
+        font-size: 0 !important;
+        min-width: 42px;
+        padding: 9px 12px !important;
+        margin: 0 !important;
+    }
+
+    .m-boton-icono::before {
+        font-family: "tabler-icons";
+        font-size: 19px;
+        font-weight: 400;
+        line-height: 1;
+    }
+
+    /* Los iconos que el botón ya traía (incluido el ⓘ de ayuda) sobran
+       cuando el botón entero es un icono */
+    .m-boton-icono > i,
+    .m-boton-icono > svg {
+        display: none !important;
+    }
+
+    .m-ico-filtros::before {
+        content: "\eaa5";
+    }
+
+    .m-ico-columnas::before {
+        content: "\eb83";
+    }
+
+    .m-ico-todos::before {
+        content: "\ea9a";
+    }
+
+    /* Barra de "Mostrar columnas / Mostrar filtros": el contenedor es un
+       flex sin wrap con columnas Bootstrap dentro, así que en celular los
+       botones se empujaban fuera de la pantalla en vez de bajar de línea. */
+    .content-body .d-flex.col-12 {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .content-body .d-flex.col-12 > [class*="col-"] {
+        flex: 0 1 auto;
+        width: auto;
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+        text-align: left !important;
+    }
+
+    /* Los contenedores del toolbar alinean a la derecha en escritorio; en
+       celular eso deja los botones pegados (o cortados) contra el borde */
+    .content-body .btn-filter-content,
+    .content-body .filter-content,
+    .content-body .btn-container-mobile {
+        flex-wrap: wrap;
+        justify-content: flex-start !important;
+        gap: 6px;
+        padding: 0 10px;
+        /* 40px de separación pensados para escritorio: en celular sólo
+           dejaban un hueco entre la cabecera y la barra de herramientas */
+        margin-top: 0 !important;
+    }
+
+    /* Los .row de Bootstrap tienen margen negativo: sin esto los botones
+       del toolbar quedan pegados al borde de la pantalla.
+       Además se saca de su capa flotante (position:absolute + z-index:5):
+       así montado se dibujaba por encima de menús y capas superpuestas. */
+    .content-body .data-table-visible-columns {
+        /* Conserva su posición absoluta (así comparte fila con el botón de
+           filtros), pero sin capa propia: con z-index se dibujaba por encima
+           de los menús y de otras capas superpuestas. */
+        z-index: auto !important;
+        padding: 0 10px;
+    }
+
+    .btn-filter-content > .el-button,
+    .btn-filter-content > .btn {
+        margin: 0 !important;
+    }
+
+    /* Botonera superior (Nuevo / Importar / Exportar): que envuelva y se
+       apoye a la izquierda en vez de amontonarse contra el borde */
+    .card .btn-group.flex-wrap,
+    .content-body .btn-toolbar {
+        justify-content: flex-start;
+    }
+
+    /* Tabla compacta: más filas por pantalla */
+    .table-responsive .table > thead > tr > th,
+    .table-responsive .table > tbody > tr > td {
+        padding: 8px 10px;
+        font-size: 13px;
+        vertical-align: middle;
+    }
+
+    /* Los botones dentro de la tabla no necesitan el alto táctil completo:
+       inflaban las filas (una fila de comprobante medía ~150px) */
+    .table-responsive .table .btn,
+    .table-responsive .table .el-button {
+        min-height: 32px;
+    }
+
+    /* Primera columna congelada: al desplazar en horizontal se mantiene la
+       referencia de a qué registro pertenece cada dato */
+    .table-responsive .table > thead > tr > th:first-child,
+    .table-responsive .table > tbody > tr > td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background: var(--color-surface, #fff);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.06);
+    }
+
+    .table-responsive .table > thead > tr > th:first-child {
+        z-index: 3;
+    }
+
+    /* Cabecera de los formularios: hasta tres fechas (emisión, vencimiento,
+       entrega) en columnas de ~117px, donde la fecha se veía cortada
+       ("16-08" en vez de 16-08-2026) y las etiquetas largas partían la
+       fila. En celular van a media fila para que quepa la fecha completa. */
+    .content-body .row > [class*="col-4"]:has(.el-date-editor),
+    .content-body .row > [class*="col-4"]:has(.el-select) {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    /* Barra de campos personalizable (formulario de producto): en celular se
+       respeta el ORDEN que definió el usuario, pero no los anchos —se guardan
+       como col-md-*, pensados para escritorio—. Cada campo ocupa la fila
+       completa salvo los cortos por naturaleza, que van a media fila. Así una
+       configuración hecha en escritorio nunca deja campos ilegibles aquí. */
+    .item-form-pinned-bar [class*="col-md-"] {
+        /* !important: gana a la heurística general de campos cortos, que se
+           guía por el ancho de escritorio y aquí no debe decidir */
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+
+    .item-form-pinned-bar [class*="col-md-"]:has(.el-date-editor),
+    .item-form-pinned-bar [class*="col-md-"]:has(.el-select),
+    .item-form-pinned-bar [class*="col-md-"]:has(.el-input-number),
+    .item-form-pinned-bar [class*="col-md-"]:has(input[inputmode="decimal"]),
+    .item-form-pinned-bar [class*="col-md-"].m-campo-corto {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+
+    /* Campos cortos a media fila en lugar de ocupar todo el ancho.
+       Dos señales, ambas del propio formulario:
+       · el ancho declarado para escritorio (col-md-1/2/3 = campo corto);
+       · un maxlength corto (RUC, DNI, serie…), que marca mobile-app-behavior.js
+         con la clase m-campo-corto.
+       col-md-4 en adelante se deja completo: ahí caben valores largos
+       (p. ej. "No Domiciliado sin Ruc" en Tipo de documento).
+       page-header queda fuera: no es un formulario sino la barra de
+       herramientas del módulo, y a la mitad del ancho sus controles
+       (lista de precios + botones de vista) no entran en una fila. */
+    .row:not(.page-header) > .col-md-1:not(:has(.el-input-group)):not(:has(.input-group)),
+    .row:not(.page-header) > .col-md-2:not(:has(.el-input-group)):not(:has(.input-group)),
+    .row:not(.page-header) > .col-md-3:not(:has(.el-input-group)):not(:has(.input-group)),
+    .row:not(.page-header) > .m-campo-corto {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+
+    /* Modal "Agregar Producto o Servicio": Cantidad / Precio Unitario /
+       Total venían en tres columnas de ~106px, donde la etiqueta "Precio
+       Unitario" se partía a mitad de palabra y descuadraba la fila. En
+       celular cada campo ocupa el ancho completo. Se acota a este modal
+       (el que contiene .product-model) para no alterar otros diálogos. */
+    .el-dialog:has(.product-model) .row > .col-4 {
+        flex: 0 0 50%;
+        max-width: 50%;
+        margin-bottom: 8px;
+    }
+
+    /* Los diálogos traen word-break: break-all heredado: en pantallas
+       angostas parte las palabras a mitad ("cliente/pr | oveedor"). Se
+       vuelve al corte normal, rompiendo solo palabras que no quepan. */
+    .el-dialog .el-dialog__body,
+    .el-dialog .el-dialog__body * {
+        word-break: normal;
+        overflow-wrap: break-word;
+    }
+
+    /* El encabezado del colapsable partía palabras ("es|peciales") y el
+       texto se metía debajo de la flecha */
+    .el-dialog .el-collapse-item__header {
+        word-break: normal;
+        overflow-wrap: anywhere;
+        padding-right: 28px;
+        line-height: 1.35;
+        height: auto;
+    }
+
+    /* Formularios (cotización, comprobante, nota de venta, pedido, contrato):
+       la pestaña vertical fija del borde derecho ("Abrir Información
+       Adicional") se montaba encima de los campos. En celular pasa a ser un
+       botón normal de ancho completo, en su lugar natural del formulario
+       (entre los datos del cliente y los productos). Es solo CSS: el
+       elemento ya vive ahí en el marcado, solo estaba sacado de flujo. */
+    .toggle-button {
+        position: static !important;
+        transform: none !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 44px;
+        margin: 4px 0 12px !important;
+        padding: 10px 14px !important;
+        border-radius: 10px !important;
+        white-space: normal !important;
+        font-size: 14px !important;
+        line-height: 1.3 !important;
+        text-align: center;
+    }
+
+    /* Personalización de campos del formulario: se opera pasando el cursor
+       sobre el título (reordenar/ajustar ancho), gesto que no existe en
+       celular. Se oculta el botón; su paso del tutorial también se omite
+       (computed miniTourStepsVisible en invoice_generate.vue). */
+    .edit-layout-btn {
+        display: none !important;
+    }
+
+    /* El botón flotante de WhatsApp se superpone a los botones de acción
+       que quedan al final de formularios y listados: se reduce y se deja
+       espacio libre debajo del contenido para que nada quede tapado */
+    .ws-flotante {
+        width: 48px !important;
+        height: 48px !important;
+        bottom: 12px !important;
+        right: 12px !important;
+    }
+
+    /* Comprobantes: la columna XML/PDF/CDR desaparece (se apilaba en
+       vertical y hacía filas de ~300px). Se ocultan encabezado y celda a la
+       vez para no descuadrar la tabla; las descargas pasan al menú de
+       acciones de cada fila (items .mobile-item-only). */
+    .table .col-downloads {
+        display: none !important;
+    }
+
+    .mobile-item-only {
+        display: block !important;
+    }
+
+    /* ------------------------------------------------------------------------
+       7. Menú lateral (sidebar) abierto en celular
+       ---------------------------------------------------------------------- */
+
+    /* Los menús ocupan toda la pantalla: la barra fija del POS (z-index
+       1030) les tapaba la parte inferior. Aplica al menú lateral y al de
+       usuario (arriba a la derecha). */
+    html.sidebar-left-opened .pos .pos-cart:has(.pos-cart__footer),
+    html.options-user-mobile-opened .pos .pos-cart:has(.pos-cart__footer) {
+        display: none;
+    }
+
+    /* El menú de usuario también scrollea dentro de sí mismo */
+    html.options-user-mobile-opened .dropdown-menu-mobile {
+        max-height: 100vh;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+
+    /* Cabecera del menú lateral: el logo (50px) desbordaba su contenedor
+       (40px) y quedaba descuadrado; además, mientras la imagen cargaba el
+       botón de cerrar se recolocaba y el logo parecía no aparecer. Se
+       acota el logo y se reserva su espacio para que nada salte. */
+    .sidebar-header-mobile {
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 14px;
+    }
+
+    .sidebar-header-mobile .logo-container-sidebar {
+        display: flex;
+        align-items: center;
+        min-width: 130px;
+        height: auto;
+        padding: 0 !important;
+        margin: 0;
+    }
+
+    .sidebar-header-mobile .logo-container-sidebar img {
+        max-height: 34px !important;
+        max-width: 100%;
+        width: auto !important;
+        object-fit: contain;
+    }
+
+    /* Quedaban ~55px de aire entre la cabecera y el primer módulo */
+    html.sidebar-left-opened .sidebar-left .nano-content-mobile {
+        padding-top: 0 !important;
+    }
+
+    html.sidebar-left-opened .sidebar-left .nav-main {
+        padding-top: 4px;
+    }
+
+    /* Logo dentro del encabezado: se acota para que no se salga de la
+       barra (60px de alto) sea cual sea la imagen que suba el tenant */
+    .logo-container,
+    .logo-container-mobile {
+        overflow: hidden;
+    }
+
+    .logo-container-mobile img,
+    .logo-container .logo img {
+        max-height: 34px !important;
+        width: auto !important;
+        object-fit: contain;
+    }
+
+    /* Con el menú abierto la página de atrás no debe scrollear. Sólo en
+       body: poner overflow:hidden en <html> deja a iOS Safari sin responder
+       al dedo dentro de los contenedores desplazables. El encadenamiento
+       real lo corta overscroll-behavior en el panel. */
+    html.sidebar-left-opened body {
+        overflow: hidden !important;
+    }
+
+    /* Scroll del menú con el dedo: el plugin nanoScroller mete la lista en
+       un contenedor absoluto cuya altura calcula en JS; cuando ese cálculo
+       no coincide con la pantalla del teléfono la lista queda recortada y
+       sin desplazamiento. Se convierte .nano en un scroller nativo con la
+       lista en flujo normal (el pie del menú queda fuera y fijo).
+       overscroll-behavior evita que el gesto arrastre la página de fondo. */
+    /* El scroller es el panel completo: una sola caja desplazable nativa,
+       que es lo que responde de forma fiable al dedo en iOS. El plugin
+       fija alturas por JS en .nano/.nano-content, así que se neutralizan
+       (!important gana a los estilos en línea que escribe el plugin). */
+    html.sidebar-left-opened .sidebar-left {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+    }
+
+    html.sidebar-left-opened .sidebar-left .nano,
+    html.sidebar-left-opened .sidebar-left .nano > .nano-content {
+        position: static !important;
+        height: auto !important;
+        max-height: none !important;
+        width: auto !important;
+        right: auto !important;
+        overflow: visible !important;
+        touch-action: pan-y;
+    }
+
+    /* Barra de desplazamiento dibujada por el plugin: ya no aplica */
+    html.sidebar-left-opened .sidebar-left .nano > .nano-pane {
+        display: none !important;
+    }
+
+    /* Botones "Crear" del menú: compactos, no bloques de 40px */
+    .sidebar-left .nav-action {
+        min-height: 0;
+        padding: 1px 8px !important;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    /* ------------------------------------------------------------------------
+       8. POS (punto de venta)
+       Nota: pos.css se carga DESPUÉS de esta hoja (via @push), por eso estas
+       reglas usan mayor especificidad (.pos .pos-cart .pos-cart__footer).
+       ---------------------------------------------------------------------- */
+
+    /* Productos siempre en 2 columnas, sea cual sea el modo de vista.
+       Aplica al POS y a Venta Rápida (/pos/garage), que comparten el
+       mismo marcado de tarjetas. */
+    .pos .product-pos-container,
+    .pos .product-pos-container.default,
+    .pos .product-pos-container.comfortable,
+    .pos .product-pos-container.compact,
+    .pos .product-pos-container.stacked,
+    .garage .product-pos-container,
+    .garage .product-pos-container.default,
+    .garage .product-pos-container.comfortable,
+    .garage .product-pos-container.compact,
+    .garage .product-pos-container.stacked {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    /* Barra de cobro fija al fondo de la pantalla, con lo mínimo:
+       contador, cliente y botón PAGAR (que ya muestra el total).
+       El panel entero es el aside, para que la lista del carrito pueda
+       desplegarse dentro (antes quedaba al final de la página, fuera
+       del alcance del usuario). */
+    .pos .pos-cart:has(.pos-cart__footer) {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1030;
+        display: flex;
+        flex-direction: column;
+        max-height: 80vh;
+        margin: 0;
+        padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+        background: var(--pos-surface, var(--color-surface, #fff));
+        box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    /* El pie deja de ser un bloque para poder intercalar la lista entre
+       sus filas: sus hijos pasan a ser elementos del panel */
+    .pos .pos-cart .pos-cart__footer {
+        display: contents;
+    }
+
+    /* Orden: [contador + Ver/Ocultar] [lista] [cliente] [PAGAR] */
+    .pos .pos-cart .pos-cart__footer-top {
+        order: 1;
+    }
+
+    .pos .pos-cart .pos-cart__body {
+        order: 2;
+    }
+
+    .pos .pos-cart .pos-cart__customer {
+        order: 3;
+    }
+
+    .pos .pos-cart .pos-cart__pay {
+        order: 4;
+    }
+
+    /* La lista solo aparece al pulsar "Ver carrito"; ocupa como mucho
+       media pantalla y scrollea dentro del panel */
+    .pos .pos-cart:has(.pos-cart__footer) .pos-cart__body {
+        display: none;
+    }
+
+    .pos .pos-cart.pos-m-cart-open .pos-cart__body {
+        display: block;
+        flex: 0 1 auto;
+        max-height: 50vh;
+        margin: 2px 0 8px;
+        padding: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        background: transparent;
+    }
+
+    /* El contador de texto se reemplaza por "Ver carrito" + globito con la
+       cantidad: ocupa menos y el globito ya destaca lo suficiente, así que
+       el botón va sin borde */
+    .pos .pos-cart .pos-cart__count {
+        display: none;
+    }
+
+    .pos .pos-cart .pos-m-cart-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--color-primary, var(--primary-color, #374151));
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .pos .pos-cart .pos-m-cart-toggle__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 19px;
+        height: 19px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--color-primary, var(--primary-color, #374151));
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    /* Desplegable de clientes pegado al campo: el posicionador de Element
+       UI fija un `top` calculado con la lista completa y no lo recalcula
+       al filtrar, así que la lista quedaba flotando arriba, despegada del
+       campo. Se ancla por abajo al propio selector (bottom: 100%), de modo
+       que siempre nace justo sobre el campo, tenga 1 o 20 resultados. */
+    .pos .pos-cart .pos-customer-dropdown {
+        position: absolute !important;
+        top: auto !important;
+        bottom: calc(100% + 6px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+        transform-origin: center bottom !important;
+    }
+
+    /* Lista compacta: la lista completa tapaba casi toda la pantalla */
+    .pos .pos-cart .pos-customer-dropdown .el-select-dropdown__wrap {
+        max-height: 250px !important;
+    }
+
+    /* Cliente sin seleccionar: en celular el selector está a la vista sobre
+       el botón de cobro, no hace falta el resaltado rojo de escritorio.
+       Lleva .pos-cart extra porque pos.css se carga después con la misma
+       especificidad y ganaría por orden. */
+    .pos .pos-cart .pos-cart__customer.is-required .el-select .el-input__inner {
+        border-color: var(--pos-border, rgba(0, 0, 0, 0.12)) !important;
+        background: var(--pos-surface, #fff) !important;
+        color: inherit !important;
+    }
+
+    .pos .pos-cart .pos-cart__customer.is-required .el-select .el-input__inner::placeholder {
+        color: var(--pos-muted, #8a8a8a) !important;
+    }
+
+    .pos .pos-cart .pos-cart__customer.is-required .el-select .el-input__icon {
+        color: var(--pos-muted, #8a8a8a) !important;
+    }
+
+    /* Desglose de totales oculto: el botón PAGAR ya muestra el total */
+    .pos .pos-cart .pos-cart__footer .pos-cart__totals {
+        display: none;
+    }
+
+    .pos .pos-cart .pos-cart__footer-top {
+        max-width: none;
+        margin-bottom: 6px;
+    }
+
+    /* Que el final del carrito no quede oculto tras la barra fija */
+    .pos:has(.pos-cart__footer) {
+        padding-bottom: 190px;
+    }
+
+    /* Cabecera del POS compacta: menos aire vertical para dejar espacio
+       a los productos (el switch de escáner y las herramientas siguen ahí) */
+    .pos .page-header,
+    .garage .page-header {
+        margin: 0 0 4px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+
+    .pos .row.page-header,
+    .garage .row.page-header {
+        gap: 6px;
+    }
+
+    .pos .page-header .el-switch__label span,
+    .garage .page-header .el-switch__label span {
+        font-size: 12px;
+    }
+
+    /* Columna de moneda vacía (una sola moneda): no ocupar fila */
+    .pos .page-header .col-md-4:empty {
+        display: none;
+    }
+
+    /* Fila "Precio principal" + botones de vista: que no desborde a la
+       derecha; el select cede espacio y los botones pierden márgenes */
+    /* La fila de lista de precios + botones de vista se desbordaba por la
+       izquierda en algunos skins: se permite que baje de línea y que el
+       selector ceda ancho en vez de empujar */
+    /* Lista de precios y botones de vista en una sola fila: el selector cede
+       el ancho que haga falta (antes empujaba a los botones a otra línea) */
+    .pos .page-header .col-md-3 > .d-flex {
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+        padding: 0 6px;
+        min-width: 0;
+    }
+
+    .pos .page-header .col-md-3 .col-6:has(.el-select) {
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .pos .page-header .col-md-3 .col-6:not(:has(.el-select)) {
+        flex: 0 0 auto;
+    }
+
+    .pos .page-header .el-select {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    /* Que "Precio principal" entre completo en el ancho que sobra */
+    .pos .page-header .el-select .el-input__inner {
+        font-size: 13px;
+        padding-left: 8px;
+        padding-right: 20px;
+    }
+
+    .pos .page-header .el-select .el-input__suffix {
+        right: 2px;
+    }
+
+    .pos .page-header .col-md-3 .col-6 {
+        flex: 0 1 auto;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+        padding: 0;
+    }
+
+    .pos .page-header .col-md-3 .col-6:has(.el-select) {
+        flex: 1 1 auto;
+    }
+
+    .pos .page-header .el-button-group .el-button {
+        padding: 8px 6px;
+        margin-right: 0 !important;
+    }
+
+    .pos .page-header .el-button-group {
+        flex-wrap: nowrap;
+        gap: 4px !important;
+    }
+
+    /* Vista 1 — sólo categorías: cada una toma el ancho de su texto (antes
+       ocupaban media pantalla), pero con buen tamaño para tocarlas cómodo y
+       pegadas entre sí. */
+    .pos .row.no-gutters > .col,
+    .garage .row.no-gutters > .col {
+        flex: 0 0 auto;
+        width: auto;
+        max-width: 100%;
+    }
+
+    .pos .row.no-gutters > .col .card,
+    .garage .row.no-gutters > .col .card {
+        margin: 0 !important;
+    }
+
+    .pos .row.no-gutters > .col .card-body,
+    .garage .row.no-gutters > .col .card-body {
+        padding: 16px 22px !important;
+        font-size: 16px !important;
+        white-space: nowrap;
+    }
+
+    .pos .row.no-gutters,
+    .garage .row.no-gutters {
+        gap: 4px;
+        row-gap: 4px;
+    }
+
+    /* Vista 2 — categorías junto a los productos: la tira se desplaza en
+       horizontal, así que cada categoría toma el ancho de su texto en vez de
+       ocupar la pantalla entera. La altura sólo se recorta un poco (de 70px
+       a ~50px) para que no quede apretada. */
+    .pos .testimonial-group .col-sm-3-name,
+    .garage .testimonial-group .col-sm-3-name {
+        flex: 0 0 auto;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 14px 18px !important;
+        margin-right: 6px !important;
+        font-size: 15px !important;
+        line-height: 1.2;
+    }
+
+    /* Tarjetas de producto compactas: más productos por pantalla */
+    .pos .product-item .card-body,
+    .garage .product-item .card-body {
+        padding: 6px 6px 2px !important;
+    }
+
+    /* Los skins fijan la imagen con height:150px !important y un selector
+       de 5 clases (.card-body.pointer.px-2.pt-2 .img-custom); para ganar
+       hace falta !important Y mayor especificidad */
+    .pos .product-item .card-body.pointer.px-2.pt-2 .img-custom,
+    .pos .product-item .img-custom,
+    .garage .product-item .card-body.pointer.px-2.pt-2 .img-custom,
+    .garage .product-item .img-custom {
+        height: 72px !important;
+        object-fit: contain !important;
+    }
+
+    .pos .product-item .product-name-description,
+    .garage .product-item .product-name-description {
+        font-size: 12.5px;
+        line-height: 1.25;
+    }
+
+    .pos .product-item .card-footer,
+    .garage .product-item .card-footer {
+        padding: 4px 6px 8px;
+    }
+
+    .pos .product-item .card-footer h5,
+    .garage .product-item .card-footer h5 {
+        font-size: 15px;
+        margin-bottom: 0;
+    }
+
+    /* Botones de stock/historial/precios: ocultos en celular (siguen
+       disponibles en escritorio y tablet) */
+    .pos .product-item .configuration-options,
+    .garage .product-item .configuration-options {
+        display: none !important;
+    }
+
+    /* Botones − / + de la tarjeta: solo en celular (el − al llegar a 1
+       elimina el producto del carrito; en escritorio se usa el carrito) */
+    .pos .pos-m-card-qty__btn {
+        display: inline-flex;
+    }
+
+    /* Buscador de productos fijo arriba: sticky dentro del contenedor
+       scrolleable del listado (.hyo), los productos pasan por debajo.
+       Se anula el margin-top -20px del componente y el padding-top del
+       contenedor para que no asome una franja de tarjetas por detrás. */
+    .pos .pos-container,
+    .pos .pos-container.margin-top-switch-active {
+        margin-top: 0 !important;
+    }
+
+    /* El listado pierde su scroll interno: scrollea la página completa,
+       así la barra de precio/vistas se va con el scroll (no queda fija).
+       El px-4 de Bootstrap (24px) es demasiado en celular: se reduce para
+       que las tarjetas aprovechen el ancho. */
+    .pos .hyo,
+    .garage .hyo {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        padding-top: 0 !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+
+    /* Porto pone overflow auto/hidden en estos contenedores intermedios,
+       lo que rompe position:sticky respecto al scroll de la página.
+       Se usa overflow-x:clip (no visible) para seguir recortando los
+       paneles off-canvas del menú, que viven fuera de pantalla a la
+       derecha: clip no crea contenedor de scroll, así el sticky sobrevive. */
+    body:has(.pos), body:has(.garage),
+    body:has(.pos) .inner-wrapper, body:has(.garage) .inner-wrapper,
+    body:has(.pos) section.body, body:has(.garage) section.body {
+        overflow-x: clip !important;
+        overflow-y: visible !important;
+    }
+
+    /* El header fijo mide 60px: el buscador se ancla un poco más arriba
+       (52px) para que su fondo quede POR DEBAJO del header y no aparezca
+       una franja por donde asomen las tarjetas al desplazarse. El padding
+       superior compensa la parte que queda oculta bajo el header. */
+    .pos .hyo .pos-m-search,
+    .garage .hyo .pos-m-search {
+        position: sticky;
+        top: 52px;
+        z-index: 20;
+        padding: 16px 0 8px;
+        /* El fondo lo calcula mobile-app-behavior.js leyendo el color real
+           del contenedor: un color fijo desentona al cambiar de skin */
+        background: var(--m-fondo-pagina, #f5f2ef);
+    }
+
+    /* Botón "Nuevo Producto" compacto para que el input respire */
+    .pos .pos-m-search .pos-m-new-item,
+    .garage .pos-m-search .pos-m-new-item {
+        padding: 6px 10px !important;
+        font-size: 12px !important;
+    }
+
+    /* Listado de productos (vista tabla): en celular se agrega tocando la
+       fila; las ayudas de atajos no aplican sin teclado físico. El botón
+       "Columnas" se conserva para aligerar la tabla. */
+    .pos .pos-table__hints, .garage .pos-table__hints,
+    .pos .pos-table__toolbar-btn[title*="atajos"],
+    .garage .pos-table__toolbar-btn[title*="atajos"],
+    .pos .pos-key, .garage .pos-key {
+        display: none !important;
+    }
+
+    /* La tabla (suma de columnas ≈ 1060px) no debe ensanchar la página:
+       se limita el contenedor y la tabla scrollea horizontal dentro */
+    .pos,
+    .garage {
+        min-width: 0;
+        max-width: 100vw;
+    }
+
+    /* --- Venta Rápida (/pos/garage) ---------------------------------- */
+
+    /* El panel de cobro trae height:calc(100vh - 110px) y overflow-y:auto
+       en línea: en celular queda como una caja alta con scroll propio
+       dentro de la página (trampa de scroll) y el botón de cobro fuera de
+       alcance. En celular se deja crecer y scrollea la página. */
+    .garage .pos-order-panel {
+        height: auto !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    /* Atajo flotante a la zona de cobro: aparece al haber productos en el
+       carrito y baja hasta el panel (no cobra, solo desplaza) */
+    .pos-m-jump-pay {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: calc(14px + env(safe-area-inset-bottom));
+        z-index: 1029;
+        max-width: calc(100vw - 24px);
+        padding: 10px 16px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--color-primary, var(--primary-color, #374151));
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    }
+
+    .pos-m-jump-pay:active {
+        transform: translateX(-50%) scale(0.97);
+    }
+
+    .pos-m-jump-pay__count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+        font-size: 12px;
+    }
+
+    .pos-m-jump-pay__total {
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* No debe tapar el propio panel de cobro cuando ya se llegó a él */
+    .garage .pos-order-panel {
+        padding-bottom: 72px !important;
+    }
+
+    /* La lista de items trae flex-grow y min-height:200px en línea para
+       llenar la columna en escritorio; en celular dejaba un hueco grande
+       entre el último producto y la zona de cobro. Se ajusta al contenido. */
+    .garage .pos-order-top {
+        flex: 0 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: visible !important;
+    }
+
+    /* Barra de herramientas: el switch y los 4 botones de vista caben en
+       una fila sin desbordar (garage usa col-md-4, no col-md-3) */
+    .garage .page-header .col-md-4 {
+        width: 100%;
+        max-width: 100%;
+        flex: 0 0 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* Garage mete el switch del escáner y los 4 botones de vista dentro de
+       etiquetas <h2>, y el tema oculta los h2 del page-header en celular:
+       la barra quedaba vacía y no se podía cambiar de vista ni activar el
+       escáner. Se restauran como contenedores en línea. */
+    .garage .page-header h2 {
+        display: inline-flex !important;
+        align-items: center;
+        height: auto;
+        margin: 0;
+        padding: 0;
+        line-height: normal;
+        font-size: inherit;
+        overflow: visible;
+    }
+
+    .garage .page-header .col-md-4:first-child {
+        margin-bottom: 6px;
+    }
+
+    .garage .page-header .btn-custom {
+        padding: 7px 10px;
+    }
+
+    /* La categoría seleccionada y el listado no deben pegarse al borde */
+    .garage .testimonial-group .row {
+        padding-bottom: 4px;
+    }
+
+    .pos .pos-table,
+    .garage .pos-table {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ============================================================================
+   TABLET (768px – 991.98px)
+   Ajustes intermedios; llenar según se detecten problemas.
+   ========================================================================== */
+@media (min-width: 768px) and (max-width: 991.98px) {
+
+    .el-dialog {
+        width: 90% !important;
+    }
+}

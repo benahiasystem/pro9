@@ -342,7 +342,6 @@
                                   </el-dropdown-item>
 
                                   <el-dropdown-item divided />
-
                                   <!-- Descargas: en celular la columna XML/PDF/CDR se oculta
                                        (hacía filas de ~300px) y sus acciones viven aquí -->
                                   <el-dropdown-item

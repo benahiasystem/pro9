@@ -1,7 +1,7 @@
 <template>
     <div :class="{ 'content-opacity': isVisible }" @click.self="toggleInformation">
         <MiniTour
-            :steps="miniTourSteps"
+            :steps="miniTourStepsVisible"
             storage-key="tour_doc_generate_buttons"
             :version="1"
             fab-avoid-selector=".ws-flotante"
@@ -4301,6 +4301,24 @@ export default {
         };
     },
     computed: {
+        // La personalización de campos se opera pasando el cursor sobre el
+        // título, gesto que no existe en celular: allí el botón se oculta
+        // (mobile.css) y su paso del tutorial se omite para no señalar un
+        // elemento invisible
+        miniTourStepsVisible() {
+            if (!window.matchMedia("(max-width: 767.98px)").matches) {
+                return this.miniTourSteps;
+            }
+            const pasos = this.miniTourSteps.filter(
+                step => step.target !== ".edit-layout-btn"
+            );
+            // Se renumeran: al quitar un paso, el rótulo "Paso 2 de 2"
+            // quedaría en el único paso que se muestra
+            return pasos.map((step, i) => ({
+                ...step,
+                tag: `Paso ${i + 1} de ${pasos.length}`
+            }));
+        },
         layoutPinnedKeysSet() {
             if (
                 this.editingLayout &&

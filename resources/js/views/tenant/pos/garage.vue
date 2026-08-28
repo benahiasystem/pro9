@@ -136,7 +136,7 @@
                         @input="searchItems"
                         @keyup.native="keyupTabCustomer"
                         @keyup.enter.native="keyupEnterAddItem"
-                        class="m-bottom mt-3 input-search-pos"
+                        class="m-bottom mt-3 input-search-pos pos-m-search"
                         ref="ref_search_items"
                         @focus="$event.target.select()"
                     >
@@ -163,7 +163,7 @@
                         @change="searchItemsBarcode"
                         @keyup.native="keyupTabCustomer"
                         ref="ref_search_items"
-                        class="m-bottom mt-3"
+                        class="m-bottom mt-3 pos-m-search"
                         @focus="searchFromBarcode = true"
                         @blur="searchFromBarcode = false"
                     >
@@ -757,6 +757,7 @@
                                         <el-input
                                             v-model="item.total"
                                             size="mini"
+                                            inputmode="decimal"
                                             @input="calculateQuantity(index)"
                                             @blur="blurCalculateQuantity(index)"
                                             class="pos-total-input"
@@ -782,7 +783,9 @@
                                     </button>
                                     <el-input
                                         v-model="item.item.aux_quantity"
-                                        @focus="$event.target.select()"
+                                        inputmode="decimal"
+                                        @focus="valueInputSelect"
+                                        @click.native="valueInputSelect"
                                         @input="clickAddItem(item, index, true)"
                                         @keyup.enter.native="keyupEnterQuantity"
                                         class="pos-qty-field"
@@ -866,6 +869,21 @@
             :itemUnitTypes="itemUnitTypes"
         >
         </item-unit-types>
+
+        <!-- Solo celular (mobile.css lo oculta en escritorio): atajo a la
+             zona de cobro, que queda al final de un listado largo -->
+        <button
+            v-if="form.items && form.items.length > 0"
+            type="button"
+            class="pos-m-jump-pay"
+            @click="scrollToPayment"
+        >
+            <span class="pos-m-jump-pay__count">{{ form.items.length }}</span>
+            <span class="pos-m-jump-pay__label">Ir a cobrar</span>
+            <span class="pos-m-jump-pay__total">
+                {{ currency_type.symbol }} {{ form.total }}
+            </span>
+        </button>
     </div>
 </template>
 <style>
@@ -2444,6 +2462,15 @@ export default {
             this.all_items = [];
             this.place = "cat";
             this.loading = false;
+        },
+        // En celular la zona de cobro queda al final del listado de
+        // productos; el atajo flotante la trae a la vista
+        scrollToPayment() {
+            const panel = this.$el.querySelector(".payment-container-pos")
+                || this.$el.querySelector(".pos-order-panel");
+            // Salto directo: el listado puede medir miles de píxeles y una
+            // animación suave a esa distancia se siente lenta
+            if (panel) panel.scrollIntoView({ behavior: "instant", block: "end" });
         },
         async setView(view) {
             this.place = view;

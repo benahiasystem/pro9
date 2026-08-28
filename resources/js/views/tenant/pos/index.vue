@@ -1,33 +1,31 @@
 <template>
     <div class="pos container-fluid p-0">
         <span class="module-title-marker" data-page-title="Punto de Venta"></span>
-        <div class="row page-header pe-0 no-gutters" style="min-height:48px">
+        <div class="row page-header pos-toolbar pe-0 no-gutters" style="min-height:48px">
             <Keypress
                 key-event="keyup"
                 :key-code="112"
                 @success="handleFn112"
             />
-            <div
-                class="col-md-5 ps-2"
-                :class="{ 'pt-2 mt-1': !search_item_by_barcode }"
-            >
+            <div class="pos-toolbar__scanner ps-3 d-flex flex-column align-items-start justify-content-center">
                 <el-switch
+                    class="pos-toolbar__scanner-switch"
                     v-model="search_item_by_barcode"
                     active-text="Buscar con escáner de código de barras"
                     @change="changeSearchItemBarcode"
                 >
                 </el-switch>
-                <div class="row bar-code-checkbox" v-if="search_item_by_barcode">
-                    <div class="col-md-4">
+                <div class="bar-code-checkbox pt-1" v-if="search_item_by_barcode">
+                    <div class="pos-toolbar__option">
                         <el-checkbox
-                            class="mt-1 font-weight-bold"
+                            class="font-weight-bold"
                             v-model="search_item_by_barcode_presentation"
                             >Por presentación</el-checkbox
                         >
                     </div>
-                    <div class="col-md-4">
+                    <div class="pos-toolbar__option">
                         <el-checkbox
-                            class="mt-1 mb-1 font-weight-bold"
+                            class="font-weight-bold"
                             v-model="electronic_scale_barcode"
                         >
                             Balanza electrónica
@@ -63,18 +61,18 @@
                         </el-tooltip>
                         </el-checkbox>
                     </div>
-                    <div class="col-md-4">
+                    <div class="pos-toolbar__option">
                         <el-checkbox
-                            class="mt-1 font-weight-bold"
+                            class="font-weight-bold"
                             v-model="barcode_stop_presentation"
                             >Seleccionar listado de precio</el-checkbox
                         >
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 pe-0">
-                <div class="d-flex justify-content-center h-100 align-items-center">
-                    <div v-if="!configuration.enable_list_product" class="col-6" style="padding-top: 2.5px;">
+            <div class="pos-toolbar__actions">
+                <div class="pos-toolbar__actions-inner">
+                    <div v-if="!configuration.enable_list_product" class="pos-toolbar__price">
                         <el-select
                             v-model="selected_option_price"
                             @change="onPriceOptionChange"
@@ -88,7 +86,7 @@
                             ></el-option>
                         </el-select>
                     </div>
-                    <div class="col-6">
+                    <div class="pos-toolbar__views">
                         <el-button-group class="d-flex">
                             <el-tooltip
                                 class="item"
@@ -99,9 +97,9 @@
                                 <el-button
                                     type="button"
                                     @click="back()"
-                                    class="btn btn-custom btn-sm  mt-2 me-2 me-sm-0"
+                                    class="btn btn-custom btn-sm me-2 me-sm-0"
                                 >
-                                    <i class="fa fa-border-all"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /></svg>
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip
@@ -114,9 +112,9 @@
                                     type="button"
                                     :disabled="place == 'cat2'"
                                     @click="setView('cat2')"
-                                    class="btn btn-custom btn-sm  mt-2 me-2 me-sm-0"
+                                    class="btn btn-custom btn-sm me-2 me-sm-0"
                                 >
-                                    <i class="fa fa-bars"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M4 14m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v2a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /></svg>
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip
@@ -129,9 +127,9 @@
                                     type="button"
                                     :disabled="place == 'cat3'"
                                     @click="setView('cat3')"
-                                    class="btn btn-custom btn-sm  mt-2 me-2 me-sm-0"
+                                    class="btn btn-custom btn-sm me-2 me-sm-0"
                                 >
-                                    <i class="fas fa-list-ul"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" /><path d="M3 10h18" /><path d="M10 3v18" /></svg>
                                 </el-button>
                             </el-tooltip>
                             <el-tooltip
@@ -144,18 +142,18 @@
                                     type="button"
                                     :disabled="place == 'cat'"
                                     @click="back()"
-                                    class="btn btn-custom btn-sm  mt-2 me-2 me-sm-0"
+                                    class="btn btn-custom btn-sm me-2 me-sm-0"
                                 >
-                                    <i class="fa fa-undo"></i>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 14l-4 -4l4 -4" /><path d="M5 10h11a4 4 0 1 1 0 8h-1" /></svg>
                                 </el-button>
                             </el-tooltip>
                         </el-button-group>
                     </div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="pull-right h-100 d-flex align-items-center" v-if="currency_types.length > 1">
-                    <p class="pe-3 exchange-currency m-0">
+            <div class="pos-toolbar__currency" v-if="currency_types.length > 1">
+                <div class="h-100 d-flex align-items-center">
+                    <p class="exchange-currency m-0">
                         T.C.
                         <span>S/ {{ form.exchange_rate_sale }}</span> Cambiar
                         Moneda
@@ -196,14 +194,14 @@
                         @input="searchItems"
                         @keyup.native="keyupTabCustomer"
                         @keyup.enter.native="keyupEnterAddItem"
-                        class="m-bottom input-search-pos mt-0"
+                        class="m-bottom input-search-pos mt-0 pos-m-search"
                         ref="ref_search_items"
                     >
                         <template v-if="validteCreateProduct">
                             <el-button
                                 slot="append"
                                 @click.prevent="showDialogNewItem = true"
-                                class="btn-add-product-pos"
+                                class="btn-add-product-pos pos-m-new-item"
                                 >Nuevo Producto</el-button
                             >
                         </template>
@@ -223,7 +221,7 @@
                         @change="searchItemsBarcode"
                         @keyup.native="keyupTabCustomer"
                         ref="ref_search_items"
-                        class="m-bottom input-search-pos mt-0"
+                        class="m-bottom input-search-pos mt-0 pos-m-search"
                         @focus="searchFromBarcode = true"
                         @blur="searchFromBarcode = false"
                     >
@@ -231,6 +229,7 @@
                             <el-button
                                 slot="append"
                                 @click.prevent="showDialogNewItem = true"
+                                class="pos-m-new-item"
                                 >Nuevo Producto</el-button
                             >
                         </template>
@@ -278,10 +277,33 @@
                 >
                     <template v-for="(item, index) in items">
                         <div :key="index">
-                            <section class="card product-item">
+                            <section
+                                class="card product-item"
+                                :class="{ 'pos-m-in-cart': cartQty(item) > 0 }"
+                            >
+                                <div
+                                    v-if="cartQty(item) > 0"
+                                    class="pos-m-card-qty"
+                                    :class="{
+                                        'is-busy': card_busy_id === item.item_id,
+                                        'is-flash': card_flash_id === item.item_id
+                                    }"
+                                >
+                                    <button
+                                        type="button"
+                                        class="pos-m-card-qty__btn"
+                                        @click.stop="cardRemoveItem(item)"
+                                    >&minus;</button>
+                                    <span class="pos-m-card-qty__num">{{ cartQtyLabel(item) }}</span>
+                                    <button
+                                        type="button"
+                                        class="pos-m-card-qty__btn"
+                                        @click.stop="cardAddItem(item, index)"
+                                    >+</button>
+                                </div>
                                 <div
                                     class="card-body pointer px-2 pt-2"
-                                    @click="clickAddItem(item, index)"
+                                    @click="cardAddItem(item, index)"
                                 >
                                     <!-- <p
                                         class="font-weight-semibold mb-0"
@@ -298,37 +320,33 @@
                                     >
                                         {{ item.description }}
                                     </p> -->
-                                    <img
-                                        :src="item.image_url"
-                                        class="img-thumbail img-custom"
-                                    />
-                                    <p
-                                        class="text-muted mb-0 "
-                                        style="display: flex; justify-content: space-between; align-items: center;"
-                                    >
-                                        <small class="text-primary" style="width: 45%;">{{
-                                            item.internal_id
-                                        }}</small>
+                                    <div class="pos-card-media">
+                                        <img
+                                            :src="item.image_url"
+                                            class="img-thumbail img-custom"
+                                        />
                                         <el-tooltip
-                                            class="item text-center"
+                                            v-if="item.sets.length > 0"
+                                            class="item"
                                             effect="dark"
                                             :content="
                                                 item.sets.flat().join(',\n')
                                             "
                                             placement="bottom"
-                                            style="width: 10%;"
                                         >
-                                            <i
-                                                v-if="item.sets.length > 0"
-                                                class="fas fa-box-open ms-2"
-                                                style="cursor: pointer;"
-                                            >
-                                            </i>
+                                            <span class="pos-card-media__badge"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M2 13.5v5.5l5 3" /><path d="M7 16.545l5 -3.03" /><path d="M17 16.5l-5 -3l5 -3l5 3v5.5l-5 3z" /><path d="M12 19l5 3" /><path d="M17 16.5l5 -3" /><path d="M12 13.5v-5.5l-5 -3l5 -3l5 3v5.5" /><path d="M7 5.03v5.455" /><path d="M12 8l5 -3" /></svg></span>
                                         </el-tooltip>
+                                    </div>
+                                    <p
+                                        class="text-muted mb-0 py-1"
+                                        style="display: flex; justify-content: space-between; align-items: center;"
+                                    >
+                                        <small class="text-primary">{{
+                                            item.internal_id
+                                        }}</small>
 
                                         <small
                                             class="measuring-unit text-end"
-                                            style="width: 45%;"
                                             >
                                             <el-tag v-if="item.variations_count > 0" size="mini" class="me-1">
                                                 {{ item.variations_count }} var.
@@ -377,27 +395,31 @@
                                                         edit_unit_price
                                                 "
                                                 type="button"
-                                                class="btn btn-xs btn-primary-pos edit-price"
+                                                class="pos-card-action pos-card-action--edit edit-price"
                                                 @click="
                                                     clickOpenInputEditUP(index)
                                                 "
                                             >
-                                                <i class="fas fa-pen"></i>
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /></svg>
                                             </button>
                                         </h5>
                                     </template>
                                     <template v-else>
-                                        <el-input
-                                            min="0"
-                                            v-model="item.edit_sale_unit_price"
-                                            class="mt-1 mb-2"
-                                            size="mini"
-                                            @focus="$event.target.select()"
-                                        >                                            
-                                        </el-input>
-                                        <div class="btn-edit-price-container d-flex">
+                                        <div class="pos-price-edit">
+                                            <el-input
+                                                min="0"
+                                                inputmode="decimal"
+                                                v-model="item.edit_sale_unit_price"
+                                                class="pos-price-edit__input"
+                                                size="mini"
+                                                @focus="valueInputSelect"
+                                                @click.native="valueInputSelect"
+                                            >
+                                            </el-input>
                                             <button
-                                            class="btn btn-primary d-flex justify-content-center align-items-center p-0"
+                                                type="button"
+                                                class="pos-price-edit__btn is-confirm"
+                                                title="Guardar precio"
                                                 @click="
                                                     clickEditUnitPriceItem(
                                                         index
@@ -407,7 +429,9 @@
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg>
                                             </button>
                                             <button
-                                                class="btn second-buton btn-close-pos d-flex justify-content-center align-items-center p-0"
+                                                type="button"
+                                                class="pos-price-edit__btn is-cancel"
+                                                title="Cancelar"
                                                 @click="
                                                     clickCancelUnitPriceItem(
                                                         index
@@ -464,14 +488,14 @@
                                                 <button
                                                     style="width:100%"
                                                     type="button"
-                                                    class="btn btn-xs btn-primary-pos"
+                                                    class="pos-card-action"
                                                     @click="
                                                         clickWarehouseDetail(
                                                             item
                                                         )
                                                     "
                                                 >
-                                                    <i class="fa fa-box"></i>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3l8 4.5l0 9l-8 4.5l-8 -4.5l0 -9l8 -4.5" /><path d="M12 12l8 -4.5" /><path d="M12 12l0 9" /><path d="M12 12l-8 -4.5" /><path d="M16 5.25l-8 4.5" /></svg>
                                                 </button>
                                             </el-tooltip>
                                         </el-col>
@@ -488,14 +512,14 @@
                                                 <button
                                                     type="button"
                                                     style="width:100%;"
-                                                    class="btn btn-xs btn-primary-pos"
+                                                    class="pos-card-action"
                                                     @click="
                                                         clickHistorySales(
                                                             item.item_id
                                                         )
                                                     "
                                                 >
-                                                    <i class="fa fa-list"></i>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 8l0 4l2 2" /><path d="M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5" /></svg>
                                                 </button>
                                             </el-tooltip>
                                         </el-col>
@@ -512,26 +536,27 @@
                                                 <button
                                                     type="button"
                                                     style="width:100%"
-                                                    class="btn btn-xs btn-primary-pos"
+                                                    class="pos-card-action"
                                                     @click="
                                                         clickHistoryPurchases(
                                                             item.item_id
                                                         )
                                                     "
                                                 >
-                                                    <i class="fas fa-clock"></i>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
                                                 </button>
                                             </el-tooltip>
                                         </el-col>
                                         <el-col :span="6">
                                             <el-tooltip
+                                                v-if="priceOptionsCount(item) > 0"
                                                 class="item"
                                                 effect="dark"
                                                 content="Ver precios disponibles"
                                                 placement="bottom-end"
                                             >
                                                 <el-popover
-                                                    placement="top"                                                    
+                                                    placement="top"
                                                     width="370"
                                                     trigger="click"
                                                 >
@@ -645,7 +670,7 @@
 
 
                                                         </tbody>
-                                                    </table>                                                    
+                                                    </table>
                                                     <!-- <el-table
                                                         v-if="item.item_unit_types"
                                                         :data="item.item_unit_types"
@@ -712,13 +737,22 @@
                                                         slot="reference"
                                                         type="button"
                                                         style="width:100%"
-                                                        class="btn btn-xs btn-primary-pos"
+                                                        class="pos-card-action"
                                                     >
-                                                        <i
-                                                            class="fa fa-tag"
-                                                        ></i>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
                                                     </button>
                                                 </el-popover>
+                                            </el-tooltip>
+                                            <el-tooltip
+                                                v-else
+                                                class="item"
+                                                effect="dark"
+                                                content="Sin lista de precios"
+                                                placement="bottom-end"
+                                            >
+                                                <span class="pos-card-action is-disabled" style="width:100%">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
+                                                </span>
                                             </el-tooltip>
                                         </el-col>
                                     </el-row>
@@ -731,6 +765,7 @@
                 <table-items
                     ref="table_items"
                     @clickAddItem="clickAddItem"
+                    @escape="onTableEscape"
                     @clickWarehouseDetail="clickWarehouseDetail"
                     @clickHistorySales="clickHistorySales"
                     @clickHistoryPurchases="clickHistoryPurchases"
@@ -754,100 +789,161 @@
                     </div>
                 </div>
             </div>
-            <div
-                class="col-lg-4 col-md-6 bg-white m-0 p-0"
-                style="height: calc(100vh - 110px)"
+            <aside
+                class="col-lg-4 col-md-6 pos-cart"
+                :class="{ 'pos-m-cart-open': show_cart_mobile }"
             >
-                <div class="h-60" style="overflow-y: auto">
-                    <div class="row py-1 m-0 p-0">
-                        <div class="col-12">
-                            <table
-                                class="table table-sm table-borderless mb-0 pos-list-items"
-                            >
-                                <tr
-                                    v-for="(item, index) in form.items"
-                                    :key="index"
-                                >
-                                    <td>
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <p class="item-description mb-0">
-                                                {{ item.item.description }}
-                                                <template v-if="item.presentation &&
-                                                    item.presentation.hasOwnProperty(
-                                                        'description'
-                                                    )
-                                                 " >
-                                                 {{ item.item.presentation
-                                                              .description
-                                                  }}
-                                                </template>
-                                            </p>
-                                            <a
-                                                class="btn btn-sm btn-default text-danger btn-trash-product-pos"
-                                                @click="clickDeleteItem(item)"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
-                                            </a>
-                                        </div>
-                                        <div class="d-flex justify-content-between align-items-center mt-1">
-                                            <div>
-                                                <small>{{ item.unit_type_id }}</small>
-                                                <small
-                                                    v-html="nameSets(item.item_id)"
-                                                ></small>
-                                            </div>
-                                            <div class="d-flex align-items-center justify-content-end gap-4">
-                                                <div :style="{ width: Math.min(120, Math.max(50, String(item.item.aux_quantity == null ? '' : item.item.aux_quantity).length * 9 + 24)) + 'px' }">
-                                                    <el-input
-                                                        v-model="item.item.aux_quantity"
-                                                        @input="
-                                                                clickAddItem(
-                                                                    item,
-                                                                    index,
-                                                                    true,
-                                                                )
-                                                        "
-                                                        @keyup.enter.native="
-                                                            keyupEnterQuantity
-                                                        "
-                                                    ></el-input>
-                                                </div>
-                                                <div class="font-weight-semibold text-end">
-                                                    <template v-if="edit_unit_price">
-                                                        <span class="d-flex align-items-center">
-                                                            <span class="me-2">
-                                                                {{ currency_type.symbol }}
-                                                            </span>
-                                                            <el-input
-                                                                v-model="item.total"
-                                                                size="mini"
-                                                                :style="{ width: Math.min(120, Math.max(70, String(item.total == null ? '' : item.total).length * 9 + 24)) + 'px' }"
-                                                                @blur="changeRowTotal(index)"
-                                                                :readonly="!edit_unit_price && !item.item.calculate_quantity"
-                                                                @focus="$event.target.select()"
-                                                            ></el-input>
-                                                        </span>
-                                                    </template>
-                                                    <template v-else>
-                                                        {{ currency_type.symbol }} {{ item.total }}
-                                                    </template>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
+                <div class="pos-cart__body">
+                    <div v-if="form.items.length === 0" class="pos-cart__empty">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17h-11v-14h-2" /><path d="M6 5l14 1l-1 7h-13" /></svg>
+                        <p class="pos-cart__empty-title">El carrito está vacío</p>
+                        <p class="pos-cart__empty-text">
+                            Busca o selecciona un producto para agregarlo a la venta.
+                        </p>
                     </div>
+
+                    <ul v-else class="pos-cart__list">
+                        <li
+                            v-for="(item, index) in form.items"
+                            :key="index"
+                            class="pos-cart-item"
+                        >
+                            <div class="pos-cart-item__top">
+                                <p class="pos-cart-item__name" :title="item.item.description">
+                                    {{ item.item.description }}
+                                    <template v-if="item.presentation &&
+                                        item.presentation.hasOwnProperty(
+                                            'description'
+                                        )
+                                     " >
+                                     {{ item.item.presentation
+                                                  .description
+                                      }}
+                                    </template>
+                                </p>
+                                <button
+                                    type="button"
+                                    class="pos-cart-item__remove"
+                                    title="Quitar producto"
+                                    @click="clickDeleteItem(item, index)"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                </button>
+                            </div>
+
+                            <div class="pos-cart-item__meta">
+                                <span class="pos-cart-item__unit">{{ item.unit_type_id }}</span>
+                                <span class="pos-cart-item__unit-price">
+                                    {{ currency_type.symbol }} {{ rowUnitPrice(item) }} c/u
+                                </span>
+                                <small
+                                    class="pos-cart-item__sets"
+                                    v-html="nameSets(item.item_id)"
+                                ></small>
+                            </div>
+
+                            <div class="pos-cart-item__bottom">
+                                <div class="pos-qty">
+                                    <button
+                                        type="button"
+                                        class="pos-qty__btn"
+                                        title="Quitar una unidad"
+                                        @click="changeCartQuantity(item, index, -1)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
+                                    </button>
+                                    <el-input
+                                        class="pos-qty__input"
+                                        inputmode="decimal"
+                                        v-model="item.item.aux_quantity"
+                                        @focus="valueInputSelect"
+                                        @click.native="valueInputSelect"
+                                        @input="
+                                                clickAddItem(
+                                                    item,
+                                                    index,
+                                                    true,
+                                                )
+                                        "
+                                        @keyup.enter.native="
+                                            keyupEnterQuantity
+                                        "
+                                    ></el-input>
+                                    <button
+                                        type="button"
+                                        class="pos-qty__btn"
+                                        title="Agregar una unidad"
+                                        @click="changeCartQuantity(item, index, 1)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                                    </button>
+                                </div>
+
+                                <div class="pos-cart-item__total">
+                                    <template v-if="edit_unit_price">
+                                        <span class="pos-cart-item__total-edit">
+                                            <span class="pos-cart-item__currency">
+                                                {{ currency_type.symbol }}
+                                            </span>
+                                            <el-input
+                                                v-model="item.total"
+                                                size="mini"
+                                                inputmode="decimal"
+                                                @focus="valueInputSelect"
+                                                @click.native="valueInputSelect"
+                                                @blur="changeRowTotal(index)"
+                                                :readonly="!edit_unit_price && !item.item.calculate_quantity"
+                                            ></el-input>
+                                        </span>
+                                    </template>
+                                    <template v-else>
+                                        <span class="pos-cart-item__total-text">
+                                            {{ currency_type.symbol }} {{ rowTotal(item) }}
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
                 </div>
-                <div class="h-40 bg-light border-top-dashed" style="overflow-y: auto">
-                    <div class="row py-3 border-bottom m-0 p-0">
-                        <div class="col-10">
+
+                <footer class="pos-cart__footer" v-if="form.items.length > 0">
+                    <div class="pos-cart__footer-top">
+                        <span class="pos-cart__count">
+                            {{ form.items.length }}
+                            {{ form.items.length === 1 ? 'producto' : 'productos' }}
+                        </span>
+                        <button
+                            type="button"
+                            class="pos-m-cart-toggle"
+                            @click="show_cart_mobile = !show_cart_mobile"
+                        >
+                            {{ show_cart_mobile ? 'Ocultar carrito' : 'Ver carrito' }}
+                            <span class="pos-m-cart-toggle__badge">
+                                {{ form.items.length }}
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            class="pos-cart__clear"
+                            @click="clickClearCart"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                            Vaciar carrito
+                        </button>
+                    </div>
+
+                    <div class="pos-cart__customer"
+                         :class="{ 'is-required': !form.customer_id }">
+                        <div class="pos-cart__customer-row">
                             <el-select
                                 ref="select_person"
                                 v-model="form.customer_id"
                                 filterable
-                                placeholder="Cliente"
+                                clearable
+                                placeholder="Seleccione un cliente"
+                                popper-class="pos-customer-dropdown"
+                                @visible-change="visibleChangeCustomer"
                                 @change="changeCustomer"
                                 @keyup.native="keyupCustomer"
                                 @keyup.enter.native="keyupEnterCustomer"
@@ -859,155 +955,96 @@
                                     :key="option.id"
                                     :label="option.description"
                                     :value="option.id"
-                                ></el-option>
+                                >
+                                    <span class="pos-customer-option__text">
+                                        <span class="pos-customer-option__track">
+                                            <span class="pos-customer-option__chunk">{{ option.description }}</span><span
+                                                class="pos-customer-option__chunk pos-customer-option__chunk--clone"
+                                                aria-hidden="true"
+                                            >{{ option.description }}</span>
+                                        </span>
+                                    </span>
+                                </el-option>
                             </el-select>
-                        </div>
-                        <div class="col-2">
-                            <div class="btn-group h-100 w-100" role="group">
-                                <a
-                                    class="btn btn-sm btn-default d-flex align-items-center justify-content-center w-100"
+                            <el-tooltip
+                                class="item"
+                                effect="dark"
+                                content="Registrar nuevo cliente"
+                                placement="top"
+                            >
+                                <button
+                                    type="button"
+                                    class="pos-cart__icon-btn"
                                     @click.prevent="showDialogNewPerson = true"
                                 >
                                     <i class="fas fa-plus"></i>
-                                </a>
-                            </div>
+                                </button>
+                            </el-tooltip>
                         </div>
                     </div>
-                    <div
-                        class="row bg-light m-0 p-0 d-flex align-items-right pt-2"
-                    >
-                        <div class="col-md-12">
-                            <table class="col-md-12" style="color:#021a6f">
-                                <tr
-                                    v-if="form.total_exonerated > 0"
-                                    class="m-0"
-                                >
-                                    <td>OP.EXONERADAS</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_exonerated }}
-                                    </td>
-                                </tr>
-                                <tr v-if="form.total_free > 0" class="m-0">
-                                    <td>OP.GRATUITAS</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_free }}
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-if="form.total_unaffected > 0"
-                                    class="m-0"
-                                >
-                                    <td>OP.INAFECTAS</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_unaffected }}
-                                    </td>
-                                </tr>
-                                <tr v-if="form.total_taxed > 0 && !isNrus" class="m-0">
-                                    <td>OP.GRAVADA</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_taxed }}
-                                    </td>
-                                </tr>
-                                <tr v-if="form.total_igv > 0 && !isNrus" class="m-0">
-                                    <td>IGV</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_igv }}
-                                    </td>
-                                </tr>
-                                <template v-if="form.has_retention && !isNrus">
-                                    <tr v-if="form.retention && form.retention.amount > 0" class="m-0">
-                                        <td>M. RETENCIÓN
-                                                    ({{
-                                                        configuration.igv_retention_percentage
-                                                                    }}%):
-                                            </td>
-                                        <td class="text-end font-weight-semibold">
-                                            {{ currency_type.symbol }}
-                                            {{ form.retention.amount }}
-                                        </td>
-                                    </tr>
-                                </template>
-                                <tr v-if="form.total_isc > 0 && !isNrus" class="m-0">
-                                    <td>ISC</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_isc }}
-                                    </td>
-                                </tr>
-                                <tr
-                                    v-if="form.total_plastic_bag_taxes > 0"
-                                    class="m-0"
-                                >
-                                    <td>ICBPER</td>
-                                    <td class="text-end font-weight-semibold">
-                                        {{ currency_type.symbol }}
-                                        {{ form.total_plastic_bag_taxes }}
-                                    </td>
-                                </tr>
-                            </table>
+
+                    <div class="pos-cart__totals">
+                        <div v-if="form.total_exonerated > 0" class="pos-cart__total-row">
+                            <span>Op. exoneradas</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_exonerated) }}</span>
                         </div>
-
-                        <!-- <div class="col-12 text-right px-0" v-if="form.total_taxed > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.GRAVADA: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_taxed }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_free > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.GRATUITAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_free }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_unaffected > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.INAFECTAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_unaffected }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_exonerated > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">OP.EXONERADAS: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{ form.total_exonerated }}</span>
-              </h4>
-            </div>
-
-            <div class="col-12 text-right px-0" v-if="form.total_igv > 0">
-              <h4 class="font-weight-semibold  m-0">
-                <span class="font-weight-semibold">IGV: </span>
-                <span class="text-blue">{{currency_type.symbol}} {{form.total_igv}}</span>
-              </h4>
-            </div> -->
-                    </div>
-
-                    <div class="m-2 ">
-                        <div
-                            class="btn py-3 col-12"
-                            @click="clickPayment"
-                            v-bind:class="[
-                                form.total > 0
-                                    ? 'btn-warning'
-                                    : 'bg-dark text-white'
-                            ]"
-                        >
-                            <span>PAGAR </span>
-                            <b
-                                >{{ currency_type.symbol }}
-                                {{ form.total.toFixed(2) }}</b
+                        <div v-if="form.total_free > 0" class="pos-cart__total-row">
+                            <span>Op. gratuitas</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_free) }}</span>
+                        </div>
+                        <div v-if="form.total_unaffected > 0" class="pos-cart__total-row">
+                            <span>Op. inafectas</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_unaffected) }}</span>
+                        </div>
+                        <div v-if="form.total_taxed > 0 && !isNrus" class="pos-cart__total-row">
+                            <span>Op. gravada</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_taxed) }}</span>
+                        </div>
+                        <div v-if="form.total_igv > 0 && !isNrus" class="pos-cart__total-row">
+                            <span>IGV</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_igv) }}</span>
+                        </div>
+                        <template v-if="form.has_retention && !isNrus">
+                            <div
+                                v-if="form.retention && form.retention.amount > 0"
+                                class="pos-cart__total-row"
                             >
-                            <i class="fas fa-arrow-right ms-2"></i>
+                                <span>M. retención ({{ configuration.igv_retention_percentage }}%)</span>
+                                <span>{{ currency_type.symbol }} {{ money(form.retention.amount) }}</span>
+                            </div>
+                        </template>
+                        <div v-if="form.total_isc > 0 && !isNrus" class="pos-cart__total-row">
+                            <span>ISC</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_isc) }}</span>
                         </div>
+                        <div v-if="form.total_plastic_bag_taxes > 0" class="pos-cart__total-row">
+                            <span>ICBPER</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total_plastic_bag_taxes) }}</span>
+                        </div>
+
+                        <div class="pos-cart__total-row pos-cart__total-row--grand">
+                            <span>TOTAL</span>
+                            <span>{{ currency_type.symbol }} {{ money(form.total) }}</span>
+                        </div>
+
                     </div>
-                </div>
-            </div>
+
+                    <button
+                        type="button"
+                        class="pos-cart__pay"
+                        :class="{ 'is-disabled': !canPay }"
+                        :disabled="!canPay"
+                        :title="!form.customer_id ? 'Seleccione un cliente para cobrar' : ''"
+                        @click="clickPayment"
+                    >
+                        <span class="pos-cart__pay-label">PAGAR</span>
+                        <span class="pos-cart__pay-amount">
+                            {{ currency_type.symbol }} {{ money(form.total) }}
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /><path d="M13 18l6 -6" /><path d="M13 6l6 6" /></svg>
+                    </button>
+                </footer>
+            </aside>
 
             <person-form
                 :showDialog.sync="showDialogNewPerson"
@@ -1142,6 +1179,80 @@
     max-width: 80% !important;
     margin-right: 1% !important;
 }
+.el-select-dropdown.pos-customer-dropdown {
+    max-width: none !important;
+    margin-right: 0 !important;
+    box-sizing: border-box;
+}
+.pos-customer-dropdown .el-scrollbar {
+    overflow: visible;
+}
+
+.pos-customer-dropdown .el-select-dropdown__wrap,
+.pos-customer-dropdown .el-scrollbar__wrap {
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    max-height: 274px;
+    scrollbar-width: thin;
+}
+
+.pos-customer-dropdown .el-scrollbar__bar {
+    display: none;
+}
+
+.pos-customer-dropdown .el-select-dropdown__list {
+    box-sizing: border-box;
+}
+
+.pos-customer-dropdown .pos-customer-option__text {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.pos-customer-dropdown .pos-customer-option__track {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.pos-customer-dropdown .pos-customer-option__chunk--clone {
+    display: none;
+}
+.pos-customer-dropdown .pos-customer-option__text.is-marquee {
+    text-overflow: clip;
+}
+
+.pos-customer-dropdown .pos-customer-option__text.is-marquee .pos-customer-option__chunk--clone {
+    display: inline;
+    padding-left: var(--marquee-gap, 40px);
+}
+
+.pos-customer-dropdown .pos-customer-option__text.is-marquee .pos-customer-option__track {
+    will-change: transform;
+    animation: pos-customer-option-marquee var(--marquee-duration, 6s) linear infinite;
+}
+
+@keyframes pos-customer-option-marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(calc(-1 * var(--marquee-shift, 0px)));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pos-customer-dropdown .pos-customer-option__text.is-marquee .pos-customer-option__track {
+        animation: none;
+    }
+    .pos-customer-dropdown .pos-customer-option__text.is-marquee .pos-customer-option__chunk--clone {
+        display: none;
+    }
+}
 
 .el-input-group__append {
     padding: 0 10px !important;
@@ -1172,6 +1283,90 @@
     grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
     gap: 0.25rem;
 }
+.pos-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto max-content;
+    align-items: stretch;
+}
+
+.pos-toolbar__scanner {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    column-gap: 24px;
+    padding-right: 20px;
+}
+
+.pos-toolbar__scanner-switch,
+.pos-toolbar__option,
+.pos-toolbar__currency {
+    white-space: nowrap;
+}
+
+.bar-code-checkbox {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: 18px;
+}
+
+.pos-toolbar__option {
+    min-width: 0;
+}
+
+.pos-toolbar .el-checkbox__label {
+    max-width: none;
+}
+
+.pos-toolbar__actions {
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    border-left: 1px solid rgba(47, 112, 86, 0.14);
+}
+
+.pos-toolbar__actions-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pos-toolbar__price {
+    width: 205px;
+}
+
+.pos-toolbar__views .el-button-group {
+    gap: 6px;
+}
+
+.pos-toolbar__currency {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 16px 0 18px;
+    border-left: 1px solid rgba(47, 112, 86, 0.14);
+}
+
+.pos-toolbar__currency .exchange-currency {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+@media only screen and (max-width: 1450px) and (min-width: 896px) {
+    .pos-toolbar__scanner {
+        grid-template-columns: minmax(0, 1fr);
+        align-content: center;
+        row-gap: 3px;
+    }
+
+    .bar-code-checkbox {
+        justify-content: flex-start;
+    }
+}
+
 @media only screen and (max-width: 1200px) {
     .bar-code-checkbox{
         display: flex;
@@ -1193,16 +1388,17 @@
         margin-top: 182px !important;
     }
     .row.page-header {
+        display: flex;
         flex-direction: column;
         align-items: stretch;
         gap: 15px;
     }
-    .row.page-header > div:first-child {
+    .pos-toolbar__scanner {
         order: 1;
         text-align: left;
         padding-left: 0;
     }
-    .row.page-header > div:nth-child(2) {
+    .pos-toolbar__actions {
         order: 2;
         text-align: center;
         padding-right: 0;
@@ -1210,13 +1406,13 @@
         align-items: center;
         justify-content: center;
     }
-    .row.page-header > div:last-child {
+    .pos-toolbar__currency {
         order: 3;
         text-align: right;
     }
-    .row.page-header .col-md-5,
-    .row.page-header .col-md-3,
-    .row.page-header .col-md-4 {
+    .pos-toolbar__scanner,
+    .pos-toolbar__actions,
+    .pos-toolbar__currency {
         width: 100%;
         max-width: 100%;
         flex: 0 0 100%;
@@ -1302,6 +1498,14 @@ export default {
     data() {
         return {
             place: "cat",
+            // Solo celular: despliega la lista del carrito dentro de la
+            // barra fija inferior (en escritorio la lista siempre se ve)
+            show_cart_mobile: false,
+            // Producto cuya cantidad se está actualizando (la validación de
+            // stock es una petición) y el que acaba de cambiar, para avisar
+            // al usuario sin que tenga que mirar el número fijamente
+            card_busy_id: null,
+            card_flash_id: null,
             showDialogItemUnitTypes: false,
             history_item_id: null,
             search_item_by_barcode: false,
@@ -1395,7 +1599,7 @@ export default {
 
         await this.selectDefaultCustomer();
         await this.enabledSearchItemByBarcode();
-        this.enabledCategoriesProductsView();
+        await this.restoreViewPreference();
     },
     computed: {
         layout_mode() {
@@ -1413,6 +1617,11 @@ export default {
                 default:
                     return "default";
             }
+        },
+        // No se puede cobrar sin cliente: el botón queda inhabilitado hasta
+        // que se seleccione uno
+        canPay() {
+            return this.form.total > 0 && !!this.form.customer_id;
         },
         ...mapState(["config"]),
         isNrus: function() {
@@ -1499,9 +1708,9 @@ export default {
                     validated = true
                     newTotal = item.item.sale_unit_price_original
                 }
-                    
+
             }
-            
+
             if (item.item.calculate_quantity) {
                 this.blurCalculateQuantity(index);
                 return;
@@ -1533,9 +1742,9 @@ export default {
                 return this.$message.error(
                     "El Precio Unitario debe ser mayor o igual al costo de compra"
                 );
-                
+
             }
-            
+
 
         },
         ...mapActions(["loadConfiguration"]),
@@ -1595,6 +1804,17 @@ export default {
                 this.setView("cat2");
             }
         },
+        // La vista elegida por el usuario persiste en el navegador
+        // (recargas, nuevas ventas, salir y volver a entrar); si no hay
+        // preferencia guardada se aplica la vista de la configuración
+        async restoreViewPreference() {
+            const saved = localStorage.getItem("pos_view_preference");
+            if (saved === "cat2" || saved === "cat3") {
+                await this.setView(saved);
+            } else if (saved !== "cat") {
+                this.enabledCategoriesProductsView();
+            }
+        },
         setFocusInInputSearch() {
             this.$nextTick(() => {
                 this.initFocus();
@@ -1610,13 +1830,18 @@ export default {
             this.setView("cat3");
         },
         initFocus() {
+            // En celular no se devuelve el foco al buscador: abre el teclado
+            // en pantalla y el navegador hace scroll hasta arriba tras cada
+            // producto agregado
+            if (window.matchMedia("(max-width: 767.98px)").matches) return;
             this.$refs.ref_search_items.$el
                 .getElementsByTagName("input")[0]
                 .focus();
         },
         keyupTabCustomer(e) {
             // console.log(e.keyCode)
-            if (e.keyCode === 9) {
+            // El selector de cliente sólo existe cuando el carrito tiene productos.
+            if (e.keyCode === 9 && this.$refs.select_person) {
                 this.$refs.select_person.$el
                     .getElementsByTagName("input")[0]
                     .focus();
@@ -1777,7 +2002,7 @@ export default {
                 index
             ].edit_sale_unit_price;
             let product = this.items[index];
-            
+
             if (this.config.condition_sale_purchase_price_to_item) {
 
                 if (edit_sale_unit_price < product.purchase_unit_price) {
@@ -1875,10 +2100,58 @@ export default {
                 }
             }
         },
+        visibleChangeCustomer(visible) {
+            if (visible) {
+                this.$nextTick(() =>
+                    window.requestAnimationFrame(this.setupCustomerMarquee)
+                );
+            }
+        },
+        setupCustomerMarquee() {
+            const select = this.$refs.select_person;
+            const dropdown =
+                select && select.$refs.popper ? select.$refs.popper.$el : null;
+            if (!select || !dropdown) return;
+
+            const selectWidth = select.$el.getBoundingClientRect().width;
+            if (selectWidth) {
+                dropdown.style.width = `${selectWidth}px`;
+            }
+
+            const gap = 40;
+            const speed = 50; // px por segundo
+            const texts = dropdown.querySelectorAll(
+                ".pos-customer-option__text"
+            );
+
+            texts.forEach(text => {
+                const chunk = text.querySelector(".pos-customer-option__chunk");
+                if (!chunk) return;
+
+                text.classList.remove("is-marquee");
+
+                const available = text.clientWidth;
+                const full = chunk.getBoundingClientRect().width;
+                if (!available || full <= available + 1) return;
+
+                const shift = full + gap;
+                text.style.setProperty("--marquee-gap", `${gap}px`);
+                text.style.setProperty("--marquee-shift", `${shift}px`);
+                text.style.setProperty(
+                    "--marquee-duration",
+                    `${Math.max(2, shift / speed).toFixed(2)}s`
+                );
+                text.classList.add("is-marquee");
+            });
+        },
         keyupCustomer(e) {
             if (this.place == "cat3") {
                 return false;
             }
+
+            this.$nextTick(() =>
+                window.requestAnimationFrame(this.setupCustomerMarquee)
+            );
 
             if (e.key !== "Enter") {
                 this.input_person.number = this.$refs.select_person.$el.getElementsByTagName(
@@ -1948,10 +2221,17 @@ export default {
             let customer = _.find(this.all_customers, {
                 id: this.form.customer_id
             });
-            
+
+            // Sin cliente (selector limpiado o sin cliente por defecto) no hay
+            // nada que aplicar; si esto lanza, se corta el created() completo
+            if (!customer) {
+                this.customer = null;
+                return;
+            }
+
             this.customer = customer;
             this.form.has_retention = customer.is_agent_retention
-            
+
             this.validateCustomerRetention(customer.identity_document_type_id);
 
             if (this.configuration.default_document_type_80) {
@@ -2018,7 +2298,7 @@ export default {
             }
         },
         validateCustomerRetention(identity_document_type_id) {
-            
+
             if (identity_document_type_id != "6" || !this.form.has_retention) {
                 if (this.form.has_retention) {
                     this.form.has_retention = false;
@@ -2311,18 +2591,18 @@ export default {
                 return;
             }
 
-            let addingNotification = this.$notify({
-                title: "",
-                message: "Agregando...",
-                type: "info",
-                duration: 0
-            });
 
             let exchangeRateSale = this.form.exchange_rate_sale;
             let presentation = item.presentation;
             let exist_item = false;
 
-            if (this.selected_option_price && !input) {
+            // Al cambiar la cantidad desde el carrito, `item` ya es la fila que se
+            // está editando: se usa esa y no la primera coincidencia por producto
+            // (un mismo producto puede estar varias veces con precios distintos).
+            if (input && this.form.items[index] === item) {
+                exist_item = item;
+            }
+            else if (this.selected_option_price && !input) {
                 exist_item = _.filter(this.form.items, {
                     item_id: item.item_id,
                     unit_type_id: item.unit_type_id
@@ -2337,20 +2617,20 @@ export default {
                     price = Number(price_list) == 0 ? item.sale_unit_price : price_list
 
                 }
-                
+
                 exist_item = _.find(this.form.items, i => {
                     return i.item_id === item.item_id &&
                         i.unit_type_id === item.unit_type_id &&
-                        i.item.sale_unit_price == price 
+                        i.item.sale_unit_price == price
                 });
-                
+
             }
             else if (presentation === undefined) {
                 exist_item = _.find(this.form.items, {
                     item_id: item.item_id,
                     unit_type_id: item.unit_type_id
                 });
-            } 
+            }
             else {
                 // Se evalua si existe presentation de item
                 exist_item = _.find(this.form.items, {
@@ -2381,7 +2661,6 @@ export default {
                     if (!response.success) {
                         item.item.aux_quantity = item.quantity;
                         this.loading = false;
-                        addingNotification.close();
                         return this.$message.error(response.message);
                     }
 
@@ -2393,7 +2672,6 @@ export default {
                     );
                     if (!response.success) {
                         this.loading = false;
-                        addingNotification.close();
                         return this.$message.error(response.message);
                     }
 
@@ -2453,7 +2731,7 @@ export default {
                 this.row["unit_type_id"] = item.unit_type_id;
 
                 this.row.item.sale_unit_price_original = this.row.item.sale_unit_price
-                
+
                 // Preservar la presentation (calculateRowItem no la copia)
                 this.row.presentation = exist_item.presentation;
 
@@ -2465,7 +2743,6 @@ export default {
                 );
                 if (!response.success) {
                     this.loading = false;
-                    addingNotification.close();
                     return this.$message.error(response.message);
                 }
 
@@ -2534,14 +2811,15 @@ export default {
 
             // console.log("pos", this.row);
 
-            addingNotification.close();
 
-            this.$notify({
-                title: "",
-                message: "Producto añadido!",
-                type: "success",
-                duration: 1000
-            });
+            if (!input) {
+                this.$notify({
+                    title: "",
+                    message: "Producto añadido!",
+                    type: "success",
+                    duration: 1000
+                });
+            }
 
             this.cleanInput();
 
@@ -2568,13 +2846,147 @@ export default {
                 });
             return data;
         },
-        async clickDeleteItem(item) {
-            let index = this.form.items.findIndex(
-                row => row.item_id === item.item_id
+        // Cantidad total del producto en el carrito (suma todas sus filas)
+        cartQty(item) {
+            let total = 0;
+            for (const row of this.form.items) {
+                if (row.item_id === item.item_id) {
+                    total += parseFloat(row.quantity) || 0;
+                }
+            }
+            return total;
+        },
+        cartQtyLabel(item) {
+            return _.round(this.cartQty(item), 2);
+        },
+        // Quita una unidad desde la tarjeta del producto; al llegar a 1
+        // elimina la fila del carrito
+        async decrementCardItem(item) {
+            const index = this.form.items.findIndex(
+                r => r.item_id === item.item_id
             );
+            if (index < 0) return;
+
+            const row = this.form.items[index];
+            if (parseFloat(row.item.aux_quantity) <= 1) {
+                return await this.clickDeleteItem(row, index);
+            }
+            await this.changeCartQuantity(row, index, -1);
+        },
+        // Agregar/quitar desde la tarjeta: marca el indicador mientras se
+        // valida el stock y lo destaca al terminar, para que el cambio se
+        // note sin mirar el número
+        async cardAddItem(item, index) {
+            this.card_busy_id = item.item_id;
+            try {
+                await this.clickAddItem(item, index);
+            } finally {
+                this.endCardFeedback(item.item_id);
+            }
+        },
+        async cardRemoveItem(item) {
+            this.card_busy_id = item.item_id;
+            try {
+                await this.decrementCardItem(item);
+            } finally {
+                this.endCardFeedback(item.item_id);
+            }
+        },
+        endCardFeedback(item_id) {
+            if (this.card_busy_id === item_id) this.card_busy_id = null;
+            this.card_flash_id = item_id;
+            setTimeout(() => {
+                if (this.card_flash_id === item_id) this.card_flash_id = null;
+            }, 600);
+        },
+        async clickDeleteItem(item, row_index = null) {
+            let index =
+                row_index !== null && this.form.items[row_index] === item
+                    ? row_index
+                    : this.form.items.indexOf(item);
+
+            if (index < 0) {
+                index = this.form.items.findIndex(
+                    row => row.item_id === item.item_id
+                );
+            }
+
+            if (index < 0) return;
+
             this.form.items.splice(index, 1);
             this.calculateTotal();
             await this.setFormPosLocalStorage();
+        },
+        /**
+         * Formatea un importe para mostrarlo siempre con 2 decimales.
+         */
+        money(value) {
+            let amount = parseFloat(value);
+            if (isNaN(amount)) amount = 0;
+            return amount.toFixed(2);
+        },
+        /**
+         * Precio unitario (con IGV) de una fila del carrito.
+         */
+        rowUnitPrice(row) {
+            let unit_price = parseFloat(row.unit_price);
+
+            if (isNaN(unit_price)) {
+                const total = parseFloat(row.total);
+                const quantity = parseFloat(row.quantity);
+                unit_price =
+                    !isNaN(total) && !isNaN(quantity) && quantity > 0
+                        ? total / quantity
+                        : 0;
+            }
+
+            return _.round(unit_price, 2).toFixed(2);
+        },
+        /**
+         * Importe de una fila del carrito (modo solo lectura).
+         */
+        rowTotal(row) {
+            return this.money(row.total);
+        },
+        /**
+         * Aumenta/disminuye en una unidad la cantidad de una fila del carrito.
+         */
+        changeCartQuantity(item, index, delta) {
+            const current = parseFloat(item.item.aux_quantity);
+            let quantity = (isNaN(current) ? 0 : current) + delta;
+
+            if (quantity < 1) {
+                if (delta < 0) return;
+                quantity = 1;
+            }
+
+            item.item.aux_quantity = _.round(quantity, 4);
+            return this.clickAddItem(item, index, true);
+        },
+        /**
+         * Vacía el carrito conservando el cliente seleccionado.
+         */
+        async clickClearCart() {
+            if (this.form.items.length === 0) return;
+
+            try {
+                await this.$confirm(
+                    "Se quitarán todos los productos de la venta actual.",
+                    "¿Vaciar el carrito?",
+                    {
+                        confirmButtonText: "Sí, vaciar",
+                        cancelButtonText: "Cancelar",
+                        type: "warning"
+                    }
+                );
+            } catch (e) {
+                return;
+            }
+
+            this.form.items = [];
+            this.calculateTotal();
+            await this.setFormPosLocalStorage();
+            this.initFocus();
         },
         calculateTotal() {
             let total_discount = 0;
@@ -2772,7 +3184,7 @@ export default {
                 this.form.customer_id = this.establishment.customer_id;
             }
             this.changeCustomer();
-            
+
         },
         renderCategories(source) {
             const contex = this;
@@ -3030,6 +3442,15 @@ export default {
         cleanInput() {
             this.input_item = null;
         },
+        /**
+         * Esc en el listado de productos: limpia la búsqueda, recarga el
+         * listado completo y devuelve el foco al buscador.
+         */
+        async onTableEscape() {
+            this.cleanInput();
+            await this.getRecords();
+            this.initFocus();
+        },
         filterItems() {
             if (this.place === "cat3") {
                 this.items = this.all_items;
@@ -3095,15 +3516,28 @@ export default {
         back() {
             this.all_items = [];
             this.place = "cat";
+            localStorage.setItem("pos_view_preference", "cat");
             this.loading = false;
         },
         async setView(view) {
             this.place = view;
+            localStorage.setItem("pos_view_preference", view);
 
             if (view == "cat3") {
                 this.category_selected = "";
                 await this.getRecords();
-                this.$refs.table_items.reset();
+                // Al restaurar la vista en el arranque la tabla aún no montó
+                if (this.$refs.table_items) {
+                    this.$refs.table_items.reset();
+                }
+            }
+
+            // La vista de categorías y productos también debe cargar el
+            // listado: al venir de la vista de categorías (back() vacía
+            // all_items) quedaba en blanco hasta filtrar una categoría.
+            if (view == "cat2") {
+                this.category_selected = "";
+                await this.getRecords();
             }
 
             this.setFocusInInputSearch();
@@ -3161,7 +3595,7 @@ export default {
         },
         async ChangeSelectedPrice() {
             // recorrer items
-            
+
             this.items.forEach(row => {
                     // precio elegido manualmente en la fila: la lista de precios no lo sobrescribe
                     if (row.manual_price_selected) return;
@@ -3179,25 +3613,25 @@ export default {
                         if (!row.affected_list_price) { // funcion candado, para colocar el valor original ya que sale_unit_price se ve modificado al cambiar la lista de precios
                             row.original_sale_unit_price = original_price;
                         }
-                        
+
                         // Buscar y asignar el precio correspondiente usando 'id'
                         if(priceLabelId && first_list.prices && first_list.prices.length > 0) {
-                            
+
                             const priceObj = first_list.prices.find(p => p.price_label_id == priceLabelId);
-                            
+
                             if(priceObj && Number(priceObj.price) > 0) {
                                 row.sale_unit_price = parseFloat(priceObj.price);
                                 row.affected_list_price = true;
                             } else {
                                 row.sale_unit_price = row.original_sale_unit_price
                             }
-                            
+
                             // Si no se encuentra o es 0, mantener el sale_unit_price original
                         } else {
                             row.sale_unit_price = row.original_sale_unit_price
                         }
                     }
-                
+
             });
         },
             itemSetSaleUnitPrice(row)
@@ -3220,7 +3654,7 @@ export default {
                         // Buscar el precio correspondiente en el array prices usando 'id'
                         if(priceLabelId && first_list.prices && first_list.prices.length > 0) {
                             const priceObj = first_list.prices.find(p => p.price_label_id === priceLabelId);
-                            
+
                             if(priceObj) {
                                 return row.unit_price_value = parseFloat(priceObj.price).toFixed(2);
                             } else {
