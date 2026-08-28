@@ -12,6 +12,9 @@ import ElementUI from 'element-ui'
 import lang from 'element-ui/lib/locale/lang/es'
 import locale from 'element-ui/lib/locale'
 
+// Agrega remote-search (input con debounce) a el-input, antes de Vue.use(ElementUI)
+import './vendor/element-input-remote-search'
+
 import '../sass/element-ui.scss';
 import '../sass/pages/system-update.scss';
 import 'element-ui/lib/theme-chalk/index.css';

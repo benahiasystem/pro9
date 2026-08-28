@@ -249,7 +249,7 @@ html.dark .pos-success {
     --ps-text: #d1d2d6;
     --ps-muted: #8b93ab;
     --ps-surface: var(--contents-dark, var(--black-content-dark, var(--md-content-dark, #283046)));
-    --ps-surface-2: var(--background-dark, var(--black-bg-dark, var(--md-bg-dark, #212c56));
+    --ps-surface-2: var(--background-dark, var(--black-bg-dark, var(--md-bg-dark, #212c56)));
     --ps-border: var(--borders-dark, var(--black-border-dark, var(--md-border-dark, #314267)));
     --ps-border-strong: color-mix(in srgb, var(--borders-dark, var(--black-border-dark, var(--md-border-dark, #3a4870))) 78%, #fff);
 }

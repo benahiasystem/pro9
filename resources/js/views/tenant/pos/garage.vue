@@ -132,7 +132,8 @@
                         "
                         placeholder="Buscar productos"
                         size="medium"
-                        v-model="input_item"
+                        v-model="input_item" 
+                        remote-search
                         @input="searchItems"
                         @keyup.native="keyupTabCustomer"
                         @keyup.enter.native="keyupEnterAddItem"

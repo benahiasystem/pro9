@@ -8,6 +8,9 @@ import ElementUI from 'element-ui'
 import lang from 'element-ui/lib/locale/lang/es'
 import locale from 'element-ui/lib/locale'
 
+// Agrega remote-search (input con debounce) a el-input, antes de Vue.use(ElementUI)
+import './vendor/element-input-remote-search'
+
 // Cargar Bootstrap PRIMERO
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.js'; // Incluye Popper
