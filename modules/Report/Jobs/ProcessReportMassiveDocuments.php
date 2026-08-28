@@ -3,8 +3,10 @@
 namespace Modules\Report\Jobs;
 
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
+use App\Models\System\JobBatchingTray;
 use App\Traits\JobReportTrait;
 use Hyn\Tenancy\Environment;
+use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -16,12 +18,19 @@ use Modules\Report\Traits\MassiveDownloadTrait;
 
 class ProcessReportMassiveDocuments implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, MassiveDownloadTrait, StorageDocument, JobReportTrait;
+    use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels, MassiveDownloadTrait, StorageDocument, JobReportTrait;
 
     public $tray_id;
     public $website_id;
     public $document_types;
     public $params;
+
+    /**
+     * Sección a procesar cuando el reporte se divide en lotes
+     * ['document_type' => '01', 'offset' => 0, 'limit' => 100]
+     */
+    public $section;
+    public $is_batching;
 
     public $timeout = 1800;
 
@@ -30,12 +39,14 @@ class ProcessReportMassiveDocuments implements ShouldQueue
      *
      * @return void
      */
-    public function __construct($tray_id, $website_id, $document_types, $params)
+    public function __construct($tray_id, $website_id, $document_types, $params, $section = null, $is_batching = false)
     {
         $this->tray_id = $tray_id;
         $this->website_id = $website_id;
         $this->document_types = $document_types;
         $this->params = $params;
+        $this->section = $section;
+        $this->is_batching = $is_batching;
     }
 
     /**
@@ -50,6 +61,10 @@ class ProcessReportMassiveDocuments implements ShouldQueue
         set_time_limit(0);
 
         Log::debug('ProcessReportMassiveDocuments Start WebsiteId => ' . $this->website_id);
+
+        if ($this->batch() && $this->batch()->cancelled()) {
+            return;
+        }
 
         try {
             $website = $this->findWebsite($this->website_id);
@@ -70,15 +85,35 @@ class ProcessReportMassiveDocuments implements ShouldQueue
                 $document_types = ['all'];
             }
 
-            $data = $this->getData($document_types, $this->params);
             $height = isset($this->params->height) ? $this->params->height : 'a4';
+
+            if ($this->is_batching) {
+                $data = $this->getDataByChunk(
+                    $this->section['document_type'],
+                    $this->params,
+                    $this->section['offset'],
+                    $this->section['limit']
+                );
+                $filename = 'massive_documents_' . $this->section['document_type'] . '_' . $this->section['offset'] . '_' . date('YmdHis') . '-' . $tray->user_id;
+            } else {
+                $data = $this->getData($document_types, $this->params);
+                $filename = 'massive_documents_' . date('YmdHis') . '-' . $tray->user_id;
+            }
+
             $view = $this->createPdf($data, $height, (array) $this->params);
 
-            $filename = 'massive_documents_' . date('YmdHis') . '-' . $tray->user_id;
             $path = 'download_tray_pdf';
             Storage::disk('tenant')->makeDirectory($path);
             $this->uploadStorage($filename, $view, $path);
-            $this->finishedDownloadTray($tray, $filename, $path);
+
+            if ($this->is_batching) {
+                JobBatchingTray::create([
+                    'job_batch_id' => $this->batchId,
+                    'generated_filename' => $filename . '.pdf'
+                ]);
+            } else {
+                $this->finishedDownloadTray($tray, $filename, $path);
+            }
 
             Log::debug('ProcessReportMassiveDocuments End WebsiteId => ' . $this->website_id);
         } catch (\Throwable $th) {
@@ -87,6 +122,13 @@ class ProcessReportMassiveDocuments implements ShouldQueue
                 'archivo' => $th->getFile(),
                 'linea'   => $th->getLine(),
             ]);
+
+            if ($this->batch()) {
+                // El batch marca la bandeja como FAILED desde el callback catch
+                $this->batch()->cancel();
+                $this->fail($th);
+                return;
+            }
 
             try {
                 $website = $this->findWebsite($this->website_id);

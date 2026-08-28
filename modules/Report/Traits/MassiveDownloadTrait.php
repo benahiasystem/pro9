@@ -132,6 +132,148 @@ use Illuminate\Support\Str;
 
         }
 
+        /**
+         *
+         * Expande los tipos de documento seleccionados (incluido "all") a los tipos soportados
+         *
+         * @param  array $document_types
+         * @return array
+         */
+        public function getDocumentTypesForChunk($document_types)
+        {
+            $available_types = ['01', '03', '80', '09'];
+            $types = [];
+
+            foreach ($document_types as $document_type) {
+                if (in_array($document_type, $available_types, true)) {
+                    $types[] = $document_type;
+                } else {
+                    $types = array_merge($types, $available_types);
+                }
+            }
+
+            return array_values(array_unique($types));
+        }
+
+        /**
+         *
+         * Total de registros por tipo de documento
+         *
+         * @param  string $document_type
+         * @param  object $params
+         * @return int
+         */
+        public function getTotalByDocumentType($document_type, $params)
+        {
+            switch ($document_type) {
+                case '01':
+                    return $this->getRecordsByModel(Document::class, $params)->where('document_type_id', '01')->count();
+                case '03':
+                    return $this->getRecordsByModel(Document::class, $params)->where('document_type_id', '03')->count();
+                case '80':
+                    return $this->getRecordsByModel(SaleNote::class, $params)->count();
+                case '09':
+                    return $this->getRecordsByModel(Dispatch::class, $params)->count();
+            }
+
+            return 0;
+        }
+
+        /**
+         *
+         * Divide los documentos seleccionados en secciones (tipo de documento + offset + limit)
+         * para generar cada bloque en un job independiente del batch
+         *
+         * @param  array $document_types
+         * @param  object $params
+         * @param  int $record_chunk
+         * @param  string $format_pdf
+         * @return array
+         */
+        public function getChunkSections($document_types, $params, $record_chunk, $format_pdf = 'a4')
+        {
+            $record_chunk = (int)$record_chunk;
+            $sections = [];
+
+            if ($record_chunk < 1) {
+                return $sections;
+            }
+
+            // Las guías de remisión solo se generan en el formato a4
+            $only_a4_types = ['09'];
+
+            foreach ($this->getDocumentTypesForChunk($document_types) as $document_type) {
+
+                if (in_array($document_type, $only_a4_types, true) && $format_pdf !== 'a4') {
+                    continue;
+                }
+
+                $total = $this->getTotalByDocumentType($document_type, $params);
+
+                for ($i = 0; $i < ceil($total / $record_chunk); $i++) {
+                    $sections[] = [
+                        'document_type' => $document_type,
+                        'offset' => $i * $record_chunk,
+                        'limit' => $record_chunk,
+                    ];
+                }
+
+            }
+
+            return $sections;
+        }
+
+        /**
+         *
+         * Registros de una sección (tipo de documento + offset + limit)
+         *
+         * @param  string $document_type
+         * @param  object $params
+         * @param  int $offset
+         * @param  int $limit
+         * @return array
+         */
+        public function getDataByChunk($document_type, $params, $offset, $limit)
+        {
+            $data = [
+                'documents_01' => [],
+                'documents_03' => [],
+                'sale_notes' => [],
+                'dispatches' => [],
+            ];
+
+            switch ($document_type) {
+                case '01':
+                    $data['documents_01'] = $this->applyChunk($this->getRecordsByModel(Document::class, $params)->where('document_type_id', '01'), $offset, $limit)->get();
+                    break;
+                case '03':
+                    $data['documents_03'] = $this->applyChunk($this->getRecordsByModel(Document::class, $params)->where('document_type_id', '03'), $offset, $limit)->get();
+                    break;
+                case '80':
+                    $data['sale_notes'] = $this->applyChunk($this->getRecordsByModel(SaleNote::class, $params), $offset, $limit)->get();
+                    break;
+                case '09':
+                    $data['dispatches'] = $this->applyChunk($this->getRecordsByModel(Dispatch::class, $params), $offset, $limit)->get();
+                    break;
+            }
+
+            return $data;
+        }
+
+        /**
+         *
+         * Ordena por id para que las secciones no se superpongan y aplica el rango
+         *
+         * @param  Builder $records
+         * @param  int $offset
+         * @param  int $limit
+         * @return Builder
+         */
+        private function applyChunk($records, $offset, $limit)
+        {
+            return $records->reorder('id', 'asc')->offset((int)$offset)->limit((int)$limit);
+        }
+
         public function toPrintByView($folder, $view)
         {
 

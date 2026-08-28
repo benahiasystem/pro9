@@ -139,6 +139,27 @@
                                     </div>
                                 </div>
     
+                                <!-- Separar en lotes -->
+                                <div class="col-lg-2 col-md-2">
+                                    <div class="form-group">
+                                        <label class="control-label">Registros
+                                            <el-tooltip class="item" effect="dark"
+                                                        content="Cantidad de documentos por cada pdf. Máximo 100 por lote para no exceder la memoria de php. El resultado se descarga en un zip"
+                                                        placement="top-start">
+                                                <i class="fa fa-info-circle"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-select v-model="form.record_chunk"
+                                                   clearable
+                                                   default-first-option>
+                                            <el-option v-for="record in [25, 50, 75, 100]"
+                                                       :key="record"
+                                                       :label="record"
+                                                       :value="record"></el-option>
+                                        </el-select>
+                                    </div>
+                                </div>
+
                                 <div class="col-lg-2 col-md-2">
                                     <div class="form-group">
                                         <label class="control-label">
@@ -331,6 +352,7 @@ export default {
                 sellers: [],
                 person_id: null,
                 type_person: null,
+                record_chunk: null,
             }
 
         },
