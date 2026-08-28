@@ -282,22 +282,29 @@
                 </template>
                 <template #image>
                     <div class="form-group d-flex">
-                        <el-upload ref="itemImageUploadPinned"
-                                   :action="`/${resource}/upload`"
-                                   :data="{'type': 'items'}"
-                                   :headers="headers"
-                                   :on-success="onSuccess"
-                                   :show-file-list="false"
-                                   class="avatar-uploader item-img"
-                                   style="margin-top: 12px;">
-                            <img v-if="form.image_url"
-                                 :src="form.image_url"
-                                 class="avatar">
-                            <i v-else
-                               class="el-icon-plus avatar-uploader-icon"></i>
-                        </el-upload>
+                        <el-tooltip :content="imageUploadHint" placement="top">
+                            <el-upload ref="itemImageUploadPinned"
+                                       :action="`/${resource}/upload`"
+                                       :data="{'type': 'items'}"
+                                       :headers="headers"
+                                       :before-upload="beforeUploadImage"
+                                       :on-success="onSuccess"
+                                       :show-file-list="false"
+                                       class="avatar-uploader item-img"
+                                       style="margin-top: 12px;">
+                                <img v-if="form.image_url"
+                                     :src="form.image_url"
+                                     class="avatar">
+                                <i v-else
+                                   class="el-icon-plus avatar-uploader-icon"></i>
+                            </el-upload>
+                        </el-tooltip>
                         <div class="d-flex flex-column ms-2">
-                            <label class="label-img">Imágen</label>
+                            <label class="label-img">Imágen
+                                <el-tooltip :content="imageUploadHint" placement="top">
+                                    <i class="el-icon-info"></i>
+                                </el-tooltip>
+                            </label>
                             <button type="button"
                                     class="btn btn-sm second-buton mt-auto"
                                     @click.prevent="clickUploadImage('itemImageUploadPinned')">
@@ -667,20 +674,27 @@
                                 <div v-show="!isPinned('image')" class="col-md-3 field-pinnable" data-field-key="image">
                                     <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('image')"><i class="el-icon-top"></i> Fijar arriba</button>
                                     <div class="form-group">
-                                        <label class="control-label">Imágen</label>
-                                        <el-upload ref="itemImageUpload"
-                                                   :action="`/${resource}/upload`"
-                                                   :data="{'type': 'items'}"
-                                                   :headers="headers"
-                                                   :on-success="onSuccess"
-                                                   :show-file-list="false"
-                                                   class="avatar-uploader item-img-fill">
-                                            <img v-if="form.image_url"
-                                                 :src="form.image_url"
-                                                 class="avatar">
-                                            <i v-else
-                                               class="el-icon-plus avatar-uploader-icon"></i>
-                                        </el-upload>
+                                        <label class="control-label">Imágen
+                                            <el-tooltip :content="imageUploadHint" placement="top">
+                                                <i class="el-icon-info"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-tooltip :content="imageUploadHint" placement="top">
+                                            <el-upload ref="itemImageUpload"
+                                                       :action="`/${resource}/upload`"
+                                                       :data="{'type': 'items'}"
+                                                       :headers="headers"
+                                                       :before-upload="beforeUploadImage"
+                                                       :on-success="onSuccess"
+                                                       :show-file-list="false"
+                                                       class="avatar-uploader item-img-fill">
+                                                <img v-if="form.image_url"
+                                                     :src="form.image_url"
+                                                     class="avatar">
+                                                <i v-else
+                                                   class="el-icon-plus avatar-uploader-icon"></i>
+                                            </el-upload>
+                                        </el-tooltip>
                                         <button type="button"
                                                 class="btn btn-sm second-buton mt-2 w-100"
                                                 @click.prevent="clickUploadImage('itemImageUpload')">
@@ -1161,19 +1175,22 @@
                                                        v-text="variationError(index, 'variable_value_ids')"></small>
                                             </td>
                                             <td>
-                                                <el-upload :action="`/${resource}/upload`"
-                                                           :data="{'type': 'items'}"
-                                                           :headers="headers"
-                                                           :on-success="(response) => onVariationImageSuccess(response, row)"
-                                                           :show-file-list="false"
-                                                           class="avatar-uploader item-img"
-                                                           style="width: 48px !important; margin-top: 0 !important;"
-                                                           :title="row.image_url ? 'Cambiar imagen' : 'Subir imagen para esta combinación'">
-                                                    <img v-if="row.image_url"
-                                                         :src="row.image_url"
-                                                         class="avatar">
-                                                    <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                                                </el-upload>
+                                                <el-tooltip placement="top"
+                                                            :content="`${row.image_url ? 'Cambiar imagen' : 'Subir imagen para esta combinación'}. ${imageUploadHint}`">
+                                                    <el-upload :action="`/${resource}/upload`"
+                                                               :data="{'type': 'items'}"
+                                                               :headers="headers"
+                                                               :before-upload="beforeUploadImage"
+                                                               :on-success="(response) => onVariationImageSuccess(response, row)"
+                                                               :show-file-list="false"
+                                                               class="avatar-uploader item-img"
+                                                               style="width: 48px !important; margin-top: 0 !important;">
+                                                        <img v-if="row.image_url"
+                                                             :src="row.image_url"
+                                                             class="avatar">
+                                                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                                                    </el-upload>
+                                                </el-tooltip>
                                             </td>
                                             <td>
                                                 <el-input v-model="row.internal_id" size="small"></el-input>
@@ -1761,6 +1778,11 @@ export default {
         VariationPicker,
     },
     computed: {
+        imageUploadHint() {
+            const max_mb = (this.max_image_size_kb / 1024).toFixed(1).replace('.0', '')
+
+            return `Formatos: JPG, PNG, GIF, WEBP o SVG. Peso máximo: ${max_mb}MB`
+        },
         resolvedVariant() {
             return ALLOWED_VARIANTS.includes(this.variant) ? this.variant : 'standard'
         },
@@ -1916,6 +1938,8 @@ export default {
 
     data() {
         return {
+            // Debe coincidir con ItemController::MAX_IMAGE_SIZE_KB
+            max_image_size_kb: 2048,
             loading_search: false,
             showDialogLots: false,
             form_category: {add: false, name: null, id: null},
@@ -2470,6 +2494,22 @@ export default {
             const selectedArea = this.preparation_areas.find(area => area.id === this.form.preparation_area_id);
             this.form.preparation_area = selectedArea ? selectedArea.description : null;
         },
+        beforeUploadImage(file) {
+            const allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+
+            if (!allowed_types.includes(file.type)) {
+                this.$message.error('Formato de imagen no válido. Use JPG, PNG, GIF, WEBP o SVG.')
+                return false
+            }
+
+            if ((file.size / 1024) > this.max_image_size_kb) {
+                const max_mb = (this.max_image_size_kb / 1024).toFixed(1)
+                this.$message.error(`La imagen excede los ${max_mb}MB. Reduzca el tamaño e intente nuevamente.`)
+                return false
+            }
+
+            return true
+        },
         onSuccess(response, file, fileList) {
             if (response.success) {
                 this.form.image = response.data.filename
@@ -2688,6 +2728,13 @@ this.activeName = null
             const payload = {
                 ...this.form,
                 name: this.stripHtml(this.form.name)
+            }
+
+            // El preview recién subido llega como data URI (base64) y el backend
+            // no lo usa: guarda la imagen desde temp_path. Enviarlo duplicaría el
+            // peso del archivo dentro del request y hace fallar el guardado.
+            if (typeof payload.image_url === 'string' && payload.image_url.startsWith('data:')) {
+                delete payload.image_url
             }
 
             if (this.globalIgvHandling) {

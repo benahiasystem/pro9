@@ -82,6 +82,12 @@ class ItemController extends Controller
     use OfflineTrait;
 
     /**
+     * Tamaño máximo permitido (KB) para las imágenes de productos.
+     * Debe coincidir con la validación del formulario (items/form.vue).
+     */
+    const MAX_IMAGE_SIZE_KB = 2048;
+
+    /**
      * Sincroniza los precios dinámicos de un ItemUnitType
      *
      * @param int $itemUnitTypeId
@@ -1184,7 +1190,7 @@ class ItemController extends Controller
     public function upload(Request $request)
     {
 
-        $validate_upload = UploadFileHelper::validateUploadFile($request, 'file', 'jpg,jpeg,png,gif,svg,webp');
+        $validate_upload = UploadFileHelper::validateUploadFile($request, 'file', 'jpg,jpeg,png,gif,svg,webp', true, self::MAX_IMAGE_SIZE_KB);
 
         if(!$validate_upload['success']){
             return $validate_upload;
