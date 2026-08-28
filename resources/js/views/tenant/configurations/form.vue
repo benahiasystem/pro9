@@ -7,35 +7,35 @@
                 <li><span class="text-muted">Avanzado</span></li>
             </ol>
         </div>
-        <section class="advanced-search-panel" aria-label="Buscar configuraciones avanzadas">
-            <div class="advanced-search-copy">
-                <span class="advanced-search-icon"><i class="fas fa-search" aria-hidden="true"></i></span>
-                <div>
-                    <strong>Buscar configuraciones</strong>
-                    <small>Filtra por nombre, descripción o términos relacionados.</small>
+        <div class="advanced-settings mb-3 config-search-section">
+            <section class="card-body" aria-label="Buscar configuraciones avanzadas">
+                <div class="advanced-search-copy">
+                    <span class="advanced-search-icon"><i class="fas fa-search" aria-hidden="true"></i></span>
+                    <div>
+                        <strong>Buscar configuraciones</strong>
+                        <small class="text-muted">Filtra por nombre, descripción o términos relacionados.</small>
+                    </div>
                 </div>
-            </div>
-            <div class="advanced-search-control">
-                <i class="fas fa-search" aria-hidden="true"></i>
-                <input
+                <el-input
                     v-model="advancedSearchQuery"
-                    type="search"
+                    class="advanced-search-control"
+                    type="text"
+                    prefix-icon="el-icon-search"
                     autocomplete="off"
+                    clearable
                     placeholder="Ej. sucursal, almacén, stock..."
                     aria-label="Buscar dentro de configuración avanzada"
                     @input="scheduleAdvancedFilter"
-                >
-                <button v-if="advancedSearchQuery" type="button" title="Limpiar búsqueda" @click="clearAdvancedSearch">
-                    <i class="fas fa-times" aria-hidden="true"></i>
-                </button>
-            </div>
-            <div v-if="advancedSearchQuery" class="advanced-search-feedback" aria-live="polite">
-                <span v-if="advancedSearchMatchCount">
-                    {{ advancedSearchMatchCount }} opción(es) encontrada(s) para “{{ advancedSearchQuery }}”.
-                </span>
-                <span v-else>No se encontraron configuraciones relacionadas con “{{ advancedSearchQuery }}”.</span>
-            </div>
-        </section>
+                    @clear="clearAdvancedSearch">
+                </el-input>
+                <div v-if="advancedSearchQuery" class="advanced-search-feedback text-muted" aria-live="polite">
+                    <span v-if="advancedSearchMatchCount">
+                        {{ advancedSearchMatchCount }} opción(es) encontrada(s) para “{{ advancedSearchQuery }}”.
+                    </span>
+                    <span v-else>No se encontraron configuraciones relacionadas con “{{ advancedSearchQuery }}”.</span>
+                </div>
+            </section>
+        </div>
         <template>
             <form autocomplete="off">
                 <el-tabs ref="advancedSettings" v-model="activeName" type="border-card" class="rounded advanced-settings">
@@ -3327,12 +3327,9 @@
     background: #fff;
     box-shadow: 0 3px 14px rgba(22, 34, 51, .05);
 }
-.advanced-search-copy,
-.advanced-search-control {
+.advanced-search-copy {
     display: flex;
     align-items: center;
-}
-.advanced-search-copy {
     gap: 10px;
     margin-bottom: 12px;
 }
@@ -3340,9 +3337,8 @@
 .advanced-search-copy small {
     display: block;
 }
-.advanced-search-copy small,
-.advanced-search-feedback {
-    color: #7c8798;
+.advanced-search-copy small {
+    margin-top: -5px;
 }
 .advanced-search-icon {
     display: inline-flex;
@@ -3351,38 +3347,20 @@
     width: 36px;
     height: 36px;
     border-radius: 9px;
-    color: var(--primary-color, #4267ef);
-    background: rgba(66, 103, 239, .1);
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, #ffffff00);
 }
-.advanced-search-control {
-    gap: 10px;
-    min-height: 46px;
-    padding: 0 13px;
-    border: 2px solid #dfe5ef;
-    border-radius: 10px;
-    background: #fff;
-    transition: border-color .16s ease, box-shadow .16s ease;
+.advanced-search-control.el-input .el-input__inner {
+    height: 40px;
+    line-height: 40px;
+    padding-left: 38px;
 }
-.advanced-search-control:focus-within {
-    border-color: var(--primary-color, #4267ef);
-    box-shadow: 0 0 0 3px rgba(66, 103, 239, .1);
+.advanced-search-control.el-input .el-input__prefix {
+    left: 12px;
 }
-.advanced-search-control input {
-    flex: 1;
-    min-width: 0;
-    height: 42px;
-    border: 0;
-    outline: 0;
-    color: #263238;
-    background: transparent;
-}
-.advanced-search-control button {
-    width: 28px;
-    height: 28px;
-    border: 0;
-    border-radius: 7px;
-    color: #707b8c;
-    background: #eef1f6;
+.advanced-search-control.el-input .el-input__icon {
+    line-height: 40px;
+    font-size: 15px;
 }
 .advanced-search-feedback {
     margin-top: 9px;
@@ -3402,16 +3380,22 @@
     display: none !important;
 }
 html.dark .advanced-search-panel,
-html.sidebarMode-dark .advanced-search-panel,
-html.dark .advanced-search-control,
-html.sidebarMode-dark .advanced-search-control {
+html.sidebarMode-dark .advanced-search-panel {
     color: #eef2f7;
     background: #202938;
     border-color: #364154;
 }
-html.dark .advanced-search-control input,
-html.sidebarMode-dark .advanced-search-control input {
+html.dark .advanced-search-control.el-input .el-input__inner,
+html.sidebarMode-dark .advanced-search-control.el-input .el-input__inner {
     color: #eef2f7;
+    background: #202938;
+    border-color: #364154;
+}
+html.dark .advanced-search-control.el-input .el-input__prefix,
+html.sidebarMode-dark .advanced-search-control.el-input .el-input__prefix,
+html.dark .advanced-search-control.el-input .el-input__suffix,
+html.sidebarMode-dark .advanced-search-control.el-input .el-input__suffix {
+    color: #aab4c4;
 }
 </style>
 

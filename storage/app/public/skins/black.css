@@ -3493,6 +3493,9 @@ html.sidebar-left-collapsed .sidebar-favorites {
     border-color: transparent;
     background: transparent;
 }
+.config-search-section {
+    padding: 0 4px;
+}
 /* ############################ ESTILOS MODO OSCURO ########################### */
 html.dark, html.dark body {
     background-color: var(--black-bg-dark) !important;
@@ -3572,7 +3575,8 @@ html.dark .btn.barcode {
     color: var(--black-light);
 }
 html.dark .card.card-dashboard .card-body,
-html.dark .card-config {
+html.dark .card-config,
+html.dark .advanced-settings .card-body {
     border: 1px solid var(--black-border-dark) !important;
 }
 html.dark .card-body,
@@ -4366,4 +4370,8 @@ html.dark .sidebar-favorites-title {
 }
 html.sidebar-left-collapsed.dark .nano.hovered .sidebar-favorites{
     border-color: var(--black-border-dark) !important;
+}
+html.dark .advanced-search-icon {
+    background-color: var(--black-content-dark);
+    color: var(--black-light);
 }
