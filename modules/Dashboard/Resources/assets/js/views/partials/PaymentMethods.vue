@@ -87,6 +87,8 @@ export default {
           },
         },
         tooltip: {
+          theme: "dark",
+          style: { fontSize: "12px" },
           y: {
             formatter: (val) =>
               "Bs. " +
@@ -178,10 +180,17 @@ export default {
 .pm-empty {
   padding: 2rem 0;
 }
-.pm-panel ::v-deep .apexcharts-tooltip,
+.pm-panel ::v-deep .apexcharts-tooltip {
+  background: rgba(33, 37, 41, 0.96) !important;
+  border: 0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  color: #fff !important;
+}
 .pm-panel ::v-deep .apexcharts-tooltip *,
 .pm-panel ::v-deep .apexcharts-tooltip-title {
   color: #fff !important;
+  background: transparent !important;
+  border: 0 !important;
 }
 </style>
 

@@ -589,12 +589,48 @@ export default {
             }
         },
 
+        /**
+         * Retira una paleta inyectada previamente.
+         *
+         * Cada skin tiene su propia paleta (#theme-styles para los skins claros,
+         * #black-theme-styles para black) y son excluyentes: si no se retira la
+         * del skin anterior, sus variables siguen pisando al skin nuevo.
+         */
+        removeThemeStyleTag(id) {
+            const styleTag = document.getElementById(id);
+            if (styleTag) styleTag.remove();
+        },
+        /**
+         * Deja activa únicamente la paleta que corresponde al skin seleccionado.
+         */
+        syncThemeStyles() {
+            if (this.isBlackSkinSelected) {
+                if (this.visuals.black_theme) {
+                    this.applyBlackTheme(this.visuals.black_theme);
+                } else {
+                    this.removeThemeStyleTag("theme-styles");
+                }
+                return;
+            }
+
+            const theme = (this.visual && this.visual.sidebar_theme)
+                || (this.visuals && this.visuals.sidebar_theme);
+
+            if (theme) {
+                this.applyTheme(theme);
+            } else {
+                this.removeThemeStyleTag("black-theme-styles");
+            }
+        },
         applyTheme(theme) {
             let colors = this.themes[theme];
             if (!colors) {
                 console.error(`Theme "${theme}" not found.`);
                 return;
             }
+
+            // Las paletas son excluyentes: al aplicar la clara se retira la de black.
+            this.removeThemeStyleTag("black-theme-styles");
             // Normaliza la estructura anidada de themes.json (ej. "white" -> { light, default })
             if (typeof colors === 'object' && !colors['--primary-color']) {
                 colors = colors.default || colors.light || colors;
@@ -624,6 +660,9 @@ export default {
                 console.error(`Black theme "${theme}" not found.`);
                 return;
             }
+
+            // Las paletas son excluyentes: al aplicar la de black se retira la clara.
+            this.removeThemeStyleTag("theme-styles");
 
             let styleTag = document.getElementById("black-theme-styles");
             if (!styleTag) {
@@ -829,13 +868,9 @@ export default {
 
                     this.branchSelectorInSidebar = !!this.visuals.branch_selector_in_sidebar;
 
-                    if (this.visual.sidebar_theme) {
-                        this.applyTheme(this.visual.sidebar_theme);
-                    }
-
-                    if (this.visuals.black_theme) {
-                        this.applyBlackTheme(this.visuals.black_theme);
-                    }
+                    // Sólo la paleta del skin activo: antes se aplicaban las dos
+                    // y la del skin anterior seguía pisando al nuevo.
+                    this.syncThemeStyles();
 
                     if (!this.form.colums_grid_item) {
                         this.form.colums_grid_item = 2;

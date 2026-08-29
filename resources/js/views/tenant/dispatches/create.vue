@@ -604,7 +604,8 @@
                                                                 <div :class="{ 'has-danger': errors.items }" class="form-group"
                                                                     id="custom-select">
 
-                                                                    <el-input id="custom-input">
+                                                                    <div class="d-flex align-items-stretch gap-1">
+                                                                    <el-input id="custom-input" class="flex-grow-1">
 
                                                                         <el-select class="w-100" v-model="current_item"
                                                                             id="select-width" :loading="loading_search"
@@ -627,6 +628,13 @@
                                                                         </el-tooltip>
 
                                                                     </el-input>
+                                                                    <replace-name-pencil
+                                                                        v-if="canEditNameProduct"
+                                                                        v-model="draft_name_product_pdf"
+                                                                        :disabled="!current_item"
+                                                                        :label="replaceNameLabel"
+                                                                    ></replace-name-pencil>
+                                                                    </div>
 
                                                                     <small v-if="errors.items" class="invalid-feedback"
                                                                         v-text="errors.items[0]"></small>
@@ -656,7 +664,8 @@
                                                                 <div :class="{ 'has-danger': errors.items }" class="form-group"
                                                                     id="custom-select">
 
-                                                                    <el-input id="custom-input">
+                                                                    <div class="d-flex align-items-stretch gap-1">
+                                                                    <el-input id="custom-input" class="flex-grow-1">
 
                                                                         <el-select class="w-100" v-model="current_item"
                                                                             id="select-width" :loading="loading_search"
@@ -679,6 +688,13 @@
                                                                         </el-tooltip>
 
                                                                     </el-input>
+                                                                    <replace-name-pencil
+                                                                        v-if="canEditNameProduct"
+                                                                        v-model="draft_name_product_pdf"
+                                                                        :disabled="!current_item"
+                                                                        :label="replaceNameLabel"
+                                                                    ></replace-name-pencil>
+                                                                    </div>
 
                                                                     <small v-if="errors.items" class="invalid-feedback"
                                                                         v-text="errors.items[0]"></small>
@@ -743,7 +759,8 @@
                                                             <div :class="{ 'has-danger': errors.items }" class="form-group"
                                                                 id="custom-select">
 
-                                                                <el-input id="custom-input">
+                                                                <div class="d-flex align-items-stretch gap-1">
+                                                                <el-input id="custom-input" class="flex-grow-1">
 
                                                                     <el-select v-model="current_item" id="select-width"
                                                                         :loading="loading_search"
@@ -766,6 +783,13 @@
                                                                     </el-tooltip>
 
                                                                 </el-input>
+                                                                <replace-name-pencil
+                                                                    v-if="canEditNameProduct"
+                                                                    v-model="draft_name_product_pdf"
+                                                                    :disabled="!current_item"
+                                                                    :label="replaceNameLabel"
+                                                                ></replace-name-pencil>
+                                                                </div>
 
                                                                 <small v-if="errors.items" class="form-control-feedback"
                                                                     v-text="errors.items[0]"></small>
@@ -918,6 +942,7 @@ import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import WarehousesDetail from '@components/WarehousesDetail.vue'
 import { setDefaultSeriesByMultipleDocumentTypes } from '@mixins/functions'
 import BuyerComp from './partials/buyer.vue'
+import ReplaceNamePencil from './partials/ReplaceNamePencil.vue'
 
 export default {
     props: [
@@ -945,7 +970,8 @@ export default {
         ListLotsGroup,
         DialogReferenceDocument,
         CustomFieldsRenderer,
-        BuyerComp
+        BuyerComp,
+        ReplaceNamePencil
     },
     mixins: [setDefaultSeriesByMultipleDocumentTypes],
     computed: {
@@ -955,6 +981,15 @@ export default {
             'items',
             'all_items',
         ]),
+        canEditNameProduct() {
+            return !!(this.config && this.config.edit_name_product)
+        },
+        replaceNameLabel() {
+            if (this.config && this.config.add_description_to_document_item) {
+                return 'Reemplazar nombre'
+            }
+            return 'Nombre producto en PDF'
+        },
         showSeries() {
             if (this.item.id && this.item.series_enabled) {
                 return true
@@ -1046,6 +1081,7 @@ export default {
             series: [],
             current_item: null,
             quantity: 1,
+            draft_name_product_pdf: '',
             price: 0,
             total: 0,
             errors: {},
@@ -1265,15 +1301,13 @@ export default {
         },
         setDescriptionOfItem(item) {
             let description = "";
-            if (this.config.show_pdf_name) {
-                if (item.item && item.item.name_product_pdf) {
-                    if (item.item.name_product_pdf !== '' && !_.isNull(item.item.name_product_pdf)) {
-                        description = item.item.name_product_pdf;
-                    }
-                } else if (item.name_product_pdf) {
-                    if (item.name_product_pdf !== '' && !_.isNull(item.name_product_pdf)) {
-                        description = item.name_product_pdf;
-                    }
+            if (item.item && item.item.name_product_pdf) {
+                if (item.item.name_product_pdf !== '' && !_.isNull(item.item.name_product_pdf)) {
+                    description = item.item.name_product_pdf;
+                }
+            } else if (item.name_product_pdf) {
+                if (item.name_product_pdf !== '' && !_.isNull(item.name_product_pdf)) {
+                    description = item.name_product_pdf;
                 }
             }
 
@@ -1396,6 +1430,38 @@ export default {
             this.price = item.sale_unit_price;
             this.total = this.price * this.quantity;
             this.$store.commit('setItem', item)
+            this.prefillDraftNameProductPdf(item)
+        },
+        prefillDraftNameProductPdf(item) {
+            if (!this.canEditNameProduct || !item) {
+                this.draft_name_product_pdf = ''
+                return
+            }
+
+            if (this.config && this.config.add_description_to_document_item) {
+                const name = item.description || ''
+                const extra = item.name || ''
+                this.draft_name_product_pdf = [name, extra].filter(Boolean).join('\n')
+                return
+            }
+
+            if (this.config && this.config.item_name_pdf_description && item.name_product_pdf) {
+                this.draft_name_product_pdf = item.name_product_pdf
+                return
+            }
+
+            this.draft_name_product_pdf = ''
+        },
+        formatNameProductPdf(value) {
+            if (!value || !String(value).trim()) return ''
+
+            return String(value)
+                .trim()
+                .split(/\r?\n/)
+                .map(line => line.trim())
+                .filter(Boolean)
+                .map(line => `<p>${line}</p>`)
+                .join('')
         },
         filterItems() {
             this.$store.commit('setItems', this.all_items)
@@ -1428,9 +1494,11 @@ export default {
                 this.addItem({
                     item: item,
                     quantity: this.quantity,
+                    name_product_pdf: this.formatNameProductPdf(this.draft_name_product_pdf),
                 })
                 this.$store.commit('setItem', item)
                 this.quantity = 1
+                this.draft_name_product_pdf = ''
                 this.focusDescription()
                 return null;
             }
@@ -1612,6 +1680,7 @@ export default {
             let it = form.item;
             let qty = form.quantity;
             let total_weight = 0
+            const name_product_pdf = (form.name_product_pdf || it.name_product_pdf || '').trim();
 
             if (it.attributes && it.attributes.length > 0 ) {
                 it.attributes.forEach(attr => {
@@ -1622,7 +1691,10 @@ export default {
             }
 
             this.form.total_weight += total_weight
-            let exist = this.form.items.find((item) => item.id == it.id);
+            // No fusionar si el nombre PDF difiere (mismo producto genérico, descripciones distintas).
+            let exist = this.form.items.find((item) =>
+                item.id == it.id && (item.name_product_pdf || '').trim() === name_product_pdf
+            );
             let attributes = null
             if (exist) {
                 exist.quantity = (it.lots_enabled || it.series_enabled)? form.quantity : exist.quantity + form.quantity;
@@ -1659,7 +1731,8 @@ export default {
                 lots: it.lots || null,
                 unit_price: it.unit_price,
                 total: it.total,
-                weight: it.weight || 0
+                weight: it.weight || 0,
+                name_product_pdf: name_product_pdf,
             });
 
             if (this.config.enable_weight_in_dispatches) {

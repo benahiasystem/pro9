@@ -1,4 +1,5 @@
 import './bootstrap';
+import './mobile-app-behavior';
 import Swal from 'sweetalert2';
 
 import 'bootstrap/dist/js/bootstrap.bundle.js'; // Incluye Popper
@@ -10,6 +11,9 @@ import ElementUI from 'element-ui'
 
 import lang from 'element-ui/lib/locale/lang/es'
 import locale from 'element-ui/lib/locale'
+
+// Agrega remote-search (input con debounce) a el-input, antes de Vue.use(ElementUI)
+import './vendor/element-input-remote-search'
 
 import '../sass/element-ui.scss';
 import '../sass/pages/system-update.scss';
@@ -25,6 +29,7 @@ import CheckoutGuest from './components/checkouts/CheckoutGuest.vue'
 import SystemSupportConfiguration from './views/system/configuration/supportConfiguration.vue';
 import SystemConfigurationOpenAi from './views/system/configuration/openAiConfiguration.vue'
 import SystemGoogleMapsConfiguration from './views/system/configuration/googleMapsConfiguration.vue'
+import SystemGitRepositoryConfiguration from './views/system/configuration/gitRepositoryConfiguration.vue'
 import SystemTermsConfiguration from './views/system/configuration/termsConfiguration.vue'
 import SystemClientsIndex from './views/system/clients/index.vue';
 import SystemClientsForm from './views/system/clients/form.vue';
@@ -115,6 +120,7 @@ Vue.component('system-support-configuration', SystemSupportConfiguration);
 Vue.component('system-clients-index', SystemClientsIndex);
 Vue.component('system-openai-configuration', SystemConfigurationOpenAi);
 Vue.component('system-google-maps-configuration', SystemGoogleMapsConfiguration);
+Vue.component('system-git-repository-configuration', SystemGitRepositoryConfiguration);
 Vue.component('system-terms-configuration', SystemTermsConfiguration);
 Vue.component('system-clients-form', SystemClientsForm);
 Vue.component('system-users-form', SystemUsersform);

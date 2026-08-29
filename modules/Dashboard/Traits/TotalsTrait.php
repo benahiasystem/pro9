@@ -18,20 +18,36 @@ use Modules\Order\Models\OrderNote;
 trait TotalsTrait
 {
 
+    /**
+     *
+     * Filtra por sucursal solo cuando se recibe una; sin valor (opción "Todos")
+     * la consulta abarca todos los establecimientos.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder $query
+     * @param  int|null $establishment_id
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function filterEstablishment($query, $establishment_id)
+    {
+        if ($establishment_id) {
+            $query->where('establishment_id', $establishment_id);
+        }
+
+        return $query;
+    }
+
     public function get_purchase_totals($establishment_id, $date_start, $date_end)
     {
 
         if($date_start && $date_end){
 
-            $purchases = Purchase::query()->whereIn('state_type_id', ['01','03','05','07','13'])
-                                        ->where('establishment_id', $establishment_id)
+            $purchases = $this->filterEstablishment(Purchase::query()->whereIn('state_type_id', ['01','03','05','07','13']), $establishment_id)
                                         ->whereBetween('date_of_issue', [$date_start, $date_end])
                                         ->get();
 
         }else{
 
-            $purchases = Purchase::query()->whereIn('state_type_id', ['01','03','05','07','13'])
-                                        ->where('establishment_id', $establishment_id)
+            $purchases = $this->filterEstablishment(Purchase::query()->whereIn('state_type_id', ['01','03','05','07','13']), $establishment_id)
                                         ->get();
         }
 
@@ -75,14 +91,14 @@ trait TotalsTrait
 
         if($date_start && $date_end){
 
-            $expenses = Expense::query()->where('establishment_id', $establishment_id)
+            $expenses = $this->filterEstablishment(Expense::query(), $establishment_id)
                                         ->whereBetween('date_of_issue', [$date_start, $date_end])
                                         ->where('state_type_id','05')
                                         ->get();
 
         }else{
 
-            $expenses = Expense::query()->where('establishment_id', $establishment_id)
+            $expenses = $this->filterEstablishment(Expense::query(), $establishment_id)
                                         ->where('state_type_id','05')
                                         ->get();
         }
@@ -116,13 +132,11 @@ trait TotalsTrait
     {
 
         if($date_start && $date_end){
-            $sale_notes = SaleNote::query()->whereStateTypeAccepted()
-                                           ->where('establishment_id', $establishment_id)
+            $sale_notes = $this->filterEstablishment(SaleNote::query()->whereStateTypeAccepted(), $establishment_id)
                                            ->where('changed', false)
                                            ->whereBetween('date_of_issue', [$date_start, $date_end])->get();
         }else{
-            $sale_notes = SaleNote::query()->whereStateTypeAccepted()
-                                           ->where('establishment_id', $establishment_id)
+            $sale_notes = $this->filterEstablishment(SaleNote::query()->whereStateTypeAccepted(), $establishment_id)
                                            ->where('changed', false)->get();
         }
 
@@ -171,9 +185,9 @@ trait TotalsTrait
     {
 
         if($date_start && $date_end){
-            $documents = Document::query()->where('establishment_id', $establishment_id)->whereBetween('date_of_issue', [$date_start, $date_end])->get();
+            $documents = $this->filterEstablishment(Document::query(), $establishment_id)->whereBetween('date_of_issue', [$date_start, $date_end])->get();
         }else{
-            $documents = Document::query()->where('establishment_id', $establishment_id)->get();
+            $documents = $this->filterEstablishment(Document::query(), $establishment_id)->get();
         }
 
         //VES

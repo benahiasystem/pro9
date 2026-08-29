@@ -29,6 +29,19 @@ class AppServiceProvider extends ServiceProvider
 		// Evitar ejecutar en consola; aplicar sólo en contexto web
 		if (!app()->runningInConsole()) {
 			SessionLifetimeHelper::setTenantSessionLifetime();
+
+			// ngrok conserva el host público en X-Forwarded-Host aunque reescriba
+			// Host para que Hyn resuelva el tenant mediante local.pro9.test.
+			$forwardedHost = trim(explode(',', request()->header('X-Forwarded-Host', ''))[0]);
+			$forwardedProto = strtolower(trim(explode(',', request()->header('X-Forwarded-Proto', 'https'))[0]));
+
+			if (
+				$forwardedHost !== '' &&
+				in_array($forwardedProto, ['http', 'https'], true) &&
+				preg_match('/\A[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::\d{1,5})?\z/i', $forwardedHost)
+			) {
+				URL::forceRootUrl("{$forwardedProto}://{$forwardedHost}");
+			}
 		}
 
 		if (config('tenant.force_https')) {

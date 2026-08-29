@@ -1190,12 +1190,30 @@ export default {
             const row = (this.form.addresses || [])[0]
             if (!row || row.main !== true) return
 
-            this.form.country_id = row.country_id || 'VE'
-            this.form.location_id = Array.isArray(row.location_id) ? [...row.location_id] : []
-            this.form.address = row.address || null
-            this.form.establishment_code = row.establishment_code || null
-            this.form.telephone = row.phone || null
-            this.form.email = row.email || null
+            // El ubigeo de la fila solo pisa al de la persona cuando viene completo:
+            // si llega vacio y la persona ya tenia uno, borrarlo haria que el backend
+            // anule department_id / province_id / district_id.
+            const rowLocation = Array.isArray(row.location_id) ? row.location_id : []
+
+            // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+            this.form.country_id = row.country_id || this.form.country_id || 'VE'
+            // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
+            if (this.hasAddressValue(rowLocation)) {
+                this.form.location_id = [...rowLocation]
+            } else if (!this.hasAddressValue(this.form.location_id)) {
+                this.form.location_id = []
+            }
+            this.form.address = this.preferFilled(row.address, this.form.address)
+            this.form.establishment_code = this.preferFilled(row.establishment_code, this.form.establishment_code)
+            this.form.telephone = this.preferFilled(row.phone, this.form.telephone)
+            this.form.email = this.preferFilled(row.email, this.form.email)
+        },
+        preferFilled(rowValue, formValue) {
+            // La fila manda cuando trae dato; si viene vacia se conserva lo que ya
+            // tenia la persona. Los inputs propios de la persona estan ocultos, asi
+            // que un valor pisado aqui se pierde sin que el usuario pueda recuperarlo.
+            if (this.hasAddressValue(rowValue)) return rowValue
+            return this.hasAddressValue(formValue) ? formValue : null
         },
         isEmptyAddressRow(row) {
             if (!row) return true

@@ -16,7 +16,7 @@
                                 {{ see_more ? "Ocultar filtros" : "Mostrar filtros" }}
                             </el-button>
                             <el-button v-if="hasActiveFilters" class="submit ms-2 mb-2" type="info" @click.prevent="cleanInputs"  icon="el-icon-refresh">Limpiar </el-button>  
-                            <div class="d-flex align-items-end justify-content-start ms-2 mb-2">
+                            <div class="d-flex align-items-end justify-content-start ms-2 mb-2 documents-legend">
                                 <div class="d-flex align-items-end gap-1">
                                     <span class="bg-tickets legend-cube d-flex" style="margin-bottom: 2px;"></span>
                                     <span style="line-height: normal;">Boletas</span>

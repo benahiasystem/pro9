@@ -2552,25 +2552,25 @@
                     <div class="delivery-mode" v-if="enableStorePickup">
                         <div class="delivery-segmented" role="radiogroup" aria-label="Modo de entrega">
                             <label class="delivery-segment" :class="{ 'delivery-segment--active': !isPickupMode }">
-                                <input
-                                    type="radio"
-                                    name="delivery_mode"
-                                    :checked="!isPickupMode"
-                                    @change="setPickupMode(false)"
-                                >
+                            <input
+                                type="radio"
+                                name="delivery_mode"
+                                :checked="!isPickupMode"
+                                @change="setPickupMode(false)"
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"/><path d="M3 9l4 0"/></svg>
                                 <span>Envío a domicilio</span>
-                            </label>
+                        </label>
                             <label class="delivery-segment" :class="{ 'delivery-segment--active': isPickupMode }">
-                                <input
-                                    type="radio"
-                                    name="delivery_mode"
-                                    :checked="isPickupMode"
-                                    @change="setPickupMode(true)"
-                                >
+                            <input
+                                type="radio"
+                                name="delivery_mode"
+                                :checked="isPickupMode"
+                                @change="setPickupMode(true)"
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l18 0"/><path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4"/><path d="M5 21l0 -10.15"/><path d="M19 21l0 -10.15"/><path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"/></svg>
                                 <span>Recojo en tienda</span>
-                            </label>
+                        </label>
                         </div>
                         <span class="delivery-mode-note">
                             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5 -5"/></svg>
@@ -2625,25 +2625,25 @@
                                         role="radiogroup"
                                         aria-label="Sucursales de recojo"
                                     >
-                                        <label
+                                    <label
                                             v-for="branch in filteredPickupBranches"
-                                            :key="branch.id"
+                                        :key="branch.id"
                                             class="option-card pickup-card"
-                                            :class="{ 'option-card--active': selectedPickupBranch && selectedPickupBranch.id === branch.id }"
-                                        >
-                                            <input
-                                                type="radio"
+                                        :class="{ 'option-card--active': selectedPickupBranch && selectedPickupBranch.id === branch.id }"
+                                    >
+                                        <input
+                                            type="radio"
                                                 name="pickup_branch"
                                                 style="margin-top: 6px"
-                                                :value="branch.id"
-                                                :checked="selectedPickupBranch && selectedPickupBranch.id === branch.id"
-                                                @change="selectPickupBranch(branch)"
-                                            >
-                                            <span class="option-card-body">
-                                                <strong>@{{ branch.name }}</strong>
-                                                <span class="option-card-sub" v-if="branch.address">@{{ branch.address }}</span>
-                                            </span>
-                                        </label>
+                                            :value="branch.id"
+                                            :checked="selectedPickupBranch && selectedPickupBranch.id === branch.id"
+                                            @change="selectPickupBranch(branch)"
+                                        >
+                                        <span class="option-card-body">
+                                            <strong>@{{ branch.name }}</strong>
+                                            <span class="option-card-sub" v-if="branch.address">@{{ branch.address }}</span>
+                                        </span>
+                                    </label>
                                     </div>
                                 </template>
 
@@ -2768,7 +2768,7 @@
                                 <div v-else class="contact-fields">
                                     <div>
                                         <label class="field-label" for="receiver_name">Nombre de quien recibe</label>
-                                        <input
+                            <input
                                             id="receiver_name"
                                             type="text"
                                             v-model.trim="form_contact.receiver_name"
@@ -2780,19 +2780,19 @@
                                         <label class="field-label" for="receiver_telephone">Teléfono de quien recibe</label>
                                         <input
                                             id="receiver_telephone"
-                                            type="tel"
+                                type="tel"
                                             v-model="form_contact.receiver_telephone"
-                                            class="input"
-                                            placeholder="Ej: 987 654 321"
-                                            maxlength="15"
-                                            inputmode="numeric"
-                                        >
+                                class="input"
+                                placeholder="Ej: 987 654 321"
+                                maxlength="15"
+                                inputmode="numeric"
+                            >
                                         <p class="hint">Solo se usa para coordinar esta entrega. Tus datos de contacto no cambian.</p>
-                                    </div>
-                                </div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
             </div>
         </div>
         </transition>
@@ -3138,13 +3138,13 @@
                             <div v-if="isCashHiddenByPickupOnly">
                                 <strong>@{{ cashPaymentTitle }}</strong> solo está disponible para <strong>recojo en tienda</strong>.
                                 Cambia el modo de entrega arriba o habilita otro método de pago en la configuración de la tienda.
-                            </div>
+                    </div>
                             <div v-else>
                                 No hay métodos de pago habilitados para esta tienda.
                                 Actívalos en <strong>Configuración &rsaquo; Pasarelas de pago</strong> del panel administrativo.
-                            </div>
-                        </div>
-                    </div>
+                </div>
+            </div>
+        </div>
                 </div>
             </div>
         </div>
@@ -3259,9 +3259,9 @@
                         :disabled="records.length === 0"
                         @click="scrollToContactSection"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                         Elegir forma de acceso
-                    </button>
+                        </button>
                     <button
                         v-else-if="!isLoggedIn && guestCheckoutAccepted && !isGuestCheckoutComplete"
                         type="button"
@@ -4340,8 +4340,8 @@
 
     function unbindCulqiEscapeClose() {
         if (!culqiEscapeHandler) {
-            return;
-        }
+                return;
+            }
         document.removeEventListener('keydown', culqiEscapeHandler);
         culqiEscapeHandler = null;
     }
@@ -4394,7 +4394,7 @@
 
         function finish(isReady) {
             if (finished) {
-                return;
+            return;
             }
             finished = true;
             cleanupPollTimer();
@@ -4589,7 +4589,7 @@
 
         if (typeof app_cart !== 'undefined') {
             app_cart.hidePaymentLoading();
-        } else {
+                    } else {
             document.body.style.overflow = '';
         }
     }

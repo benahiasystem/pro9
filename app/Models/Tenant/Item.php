@@ -593,18 +593,72 @@ class Item extends ModelTenant
      */
     public function getStockByWarehouse()
     {
+        // Listados que ya precargaron el stock con preloadStockByWarehouse().
+        if ($this->preloaded_stock_by_warehouse !== null) {
+            return $this->preloaded_stock_by_warehouse;
+        }
+
         if(auth()->user())
         {
             $establishment_id = auth()->user()->establishment_id;
-            $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
+            $warehouse = Warehouse::forEstablishment($establishment_id);
             if ($warehouse) {
-                $this->unsetRelation('warehouses');
-                $item_warehouse = $this->warehouses->where('warehouse_id', $warehouse->id)->first();
-                return ($item_warehouse) ? $item_warehouse->stock : 0;
+                // El stock se lee siempre fresco de item_warehouse (no de la relacion
+                // cacheada), pero sin recargar warehouses ni su almacen: en listados
+                // eso costaba dos consultas por producto.
+                $stock = ItemWarehouse::where('item_id', $this->id)
+                    ->where('warehouse_id', $warehouse->id)
+                    ->value('stock');
+
+                return ($stock !== null) ? $stock : 0;
             }
         }
 
         return 0;
+    }
+
+    /**
+     * Stock del almacen del usuario precargado para toda una coleccion.
+     * No es un atributo del modelo, asi que no se filtra en toArray().
+     *
+     * @var mixed
+     */
+    public $preloaded_stock_by_warehouse = null;
+
+    /**
+     * Resuelve en una sola consulta el stock de todos los productos de un listado,
+     * en lugar de una consulta por producto dentro de getStockByWarehouse().
+     *
+     * @param  iterable  $items
+     * @return void
+     */
+    public static function preloadStockByWarehouse($items)
+    {
+        if (!auth()->user()) {
+            return;
+        }
+
+        $items = collect($items);
+
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        // Mismo almacen que resuelve getStockByWarehouse(), para no devolver
+        // el stock de otro establecimiento.
+        $warehouse = Warehouse::forEstablishment(auth()->user()->establishment_id);
+
+        if (!$warehouse) {
+            return;
+        }
+
+        $stocks = ItemWarehouse::where('warehouse_id', $warehouse->id)
+            ->whereIn('item_id', $items->pluck('id')->all())
+            ->pluck('stock', 'item_id');
+
+        foreach ($items as $item) {
+            $item->preloaded_stock_by_warehouse = $stocks->get($item->id, 0);
+        }
     }
 
     /**
@@ -820,6 +874,41 @@ class Item extends ModelTenant
     }
 
     /**
+     * Indica si el producto tiene insumos asignados sin disparar una consulta
+     * cuando la relacion ya fue cargada (listados con eager loading).
+     *
+     * @return bool
+     */
+    public function hasRestaurantSupplies()
+    {
+        if ($this->relationLoaded('restaurantSupplies')) {
+            return $this->restaurantSupplies->isNotEmpty();
+        }
+
+        return $this->restaurantSupplies()->exists();
+    }
+
+    /**
+     * Indica si el producto es un set/combo, reutilizando la relacion cargada.
+     *
+     * @return bool
+     */
+    public function hasItemSets()
+    {
+        if ($this->relationLoaded('sets')) {
+            return $this->sets->isNotEmpty();
+        }
+
+        // items_sets recorre la misma tabla (item_sets) y la FK de
+        // individual_item_id impide filas huerfanas, asi que sirve igual.
+        if ($this->relationLoaded('items_sets')) {
+            return $this->items_sets->isNotEmpty();
+        }
+
+        return $this->sets()->exists();
+    }
+
+    /**
      * Calcula el stock disponible del producto en base a los insumos
      * Retorna la cantidad máxima de productos que se pueden preparar con el stock actual de insumos
      *
@@ -830,7 +919,15 @@ class Item extends ModelTenant
      */
     public function getRestaurantStock()
     {
-        $itemSupplies = $this->restaurantItemSupplies()->with('supply')->get();
+        // En listados la relacion ya viene cargada; se usa esa data en lugar de
+        // volver a consultar los insumos producto por producto.
+        if ($this->relationLoaded('restaurantSupplies')) {
+            $itemSupplies = $this->restaurantSupplies->map(function ($supply) {
+                return (object) ['supply' => $supply, 'quantity' => $supply->pivot->quantity];
+            });
+        } else {
+            $itemSupplies = $this->restaurantItemSupplies()->with('supply')->get();
+        }
 
         // Si no tiene insumos asignados, retorna 0
         if ($itemSupplies->isEmpty()) {
@@ -887,7 +984,7 @@ class Item extends ModelTenant
         $possibleStocks = [];
 
         foreach ($items as $item) {
-            if ($item->restaurantSupplies()->exists()) {
+            if ($item->hasRestaurantSupplies()) {
                 // Si el item del set tiene insumos asignados, se calcula su stock en base a esos insumos
                 $itemStock = $item->getRestaurantStock();
                 $possibleStocks[] = floor($itemStock / $item->pivot->quantity);
@@ -1421,6 +1518,70 @@ class Item extends ModelTenant
      */
     public static function AffectationIgvTypesExoneratedUnaffected(){
         return ['20', '21', '30', '31', '32', '33', '34', '35', '36', '37'];
+    }
+
+    /**
+     * Retorna item_unit_types con sus precios en el formato que consume el POS
+     * (usado por PosCollection y por la busqueda de items por codigo de barras)
+     *
+     * @param Configuration|null $configuration
+     * @param Collection|null $all_prices_label
+     * @return Collection
+     */
+    public function getItemUnitTypesForPos($configuration = null, $all_prices_label = null)
+    {
+        $configuration = $configuration ?? Configuration::first();
+        $all_prices_label = $all_prices_label ?? PriceLabel::all();
+
+        return collect($this->item_unit_types)->transform(function ($row) use ($configuration, $all_prices_label) {
+
+            // ya viene transformado (arreglo plano), se retorna tal cual
+            if (is_array($row)) {
+                return $row;
+            }
+
+            $row->loadMissing('prices.priceLabel');
+            $labels_id = $row->prices->pluck('price_label_id')->toArray();
+            $prices = $row->prices->map(function ($price) use ($row, $configuration) {
+                $price_label = $price->priceLabel;
+
+                return [
+                    'id' => $price->id,
+                    'price_label_id' => $price->price_label_id,
+                    'position' => $price_label->position,
+                    'description' => $row->description,
+                    'unit_type_id' => $row->unit_type_id,
+                    'quantity_unit' => (float)number_format($row->quantity_unit, $configuration->decimal_quantity, ".", ""),
+                    'label' => $price_label->label,
+                    'price' => $price ? number_format($price->price, 2, '.', '') : 0,
+                    'is_active' => $price ? (bool)$price->is_active : false,
+                ];
+            });
+
+            $missingLabel = $all_prices_label->whereNotIn('id', $labels_id)->first();
+
+            if ($missingLabel) {
+                $prices->push([
+                    'id' => null,
+                    'price_label_id' => $missingLabel->id,
+                    'position' => $missingLabel->position,
+                    'label' => $missingLabel->label,
+                    'price' => 0,
+                    'is_active' => $missingLabel->is_active
+                ]);
+            }
+
+            return [
+                'id' => $row->id,
+                'description' => "{$row->description}",
+                'item_id' => $row->item_id,
+                'unit_type_id' => $row->unit_type_id,
+                'quantity_unit' => (float)number_format($row->quantity_unit, $configuration->decimal_quantity, ".", ""),
+                'price_default' => $row->price_default,
+                'barcode' => $row->barcode ?? '',
+                'prices' => $prices->toArray(),
+            ];
+        })->values();
     }
 
     /**
@@ -3118,7 +3279,51 @@ class Item extends ModelTenant
             $record->where('unit_type_id', '!=', 'ZZ');
         }
 
+        // Inventario (app): filtrar por el stock de un almacen concreto
+        $record->filterStockByWarehouse($request->warehouse_id ?? null, $request->stock_filter ?? null);
+
         return $record;
+    }
+
+    /**
+     *
+     * Filtrar por stock en un almacen (modulo inventario de la app).
+     * Misma semantica que InventoryController::getCommonRecords (modulo Inventory).
+     * Un item sin fila en item_warehouse cuenta como stock 0.
+     *
+     * @param  Builder $query
+     * @param  int|null $warehouse_id
+     * @param  string|null $stock_filter all|positive|negative|zero|min_alert|safe
+     * @return Builder
+     */
+    public function scopeFilterStockByWarehouse($query, $warehouse_id, $stock_filter)
+    {
+        if (!$stock_filter || $stock_filter === 'all') return $query;
+
+        $warehouse_id = $warehouse_id ?: optional(Warehouse::select('id')->where('establishment_id', auth()->user()->establishment_id)->first())->id;
+        if (!$warehouse_id) return $query;
+
+        $has_stock_row = function ($q) use ($warehouse_id, $stock_filter) {
+            $q->where('warehouse_id', $warehouse_id);
+            switch ($stock_filter) {
+                case 'positive': $q->where('stock', '>', 0); break;
+                case 'negative': $q->where('stock', '<', 0); break;
+                case 'zero': $q->where('stock', '=', 0); break;
+                case 'min_alert': $q->where('stock', '>', 0)->whereColumn('stock', '<=', 'items.stock_min'); break;
+                case 'safe': $q->whereColumn('stock', '>', 'items.stock_min'); break;
+            }
+        };
+
+        if ($stock_filter === 'zero') {
+            return $query->where(function ($q) use ($has_stock_row, $warehouse_id) {
+                $q->whereHas('warehouses', $has_stock_row)
+                  ->orWhereDoesntHave('warehouses', function ($w) use ($warehouse_id) {
+                      $w->where('warehouse_id', $warehouse_id);
+                  });
+            });
+        }
+
+        return $query->whereHas('warehouses', $has_stock_row);
     }
 
 
@@ -3144,6 +3349,26 @@ class Item extends ModelTenant
      *
      * @return array
      */
+    /**
+     *
+     * Stock por almacen uniforme para la API movil (records-scroll, document/tables, search-items).
+     * Un establecimiento = un almacen: la app muestra el nombre del establecimiento.
+     *
+     * @param  \Illuminate\Support\Collection $warehouses
+     * @return \Illuminate\Support\Collection
+     */
+    public static function transformWarehousesForApi($warehouses)
+    {
+        return collect($warehouses)->map(function ($row) {
+            return [
+                'warehouse_id' => $row->warehouse_id,
+                'establishment_id' => optional($row->warehouse)->establishment_id,
+                'warehouse_description' => optional($row->warehouse)->description,
+                'stock' => (float) $row->stock,
+            ];
+        })->values();
+    }
+
     public function getSaleApiRowResource($warehouse)
     {
         $configuration =  Configuration::first();
@@ -3176,16 +3401,15 @@ class Item extends ModelTenant
                 return $row->getCollectionData($decimal_units);
             }),
             'stock' => $this->getWarehouseCurrentStock($warehouse),
+            // inventario (app): minimo y flags de lotes/series para bloquear traslado/ajuste
+            'stock_min' => (float) $this->stock_min,
+            'lots_enabled' => (bool) $this->lots_enabled,
+            'series_enabled' => (bool) $this->series_enabled,
             'image_url' => $this->getImageUrl(),
             'brand_id' => $this->brand_id,
             'category_id' => $this->category_id,
             'is_set' => $this->is_set,
-            'warehouses' => collect($this->warehouses)->transform(function ($row) {
-                return [
-                    'warehouse_description' => $row->warehouse->description,
-                    'stock' => $row->stock,
-                ];
-            }),
+            'warehouses' => self::transformWarehousesForApi($this->warehouses),
         ];
     }
 

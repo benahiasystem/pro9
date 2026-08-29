@@ -32,7 +32,7 @@ class DashboardTopKpiVisualContractTest extends TestCase
 
         self::assertNotFalse($card);
         self::assertNotFalse($renderer);
-        self::assertStringContainsString(":class=\"{ 'wg-body-kpi': isKpi }\"", $card);
+        self::assertStringContainsString("'wg-body-kpi': isKpi", $card);
         self::assertStringContainsString("<template v-else-if=\"dataset\">\n          <div class=\"wg-head\" :class=\"{ 'wg-head-kpi': isKpi }\">", $card);
         self::assertStringContainsString("return this.widget.type === 'kpi' || this.widget.type === 'kpi_spark'", $card);
         self::assertStringContainsString('.wg-body-kpi {', $card);

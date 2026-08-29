@@ -2929,10 +2929,25 @@ html.dark .minitour-tooltip p b {
   color:var(--dark-color) !important;
   border:1px solid var(--accent-color) !important;
 }
-html.dark .el-tooltip__popper.is-dark{
-  background: var(--light-color) !important;
-  color: var(--dark-color) !important;
-  border: 1px solid var(--accent-color);
+.sidebar-favorites,
+html.sidebar-left-collapsed .nano.hovered .sidebar-favorites {
+    margin: 0 15px 8px !important;
+    background: #fff !important;
+}
+.sidebar-favorites ul.nav-main li.nav-active.sidebar-pinned-item:not(.nav-parent) > a.nav-link {
+    color: #fff !important;
+}
+html.sidebar-left-collapsed .sidebar-favorites {
+    margin: 5px 0 !important;
+    padding: 3px 0;
+    border-color: transparent;
+    background: transparent !important;
+}
+.wg-filter-actions {
+    margin-top: auto !important;
+}
+.dashboard-filter-section {
+    margin-bottom: 10px !important;
 }
 /* --------------------------- tema Oscuro --------------------------- */
 /* html.dark .header .logo-container .topbar-links:hover {
@@ -4222,4 +4237,29 @@ html.dark .so-action-item,
 html.dark .so-collapse .el-collapse-item__header{
     background: var(--button-second);
     border: 1px solid var(--borders-dark);
+}
+html.dark .el-tooltip__popper.is-dark{
+  background: var(--light-color) !important;
+  color: var(--dark-color) !important;
+  border: 1px solid var(--accent-color);
+}
+html.dark .sidebar-favorites,
+html.sidebar-left-collapsed.dark .nano.hovered .sidebar-favorites {
+    background: var(--inputs-dark) !important;
+}
+html.sidebar-left-collapsed.dark .sidebar-favorites {
+    background: transparent !important;
+}
+html.dark .sidebar-menu-config-section-title,
+html.dark .sidebar-menu-config-section,
+html.dark .sidebar-menu-config-toolbar,
+html.dark .sidebar-menu-config-group{
+    border-color: var(--borders-dark);
+}
+html.sidebar-left-collapsed.dark .nano.hovered .sidebar-favorites{
+    border-color: var(--borders-dark) !important;
+}
+html.dark .sidebar-favorites,
+html.dark .sidebar-favorites-title {
+    border-color: var(--contents-dark);
 }

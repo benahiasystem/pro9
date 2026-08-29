@@ -22,7 +22,8 @@ class EstablishmentController extends Controller
     public function withSeries()
     {
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-        $document_type_ids = ['01', '80'];
+        // Las guías 09/31 se conservan para el módulo móvil; no se ofrecen nuevas boletas 03.
+        $document_type_ids = ['01', '80', '09', '31'];
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         $series_by_establishment = app(SeriesResolver::class)->applyContext(Series::whereIn('document_type_id', $document_type_ids))
@@ -33,7 +34,7 @@ class EstablishmentController extends Controller
             ->map(fn($item) => $item->only(['id', 'series_id', 'document_type_id']));
 
         $establishments = Establishment::whereFilterWithOutRelations()
-            ->select('id', 'description', 'address', 'code')
+            ->select('id', 'description', 'address', 'code', 'district_id', 'email', 'telephone')
             ->get()
             ->map(function ($establishment) use ($series_by_establishment) {
                 $series = $series_by_establishment->get($establishment->id, collect())
@@ -50,6 +51,10 @@ class EstablishmentController extends Controller
                     'address' => $establishment->address,
                     'trade_address' => $establishment->trade_address,
                     'code' => $establishment->code,
+                    // ubigeo y contacto: punto de partida / datos del emisor en guias de remision
+                    'district_id' => $establishment->district_id,
+                    'email' => $establishment->email,
+                    'telephone' => $establishment->telephone,
                     'series' => $series,
                 ];
             });

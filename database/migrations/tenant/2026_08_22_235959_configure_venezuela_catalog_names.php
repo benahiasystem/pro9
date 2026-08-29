@@ -71,7 +71,7 @@ return new class extends Migration
     {
         DB::transaction(function (): void {
             foreach (self::DOCUMENT_DESCRIPTIONS as $id => $description) {
-                DB::table('cat_document_types')->where('id', $id)->update([
+                DB::table('cat_document_types')->where('id', (string) $id)->update([
                     'description' => $description,
                 ]);
             }
@@ -123,7 +123,7 @@ return new class extends Migration
 
             foreach ($previousDocumentDescriptions as $id => $description) {
                 DB::table('cat_document_types')
-                    ->where('id', $id)
+                    ->where('id', (string) $id)
                     ->where('description', self::DOCUMENT_DESCRIPTIONS[$id])
                     ->update(['description' => $description]);
             }

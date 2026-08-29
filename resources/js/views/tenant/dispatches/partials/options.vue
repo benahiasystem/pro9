@@ -24,51 +24,45 @@
         <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
         <div class="row">
-
-            <template v-if="form.has_cdr">
-                <div v-if="form && form.external_id && form.external_id != null"
-                     class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
-                    <button class="btn btn-lg btn-info waves-effect waves-light"
-                            type="button"
-                            @click="clickDownload('a4')">
-                        <i class="fa fa-file-alt"></i>
-                    </button>
-                    <p>Descargar A4</p>
-                </div>
-                <!-- se agregaron templates con el issue #1435 -->
-                <div v-if="form && form.external_id && form.external_id != null"
-                     class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
-                    <button class="btn btn-lg btn-info waves-effect waves-light"
-                            type="button"
-                            @click="clickDownload('ticket')">
-                        <i class="fa fa-file-alt"></i>
-                    </button>
-                    <p>80MM</p>
-                </div>
-                <div v-if="form && form.external_id && form.external_id != null"
-                     class="col-lg-6 col-md-6 col-sm-6 text-center font-weight-bold mt-3">
-                    <button class="btn btn-lg btn-info waves-effect waves-light"
-                            type="button"
-                            @click="clickDownload('ticket_58')">
-                        <i class="fa fa-file-alt"></i>
-                    </button>
-                    <p>58MM</p>
-                </div>
-                <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                <!-- Sólo se ofrecen formatos PDF locales. -->
-                <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
-            </template>
-            <template v-else>
-                <div class="col-lg-12 col-md-12 col-sm-12 text-center font-weight-bold mt-3">
-                    <button class="btn btn-lg btn-info waves-effect waves-light"
-                            type="button"
-                            @click="clickDownload()">
-                        <i class="fa fa-file-alt"></i>
-                    </button>
-                    <p>Descargar A4</p>
-                </div>
-            </template>
-
+            <div
+                v-if="form && form.external_id"
+                class="col-lg-4 col-md-4 col-sm-6 text-center font-weight-bold mt-3"
+            >
+                <button
+                    class="btn btn-lg btn-info waves-effect waves-light"
+                    type="button"
+                    @click="clickDownload('a4')"
+                >
+                    <i class="fa fa-file-alt"></i>
+                </button>
+                <p>A4</p>
+            </div>
+            <div
+                v-if="form && form.external_id"
+                class="col-lg-4 col-md-4 col-sm-6 text-center font-weight-bold mt-3"
+            >
+                <button
+                    class="btn btn-lg btn-info waves-effect waves-light"
+                    type="button"
+                    @click="clickDownload('ticket')"
+                >
+                    <i class="fa fa-file-alt"></i>
+                </button>
+                <p>80MM</p>
+            </div>
+            <div
+                v-if="form && form.external_id"
+                class="col-lg-4 col-md-4 col-sm-6 text-center font-weight-bold mt-3"
+            >
+                <button
+                    class="btn btn-lg btn-info waves-effect waves-light"
+                    type="button"
+                    @click="clickDownload('ticket_58')"
+                >
+                    <i class="fa fa-file-alt"></i>
+                </button>
+                <p>58MM</p>
+            </div>
         </div>
         <div class="row mt-3">
             <div class="col-md-12">

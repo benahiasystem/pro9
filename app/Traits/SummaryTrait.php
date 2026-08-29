@@ -14,7 +14,7 @@ use DB;
 trait SummaryTrait
 {
     public function save($request) {
-        $validate = $this->validateVoided($request);
+        $validate = $this->validateSummary($request);
 
         if (!$validate['success']) return $validate;
         if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
@@ -43,25 +43,25 @@ trait SummaryTrait
      * @param VoidedRequest $request
      * @return array
      */
-    public function validateVoided($request)
+    public function validateSummary($request)
     {
 
-        $configuration = Configuration::select('restrict_voided_send', 'shipping_time_days_voided')->firstOrFail();
+        $configuration = Configuration::select('restrict_receipt_date', 'shipping_time_days')->firstOrFail();
         $voided_date_of_issue = Carbon::parse($request->date_of_issue);
 
-        if($configuration->restrict_voided_send)
+        if($configuration->restrict_receipt_date)
         {
             foreach ($request->documents as $row)
             {
                 $document = Document::whereFilterWithOutRelations()->select('date_of_issue')->findOrFail($row['document_id']);
 
-                $difference_days = $configuration->shipping_time_days_voided - $document->getDiffInDaysDateOfIssue($voided_date_of_issue);
+                $difference_days = $configuration->shipping_time_days - $document->getDiffInDaysDateOfIssue($voided_date_of_issue);
 
                 if($difference_days < 0)
                 {
                     return [
                         'success' => false,
-                        'message' => "El documento excede los {$configuration->shipping_time_days_voided} días válidos para ser anulado."
+                        'message' => "El documento excede los {$configuration->shipping_time_days} días válidos para ser anulado."
                     ];
                 }
             }

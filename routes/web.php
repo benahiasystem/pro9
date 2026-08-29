@@ -40,6 +40,10 @@ if ($hostname) {
                 return response()->noContent(); // 204
             });
             Route::get('notifications/header', 'Tenant\NotificationController@header');
+            Route::get('api/user/menu-preferences', 'Tenant\UserMenuPreferenceController@show')
+                ->name('tenant.user.menu-preferences.show');
+            Route::post('api/user/menu-preferences', 'Tenant\UserMenuPreferenceController@update')
+                ->name('tenant.user.menu-preferences.update');
             // Route::get('catalogs', 'Tenant\CatalogController@index')->name('tenant.catalogs.index');
             Route::get('list-reports', 'Tenant\SettingController@listReports');
             Route::get('list-extras', 'Tenant\SettingController@listExtras');
@@ -535,6 +539,7 @@ if ($hostname) {
                 Route::get('/get_origin_addresses/{establishment_id}', 'Tenant\DispatchController@getOriginAddresses');
                 Route::get('/get_addresses_other_establishments/{establishment_id}', 'Tenant\DispatchController@getAddressesOtherEstablishments');
                 Route::get('/get_delivery_addresses/{person_id}', 'Tenant\DispatchController@getDeliveryAddresses');
+                Route::get('/anulate/{id}', 'Tenant\DispatchController@anulate');
             });
 
             Route::prefix('dispatch_carrier')->group(function () {
@@ -1223,6 +1228,10 @@ if ($hostname) {
             Route::delete('waha-servers/{wahaServer}', 'System\WahaServerController@destroy');
             Route::post('waha-servers/{wahaServer}/set-default', 'System\WahaServerController@setDefault');
             Route::post('configurations/google-maps', 'System\ConfigurationController@googleMaps');
+
+            // Repositorio remoto (GitHub/GitLab) para el auto-update
+            Route::get('configurations/git-repository', 'System\ConfigurationController@gitRepository');
+            Route::post('configurations/git-repository', 'System\ConfigurationController@storeGitRepository');
 
             // Número de WhatsApp conectado al superadmin (envío de notificaciones)
             Route::post('configurations/whatsapp-notify/connect', 'System\WhatsAppNotifyController@connect');

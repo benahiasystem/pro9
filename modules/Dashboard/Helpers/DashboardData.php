@@ -13,7 +13,6 @@ use Carbon\Carbon;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Item;
 use App\Models\Tenant\Purchase;
-use App\Models\Tenant\Establishment;
 use Modules\Inventory\Models\ItemWarehouse;
 use Modules\Expense\Models\Expense;
 use Modules\Dashboard\Traits\TotalsTrait;
@@ -83,15 +82,6 @@ class DashboardData
     private function resolveFilters(array $request = [])
     {
         return DashboardFilterHelper::resolve($request);
-    }
-
-    private function applyEstablishment($query, $establishment_id, $table = null)
-    {
-        if ($establishment_id) {
-            $query->where(($table ? "{$table}." : '').'establishment_id', $establishment_id);
-        }
-
-        return $query;
     }
 
     private function applyDateRange($query, $date_start, $date_end, $column = 'date_of_issue')
@@ -275,7 +265,7 @@ class DashboardData
     public function lowStock(array $request = [])
     {
         $filters = $this->resolveFilters($request);
-        $establishment_id = $filters['establishment_id'] ?: optional(Establishment::select('id')->first())->id;
+        $establishment_id = $filters['establishment_id'];
         $stock_limit = 10;
 
         $rows = ItemWarehouse::with('item:id,description,stock_min')
@@ -284,24 +274,30 @@ class DashboardData
                       ->where('status', true)
                       ->where('unit_type_id', '!=', 'ZZ');
             })
-            ->whereHas('warehouse', function ($query) use ($establishment_id) {
-                $query->where('establishment_id', $establishment_id);
+            ->when($establishment_id, function ($query) use ($establishment_id) {
+                $query->whereHas('warehouse', function ($query) use ($establishment_id) {
+                    $query->where('establishment_id', $establishment_id);
+                });
             })
             ->get();
 
-        $low = $rows->filter(function ($row) use ($stock_limit) {
-            return $row->item && (float) $row->stock <= $stock_limit;
-        })->sortBy(function ($row) {
-            return (float) $row->stock;
-        });
+        $low = $rows->filter(function ($row) {
+                return (bool) $row->item;
+            })
+            ->groupBy('item_id')
+            ->map(function ($group) {
+                return [
+                    'product' => $group->first()->item->description,
+                    'stock' => (float) $group->sum('stock'),
+                    'stock_min' => (float) $group->first()->item->stock_min,
+                ];
+            })
+            ->filter(function ($row) use ($stock_limit) {
+                return $row['stock'] <= $stock_limit;
+            })
+            ->sortBy('stock');
 
-        $items = $low->map(function ($row) {
-            return [
-                'product' => $row->item->description,
-                'stock' => (float) $row->stock,
-                'stock_min' => (float) $row->item->stock_min,
-            ];
-        })->values();
+        $items = $low->values();
 
         return [
             'items' => $items,
@@ -866,12 +862,12 @@ class DashboardData
     {
 
         if($date_start && $date_end){
-            $sale_notes = SaleNote::query()->where('establishment_id', $establishment_id)
+            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)
                                            ->where('changed', false)
                                            ->whereStateTypeAccepted()
                                            ->whereBetween('date_of_issue', [$date_start, $date_end])->get();
         }else{
-            $sale_notes = SaleNote::query()->where('establishment_id', $establishment_id)
+            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)
                                            ->where('changed', false)
                                            ->whereStateTypeAccepted()
                                            ->get();
@@ -1003,14 +999,12 @@ class DashboardData
     {
 
         if($date_start && $date_end){
-            $documents = Document::query()
-                ->where('establishment_id', $establishment_id)
+            $documents = $this->filterEstablishment(Document::query(), $establishment_id)
                 ->whereBetween('date_of_issue', [$date_start, $date_end])
                 ->whereIn('state_type_id', ['01','03','05','07','13'])
                 ->get();
         }else{
-            $documents = Document::query()
-                ->where('establishment_id', $establishment_id)
+            $documents = $this->filterEstablishment(Document::query(), $establishment_id)
                 ->whereIn('state_type_id', ['01','03','05','07','13'])
                 ->get();
         }
@@ -1192,8 +1186,7 @@ class DashboardData
      */
     public function salesTotalByRange($establishment_id, $date_start, $date_end)
     {
-        $documents_query = Document::query()
-            ->where('establishment_id', $establishment_id)
+        $documents_query = $this->filterEstablishment(Document::query(), $establishment_id)
             ->whereIn('state_type_id', ['01','03','05','07','13']);
 
         if ($date_start && $date_end) {
@@ -1214,8 +1207,7 @@ class DashboardData
         }
         $documents_total = round($document_total - $document_note_credit, 2);
 
-        $sale_notes_query = SaleNote::query()
-            ->where('establishment_id', $establishment_id)
+        $sale_notes_query = $this->filterEstablishment(SaleNote::query(), $establishment_id)
             ->where('changed', false)
             ->whereStateTypeAccepted();
 
@@ -1252,21 +1244,21 @@ class DashboardData
     {
 
         if($date_start && $date_end){
-            $sale_notes = SaleNote::query()->where('establishment_id', $establishment_id)
+            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)
                                            ->where('changed', false)
                                            ->whereBetween('date_of_issue', [$date_start, $date_end])
                                            ->whereStateTypeAccepted()
                                            ->get();
 
-            $documents = Document::query()->where('establishment_id', $establishment_id)->whereBetween('date_of_issue', [$date_start, $date_end])->get();
+            $documents = $this->filterEstablishment(Document::query(), $establishment_id)->whereBetween('date_of_issue', [$date_start, $date_end])->get();
 
         }else{
-            $sale_notes = SaleNote::query()->where('establishment_id', $establishment_id)
+            $sale_notes = $this->filterEstablishment(SaleNote::query(), $establishment_id)
                                            ->where('changed', false)
                                            ->whereStateTypeAccepted()
                                            ->get();
 
-            $documents = Document::query()->where('establishment_id', $establishment_id)->get();
+            $documents = $this->filterEstablishment(Document::query(), $establishment_id)->get();
         }
 
 

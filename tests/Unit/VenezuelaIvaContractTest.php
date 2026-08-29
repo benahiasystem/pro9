@@ -226,7 +226,7 @@ class VenezuelaIvaContractTest extends TestCase
             resource_path('js/views/tenant/pos/index.vue')
         );
 
-        self::assertSame(1, substr_count($source, '<td>IVA</td>'));
+        self::assertSame(1, substr_count($source, '<span>IVA</span>'));
         self::assertStringNotContainsString('<div class="col-12 text-right px-0" v-if="form.total_igv > 0">', $source);
         self::assertStringNotContainsString('</div> -->', $source);
     }

@@ -65,7 +65,7 @@ class TenantMigrationDataSeederTest extends TestCase
             glob(database_path('migrations/tenant/*_repair_items_parent_item_contract.php')) ?: []
         );
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        self::assertCount(354, glob(database_path('migrations/tenant/*.php')) ?: []);
+        self::assertCount(357, glob(database_path('migrations/tenant/*.php')) ?: []);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         // ########### FIN CONTRATO FLUJO DE PRODUCTOS ###########
         // ######### FIN CAMBIO SUNAT A SENIAT

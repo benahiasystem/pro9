@@ -909,8 +909,12 @@
         {
             $query->whereDoesntHave('documents')
                     ->whereDoesntHave('sale_notes')
-                    ->where('establishment_id', $establishment_id)
                     ->whereStateTypeAccepted();
+
+            if($establishment_id)
+            {
+                $query->where('establishment_id', $establishment_id);
+            }
 
             if($date_start && $date_end)
             {

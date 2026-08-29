@@ -5,8 +5,35 @@
  */
 
 export const GRID_COLUMNS = 12
-export const GRID_ROW_HEIGHT = 84
+export const GRID_ROW_HEIGHT = 96
 export const GRID_GAP = 16
+
+/** Títulos de "Ventas…" según el periodo global (espejo de RowTop.salesTitle). */
+const PERIOD_SALES_TITLES = {
+  all: 'Ventas totales',
+  last_week: 'Ventas de la semana',
+  month: 'Ventas del mes',
+  between_months: 'Ventas entre meses',
+  date: 'Venta del dia',
+  between_dates: 'Ventas entre fechas',
+}
+
+const PERIOD_CHANGE_LABELS = {
+  all: 'vs mes anterior',
+  last_week: 'vs semana anterior',
+  month: 'vs mes anterior',
+  between_months: 'vs periodo anterior',
+  date: 'vs día anterior',
+  between_dates: 'vs periodo anterior',
+}
+
+export function salesTitleForPeriod(period) {
+  return PERIOD_SALES_TITLES[period] || 'Ventas'
+}
+
+export function changeLabelForPeriod(period) {
+  return PERIOD_CHANGE_LABELS[period] || 'vs periodo anterior'
+}
 
 export const SIZES = [
   { id: 's', label: 'S', cols: 3 },
@@ -138,6 +165,27 @@ export function formatCompact(value, unit) {
   else if (Math.abs(n) >= 1000) s = (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
   else s = unit === 'money' ? String(Math.round(n * 100) / 100) : String(Math.round(n))
   return unit === 'money' ? 'Bs. ' + s : s
+}
+
+/**
+ * Valor de KPI compacto (espejo de RowTop.formatNumber) para que quepa
+ * junto al sparkline: 29.3K / 1.2M, o 2 decimales si es menor a mil.
+ */
+export function formatKpi(value, unit) {
+  const n = Number(value) || 0
+  if (unit === 'percent') {
+    return n.toLocaleString('es-VE', { maximumFractionDigits: 1 }) + '%'
+  }
+  if (unit !== 'money') {
+    if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0+$/, '') + 'M'
+    if (Math.abs(n) >= 1000) return (n / 1000).toFixed(1).replace(/\.0+$/, '') + 'K'
+    return Math.round(n).toLocaleString('es-VE')
+  }
+  let amount
+  if (Math.abs(n) >= 1000000) amount = (n / 1000000).toFixed(1).replace(/\.0+$/, '') + 'M'
+  else if (Math.abs(n) >= 1000) amount = (n / 1000).toFixed(1).replace(/\.0+$/, '') + 'K'
+  else amount = n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return 'Bs. ' + amount
 }
 
 export function formatValue(value, unit) {

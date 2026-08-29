@@ -2,6 +2,8 @@
 
 namespace App\Models\Tenant;
 
+use App\Traits\ApiResourceFindTrait;
+
 use App\CoreFacturalo\Facturalo;
 use App\Http\Controllers\Tenant\DownloadController;
 use App\Models\Tenant\Catalogs\DocumentType;
@@ -66,6 +68,8 @@ use App\Models\Tenant\Catalogs\IdentityDocumentType;
  */
 class Dispatch extends ModelTenant
 {
+    use ApiResourceFindTrait;
+
     protected $with = ['user', 'soap_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type','transfer_reason_type', 'items', 'reference_document'];
 
     protected $fillable = [
@@ -385,6 +389,69 @@ class Dispatch extends ModelTenant
     /**
      * @return HasMany
      */
+    /**
+     * Datos esenciales de la guia de remision para consumo por API.
+     *
+     * A diferencia de document / sale-note / quotation / purchase, la guia no tiene
+     * importes: lo relevante es el traslado (motivo, fechas, pesos, bultos, origen,
+     * destino y transporte). Por eso las lineas solo llevan cantidad y descripcion.
+     *
+     * @return array
+     */
+    public function getApiResourceFind()
+    {
+        $person = $this->customer_id ? Person::find($this->customer_id) : null;
+        $person_ubigeo = $this->resolvePersonUbigeo($person);
+
+        $items = collect($this->items)->map(function ($row) {
+            return [
+                'quantity'     => (float) $row->quantity,
+                'unit_type_id' => optional($row->item)->unit_type_id,
+                'description'  => $row->name_product_pdf ?: optional($row->item)->description,
+            ];
+        })->values()->all();
+
+        return [
+            'series'                      => $this->series,
+            'number'                      => $this->number,
+            'document_type_id'            => $this->document_type_id,
+            'date_of_issue'               => optional($this->date_of_issue)->format('Y-m-d'),
+            'time_of_issue'               => $this->time_of_issue,
+            'date_of_shipping'            => optional($this->date_of_shipping)->format('Y-m-d'),
+
+            'customer_name'               => optional($this->customer)->name,
+            'customer_number'             => optional($this->customer)->number,
+            'customer_address'            => $this->buildApiResourcePersonAddress($this->customer, $person_ubigeo),
+            'department_id'               => $person_ubigeo['department_id'],
+            'province_id'                 => $person_ubigeo['province_id'],
+            'district_id'                 => $person_ubigeo['district_id'],
+
+            // Datos del traslado
+            'transfer_reason_type_id'     => $this->transfer_reason_type_id,
+            'transfer_reason_description' => $this->transfer_reason_description,
+            'transport_mode_type_id'      => $this->transport_mode_type_id,
+            'unit_type_id'                => $this->unit_type_id,
+            'total_weight'                => (float) $this->total_weight,
+            'packages_number'             => $this->packages_number,
+            'container_number'            => $this->container_number,
+            'origin'                      => $this->origin,
+            'delivery'                    => $this->delivery,
+            'license_plate'               => $this->license_plate,
+            'driver'                      => $this->driver,
+            'dispatcher'                  => $this->dispatcher,
+
+            'items'                       => $items,
+            // clave unificada con purchase/find y sale-note/find; en dispatches la
+            // columna se llama observations (plural).
+            'observations'                => $this->observations,
+            'terms_condition'             => $this->terms_condition,
+            'legends'                     => $this->legends,
+            // La guia electronica no genera 'qr' como Document; expone qr_url y hash.
+            'qr_url'                      => $this->qr_url,
+            'hash'                        => $this->hash,
+        ];
+    }
+
     public function items()
     {
         return $this->hasMany(DispatchItem::class);
@@ -548,6 +615,26 @@ class Dispatch extends ModelTenant
 
 
     /**
+     * Indica si la guía descontó stock físico al crearse.
+     * Misma regla que InventoryKardexServiceProvider::dispatch().
+     */
+    public function discountsPhysicalStock(): bool
+    {
+        if ($this->document_type_id !== '09') {
+            return false;
+        }
+
+        $transferReason = $this->getRelationValue('transfer_reason_type');
+        if (!$transferReason || !$transferReason->discount_stock) {
+            return false;
+        }
+
+        return !$this->reference_sale_note_id
+            && !$this->reference_order_note_id
+            && !$this->reference_document_id;
+    }
+
+    /**
      * Retorna un standar de nomenclatura para el modelo
      *
      * @return array
@@ -588,6 +675,14 @@ class Dispatch extends ModelTenant
 
         if ($this->state_type_id !== '05') {
             $btn_edit = true;
+        }
+
+        $btn_voided = false;
+        if (
+            $this->discountsPhysicalStock()
+            && !in_array($this->state_type_id, ['09', '11'], true)
+        ) {
+            $btn_voided = true;
         }
 
 //        if(!is_null($this->reference_sale_note_id) || !is_null($this->reference_document_id) ||
@@ -661,6 +756,7 @@ class Dispatch extends ModelTenant
             'btn_pdf' => $btn_pdf,
             'btn_options' => $btn_options,
             'btn_edit' => $btn_edit,
+            'btn_voided' => $btn_voided,
             'has_transport_driver_01'=> $this->has_transport_driver_01,
             'sunat_error_response' => $this->sunat_error_response,
         ];

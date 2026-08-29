@@ -26,7 +26,7 @@
                     </button>
                 </template>
                 <template v-else>
-                    <button class="btn btn-sm second-buton" @click="enterLayoutEditFromHeader">
+                    <button class="btn btn-sm second-buton edit-layout-btn" @click="enterLayoutEditFromHeader">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-adjustments-horizontal" style="margin-top: -2px;"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 6a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M6 12a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M15 18a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" /></svg>
                         Personalizar barra
                     </button>
@@ -284,22 +284,29 @@
                 </template>
                 <template #image>
                     <div class="form-group d-flex">
-                        <el-upload ref="itemImageUploadPinned"
-                                   :action="`/${resource}/upload`"
-                                   :data="{'type': 'items'}"
-                                   :headers="headers"
-                                   :on-success="onSuccess"
-                                   :show-file-list="false"
-                                   class="avatar-uploader item-img"
-                                   style="margin-top: 12px;">
-                            <img v-if="form.image_url"
-                                 :src="form.image_url"
-                                 class="avatar">
-                            <i v-else
-                               class="el-icon-plus avatar-uploader-icon"></i>
-                        </el-upload>
+                        <el-tooltip :content="imageUploadHint" placement="top">
+                            <el-upload ref="itemImageUploadPinned"
+                                       :action="`/${resource}/upload`"
+                                       :data="{'type': 'items'}"
+                                       :headers="headers"
+                                       :before-upload="beforeUploadImage"
+                                       :on-success="onSuccess"
+                                       :show-file-list="false"
+                                       class="avatar-uploader item-img"
+                                       style="margin-top: 12px;">
+                                <img v-if="form.image_url"
+                                     :src="form.image_url"
+                                     class="avatar">
+                                <i v-else
+                                   class="el-icon-plus avatar-uploader-icon"></i>
+                            </el-upload>
+                        </el-tooltip>
                         <div class="d-flex flex-column ms-2">
-                            <label class="label-img">Imágen</label>
+                            <label class="label-img">Imágen
+                                <el-tooltip :content="imageUploadHint" placement="top">
+                                    <i class="el-icon-info"></i>
+                                </el-tooltip>
+                            </label>
                             <button type="button"
                                     class="btn btn-sm second-buton mt-auto"
                                     @click.prevent="clickUploadImage('itemImageUploadPinned')">
@@ -500,7 +507,7 @@
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('warehouse_id')"><i class="el-icon-top"></i> Fijar arriba</button>
                         </div>
-                        <div v-show="recordId==null && form.unit_type_id !='ZZ' && !isPinned('stock')"
+                        <div v-show="variation_rows.length === 0 && (recordId==null && form.unit_type_id !='ZZ' && !isPinned('stock'))  "
                              class="col-md-3 field-pinnable">
                             <div :class="{'has-danger': errors.stock}"
                                  class="form-group">
@@ -523,20 +530,6 @@
                                        v-text="errors.stock_min[0]"></small>
                             </div>
                             <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('stock_min')"><i class="el-icon-top"></i> Fijar arriba</button>
-                        </div>
-                        <div v-show="form.unit_type_id !='ZZ' && form.lots_enabled"
-                             class="col-md-3">
-                            <div :class="{'has-danger': errors.date_of_due}"
-                                 class="form-group">
-                                <label class="control-label">Fec. Vencimiento</label>
-                                <el-date-picker v-model="form.date_of_due"
-                                                :clearable="true"
-                                                type="date"
-                                                value-format="yyyy-MM-dd"></el-date-picker>
-                                <small v-if="errors.date_of_due"
-                                       class="form-control-feedback"
-                                       v-text="errors.date_of_due[0]"></small>
-                            </div>
                         </div>
                         <div v-show="!isPinned('barcode')" class="col-md-3 field-pinnable">
                             <div :class="{'has-danger': errors.barcode}"
@@ -617,27 +610,6 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3">
-                            <div :class="{'has-danger': errors.factory_code}"
-                                 class="form-group">
-                                <label class="control-label">
-                                    Código de fábrica
-                                    <el-tooltip
-                                        class="item"
-                                        content="Para habilitar la búsqueda debe realizarlo en configuración/avanzado"
-                                        effect="dark"
-                                        placement="top">
-                                        <i class="fa fa-info-circle"></i>
-                                    </el-tooltip>
-                                </label>
-                                <el-input v-model="form.factory_code">
-                                </el-input>
-                                <small v-if="errors.factory_code"
-                                       class="form-control-feedback"
-                                       v-text="errors.factory_code[0]"></small>
-                            </div>
-                        </div>
-
                         <div class="col-md-3" v-if="resolvedVariant === 'restaurant'">
                             <div :class="{'has-danger': errors.preparation_area_id}" class="form-group">
                                 <label class="control-label">Areas de preparación</label>
@@ -654,94 +626,6 @@
                         </div>
 
                         <template v-if="!isNrus">
-                        <div class="col-12 mt-2">
-                            <div class="table-responsive table-border-none">
-                                <table class="table table-sm mb-0 table-borderless">
-                                    <thead>
-                                    <tr>
-                                        <th width="25%" class="bg-transparent border-0">
-                                            <el-checkbox v-model="form.has_perception"
-                                                         @change="changeHasPerception">Incluye percepción
-                                            </el-checkbox>
-                                        </th>
-                                        <th width="25%" class="bg-transparent border-0">
-                                            <div v-show="form.unit_type_id !='ZZ'">
-                                                <el-checkbox v-model="form.lots_enabled"
-                                                             @change="changeLotsEnabled">¿Maneja lotes?
-                                                </el-checkbox>
-                                            </div>
-                                        </th>
-                                        <th width="25%" class="bg-transparent border-0">
-                                            <div v-show="form.unit_type_id !='ZZ'">
-                                                <el-checkbox v-model="form.series_enabled"
-                                                             @change="changeLotsEnabled">¿Maneja series?
-                                                </el-checkbox>
-                                            </div>
-                                        </th>
-                                        <!-- <th width="25%">
-                                            <div v-show="form.unit_type_id !='ZZ' && canSeeProduction">
-                                                <el-checkbox v-model="form.is_for_production"
-                                                             @change="changeProductioTab">Este producto, ¿requiere insumos?
-                                                </el-checkbox>
-                                            </div>
-                                        </th> -->
-                                    </tr>
-                                                                        </thead>
-                                    <tbody>
-                                    <tr>
-                                        <td>
-                                            <div v-show="form.has_perception">
-                                                <div class="form-group">
-                                                    <el-input v-model="form.percentage_perception"
-                                                              class="input-select-all"
-                                                              placeholder="% de percepción"></el-input>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div v-show="form.unit_type_id !='ZZ' && form.lots_enabled">
-                                                <div :class="{'has-danger': errors.lot_code}"
-                                                     class="form-group">
-
-                                                     <el-tooltip class="item"
-                                                    content="Si va a usar el mismo LOTE en otros almacenes coloque un prefijo para diferenciarlos."
-                                                    effect="dark"
-                                                    placement="top">
-                                                    <el-input v-model="form.lot_code"
-                                                              placeholder="Código de lote"></el-input>
-                                                    </el-tooltip>
-                                                    <small v-if="errors.lot_code"
-                                                           class="form-control-feedback"
-                                                           v-text="errors.lot_code[0]"></small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div v-show="form.unit_type_id !='ZZ' && form.series_enabled && !recordId">
-                                                <div :class="{'has-danger': errors.lot_code}"
-                                                     class="form-group">
-                                                    <el-button icon="el-icon-edit-outline"
-                                                               size="small"
-                                                               type="primary"
-                                                               @click.prevent="clickLotcode">Ingrese series
-                                                    </el-button>
-                                                    <small v-if="errors.lot_code"
-                                                           class="form-control-feedback"
-                                                           v-text="errors.lot_code[0]"></small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                        <!-- ISC y detracción permanecen neutrales en el estado, sin controles de alta/edición. -->
-                        <!-- ######### FIN SIN DETRACCIONES E ISC -->
-
-
                         <div class="col-md-3" v-if="showRestrictSaleItemsCpe">
                             <div :class="{'has-danger': errors.restrict_sale_cpe}"
                                  class="form-group">
@@ -783,18 +667,206 @@
                             </div>
                         </template>
                         </template>
-                        <div class="col-md-12 mt-4 text-center field-pinnable" v-if="showTab('imagen') && !isPinned('image')" data-field-key="image">
-                            <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('image')"><i class="el-icon-top"></i> Fijar arriba</button>
-                            <label class="control-label d-block mb-2">Imagen</label>
-                            <el-upload :action="`/${resource}/upload`"
-                                    :data="{'type': 'items'}"
-                                    :headers="headers"
-                                    :on-success="onSuccess"
-                                    :show-file-list="false"
-                                    class="avatar-uploader item-image-uploader">
-                                <img v-if="form.image_url" :src="form.image_url" class="avatar">
-                                <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                            </el-upload>
+                        <div class="col-12 mt-3">
+                            <div class="row">
+                                <div v-show="!isPinned('image')" class="col-md-3 field-pinnable" data-field-key="image">
+                                    <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('image')"><i class="el-icon-top"></i> Fijar arriba</button>
+                                    <div class="form-group">
+                                        <label class="control-label">Imágen
+                                            <el-tooltip :content="imageUploadHint" placement="top">
+                                                <i class="el-icon-info"></i>
+                                            </el-tooltip>
+                                        </label>
+                                        <el-tooltip :content="imageUploadHint" placement="top">
+                                            <el-upload ref="itemImageUpload"
+                                                       :action="`/${resource}/upload`"
+                                                       :data="{'type': 'items'}"
+                                                       :headers="headers"
+                                                       :before-upload="beforeUploadImage"
+                                                       :on-success="onSuccess"
+                                                       :show-file-list="false"
+                                                       class="avatar-uploader item-img-fill">
+                                                <img v-if="form.image_url"
+                                                     :src="form.image_url"
+                                                     class="avatar">
+                                                <i v-else
+                                                   class="el-icon-plus avatar-uploader-icon"></i>
+                                            </el-upload>
+                                        </el-tooltip>
+                                        <button type="button"
+                                                class="btn btn-sm second-buton mt-2 w-100"
+                                                @click.prevent="clickUploadImage('itemImageUpload')">
+                                            Agregar imágen
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-9 px-0">
+                                    <div class="row">
+                                        <div v-show="!isPinned('category_id')" class="col-md-6 field-pinnable">
+                                            <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('category_id')"><i class="el-icon-top"></i> Fijar arriba</button>
+                                            <div :class="{'has-danger': errors.category_id}"
+                                                 class="form-group">
+                                                <label class="control-label">Categoría</label>
+                                                <el-input v-if="form_category.add == true"
+                                                          v-model="form_category.name"
+                                                          dusk="item_code"
+                                                          style="margin-bottom:1.5%;"></el-input>
+
+                                                <el-select v-if="form_category.add == false"
+                                                           v-model="form.category_id"
+                                                           clearable
+                                                           filterable
+                                                           :filter-method="filterCategories"
+                                                           @visible-change="onCategoryDropdownChange"
+                                                           @keydown.enter.native.prevent="createCategoryFromSearch">
+                                                    <el-option v-for="option in filteredCategories"
+                                                               :key="option.id"
+                                                               :label="option.name"
+                                                               :value="option.id"></el-option>
+                                                    <template slot="empty">
+                                                        <p v-if="loading_search" class="el-select-dropdown__empty">
+                                                            Cargando...
+                                                        </p>
+                                                        <p v-else-if="categorySearchQuery" class="el-select-dropdown__empty">
+                                                            No se encontraron resultados
+                                                        </p>
+
+                                                        <p v-else class="el-select-dropdown__empty">
+                                                            No hay categorías. <br> Escriba el nombre y presione Enter para crear
+                                                        </p>
+
+                                                        <div
+                                                            v-if="!loading_search && categorySearchQuery"
+                                                            class="el-select-dropdown__item new-option"
+                                                            @click.stop="createCategoryFromSearch"
+                                                        >
+                                                            <span>Crear categoría "{{ categorySearchQuery }}"</span>
+                                                        </div>
+                                                    </template>
+                                                </el-select>
+                                                <small v-if="errors.category_id"
+                                                       class="form-control-feedback"
+                                                       v-text="errors.category_id[0]"></small>
+                                            </div>
+                                        </div>
+                                        <div v-show="!isPinned('brand_id')" class="col-md-6 field-pinnable">
+                                            <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('brand_id')"><i class="el-icon-top"></i> Fijar arriba</button>
+                                            <div :class="{'has-danger': errors.brand_id}"
+                                                 class="form-group">
+                                                <label class="control-label">
+                                                    Marca
+                                                    <a v-if="form_brand.add == false"
+                                                        class="control-label font-weight-bold text-info"
+                                                        href="#"
+                                                        @click.prevent="form_brand.add = true"> [ + Nuevo]</a>
+                                                    <a v-if="form_brand.add == true"
+                                                        class="control-label font-weight-bold text-info"
+                                                        href="#"
+                                                        @click.prevent="saveBrand"> [ Guardar]</a>
+                                                    <a v-if="form_brand.add == true"
+                                                        class="control-label font-weight-bold text-danger"
+                                                        href="#"
+                                                        @click.prevent="cancelBrand"> [ Cancelar]</a>
+                                                </label>
+                                                <el-input v-if="form_brand.add == true"
+                                                          v-model="form_brand.name"
+                                                          placeholder="Nombre de la marca"
+                                                          @keyup.enter.native="saveBrand"
+                                                          dusk="item_code"
+                                                          style="margin-bottom:1.5%;"></el-input>
+
+                                                <el-select v-if="form_brand.add == false"
+                                                           v-model="form.brand_id"
+                                                           clearable
+                                                           filterable
+                                                           :filter-method="filterBrands"
+                                                           @visible-change="onBrandDropdownChange"
+                                                           @keydown.enter.native.prevent="createBrandFromSearch">
+                                                    <el-option v-for="option in filteredBrands"
+                                                               :key="option.id"
+                                                               :label="option.name"
+                                                               :value="option.id"></el-option>
+                                                    <template slot="empty">
+                                                        <p v-if="loading_search" class="el-select-dropdown__empty">
+                                                            Cargando...
+                                                        </p>
+
+                                                        <p v-else-if="brandSearchQuery" class="el-select-dropdown__empty">
+                                                            No se encontraron resultados
+                                                        </p>
+
+                                                        <p v-else class="el-select-dropdown__empty">
+                                                            No hay marcas. <br> Escriba el nombre y presione Enter para crear
+                                                        </p>
+
+                                                        <div
+                                                            v-if="!loading_search && brandSearchQuery"
+                                                            class="el-select-dropdown__item new-option"
+                                                            @click.stop="createBrandFromSearch"
+                                                        >
+                                                            <span>Crear marca "{{ brandSearchQuery }}"</span>
+                                                        </div>
+                                                    </template>
+                                                </el-select>
+                                                <small v-if="errors.brand_id"
+                                                       class="form-control-feedback"
+                                                       v-text="errors.brand_id[0]"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div v-if="attribute_types.length > 0">
+                                <h5 class="separator-title mb-0">
+                                    Listado
+                                    <el-tooltip class="item"
+                                                content="Diferentes presentaciones para la venta del producto"
+                                                effect="dark"
+                                                placement="top">
+                                        <i class="fa fa-info-circle"></i>
+                                    </el-tooltip>
+                                </h5>
+                            </div>
+                            <div v-if="form.attributes.length > 0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0 table-borderless">
+                                        <thead>
+                                        <tr>
+                                            <th class="pb-0">Tipo</th>
+                                            <th class="pb-0">Descripción</th>
+                                            <th class="pb-0"></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="(row, index) in form.attributes"
+                                            :key="index">
+                                            <td>
+                                                <el-select v-model="row.attribute_type_id"
+                                                           filterable
+                                                           @change="changeAttributeType(index)">
+                                                    <el-option v-for="option in attribute_types"
+                                                               :key="option.id"
+                                                               :label="option.description"
+                                                               :value="option.id"></el-option>
+                                                </el-select>
+                                            </td>
+                                            <td>
+                                                <el-input v-model="row.value"></el-input>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-danger btn-sm"
+                                                        type="button"
+                                                        @click.prevent="clickRemoveAttribute(index)">x
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                                    <a class="control-label font-weight-bold text-info"
+                                       href="#"
+                                       @click.prevent="clickAddAttribute">[+ Agregar]</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </el-tab-pane>
@@ -965,213 +1037,199 @@
                              name="fourth">
                     <span slot="label">Atributos</span>
                     <div class="row">
-                        <div v-show="!isPinned('image')" class="col-md-3 field-pinnable" data-field-key="image">
-                            <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('image')"><i class="el-icon-top"></i> Fijar arriba</button>
-                            <div class="form-group d-flex">
-                                <el-upload ref="itemImageUpload"
-                                           :action="`/${resource}/upload`"
-                                           :data="{'type': 'items'}"
-                                           :headers="headers"
-                                           :on-success="onSuccess"
-                                           :show-file-list="false"
-                                           class="avatar-uploader item-img"
-                                           style="margin-top: 12px;">
-                                    <img v-if="form.image_url"
-                                         :src="form.image_url"
-                                         class="avatar">
-                                    <i v-else
-                                       class="el-icon-plus avatar-uploader-icon"></i>
-                                </el-upload>
-                                <div class="d-flex flex-column ms-2">
-                                    <label class="label-img">Imágen</label>
-                                    <button type="button"
-                                            class="btn btn-sm second-buton mt-auto"
-                                            @click.prevent="clickUploadImage('itemImageUpload')">
-                                        Agregar imágen
-                                    </button>
+                        <template v-if="form.parent_item_id">
+                            <div class="col-12">
+                                <div class="alert alert-info mb-0">
+                                    <i class="fa fa-info-circle"></i>
+                                    Este producto es una variación. Sus atributos se gestionan desde el producto principal.
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-9">
-                            <div class="row">
-                                <div v-show="!isPinned('category_id')" class="col-md-6 field-pinnable">
-                                    <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('category_id')"><i class="el-icon-top"></i> Fijar arriba</button>
-                                    <div :class="{'has-danger': errors.category_id}"
-                                         class="form-group">
-                                        <label class="control-label">
-                                            Categoría
-                                            <!-- <a v-if="form_category.add == false"
-                                                class="control-label font-weight-bold text-info"
-                                                href="#"
-                                                @click="form_category.add = true"> [ + Nuevo]</a>
-                                            <a v-if="form_category.add == true"
-                                                class="control-label font-weight-bold text-info"
-                                                href="#"
-                                                @click="saveCategory()"> [ + Guardar]</a>
-                                            <a v-if="form_category.add == true"
-                                                class="control-label font-weight-bold text-danger"
-                                                href="#"
-                                                @click="form_category.add = false"> [ Cancelar]</a> -->
-                                        </label>
-                                        <el-input v-if="form_category.add == true"
-                                                  v-model="form_category.name"
-                                                  dusk="item_code"
-                                                  style="margin-bottom:1.5%;"></el-input>
-
-                                        <el-select v-if="form_category.add == false"
-                                                   v-model="form.category_id"
-                                                   clearable
-                                                   filterable
-                                                   :filter-method="filterCategories"
-                                                   @visible-change="onCategoryDropdownChange"
-                                                   @keydown.enter.native.prevent="createCategoryFromSearch">
-                                            <el-option v-for="option in filteredCategories"
-                                                       :key="option.id"
-                                                       :label="option.name"
-                                                       :value="option.id"></el-option>
-                                            <template slot="empty">
-                                                <p v-if="loading_search" class="el-select-dropdown__empty">
-                                                    Cargando...
-                                                </p>
-                                                <p v-else-if="categorySearchQuery" class="el-select-dropdown__empty">
-                                                    No se encontraron resultados
-                                                </p>
-
-                                                <p v-else class="el-select-dropdown__empty">
-                                                    No hay categorías. <br> Escriba el nombre y presione Enter para crear
-                                                </p>
-
-                                                <div
-                                                    v-if="!loading_search && categorySearchQuery"
-                                                    class="el-select-dropdown__item new-option"
-                                                    @click.stop="createCategoryFromSearch"
-                                                >
-                                                    <span>Crear categoría "{{ categorySearchQuery }}"</span>
-                                                </div>
-                                            </template>
-                                        </el-select>
-                                        <small v-if="errors.category_id"
-                                               class="form-control-feedback"
-                                               v-text="errors.category_id[0]"></small>
-                                    </div>
-                                </div>
-                                <div v-show="!isPinned('brand_id')" class="col-md-6 field-pinnable">
-                                    <button v-if="editingLayout" type="button" class="pin-from-form-btn" @click.prevent="pinFromForm('brand_id')"><i class="el-icon-top"></i> Fijar arriba</button>
-                                    <div :class="{'has-danger': errors.brand_id}"
-                                         class="form-group">
-                                        <label class="control-label">
-                                            Marca
-                                            <a v-if="form_brand.add == false"
-                                                class="control-label font-weight-bold text-info"
-                                                href="#"
-                                                @click.prevent="form_brand.add = true"> [ + Nuevo]</a>
-                                            <a v-if="form_brand.add == true"
-                                                class="control-label font-weight-bold text-info"
-                                                href="#"
-                                                @click.prevent="saveBrand"> [ Guardar]</a>
-                                            <a v-if="form_brand.add == true"
-                                                class="control-label font-weight-bold text-danger"
-                                                href="#"
-                                                @click.prevent="cancelBrand"> [ Cancelar]</a>
-                                        </label>
-                                        <el-input v-if="form_brand.add == true"
-                                                  v-model="form_brand.name"
-                                                  placeholder="Nombre de la marca"
-                                                  @keyup.enter.native="saveBrand"
-                                                  dusk="item_code"
-                                                  style="margin-bottom:1.5%;"></el-input>
-
-                                        <el-select v-if="form_brand.add == false"
-                                                   v-model="form.brand_id"
-                                                   clearable
-                                                   filterable
-                                                   :filter-method="filterBrands"
-                                                   @visible-change="onBrandDropdownChange"
-                                                   @keydown.enter.native.prevent="createBrandFromSearch">
-                                            <el-option v-for="option in filteredBrands"
-                                                       :key="option.id"
-                                                       :label="option.name"
-                                                       :value="option.id"></el-option>
-                                            <template slot="empty">
-                                                <p v-if="loading_search" class="el-select-dropdown__empty">
-                                                    Cargando...
-                                                </p>
-
-                                                <p v-else-if="brandSearchQuery" class="el-select-dropdown__empty">
-                                                    No se encontraron resultados
-                                                </p>
-
-                                                <p v-else class="el-select-dropdown__empty">
-                                                    No hay marcas. <br> Escriba el nombre y presione Enter para crear
-                                                </p>
-
-                                                <div
-                                                    v-if="!loading_search && brandSearchQuery"
-                                                    class="el-select-dropdown__item new-option"
-                                                    @click.stop="createBrandFromSearch"
-                                                >
-                                                    <span>Crear marca "{{ brandSearchQuery }}"</span>
-                                                </div>
-                                            </template>
-                                        </el-select>
-                                        <small v-if="errors.brand_id"
-                                               class="form-control-feedback"
-                                               v-text="errors.brand_id[0]"></small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div v-if="attribute_types.length > 0">
-                                <h5 class="separator-title mb-0">
-                                    Listado
-                                    <el-tooltip class="item"
-                                                content="Diferentes presentaciones para la venta del producto"
-                                                effect="dark"
-                                                placement="top">
-                                        <i class="fa fa-info-circle"></i>
-                                    </el-tooltip>
-                                </h5>
-                            </div>
-                            <div v-if="form.attributes.length > 0">
+                        </template>
+                        <template v-else>
+                            <div v-if="existing_variations.length > 0" class="col-12 mb-3">
+                                <label class="control-label">Variaciones registradas</label>
                                 <div class="table-responsive">
-                                    <table class="table table-sm mb-0 table-borderless">
+                                    <table class="table table-sm mb-0">
                                         <thead>
                                         <tr>
-                                            <th class="pb-0">Tipo</th>
-                                            <th class="pb-0">Descripción</th>
-                                            <th class="pb-0"></th>
+                                            <th>Combinación</th>
+                                            <th>Código interno</th>
+                                            <th>Código de barras</th>
+                                            <th class="text-end">Precio</th>
+                                            <th class="text-end">Stock</th>
                                         </tr>
                                         </thead>
                                         <tbody>
-                                        <tr v-for="(row, index) in form.attributes"
-                                            :key="index">
+                                        <tr v-for="row in existing_variations" :key="'existing-variation-' + row.id">
+                                            <td>{{ row.variation_label }}</td>
+                                            <td>{{ row.internal_id }}</td>
+                                            <td>{{ row.barcode }}</td>
+                                            <td class="text-end">{{ row.sale_unit_price }}</td>
+                                            <td class="text-end">{{ row.stock }}</td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <template v-if="product_variables.length === 0">
+                                <div class="col-12">
+                                    <p class="text-muted mb-0">
+                                        Aún no hay variables de atributos.
+                                        <a href="/configurations/product-variables" target="_blank">Créalas desde "Gestionar atributos"</a>
+                                        para generar variaciones.
+                                    </p>
+                                </div>
+                            </template>
+                            <template v-else>
+                                <div class="col-12 mb-2 d-flex align-items-center">
+                                    <el-button size="mini"
+                                               plain
+                                               icon="el-icon-plus"
+                                               @click.prevent="openVariationPicker">Seleccionar atributos</el-button>
+                                    <small class="text-muted ms-2">
+                                        Activa los valores de cada atributo para generar variaciones bajo este producto principal.
+                                    </small>
+                                </div>
+                                <div v-for="variable in selectedVariables"
+                                     :key="'variable-values-' + variable.id"
+                                     class="col-md-6">
+                                    <div class="pv-variable-card">
+                                        <label class="control-label font-weight-bold d-block mb-2">
+                                            {{ variable.name }}
+                                            <small class="text-muted fw-normal">
+                                                ({{ (selected_values[variable.id] || []).length }}/{{ variable.values.length }})
+                                            </small>
+                                        </label>
+                                        <el-select :value="selected_values[variable.id] || []"
+                                                   multiple
+                                                   filterable
+                                                   clearable
+                                                   class="w-100"
+                                                   :class="{'pv-color-select': variable.value_type === 'color'}"
+                                                   :style="selectedColorVars(variable)"
+                                                   placeholder="Selecciona uno o varios valores"
+                                                   @input="setVariableValues(variable.id, $event)">
+                                            <el-option v-for="value in variable.values"
+                                                       :key="'value-option-' + value.id"
+                                                       :label="value.value"
+                                                       :value="value.id">
+                                                <span v-if="variable.value_type === 'color'"
+                                                      class="pv-color-dot"
+                                                      :style="{background: value.color}"></span>{{ value.value }}
+                                            </el-option>
+                                        </el-select>
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-2">
+                                    <div class="d-flex align-items-center justify-content-between attr-gen-bar">
+                                        <span>
+                                            Combinaciones a generar: <b>{{ combinationsCount }}</b>
+                                            <span v-if="combinationsDetail" class="text-muted">({{ combinationsDetail }})</span>
+                                        </span>
+                                        <el-button type="primary"
+                                                   size="mini"
+                                                   icon="el-icon-setting"
+                                                   :disabled="combinationsCount === 0"
+                                                   @click.prevent="generateCombinations">Generar combinaciones</el-button>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <div v-if="variation_rows.length > 0" class="col-12">
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                        <tr>
+                                            <th style="width: 18%">Combinación</th>
+                                            <th style="width: 70px">
+                                                Imagen
+                                                <el-tooltip placement="top">
+                                                    <div slot="content">
+                                                        Imagen propia de cada combinación.<br>
+                                                        Si no subes una, la variación usará la imagen del producto principal.
+                                                    </div>
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </th>
+                                            <th style="width: 22%">Código interno</th>
+                                            <th style="width: 24%">Código de barras</th>
+                                            <th style="width: 16%">Precio</th>
+                                            <th style="width: 14%">Stock inicial</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="(row, index) in variation_rows" :key="'variation-row-' + index">
                                             <td>
-                                                <el-select v-model="row.attribute_type_id"
-                                                           filterable
-                                                           @change="changeAttributeType(index)">
-                                                    <el-option v-for="option in attribute_types"
-                                                               :key="option.id"
-                                                               :label="option.description"
-                                                               :value="option.id"></el-option>
-                                                </el-select>
+                                                <span v-for="(color, colorIndex) in row.colors"
+                                                      :key="'variation-color-' + index + '-' + colorIndex"
+                                                      class="pv-color-dot"
+                                                      :style="{background: color}"></span>
+                                                {{ row.label }}
+                                                <small v-if="variationError(index, 'variable_value_ids')"
+                                                       class="form-control-feedback text-danger d-block"
+                                                       v-text="variationError(index, 'variable_value_ids')"></small>
                                             </td>
                                             <td>
-                                                <el-input v-model="row.value"></el-input>
+                                                <el-tooltip placement="top"
+                                                            :content="`${row.image_url ? 'Cambiar imagen' : 'Subir imagen para esta combinación'}. ${imageUploadHint}`">
+                                                    <el-upload :action="`/${resource}/upload`"
+                                                               :data="{'type': 'items'}"
+                                                               :headers="headers"
+                                                               :before-upload="beforeUploadImage"
+                                                               :on-success="(response) => onVariationImageSuccess(response, row)"
+                                                               :show-file-list="false"
+                                                               class="avatar-uploader item-img"
+                                                               style="width: 48px !important; margin-top: 0 !important;">
+                                                        <img v-if="row.image_url"
+                                                             :src="row.image_url"
+                                                             class="avatar">
+                                                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                                                    </el-upload>
+                                                </el-tooltip>
+                                            </td>
+                                            <td>
+                                                <el-input v-model="row.internal_id" size="small"></el-input>
+                                                <small v-if="variationError(index, 'internal_id')"
+                                                       class="form-control-feedback text-danger"
+                                                       v-text="variationError(index, 'internal_id')"></small>
+                                            </td>
+                                            <td>
+                                                <el-input v-model="row.barcode" size="small" placeholder="Automático"></el-input>
+                                                <small v-if="variationError(index, 'barcode')"
+                                                       class="form-control-feedback text-danger"
+                                                       v-text="variationError(index, 'barcode')"></small>
+                                            </td>
+                                            <td>
+                                                <el-input v-model="row.sale_unit_price" size="small" type="number" step="0.01" min="0"></el-input>
+                                                <small v-if="variationError(index, 'sale_unit_price')"
+                                                       class="form-control-feedback text-danger"
+                                                       v-text="variationError(index, 'sale_unit_price')"></small>
+                                            </td>
+                                            <td>
+                                                <el-input v-model="row.stock" size="small" type="number" min="0"></el-input>
+                                                <small v-if="variationError(index, 'stock')"
+                                                       class="form-control-feedback text-danger"
+                                                       v-text="variationError(index, 'stock')"></small>
                                             </td>
                                             <td>
                                                 <button class="btn btn-danger btn-sm"
                                                         type="button"
-                                                        @click.prevent="clickRemoveAttribute(index)">x
+                                                        @click.prevent="removeVariationRow(index)">x
                                                 </button>
                                             </td>
                                         </tr>
                                         </tbody>
                                     </table>
                                 </div>
+                                <small v-if="variationGeneralError" class="text-danger d-block mt-1" v-text="variationGeneralError"></small>
+                                <p class="text-muted mt-2 mb-0">
+                                    <small>Las variaciones se crearán al guardar el producto. Se recomienda dejar el stock inicial del producto principal en 0.</small>
+                                </p>
                             </div>
-                            <a class="control-label font-weight-bold text-info"
-                               href="#"
-                               @click.prevent="clickAddAttribute">[+ Agregar]</a>
-                        </div>
+                        </template>
                     </div>
                 </el-tab-pane>
                 <el-tab-pane class
@@ -1434,6 +1492,118 @@
                         -->
                     </div>
                 </el-tab-pane>
+
+                <el-tab-pane v-if="showTab('advanced')"
+                             class
+                             name="advanced">
+                    <span slot="label">Avanzado</span>
+
+                    <div class="advanced-section">
+                        <h6 class="advanced-section__title">Códigos</h6>
+                        <div class="row">
+                            <!-- ########## INICIO CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                            <!-- item_code permanece en el contrato de datos, sin exposición en el formulario. -->
+                            <!-- ######### FIN CAMBIO NELSON: RETIRO CÓDIGO SUNAT -->
+                            <div class="col-md-4">
+                                <div :class="{'has-danger': errors.factory_code}"
+                                     class="form-group">
+                                    <label class="control-label">
+                                        Código de fábrica
+                                        <el-tooltip class="item"
+                                                    content="Para habilitar la búsqueda debe realizarlo en configuración/avanzado"
+                                                    effect="dark"
+                                                    placement="top">
+                                            <i class="fa fa-info-circle"></i>
+                                        </el-tooltip>
+                                    </label>
+                                    <el-input v-model="form.factory_code"></el-input>
+                                    <small v-if="errors.factory_code"
+                                           class="form-control-feedback"
+                                           v-text="errors.factory_code[0]"></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-show="form.unit_type_id != 'ZZ'" class="advanced-section">
+                        <h6 class="advanced-section__title">Trazabilidad de inventario</h6>
+
+                        <div class="advanced-toggle">
+                            <div class="advanced-toggle__check">
+                                <el-checkbox v-model="form.lots_enabled"
+                                             @change="changeLotsEnabled">¿Maneja lotes?
+                                </el-checkbox>
+                            </div>
+                            <div class="advanced-toggle__fields">
+                                <template v-if="form.lots_enabled">
+                                    <el-tooltip class="item"
+                                                content="Si va a usar el mismo LOTE en otros almacenes coloque un prefijo para diferenciarlos."
+                                                effect="dark"
+                                                placement="top">
+                                        <el-input v-model="form.lot_code"
+                                                  size="small"
+                                                  placeholder="Código de lote"></el-input>
+                                    </el-tooltip>
+                                    <el-date-picker v-model="form.date_of_due"
+                                                    :clearable="true"
+                                                    size="small"
+                                                    type="date"
+                                                    placeholder="Fec. vencimiento"
+                                                    value-format="yyyy-MM-dd"></el-date-picker>
+                                    <small v-if="errors.lot_code"
+                                           class="text-danger"
+                                           v-text="errors.lot_code[0]"></small>
+                                    <small v-if="errors.date_of_due"
+                                           class="text-danger"
+                                           v-text="errors.date_of_due[0]"></small>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="advanced-toggle">
+                            <div class="advanced-toggle__check">
+                                <el-checkbox v-model="form.series_enabled"
+                                             @change="changeLotsEnabled">¿Maneja series?
+                                </el-checkbox>
+                            </div>
+                            <div class="advanced-toggle__fields">
+                                <template v-if="form.series_enabled && !recordId">
+                                    <el-button icon="el-icon-edit-outline"
+                                               size="small"
+                                               type="primary"
+                                               @click.prevent="clickLotcode">Ingrese series
+                                    </el-button>
+                                    <small v-if="errors.lot_code"
+                                           class="text-danger"
+                                           v-text="errors.lot_code[0]"></small>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="!isNrus" class="advanced-section">
+                        <h6 class="advanced-section__title">Tributos y retenciones</h6>
+
+                        <div class="advanced-toggle">
+                            <div class="advanced-toggle__check">
+                                <el-checkbox v-model="form.has_perception"
+                                             @change="changeHasPerception">Incluye percepción
+                                </el-checkbox>
+                            </div>
+                            <div class="advanced-toggle__fields">
+                                <el-input v-if="form.has_perception"
+                                          v-model="form.percentage_perception"
+                                          class="input-select-all"
+                                          size="small"
+                                          placeholder="% de percepción"></el-input>
+                            </div>
+                        </div>
+
+                        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
+                        <!-- ISC y detracción permanecen en el estado histórico, sin controles activos. -->
+                        <!-- ######### FIN SIN DETRACCIONES E ISC -->
+                    </div>
+                </el-tab-pane>
             </el-tabs>
             <div class="form-actions text-end pt-2 mt-2" v-if="!editingLayout">
                 <template v-if="forOnlyShowAllDetails">
@@ -1457,6 +1627,13 @@
             @addRowLot="addRowLot">
         </lots-form>
 
+        <variation-picker
+            :showDialog.sync="showDialogVariationPicker"
+            :product-variables="product_variables"
+            :selected-variable-ids="selected_variable_ids"
+            @apply="applyVariationSelection">
+        </variation-picker>
+
     </el-dialog>
 </template>
 
@@ -1467,6 +1644,7 @@ import ItemFormPinnedBar from './_pinned_bar.vue'
 import { getDefaultLayout, getAvailableFields } from './_form_fields_catalog'
 import SuppliesTab from "@viewsModuleRestaurant/items/supplies-tab.vue";
 import ModifiersTab from "@viewsModuleRestaurant/items/modifiers-tab.vue";
+import VariationPicker from "./partials/variation_picker.vue";
 import {mapActions, mapState} from "vuex";
 import {ItemOptionDescription, ItemSlotTooltip} from "../../../helpers/modal_item";
 import ItemPricesTable from "@components/items/partials/ItemPricesTable.vue";
@@ -1475,9 +1653,9 @@ import ItemPricesTable from "@components/items/partials/ItemPricesTable.vue";
 const ALLOWED_VARIANTS = ['standard', 'ecommerce', 'restaurant']
 
 const TABS_BY_VARIANT = {
-    standard:   ['general', 'warehouses', 'presentations', 'attributes', 'purchase', 'extra_info', 'production'],
-    ecommerce:  ['general', 'extra_info'],
-    restaurant: ['general', 'supplies', 'modifiers', 'imagen'],
+    standard:   ['general', 'warehouses', 'presentations', 'attributes', 'purchase', 'extra_info', 'production', 'advanced'],
+    ecommerce:  ['general', 'extra_info', 'advanced'],
+    restaurant: ['general', 'supplies', 'modifiers', 'imagen', 'advanced'],
 }
 
 export default {
@@ -1502,13 +1680,40 @@ export default {
         ItemFormPinnedBar,
         SuppliesTab,
         ModifiersTab,
+        VariationPicker,
     },
     computed: {
+        imageUploadHint() {
+            const max_mb = (this.max_image_size_kb / 1024).toFixed(1).replace('.0', '')
+
+            return `Formatos: JPG, PNG, GIF, WEBP o SVG. Peso máximo: ${max_mb}MB`
+        },
         resolvedVariant() {
             return ALLOWED_VARIANTS.includes(this.variant) ? this.variant : 'standard'
         },
         pinnedKeysSet() {
             return new Set((this.pinned_fields || []).map(p => p.field_key))
+        },
+        selectedVariables() {
+            return this.product_variables.filter(v => this.selected_variable_ids.includes(v.id))
+        },
+        combinationsCount() {
+            const variables = this.selectedVariables
+            if (variables.length === 0) return 0
+            return variables.reduce((total, variable) => {
+                return total * ((this.selected_values[variable.id] || []).length)
+            }, 1)
+        },
+        combinationsDetail() {
+            const variables = this.selectedVariables
+            if (variables.length === 0) return null
+            return variables
+                .map(variable => `${(this.selected_values[variable.id] || []).length} ${variable.name}`)
+                .join(' × ')
+        },
+        variationGeneralError() {
+            const messages = this.variation_errors['variations']
+            return (messages && messages.length) ? messages[0] : null
         },
         showAffectationIgvType() {
             return this.affectation_igv_types.length > 1
@@ -1642,6 +1847,8 @@ export default {
 
     data() {
         return {
+            // Debe coincidir con ItemController::MAX_IMAGE_SIZE_KB
+            max_image_size_kb: 2048,
             loading_search: false,
             showDialogLots: false,
             form_category: {add: false, name: null, id: null},
@@ -1688,6 +1895,13 @@ export default {
 
             },
             attribute_types: [],
+            product_variables: [],
+            selected_variable_ids: [],
+            selected_values: {},
+            variation_rows: [],
+            existing_variations: [],
+            variation_errors: {},
+            showDialogVariationPicker: false,
             activeName: null,
             lastClickedTab: null,
             fromPharmacy: false,
@@ -1725,6 +1939,7 @@ export default {
                 this.categories = data.categories
                 this.brands = data.brands
                 this.attribute_types = data.attribute_types
+                this.product_variables = data.product_variables || []
                 // this.config = data.configuration
                 if (this.canShowExtraData) {
                     this.$store.commit('setColors', data.colors);
@@ -1901,6 +2116,143 @@ export default {
             // }
 
         },
+        openVariationPicker() {
+            this.reloadProductVariables()
+            this.showDialogVariationPicker = true
+        },
+        applyVariationSelection(selection) {
+            this.selected_variable_ids = selection.selected_variable_ids
+            this.selected_variable_ids.forEach(variableId => {
+                if (!this.selected_values[variableId]) {
+                    this.$set(this.selected_values, variableId, [])
+                }
+            })
+        },
+        setVariableValues(variableId, valueIds) {
+            this.$set(this.selected_values, variableId, valueIds || [])
+        },
+        // Element no expone slot para los tags del select: los colores viajan como
+        // variables CSS (--pv-dot-N) y el estilo los pinta por posición del tag
+        selectedColorVars(variable) {
+            if (variable.value_type !== 'color') {
+                return {}
+            }
+            const vars = {}
+            ;(this.selected_values[variable.id] || []).forEach((valueId, index) => {
+                const value = variable.values.find(v => v.id === valueId)
+                vars[`--pv-dot-${index + 1}`] = (value && value.color) || 'transparent'
+            })
+            return vars
+        },
+        abbreviateVariationValue(text) {
+            const clean = String(text).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]/g, '')
+            return (clean.length <= 3 ? clean : clean.slice(0, 3)).toUpperCase()
+        },
+        generateCombinations() {
+            if (!this.form.internal_id || !this.form.description || !(parseFloat(this.form.sale_unit_price) > 0)) {
+                return this.$message.warning('Completa el código interno, nombre y precio unitario del producto antes de generar combinaciones')
+            }
+
+            if (this.variation_rows.length > 0) {
+                this.$confirm('Se reemplazará el listado de combinaciones actual. ¿Continuar?', 'Confirmar', {
+                    confirmButtonText: 'Reemplazar',
+                    cancelButtonText: 'Cancelar',
+                    type: 'warning'
+                }).then(() => {
+                    this.buildVariationRows()
+                }).catch(() => {
+                })
+            } else {
+                this.buildVariationRows()
+            }
+        },
+        buildVariationRows() {
+            let combos = [[]]
+            this.selectedVariables.forEach(variable => {
+                const values = variable.values.filter(v => (this.selected_values[variable.id] || []).includes(v.id))
+                combos = combos.flatMap(combo => values.map(v => [...combo, v]))
+            })
+
+            this.variation_rows = combos.map(combo => ({
+                label: combo.map(v => v.value).join(' / '),
+                colors: combo.filter(v => v.color).map(v => v.color),
+                variable_value_ids: combo.map(v => v.id),
+                internal_id: `${this.form.internal_id}-${combo.map(v => this.abbreviateVariationValue(v.value)).join('-')}`.slice(0, 30),
+                barcode: '',
+                sale_unit_price: this.form.sale_unit_price,
+                stock: 0,
+                // sin imagen propia, la variación hereda la del producto principal
+                image: null,
+                image_url: null,
+                temp_path: null,
+            }))
+            this.variation_errors = {}
+        },
+        removeVariationRow(index) {
+            this.variation_rows.splice(index, 1)
+        },
+        onVariationImageSuccess(response, row) {
+            if (!response.success) {
+                return this.$message.error(response.message)
+            }
+            row.image = response.data.filename
+            row.image_url = response.data.temp_image
+            row.temp_path = response.data.temp_path
+        },
+        removeVariationImage(row) {
+            row.image = null
+            row.image_url = null
+            row.temp_path = null
+        },
+        variationError(index, field) {
+            const messages = this.variation_errors[`variations.${index}.${field}`]
+            return (messages && messages.length) ? messages[0] : null
+        },
+        async submitVariationsBulk(parentId) {
+            const payload = {
+                variations: this.variation_rows.map(row => ({
+                    internal_id: row.internal_id,
+                    barcode: row.barcode ? row.barcode : null,
+                    sale_unit_price: row.sale_unit_price,
+                    stock: row.stock || 0,
+                    variable_value_ids: row.variable_value_ids,
+                    image: row.image || null,
+                    temp_path: row.temp_path || null,
+                })),
+            }
+
+            try {
+                const response = await this.$http.post(`/items/${parentId}/variations/bulk`, payload)
+                if (response.data.success) {
+                    this.$message.success(response.data.message)
+                    this.variation_rows = []
+                    this.variation_errors = {}
+                    return true
+                }
+                this.$message.error(response.data.message || 'No se pudieron crear las variaciones')
+                return false
+            } catch (error) {
+                if (error.response?.status === 422) {
+                    this.variation_errors = error.response.data.errors || error.response.data || {}
+                } else if (error.response?.data?.message) {
+                    this.$message.error(error.response.data.message)
+                } else {
+                    this.$message.error('Error inesperado al crear las variaciones')
+                }
+                return false
+            }
+        },
+        loadExistingVariations() {
+            if (!this.form.id) return
+            this.$http.get(`/items/${this.form.id}/variations`).then(response => {
+                this.existing_variations = response.data.data || []
+            })
+        },
+        reloadProductVariables() {
+            this.$http.get('/product-variables/records?active=1').then(response => {
+                this.product_variables = response.data.data || []
+            })
+        },
         changeProductioTab(){
 
         },
@@ -2004,6 +2356,7 @@ export default {
                 image_url: null,
                 temp_path: null,
                 is_set: false,
+                parent_item_id: null,
                 account_id: null,
                 category_id: null,
                 brand_id: null,
@@ -2039,11 +2392,32 @@ export default {
             this.show_has_igv = true
             this.purchase_show_has_igv = true
             this.enabled_percentage_of_profit = false
+            this.selected_variable_ids = []
+            this.selected_values = {}
+            this.variation_rows = []
+            this.existing_variations = []
+            this.variation_errors = {}
             this.loadCurrentEstablishment()
         },
         changePreparationArea() {
             const selectedArea = this.preparation_areas.find(area => area.id === this.form.preparation_area_id);
             this.form.preparation_area = selectedArea ? selectedArea.description : null;
+        },
+        beforeUploadImage(file) {
+            const allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+
+            if (!allowed_types.includes(file.type)) {
+                this.$message.error('Formato de imagen no válido. Use JPG, PNG, GIF, WEBP o SVG.')
+                return false
+            }
+
+            if ((file.size / 1024) > this.max_image_size_kb) {
+                const max_mb = (this.max_image_size_kb / 1024).toFixed(1)
+                this.$message.error(`La imagen excede los ${max_mb}MB. Reduzca el tamaño e intente nuevamente.`)
+                return false
+            }
+
+            return true
         },
         onSuccess(response, file, fileList) {
             if (response.success) {
@@ -2149,6 +2523,7 @@ this.activeName = null
 
                         this.changeAffectationIgvType();
                         this.changePurchaseAffectationIgvType();
+                        this.loadExistingVariations();
                     });
             } else {
 
@@ -2264,6 +2639,13 @@ this.activeName = null
                 name: this.stripHtml(this.form.name)
             }
 
+            // El preview recién subido llega como data URI (base64) y el backend
+            // no lo usa: guarda la imagen desde temp_path. Enviarlo duplicaría el
+            // peso del archivo dentro del request y hace fallar el guardado.
+            if (typeof payload.image_url === 'string' && payload.image_url.startsWith('data:')) {
+                delete payload.image_url
+            }
+
             if (this.globalIgvHandling) {
                 payload.has_igv = true
                 payload.purchase_has_igv = true
@@ -2320,13 +2702,22 @@ this.activeName = null
                 const response = await this.$http.post(`/${this.resource}`, payload);
 
                 if (response.data.success) {
-                    this.$message.success(response.data.message);
 
                     if (!this.recordId && response.data.id && this.inventory_configuration?.generate_internal_id) {
                         const nextNum = parseInt(response.data.id) + 1;
                         this.next_internal_id = String(nextNum).padStart(5, '0');
                     }
 
+                    if (this.variation_rows.length > 0 && !this.form.parent_item_id) {
+                        this.form.id = response.data.id;
+                        const variationsOk = await this.submitVariationsBulk(response.data.id);
+                        if (!variationsOk) {
+                            this.$message.warning('El producto se guardó, pero las variaciones tienen errores. Corrígelas y vuelve a guardar.');
+                            return;
+                        }
+                    }
+
+                    this.$message.success(response.data.message);
                     this.$eventHub.$emit(this.external ? 'reloadDataItems' : 'reloadData', response.data.id);
                     this.close();
 
@@ -2709,6 +3100,50 @@ this.activeName = null
 </script>
 
 <style scoped>
+.advanced-section + .advanced-section {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+}
+.advanced-section__title {
+    margin-bottom: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6c757d;
+}
+.advanced-toggle {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: 46px;
+}
+.advanced-toggle + .advanced-toggle {
+    border-top: 1px dashed rgba(0, 0, 0, 0.06);
+}
+.advanced-toggle__check {
+    flex: 0 0 220px;
+}
+.advanced-toggle__fields {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-width: 0;
+}
+.advanced-toggle__fields >>> .el-input,
+.advanced-toggle__fields >>> .el-select,
+.advanced-toggle__fields >>> .el-date-editor {
+    width: 190px;
+}
+@media (max-width: 767px) {
+    .advanced-toggle__check {
+        flex: 0 0 100%;
+    }
+}
+
 /* Estilos para tabla de precios expandible */
 .prices-row td {
     border-top: none !important;
@@ -2723,11 +3158,12 @@ this.activeName = null
 .btn-chevron.rotated i{
     transform: rotate(90deg);
 }
-.item-image-uploader {
-    display: inline-block;   /* para que el text-center lo centre */
+.item-img-fill {
+    display: block;
+    width: 100%;
 }
-.item-image-uploader ::v-deep .el-upload {
-    width: 300px;
+.item-img-fill ::v-deep .el-upload {
+    width: 100%;
     height: 220px;
     border: 1px dashed #d9d9d9;
     border-radius: 8px;
@@ -2737,17 +3173,74 @@ this.activeName = null
     overflow: hidden;
     cursor: pointer;
 }
-.item-image-uploader ::v-deep .el-upload:hover {
+.item-img-fill ::v-deep .el-upload:hover {
     border-color: #409EFF;
 }
-.item-image-uploader ::v-deep .avatar {
-    width: 300px;
-    height: 220px;
-    object-fit: cover;
+.item-img-fill ::v-deep .avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
-.item-image-uploader ::v-deep .avatar-uploader-icon {
+.item-img-fill ::v-deep .avatar-uploader-icon {
     font-size: 48px;
     color: #8c939d;
+}
+.pv-color-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    margin-right: 6px;
+    vertical-align: middle;
+}
+.pv-variable-card {
+    border: 1px dashed #dcdfe6;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+.pv-variable-card ::v-deep .el-select__tags {
+    max-width: 100% !important;
+}
+.pv-variable-card ::v-deep .el-select__tags .el-tag {
+    margin: 2px 0 2px 6px;
+}
+.pv-color-select ::v-deep .el-select__tags .el-tag::before {
+    content: '';
+    display: none;
+    width: 10px;
+    height: 10px;
+    margin-right: 5px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    vertical-align: middle;
+}
+.pv-color-select ::v-deep .el-tag:nth-child(1)::before { display: inline-block; background: var(--pv-dot-1); }
+.pv-color-select ::v-deep .el-tag:nth-child(2)::before { display: inline-block; background: var(--pv-dot-2); }
+.pv-color-select ::v-deep .el-tag:nth-child(3)::before { display: inline-block; background: var(--pv-dot-3); }
+.pv-color-select ::v-deep .el-tag:nth-child(4)::before { display: inline-block; background: var(--pv-dot-4); }
+.pv-color-select ::v-deep .el-tag:nth-child(5)::before { display: inline-block; background: var(--pv-dot-5); }
+.pv-color-select ::v-deep .el-tag:nth-child(6)::before { display: inline-block; background: var(--pv-dot-6); }
+.pv-color-select ::v-deep .el-tag:nth-child(7)::before { display: inline-block; background: var(--pv-dot-7); }
+.pv-color-select ::v-deep .el-tag:nth-child(8)::before { display: inline-block; background: var(--pv-dot-8); }
+.pv-color-select ::v-deep .el-tag:nth-child(9)::before { display: inline-block; background: var(--pv-dot-9); }
+.pv-color-select ::v-deep .el-tag:nth-child(10)::before { display: inline-block; background: var(--pv-dot-10); }
+.pv-color-select ::v-deep .el-tag:nth-child(11)::before { display: inline-block; background: var(--pv-dot-11); }
+.pv-color-select ::v-deep .el-tag:nth-child(12)::before { display: inline-block; background: var(--pv-dot-12); }
+.pv-color-select ::v-deep .el-tag:nth-child(13)::before { display: inline-block; background: var(--pv-dot-13); }
+.pv-color-select ::v-deep .el-tag:nth-child(14)::before { display: inline-block; background: var(--pv-dot-14); }
+.pv-color-select ::v-deep .el-tag:nth-child(15)::before { display: inline-block; background: var(--pv-dot-15); }
+.pv-color-select ::v-deep .el-tag:nth-child(16)::before { display: inline-block; background: var(--pv-dot-16); }
+.pv-color-select ::v-deep .el-tag:nth-child(17)::before { display: inline-block; background: var(--pv-dot-17); }
+.pv-color-select ::v-deep .el-tag:nth-child(18)::before { display: inline-block; background: var(--pv-dot-18); }
+.pv-color-select ::v-deep .el-tag:nth-child(19)::before { display: inline-block; background: var(--pv-dot-19); }
+.pv-color-select ::v-deep .el-tag:nth-child(20)::before { display: inline-block; background: var(--pv-dot-20); }
+.attr-gen-bar {
+    background: color-mix(in srgb, var(--primary) 10%, #fefefe00);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
 }
 </style>
 

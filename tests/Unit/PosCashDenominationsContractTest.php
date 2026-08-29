@@ -20,7 +20,8 @@ class PosCashDenominationsContractTest extends TestCase
         self::assertNotFalse($fastPos);
         self::assertStringContainsString('ref="enter_amount"', $payment);
         self::assertStringContainsString('@input="enterAmount()"', $payment);
-        self::assertStringContainsString("v-text=\"(difference <0) ? 'Faltante' :'Vuelto'\"", $payment);
+        self::assertStringContainsString("v-text=\"isMissingAmount ? 'Faltante' : 'Vuelto'\"", $payment);
+        self::assertStringContainsString('{{ differenceText }}', $payment);
         self::assertStringContainsString('setAmountCash(amount)', $payment);
         self::assertStringNotContainsString('setAmountCash(10)', $payment);
         self::assertStringNotContainsString('setAmountCash(20)', $payment);

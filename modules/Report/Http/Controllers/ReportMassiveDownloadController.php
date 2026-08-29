@@ -20,13 +20,22 @@ use App\Models\Tenant\{
 };
 use Carbon\Carbon;
 use Hyn\Tenancy\Models\Hostname;
+use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use Modules\Report\Jobs\ProcessReportMassiveDocuments;
 use Modules\Report\Traits\MassiveDownloadTrait;
+use App\Traits\JobReportTrait;
 
 class ReportMassiveDownloadController extends Controller
 {
 
-    use ReportTrait, MassiveDownloadTrait;
+    use ReportTrait, MassiveDownloadTrait, JobReportTrait;
+
+    /**
+     * Maximo de documentos por lote al separar la descarga masiva
+     */
+    const MAX_RECORD_CHUNK = 100;
 
     public function index()
     {
@@ -65,10 +74,31 @@ class ReportMassiveDownloadController extends Controller
 
     public function pdf(Request $request) {
         $host = $request->getHost();
+        $params = json_decode($request->form);
+
+        $document_types = $params->document_types;
+
+        if(count($document_types) == 0){
+            $document_types = ['all'];
+        }
+        $params->document_types = $document_types;
+
+        $height = isset($params->height) ? $params->height : 'a4';
+        $record_chunk = (isset($params->record_chunk) && $params->record_chunk) ? (int) $params->record_chunk : null;
+
+        // Tope de seguridad: mas de 100 documentos por lote satura la memoria de php al generar el pdf
+        if (!is_null($record_chunk)) {
+            $record_chunk = min($record_chunk, self::MAX_RECORD_CHUNK);
+        }
+
+        // Secciones (tipo de documento + rango) que se procesarán en jobs independientes
+        $sections = is_null($record_chunk) ? [] : $this->getChunkSections($document_types, $params, $record_chunk, $height);
+        $is_batching = count($sections) > 0;
+
         $tray = DownloadTray::create([
             'user_id' => auth()->user()->id,
             'module' => 'REPORT',
-            'format' => 'pdf',
+            'format' => $is_batching ? 'zip' : 'pdf',
             'date_init' => date('Y-m-d H:i:s'),
             'type' => 'Descarga masiva de documentos'
         ]);
@@ -82,15 +112,39 @@ class ReportMassiveDownloadController extends Controller
         }else{
             $website_id = $hostname->website_id;
         }
-        $params = json_decode($request->form);
 
-        $document_types = $params->document_types;
+        if ($is_batching) {
 
-        if(count($document_types) == 0){
-            $document_types = ['all'];
+            $batches = [];
+            foreach ($sections as $section) {
+                $batches[] = new ProcessReportMassiveDocuments(
+                    $trayId,
+                    $website_id,
+                    $document_types,
+                    $params,
+                    $section,
+                    true
+                );
+            }
+
+            $filename = 'massive_documents_' . date('YmdHis') . '-' . $trayId;
+
+            Bus::batch($batches)
+                ->name('Report Massive Documents')
+                ->catch(function (Batch $batch, $exception) use($trayId) {
+                    Log::error("Error de batch Report Massive Documents: ", [
+                        "error" => $exception->getMessage()
+                    ]);
+                    $this->jobBatchFailed($batch->id, $trayId);
+                })
+                ->then(function(Batch $batch) use($trayId, $website_id, $filename) {
+                    return $this->jobBatchFinished($batch, $trayId, $website_id, $filename, 'pdf');
+                })
+                ->dispatch();
+
+        } else {
+            ProcessReportMassiveDocuments::dispatch($trayId, $website_id, $document_types, $params);
         }
-        $params->document_types = $document_types;
-        ProcessReportMassiveDocuments::dispatch($trayId, $website_id,$document_types, $params);
 
         return  [
             'success' => true,

@@ -8,18 +8,18 @@
                     <table>
                     <thead>
                         <tr width="100%">
-                            <th v-if="payments.length>0">Método de pago</th>
+                            <th v-if="draftPayments.length>0">Método de pago</th>
                             <template v-if="enabled_payments">
-                                 <th v-if="payments.length>0">Destino</th>
-                                <th v-if="payments.length>0">Referencia</th>
-                                <th v-if="payments.length>0">Monto</th>
+                                 <th v-if="draftPayments.length>0">Destino</th>
+                                <th v-if="draftPayments.length>0">Referencia</th>
+                                <th v-if="draftPayments.length>0">Monto</th>
                                 <th width="15%"><a href="#" @click.prevent="clickAddPayment()" class="text-center font-weight-bold text-info">[+ Agregar]</a></th>
                             </template>
                            
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="(row, index) in payments" :key="index">
+                        <tr v-for="(row, index) in draftPayments" :key="index">
                             <td>
                                 <div class="form-group mb-2 mr-2">
                                     <el-select v-model="row.payment_method_type_id" @change="changePaymentMethodType(index)">
@@ -37,12 +37,16 @@
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2"  >
-                                        <el-input v-model="row.reference" @focus="$event.target.select()"></el-input>
+                                        <el-input v-model="row.reference"
+                                                  @focus="valueInputSelect"
+                                                  @click.native="valueInputSelect"></el-input>
                                     </div>
                                 </td>
                                 <td>
                                     <div class="form-group mb-2 mr-2" >
-                                        <el-input v-model="row.payment" @focus="$event.target.select()"></el-input>
+                                        <el-input v-model="row.payment"
+                                                  @focus="valueInputSelect"
+                                                  @click.native="valueInputSelect"></el-input>
                                     </div>
                                 </td>
                                 <td class="series-table-actions text-center">
@@ -95,7 +99,8 @@
                 payment_destinations: [],
                 cards_brand:[],
                 enabled_payments: true,
-
+                draftPayments: [],
+                paymentsSnapshot: [],
             }
         },
         async created() {
@@ -105,13 +110,15 @@
                     this.payment_method_types = response.data.payment_method_types
                     this.cards_brand = response.data.cards_brand
                     this.payment_destinations = response.data.payment_destinations
-                    // this.clickAddPayment()
                     this.getFormPosLocalStorage()
                 })
 
             this.events()
         },
         methods: {
+            clonePayments(list) {
+                return JSON.parse(JSON.stringify(Array.isArray(list) ? list : []))
+            },
             getFormPosLocalStorage(){
 
                 let form_pos = localStorage.getItem('form_pos');
@@ -123,10 +130,8 @@
                         this.clickAddPayment(this.total)
 
                     }else{
-                        // console.log(form_pos.payments[0])
                         form_pos.payments[0].payment = this.total
                         this.$eventHub.$emit('localSPayments', (form_pos.payments))
-                        // this.$eventHub.$emit('eventSetFormPosLocalStorage', form_pos)
                         this.$emit('add', form_pos.payments);
 
                     }
@@ -134,12 +139,25 @@
 
             },
             create(){
+                this.enabled_payments = true
+                this.paymentsSnapshot = this.clonePayments(this.payments)
+                this.draftPayments = this.clonePayments(this.payments)
 
-
+                if (this.draftPayments.length === 0) {
+                    this.pushDraftPayment(this.total)
+                }
             },
-            clickAddPayment(total = 0) {
-
-                this.payments.push({
+            valueInputSelect(event) {
+                const target = event && event.target
+                if (!target) return
+                const input = (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
+                    ? target
+                    : (target.querySelector && target.querySelector('input'))
+                if (!input || typeof input.select !== 'function') return
+                this.$nextTick(() => input.select())
+            },
+            buildPaymentRow(total = 0) {
+                return {
                     id: null,
                     document_id: null,
                     sale_note_id: null,
@@ -148,20 +166,34 @@
                     payment_destination_id: 'cash',
                     reference: null,
                     payment: total,
-                });
-
-                this.calculatePayments();
-                this.$emit('add', this.payments);
+                }
             },
-            calculatePayments() {
-                let payment_count = this.payments.length;
+            pushDraftPayment(total = 0) {
+                this.draftPayments.push(this.buildPaymentRow(total))
+                this.calculatePayments(this.draftPayments)
+            },
+            clickAddPayment(total = 0) {
+                // Modal abierto: solo edita el borrador (se confirma con Aceptar).
+                if (this.showDialog) {
+                    this.pushDraftPayment(total)
+                    return
+                }
+
+                // Inicialización (p. ej. localStorage) antes de abrir el modal.
+                this.payments.push(this.buildPaymentRow(total))
+                this.calculatePayments(this.payments)
+                this.$emit('add', this.payments)
+            },
+            calculatePayments(list = null) {
+                const payments = list || (this.showDialog ? this.draftPayments : this.payments)
+                let payment_count = payments.length;
                 if (payment_count === 0) return;
 
                 let total = parseFloat(this.total) || 0;
                 let payment = 0;
                 let amount = _.round(total / payment_count, 2);
 
-                _.forEach(this.payments, row => {
+                _.forEach(payments, row => {
                     payment += amount;
                     if (total - payment < 0) {
                         amount = _.round(total - payment + amount, 2);
@@ -169,21 +201,23 @@
                     this.$set(row, 'payment', amount);
                 });
             },
-
             accept() {
-                this.close();
+                const payments = this.enabled_payments ? this.clonePayments(this.draftPayments) : []
+                this.payments.splice(0, this.payments.length, ...payments)
+                this.$emit('add', payments)
+                this.$emit('setPaymentMethod', this.enabled_payments ? null : '09')
+                this.$emit('update:showDialog', false)
             },
             close() {
+                // Descartar cambios del modal: no emitir add.
+                const snapshot = this.clonePayments(this.paymentsSnapshot)
+                this.payments.splice(0, this.payments.length, ...snapshot)
+                this.draftPayments = snapshot
                 this.$emit('update:showDialog', false)
-
-                this.$emit('add', this.enabled_payments ? this.payments : []);
-                this.$emit('setPaymentMethod', this.enabled_payments ? null : '09');
-
             },
             clickCancel(index) {
-                this.payments.splice(index, 1);
-                this.calculatePayments();
-                this.$emit('add', this.payments);
+                this.draftPayments.splice(index, 1);
+                this.calculatePayments(this.draftPayments);
             },
             async events() {
                 // se elimina porque genera error, registro de pagos duplicados
@@ -194,7 +228,7 @@
             },
             changePaymentMethodType(index){
 
-                let payment_method_type = _.find(this.payment_method_types, {'id':this.payments[index].payment_method_type_id})
+                let payment_method_type = _.find(this.payment_method_types, {'id':this.draftPayments[index].payment_method_type_id})
 
                 if(payment_method_type.id == '09' || payment_method_type.is_credit){
 

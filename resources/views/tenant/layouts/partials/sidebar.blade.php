@@ -203,6 +203,33 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         </div>
         <div class="nano-content nano-content-mobile pt-0">
             <nav id="menu" class="nav-main" role="navigation">
+                <section id="sidebar-favorites" class="sidebar-favorites" aria-label="Accesos favoritos">
+                    <div class="sidebar-favorites-header">
+                        <span class="sidebar-favorites-title text-muted">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" /><path d="M9 15l-4.5 4.5" /><path d="M14.5 4l5.5 5.5" /></svg>
+                            <span class="text-uppercase">Favoritos</span>
+                            <div class="ms-auto">
+                                <button id="sidebar-search-trigger" type="button" class="sidebar-search-trigger text-muted" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
+                                </button>
+                                <button id="sidebar-menu-config-quick-trigger" type="button" class="sidebar-menu-config-quick-trigger text-muted" title="Configurar menú" aria-label="Abrir configuración del menú">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" /><path d="M16 5l3 3" /></svg>
+                                </button>
+                            </div>
+                        </span>
+                    </div>
+                    <ul id="sidebar-pinned-items" class="nav nav-main sidebar-pinned-items"></ul>
+                    <p id="sidebar-pinned-empty" class="sidebar-pinned-empty mb-0">
+                        Usa “Configurar menú” para agregar tus accesos favoritos.
+                    </p>
+                    <small id="sidebar-preferences-status" class="sidebar-preferences-status" role="status" aria-live="polite"></small>
+                    <div class="w-100 px-3">
+                        <button id="sidebar-preferences-retry" type="button" class="sidebar-preferences-retry mt-2">
+                            <i class="fas fa-sync-alt" aria-hidden="true"></i>
+                            Reintentar sincronización
+                        </button>
+                    </div>
+                </section>
                 <ul class="nav nav-main nav-main-mobile">
                     @if(in_array('dashboard', $vc_modules))
                         <li class="{{ ($firstLevel === 'dashboard') ? 'nav-active' : '' }}">
@@ -1704,7 +1731,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         </script>
     </div>
 
-    @if(in_array('users_establishments', $vc_module_levels) || in_array('users', $vc_module_levels) || in_array('configuration', $vc_modules) || in_array('app_2_generator', $vc_modules) || in_array('apps', $vc_modules))
+    @if(auth()->check() || in_array('users_establishments', $vc_module_levels) || in_array('users', $vc_module_levels) || in_array('configuration', $vc_modules) || in_array('app_2_generator', $vc_modules) || in_array('apps', $vc_modules))
         <div class="more-config more-config-mobile">
             <div class="nano-content nano-content-config pt-0">
                 <ul class="nav nav-main">
@@ -1726,6 +1753,29 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             </div>
 
             <ul class="nav list-config">
+
+                <li>
+                    <a id="sidebar-menu-config-trigger" class="nav-link" href="#">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-adjustments-horizontal">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M14 6l7 0" />
+                            <path d="M3 6l2 0" />
+                            <path d="M9 6l1 0" />
+                            <path d="M5 3l0 6" />
+                            <path d="M10 3l0 6" />
+                            <path d="M3 12l6 0" />
+                            <path d="M13 12l8 0" />
+                            <path d="M9 9l0 6" />
+                            <path d="M13 9l0 6" />
+                            <path d="M14 18l7 0" />
+                            <path d="M3 18l2 0" />
+                            <path d="M9 18l1 0" />
+                            <path d="M5 15l0 6" />
+                            <path d="M10 15l0 6" />
+                        </svg>
+                        Configurar menú
+                    </a>
+                </li>
 
                 @if(in_array('users', $vc_module_levels))
                     <li>
@@ -1815,6 +1865,1094 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         </div>
     @endif
 </aside>
+
+
+<style>
+    #sidebar-left,
+    .sidebar-menu-config-el-dialog,
+    .sidebar-search-el-dialog {
+        --menu-primary: var(--primary-color, var(--bs-primary, LinkText));
+        --menu-surface: var(--bs-body-bg, Canvas);
+        --menu-surface-muted: var(--bs-tertiary-bg, var(--bs-light, Canvas));
+        --menu-text: var(--bs-body-color, CanvasText);
+        --menu-text-muted: var(--bs-secondary-color, GrayText);
+        --menu-border: var(--bs-border-color, color-mix(in srgb, GrayText 24%, transparent));
+        --menu-hover: color-mix(in srgb, var(--menu-primary) 10%, transparent);
+        --menu-focus: color-mix(in srgb, var(--menu-primary) 18%, transparent);
+        --menu-overlay: color-mix(in srgb, CanvasText 52%, transparent);
+        --menu-shadow: color-mix(in srgb, CanvasText 30%, transparent);
+        --menu-danger: var(--bs-danger, Mark);
+        --menu-on-primary: var(--bs-white, Canvas);
+    }
+    html.dark #sidebar-left,
+    html.dark .sidebar-menu-config-el-dialog,
+    html.dark .sidebar-search-el-dialog,
+    html.sidebarMode-dark #sidebar-left,
+    html.sidebarMode-dark .sidebar-menu-config-el-dialog,
+    html.sidebarMode-dark .sidebar-search-el-dialog {
+        --menu-surface: var(--bs-dark, Canvas);
+        --menu-surface-muted: color-mix(in srgb, var(--bs-dark, Canvas) 84%, var(--bs-white, CanvasText));
+        --menu-text: var(--bs-white, CanvasText);
+        --menu-text-muted: color-mix(in srgb, var(--bs-white, CanvasText) 66%, var(--bs-secondary, GrayText));
+        --menu-border: color-mix(in srgb, var(--bs-white, CanvasText) 18%, transparent);
+        --menu-shadow: color-mix(in srgb, var(--bs-dark, Canvas) 55%, transparent);
+    }
+    .sidebar-favorites,
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-favorites {
+        margin: 0 15px 8px;
+        border: 1px solid color-mix(in srgb, var(--primary) 20%, #fff);
+        border-radius: 8px;
+        padding-bottom: 8px;
+        background: transparent;
+        box-shadow: none;
+        transition: padding .18s ease, border-color .18s ease, background-color .18s ease;
+    }
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-favorites-header,
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-pinned-empty,
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-preferences-status {
+        display: flex;
+    }
+    #sidebar-left.sidebar-only-active .sidebar-favorites {
+        padding: 4px 0 6px;
+        border-color: transparent !important;
+        border-radius: 0;
+        background: transparent !important;
+        margin: 0 0px 8px !important;
+    }
+    .sidebar-favorites-header,
+    .sidebar-favorites-title {
+        display: flex;
+        align-items: center;
+    }
+    .sidebar-favorites-header {
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 5px;
+        padding: 8px 10px 0 10px;
+        min-width: 0;
+    }
+    .sidebar-favorites-title {
+        flex: 1;
+        min-width: 0;
+        gap: 6px;
+        overflow: hidden;
+        font-weight: 600;
+        font-size: 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border-bottom: 1px solid color-mix(in srgb, var(--primary) 20%, #fff);
+    }
+    .sidebar-search-trigger,
+    .sidebar-menu-config-quick-trigger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        color: inherit;
+        background: transparent
+    }
+    .sidebar-search-trigger:hover,
+    .sidebar-search-trigger:focus,
+    .sidebar-menu-config-quick-trigger:hover,
+    .sidebar-menu-config-quick-trigger:focus {
+        color: var(--primary) !important;
+        background: color-mix(in srgb, var(--primary) 10%, #ffffff00);
+    }
+    .sidebar-pinned-items {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
+    }
+    .sidebar-pinned-items > li {
+        min-width: 0;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: default;
+        border-radius: 7px;
+        transition: transform .18s ease, background-color .18s ease, opacity .18s ease;
+    }
+    body.sidebar-menu-config-open .sidebar-pinned-items > li {
+        cursor: grab;
+    }
+    .sidebar-pinned-items > li.is-dragging {
+        opacity: .45;
+    }
+    .sidebar-pinned-items > li.drag-before {
+        box-shadow: inset 0 2px 0 var(--menu-primary);
+    }
+    .sidebar-pinned-items > li.drag-after {
+        box-shadow: inset 0 -2px 0 var(--menu-primary);
+    }
+    .sidebar-pinned-items li > .nav-link > svg,
+    .sidebar-pinned-items li > .nav-link > i,
+    .sidebar-pinned-items li > .nav-link::after {
+        flex: 0 0 auto;
+    }
+    .sidebar-pinned-items > li > .nav-link > .sidebar-fav-icon {
+        width: 20px;
+        height: 20px;
+        margin-right: .5rem;
+        vertical-align: middle;
+    }
+    .sidebar-pinned-items .nav-parent.nav-expanded > .nav-children {
+        max-height: 900px;
+        opacity: 1;
+    }
+    .sidebar-pinned-items .nav-children > li {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .sidebar-pinned-items .nav-children > li + li {
+        margin-top: 4px !important;
+    }
+    .sidebar-pinned-empty,
+    .sidebar-preferences-status {
+        display: block;
+        padding: 6px 5px;
+        color: var(--menu-text-muted);
+        line-height: 1.3;
+    }
+    .sidebar-preferences-status {
+        font-size: 10px;
+    }
+    .sidebar-preferences-status:empty {
+        display: none;
+    }
+    .sidebar-preferences-retry {
+        display: none;
+        width: 100%;
+        padding: 5px 8px;
+        border: 1px solid var(--danger);
+        border-radius: 6px;
+        color: var(--danger);
+        background: transparent;
+        font-size: 10px;
+        transition: color .16s ease, background-color .16s ease;
+    }
+    .sidebar-preferences-retry:hover,
+    .sidebar-preferences-retry:focus {
+        color: var(--menu-on-primary);
+        background: var(--danger);
+    }
+    .sidebar-preferences-retry.is-visible {
+        display: block;
+    }
+    .sidebar-only-active #menu > .nav-main-mobile {
+        display: none !important;
+    }
+    html.sidebar-left-collapsed .sidebar-favorites-header,
+    html.sidebar-left-collapsed .sidebar-pinned-empty,
+    html.sidebar-left-collapsed .sidebar-preferences-status {
+        display: none;
+    }
+    html.sidebar-left-collapsed .sidebar-preferences-retry {
+        display: none;
+    }
+    html.sidebar-left-collapsed .sidebar-favorites {
+        margin: 5px 0;
+        padding: 3px 0;
+        border-color: transparent;
+        background: transparent;
+    }
+    html.sidebar-left-collapsed .sidebar-left .sidebar-favorites a.nav-link {
+        padding-right: 0 !important;
+    }
+    html.sidebar-left-collapsed .sidebar-left .sidebar-pinned-items > li.nav-item-with-action > .nav-action {
+        display: none;
+    }
+    html.sidebar-left-collapsed .sidebar-left .nano.hovered .sidebar-pinned-items > li.nav-item-with-action > .nav-action {
+        display: inline-flex;
+    }
+</style>
+
+{{-- Puntos de montaje de los modales del menu (Vue + el-dialog).
+     Ver resources/js/views/tenant/components/sidebar_search.vue y sidebar_menu_config.vue --}}
+<div id="sidebar-search-root"></div>
+<div id="sidebar-menu-config-root"></div>
+
+@include('tenant.layouts.partials.sidebar-favorite-icons')
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const sidebar = document.getElementById('sidebar-left');
+        const menu = document.getElementById('menu');
+        const originalList = menu ? menu.querySelector(':scope > .nav-main-mobile') : null;
+        const pinnedList = document.getElementById('sidebar-pinned-items');
+        const emptyState = document.getElementById('sidebar-pinned-empty');
+        const status = document.getElementById('sidebar-preferences-status');
+        const retryButton = document.getElementById('sidebar-preferences-retry');
+        const searchTrigger = document.getElementById('sidebar-search-trigger');
+        const menuConfigQuickTrigger = document.getElementById('sidebar-menu-config-quick-trigger');
+        const menuConfigTrigger = document.getElementById('sidebar-menu-config-trigger');
+        const endpoint = @json(url('api/user/menu-preferences'));
+        const storageKey = @json('menu-preferences:' . request()->getHost() . ':' . auth()->id());
+        const expansionStorageKey = @json('sidebar-menu-state:' . request()->getHost() . ':' . auth()->id());
+        const favoriteIcons = window.sidebarFavoriteIcons || {};
+        const favoriteIconFallback = window.sidebarFavoriteIconFallback || '';
+
+        if (!sidebar || !originalList || !pinnedList) return;
+
+        let preferences = { pinned_items: [], menu_order: [], show_only_active_menu: false };
+        let saveTimer = null;
+        let draggedItem = null;
+        let syncInProgress = false;
+        let syncQueued = false;
+        let searchIndex = [];
+        let menuExpansionState = {};
+        let menuConfigurationEntries = [];
+        let configMode = false;
+
+        const synonymGroups = [
+            ['sucursal', 'sede', 'establecimiento', 'local', 'tienda', 'agencia', 'punto de venta', 'almacen'],
+            ['inventario', 'stock', 'existencia', 'existencias', 'kardex', 'almacen', 'bodega', 'deposito', 'disponibilidad', 'saldo', 'ubicacion', 'lote'],
+            ['producto', 'articulo', 'item', 'mercaderia', 'mercancia', 'genero', 'bien', 'catalogo'],
+            ['venta', 'facturacion', 'comercializacion', 'transaccion', 'operacion', 'transferencia', 'ingreso', 'pedido'],
+            ['comprobante', 'documento', 'factura', 'boleta', 'ticket', 'recibo', 'cpe', 'nota de credito', 'nota de debito'],
+            ['cliente', 'comprador', 'consumidor', 'adquirente', 'contacto'],
+            ['compra', 'adquisicion', 'abastecimiento', 'aprovisionamiento', 'pedido de compra'],
+            ['proveedor', 'suministrador', 'abastecedor', 'acreedor'],
+            ['usuario', 'cuenta', 'operador', 'perfil', 'acceso', 'credencial'],
+            ['vendedor', 'asesor', 'comercial', 'ejecutivo de ventas', 'representante'],
+            ['pago', 'abono', 'paga', 'cobro', 'reembolso', 'reintegro', 'amortizacion', 'cancelacion'],
+            ['caja', 'efectivo', 'dinero', 'tesoreria', 'arqueo', 'apertura', 'cierre', 'turno'],
+            ['reporte', 'informe', 'estadistica', 'resumen', 'consulta', 'listado', 'analisis'],
+            ['cotizacion', 'presupuesto', 'proforma', 'propuesta', 'oferta', 'estimacion'],
+            ['guia', 'guia de remision', 'despacho', 'envio', 'traslado', 'transporte', 'transportista', 'remitente'],
+            ['devolucion', 'retorno', 'reintegro', 'nota de credito', 'anulacion', 'reversion'],
+            ['serie', 'numeracion', 'correlativo', 'secuencia', 'folio'],
+            ['moneda', 'divisa', 'tipo de cambio', 'cambio', 'conversion'],
+            ['banco', 'entidad financiera', 'cuenta bancaria', 'banca'],
+            ['credito', 'financiamiento', 'cuota', 'pago diferido', 'dias de credito', 'plazo'],
+            ['trabajador', 'empleado', 'personal', 'colaborador'],
+            ['configuracion', 'ajuste', 'preferencia', 'parametro', 'opcion', 'personalizacion']
+        ];
+
+        function normalizedPreferences(value) {
+            const source = value && typeof value === 'object' ? value : {};
+            const uniqueKeys = function (items) {
+                const seen = new Set();
+                return (Array.isArray(items) ? items : []).filter(function (item) {
+                    if (typeof item !== 'string') return false;
+                    const key = item.trim();
+                    if (!key || seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                }).map(function (item) { return item.trim(); });
+            };
+            return {
+                pinned_items: uniqueKeys(source.pinned_items),
+                menu_order: uniqueKeys(source.menu_order),
+                show_only_active_menu: source.show_only_active_menu === true
+            };
+        }
+
+        function readLocalBackup() {
+            try {
+                const backup = JSON.parse(localStorage.getItem(storageKey) || 'null');
+                if (!backup || !backup.preferences) return null;
+                return {
+                    preferences: normalizedPreferences(backup.preferences),
+                    pending: backup.pending === true
+                };
+            } catch (error) {
+                console.error('Error al leer respaldo local de preferencias:', error);
+                return null;
+            }
+        }
+
+        function saveLocalBackup(pending) {
+            try {
+                localStorage.setItem(storageKey, JSON.stringify({
+                    preferences: normalizedPreferences(preferences),
+                    pending: pending === true,
+                    updated_at: new Date().toISOString()
+                }));
+            } catch (error) {
+                console.error('Error al guardar respaldo local de preferencias:', error);
+            }
+        }
+
+        function setRetryVisible(visible) {
+            retryButton.classList.toggle('is-visible', !!visible);
+        }
+
+        function readMenuExpansionState() {
+            try {
+                const stored = JSON.parse(localStorage.getItem(expansionStorageKey) || '{}');
+                menuExpansionState = stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+            } catch (error) {
+                menuExpansionState = {};
+                console.error('Error al leer el estado de los menús laterales:', error);
+            }
+        }
+
+        function saveMenuExpansionState() {
+            try {
+                localStorage.setItem(expansionStorageKey, JSON.stringify(menuExpansionState));
+            } catch (error) {
+                console.error('Error al guardar el estado de los menús laterales:', error);
+            }
+        }
+
+        function setMenuExpanded(key, expanded, persist) {
+            if (!key) return;
+            menuExpansionState[key] = !!expanded;
+            document.querySelectorAll('[data-menu-preference-key]').forEach(function (item) {
+                if (item.dataset.menuPreferenceKey === key && item.classList.contains('nav-parent')) {
+                    item.classList.toggle('nav-expanded', !!expanded);
+                }
+            });
+            if (persist !== false) saveMenuExpansionState();
+        }
+
+        function restoreMenuExpansionState(root) {
+            const scope = root || originalList;
+            scope.querySelectorAll('li.nav-parent[data-menu-preference-key]').forEach(function (item) {
+                const key = item.dataset.menuPreferenceKey;
+                if (Object.prototype.hasOwnProperty.call(menuExpansionState, key)) {
+                    item.classList.toggle('nav-expanded', menuExpansionState[key] === true);
+                }
+            });
+        }
+
+        function normalizeLabel(value) {
+            return (value || '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, '-');
+        }
+
+        function directAnchor(item) {
+            return Array.from(item.children).find(function (child) {
+                return child.matches && child.matches('a.nav-link');
+            });
+        }
+
+        function buildFavoriteIcon(markup) {
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"'
+                + ' fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"'
+                + ' class="icon icon-tabler sidebar-fav-icon" aria-hidden="true">' + markup + '</svg>';
+            return wrapper.firstElementChild;
+        }
+
+        function inheritedIcon(item) {
+            let parent = item.parentElement ? item.parentElement.closest('li') : null;
+            while (parent) {
+                const anchor = directAnchor(parent);
+                const icon = anchor ? anchor.querySelector(':scope > svg') : null;
+                if (icon) return icon.cloneNode(true);
+                parent = parent.parentElement ? parent.parentElement.closest('li') : null;
+            }
+            return null;
+        }
+
+        function resolveMenuIcon(item, key) {
+            const anchor = directAnchor(item);
+            const own = anchor ? anchor.querySelector(':scope > svg, :scope > i') : null;
+            if (own) return own.cloneNode(true);
+            if (key && favoriteIcons[key]) return buildFavoriteIcon(favoriteIcons[key]);
+            const inherited = inheritedIcon(item);
+            if (inherited) return inherited;
+            return favoriteIconFallback ? buildFavoriteIcon(favoriteIconFallback) : null;
+        }
+
+        function wrapPinnedLabel(anchor) {
+            const hasElement = Array.from(anchor.childNodes).some(function (node) {
+                return node.nodeType === 1;
+            });
+            if (hasElement) return;
+
+            const label = anchor.textContent.replace(/\s+/g, ' ').trim();
+            if (!label) return;
+
+            const span = document.createElement('span');
+            span.textContent = label;
+            anchor.textContent = '';
+            anchor.appendChild(span);
+        }
+
+        function ensurePinnedIcon(clone, key, original) {
+            const anchor = directAnchor(clone);
+            if (!anchor || anchor.querySelector(':scope > svg, :scope > i')) return;
+
+            wrapPinnedLabel(anchor);
+
+            const icon = resolveMenuIcon(original, key);
+            if (!icon) return;
+
+            icon.classList.add('sidebar-fav-icon');
+            anchor.insertBefore(icon, anchor.firstChild);
+        }
+
+        function closestPinnedItem(target) {
+            const item = target && target.closest ? target.closest('li.sidebar-pinned-item') : null;
+            return item && item.parentElement === pinnedList ? item : null;
+        }
+
+        function itemKey(item) {
+            const anchor = directAnchor(item);
+            if (!anchor) return null;
+            const href = anchor.getAttribute('href') || '';
+            if (href && href !== '#') {
+                try {
+                    const parsed = new URL(href, window.location.origin);
+                    return 'route:' + parsed.pathname.replace(/\/$/, '') + parsed.search;
+                } catch (error) {
+                    return 'route:' + href;
+                }
+            }
+
+            const labels = [];
+            let current = item;
+            while (current && current !== originalList) {
+                const currentAnchor = directAnchor(current);
+                if (currentAnchor) labels.unshift(normalizeLabel(currentAnchor.textContent));
+                current = current.parentElement ? current.parentElement.closest('li') : null;
+            }
+            return 'group:' + labels.filter(Boolean).join('/');
+        }
+
+        function availableItems() {
+            const items = new Map();
+            originalList.querySelectorAll('li').forEach(function (item) {
+                const key = itemKey(item);
+                if (key && !items.has(key)) {
+                    item.dataset.menuPreferenceKey = key;
+                    items.set(key, item);
+                }
+            });
+            return items;
+        }
+
+        function orderedPinnedKeys() {
+            const pinned = preferences.pinned_items || [];
+            const order = (preferences.menu_order || []).filter(function (key) { return pinned.includes(key); });
+            pinned.forEach(function (key) {
+                if (!order.includes(key)) order.push(key);
+            });
+            return order;
+        }
+
+        function renderPinnedItems() {
+            const items = availableItems();
+            const validKeys = orderedPinnedKeys().filter(function (key) { return items.has(key); });
+            preferences.pinned_items = validKeys.slice();
+            preferences.menu_order = validKeys.slice();
+            pinnedList.innerHTML = '';
+
+            validKeys.forEach(function (key) {
+                const original = items.get(key);
+                const clone = original.cloneNode(true);
+                clone.dataset.menuPreferenceKey = key;
+                clone.classList.add('sidebar-pinned-item');
+                clone.setAttribute('draggable', configMode ? 'true' : 'false');
+                ensurePinnedIcon(clone, key, original);
+                pinnedList.appendChild(clone);
+            });
+            restoreMenuExpansionState(pinnedList);
+
+            emptyState.style.display = validKeys.length ? 'none' : 'block';
+        }
+
+        function applyCompactMode() {
+            const hasFavorites = preferences.pinned_items.length > 0;
+            if (!hasFavorites) preferences.show_only_active_menu = false;
+            const showOnlyFavorites = hasFavorites && !!preferences.show_only_active_menu;
+            sidebar.classList.toggle('sidebar-only-active', showOnlyFavorites);
+        }
+
+        function showStatus(message, isError) {
+            status.textContent = message;
+            status.style.color = isError ? 'var(--menu-danger)' : '';
+            window.setTimeout(function () {
+                if (status.textContent === message) status.textContent = '';
+            }, 2500);
+        }
+
+        function persistPreferences(immediate) {
+            saveLocalBackup(true);
+            setRetryVisible(false);
+            window.clearTimeout(saveTimer);
+            saveTimer = window.setTimeout(function () {
+                if (syncInProgress) {
+                    syncQueued = true;
+                    return;
+                }
+
+                syncInProgress = true;
+                const snapshot = normalizedPreferences(preferences);
+                const serializedSnapshot = JSON.stringify(snapshot);
+                const requestPayload = Object.assign({}, snapshot, {
+                    menu_hierarchy: menuConfigurationEntries.map(function (entry) {
+                        return { key: entry.key, ancestors: entry.ancestorKeys || [] };
+                    })
+                });
+                const csrf = document.querySelector('meta[name="csrf-token"]');
+                fetch(endpoint, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrf ? csrf.getAttribute('content') : '',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(requestPayload)
+                }).then(function (response) {
+                    return response.text().then(function (body) {
+                        let payload = null;
+                        try { payload = body ? JSON.parse(body) : null; } catch (parseError) { payload = body; }
+                        if (!response.ok) {
+                            const error = new Error('No se pudieron guardar las preferencias');
+                            error.response = { status: response.status, statusText: response.statusText, data: payload };
+                            throw error;
+                        }
+                        return payload || {};
+                    });
+                }).then(function (payload) {
+                    // Una respuesta de una petición anterior nunca debe reemplazar
+                    // cambios que el usuario haya realizado mientras se guardaba.
+                    if (JSON.stringify(normalizedPreferences(preferences)) === serializedSnapshot) {
+                        preferences = normalizedPreferences(payload.preferences || snapshot);
+                        saveLocalBackup(false);
+                        setRetryVisible(false);
+                        showStatus('Preferencias guardadas');
+                    } else {
+                        syncQueued = true;
+                    }
+                }).catch(function (error) {
+                    console.error('Error al guardar preferencias:', error.response || error);
+                    saveLocalBackup(true);
+                    setRetryVisible(true);
+                    showStatus('No se pudieron guardar los cambios', true);
+                }).finally(function () {
+                    syncInProgress = false;
+                    if (syncQueued) {
+                        syncQueued = false;
+                        persistPreferences(true);
+                    }
+                });
+            }, immediate ? 0 : 180);
+        }
+
+        function normalizeSearchText(value) {
+            return (value || '')
+                .toString()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function menuItemLabel(item) {
+            const anchor = directAnchor(item);
+            return anchor ? anchor.textContent.replace(/\s+/g, ' ').trim() : '';
+        }
+
+        function configurationSectionLabel() {
+            const title = sidebar.querySelector('.more-config .nano-content-config .nav-link span');
+            const label = title ? title.textContent.replace(/\s+/g, ' ').trim() : '';
+            return label || 'Configuración';
+        }
+
+        function configurationItems() {
+            const items = new Map();
+            sidebar.querySelectorAll('.more-config .list-config > li').forEach(function (item) {
+                const anchor = directAnchor(item);
+                if (!anchor) return;
+                const label = menuItemLabel(item);
+                if (!label) return;
+                const key = 'config:' + (itemKey(item) || normalizeLabel(label));
+                if (!items.has(key)) items.set(key, item);
+            });
+            return items;
+        }
+
+        function pushSearchEntry(item, key, hierarchy, options) {
+            const settings = options || {};
+            const name = hierarchy[hierarchy.length - 1] || menuItemLabel(item);
+            if (!name) return;
+            const path = hierarchy.join(' > ');
+            const icon = resolveMenuIcon(item, settings.iconKey || key);
+            searchIndex.push({
+                key: key,
+                name: name,
+                path: path,
+                normalizedName: normalizeSearchText(name),
+                normalizedPath: normalizeSearchText(path),
+                href: settings.href || '',
+                action: settings.action || '',
+                iconHtml: icon ? icon.outerHTML : ''
+            });
+        }
+
+        function buildSearchIndex() {
+            searchIndex = [];
+            availableItems().forEach(function (item, key) {
+                const anchor = directAnchor(item);
+                if (!anchor) return;
+                const href = anchor.getAttribute('href') || '';
+                if (!href || href === '#') return;
+
+                const hierarchy = [];
+                let current = item;
+                while (current && current !== originalList) {
+                    const label = menuItemLabel(current);
+                    if (label) hierarchy.unshift(label);
+                    const parentList = current.parentElement;
+                    current = parentList ? parentList.closest('li') : null;
+                }
+
+                pushSearchEntry(item, key, hierarchy, { href: href });
+            });
+
+            const configurationLabel = configurationSectionLabel();
+            configurationItems().forEach(function (item, key) {
+                const anchor = directAnchor(item);
+                const href = anchor.getAttribute('href') || '';
+                const isMenuConfig = anchor.id === 'sidebar-menu-config-trigger';
+                if ((!href || href === '#') && !isMenuConfig) return;
+
+                pushSearchEntry(item, key, [configurationLabel, menuItemLabel(item)], {
+                    href: isMenuConfig ? '' : href,
+                    action: isMenuConfig ? 'menu-config' : ''
+                });
+            });
+
+            return searchIndex;
+        }
+
+        function expandedSearchTerms(query) {
+            const terms = normalizeSearchText(query).split(' ').filter(Boolean);
+            const expanded = new Set(terms);
+            synonymGroups.forEach(function (group) {
+                const normalizedGroup = group.map(normalizeSearchText);
+                const matches = terms.some(function (term) {
+                    return normalizedGroup.some(function (synonym) {
+                        return synonym.includes(term) || term.includes(synonym);
+                    });
+                });
+                if (matches) normalizedGroup.forEach(function (synonym) { expanded.add(synonym); });
+            });
+            return Array.from(expanded);
+        }
+
+        function textSimilarity(left, right) {
+            if (!left || !right) return 0;
+            if (left === right) return 1;
+            if (left.length < 2 || right.length < 2) return 0;
+            const pairs = new Map();
+            for (let index = 0; index < left.length - 1; index++) {
+                const pair = left.slice(index, index + 2);
+                pairs.set(pair, (pairs.get(pair) || 0) + 1);
+            }
+            let intersection = 0;
+            for (let index = 0; index < right.length - 1; index++) {
+                const pair = right.slice(index, index + 2);
+                const count = pairs.get(pair) || 0;
+                if (count > 0) {
+                    pairs.set(pair, count - 1);
+                    intersection++;
+                }
+            }
+            return (2 * intersection) / (left.length + right.length - 2);
+        }
+
+        function searchMenu(query) {
+            const normalizedQuery = normalizeSearchText(query);
+            if (!normalizedQuery) return [];
+            const terms = expandedSearchTerms(normalizedQuery);
+
+            return searchIndex.map(function (entry) {
+                let score = 0;
+                if (entry.normalizedName === normalizedQuery) score += 140;
+                else if (entry.normalizedName.startsWith(normalizedQuery)) score += 110;
+                else if (entry.normalizedName.includes(normalizedQuery)) score += 90;
+                if (entry.normalizedPath.includes(normalizedQuery)) score += 55;
+
+                terms.forEach(function (term) {
+                    if (entry.normalizedName.includes(term)) score += 35;
+                    else if (entry.normalizedPath.includes(term)) score += 20;
+                });
+
+                const similarity = textSimilarity(normalizedQuery, entry.normalizedName);
+                if (similarity >= .42) score += Math.round(similarity * 35);
+                return { entry: entry, score: score };
+            }).filter(function (result) {
+                return result.score > 0;
+            }).sort(function (left, right) {
+                return right.score - left.score || left.entry.path.localeCompare(right.entry.path);
+            }).slice(0, 15).map(function (result) {
+                return result.entry;
+            });
+        }
+
+        window.sidebarMenuSearch = {
+            buildIndex: buildSearchIndex,
+            search: searchMenu
+        };
+
+        function emitSidebarSearch(event) {
+            if (window.$eventHub) window.$eventHub.$emit(event);
+        }
+
+        function buildMenuConfigurationEntries() {
+            menuConfigurationEntries = [];
+            let dashboardOrder = 0;
+            availableItems().forEach(function (item, key) {
+                const hierarchy = [];
+                const hierarchyKeys = [];
+                let current = item;
+                while (current && current !== originalList) {
+                    const label = menuItemLabel(current);
+                    const currentKey = itemKey(current);
+                    if (label) hierarchy.unshift(label);
+                    if (currentKey) hierarchyKeys.unshift(currentKey);
+                    const parentList = current.parentElement;
+                    current = parentList ? parentList.closest('li') : null;
+                }
+                if (!hierarchy.length) return;
+                menuConfigurationEntries.push({
+                    key: key,
+                    name: hierarchy[hierarchy.length - 1],
+                    path: hierarchy.join(' > '),
+                    group: hierarchy[0],
+                    groupKey: normalizeSearchText(hierarchy[0]),
+                    normalizedName: normalizeSearchText(hierarchy[hierarchy.length - 1]),
+                    normalizedPath: normalizeSearchText(hierarchy.join(' ')),
+                    ancestorKeys: hierarchyKeys.slice(0, -1),
+                    dashboardOrder: dashboardOrder++
+                });
+            });
+            normalizeHierarchicalPreferences();
+        }
+
+        function normalizeHierarchicalPreferences() {
+            const selected = new Set(preferences.pinned_items);
+            const redundant = new Set();
+            menuConfigurationEntries.forEach(function (entry) {
+                if (!selected.has(entry.key)) return;
+                if ((entry.ancestorKeys || []).some(function (ancestorKey) { return selected.has(ancestorKey); })) {
+                    redundant.add(entry.key);
+                }
+            });
+            preferences.pinned_items = preferences.pinned_items.filter(function (key, index, items) {
+                return items.indexOf(key) === index && !redundant.has(key);
+            });
+            const pinned = new Set(preferences.pinned_items);
+            preferences.menu_order = preferences.menu_order.filter(function (key, index, items) {
+                return items.indexOf(key) === index && pinned.has(key);
+            });
+            preferences.pinned_items.forEach(function (key) {
+                if (!preferences.menu_order.includes(key)) preferences.menu_order.push(key);
+            });
+        }
+
+        function updateMenuConfiguration() {
+            normalizeHierarchicalPreferences();
+            renderPinnedItems();
+            applyCompactMode();
+            saveLocalBackup(true);
+            persistPreferences();
+            notifyMenuConfigChanged();
+        }
+
+        function menuConfigState() {
+            return {
+                entries: menuConfigurationEntries.slice(),
+                pinned: orderedPinnedKeys().filter(function (key) {
+                    return menuConfigurationEntries.some(function (entry) { return entry.key === key; });
+                }),
+                showOnlyActive: !!preferences.show_only_active_menu,
+                hasFavorites: preferences.pinned_items.length > 0
+            };
+        }
+
+        function notifyMenuConfigChanged() {
+            if (configMode && window.$eventHub) {
+                window.$eventHub.$emit('sidebarMenuConfigChanged', menuConfigState());
+            }
+        }
+
+        function toggleConfiguredFavorite(key) {
+            const entry = menuConfigurationEntries.find(function (candidate) { return candidate.key === key; });
+            const selectedAncestor = entry && (entry.ancestorKeys || []).some(function (ancestorKey) {
+                return preferences.pinned_items.includes(ancestorKey);
+            });
+            if (selectedAncestor) return;
+            const pinnedIndex = preferences.pinned_items.indexOf(key);
+            if (pinnedIndex >= 0) {
+                preferences.pinned_items.splice(pinnedIndex, 1);
+                preferences.menu_order = preferences.menu_order.filter(function (value) { return value !== key; });
+            } else {
+                const descendantKeys = menuConfigurationEntries.filter(function (candidate) {
+                    return (candidate.ancestorKeys || []).includes(key);
+                }).map(function (candidate) { return candidate.key; });
+                preferences.pinned_items = preferences.pinned_items.filter(function (value) { return !descendantKeys.includes(value); });
+                preferences.menu_order = preferences.menu_order.filter(function (value) { return !descendantKeys.includes(value); });
+                preferences.pinned_items.push(key);
+                preferences.menu_order.push(key);
+            }
+            normalizeHierarchicalPreferences();
+            updateMenuConfiguration();
+        }
+
+        function setConfiguredGroupSelection(entries, selected) {
+            const keys = entries.map(function (entry) { return entry.key; });
+            const parent = entries.find(function (entry) { return (entry.ancestorKeys || []).length === 0; }) || entries[0];
+            if (selected) {
+                preferences.pinned_items = preferences.pinned_items.filter(function (key) { return !keys.includes(key); });
+                preferences.menu_order = preferences.menu_order.filter(function (key) { return !keys.includes(key); });
+                preferences.pinned_items.push(parent.key);
+                preferences.menu_order.push(parent.key);
+            } else {
+                preferences.pinned_items = preferences.pinned_items.filter(function (key) { return !keys.includes(key); });
+                preferences.menu_order = preferences.menu_order.filter(function (key) { return !keys.includes(key); });
+            }
+            normalizeHierarchicalPreferences();
+            updateMenuConfiguration();
+        }
+
+        function menuConfigurationTermVariants(term) {
+            const variants = new Set([term]);
+            synonymGroups.forEach(function (group) {
+                const normalizedGroup = group.map(normalizeSearchText);
+                if (normalizedGroup.some(function (synonym) {
+                    return synonym === term || synonym.startsWith(term) || term.startsWith(synonym);
+                })) {
+                    normalizedGroup.forEach(function (synonym) { variants.add(synonym); });
+                }
+            });
+            return Array.from(variants);
+        }
+
+        function scoreMenuConfigurationEntry(entry, query) {
+            if (!query) return 1;
+            const queryTerms = query.split(' ').filter(function (term) {
+                return term.length > 2 || query.split(' ').length === 1;
+            });
+            let score = 0;
+
+            if (entry.normalizedName === query) score += 300;
+            else if (entry.normalizedName.startsWith(query)) score += 220;
+            else if (entry.normalizedName.includes(query)) score += 170;
+            if (entry.normalizedPath.includes(query)) score += 100;
+
+            const everyTermMatches = queryTerms.every(function (term) {
+                const variants = menuConfigurationTermVariants(term);
+                let bestTermScore = 0;
+                variants.forEach(function (variant, variantIndex) {
+                    const relevance = variantIndex === 0 ? 1 : .45;
+                    const nameWords = entry.normalizedName.split(' ');
+                    const pathWords = entry.normalizedPath.split(' ');
+                    if (nameWords.includes(variant)) bestTermScore = Math.max(bestTermScore, 70 * relevance);
+                    else if (nameWords.some(function (word) { return word.startsWith(variant); })) bestTermScore = Math.max(bestTermScore, 55 * relevance);
+                    else if (entry.normalizedName.includes(variant)) bestTermScore = Math.max(bestTermScore, 42 * relevance);
+                    else if (pathWords.includes(variant)) bestTermScore = Math.max(bestTermScore, 30 * relevance);
+                    else if (pathWords.some(function (word) { return word.startsWith(variant); })) bestTermScore = Math.max(bestTermScore, 20 * relevance);
+                });
+                score += bestTermScore;
+                return bestTermScore > 0;
+            });
+
+            return everyTermMatches ? score : 0;
+        }
+
+        window.sidebarMenuConfig = {
+            normalize: normalizeSearchText,
+            score: scoreMenuConfigurationEntry,
+            state: menuConfigState,
+            open: function () {
+                configMode = true;
+                pinnedList.querySelectorAll('.sidebar-pinned-item').forEach(function (item) {
+                    item.setAttribute('draggable', 'true');
+                });
+                buildMenuConfigurationEntries();
+                applyCompactMode();
+                document.body.classList.add('sidebar-menu-config-open');
+                return menuConfigState();
+            },
+            close: function () {
+                configMode = false;
+                document.body.classList.remove('sidebar-menu-config-open');
+                pinnedList.querySelectorAll('.sidebar-pinned-item').forEach(function (item) {
+                    item.setAttribute('draggable', 'false');
+                });
+            },
+            toggle: function (key) {
+                toggleConfiguredFavorite(key);
+            },
+            setGroupSelection: function (groupKey, selected) {
+                const entries = menuConfigurationEntries.filter(function (entry) {
+                    return entry.groupKey === groupKey;
+                });
+                if (entries.length) setConfiguredGroupSelection(entries, selected);
+            },
+            reorder: function (order) {
+                preferences.pinned_items = order.slice();
+                preferences.menu_order = order.slice();
+                updateMenuConfiguration();
+            },
+            unpin: function (key) {
+                preferences.pinned_items = preferences.pinned_items.filter(function (value) { return value !== key; });
+                preferences.menu_order = preferences.menu_order.filter(function (value) { return value !== key; });
+                updateMenuConfiguration();
+            },
+            setShowOnlyActive: function (value) {
+                preferences.show_only_active_menu = !!value;
+                applyCompactMode();
+                persistPreferences();
+                notifyMenuConfigChanged();
+            }
+        };
+
+        function emitMenuConfigOpen(triggerId) {
+            if (window.$eventHub) window.$eventHub.$emit('sidebarMenuConfigOpen', triggerId);
+        }
+
+        pinnedList.addEventListener('click', function (event) {
+            const anchor = event.target.closest('a.nav-link');
+            const item = anchor ? anchor.parentElement : null;
+            if (!item || !item.classList.contains('nav-parent') || anchor.getAttribute('href') !== '#') return;
+            event.preventDefault();
+            event.stopPropagation();
+            const expanded = !item.classList.contains('nav-expanded');
+            setMenuExpanded(item.dataset.menuPreferenceKey, expanded);
+        });
+
+        originalList.addEventListener('click', function (event) {
+            const anchor = event.target.closest('a.nav-link');
+            const item = anchor ? anchor.parentElement : null;
+            if (!item || !item.classList.contains('nav-parent') || anchor.getAttribute('href') !== '#') return;
+
+            // El plugin histórico del sidebar alterna la clase en su propio
+            // listener. Esperamos al siguiente ciclo para persistir el estado final.
+            window.setTimeout(function () {
+                setMenuExpanded(
+                    item.dataset.menuPreferenceKey,
+                    item.classList.contains('nav-expanded')
+                );
+            }, 0);
+        });
+
+        pinnedList.addEventListener('dragstart', function (event) {
+            if (!configMode) {
+                event.preventDefault();
+                return;
+            }
+            draggedItem = closestPinnedItem(event.target);
+            if (!draggedItem) return;
+            draggedItem.classList.add('is-dragging');
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', draggedItem.dataset.menuPreferenceKey || '');
+        });
+        pinnedList.addEventListener('dragover', function (event) {
+            if (!configMode) return;
+            const target = closestPinnedItem(event.target);
+            if (!draggedItem || !target || target === draggedItem) return;
+            event.preventDefault();
+            pinnedList.querySelectorAll('.drag-before, .drag-after').forEach(function (item) {
+                item.classList.remove('drag-before', 'drag-after');
+            });
+            const after = event.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
+            target.classList.add(after ? 'drag-after' : 'drag-before');
+        });
+        pinnedList.addEventListener('drop', function (event) {
+            if (!configMode) return;
+            const target = closestPinnedItem(event.target);
+            if (!draggedItem || !target || target === draggedItem) return;
+            event.preventDefault();
+            const after = event.clientY > target.getBoundingClientRect().top + target.offsetHeight / 2;
+            pinnedList.insertBefore(draggedItem, after ? target.nextSibling : target);
+            preferences.menu_order = Array.from(pinnedList.children).map(function (item) {
+                return item.dataset.menuPreferenceKey;
+            });
+            preferences.pinned_items = preferences.menu_order.slice();
+            persistPreferences();
+        });
+        pinnedList.addEventListener('dragend', function () {
+            pinnedList.querySelectorAll('.is-dragging, .drag-before, .drag-after').forEach(function (item) {
+                item.classList.remove('is-dragging', 'drag-before', 'drag-after');
+            });
+            draggedItem = null;
+        });
+
+        retryButton.addEventListener('click', function () {
+            showStatus('Sincronizando...');
+            persistPreferences(true);
+        });
+
+        searchTrigger.addEventListener('click', function () {
+            emitSidebarSearch('sidebarSearchOpen');
+        });
+        menuConfigTrigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            emitMenuConfigOpen('sidebar-menu-config-trigger');
+        });
+        menuConfigQuickTrigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            emitMenuConfigOpen('sidebar-menu-config-quick-trigger');
+        });
+        document.addEventListener('keydown', function (event) {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                emitSidebarSearch('sidebarSearchToggle');
+                return;
+            }
+        });
+
+        readMenuExpansionState();
+        restoreMenuExpansionState(originalList);
+        const localBackup = readLocalBackup();
+        if (localBackup) {
+            preferences = localBackup.preferences;
+            renderPinnedItems();
+            applyCompactMode();
+            setRetryVisible(localBackup.pending);
+        }
+        fetch(endpoint, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function (response) {
+            if (!response.ok) throw new Error('No se pudieron cargar las preferencias');
+            return response.json();
+        }).then(function (payload) {
+            // Si hay cambios locales pendientes, tienen prioridad hasta que el
+            // usuario pueda sincronizarlos nuevamente.
+            if (!localBackup || !localBackup.pending) {
+                preferences = normalizedPreferences(payload || {});
+                saveLocalBackup(false);
+                setRetryVisible(false);
+            }
+            renderPinnedItems();
+            applyCompactMode();
+            if (localBackup && localBackup.pending) {
+                showStatus('Sincronizando cambios pendientes...');
+                persistPreferences(true);
+            }
+        }).catch(function (error) {
+            console.error('Error al cargar preferencias:', error.response || error);
+            renderPinnedItems();
+            applyCompactMode();
+            setRetryVisible(true);
+            showStatus('No se pudieron cargar las preferencias', true);
+        });
+    });
+</script>
 
 <script>
     // Función para cambiar establecimiento desde el sidebar
@@ -2126,19 +3264,21 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
     .list-config {
         position: absolute;
-        z-index: 2;
+        z-index: 100;
+        isolation: isolate;
         display: none;
-        background-color: #fff;
+        color: var(--menu-text);
+        background-color: var(--menu-surface);
         min-width: 230px;
-        border: 1px solid #e0e6f8;
-        box-shadow: 0 0 16px 0px rgb(0 36 96 / 12%);
+        border: 1px solid var(--menu-border);
+        box-shadow: 0 0 16px var(--menu-shadow);
         bottom: 116px;
         left: 15px;
         border-radius: 8px;
         padding: 15px;
     }
 
-    .more-config .nano-content:hover~.list-config,
+    .more-config .nano-content:hover ~ .list-config,
     .list-config:hover {
         display: block;
     }
@@ -2149,7 +3289,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     }
 
     ul.nav.list-config li:hover {
-        background: #f3f4fb;
+        background: var(--menu-hover);
         border-radius: 5px;
     }
 
@@ -2161,27 +3301,46 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-blue .more-config a,
     .sidebar-green .more-config a,
     .sidebar-dark .sidebar-left .more-config a {
-        color: #60769a !important;
+        color: var(--menu-text) !important;
     }
 
     .sidebar-red .more-config a:hover,
     .sidebar-blue .more-config a:hover,
     .sidebar-green .more-config a:hover {
-        color: #fff !important;
+        color: var(--menu-primary) !important;
     }
 
-    .nav-main .nav-children li.nav-item-with-action {
+    .nav-main li.nav-item-with-action {
         position: relative;
+        display: block;
+        min-width: 0;
+        overflow: hidden;
     }
 
-    .nav-main .nav-children li.nav-item-with-action > .nav-action {
+    .nav-main li.nav-item-with-action > .nav-link {
+        display: block;
+        min-width: 0;
+        padding-right: 82px !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .nav-main li.nav-item-with-action > .nav-action {
         position: absolute;
-        right: 12px;
+        right: 8px;
         top: 50%;
         transform: translateY(-50%);
-        z-index: 1;
+        z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        max-width: 70px;
         padding: 2px 6px;
         line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .nav-item-with-action button{
         padding: 0 4px !important;
@@ -2204,10 +3363,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         left: 50px;
         top: 94px;
         transform: translateY(-50%);
-        background-color: #fff;
-        border: 1px solid #e0e6f8;
+        color: var(--menu-text);
+        background-color: var(--menu-surface);
+        border: 1px solid var(--menu-border);
         border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 20px var(--menu-shadow);
         min-width: 250px;
         opacity: 0;
         visibility: hidden;
@@ -2222,11 +3382,11 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
 
     .establishment-dropdown-header {
         padding: 12px 15px;
-        border-bottom: 1px solid #e0e6f8;
+        border-bottom: 1px solid var(--menu-border);
         font-weight: 600;
         font-size: 13px;
-        color: #333;
-        background-color: #f8f9fa;
+        color: var(--menu-text);
+        background-color: var(--menu-surface-muted);
         border-radius: 8px 8px 0 0;
     }
 
@@ -2239,8 +3399,8 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         left: calc(100% + 0px);
         top: 50%;
         transform: translateY(-50%);
-        background-color: #000;
-        color: #fff;
+        background-color: var(--menu-text);
+        color: var(--menu-surface);
         font-size: 12px;
         padding: 4px 7px;
         border-radius: 6px;
@@ -2260,7 +3420,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         transform: translateY(-50%);
         border-width: 8px;
         border-style: solid;
-        border-color: transparent #000 transparent transparent;
+        border-color: transparent var(--menu-text) transparent transparent;
     }
 
     .contain-icon-establishment-wrapper:hover .tooltip-right,
@@ -2310,7 +3470,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
         position: relative;
         z-index: 1;
     }
-
+    .sidebar-pinned-items > li.nav-item-with-action > .nav-action {
+        right: 24px;
+    }
     @keyframes shimmer {
         0% { background-position: 200% 0; }
         100% { background-position: -200% 0; }

@@ -88,6 +88,12 @@ class ItemController extends Controller
     use OfflineTrait;
 
     /**
+     * Tamaño máximo permitido (KB) para las imágenes de productos.
+     * Debe coincidir con la validación del formulario (items/form.vue).
+     */
+    const MAX_IMAGE_SIZE_KB = 2048;
+
+    /**
      * Sincroniza los precios dinámicos de un ItemUnitType
      *
      * @param int $itemUnitTypeId
@@ -164,6 +170,7 @@ class ItemController extends Controller
     public function records(Request $request)
     {
         // Generar clave de caché basada en todos los filtros
+        $listItemsByWarehouse = (bool) Configuration::getRecordIndividualColumn('list_items_by_warehouse');
         $cacheParams = [
             'column' => $request->column,
             'value' => $request->value,
@@ -177,7 +184,13 @@ class ItemController extends Controller
             'sort_direction' => $request->get('sort_direction', 'desc'),
             'variations_view' => $request->variations_view,
             'page' => $request->get('page', 1),
+            'list_items_by_warehouse' => $listItemsByWarehouse,
         ];
+
+        // El filtro por almacén depende de la sucursal del usuario autenticado
+        if ($listItemsByWarehouse || auth()->user()->type === 'seller') {
+            $cacheParams['establishment_id'] = auth()->user()->establishment_id;
+        }
 
         $cacheKey = 'items_list_' . md5(json_encode($cacheParams));
 
@@ -1235,7 +1248,7 @@ class ItemController extends Controller
     public function upload(Request $request)
     {
 
-        $validate_upload = UploadFileHelper::validateUploadFile($request, 'file', 'jpg,jpeg,png,gif,svg,webp');
+        $validate_upload = UploadFileHelper::validateUploadFile($request, 'file', 'jpg,jpeg,png,gif,svg,webp', true, self::MAX_IMAGE_SIZE_KB);
 
         if(!$validate_upload['success']){
             return $validate_upload;
@@ -1342,19 +1355,44 @@ class ItemController extends Controller
 
     public function duplicate(Request $request)
     {
-        // return $request->id;
         $obj = Item::find($request->id);
 
-        if($obj->lots_enabled){
+        if (!$obj) {
+            return [
+                'success' => false,
+                'message' => 'Producto no encontrado',
+            ];
+        }
+
+        if ($obj->lots_enabled) {
             $obj->date_of_due = null;
             $obj->lot_code = null;
             $obj->stock = 0;
         }
 
+        $userWarehouse = Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
+
         $new = $obj->setDescription($obj->getDescription().' (Duplicado)')->replicate();
         // el duplicado nace independiente, sin vínculo con variaciones
         $new->parent_item_id = null;
+        $new->stock = 0;
+
+        // Almacén de la sucursal de quien duplica (el observer Item::created usa este campo)
+        if ($userWarehouse) {
+            $new->warehouse_id = $userWarehouse->id;
+        }
+
         $new->save();
+
+        // Asegurar registro en el almacén de la sucursal actual (stock 0)
+        if ($userWarehouse) {
+            ItemWarehouse::firstOrCreate(
+                ['item_id' => $new->id, 'warehouse_id' => $userWarehouse->id],
+                ['stock' => 0]
+            );
+        }
+
+        CacheHelper::flush(['items_list']);
 
         return [
             'success' => true,
@@ -1362,7 +1400,6 @@ class ItemController extends Controller
                 'id' => $new->id,
             ],
         ];
-
     }
 
     public function disable($id)

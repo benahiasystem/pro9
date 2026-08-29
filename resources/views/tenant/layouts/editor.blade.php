@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="sidebar-light sidebar-left-big-icons">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -51,39 +51,52 @@
         <link rel="stylesheet" href="{{ asset('storage/skins/' . $vc_compact_sidebar->skin->filename) }}" />
       @endif
     @endif
+
+    {{-- Iconografía Tabler sobre las clases .fa-* existentes --}}
+    <link rel="stylesheet" href="{{ asset('porto-light/css/icons-tabler.css') }}?v={{ filemtime(public_path('porto-light/css/icons-tabler.css')) }}" />
+
+    {{-- Capa móvil global: siempre al final para ganar la cascada --}}
+    <link rel="stylesheet" href="{{ asset('porto-light/css/mobile.css') }}?v={{ filemtime(public_path('porto-light/css/mobile.css')) }}" />
     {{--@stack('styles')--}}
 
     @if(isset($visual))
         @php
+            // Paletas excluyentes por skin (ver tenant/layouts/app.blade.php):
+            // skins claros -> themes.json; skin black -> black-themes.json.
             $themeInlineCss = '';
             $blackThemeInlineCss = '';
 
-            $themeKey = (property_exists($visual, 'sidebar_theme') && $visual->sidebar_theme) ? $visual->sidebar_theme : 'white';
-            $themesPath = public_path('json/themes/themes.json');
-            if (is_file($themesPath)) {
-                $themesAll = json_decode(file_get_contents($themesPath), true) ?: [];
-                $colors = $themesAll[$themeKey] ?? $themesAll['white'] ?? null;
-                if (is_array($colors) && !isset($colors['--primary-color'])) {
-                    $colors = $colors['default'] ?? $colors['light'] ?? $colors;
-                }
-                if (is_array($colors)) {
-                    foreach ($colors as $var => $val) {
-                        if (strpos($var, '--') === 0) {
-                            $themeInlineCss .= $var . ':' . $val . ';';
+            $activeSkin = strtolower($vc_compact_sidebar->skin->filename ?? '');
+            $isBlackSkin = strpos($activeSkin, 'black') !== false;
+
+            if (!$isBlackSkin) {
+                $themeKey = (property_exists($visual, 'sidebar_theme') && $visual->sidebar_theme) ? $visual->sidebar_theme : 'white';
+                $themesPath = public_path('json/themes/themes.json');
+                if (is_file($themesPath)) {
+                    $themesAll = json_decode(file_get_contents($themesPath), true) ?: [];
+                    $colors = $themesAll[$themeKey] ?? $themesAll['white'] ?? null;
+                    if (is_array($colors) && !isset($colors['--primary-color'])) {
+                        $colors = $colors['default'] ?? $colors['light'] ?? $colors;
+                    }
+                    if (is_array($colors)) {
+                        foreach ($colors as $var => $val) {
+                            if (strpos($var, '--') === 0) {
+                                $themeInlineCss .= $var . ':' . $val . ';';
+                            }
                         }
                     }
                 }
-            }
-
-            $blackThemeKey = (property_exists($visual, 'black_theme') && $visual->black_theme) ? $visual->black_theme : 'default';
-            $blackThemesPath = public_path('json/themes/black-themes.json');
-            if (is_file($blackThemesPath)) {
-                $blackAll = json_decode(file_get_contents($blackThemesPath), true) ?: [];
-                $blackColors = $blackAll[$blackThemeKey] ?? $blackAll['default'] ?? null;
-                if (is_array($blackColors)) {
-                    foreach ($blackColors as $var => $val) {
-                        if (strpos($var, '--') === 0) {
-                            $blackThemeInlineCss .= $var . ':' . $val . ';';
+            } else {
+                $blackThemeKey = (property_exists($visual, 'black_theme') && $visual->black_theme) ? $visual->black_theme : 'default';
+                $blackThemesPath = public_path('json/themes/black-themes.json');
+                if (is_file($blackThemesPath)) {
+                    $blackAll = json_decode(file_get_contents($blackThemesPath), true) ?: [];
+                    $blackColors = $blackAll[$blackThemeKey] ?? $blackAll['default'] ?? null;
+                    if (is_array($blackColors)) {
+                        foreach ($blackColors as $var => $val) {
+                            if (strpos($var, '--') === 0) {
+                                $blackThemeInlineCss .= $var . ':' . $val . ';';
+                            }
                         }
                     }
                 }

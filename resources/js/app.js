@@ -1,4 +1,5 @@
 import './bootstrap';
+import './mobile-app-behavior';
 
 import Vue from 'vue'
 import store from './store'
@@ -6,6 +7,9 @@ import ElementUI from 'element-ui'
 
 import lang from 'element-ui/lib/locale/lang/es'
 import locale from 'element-ui/lib/locale'
+
+// Agrega remote-search (input con debounce) a el-input, antes de Vue.use(ElementUI)
+import './vendor/element-input-remote-search'
 
 // Cargar Bootstrap PRIMERO
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -212,6 +216,24 @@ if (sidebarMultiUserRoots && sidebarMultiUserRoots.length) {
             store: store,
             el: el
         });
+    });
+}
+
+const sidebarSearchRoot = document.getElementById('sidebar-search-root');
+if (sidebarSearchRoot) {
+    new Vue({
+        store: store,
+        el: '#sidebar-search-root',
+        template: '<tenant-sidebar-search />',
+    });
+}
+
+const sidebarMenuConfigRoot = document.getElementById('sidebar-menu-config-root');
+if (sidebarMenuConfigRoot) {
+    new Vue({
+        store: store,
+        el: '#sidebar-menu-config-root',
+        template: '<tenant-sidebar-menu-config />',
     });
 }
 

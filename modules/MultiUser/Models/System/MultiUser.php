@@ -70,7 +70,21 @@ class MultiUser extends ModelSystem
 
         if(!empty($request->value))
         {
-            $query->where($request->column, 'like', "%{$request->value}%");
+            $value = $request->value;
+
+            if(in_array($request->column, ['origin_client', 'destination_client']))
+            {
+                $query->whereHas($request->column, function($client) use($value){
+                    $client->where(function($q) use($value){
+                        $q->where('name', 'like', "%{$value}%")
+                            ->orWhere('number', 'like', "%{$value}%");
+                    });
+                });
+            }
+            else
+            {
+                $query->where('email', 'like', "%{$value}%");
+            }
         }
 
         return $query;

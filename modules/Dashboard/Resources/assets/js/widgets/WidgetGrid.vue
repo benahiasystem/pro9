@@ -1,5 +1,5 @@
 <template>
-  <div class="widget-dashboard">
+  <div class="">
 
     <div v-if="state.editMode" class="wg-hint-bar">
       <small class="wg-hint">
@@ -202,6 +202,9 @@ export default {
 
 <style scoped>
 .widget-dashboard {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
   padding: 0;
 }
 .wg-hint-bar {
@@ -235,11 +238,14 @@ export default {
   padding: 0.4rem 0.9rem;
 }
 .wg-grid {
+  box-sizing: border-box;
   display: grid;
-  gap: 16px;
+  gap: 10px;
   grid-auto-flow: dense;
-  grid-auto-rows: 84px;
   grid-template-columns: repeat(12, minmax(0, 1fr));
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
 }
 .wg-loading {
   padding: 2rem;

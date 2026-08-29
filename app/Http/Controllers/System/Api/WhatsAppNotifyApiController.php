@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\System\Configuration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Modules\WhatsAppBot\Services\Evolution\EvolutionClient;
+use Modules\WhatsAppBot\Services\Contracts\WhatsAppProviderClientInterface;
+use Modules\WhatsAppBot\Services\WhatsAppProviderFactory;
 
 /**
  * API publica para que un servicio externo envie WhatsApp usando el numero
@@ -35,22 +36,33 @@ class WhatsAppNotifyApiController extends Controller
     }
 
     /**
+     * Cliente del proveedor congelado al conectar el numero (NULL en
+     * notify_wa_provider = conexion previa a WAHA, o sea Evolution).
+     */
+    private function client(Configuration $config): WhatsAppProviderClientInterface
+    {
+        return WhatsAppProviderFactory::forProviderAndKey(
+            $config->notify_wa_provider ?: 'evolution',
+            $config->notify_wa_waha_server_key
+        );
+    }
+
+    /**
      * sendText()/sendMedia() no lanzan excepcion en respuestas HTTP de error
      * (4xx/5xx) — solo devuelven el body parseado. Sin este chequeo se
-     * reportaria "enviado" aunque Evolution lo haya rechazado.
+     * reportaria "enviado" aunque el proveedor lo haya rechazado.
      */
-    private function deliveryError(array $response, string $context): ?array
+    private function deliveryError(WhatsAppProviderClientInterface $client, array $response, string $context): ?array
     {
-        $messageId = data_get($response, 'key.id') ?: data_get($response, 'data.key.id');
-        if ($messageId) {
+        if ($client::extractMessageId($response)) {
             return null;
         }
 
-        Log::warning("[WhatsAppNotifyApi] {$context}: Evolution no confirmó el envío", ['response' => $response]);
+        Log::warning("[WhatsAppNotifyApi] {$context}: el proveedor no confirmó el envío", ['response' => $response]);
 
         return [
             'success' => false,
-            'message' => 'Evolution no confirmó el envío.',
+            'message' => 'El proveedor no confirmó el envío.',
             'data' => $response,
         ];
     }
@@ -68,8 +80,9 @@ class WhatsAppNotifyApiController extends Controller
         ]);
 
         try {
-            $response = (new EvolutionClient())->sendText($config->notify_wa_instance, $data['number'], $data['message']);
-            if ($error = $this->deliveryError($response, 'text')) {
+            $client = $this->client($config);
+            $response = $client->sendText($config->notify_wa_instance, $data['number'], $data['message']);
+            if ($error = $this->deliveryError($client, $response, 'text')) {
                 return response()->json($error, 502);
             }
             return response()->json(['success' => true, 'data' => $response]);
@@ -99,14 +112,15 @@ class WhatsAppNotifyApiController extends Controller
         ]);
 
         try {
-            $response = (new EvolutionClient())->sendMedia($config->notify_wa_instance, $data['number'], [
+            $client = $this->client($config);
+            $response = $client->sendMedia($config->notify_wa_instance, $data['number'], [
                 'mediatype' => $data['media_type'],
                 'mimetype' => $data['mimetype'] ?? '',
                 'media' => $data['media'],
                 'fileName' => $data['filename'] ?? '',
                 'caption' => $data['caption'] ?? '',
             ]);
-            if ($error = $this->deliveryError($response, 'media')) {
+            if ($error = $this->deliveryError($client, $response, 'media')) {
                 return response()->json($error, 502);
             }
             return response()->json(['success' => true, 'data' => $response]);
@@ -135,14 +149,15 @@ class WhatsAppNotifyApiController extends Controller
         ]);
 
         try {
-            $response = (new EvolutionClient())->sendMedia($config->notify_wa_instance, $data['number'], [
+            $client = $this->client($config);
+            $response = $client->sendMedia($config->notify_wa_instance, $data['number'], [
                 'mediatype' => 'document',
                 'mimetype' => 'application/pdf',
                 'media' => $data['file'],
                 'fileName' => $data['filename'],
                 'caption' => $data['message'] ?? '',
             ]);
-            if ($error = $this->deliveryError($response, 'pdf')) {
+            if ($error = $this->deliveryError($client, $response, 'pdf')) {
                 return response()->json($error, 502);
             }
             return response()->json(['success' => true, 'data' => $response]);

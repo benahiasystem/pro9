@@ -506,9 +506,43 @@ function getDataItemLotGroup(row_old)
 }
 
 
+/**
+ * Unidades de medida que expresan magnitudes continuas: admiten fracciones.
+ * El resto (unidades, cajas, docenas, etc.) se cuentan de a enteros.
+ */
+const DECIMAL_UNIT_TYPES = [
+    // Peso
+    'KGM', 'GRM', 'MGM', 'TNE', 'LBR', 'ONZ',
+    // Volumen
+    'LTR', 'MLT', 'GLL', 'GLI', 'MTQ', 'CMQ', 'MMQ', 'FTQ',
+    // Longitud
+    'MTR', 'CMT', 'MMT', 'KTM', 'FOT', 'INH', 'YRD',
+    // Superficie
+    'MTK', 'CMK', 'MMK', 'FTK',
+    // Tiempo y energía
+    'HUR', 'HT', 'SEC', 'KWH', 'MWH',
+]
+
+
+/**
+ *
+ * Decimales admitidos en una cantidad según la unidad de medida del producto.
+ * Se topan en 4 porque así se almacenan stock y movimientos: decimal(12,4).
+ *
+ * @param  {string} unit_type_id
+ * @param  {number|undefined} fallback  Precisión para unidades discretas
+ * @return {number|undefined}
+ */
+const getQuantityPrecisionByUnitType = (unit_type_id, fallback = 0) => {
+    const unit_type = String(unit_type_id || '').toUpperCase()
+
+    return DECIMAL_UNIT_TYPES.includes(unit_type) ? 4 : fallback
+}
+
 export {
     calculateRowItem, getUniqueArray, showNamePdfOfDescription,
-    sumAmountDiscountsNoBaseByItem, FormatUnitPriceRow, filterWords
+    sumAmountDiscountsNoBaseByItem, FormatUnitPriceRow, filterWords,
+    getQuantityPrecisionByUnitType
 }
 
 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

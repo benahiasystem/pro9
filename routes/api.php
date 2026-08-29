@@ -57,6 +57,12 @@ if ($hostname) {
             // "documents/record/{id}" ya lo registra el modulo MobileApp, que gana por
             // orden de registro; por eso este endpoint usa "find".
             Route::get('documents/find/{id}', 'Tenant\Api\DocumentController@record');
+
+            // Mismo contrato que documents/find y sale-note/find: un registro por id,
+            // envuelto en "data", con 404 cuando no existe o no pertenece al vendedor.
+            Route::get('quotation/find/{id}', 'Tenant\Api\QuotationController@record');
+            Route::get('purchase/find/{id}', 'Tenant\Api\PurchaseController@record');
+            Route::get('dispatch/find/{id}', 'Tenant\Api\DispatchController@record');
             Route::post('documents/updatedocumentstatus', 'Tenant\Api\DocumentController@updatestatus');
             Route::post('summaries', 'Tenant\Api\SummaryController@store');
             Route::post('voided', 'Tenant\Api\VoidedController@store');

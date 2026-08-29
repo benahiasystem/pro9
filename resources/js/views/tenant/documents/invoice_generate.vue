@@ -3,7 +3,7 @@
     <!-- ######## INICIO CAMBIO GEOPOLITICO VENEZUELA -->
     <div :class="{ 'content-opacity': isVisible }" @click.self="toggleInformation">
         <MiniTour
-            :steps="miniTourSteps"
+            :steps="miniTourStepsVisible"
             storage-key="tour_doc_generate_buttons"
             :version="1"
             fab-avoid-selector=".ws-flotante"
@@ -4290,6 +4290,24 @@ export default {
         };
     },
     computed: {
+        // La personalización de campos se opera pasando el cursor sobre el
+        // título, gesto que no existe en celular: allí el botón se oculta
+        // (mobile.css) y su paso del tutorial se omite para no señalar un
+        // elemento invisible
+        miniTourStepsVisible() {
+            if (!window.matchMedia("(max-width: 767.98px)").matches) {
+                return this.miniTourSteps;
+            }
+            const pasos = this.miniTourSteps.filter(
+                step => step.target !== ".edit-layout-btn"
+            );
+            // Se renumeran: al quitar un paso, el rótulo "Paso 2 de 2"
+            // quedaría en el único paso que se muestra
+            return pasos.map((step, i) => ({
+                ...step,
+                tag: `Paso ${i + 1} de ${pasos.length}`
+            }));
+        },
         layoutPinnedKeysSet() {
             if (
                 this.editingLayout &&
@@ -7678,6 +7696,29 @@ export default {
             item.total_without_rounding = orig.total_without_rounding;
             delete item._original_before_global_discount;
         },
+        /**
+         * Afectaciones que participan del descuento global.
+         *
+         * Quedan fuera las gratuitas (11-16 bonificaciones, 21 exonerada
+         * gratuita, 37 inafecta gratuita): su valor es referencial, no integra
+         * el total a pagar y SUNAT no admite descuento sobre ellas. Si se
+         * incluyeran, absorberian parte del descuento y este se perderia:
+         * la suma de descuentos por linea no cuadraria con el descuento global.
+         */
+        isDiscountableAffectation(item) {
+            return [
+                "10", // Gravada - Operacion Onerosa
+                "20", // Exonerada - Operacion Onerosa
+                "30", // Inafecta - Operacion Onerosa
+                "31", // Inafecta - Retiro por Bonificacion
+                "32", // Inafecta - Retiro
+                "33", // Inafecta - Retiro por Muestras Medicas
+                "34", // Inafecta - Retiro por Convenio Colectivo
+                "35", // Inafecta - Retiro por Premio
+                "36", // Inafecta - Retiro por Publicidad
+                "40"  // Exportacion
+            ].includes(item.affectation_igv_type_id);
+        },
         discountGlobalItems(ctx) {
              let total_discounts_item = 0;
              // Seguridad: no acumular si calculateTotal no restauró antes
@@ -7685,41 +7726,62 @@ export default {
 
              if (!this.total_global_discount || this.total_global_discount <= 0) return;
 
-             // ########## INICIO CAMBIO IGV A IVA
-             // Si el monto Incluye IVA (descuento exacto tipo "02"), extraemos la base SIN IVA
-             // ######### FIN CAMBIO IGV A IVA
-             let amount_discount = parseFloat(this.total_global_discount);
-             if (this.is_amount) {
-                 if (this.recordDiscountsGlobal) {
-                     if (this.recordDiscountsGlobal.discount_type_id === "02") {
-                        amount_discount = this.total_global_discount / (1 + this.percentage_igv);
+             // Base del descuento: solo operaciones onerosas. Las gratuitas
+             // (11-16, 21, 37) quedan fuera, no tienen valor de venta que
+             // descontar y su importe no forma parte del total a pagar.
+             let total_base = parseFloat(ctx.total_taxed)
+                + parseFloat(ctx.total_exonerated)
+                + parseFloat(ctx.total_unaffected)
+                + parseFloat(ctx.total_exportation);
+
+            if (total_base <= 0) return;
+
+            // ########## INICIO CAMBIO IGV A IVA
+            // Si el monto incluye IVA (descuento exacto tipo "02"), extraemos la
+            // base sin IVA. Solo la porcion gravada genera IVA, por eso se divide
+            // entre (1 + IVA * participacion gravada): en un comprobante
+            // exonerado/inafecto el monto tecleado ya es neto y dividir entre
+            // 1.18 aplicaria un descuento menor al pedido.
+            let amount_discount = parseFloat(this.total_global_discount);
+            if (this.is_amount) {
+                const taxed_share = parseFloat(ctx.total_taxed) / total_base;
+                const igv_divisor = 1 + this.percentage_igv * taxed_share;
+
+                if (this.recordDiscountsGlobal) {
+                    if (this.recordDiscountsGlobal.discount_type_id === "02") {
+                        amount_discount = this.total_global_discount / igv_divisor;
                     }
                 } else if (
                     this.configuration.global_discount_type_id === "02" &&
                     this.configuration.exact_discount
                 ) {
-                    amount_discount = this.total_global_discount / (1 + this.percentage_igv);
+                    amount_discount = this.total_global_discount / igv_divisor;
                 }
             }
-
-            let total_base = parseFloat(ctx.total_taxed)
-                + parseFloat(ctx.total_exonerated)
-                + parseFloat(ctx.total_unaffected)
-                + parseFloat(ctx.total_exportation)
-                + parseFloat(ctx.total_free);
+            // ######### FIN CAMBIO IGV A IVA
 
             let global_amount = this.is_amount
                 ? parseFloat(amount_discount)
                 : _.round((parseFloat(amount_discount) / 100) * total_base, 2);
 
-            // Suma de todos los items (denominador de la formula)
+            // Suma de los items que reciben descuento (denominador de la formula)
             let sum_items_value = _.sumBy(this.form.items, item => {
+                if (!this.isDiscountableAffectation(item)) return 0;
                 return item.total_value_without_rounding
                     ? parseFloat(item.total_value_without_rounding)
                     : parseFloat(item.total_value);
             });
 
             if (sum_items_value <= 0) return;
+
+            // Descuento repartido, separado por afectacion: cada base solo se
+            // reduce con lo que se repartio a SUS items
+            let discount_by_affectation = {
+                taxed: 0,
+                exonerated: 0,
+                unaffected: 0,
+                exportation: 0
+            };
 
             let discount_type_id = this.recordDiscountsGlobal
                 ? this.recordDiscountsGlobal.discount_type_id
@@ -7729,6 +7791,8 @@ export default {
                 : this.global_discount_type.description;
 
             this.form.items.forEach((item, index) => {
+                if (!this.isDiscountableAffectation(item)) return;
+
                 let item_value = item.total_value_without_rounding
                     ? parseFloat(item.total_value_without_rounding)
                     : parseFloat(item.total_value);
@@ -7762,6 +7826,23 @@ export default {
                     from_global_distribution: true
                 });
 
+                // El descuento de una linea solo puede reducir la base de su
+                // propia afectacion
+                switch (item.affectation_igv_type_id) {
+                    case "10": // Gravada
+                        discount_by_affectation.taxed += item_discount_amount;
+                        break;
+                    case "20": // Exonerada
+                        discount_by_affectation.exonerated += item_discount_amount;
+                        break;
+                    case "40": // Exportacion
+                        discount_by_affectation.exportation += item_discount_amount;
+                        break;
+                    default: // Inafecta (30 a 36)
+                        discount_by_affectation.unaffected += item_discount_amount;
+                        break;
+                }
+
                 this.recalcItemBasesAndIgv(item);
 
             });
@@ -7778,15 +7859,28 @@ export default {
 
 
                 if (this.isGlobalDiscountBase) {
+                    // Cada base se reduce unicamente con el descuento repartido a
+                    // los items de esa afectacion. Antes se restaba el descuento
+                    // completo a la gravada (total_base - amount) y luego se
+                    // volvian a sumar exonerado/inafecto/exportacion en total_out:
+                    // en comprobantes mixtos eso duplicaba esos importes y cobraba
+                    // IGV sobre operaciones que no lo pagan, y en comprobantes sin
+                    // gravada inventaba una Op. Gravada inexistente.
+                    let total_taxed =
+                        parseFloat(ctx.total_taxed) - discount_by_affectation.taxed;
+                    let total_exonerated =
+                        parseFloat(ctx.total_exonerated) - discount_by_affectation.exonerated;
+                    let total_unaffected =
+                        parseFloat(ctx.total_unaffected) - discount_by_affectation.unaffected;
+                    let total_exportation =
+                        parseFloat(ctx.total_exportation) - discount_by_affectation.exportation;
 
-                    let total_taxed = total_base  - amount;
+                    // solo la operacion gravada genera IGV
                     let total_igv = total_taxed * this.percentage_igv;
                     let total_taxes =
                         total_igv + ctx.total_isc + ctx.total_plastic_bag_taxes;
-                    let total_out = _.round(
-                        ctx.total_exonerated + ctx.total_unaffected + ctx.total_exportation + ctx.total_free,
-                        2
-                    );
+                    let total_out =
+                        total_exonerated + total_unaffected + total_exportation;
                     let total = total_taxed + total_out + total_taxes;
 
                     this.form.total_taxed = _.round(
@@ -7794,12 +7888,13 @@ export default {
                          2
                      );
 
-                    this.form.total_value = total_taxed + total_out;
+                    this.form.total_exonerated = _.round(total_exonerated, 2);
+                    this.form.total_unaffected = _.round(total_unaffected, 2);
+                    this.form.total_exportation = _.round(total_exportation, 2);
 
-                    this.form.total_igv = _.round(
-                        total_taxed * this.percentage_igv,
-                        2
-                    );
+                    this.form.total_value = _.round(total_taxed + total_out, 2);
+
+                    this.form.total_igv = _.round(total_igv, 2);
 
                     //impuestos (isc + igv + icbper)
                     this.form.total_taxes = _.round(
@@ -7941,13 +8036,20 @@ export default {
                 quantity > 0 ? total / quantity : orig.unit_price;
 
             // 3271: unit_value ORIGINAL; 3270: unit_price = precio operación post-dto.
-            // Si el descuento no afecta la BI, el item no cambia: se conserva el
-            // unit_price original (evita ademas arrastre de redondeo).
+            //
+            // Si el descuento NO afecta la base imponible (catalogo 53 '01') el
+            // item queda intacto: total_value y total_igv no cambian, asi que el
+            // precio unitario tampoco puede cambiar sin romper 3270
+            // (PriceAmount ≈ (LineExtensionAmount + IGV) / cantidad).
+            // Antes se hacia `orig.unit_price - discount_no_base`, que resta un
+            // importe de linea a un precio unitario: con cantidad > 1 el precio
+            // caia el descuento completo en lugar de la parte proporcional, y ni
+            // siquiera con cantidad 1 cuadraba contra total_value.
             item.unit_value = orig.unit_value;
             item.unit_price =
                 discount_base > 0
                     ? _.round(unit_price_operation, 6)
-                    : orig.unit_price - discount_no_base;
+                    : orig.unit_price;
             item.total_value = _.round(total_value, 2);
             item.total_base_igv = _.round(total_base_igv, 2);
             item.total_igv = _.round(total_igv, 2);

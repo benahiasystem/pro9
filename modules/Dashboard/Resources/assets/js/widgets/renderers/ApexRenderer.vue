@@ -1,5 +1,5 @@
 <template>
-  <div class="wg-apex" ref="wrap">
+  <div class="wg-apex" :class="{ 'is-series-tooltip': isCircular }" ref="wrap">
     <apexchart
       :key="chartKey"
       :type="apexType"
@@ -60,6 +60,32 @@ export default {
     chartHeight() {
       return this.height
     },
+    previousLabels() {
+      const meta = this.dataset.meta || {}
+      return meta.previous_labels || []
+    },
+    sharedTooltip() {
+      return !['bar', 'barh'].includes(this.type)
+    },
+    tooltipXFormatter() {
+      const previous = this.previousLabels
+      if (!previous.length || this.sharedTooltip) return undefined
+      return (value, opts) => {
+        if (!opts || opts.seriesIndex < 1) return value
+        return previous[opts.dataPointIndex] || value
+      }
+    },
+    seriesTitleFormatter() {
+      const previous = this.previousLabels
+      const shared = this.sharedTooltip
+      return (seriesName, opts) => {
+        const name = seriesName || ''
+        if (!name) return ''
+        if (!shared || !previous.length || !opts || opts.seriesIndex < 1) return name + ': '
+        const label = previous[opts.dataPointIndex]
+        return label ? name + ' (' + label + '): ' : name + ': '
+      }
+    },
     breakdownTotal() {
       return (this.dataset.breakdown.values || []).reduce((a, b) => a + (Number(b) || 0), 0)
     },
@@ -94,7 +120,15 @@ export default {
         chart: { toolbar: { show: false }, fontFamily: 'inherit', zoom: { enabled: false }, animations: { enabled: false }, parentHeightOffset: 0, background: 'transparent' },
         dataLabels: { enabled: false },
         grid: { borderColor: theme.grid, strokeDashArray: 4 },
-        tooltip: { y: { formatter: v => formatValue(v, this.unit) } },
+        tooltip: {
+          shared: this.sharedTooltip,
+          intersect: !this.sharedTooltip,
+          x: { formatter: this.tooltipXFormatter },
+          y: {
+            formatter: v => formatValue(v, this.unit),
+            title: { formatter: this.seriesTitleFormatter },
+          },
+        },
       }
 
       if (this.type === 'line' || this.type === 'area') {
@@ -191,5 +225,10 @@ export default {
 .wg-apex {
   flex: 1 1 auto;
   min-height: 0;
+}
+.is-series-tooltip >>> .apexcharts-tooltip,
+.is-series-tooltip >>> .apexcharts-tooltip *,
+.is-series-tooltip >>> .apexcharts-tooltip-title {
+  color: #fff !important;
 }
 </style>

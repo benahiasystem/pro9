@@ -8,9 +8,38 @@
                 <li><span class="text-muted">Avanzado</span></li>
             </ol>
         </div>
+        <div class="advanced-settings mb-3 config-search-section">
+            <section class="card-body" aria-label="Buscar configuraciones avanzadas">
+                <div class="advanced-search-copy">
+                    <span class="advanced-search-icon"><i class="fas fa-search" aria-hidden="true"></i></span>
+                    <div>
+                        <strong>Buscar configuraciones</strong>
+                        <small class="text-muted">Filtra por nombre, descripción o términos relacionados.</small>
+                    </div>
+                </div>
+                <el-input
+                    v-model="advancedSearchQuery"
+                    class="advanced-search-control"
+                    type="text"
+                    prefix-icon="el-icon-search"
+                    autocomplete="off"
+                    clearable
+                    placeholder="Ej. sucursal, almacén, stock..."
+                    aria-label="Buscar dentro de configuración avanzada"
+                    @input="scheduleAdvancedFilter"
+                    @clear="clearAdvancedSearch">
+                </el-input>
+                <div v-if="advancedSearchQuery" class="advanced-search-feedback text-muted" aria-live="polite">
+                    <span v-if="advancedSearchMatchCount">
+                        {{ advancedSearchMatchCount }} opción(es) encontrada(s) para “{{ advancedSearchQuery }}”.
+                    </span>
+                    <span v-else>No se encontraron configuraciones relacionadas con “{{ advancedSearchQuery }}”.</span>
+                </div>
+            </section>
+        </div>
         <template>
             <form autocomplete="off">
-                <el-tabs v-model="activeName" type="border-card" class="rounded advanced-settings">
+                <el-tabs ref="advancedSettings" v-model="activeName" type="border-card" class="rounded advanced-settings">
                     <el-tab-pane class="mb-3" name="second">
                         <span slot="label">Visual</span>
                         <div class="row switch-configuration-container">
@@ -243,7 +272,7 @@
                                                 Agregar descripción al producto
                                                 <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Cotización y Notas de venta."
+                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Cotización, Notas de venta y Guías de remisión."
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -390,16 +419,6 @@
                                         </div>
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
-                                        <div class="col-12">
-                                            <label class="control-label">Restringir fecha de comprobante</label>
-                                            <div :class="{ 'has-danger': errors.restrict_receipt_date }" class="form-group">
-                                                <el-switch v-model="form.restrict_receipt_date"
-                                                    @change="submit"></el-switch>
-                                                <small v-if="errors.restrict_receipt_date" class="form-control-feedback"
-                                                    v-text="errors.restrict_receipt_date[0]"></small>
-                                            </div>
-                                        </div>
-
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Mostrar totales en el listado de CPE
@@ -611,23 +630,6 @@
                                                     :step="1" @change="submit"></el-input-number>
                                                 <small v-if="errors.new_validator_pagination" class="form-control-feedback"
                                                     v-text="errors.new_validator_pagination[0]"></small>
-                                            </div>
-                                        </div>
-
-                                        <div v-if="typeUser != 'integrator'" class="col-md-6">
-                                            <label class="control-label">
-                                                Días de plazo de envío
-                                                <el-tooltip class="item"
-                                                    content="Validar fecha de emisión en Ventas/Comprobante electrónico"
-                                                    effect="dark" placement="top-start">
-                                                    <i class="fa fa-info-circle"></i>
-                                                </el-tooltip>
-                                            </label>
-                                            <div :class="{ 'has-danger': errors.shipping_time_days }" class="form-group w-50">
-                                                <el-input-number v-model="form.shipping_time_days" :min="1" :precision="0"
-                                                    :step="1" @change="submit"></el-input-number>
-                                                <small v-if="errors.shipping_time_days" class="form-control-feedback"
-                                                    v-text="errors.shipping_time_days[0]"></small>
                                             </div>
                                         </div>
 
@@ -1365,16 +1367,48 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="fw-semibold m-0 d-flex align-items-center gap-2">
                                                 <span class="dot"></span>
-                                                <span class="text-primary text-uppercase">Comunicación de Baja (RA)</span>
+                                                <span class="text-primary text-uppercase">Plazos de Envío</span>
                                             </h5>
                                         </div>
                                         <div>
                                             <span class="text-muted">
-                                                Reglas para el envío de comunicaciones de baja a SUNAT.
+                                                Plazos para la fecha del comprobante y para el envío de comunicaciones de baja a SUNAT.
                                             </span>
                                         </div>
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
+                                        <div class="col-12">
+                                            <label class="control-label">Restringir fecha de comprobante
+                                                <el-tooltip class="item"
+                                                    content="Validar fecha de emisión en Ventas/Comprobante electrónico"
+                                                    effect="dark" placement="top-start">
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </label>
+                                            <div :class="{ 'has-danger': errors.restrict_receipt_date }" class="form-group">
+                                                <el-switch v-model="form.restrict_receipt_date"
+                                                    @change="submit"></el-switch>
+                                                <small v-if="errors.restrict_receipt_date" class="form-control-feedback"
+                                                    v-text="errors.restrict_receipt_date[0]"></small>
+                                            </div>
+                                        </div>
+
+                                        <template v-if="typeUser != 'integrator' && form.restrict_receipt_date">
+                                            <div class="inputs-column">
+                                                <label class="control-label">
+                                                    Días de plazo de envío
+                                                </label>
+                                                <div :class="{ 'has-danger': errors.shipping_time_days }"
+                                                    class="form-group w-50">
+                                                    <el-input-number v-model="form.shipping_time_days" :min="1"
+                                                        :precision="0" :step="1" @change="submit"></el-input-number>
+                                                    <small v-if="errors.shipping_time_days" class="form-control-feedback"
+                                                        v-text="errors.shipping_time_days[0]"></small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2"></div>
+                                        </template>
+
                                         <template v-if="typeUser != 'integrator'">
                                             <div class="col-12">
                                                 <label class="control-label">Restringir envío de comunicación de baja (RA)
@@ -3336,6 +3370,84 @@
     border-top-right-radius: 5px;
     border-top-left-radius: 5px;
 }
+.advanced-search-panel {
+    margin-bottom: 16px;
+    padding: 16px;
+    border: 1px solid #e3e8f2;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 3px 14px rgba(22, 34, 51, .05);
+}
+.advanced-search-copy {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.advanced-search-copy strong,
+.advanced-search-copy small {
+    display: block;
+}
+.advanced-search-copy small {
+    margin-top: -5px;
+}
+.advanced-search-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, #ffffff00);
+}
+.advanced-search-control.el-input .el-input__inner {
+    height: 40px;
+    line-height: 40px;
+    padding-left: 38px;
+}
+.advanced-search-control.el-input .el-input__prefix {
+    left: 12px;
+}
+.advanced-search-control.el-input .el-input__icon {
+    line-height: 40px;
+    font-size: 15px;
+}
+.advanced-search-feedback {
+    margin-top: 9px;
+    font-size: 12px;
+}
+.advanced-settings.is-filtering > .el-tabs__header {
+    display: none;
+}
+.advanced-settings.is-filtering > .el-tabs__content > .el-tab-pane {
+    display: block !important;
+    margin-bottom: 16px;
+}
+.advanced-settings.is-filtering > .el-tabs__content > .el-tab-pane.advanced-pane-empty {
+    display: none !important;
+}
+.advanced-filter-hidden {
+    display: none !important;
+}
+html.dark .advanced-search-panel,
+html.sidebarMode-dark .advanced-search-panel {
+    color: #eef2f7;
+    background: #202938;
+    border-color: #364154;
+}
+html.dark .advanced-search-control.el-input .el-input__inner,
+html.sidebarMode-dark .advanced-search-control.el-input .el-input__inner {
+    color: #eef2f7;
+    background: #202938;
+    border-color: #364154;
+}
+html.dark .advanced-search-control.el-input .el-input__prefix,
+html.sidebarMode-dark .advanced-search-control.el-input .el-input__prefix,
+html.dark .advanced-search-control.el-input .el-input__suffix,
+html.sidebarMode-dark .advanced-search-control.el-input .el-input__suffix {
+    color: #aab4c4;
+}
 </style>
 
 <script>
@@ -3428,7 +3540,10 @@ export default {
             loadingPrinters: false,
             placeholder: '',
             activeName: 'second',
-            loading_save_mail: false
+            loading_save_mail: false,
+            advancedSearchQuery: '',
+            advancedSearchMatchCount: 0,
+            advancedSearchFrame: null
         }
     },
     created() {
@@ -3467,6 +3582,123 @@ export default {
         ...mapActions([
             'loadConfiguration',
         ]),
+        normalizeAdvancedSearch(value) {
+            return (value || '')
+                .toString()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+        },
+        advancedSynonymGroups() {
+            return [
+                ['sucursal', 'sede', 'establecimiento', 'local', 'tienda', 'agencia', 'punto de venta', 'almacen'],
+                ['almacen', 'bodega', 'deposito', 'inventario', 'stock', 'existencia', 'existencias', 'kardex', 'disponibilidad', 'saldo', 'ubicacion', 'lote'],
+                ['producto', 'articulo', 'item', 'mercaderia', 'mercancia', 'genero', 'bien', 'catalogo', 'existencia'],
+                ['venta', 'facturacion', 'comercializacion', 'transaccion', 'operacion', 'transferencia', 'ingreso', 'pedido'],
+                ['comprobante', 'documento', 'factura', 'boleta', 'ticket', 'recibo', 'cpe', 'nota de credito', 'nota de debito'],
+                ['cliente', 'comprador', 'consumidor', 'adquirente', 'contacto'],
+                ['compra', 'adquisicion', 'abastecimiento', 'aprovisionamiento', 'pedido de compra'],
+                ['proveedor', 'suministrador', 'abastecedor', 'acreedor'],
+                ['usuario', 'cuenta', 'operador', 'perfil', 'acceso', 'credencial'],
+                ['vendedor', 'asesor', 'comercial', 'ejecutivo de ventas', 'representante'],
+                ['pago', 'abono', 'paga', 'cobro', 'reembolso', 'reintegro', 'amortizacion', 'cancelacion'],
+                ['caja', 'efectivo', 'dinero', 'tesoreria', 'arqueo', 'apertura', 'cierre', 'turno'],
+                ['reporte', 'informe', 'estadistica', 'resumen', 'consulta', 'listado', 'analisis'],
+                ['cotizacion', 'presupuesto', 'proforma', 'propuesta', 'oferta', 'estimacion'],
+                ['guia', 'guia de remision', 'despacho', 'envio', 'traslado', 'transporte', 'transportista', 'remitente'],
+                ['devolucion', 'retorno', 'reintegro', 'nota de credito', 'anulacion', 'reversion'],
+                ['serie', 'numeracion', 'correlativo', 'secuencia', 'folio'],
+                ['moneda', 'divisa', 'tipo de cambio', 'cambio', 'conversion'],
+                ['banco', 'entidad financiera', 'cuenta bancaria', 'banca'],
+                ['credito', 'financiamiento', 'cuota', 'pago diferido', 'dias de credito', 'plazo'],
+                ['trabajador', 'empleado', 'personal', 'vendedor', 'colaborador'],
+                ['configuracion', 'ajuste', 'preferencia', 'parametro', 'opcion', 'personalizacion']
+            ].map(group => group.map(this.normalizeAdvancedSearch))
+        },
+        advancedQueryGroups(query) {
+            const synonymGroups = this.advancedSynonymGroups()
+            return this.normalizeAdvancedSearch(query).split(' ').filter(Boolean).map(token => {
+                const synonymGroup = synonymGroups.find(group => group.some(term => term === token || term.includes(token) || token.includes(term)))
+                return synonymGroup || [token]
+            })
+        },
+        advancedTextMatches(text, queryGroups) {
+            const normalizedText = this.normalizeAdvancedSearch(text)
+            return queryGroups.every(group => group.some(term => normalizedText.includes(term)))
+        },
+        scheduleAdvancedFilter() {
+            if (this.advancedSearchFrame) cancelAnimationFrame(this.advancedSearchFrame)
+            this.advancedSearchFrame = requestAnimationFrame(() => {
+                this.advancedSearchFrame = null
+                this.applyAdvancedFilter()
+            })
+        },
+        applyAdvancedFilter() {
+            const tabsComponent = this.$refs.advancedSettings
+            const root = tabsComponent && tabsComponent.$el ? tabsComponent.$el : tabsComponent
+            if (!root) return
+
+            const query = this.normalizeAdvancedSearch(this.advancedSearchQuery)
+            const panes = Array.from(root.querySelectorAll(':scope > .el-tabs__content > .el-tab-pane'))
+            root.querySelectorAll('.advanced-filter-hidden').forEach(element => element.classList.remove('advanced-filter-hidden'))
+            panes.forEach(pane => pane.classList.remove('advanced-pane-empty'))
+
+            if (!query) {
+                root.classList.remove('is-filtering')
+                this.advancedSearchMatchCount = 0
+                return
+            }
+
+            root.classList.add('is-filtering')
+            const queryGroups = this.advancedQueryGroups(query)
+            let matchCount = 0
+
+            panes.forEach(pane => {
+                let paneMatches = 0
+                const containers = Array.from(pane.querySelectorAll('.adv-conf-container'))
+                    .filter(container => !container.closest('.el-dialog__wrapper'))
+
+                containers.forEach(container => {
+                    const cardBody = container.closest('.card-body')
+                    const card = cardBody ? cardBody.parentElement : container.parentElement
+                    const header = cardBody ? cardBody.querySelector('.header-card') : null
+                    const headerMatchesLiteral = header
+                        ? this.normalizeAdvancedSearch(header.textContent).includes(query)
+                        : false
+                    const options = Array.from(container.children).filter(child => child.nodeType === 1)
+                    let cardMatches = 0
+
+                    options.forEach(option => {
+                        const matches = headerMatchesLiteral || this.advancedTextMatches(option.textContent, queryGroups)
+                        option.classList.toggle('advanced-filter-hidden', !matches)
+                        if (matches) {
+                            cardMatches++
+                            paneMatches++
+                            matchCount++
+                        }
+                    })
+                    if (card) card.classList.toggle('advanced-filter-hidden', cardMatches === 0)
+                })
+
+                // Algunos paneles usan componentes o formularios sin adv-conf-container.
+                // Se evalúan como un único bloque para no excluir configuraciones válidas.
+                if (!containers.length) {
+                    const matches = this.advancedTextMatches(pane.textContent, queryGroups)
+                    paneMatches = matches ? 1 : 0
+                    if (matches) matchCount++
+                }
+                pane.classList.toggle('advanced-pane-empty', paneMatches === 0)
+            })
+
+            this.advancedSearchMatchCount = matchCount
+        },
+        clearAdvancedSearch() {
+            this.advancedSearchQuery = ''
+            this.$nextTick(this.applyAdvancedFilter)
+        },
         events() {
 
             this.$eventHub.$on('submitFormConfigurations', (form) => {

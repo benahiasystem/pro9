@@ -205,6 +205,18 @@ class WahaClient implements WhatsAppProviderClientInterface
     {
         return ($response['state'] ?? null) === 'open';
     }
+
+    public static function extractMessageId(array $response): ?string
+    {
+        // WAHA devuelve el mensaje crudo del engine: NOWEB/GOWS traen
+        // 'key.id' (Baileys), WEBJS 'id._serialized' / 'id.id'.
+        $id = $response['id'] ?? null;
+
+        return data_get($response, 'key.id')
+            ?: data_get($response, 'id._serialized')
+            ?: data_get($response, 'id.id')
+            ?: (is_string($id) && $id !== '' ? $id : null);
+    }
 }
 
 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

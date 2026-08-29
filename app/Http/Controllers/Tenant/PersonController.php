@@ -144,17 +144,34 @@ class PersonController extends Controller
         unset($data['optional_email'], $data['id']);
         $person->fill($data);
 
-        $location_id = $request->input('location_id');
-        if (
-            // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
-            $request->input('country_id') === 'VE'
-            && is_array($location_id)
-            && count($location_id) === 3
-            && !empty($location_id[0])
-            && !empty($location_id[1])
-            && !empty($location_id[2])
-            // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
-        ) {
+        // El ubigeo de la persona sale de location_id, pero desde que los inputs de
+        // "Direccion principal" quedaron ocultos ese campo depende del espejo del front
+        // y puede llegar vacio. En ese caso se toma el de la direccion principal para
+        // no dejar en null department_id / province_id / district_id.
+        $location_id = $this->normalizeLocationId($request->input('location_id'));
+
+        if (!$this->isCompleteLocationId($location_id)) {
+            $location_id = $this->resolveMainAddressLocationId($request->input('addresses'));
+        }
+
+        // TEMPORAL - diagnostico ubigeo persona. Quitar cuando se confirme la causa.
+        \Illuminate\Support\Facades\Log::info('[ubigeo-persona] store', [
+            'person_id'          => $request->input('id'),
+            'country_id'         => $request->input('country_id'),
+            'location_id_request'=> $request->input('location_id'),
+            'location_id_final'  => $location_id,
+            'addresses'          => collect($request->input('addresses') ?: [])->map(function ($row) {
+                return is_array($row) ? [
+                    'id'            => $row['id'] ?? null,
+                    'main'          => $row['main'] ?? null,
+                    'location_id'   => $row['location_id'] ?? null,
+                    'department_id' => $row['department_id'] ?? null,
+                ] : $row;
+            })->all(),
+        ]);
+
+        // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+        if ($request->input('country_id') === 'VE' && $this->isCompleteLocationId($location_id)) {
             $person->district_id = $location_id[2];
             $person->province_id = $location_id[1];
             $person->department_id = $location_id[0];
@@ -163,6 +180,7 @@ class PersonController extends Controller
             $person->province_id = null;
             $person->department_id = null;
         }
+        // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 
         if($request->password && $request->email ){
             $person->password = bcrypt($request->password);
@@ -208,6 +226,78 @@ class PersonController extends Controller
             'message' => $msg,
             'id' => $person->id
         ];
+    }
+
+    /**
+     * Deja el ubigeo como lista indexada, descartando valores vacios.
+     *
+     * @param  mixed  $locationId
+     * @return array
+     */
+    private function normalizeLocationId($locationId): array
+    {
+        if (!is_array($locationId)) {
+            return [];
+        }
+
+        return array_values(array_filter($locationId, function ($value) {
+            return $value !== null && $value !== '';
+        }));
+    }
+
+    /**
+     * Un ubigeo solo sirve si trae departamento, provincia y distrito.
+     *
+     * @param  mixed  $locationId
+     * @return bool
+     */
+    private function isCompleteLocationId($locationId): bool
+    {
+        return is_array($locationId) && count($locationId) === 3;
+    }
+
+    /**
+     * Ubigeo de la direccion principal (main) del payload. Si esa fila no lo trae en
+     * location_id se arma con sus columnas department_id / province_id / district_id.
+     *
+     * @param  mixed  $addresses
+     * @return array
+     */
+    private function resolveMainAddressLocationId($addresses): array
+    {
+        $addresses = is_array($addresses) ? $addresses : [];
+
+        $rows = array_values(array_filter($addresses, 'is_array'));
+        if (empty($rows)) {
+            return [];
+        }
+
+        $main = null;
+        foreach ($rows as $row) {
+            if (!empty($row['main'])) {
+                $main = $row;
+                break;
+            }
+        }
+
+        if ($main === null) {
+            $main = $rows[0];
+        }
+
+        $locationId = $this->normalizeLocationId($main['location_id'] ?? []);
+        if ($this->isCompleteLocationId($locationId)) {
+            return $locationId;
+        }
+
+        $departmentId = $main['department_id'] ?? null;
+        $provinceId = $main['province_id'] ?? null;
+        $districtId = $main['district_id'] ?? null;
+
+        if ($departmentId && $provinceId && $districtId) {
+            return [$departmentId, $provinceId, $districtId];
+        }
+
+        return [];
     }
 
     /**

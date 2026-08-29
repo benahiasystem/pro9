@@ -31,6 +31,8 @@ if ($hostname)
             // factura, boleta, nota de venta
             Route::prefix('documents')->group(function () {
                 Route::get('records-scroll', 'Api\DocumentCentralizedController@byScroll');
+                // catalogos de "operacion sujeta a detraccion" (1001)
+                Route::get('detraction-tables', 'Api\DocumentCentralizedController@detractionTables');
             });
 
             // pagos de comprobantes (factura, boleta)
@@ -62,6 +64,32 @@ if ($hostname)
             Route::prefix('establishments')->group(function () {
                 Route::get('series', 'Api\EstablishmentController@withSeries');
                 Route::post('change-user', '\App\Http\Controllers\Tenant\EstablishmentController@changeUserEstablishment');
+            });
+
+            // guias de remision (09 remitente, 31 transportista): catalogos livianos y listado unificado.
+            // La emision usa los endpoints core: POST api/dispatches (09) y POST api/dispatch-carrier (31).
+            Route::prefix('dispatches')->group(function () {
+                Route::get('tables', 'Api\DispatchController@tables');
+                Route::get('records-scroll', 'Api\DispatchController@byScroll');
+            });
+
+            // inventario: catalogos, traslado entre almacenes y ajuste de stock.
+            // La lectura usa GET items/records-scroll (params warehouse_id, stock_filter).
+            Route::prefix('inventory')->group(function () {
+                Route::get('tables', 'Api\InventoryController@tables');
+                Route::post('transfer', 'Api\InventoryController@transfer');
+                Route::post('adjust', 'Api\InventoryController@adjust');
+            });
+
+            // finanzas: movimientos unificados de ingresos/egresos, registro de ingresos y gastos
+            Route::prefix('finances')->group(function () {
+                Route::get('tables', 'Api\FinanceController@tables');
+                Route::get('movements-scroll', 'Api\FinanceController@movementsByScroll');
+                Route::get('movements-summary', 'Api\FinanceController@movementsSummary');
+                Route::post('income', 'Api\FinanceController@storeIncome');
+                Route::post('income/{id}/void', 'Api\FinanceController@voidIncome');
+                Route::post('expense', 'Api\FinanceController@storeExpense');
+                Route::post('expense/{id}/void', 'Api\FinanceController@voidExpense');
             });
 
             Route::prefix('cash')->group(function () {

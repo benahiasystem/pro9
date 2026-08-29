@@ -9,7 +9,6 @@ use App\Services\System\GitRemoteService;
 use App\Services\System\GitVersionService;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Http;
 use Symfony\Component\Process\Process;
 
 class UpdateController extends Controller
@@ -130,33 +129,13 @@ class UpdateController extends Controller
 
     public function preCheck()
     {
-        $token = $this->gitRemote->token();
-        $tagsUrl = config('git.project_tags_url');
-
         $hasGitDir = is_dir(base_path('.git'));
         $gitWriteCheck = $this->checkGitDirectoryWritable();
 
-        $tokenValid = false;
-        $tokenMessage = 'Token no configurado (GIT_TOKEN en .env). Si usas config:cache, vuelve a generarlo tras cambiar .env.';
-
-        if (! $tagsUrl) {
-            $tokenMessage = 'GIT_PROJECT_TAGS_URL no configurado en .env';
-        } elseif ($token) {
-            try {
-                $response = Http::withHeaders([
-                    'PRIVATE-TOKEN' => $token,
-                ])->get($tagsUrl, ['per_page' => 1]);
-
-                if ($response->successful()) {
-                    $tokenValid = true;
-                    $tokenMessage = 'Token válido y activo con GitLab';
-                } else {
-                    $tokenMessage = 'Token inválido o expirado (código '.$response->status().')';
-                }
-            } catch (\Exception $e) {
-                $tokenMessage = 'Error al conectar con GitLab: '.$e->getMessage();
-            }
-        }
+        // Credenciales desde Configuraciones > Integraciones > Repositorio remoto (fallback .env)
+        $tokenCheck = $this->gitRemote->verifyToken();
+        $tokenValid = $tokenCheck['valid'];
+        $tokenMessage = $tokenCheck['message'];
 
         $this->git->run(['version']);
 
@@ -186,6 +165,8 @@ class UpdateController extends Controller
             'setup_command' => $gitWriteCheck['setup_command'] ?? null,
             'version_resolved' => $versionResolved,
             'version_message' => $versionMessage,
+            'provider' => $this->gitRemote->providerLabel(),
+            'remote_url' => $this->gitRemote->plainRemoteUrl(),
         ]);
     }
 

@@ -10,6 +10,9 @@
                 <li class="active"><span>Atributos de productos</span></li>
             </ol>
             <div class="right-wrapper pull-right">
+                <button class="btn btn-custom btn-sm mt-2 me-2" type="button" @click.prevent="showImportDialog = true">
+                    <i class="fa fa-upload"></i> Importar
+                </button>
                 <button class="btn btn-custom btn-sm mt-2 me-2" type="button" @click.prevent="clickCreate()">
                     <i class="fa fa-plus-circle"></i> Nueva variable
                 </button>
@@ -152,10 +155,17 @@
                 </div>
             </form>
         </el-dialog>
+
+        <product-variables-import
+            :showDialog.sync="showImportDialog"
+            @imported="load"
+        ></product-variables-import>
     </div>
 </template>
 
 <script>
+import ProductVariablesImport from './import.vue'
+
 const DEFAULT_COLOR = '#409EFF'
 
 const COLOR_NAMES = {
@@ -225,6 +235,9 @@ const COLOR_NAMES = {
 
 export default {
     name: 'TenantProductVariablesIndex',
+    components: {
+        ProductVariablesImport,
+    },
     data() {
         return {
             resource: 'product-variables',
@@ -232,6 +245,7 @@ export default {
             loading: false,
             loading_submit: false,
             showDialogForm: false,
+            showImportDialog: false,
             errors: {},
             form: {},
             new_value: {value: '', color: DEFAULT_COLOR},

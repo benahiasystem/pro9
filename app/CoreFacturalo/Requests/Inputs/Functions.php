@@ -15,36 +15,36 @@ class Functions
         // Marca la serie como en uso al asignarle n├║mero en emisi├│n (┬º4.7).
         Series::markInUse($document_type_id, $series);
 
-        if ($number === '#') {
-            // max() num├®rico evita saltos/duplicados frente a orderBy string.
-            $max = $model::where('document_type_id', $document_type_id)
-                ->where('series', $series)
-                ->max(\Illuminate\Support\Facades\DB::raw('CAST(number AS UNSIGNED)'));
-
-            if ($max !== null) {
-                return (int) $max + 1;
-            }
-
-            $series_configuration = SeriesConfiguration::where([
-                ['document_type_id', $document_type_id],
-                ['series', $series],
-            ])->first();
-
-            return ($series_configuration) ? (int) $series_configuration->number : 1;
-        }
-
-        return $number;
-
         // if ($number === '#') {
-        //     $document = $model::select('number')
-        //                         ->where('soap_type_id', $soap_type_id)
-        //                         ->where('document_type_id', $document_type_id)
-        //                         ->where('series', $series)
-        //                         ->orderBy('number', 'desc')
-        //                         ->first();
-        //     return ($document)?(int)$document->number+1:1;
+        //     // max() num├®rico evita saltos/duplicados frente a orderBy string.
+        //     $max = $model::where('document_type_id', $document_type_id)
+        //         ->where('series', $series)
+        //         ->max(\Illuminate\Support\Facades\DB::raw('CAST(number AS UNSIGNED)'));
+
+        //     if ($max !== null) {
+        //         return (int) $max + 1;
+        //     }
+
+        //     $series_configuration = SeriesConfiguration::where([
+        //         ['document_type_id', $document_type_id],
+        //         ['series', $series],
+        //     ])->first();
+
+        //     return ($series_configuration) ? (int) $series_configuration->number : 1;
         // }
+
         // return $number;
+
+        if ($number === '#') {
+            $document = $model::select('number')
+                                ->where('soap_type_id', $soap_type_id)
+                                ->where('document_type_id', $document_type_id)
+                                ->where('series', $series)
+                                ->orderBy('number', 'desc')
+                                ->first();
+            return ($document)?(int)$document->number+1:1;
+        }
+        return $number;
     }
 
     public static function filename($company, $document_type_id, $series, $number)

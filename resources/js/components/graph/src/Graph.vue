@@ -16,6 +16,17 @@
         height: inherit!important;
         width: inherit!important;
     }
+    /* Tooltip Chart.js: forzar contraste legible */
+    .chartjs-tooltip {
+        background: rgba(33, 37, 41, 0.96) !important;
+        color: #fff !important;
+        border-radius: 6px !important;
+        opacity: 1 !important;
+    }
+    .chartjs-tooltip *,
+    .chartjs-tooltip-key {
+        color: #fff !important;
+    }
 </style>
 
 <script>
@@ -42,6 +53,28 @@ export default {
         rotation: -0.5 * Math.PI,
         circumference: 2 * Math.PI,
         legend: { display: false },
+        // Chart.js v2: texto del tooltip legible (evita negro sobre fondo oscuro/naranja).
+        tooltips: {
+          enabled: true,
+          backgroundColor: 'rgba(33, 37, 41, 0.96)',
+          titleFontColor: '#ffffff',
+          bodyFontColor: '#ffffff',
+          footerFontColor: '#ffffff',
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+          borderWidth: 1,
+          xPadding: 12,
+          yPadding: 10,
+          displayColors: true,
+          callbacks: {
+            label: function (tooltipItem, data) {
+              const label = (data.labels && data.labels[tooltipItem.index]) || ''
+              const raw = data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index]
+              const value = Number(raw)
+              const amount = isNaN(value) ? raw : value.toFixed(2)
+              return ` ${label}: Bs. ${amount}`
+            },
+          },
+        },
         plugins: {
           doughnutlabel: {
             labels: [
@@ -101,7 +134,9 @@ export default {
               height = chart.height,
               ctx = chart.ctx;
 
-            ctx.restore();
+            // save/restore balanceados: el restore() previo sin save
+            // corrompía el contexto y el tooltip salía negro/ilegible.
+            ctx.save();
 
             const mainFontSize = Math.min(height / 10, 16);
             ctx.font = `bold ${mainFontSize}px Arial, sans-serif`;
@@ -117,7 +152,7 @@ export default {
             ctx.fillStyle = chart.config.options.plugins.doughnutlabel.labels[1].color;
             ctx.fillText('Total', width / 2, height / 2 + 15);
 
-            ctx.save();
+            ctx.restore();
           }
         }
       });

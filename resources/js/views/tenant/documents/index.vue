@@ -340,7 +340,6 @@
                                   </el-dropdown-item>
 
                                   <el-dropdown-item divided />
-
                                   <!-- Descargas: en celular la columna XML/PDF/CDR se oculta
                                        (hacía filas de ~300px) y sus acciones viven aquí -->
                                   <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
@@ -359,20 +358,18 @@
 
                                   <el-dropdown-item
                                     v-if="configuration.permission_to_edit_cpe && row.state_type_id === '01' && userPermissionEditCpe && row.is_editable"
+                                    @click.native="go(`/documents/${row.id}/edit`)"
                                   >
-                                    <a :href="`/documents/${row.id}/edit`" style="text-decoration: none; color: inherit;">
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                                       Editar
-                                    </a>
                                   </el-dropdown-item>
 
                                   <el-dropdown-item
                                     v-else-if="row.state_type_id === '01' && userId == row.user_id && row.is_editable"
+                                    @click.native="go(`/documents/${row.id}/edit`)"
                                   >
-                                    <a :href="`/documents/${row.id}/edit`" style="text-decoration: none; color: inherit;">
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
                                       Editar
-                                    </a>
                                   </el-dropdown-item>
 
                                   <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
@@ -414,16 +411,17 @@
                                           )
                                       "
                                   ></el-dropdown-item>
-
-                                  <el-dropdown-item v-if="row.btn_note">
-                                    <a :href="`/${resource}/note/${row.id}`" style="text-decoration: none; color: inherit;">
+                                  <el-dropdown-item
+                                    v-if="row.btn_note"
+                                    @click.native="go(`/${resource}/note/${row.id}`)"
+                                  >
                                       <svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4v17l2 -2l2 2l2 -2l2 2l2 -2l2 2l2 -2v-17z"></path><path d="M14 8h-4"></path><path d="M14 12h-4"></path><path d="M14 16h-4"></path></svg>
                                       Nota
-                                    </a>
                                   </el-dropdown-item>
-
-                                  <el-dropdown-item v-if="row.btn_guide">
-                                    <a :href="`/dispatches/create_new/document/${row.id}`" style="text-decoration: none; color: inherit;">
+                                  <el-dropdown-item
+                                    v-if="row.btn_guide"
+                                    @click.native="go(`/dispatches/create_new/document/${row.id}`)"
+                                  >
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck me-2">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                         <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
@@ -431,7 +429,6 @@
                                         <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path>
                                       </svg>
                                       Guía
-                                    </a>
                                   </el-dropdown-item>
 
                                   <!-- ########## INICIO SIN DETRACCIONES E ISC -->

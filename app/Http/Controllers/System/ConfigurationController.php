@@ -102,6 +102,51 @@ class ConfigurationController extends Controller
         ];
     }
 
+    /**
+     * Repositorio remoto (GitHub/GitLab) usado por el auto-update.
+     * Si estos campos están vacíos, GitRemoteService sigue leyendo el .env.
+     */
+    public function gitRepository()
+    {
+        $configuration = Configuration::first();
+
+        return [
+            'git_remote_url' => $configuration->git_remote_url,
+            'git_provider' => $configuration->git_provider,
+            'git_user' => $configuration->git_user,
+            'git_token' => $configuration->git_token,
+        ];
+    }
+
+    public function storeGitRepository(Request $request)
+    {
+        $request->validate([
+            'git_remote_url' => 'nullable|string|max:500|url',
+            'git_provider' => 'nullable|in:github,gitlab',
+            'git_user' => 'nullable|string|max:191',
+            'git_token' => 'nullable|string|max:500',
+        ]);
+
+        $configuration = Configuration::first();
+        $configuration->git_remote_url = $this->nullIfBlank($request->git_remote_url);
+        $configuration->git_provider = $this->nullIfBlank($request->git_provider);
+        $configuration->git_user = $this->nullIfBlank($request->git_user);
+        $configuration->git_token = $this->nullIfBlank($request->git_token);
+        $configuration->save();
+
+        return [
+            'success' => true,
+            'message' => 'Configuración del repositorio remoto actualizada',
+        ];
+    }
+
+    private function nullIfBlank($value)
+    {
+        $value = is_string($value) ? trim($value) : $value;
+
+        return ($value === '' || $value === null) ? null : $value;
+    }
+
     public function storeLoginSettings()
     {
         request()->validate([

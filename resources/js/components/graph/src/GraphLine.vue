@@ -172,18 +172,30 @@ export default {
                             borderWidth: 3
                         }
                     },
-                    plugins: {
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            displayColors: true,
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.dataset.label}: s/${context.parsed.y.toFixed(2)}`;
-                                }
-                            }
-                        }
-                    }
+                    // Chart.js v2: tooltips legibles (texto blanco sobre fondo oscuro)
+                    tooltips: {
+                        enabled: true,
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(33, 37, 41, 0.96)',
+                        titleFontColor: '#ffffff',
+                        bodyFontColor: '#ffffff',
+                        footerFontColor: '#ffffff',
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        borderWidth: 1,
+                        xPadding: 12,
+                        yPadding: 10,
+                        displayColors: true,
+                        callbacks: {
+                            label: function (tooltipItem, data) {
+                                const ds = data.datasets[tooltipItem.datasetIndex]
+                                const label = (ds && ds.label) || ''
+                                const value = Number(tooltipItem.yLabel)
+                                const amount = isNaN(value) ? tooltipItem.yLabel : value.toFixed(2)
+                                return ` ${label}: Bs. ${amount}`
+                            },
+                        },
+                    },
                 },
             });
         },

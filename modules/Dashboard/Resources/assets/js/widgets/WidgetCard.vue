@@ -1,5 +1,5 @@
 <template>
-  <div class="wg-cell" :class="{ 'is-edit': editMode, 'is-over': dragOver }" :style="cellStyle">
+  <div class="wg-cell" :class="{ 'is-edit': editMode, 'is-over': dragOver, 'is-kpi': isKpi }" :style="cellStyle">
 
     <!-- Vista custom: el componente trae su propio card; solo se superpone la capa de edición -->
     <component
@@ -12,7 +12,7 @@
     <section v-else class="card card-dashboard wg-card">
       <div
         class="card-body card-body-border-radius wg-body"
-        :class="{ 'wg-body-kpi': isKpi }"
+        :class="{ 'wg-body-kpi': isKpi, 'card-kpi': isKpi, 'justify-content-start': isKpi }"
       >
         <template v-if="loading">
           <loader-graph :rows="4" :columns="1" :radius="50"></loader-graph>
@@ -42,10 +42,11 @@
           </div>
 
           <kpi-renderer
-            v-if="widget.type === 'kpi' || widget.type === 'kpi_spark'"
+            v-if="isKpi"
             :dataset="dataset"
             :spark="widget.type === 'kpi_spark'"
             :spark-height="kpiSparkHeight"
+            :period="filters.period"
           ></kpi-renderer>
 
           <div v-else-if="!hasData" class="wg-empty text-muted text-center">Sin datos en el periodo.</div>
@@ -131,7 +132,7 @@ import Debtors from '../views/partials/Debtors.vue'
 import MonthGoal from '../views/partials/MonthGoal.vue'
 import SunatStatus from '../views/partials/SunatStatus.vue'
 import LowStock from '../views/partials/LowStock.vue'
-import { GRID_GAP, GRID_ROW_HEIGHT, formatValue, recFor, themeColors, themePalette, typeById, typesForSource } from './registry'
+import { GRID_GAP, GRID_ROW_HEIGHT, formatValue, recFor, salesTitleForPeriod, themeColors, themePalette, typeById, typesForSource } from './registry'
 
 // Componentes custom aportados por fuentes del propio módulo Dashboard.
 // Fuentes de otros módulos registran los suyos vía registerCustomComponent.
@@ -168,6 +169,9 @@ export default {
         : null
     },
     title() {
+      if (this.source && this.source.key === 'ventas.ventas_totales') {
+        return salesTitleForPeriod(this.filters && this.filters.period)
+      }
       return this.source ? this.source.label : this.widget.source
     },
     subtitle() {
@@ -246,8 +250,6 @@ export default {
       return Math.max(120, cell - 104)
     },
     kpiSparkHeight() {
-      // El sparkline (al costado del valor) se estira a toda la altura libre
-      // del card: sin franjas vacías arriba/abajo del contenido.
       const cell = this.rowSpan * GRID_ROW_HEIGHT + (this.rowSpan - 1) * GRID_GAP
       return Math.max(40, cell - 44)
     },
@@ -273,14 +275,12 @@ export default {
   },
 }
 </script>
-
 <style scoped>
 .wg-cell {
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  overflow: visible;
   position: relative;
 }
 .wg-cell.is-edit .wg-card,
@@ -298,23 +298,24 @@ export default {
   flex: 1 1 auto;
   margin-bottom: 0 !important;
   min-height: 0;
-  overflow: hidden;
 }
 .wg-custom {
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
 }
 .wg-custom > .card,
 .wg-custom.card {
   height: 100%;
   margin-bottom: 0 !important;
-  overflow: hidden;
 }
 .wg-body {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   height: 100%;
+  /* Anula el margin: 10px global de .card-body (admin_styles), que
+     recortaba el contenido y hacía solapar título y valor en KPIs. */
+  margin: 0;
   min-height: 0;
   overflow: hidden;
 }
@@ -324,6 +325,7 @@ export default {
 .wg-head {
   align-items: flex-start;
   display: flex;
+  flex-shrink: 0;
   gap: 1rem;
   justify-content: space-between;
   margin-bottom: 0.75rem;
@@ -346,6 +348,16 @@ export default {
 .wg-title {
   font-size: 1rem;
   font-weight: 600;
+  line-height: 1.25;
+}
+.wg-cell.is-kpi .wg-body {
+  padding: 12px 16px 10px;
+}
+.wg-custom >>> .card-body {
+  box-sizing: border-box;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
 }
 .wg-empty {
   padding: 2rem 0;

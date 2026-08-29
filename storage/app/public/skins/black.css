@@ -508,6 +508,7 @@ label.control-label {
     margin-top: 8px;
     font-weight: 500;
     color: var(--black-dark);
+    font-size: 13px;
 }
 .el-radio-button__inner:hover {
     color: var(--black-dark) !important;
@@ -3479,6 +3480,22 @@ html.dark .detail-drawer__totals-card,
 html.dark .detail-drawer__totals-row {
     border-color: var(--black-border-dark);
 }
+.sidebar-favorites,
+html.sidebar-left-collapsed .nano.hovered .sidebar-favorites {
+    margin: 0 8px 8px !important;
+}
+.sidebar-pinned-items > li.nav-item-with-action > .nav-action {
+    right: 16px;
+}
+html.sidebar-left-collapsed .sidebar-favorites {
+    margin: 5px 0 !important;
+    padding: 3px 0;
+    border-color: transparent;
+    background: transparent;
+}
+.config-search-section {
+    padding: 0 4px;
+}
 /* ############################ ESTILOS MODO OSCURO ########################### */
 html.dark, html.dark body {
     background-color: var(--black-bg-dark) !important;
@@ -3558,7 +3575,8 @@ html.dark .btn.barcode {
     color: var(--black-light);
 }
 html.dark .card.card-dashboard .card-body,
-html.dark .card-config {
+html.dark .card-config,
+html.dark .advanced-settings .card-body {
     border: 1px solid var(--black-border-dark) !important;
 }
 html.dark .card-body,
@@ -4341,4 +4359,19 @@ html.dark .so-action-item,
 html.dark .so-collapse .el-collapse-item__header{
     background: var(--black-button-second);
     border: 1px solid var(--black-border-dark);
+}
+html.dark .sidebar-menu-config-section-title,
+html.dark .sidebar-menu-config-section,
+html.dark .sidebar-menu-config-toolbar,
+html.dark .sidebar-menu-config-group,
+html.dark .sidebar-favorites,
+html.dark .sidebar-favorites-title {
+    border-color: var(--black-border-dark);
+}
+html.sidebar-left-collapsed.dark .nano.hovered .sidebar-favorites{
+    border-color: var(--black-border-dark) !important;
+}
+html.dark .advanced-search-icon {
+    background-color: var(--black-content-dark);
+    color: var(--black-light);
 }

@@ -15,23 +15,49 @@ class UploadFileHelper
 { 
     
     /**
-     * 
+     *
      * Validar archivos
      *
      * @param  Request $request
      * @param  string $column
      * @param  string $mimes
      * @param  bool $is_image
+     * @param  int|null $max_kb  Tamaño máximo permitido en kilobytes (null = sin limite)
      * @return array
      */
-    public static function validateUploadFile($request, $column = 'file', $mimes = 'jpg,jpeg,png,gif,svg,webp,pdf,xlsx', $is_image = true)
+    public static function validateUploadFile($request, $column = 'file', $mimes = 'jpg,jpeg,png,gif,svg,webp,pdf,xlsx', $is_image = true, $max_kb = null)
     {
-        
+
+        $rules = ['mimes:'.$mimes];
+
+        if($max_kb) $rules[] = 'max:'.$max_kb;
+
         $validator = Validator::make($request->all(), [
-            $column => 'mimes:'.$mimes
+            $column => implode('|', $rules)
         ]);
 
         if ($validator->fails()) { 
+
+            $file = $request->file($column);
+
+            // Si el archivo supera los límites de php (upload_max_filesize/post_max_size)
+            // no llega nada en la petición, por lo que el error de mimes es engañoso
+            if(!$file)
+            {
+                return [
+                    'success' => false,
+                    'message' =>  'No se recibió el archivo, verifique que no exceda el tamaño máximo permitido',
+                ];
+            }
+
+            if($max_kb && $file->getSize() > ($max_kb * 1024))
+            {
+                return [
+                    'success' => false,
+                    'message' =>  'El archivo excede el tamaño máximo permitido de '.self::formatMaxSize($max_kb),
+                ];
+            }
+
             return [
                 'success' => false,
                 'message' =>  'Tipo de archivo no permitido',
@@ -54,7 +80,20 @@ class UploadFileHelper
 
      
     /**
-     * 
+     *
+     * Formato legible del tamaño máximo permitido
+     *
+     * @param  int $max_kb
+     * @return string
+     */
+    private static function formatMaxSize($max_kb)
+    {
+        return ($max_kb >= 1024) ? (round($max_kb / 1024, 1).'MB') : ($max_kb.'KB');
+    }
+
+
+    /**
+     *
      * Obtener archivo temporal en base64
      *
      * @param  $request

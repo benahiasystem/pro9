@@ -40,4 +40,11 @@ interface WhatsAppProviderClientInterface
     public static function extractQr(array $response): ?string;
 
     public static function isConnected(array $response): bool;
+
+    /**
+     * Id del mensaje en la respuesta de sendText()/sendMedia(), o null si el
+     * proveedor no confirmó el envío (ninguno lanza excepción en errores
+     * HTTP: devuelven el body parseado, y sin id el mensaje no salió).
+     */
+    public static function extractMessageId(array $response): ?string;
 }

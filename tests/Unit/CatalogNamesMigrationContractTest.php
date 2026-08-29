@@ -91,6 +91,7 @@ class CatalogNamesMigrationContractTest extends TestCase
         self::assertStringContainsString("where('value', 'invoice')", $source);
         self::assertStringContainsString("where('id', '10')", $source);
         self::assertStringContainsString("where('id', '20')", $source);
+        self::assertSame(2, substr_count($source, "where('id', (string) \$id)"));
         self::assertStringContainsString("->update(['active' => false])", $source);
         self::assertStringNotContainsString('->delete(', $source);
         self::assertStringNotContainsString('::delete(', $source);

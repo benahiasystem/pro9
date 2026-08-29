@@ -1,0 +1,161 @@
+/* ============================================================================
+   icons-tabler.css — Iconografía Tabler (tabler.io) sobre las clases de
+   Font Awesome que ya existen en las vistas.
+
+   GENERADO automáticamente: no editar a mano. Para regenerar, ver el mapa
+   Font Awesome -> Tabler en el script de generación.
+
+   Se sustituye la fuente y el glifo de cada clase .fa-*, de modo que todo
+   el sistema queda con iconos Tabler sin tocar el markup (1348 usos en 461
+   archivos). Los modificadores de Font Awesome (fa-fw, fa-2x, fa-spin...)
+   siguen funcionando porque solo cambian tamaño/animación.
+   ============================================================================ */
+
+@font-face {
+    font-family: "tabler-icons";
+    font-style: normal;
+    font-weight: 400;
+    font-display: block;
+    src: url("../vendor/tabler-icons/fonts/tabler-icons.woff2") format("woff2"),
+         url("../vendor/tabler-icons/fonts/tabler-icons.woff") format("woff"),
+         url("../vendor/tabler-icons/fonts/tabler-icons.ttf") format("truetype");
+}
+
+/* Las clases base de Font Awesome pasan a usar la fuente Tabler */
+.fa,
+.fas,
+.far,
+.fal,
+.fab,
+.fa-solid,
+.fa-regular,
+.fa-light,
+.fa-brands {
+    font-family: "tabler-icons" !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glifos equivalentes */
+.fa-android:before { content: "\ec16"; }
+.fa-angle-down:before { content: "\ea5f"; }
+.fa-angle-left:before { content: "\ea60"; }
+.fa-angle-right:before { content: "\ea61"; }
+.fa-archive:before { content: "\ea0b"; }
+.fa-arrow-left:before { content: "\ea19"; }
+.fa-arrow-right:before { content: "\ea1f"; }
+.fa-arrows-alt:before { content: "\ea28"; }
+.fa-bars:before { content: "\ec42"; }
+.fa-bell:before { content: "\ea35"; }
+.fa-bolt:before { content: "\ea38"; }
+.fa-book-medical:before { content: "\ea39"; }
+.fa-border-all:before { content: "\edba"; }
+.fa-box-open:before { content: "\eaff"; }
+.fa-bus-alt:before { content: "\ebe4"; }
+.fa-calendar:before { content: "\ea53"; }
+.fa-calendar-alt:before { content: "\ea52"; }
+.fa-cart-plus:before { content: "\fb65"; }
+.fa-cash-register:before { content: "\fee6"; }
+.fa-chart-line:before { content: "\ea5c"; }
+.fa-check:before { content: "\ea5e"; }
+.fa-check-circle:before { content: "\ea67"; }
+.fa-chevron-down:before { content: "\ea5f"; }
+.fa-chevron-left:before { content: "\ea60"; }
+.fa-chevron-right:before { content: "\ea61"; }
+.fa-clock:before { content: "\ea70"; }
+.fa-cloud-upload-alt:before { content: "\ea75"; }
+.fa-cog:before { content: "\eb20"; }
+.fa-cogs:before { content: "\ea03"; }
+.fa-comment:before { content: "\eaed"; }
+.fa-copy:before { content: "\ea7a"; }
+.fa-credit-card:before { content: "\ea84"; }
+.fa-cube:before { content: "\ea45"; }
+.fa-database:before { content: "\ea88"; }
+.fa-dollar-sign:before { content: "\eb84"; }
+.fa-download:before { content: "\ea96"; }
+.fa-edit:before { content: "\ea98"; }
+.fa-ellipsis-h:before { content: "\ea95"; }
+.fa-ellipsis-v:before { content: "\ea94"; }
+.fa-envelope:before { content: "\eae5"; }
+.fa-exclamation:before { content: "\efb4"; }
+.fa-exclamation-circle:before { content: "\ea05"; }
+.fa-exclamation-triangle:before { content: "\ea06"; }
+.fa-external-link-alt:before { content: "\ea99"; }
+.fa-eye:before { content: "\ea9a"; }
+.fa-eye-slash:before { content: "\ecf0"; }
+.fa-file:before { content: "\eaa4"; }
+.fa-file-alt:before { content: "\eaa2"; }
+.fa-file-code:before { content: "\ebd0"; }
+.fa-file-download:before { content: "\ea9d"; }
+.fa-file-excel:before { content: "\f03e"; }
+.fa-file-export:before { content: "\ede9"; }
+.fa-file-invoice:before { content: "\eb67"; }
+.fa-file-pdf:before { content: "\fb10"; }
+.fa-file-signature:before { content: "\eee0"; }
+.fa-file-text-o:before { content: "\eaa2"; }
+.fa-file-upload:before { content: "\ec91"; }
+.fa-flag:before { content: "\eaa6"; }
+.fa-github:before { content: "\ec1c"; }
+.fa-gitlab:before { content: "\ec1d"; }
+.fa-heart:before { content: "\eabe"; }
+.fa-history:before { content: "\ebea"; }
+.fa-home:before { content: "\eac1"; }
+.fa-hotel:before { content: "\ea4f"; }
+.fa-industry:before { content: "\ee1c"; }
+.fa-infinity:before { content: "\eb69"; }
+.fa-info-circle:before { content: "\eac5"; }
+.fa-link:before { content: "\eade"; }
+.fa-list:before { content: "\eb6b"; }
+.fa-list-ul:before { content: "\eb6b"; }
+.fa-lock:before { content: "\eae2"; }
+.fa-minus:before { content: "\eaf2"; }
+.fa-minus-circle:before { content: "\ea68"; }
+.fa-money-bill-alt:before { content: "\ea55"; }
+.fa-money-bill-wave-alt:before { content: "\ee25"; }
+.fa-paint-brush:before { content: "\ebb8"; }
+.fa-paper-plane:before { content: "\eb1e"; }
+.fa-pause:before { content: "\ed45"; }
+.fa-pen:before { content: "\eb04"; }
+.fa-play:before { content: "\ed46"; }
+.fa-play-circle:before { content: "\ed46"; }
+.fa-plus:before { content: "\eb0b"; }
+.fa-plus-circle:before { content: "\ea69"; }
+.fa-power-off:before { content: "\eb0d"; }
+.fa-print:before { content: "\eb0e"; }
+.fa-question-circle:before { content: "\f91d"; }
+.fa-receipt:before { content: "\edfd"; }
+.fa-refresh:before { content: "\eb13"; }
+.fa-save:before { content: "\eb62"; }
+.fa-search:before { content: "\eb1c"; }
+.fa-search-plus:before { content: "\eb56"; }
+.fa-shopping-cart:before { content: "\eb25"; }
+.fa-sort:before { content: "\eb5a"; }
+.fa-sort-down:before { content: "\ea5f"; }
+.fa-sort-up:before { content: "\ea62"; }
+.fa-spinner:before { content: "\f226"; }
+.fa-sync-alt:before { content: "\eb13"; }
+.fa-tachometer-alt:before { content: "\ea87"; }
+.fa-text-width:before { content: "\f2b1"; }
+.fa-times:before { content: "\eb55"; }
+.fa-times-circle:before { content: "\ea6a"; }
+.fa-toggle-off:before { content: "\eb3e"; }
+.fa-toggle-on:before { content: "\eb3f"; }
+.fa-trash:before { content: "\eb41"; }
+.fa-trash-alt:before { content: "\eb41"; }
+.fa-undo:before { content: "\eb77"; }
+.fa-upload:before { content: "\eb47"; }
+.fa-usd:before { content: "\eb84"; }
+.fa-user:before { content: "\eb4d"; }
+.fa-user-circle:before { content: "\ef68"; }
+.fa-user-lock:before { content: "\f7d0"; }
+.fa-user-shield:before { content: "\f7d0"; }
+.fa-utensils:before { content: "\eeff"; }
+.fa-warehouse:before { content: "\ebe3"; }
+.fa-whatsapp:before { content: "\ec74"; }
+.fa-wifi:before { content: "\eb52"; }
+.fa-youtube:before { content: "\ec90"; }

@@ -18,8 +18,11 @@ class ItemSaleCollection extends ResourceCollection
     public function toArray($request)
     {
         
-        $establishment_id = auth()->user()->establishment_id;
-        $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
+        // Inventario (app): `stock` se calcula para el almacen pedido; por defecto el del establecimiento del usuario
+        $warehouse_id = $request->input('warehouse_id');
+        $warehouse = $warehouse_id
+            ? Warehouse::find($warehouse_id)
+            : Warehouse::where('establishment_id', auth()->user()->establishment_id)->first();
 
         return $this->collection->transform(function($row, $key) use($warehouse){
             return $row->getSaleApiRowResource($warehouse);

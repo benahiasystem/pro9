@@ -2887,10 +2887,10 @@ var app_cart = new Vue({
                     await this.getFormPaymentCash(),
                     this.getHeaderConfig()
                 );
-                if (response.data.success) {
+                    if (response.data.success) {
                     this.saveContactDataUser();
                     this.showPurchaseSuccess(response.data.order);
-                } else {
+                    } else {
                     this.hidePaymentLoading();
                     swal(
                         'Pago No realizado',
@@ -2905,10 +2905,10 @@ var app_cart = new Vue({
                     || 'Sucedió algo inesperado.';
                 swal('Pago No realizado', message, 'error');
                 if (error.response && error.response.status === 422) {
-                    this.errors = error.response.data;
-                } else {
-                    console.log(error);
-                }
+                        this.errors = error.response.data;
+                    } else {
+                        console.log(error);
+                    }
             }
         },
         async loadMpScript(silent = false) {
@@ -4030,7 +4030,7 @@ var app_cart = new Vue({
         },
         getHeaderConfig() {
             const headers = {
-                "Content-Type": "application/json",
+                    "Content-Type": "application/json",
             };
             const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             if (csrf) {
@@ -4839,21 +4839,21 @@ var app_cart = new Vue({
                 const hasSavedCoords = saved && saved.latitude != null && saved.longitude != null;
 
                 if (!hasSavedCoords && navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(
-                        (position) => {
-                            const userLocation = {
-                                lat: position.coords.latitude,
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userLocation = {
+                            lat: position.coords.latitude,
                                 lng: position.coords.longitude,
-                            };
-                            this.marker.setPosition(userLocation);
+                        };
+                        this.marker.setPosition(userLocation);
                             this.map.setCenter(userLocation);
                             this.mapGeocodeEnabled = true;
                             this.lastGeocodedLat = null;
                             this.lastGeocodedLng = null;
                             this.onMarkerPositionChanged(true);
-                        },
-                        (error) => {
-                            console.error('Error obteniendo la ubicación actual:', error);
+                    },
+                    (error) => {
+                        console.error('Error obteniendo la ubicación actual:', error);
                             this.mapGeocodeEnabled = true;
                         }
                     );
@@ -4916,7 +4916,7 @@ var app_cart = new Vue({
 
             const requestId = ++this.mapGeocodeRequestId;
             this.isGeocodingAddress = true;
-            this.addressModal.preventSearch = true;
+                this.addressModal.preventSearch = true;
 
             this.geocoder.geocode({ location: { lat, lng } }, (results, status) => {
                 if (requestId !== this.mapGeocodeRequestId) {
@@ -4924,14 +4924,14 @@ var app_cart = new Vue({
                 }
 
                 this.isGeocodingAddress = false;
-                if (status === google.maps.GeocoderStatus.OK && results[0]) {
-                    this.addressModal.address = results[0].formatted_address;
-                    this.extractAndSetUbigeoFromComponents(results[0].address_components);
+                    if (status === google.maps.GeocoderStatus.OK && results[0]) {
+                        this.addressModal.address = results[0].formatted_address;
+                        this.extractAndSetUbigeoFromComponents(results[0].address_components);
                     this.lastGeocodedLat = lat;
                     this.lastGeocodedLng = lng;
-                }
-                setTimeout(() => {
-                    this.addressModal.preventSearch = false;
+                    }
+                    setTimeout(() => {
+                        this.addressModal.preventSearch = false;
                 }, 400);
             });
         },

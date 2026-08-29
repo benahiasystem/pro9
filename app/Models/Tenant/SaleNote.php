@@ -401,6 +401,7 @@ use Modules\Sale\Models\Agent;
                 'prefix'                 => $this->prefix,
                 'series'                 => $this->series,
                 'number'                 => $this->number,
+                'document_type_id'       => $this->document_type_id,
                 'date_of_issue'          => optional($this->date_of_issue)->format('Y-m-d'),
                 'time_of_issue'          => $this->time_of_issue,
                 'date_of_due'            => $this->date_of_due,
@@ -424,6 +425,11 @@ use Modules\Sale\Models\Agent;
                 'total'                  => round((float) $this->total, 2),
 
                 'items'                  => $items,
+                // La tabla sale_notes tiene estas columnas y las plantillas pdf las
+                // imprimen; se agregan para igualar el contrato de los demas "find".
+                'observations'           => $this->observation,
+                'terms_condition'        => $this->terms_condition,
+                'legends'                => $this->legends,
             ];
         }
 

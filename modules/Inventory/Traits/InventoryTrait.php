@@ -213,6 +213,7 @@ trait InventoryTrait
             return [
                 'id' => $row->id,
                 'description' => $description,
+                'unit_type_id' => $row->unit_type_id,
                 'text_filter' => $row->text_filter,
                 'lots_enabled' => (bool)$row->lots_enabled,
                 'series_enabled' => (bool)$row->series_enabled,

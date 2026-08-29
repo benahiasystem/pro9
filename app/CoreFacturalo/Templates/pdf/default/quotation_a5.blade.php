@@ -33,7 +33,7 @@
                     <img src="data:{{mime_content_type(public_path("storage/uploads/logos/{$company->logo}"))}};base64, {{base64_encode(file_get_contents(public_path("storage/uploads/logos/{$company->logo}")))}}" alt="{{ \App\CoreFacturalo\Helpers\CompanyDocumentDisplay::logoAlt($company) }}" class="company_logo" style="max-width: 150px;">
                 </div>
             </td>
-            <td width="50%" class="text-center">
+            <td width="50%" class="text-left pl-3">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
                     <h5>{{ 'RUC '.$company->number }}</h5>

@@ -6,16 +6,56 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Excel;
 use Modules\Item\Http\Requests\ProductVariableRequest;
 use Modules\Item\Http\Resources\ProductVariableCollection;
 use Modules\Item\Models\ProductVariable;
 use Modules\Item\Models\ProductVariableValue;
+use Modules\Item\Services\ProductVariablesImport;
 
 class ProductVariableController extends Controller
 {
     public function index()
     {
         return view('item::product-variables.index');
+    }
+
+    public function downloadImportFormat()
+    {
+        return response()->download(
+            public_path('formats/product_variables.xlsx'),
+            'formato_atributos_producto.xlsx'
+        );
+    }
+
+    public function import(Request $request)
+    {
+        if ($request->hasFile('file')) {
+            try {
+                $import = new ProductVariablesImport();
+                $import->import($request->file('file'), null, Excel::XLSX);
+                $data = $import->getData();
+                $message = !empty($data['message'])
+                    ? $data['message']
+                    : __('app.actions.upload.success');
+
+                return [
+                    'success' => true,
+                    'message' => $message,
+                    'data' => $data,
+                ];
+            } catch (Exception $e) {
+                return [
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return [
+            'success' => false,
+            'message' => __('app.actions.upload.error'),
+        ];
     }
 
     public function records(Request $request)

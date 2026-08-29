@@ -514,6 +514,7 @@
                 case 'income':
                     $person['name'] = $record->customer;
                     $person['number'] = '';
+                    break;
 
                 case 'cash_transaction':
                     $person['name'] = '-';

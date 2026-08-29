@@ -1450,7 +1450,9 @@ export default {
                 if (this.recordItem.attributes && this.recordItem.attributes.length) {
                     this.form.attributes = [...this.recordItem.attributes];
                 }
-                if (this.recordItem.item.name_product_pdf) {
+                if (this.recordItem.name_product_pdf) {
+                    this.form.name_product_pdf = this.recordItem.name_product_pdf;
+                } else if (this.recordItem.item && this.recordItem.item.name_product_pdf) {
                     this.form.name_product_pdf = this.recordItem.item.name_product_pdf;
                 }
                 if (this.recordItem.item.change_free_affectation_igv) {

@@ -271,14 +271,56 @@
                             >
                                 Opciones
                             </button>
-                            <a
-                                :href="
-                                    `/dispatches/create_new/dispatch/${row.id}`
-                                "
-                                class="btn waves-effect waves-light btn-xs btn-warning m-1__2 me-1"
-                                v-if="row.btn_edit"
-                                >Editar</a
+                            <el-dropdown
+                                trigger="click"
+                                size="small"
                             >
+                                <el-button class="btn-dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                    <i class="fas fa-ellipsis-h" style="display: none;"></i>
+                                </el-button>
+                                <el-dropdown-menu slot="dropdown">
+                                    <el-dropdown-item
+                                        v-if="row.btn_edit"
+                                        @click.native="go(`/dispatches/create_new/dispatch/${row.id}`)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg>
+                                        Editar
+                                    </el-dropdown-item>
+                                    <el-dropdown-item
+                                        @click.native="clickOptions(row.id)"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-settings me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
+                                        Opciones
+                                    </el-dropdown-item>
+                                    <el-dropdown-item
+                                        v-if="row.btn_voided"
+                                        class="text-danger option-delete dispatch-void-item"
+                                        @click.native="clickVoided(row.id)"
+                                    >
+                                        <span class="dispatch-void-item-content">
+                                            <span class="dispatch-void-item-label">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-x-circle me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                                                Anular
+                                            </span>
+                                            <el-tooltip
+                                                class="item"
+                                                effect="dark"
+                                                placement="left"
+                                            >
+                                                <div slot="content">
+                                                    Anulación solo interna.<br/>
+                                                    No se comunica a la autoridad fiscal.
+                                                </div>
+                                                <i
+                                                    class="fas fa-info-circle text-info dispatch-void-info-icon"
+                                                    @click.stop.prevent
+                                                ></i>
+                                            </el-tooltip>
+                                        </span>
+                                    </el-dropdown-item>
+                                </el-dropdown-menu>
+                            </el-dropdown>
                         </td>
                     </tr>
                 </data-table>
@@ -301,6 +343,23 @@
     </div>
 </template>
 <style>
+.dispatch-void-item-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.dispatch-void-item-label {
+    display: flex;
+    align-items: center;
+}
+
+.dispatch-void-info-icon {
+    cursor: help;
+    font-size: 14px;
+}
+
 @media only screen and (max-width: 390px) {
     .filter-content {
         margin-top: 0px;
@@ -340,6 +399,9 @@ export default {
         this.loadCustomFieldsColumns();
     },
     methods: {
+        go(url) {
+            window.location.href = url;
+        },
         formatDate(date) {
             if (!date) return null;
             const parsedDate = moment(date);
@@ -357,6 +419,51 @@ export default {
         clickOptions(recordId = null) {
             this.recordId = recordId;
             this.showDialogOptions = true;
+        },
+        clickVoided(id) {
+            this.$confirm(
+                "Esta anulación es únicamente interna y no tiene efecto ante SUNAT. Si la guía descontó stock, se restaurará en inventario.",
+                "Anular guía de remisión",
+                {
+                    confirmButtonText: "Anular",
+                    cancelButtonText: "Cancelar",
+                    type: "warning",
+                }
+            )
+                .then(() => {
+                    this.$http
+                        .get(`/${this.resource}/anulate/${id}`)
+                        .then((res) => {
+                            if (res.data.success) {
+                                this.$message.success(
+                                    res.data.message ||
+                                        "Se anuló correctamente el registro"
+                                );
+                                this.$eventHub.$emit("reloadData");
+                            } else {
+                                this.$message.error(
+                                    res.data.message ||
+                                        "Error al intentar anular"
+                                );
+                            }
+                        })
+                        .catch((error) => {
+                            if (
+                                error.response &&
+                                error.response.status === 500
+                            ) {
+                                this.$message.error(
+                                    "Error al intentar anular"
+                                );
+                            } else if (error.response) {
+                                this.$message.error(
+                                    error.response.data.message ||
+                                        "Error al intentar anular"
+                                );
+                            }
+                        });
+                })
+                .catch(() => {});
         },
         clickDownload(download) {
             window.open(download, "_blank");

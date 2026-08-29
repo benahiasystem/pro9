@@ -113,6 +113,14 @@ class PlanController extends Controller
     {
         $id = $request->input('id');
         $plan = Plan::firstOrNew(['id' => $id]);
+
+        if ($plan->exists && $plan->locked) {
+            return [
+                'success' => false,
+                'message' => "El plan «{$plan->name}» es de solo lectura y no se puede modificar.",
+            ];
+        }
+
         $plan->fill($request->all());
 
         if ($request->has('module_permissions')) {
@@ -130,6 +138,14 @@ class PlanController extends Controller
     public function destroy($id)
     {
         $plan = Plan::findOrFail($id);
+
+        if ($plan->locked) {
+            return [
+                'success' => false,
+                'message' => "El plan «{$plan->name}» es de solo lectura y no se puede eliminar.",
+            ];
+        }
+
         $plan->delete();
 
         return [

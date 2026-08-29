@@ -10,14 +10,16 @@
             </div>
             <div class="d-flex align-items-center h-100">
               {{ filterLabel }}
-              <el-tooltip :content="showLegacyDashboard ? 'Probar el nuevo dashboard de widgets' : 'Volver al dashboard clásico'" placement="bottom">
+              <el-tooltip :content="dashboardToggleTooltip" placement="bottom">
                 <el-button
                   size="small"
-                  class="mx-2 p-2 btn-dashboard-filter"
+                  class="ms-2 p-2 btn-dashboard-filter"
                   style="padding: 8px !important;"
+                  :aria-pressed="showLegacyDashboard ? 'false' : 'true'"
                   @click="toggleDashboardVersion"
                 >
-                  <i class="ti ti-layout-dashboard" style="font-size: 20px;"></i>
+                  <svg v-if="showLegacyDashboard" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-layout-grid"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M14 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M4 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /><path d="M14 15a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1l0 -4" /></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-layout-dashboard"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 4h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1" /><path d="M5 16h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1" /><path d="M15 12h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1" /><path d="M15 4h4a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1" /></svg>
                 </el-button>
               </el-tooltip>
               <el-button
@@ -51,120 +53,129 @@
 
         <hr v-if="showWelcomePanel">
 
-        <!-- Filtros compartidos por ambos dashboards -->
-        <div class="row mx-0 wg-filter-row" :class="{ 'wg-full-bleed': !showLegacyDashboard }" v-show="showFilters">
-            <div class="col-12 px-0">
-                <section class="card card-dashboard">
-                    <div class="card-body pt-2 pb-0">
-                        <div class="row">
-                            <div :class="filterColumnClass" class="form-group">
-                                <label class="control-label">Sucursal</label>
-                                <el-select v-model="form.establishment_id" @change="loadAll">
-                                    <el-option
-                                    v-for="option in establishments"
-                                    :key="option.id"
-                                    :value="option.id"
-                                    :label="option.name"
-                                    ></el-option>
-                                </el-select>
-                            </div>
-                            <div :class="filterColumnClass" class="form-period form-group">
-                                <label class="control-label">Periodo</label>
-                                <el-select v-model="form.period" @change="changePeriod">
-                                    <el-option key="all" value="all" label="Todos"></el-option>
-                                    <el-option key="last_week" value="last_week" label="Última semana"></el-option>
-                                    <el-option key="month" value="month" label="Por mes"></el-option>
-                                    <el-option key="between_months" value="between_months" label="Entre meses"></el-option>
-                                    <el-option key="date" value="date" label="Por fecha"></el-option>
-                                    <el-option key="between_dates" value="between_dates" label="Entre fechas"></el-option>
-                                </el-select>
-                            </div>
-                            <template v-if="form.period === 'month' || form.period === 'between_months'">
-                                <div :class="filterColumnClass" class="form-group">
-                                    <label class="control-label">Mes de</label>
-                                    <el-date-picker
-                                        v-model="form.month_start"
-                                        type="month"
-                                        @change="changeDisabledMonths"
-                                        value-format="yyyy-MM"
-                                        format="MM/yyyy"
-                                        class="w-100"
-                                        :clearable="false"
-                                    ></el-date-picker>
+        <div class="mb-0 row-new bg-transparent dashboard-cards mt-0" v-show="showFilters">
+          <div class="row mx-0 wg-filter-row" :class="{ 'wg-full-bleed': !showLegacyDashboard }">
+              <div class="col-12 px-0">
+                  <section class="card card-dashboard dashboard-filter-section">
+                      <div class="card-body pt-2 pb-0">
+                          <div class="row">
+                              <div :class="filterColumnClass" class="form-group">
+                                  <label class="control-label">Sucursal</label>
+                                  <el-select v-model="form.establishment_id" @change="loadAll">
+                                      <el-option key="all" :value="null" label="Todos"></el-option>
+                                      <el-option
+                                      v-for="option in establishments"
+                                      :key="option.id"
+                                      :value="option.id"
+                                      :label="option.name"
+                                      ></el-option>
+                                  </el-select>
+                              </div>
+                              <div :class="filterColumnClass" class="form-period form-group">
+                                  <label class="control-label">Periodo</label>
+                                  <el-select v-model="form.period" @change="changePeriod">
+                                      <el-option key="all" value="all" label="Todos"></el-option>
+                                      <el-option key="last_week" value="last_week" label="Última semana"></el-option>
+                                      <el-option key="month" value="month" label="Por mes"></el-option>
+                                      <el-option key="between_months" value="between_months" label="Entre meses"></el-option>
+                                      <el-option key="date" value="date" label="Por fecha"></el-option>
+                                      <el-option key="between_dates" value="between_dates" label="Entre fechas"></el-option>
+                                  </el-select>
+                              </div>
+                              <template v-if="form.period === 'month' || form.period === 'between_months'">
+                                  <div :class="filterColumnClass" class="form-group">
+                                      <label class="control-label">Mes de</label>
+                                      <el-date-picker
+                                          v-model="form.month_start"
+                                          type="month"
+                                          @change="changeDisabledMonths"
+                                          value-format="yyyy-MM"
+                                          format="MM/yyyy"
+                                          class="w-100"
+                                          :clearable="false"
+                                      ></el-date-picker>
+                                  </div>
+                              </template>
+                              <template v-if="form.period === 'between_months'">
+                                  <div :class="filterColumnClass" class="form-group">
+                                      <label class="control-label">Mes al</label>
+                                      <el-date-picker
+                                          v-model="form.month_end"
+                                          type="month"
+                                          :picker-options="pickerOptionsMonths"
+                                          @change="loadAll"
+                                          value-format="yyyy-MM"
+                                          format="MM/yyyy"
+                                          :clearable="false"
+                                      ></el-date-picker>
+                                  </div>
+                              </template>
+                              <template v-if="form.period === 'date' || form.period === 'between_dates'">
+                                  <div :class="filterColumnClass" class="form-group">
+                                      <label class="control-label">Fecha del</label>
+                                      <el-date-picker
+                                          v-model="form.date_start"
+                                          type="date"
+                                          @change="changeDisabledDates"
+                                          value-format="yyyy-MM-dd"
+                                          format="dd/MM/yyyy"
+                                          :clearable="false"
+                                      ></el-date-picker>
+                                  </div>
+                              </template>
+                              <template v-if="form.period === 'between_dates'">
+                                  <div :class="filterColumnClass" class="form-group">
+                                      <label class="control-label">Fecha al</label>
+                                      <el-date-picker
+                                          v-model="form.date_end"
+                                          type="date"
+                                          :picker-options="pickerOptionsDates"
+                                          @change="loadAll"
+                                          value-format="yyyy-MM-dd"
+                                          format="dd/MM/yyyy"
+                                          :clearable="false"
+                                      ></el-date-picker>
+                                  </div>
+                              </template>
+                              <!-- Acciones del dashboard de widgets, en la misma fila del filtro (mockup) -->
+                              <div v-if="!showLegacyDashboard" class="col-auto ml-auto wg-filter-actions mb-3">
+                                <label class="control-label w-100">Widgets</label>
+                                <div class="d-flex justify-content-between align-items-end w-100 widget-btns gap-2">
+                                  <el-tooltip content="Añadir widget" placement="bottom">
+                                      <button type="button" class="btn btn-primary btn-sm" @click="widgetStore.openModal()">
+                                          <i class="ti ti-plus"></i>
+                                      </button>
+                                  </el-tooltip>
+                                  <el-tooltip :content="widgetStore.state.editMode ? 'Terminar edición' : 'Personalizar: reordenar, redimensionar o quitar widgets'" placement="bottom">
+                                      <button
+                                          type="button"
+                                          class="btn second-buton btn-sm"
+                                          :class="{ 'is-primary': widgetStore.state.editMode }"
+                                          @click="widgetStore.toggleEdit()"
+                                      >
+                                          <i :class="['ti', widgetStore.state.editMode ? 'ti-check' : 'ti-pencil']"></i>
+                                      </button>
+                                  </el-tooltip>
+                                  <el-tooltip content="Restablecer distribución" placement="bottom">
+                                      <button type="button" class="btn second-buton btn-sm" @click="widgetStore.resetLayout()">
+                                          <i class="ti ti-history"></i>
+                                      </button>
+                                  </el-tooltip>
                                 </div>
-                            </template>
-                            <template v-if="form.period === 'between_months'">
-                                <div :class="filterColumnClass" class="form-group">
-                                    <label class="control-label">Mes al</label>
-                                    <el-date-picker
-                                        v-model="form.month_end"
-                                        type="month"
-                                        :picker-options="pickerOptionsMonths"
-                                        @change="loadAll"
-                                        value-format="yyyy-MM"
-                                        format="MM/yyyy"
-                                        :clearable="false"
-                                    ></el-date-picker>
-                                </div>
-                            </template>
-                            <template v-if="form.period === 'date' || form.period === 'between_dates'">
-                                <div :class="filterColumnClass" class="form-group">
-                                    <label class="control-label">Fecha del</label>
-                                    <el-date-picker
-                                        v-model="form.date_start"
-                                        type="date"
-                                        @change="changeDisabledDates"
-                                        value-format="yyyy-MM-dd"
-                                        format="dd/MM/yyyy"
-                                        :clearable="false"
-                                    ></el-date-picker>
-                                </div>
-                            </template>
-                            <template v-if="form.period === 'between_dates'">
-                                <div :class="filterColumnClass" class="form-group">
-                                    <label class="control-label">Fecha al</label>
-                                    <el-date-picker
-                                        v-model="form.date_end"
-                                        type="date"
-                                        :picker-options="pickerOptionsDates"
-                                        @change="loadAll"
-                                        value-format="yyyy-MM-dd"
-                                        format="dd/MM/yyyy"
-                                        :clearable="false"
-                                    ></el-date-picker>
-                                </div>
-                            </template>
-                            <!-- Acciones del dashboard de widgets, en la misma fila del filtro (mockup) -->
-                            <div v-if="!showLegacyDashboard" class="col-auto ml-auto wg-filter-actions">
-                                <el-tooltip content="Añadir widget" placement="bottom">
-                                    <button type="button" class="wg-action-btn is-primary" @click="widgetStore.openModal()">
-                                        <i class="ti ti-plus"></i>
-                                    </button>
-                                </el-tooltip>
-                                <el-tooltip :content="widgetStore.state.editMode ? 'Terminar edición' : 'Personalizar: reordenar, redimensionar o quitar widgets'" placement="bottom">
-                                    <button
-                                        type="button"
-                                        class="wg-action-btn"
-                                        :class="{ 'is-primary': widgetStore.state.editMode }"
-                                        @click="widgetStore.toggleEdit()"
-                                    >
-                                        <i :class="['ti', widgetStore.state.editMode ? 'ti-check' : 'ti-pencil']"></i>
-                                    </button>
-                                </el-tooltip>
-                                <el-tooltip content="Restablecer layout" placement="bottom">
-                                    <button type="button" class="wg-action-btn" @click="widgetStore.resetLayout()">
-                                        <i class="ti ti-history"></i>
-                                    </button>
-                                </el-tooltip>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
+                              </div>
+                          </div>
+                      </div>
+                  </section>
+              </div>
+          </div>
         </div>
 
         <!-- Nuevo dashboard de widgets configurables -->
-        <widget-grid v-if="!showLegacyDashboard && filtersReady" :filters="form" class="wg-full-bleed"></widget-grid>
+        <widget-grid
+          v-if="!showLegacyDashboard && filtersReady"
+          :filters="form"
+          class="card mb-0 row-new bg-transparent dashboard-cards mt-0"
+        ></widget-grid>
 
         <div v-if="showLegacyDashboard" class="card mb-0 row-new bg-transparent dashboard-cards mt-0">
 
@@ -566,11 +577,18 @@
     </div>
 </template>
 <style>
-/* Alineación al ancho del breadcrumb: compensa el padding de 40px del
-   .content-body global, igual que hace el propio .page-header. */
+/* content-body en este tema ya no tiene padding horizontal de 40px
+   (queda 25px 0.5rem 10px 0) y el page-header usa margin-left/right: 0.
+   Un margen negativo aquí sacaba la grilla encima del sidebar. */
 .wg-full-bleed {
-  margin-left: -30px !important;
-  margin-right: -30px !important;
+  margin-left: 0;
+  margin-right: 0;
+  max-width: 100%;
+}
+.dashboard {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
 .wg-filter-row .card.card-dashboard {
   margin-bottom: 0.75rem;
@@ -578,11 +596,14 @@
 .wg-filter-actions {
   align-items: center;
   align-self: center;
-  border-left: 1px solid #e3e6ea;
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  flex-direction: column;
   padding-left: 1rem;
+  width: 200px;
+  margin-top: -2px;
+}
+.widget-btns > button {
+  flex: 1;
 }
 .wg-action-btn {
   align-items: center;
@@ -669,10 +690,29 @@
 .sn-empty {
   padding: 2rem 0 1.5rem;
 }
-.sn-panel .apexcharts-tooltip,
+.sn-panel .apexcharts-tooltip {
+  background: rgba(33, 37, 41, 0.96) !important;
+  border: 0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  color: #fff !important;
+}
 .sn-panel .apexcharts-tooltip *,
 .sn-panel .apexcharts-tooltip-title {
   color: #fff !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+.gt-panel .apexcharts-tooltip {
+  background: rgba(33, 37, 41, 0.96) !important;
+  border: 0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+  color: #fff !important;
+}
+.gt-panel .apexcharts-tooltip *,
+.gt-panel .apexcharts-tooltip-title {
+  color: #fff !important;
+  background: transparent !important;
+  border: 0 !important;
 }
 .gt-panel {
   height: 100%;
@@ -855,8 +895,7 @@ export default {
     this.initLoaders();
     await this.$http.get(`/${this.resource}/filter`).then((response) => {
       this.establishments = response.data.establishments;
-      this.form.establishment_id =
-        this.establishments.length > 0 ? this.establishments[0].id : null;
+      this.form.establishment_id = this.defaultEstablishmentId(response.data.establishment_id);
     });
 
     // El grid de widgets se monta recién con la sucursal resuelta.
@@ -880,6 +919,11 @@ export default {
     },
 
   computed: {
+    dashboardToggleTooltip() {
+      return this.showLegacyDashboard
+        ? 'Dashboard clásico activo · cambiar al de widgets'
+        : 'Dashboard de widgets activo · volver al clásico';
+    },
     filterLabel() {
       switch(this.form.period) {
         case 'all':
@@ -1008,6 +1052,8 @@ export default {
           },
         },
         tooltip: {
+          theme: "dark",
+          style: { fontSize: "12px" },
           y: {
             formatter: (val) =>
               "Bs. " +
@@ -1095,6 +1141,8 @@ export default {
           },
         },
         tooltip: {
+          theme: "dark",
+          style: { fontSize: "12px" },
           y: {
             formatter: (val) =>
               "Bs. " +
@@ -1192,6 +1240,8 @@ export default {
           },
         },
         tooltip: {
+          theme: "dark",
+          style: { fontSize: "12px" },
           y: {
             formatter: (val) =>
               "Bs. " +
@@ -1322,6 +1372,17 @@ export default {
         // Al volver al clásico, recargar sus datos (se omiten mientras está oculto).
         this.loadAll();
       }
+    },
+    defaultEstablishmentId(current_establishment_id) {
+      if (this.establishments.length === 0) {
+        return null;
+      }
+
+      const current = this.establishments.find(
+        (establishment) => String(establishment.id) === String(current_establishment_id)
+      );
+
+      return current ? current.id : this.establishments[0].id;
     },
     updateEstablishment(establishmentId) {
       console.log('Cambiando a sucursal ID:', establishmentId);

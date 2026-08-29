@@ -509,6 +509,10 @@ export default {
                 .get(`/${this.resource}/records?${this.getQueryParameters()}`)
                 .then(response => {
                     this.records = response.data.data;
+                    if (this.fromEcommerce) {
+                        this.records =  response.data.data.filter(r => !r.parent_item_id)
+                    }
+
                     this.pagination = response.data.meta;
                     this.pagination.per_page = parseInt(
                         response.data.meta.per_page

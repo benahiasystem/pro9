@@ -90,6 +90,15 @@ export const functions = {
                         this.percentage_igv = response.data
                     })
         },
+        valueInputSelect(event) {
+            const target = event && event.target
+            if (!target) return
+            const input = (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')
+                ? target
+                : (target.querySelector && target.querySelector('input'))
+            if (!input || typeof input.select !== 'function') return
+            this.$nextTick(() => input.select())
+        },
     }
 };
 

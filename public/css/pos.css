@@ -153,8 +153,8 @@ button.edit-price {
 }
 
 .card-footer.configuration-options{
-    width:100% !important; 
-    padding:6px 0 2px 0 !important;
+    width:100% !important;
+    padding: 6px 2px 10px !important;
 }
 
 .card.product-item:hover {
@@ -249,4 +249,1924 @@ html.dark .el-loading-mask{
 }
 html.dark .pos .product-item .card-body  {
     border-color: transparent;
+}
+
+/* =========================================================================
+   Carrito del POS (panel derecho)  ·  rediseño
+   ========================================================================= */
+
+/* Paleta del POS.
+   El tema activo del tenant se inyecta en un <style id="theme-styles"> con
+   `--primary-color`, `--dark-color`, `--light-color`, `--accent-color` y
+   `--muted`. Los skins modern/black NO declaran esas variables y NINGÚN tema
+   declara `--border-color`, así que todo lo que falte se deriva del color de
+   marca en lugar de caer en una paleta fija: de lo contrario el POS se queda
+   con los colores del skin default al cambiar de tema. */
+
+/* Cadena de resolución de cada token, en orden:
+   1. Variables legacy (--dark-color, --light-color, --accent-color, --muted):
+      las definen los skins default/light y los temas claros de themes.json.
+   2. Familia --black-* del skin black (fondo general --black-highlight, texto
+      --black-dark, muted --black-accent), con sus matices propios.
+   3. Derivado del color de marca con color-mix (skin modern, que sólo define
+      --primary-color).
+   `--border-color` no existe en ningún tema: no se consulta. */
+
+.pos,
+.pos-table {
+    --pos-primary: var(--primary-color, #3d6bf5);
+    --pos-text: var(--dark-color, var(--black-dark, #3a4658));
+    --pos-muted: var(--muted, var(--black-accent, color-mix(in srgb, var(--pos-text) 62%, #fff)));
+    --pos-surface: #fff;
+    --pos-surface-2: var(--light-color, var(--black-highlight, color-mix(in srgb, var(--pos-primary) 5%, #fff)));
+    --pos-border: var(--accent-color, color-mix(in srgb, var(--black-accent, var(--pos-primary)) 16%, #fff));
+    --pos-border-strong: color-mix(in srgb, var(--black-accent, var(--pos-primary)) 28%, #fff);
+    --pos-danger: var(--danger, #ff0066);
+    --pos-success: var(--success, #00c666);
+    --pos-warning: var(--warning, #ff8400);
+    --pos-radius: var(--border-radius-sm, 8px);
+    --pos-radius-lg: var(--border-radius-lg, 14px);
+    --pos-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .06);
+}
+
+html.dark .pos,
+html.dark .pos-table {
+    --pos-text: #d1d2d6;
+    --pos-muted: #8b93ab;
+    --pos-surface: var(--contents-dark, var(--black-content-dark, var(--md-content-dark, #283046)));
+    --pos-surface-2: var(--background-dark, var(--black-bg-dark, var(--md-bg-dark, #212c56)));
+    --pos-border: var(--borders-dark, var(--black-border-dark, var(--md-border-dark, #314267)));
+    --pos-border-strong: color-mix(in srgb, var(--borders-dark, var(--black-border-dark, var(--md-border-dark, #3a4870))) 78%, #fff);
+    --pos-shadow: none;
+}
+
+/* ---- Tarjetas de producto: fondo sólido ----
+   El skin fuerza `background: transparent !important` sobre .product-item;
+   aquí se restituye la superficie blanca (y su equivalente en modo oscuro). */
+
+/* El fondo se pinta SOLO en la tarjeta: su propio border-radius lo recorta.
+   Si también se pintan body/footer, sus esquinas cuadradas se superponen al
+   borde redondeado. */
+
+.pos .card.product-item {
+    background-color: var(--pos-surface) !important;
+}
+
+.pos .card.product-item .card-body,
+.pos .card.product-item .card-footer {
+    background-color: transparent !important;
+}
+
+.pos .card.product-item {
+    border-color: var(--pos-border) !important;
+    margin-bottom: 10px !important;
+}
+
+/* Acciones de la tarjeta de producto (grid): botones uniformes de 30px.
+   Antes usaban .btn-primary-pos y cada skin los pintaba como píldora oscura
+   con tamaños dispares. */
+
+.pos .pos-card-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    color: var(--pos-muted);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos .pos-card-action:hover {
+    border-color: var(--pos-primary);
+    color: var(--pos-primary);
+}
+
+/* Sin lista de precios: botón deshabilitado (span para que el tooltip funcione) */
+
+.pos .pos-card-action.is-disabled,
+.pos .pos-card-action.is-disabled:hover {
+    opacity: .45;
+    cursor: not-allowed;
+    border-color: var(--pos-border-strong);
+    color: var(--pos-muted);
+}
+
+.pos .configuration-options .el-col {
+    padding: 0 2px;
+}
+
+/* Lápiz de edición: mismo lenguaje visual, aparece al pasar el mouse
+   (las reglas de .edit-price de posición/opacidad se mantienen) */
+
+/* El lápiz vive fuera del flujo: el precio queda centrado exacto y el
+   lápiz aparece a la derecha de la fila al pasar el mouse */
+
+.pos .pos-card-action--edit {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+}
+
+/* Pie de precio con altura estable: la línea normal mide lo mismo que el
+   modo edición, así la tarjeta no crece al editar */
+
+.pos .product-item .card-footer h5 {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    margin: 2px 0 6px;
+}
+
+.pos .product-item .product-name-description {
+    line-height: 1.3;
+    font-size: 14px;
+}
+
+/* Contenedor de la imagen: solo ancla el indicador de pack
+   (la imagen conserva su altura fija original) */
+
+.pos .product-item .card-body .pos-card-media {
+    position: relative;
+}
+
+/* Indicador de pack: dentro de la imagen, esquina inferior izquierda,
+   sobre un círculo blanco para que destaque */
+
+.pos .pos-card-media__badge {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--pos-text);
+    box-shadow: 0 1px 4px rgba(16, 24, 40, .22);
+    cursor: pointer;
+}
+
+
+
+.pos .product-item p {
+    line-height: 1.3;
+}
+
+/* Etiqueta de unidad (NIU/ZZ): misma píldora que la del carrito
+   (fondo tintado, sin borde) */
+
+.pos .product-item .el-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 19px;
+    padding: 0 7px;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: var(--pos-border) !important;
+    color: var(--pos-primary) !important;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+/* Edición del precio en la tarjeta de producto */
+
+.pos .pos-price-edit {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 2px 0 6px;
+}
+
+.pos .pos-price-edit__input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pos .pos-price-edit__input .el-input__inner {
+    width: 100%;
+    height: 26px !important;
+    line-height: 26px !important;
+    padding: 0 8px !important;
+    border-radius: var(--pos-radius) !important;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-price-edit__btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--pos-radius);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos .pos-price-edit__btn.is-confirm {
+    background: var(--pos-primary);
+    color: #fff;
+}
+
+.pos .pos-price-edit__btn.is-confirm:hover {
+    filter: brightness(1.08);
+}
+
+.pos .pos-price-edit__btn.is-cancel {
+    background: var(--pos-surface);
+    border-color: var(--pos-border-strong);
+    color: var(--pos-muted);
+}
+
+.pos .pos-price-edit__btn.is-cancel:hover {
+    border-color: var(--pos-danger);
+    color: var(--pos-danger);
+}
+
+/* ---- Foco: se sustituye el rectángulo por defecto del navegador por el
+   resaltado del propio contenedor ---- */
+
+.pos .pos-qty__input .el-input__inner:focus,
+.pos .pos-cart-item__total-edit .el-input__inner:focus,
+.pos .pos-money-input .el-input__inner:focus,
+.pos .pos-price-edit__input .el-input__inner:focus,
+.pos .pos-cart-item__total-edit .el-input__inner:focus-visible,
+.pos .pos-qty__input .el-input__inner:focus-visible,
+.pos .pos-money-input .el-input__inner:focus-visible,
+.pos .pos-price-edit__input .el-input__inner:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.pos .pos-qty:focus-within,
+.pos .pos-cart-item__total-edit:focus-within {
+    border-color: var(--pos-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pos-primary) 14%, transparent);
+}
+
+.pos .pos-price-edit__btn:focus,
+.pos .pos-qty__btn:focus,
+.pos .pos-cart-item__remove:focus,
+.pos .pos-cart__clear:focus,
+.pos .pos-cart__icon-btn:focus,
+.pos .pos-cart__pay:focus {
+    outline: none;
+}
+
+/* ---- Contenedor ---- */
+
+.pos .pos-cart {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 110px);
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: var(--pos-surface);
+    border-left: 1px solid var(--pos-border);
+}
+
+/* ---- Botón flotante de WhatsApp ----
+   Estorba sobre el botón de cobro; pos.css sólo se carga en las vistas del POS. */
+
+.ws-flotante {
+    display: none !important;
+}
+
+/* ---- Resumen de línea del pie (contador + vaciar) ---- */
+
+.pos .pos-cart__footer-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.pos .pos-cart__count {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pos-muted);
+}
+
+.pos .pos-cart__clear {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border: 1px solid transparent;
+    border-radius: var(--pos-radius);
+    background: transparent;
+    color: var(--pos-muted);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos .pos-cart__clear:hover {
+    background: color-mix(in srgb, var(--pos-danger) 8%, transparent);
+    border-color: color-mix(in srgb, var(--pos-danger) 25%, transparent);
+    color: var(--pos-danger);
+}
+
+/* ---- Lista de productos ---- */
+
+.pos .pos-cart__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 12px;
+    background: #fff;
+}
+
+.pos .pos-cart__body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.pos .pos-cart__body::-webkit-scrollbar-thumb {
+    background: var(--pos-border-strong);
+    border-radius: 999px;
+}
+
+.pos .pos-cart__body::-webkit-scrollbar-track {
+    background: transparent;
+}
+.pos .hyo {
+    scrollbar-width: thin;
+    scrollbar-color: var(--pos-border-strong) transparent;
+}
+
+.pos .hyo::-webkit-scrollbar {
+    width: 8px;
+}
+
+.pos .hyo::-webkit-scrollbar-thumb {
+    background: var(--pos-border-strong);
+    border-radius: 999px;
+}
+
+.pos .hyo::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.pos .pos-cart__list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pos .pos-cart-item {
+    padding: 10px 12px;
+    border: 1px solid var(--pos-border);
+    border-radius: var(--pos-radius-lg);
+    background: var(--pos-surface);
+    box-shadow: var(--pos-shadow);
+    transition: border-color .15s ease;
+}
+
+.pos .pos-cart-item:hover {
+    border-color: color-mix(in srgb, var(--pos-primary) 40%, var(--pos-border));
+}
+
+.pos .pos-cart-item__top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.pos .pos-cart-item__name {
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--pos-text);
+    overflow-wrap: anywhere;
+}
+
+.pos .pos-cart-item__remove {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--pos-radius);
+    background: transparent;
+    color: var(--pos-muted);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.pos .pos-cart-item__remove:hover {
+    background: color-mix(in srgb, var(--pos-danger) 10%, transparent);
+    color: var(--pos-danger);
+}
+
+.pos .pos-cart-item__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+    font-size: 12px;
+    color: var(--pos-muted);
+}
+
+.pos .pos-cart-item__unit {
+    display: inline-flex;
+    align-items: center;
+    height: 19px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--pos-border);
+    color: var(--pos-primary);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.pos .pos-cart-item__unit-price {
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-cart-item__sets {
+    width: 100%;
+    line-height: 1.4;
+}
+
+.pos .pos-cart-item__sets:empty {
+    display: none;
+}
+
+.pos .pos-cart-item__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 9px;
+}
+
+/* Stepper de cantidad */
+
+.pos .pos-qty {
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    overflow: hidden;
+}
+
+.pos .pos-qty__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--pos-text);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.pos .pos-qty__btn:hover {
+    background: var(--pos-primary);
+    color: #fff;
+}
+
+.pos .pos-qty__input {
+    width: 56px;
+}
+
+.pos .pos-qty__input .el-input__inner {
+    height: 32px !important;
+    line-height: 32px !important;
+    width: 100%;
+    padding: 0 4px !important;
+    border: 0 !important;
+    border-left: 1px solid var(--pos-border) !important;
+    border-right: 1px solid var(--pos-border) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--pos-text) !important;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-qty__input .el-input__inner:focus {
+    box-shadow: none !important;
+}
+
+/* Importe de la línea */
+
+.pos .pos-cart-item__total {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.pos .pos-cart-item__total-text {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--pos-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.pos .pos-cart-item__total-edit {
+    display: inline-flex;
+    align-items: center;
+    height: 34px;
+    padding-left: 9px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+}
+
+.pos .pos-cart-item__currency {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--pos-muted);
+}
+
+.pos .pos-cart-item__total-edit .el-input {
+    width: 92px;
+}
+
+.pos .pos-cart-item__total-edit .el-input__inner {
+    height: 32px !important;
+    line-height: 32px !important;
+    width: 100%;
+    padding: 0 8px 0 4px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--pos-text) !important;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-cart-item__total-edit:focus-within {
+    border-color: var(--pos-primary);
+}
+
+/* ---- Estado vacío ---- */
+
+.pos .pos-cart__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 220px;
+    padding: 24px;
+    text-align: center;
+    color: var(--pos-muted);
+}
+
+.pos .pos-cart__empty svg {
+    opacity: .45;
+    margin-bottom: 12px;
+}
+
+.pos .pos-cart__empty-title {
+    margin: 0 0 4px;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--pos-text);
+}
+
+.pos .pos-cart__empty-text {
+    margin: 0;
+    max-width: 240px;
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+/* ---- Pie: cliente, totales y botón de pago ---- */
+
+.pos .pos-cart__footer {
+    flex: 0 0 auto;
+    padding: 12px 16px 14px;
+    border-top: 1px solid var(--pos-border);
+    background: var(--pos-surface);
+}
+
+.pos .pos-cart__label {
+    display: block;
+    margin: 0 0 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--pos-muted);
+}
+
+.pos .pos-cart__customer-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Cliente sin seleccionar: se resalta en rojo porque bloquea el cobro */
+
+.pos .pos-cart__customer.is-required .el-select .el-input__inner {
+    border-color: var(--pos-danger) !important;
+    background: color-mix(in srgb, var(--pos-danger) 6%, var(--pos-surface)) !important;
+    color: var(--pos-danger) !important;
+}
+
+.pos .pos-cart__customer.is-required .el-select .el-input__inner::placeholder {
+    color: var(--pos-danger) !important;
+    opacity: 1;
+}
+
+.pos .pos-cart__customer.is-required .el-select .el-input__icon {
+    color: var(--pos-danger);
+}
+
+.pos .pos-cart__customer-row .el-select {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pos .pos-cart__customer-row .el-select .el-input__inner {
+    height: 40px !important;
+    line-height: 40px !important;
+}
+
+.pos .pos-cart__icon-btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    color: var(--pos-primary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos .pos-cart__icon-btn:hover {
+    background: var(--pos-primary);
+    border-color: var(--pos-primary);
+    color: #fff;
+}
+
+.pos .pos-cart__totals {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--pos-border-strong);
+}
+
+.pos .pos-cart__total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0;
+    font-size: 13px;
+    color: var(--pos-muted);
+}
+
+.pos .pos-cart__total-row span:last-child {
+    font-weight: 600;
+    color: var(--pos-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.pos .pos-cart__total-row--grand {
+    margin-top: 6px;
+    padding-top: 9px;
+    border-top: 1px solid var(--pos-border);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--pos-text);
+}
+
+.pos .pos-cart__total-row--grand span:last-child {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: var(--pos-text);
+}
+
+.pos .pos-cart__pay {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px 16px;
+    border: 0;
+    border-radius: var(--pos-radius-lg);
+    background: var(--pos-primary);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    cursor: pointer;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--pos-primary) 28%, transparent);
+    transition: filter .15s ease, box-shadow .15s ease, transform .1s ease;
+}
+
+.pos .pos-cart__pay:hover {
+    filter: brightness(1.06);
+}
+
+.pos .pos-cart__pay:active {
+    transform: translateY(1px);
+}
+
+.pos .pos-cart__pay-amount {
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-cart__pay.is-disabled {
+    background: var(--pos-border-strong);
+    color: var(--pos-surface);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+html.dark .pos .pos-cart__pay.is-disabled {
+    color: var(--pos-muted);
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 991.98px) {
+    .pos .pos-cart {
+        height: auto;
+        max-height: none;
+        border-left: 0;
+        border-top: 1px solid var(--pos-border);
+    }
+
+    .pos .pos-cart__body {
+        max-height: 46vh;
+    }
+}
+
+
+/* =========================================================================
+   Pantalla de cobro del POS  ·  rediseño
+   ========================================================================= */
+
+@media only screen and (min-width: 768px) {
+    .pos .pos-payment > aside {
+        height: calc(-60px + 100vh);
+    }
+}
+
+/* ---- Columna del formulario ---- */
+
+.pos .pos-checkout__main {
+    padding: 0;
+    overflow-y: auto;
+    background: var(--pos-surface-2);
+}
+
+.pos .pos-checkout__main::-webkit-scrollbar {
+    width: 8px;
+}
+
+.pos .pos-checkout__main::-webkit-scrollbar-thumb {
+    background: var(--pos-border-strong);
+    border-radius: 999px;
+}
+
+.pos .pos-checkout__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 18px 20px 28px;
+}
+
+/* ---- Tarjetas ---- */
+
+.pos .pos-card {
+    padding: 16px 18px;
+    border: 1px solid var(--pos-border);
+    border-radius: var(--pos-radius-lg);
+    background: var(--pos-surface);
+    box-shadow: var(--pos-shadow);
+}
+
+.pos .pos-card__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.pos .pos-card__title {
+    margin: 0;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--pos-text);
+}
+
+.pos .pos-card__hint {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--pos-muted);
+}
+
+.pos .pos-card__body {
+    margin-top: 14px;
+}
+
+.pos .pos-card__body--grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 170px;
+    gap: 12px;
+    align-items: start;
+}
+
+.pos .pos-card__check {
+    display: block;
+    margin-top: 10px;
+}
+
+/* ---- Campos ---- */
+
+.pos .pos-field {
+    min-width: 0;
+}
+
+.pos .pos-field__label {
+    display: block;
+    margin: 0 0 5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--pos-muted);
+}
+
+.pos .pos-field .el-select,
+.pos .pos-field .el-input,
+.pos .pos-field .el-input-number {
+    width: 100%;
+}
+
+/* Campo de importe con símbolo integrado */
+
+.pos .pos-money-input {
+    display: flex;
+    align-items: center;
+    height: 46px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.pos .pos-money-input:focus-within {
+    border-color: var(--pos-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--pos-primary) 14%, transparent);
+}
+
+.pos .pos-money-input__symbol {
+    flex: 0 0 auto;
+    padding: 0 10px 0 13px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pos-muted);
+}
+
+.pos .pos-money-input .el-input__inner {
+    height: 44px !important;
+    line-height: 44px !important;
+    width: 100%;
+    padding: 0 13px 0 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: var(--pos-text) !important;
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-money-input .el-input__inner:focus {
+    box-shadow: none !important;
+}
+
+/* ---- Tarjetas en fila (descuento + propina) ---- */
+
+.pos .pos-card-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.pos .pos-card-row > .pos-card {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.pos .pos-card--compact {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 14px;
+}
+
+.pos .pos-card--compact .pos-card__head {
+    align-items: center;
+    min-height: 32px;
+}
+
+.pos .pos-card--compact .pos-card__title {
+    font-size: 13.5px;
+}
+
+.pos .pos-card--compact .pos-card__title .fa-info-circle {
+    margin-left: 4px;
+    color: var(--pos-muted);
+    font-size: 12px;
+    cursor: help;
+}
+
+.pos .pos-card--compact .pos-card__body {
+    margin-top: 10px;
+}
+
+.pos .pos-card--compact .pos-card__hint {
+    margin-top: 6px;
+}
+
+.pos .pos-card__foot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.pos .pos-card__foot .fa-info-circle {
+    color: var(--pos-muted);
+    font-size: 12px;
+    cursor: help;
+}
+
+.pos .pos-card__foot .el-checkbox__label {
+    font-size: 12.5px;
+}
+
+/* Campo de importe compacto */
+
+.pos .pos-money-input--sm {
+    height: 38px;
+}
+
+.pos .pos-money-input--sm .pos-money-input__symbol {
+    padding: 0 7px 0 10px;
+    font-size: 12.5px;
+}
+
+.pos .pos-money-input--sm .el-input__inner {
+    height: 36px !important;
+    line-height: 36px !important;
+    padding-right: 10px !important;
+    font-size: 15px;
+}
+
+/* Propina */
+
+.pos .pos-tip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 108px;
+    gap: 8px;
+}
+
+.pos .pos-tip .el-input__inner {
+    height: 38px !important;
+    line-height: 38px !important;
+}
+
+.pos .pos-tip__amount .el-input__inner {
+    height: 36px !important;
+    line-height: 36px !important;
+    text-align: right;
+}
+
+/* ---- Comprobante ---- */
+
+.pos .pos-card--voucher {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.pos .pos-checkout__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    color: var(--pos-text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.pos .pos-checkout__back:hover {
+    background: var(--pos-surface-2);
+    border-color: var(--pos-primary);
+    color: var(--pos-primary);
+}
+
+.pos .pos-card__voucher-fields {
+    display: flex;
+    align-items: flex-end;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.pos .pos-field--series {
+    width: 118px;
+}
+
+.pos .pos-doctype .el-radio-button__inner {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+/* ---- Monto a cobrar ---- */
+
+.pos .pos-card--amount {
+    padding-top: 0;
+}
+
+.pos .pos-amount {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin: 0 -18px 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--pos-border);
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--pos-primary) 7%, transparent),
+        transparent
+    );
+    border-radius: var(--pos-radius-lg) var(--pos-radius-lg) 0 0;
+}
+
+.pos .pos-amount__label {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--pos-muted);
+}
+
+.pos .pos-amount__value {
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -.02em;
+    color: var(--pos-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-amount__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 190px;
+    gap: 16px;
+    align-items: start;
+}
+
+/* Botones de efectivo rápido */
+
+.pos .pos-quick-cash {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.pos .pos-quick-cash__btn {
+    padding: 7px 12px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: 999px;
+    background: var(--pos-surface);
+    color: var(--pos-text);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos .pos-quick-cash__btn:hover {
+    background: var(--pos-primary);
+    border-color: var(--pos-primary);
+    color: #fff;
+}
+
+.pos .pos-quick-cash__btn--exact {
+    border-color: color-mix(in srgb, var(--pos-primary) 45%, transparent);
+    background: color-mix(in srgb, var(--pos-primary) 8%, transparent);
+    color: var(--pos-primary);
+}
+
+/* Vuelto / faltante */
+
+.pos .pos-change {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    min-height: 76px;
+    padding: 12px 16px;
+    border: 1px solid var(--pos-border);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface-2);
+    margin-top: 22px;
+}
+
+.pos .pos-change__label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--pos-muted);
+}
+
+.pos .pos-change__value {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--pos-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-change.is-change {
+    border-color: color-mix(in srgb, var(--pos-success) 35%, transparent);
+    background: color-mix(in srgb, var(--pos-success) 8%, transparent);
+}
+
+.pos .pos-change.is-change .pos-change__value {
+    color: var(--pos-success);
+}
+
+.pos .pos-change.is-missing {
+    border-color: color-mix(in srgb, var(--pos-danger) 35%, transparent);
+    background: color-mix(in srgb, var(--pos-danger) 8%, transparent);
+}
+
+.pos .pos-change.is-missing .pos-change__value,
+.pos .pos-change.is-missing .pos-change__label {
+    color: var(--pos-danger);
+}
+
+/* ---- Formas de pago ---- */
+
+.pos .pos-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--pos-primary);
+    border-radius: var(--pos-radius);
+    background: transparent;
+    color: var(--pos-primary);
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+}
+
+.pos .pos-btn-outline:hover {
+    background: var(--pos-primary);
+    color: #fff;
+}
+
+.pos .pos-payments {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pos .pos-payments__row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-top: 1px solid var(--pos-border);
+    font-size: 13.5px;
+    color: var(--pos-text);
+}
+
+.pos .pos-payments__idx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--pos-border);
+    color: var(--pos-primary);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.pos .pos-payments__method {
+    flex: 1 1 auto;
+}
+
+.pos .pos-payments__amount {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.pos .pos-payments__empty {
+    padding: 12px 0 2px;
+    border-top: 1px solid var(--pos-border);
+    font-size: 12.5px;
+    color: var(--pos-muted);
+}
+
+/* ---- Resumen de la venta ---- */
+
+.pos .pos-checkout__summary {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 0;
+    background: var(--pos-surface);
+    border-left: 1px solid var(--pos-border);
+}
+
+.pos .pos-checkout__summary-header {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--pos-border);
+}
+
+.pos .pos-checkout__summary-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--pos-text);
+}
+
+.pos .pos-checkout__summary-count {
+    font-size: 12px;
+    color: var(--pos-muted);
+}
+
+.pos .pos-checkout__label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--pos-muted);
+}
+
+.pos .pos-checkout__customer {
+    flex: 0 0 auto;
+    padding: 12px 18px;
+    background: var(--pos-surface-2);
+    border-bottom: 1px solid var(--pos-border);
+}
+
+.pos .pos-checkout__customer-name {
+    display: block;
+    margin-top: 2px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--pos-text);
+    overflow-wrap: anywhere;
+}
+
+.pos .pos-checkout__points {
+    margin-top: 8px;
+}
+
+.pos .pos-checkout__point-row {
+    margin: 0;
+    font-size: 12px;
+    color: var(--pos-muted);
+}
+
+.pos .pos-checkout__point-row span {
+    font-weight: 700;
+    color: var(--pos-text);
+}
+
+.pos .pos-checkout__point-row--success,
+.pos .pos-checkout__point-row--success span {
+    color: var(--pos-success);
+}
+
+.pos .pos-checkout__items {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 6px 18px;
+}
+
+.pos .pos-checkout__items::-webkit-scrollbar {
+    width: 8px;
+}
+
+.pos .pos-checkout__items::-webkit-scrollbar-thumb {
+    background: var(--pos-border-strong);
+    border-radius: 999px;
+}
+
+.pos .pos-checkout__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--pos-border);
+}
+
+.pos .pos-checkout__item:last-child {
+    border-bottom: 0;
+}
+
+.pos .pos-checkout__item-qty {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 26px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: var(--pos-radius);
+    background: var(--pos-border);
+    color: var(--pos-primary);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-checkout__item-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pos .pos-checkout__item-name {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--pos-text);
+    overflow-wrap: anywhere;
+}
+
+.pos .pos-checkout__item-flag {
+    display: block;
+    margin-top: 4px;
+}
+
+.pos .pos-checkout__item-alert {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--pos-danger);
+}
+
+.pos .pos-checkout__item-total {
+    flex: 0 0 auto;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--pos-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.pos .pos-checkout__summary-footer {
+    flex: 0 0 auto;
+    padding: 12px 18px 16px;
+    border-top: 1px solid var(--pos-border);
+    background: var(--pos-surface);
+}
+
+.pos .pos-checkout__total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 3px 0;
+    font-size: 13px;
+    color: var(--pos-muted);
+}
+
+.pos .pos-checkout__total-row span:last-child {
+    font-weight: 600;
+    color: var(--pos-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.pos .pos-checkout__grand-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 10px;
+    border-top: 1px solid var(--pos-border);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--pos-text);
+}
+
+.pos .pos-checkout__grand-total span:last-child {
+    font-size: 26px;
+    letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.pos .pos-checkout__confirm {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    margin-top: 14px;
+    padding: 15px 16px;
+    border: 0;
+    border-radius: var(--pos-radius-lg);
+    background: var(--pos-success);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    cursor: pointer;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--pos-success) 30%, transparent);
+    transition: filter .15s ease, transform .1s ease;
+}
+
+.pos .pos-checkout__confirm:hover:not(:disabled) {
+    filter: brightness(1.06);
+}
+
+.pos .pos-checkout__confirm:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.pos .pos-checkout__confirm:disabled {
+    background: var(--pos-border-strong);
+    color: var(--pos-surface);
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+html.dark .pos .pos-checkout__confirm:disabled {
+    color: var(--pos-muted);
+}
+
+.pos .pos-checkout__confirm-hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    text-align: center;
+    color: var(--pos-danger);
+}
+
+.pos .pos-checkout__cancel {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px;
+    border: 0;
+    background: transparent;
+    color: var(--pos-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color .15s ease;
+}
+
+.pos .pos-checkout__cancel:hover {
+    color: var(--pos-danger);
+    text-decoration: underline;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 991.98px) {
+    .pos .pos-payment {
+        flex-direction: column-reverse;
+    }
+
+    .pos .pos-checkout__summary {
+        height: auto;
+        border-left: 0;
+        border-top: 1px solid var(--pos-border);
+    }
+
+    .pos .pos-checkout__items {
+        max-height: 34vh;
+    }
+
+    .pos .pos-amount__grid,
+    .pos .pos-card__body--grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .pos .pos-change {
+        margin-top: 0;
+        align-items: center;
+    }
+}
+
+
+/* =========================================================================
+   Listado de productos (vista tabla del POS)  ·  teclado + columnas
+   ========================================================================= */
+
+.pos-table__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 2px 0 8px;
+}
+
+.pos-table__hints {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+    font-size: 12.5px;
+    color: var(--pos-muted);
+}
+
+.pos-table__hint-text {
+    margin-right: 8px;
+}
+
+.pos-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border: 1px solid var(--pos-border-strong);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    background: var(--pos-surface);
+    color: var(--pos-text);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Pista de tecla junto al icono, solo en la fila seleccionada */
+
+.pos-key--hint {
+    min-width: 24px;
+    height: 18px;
+    margin-left: 6px;
+    font-size: 9.5px;
+    vertical-align: middle;
+    color: var(--pos-primary);
+    border-color: color-mix(in srgb, var(--pos-primary) 40%, #fff);
+}
+
+.pos-table__toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pos-table__toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    color: var(--pos-text);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos-table__toolbar-btn:hover {
+    border-color: var(--pos-primary);
+    color: var(--pos-primary);
+}
+
+/* Popover de columnas */
+
+.pos-table__cols {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pos-table__cols .el-checkbox {
+    display: block;
+    margin: 0;
+    padding: 3px 0;
+}
+
+.pos-table__cols-title {
+    margin: 0 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--pos-muted, #8492a6);
+}
+
+/* Selección única de fila: el mismo resaltado para teclado, hover y click,
+   con el color del tema activo (antes: azules fijos #A9E6FF/#ACE1F6). */
+
+.pos-table .el-table__body tr.current-row > td {
+    background: color-mix(in srgb, var(--pos-primary) 11%, var(--pos-surface)) !important;
+}
+
+.pos-table .el-table__body tr.current-row > td:first-child {
+    box-shadow: inset 3px 0 0 var(--pos-primary);
+}
+
+/* Un solo estado visual posible: la fila seleccionada (current-row). El hover
+   ya mueve la selección, así que se anula toda otra pintura de hover — la
+   clase hover-row de Element-UI y los tr:hover de los skins — para que un
+   hover "pegado" por movimiento rápido o scroll nunca deje filas marcadas. */
+.pos-table .el-table__body tr.hover-row > td,
+.pos-table .el-table--enable-row-hover .el-table__body tr:hover > td,
+.pos-table .el-table__body tbody tr:hover {
+    background: transparent !important;
+}
+
+.pos-table .el-table__body tr {
+    cursor: pointer;
+}
+
+/* Celdas: interlineado compacto (cabeceras de dos líneas y packs) */
+
+.pos-table .el-table th .cell,
+.pos-table .el-table td .cell {
+    line-height: 1.35;
+}
+
+.pos-table__muted {
+    font-size: 12px;
+    color: var(--pos-muted);
+}
+
+/* Botón de icono ghost (stock, historial) */
+
+.pos-table__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: var(--pos-radius);
+    background: var(--pos-surface);
+    color: var(--pos-muted);
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos-table__icon-btn:hover {
+    border-color: var(--pos-primary);
+    color: var(--pos-primary);
+}
+
+/* Pack: un producto por línea */
+
+.pos-table__pack {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--pos-muted);
+}
+
+/* Chips de precio: click = agregar con ese precio */
+
+.pos-price-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.pos-price-chip {
+    padding: 3px 9px;
+    border: 1px solid var(--pos-border-strong);
+    border-radius: 999px;
+    background: var(--pos-surface);
+    color: var(--pos-text);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.3;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.pos-price-chip:hover {
+    background: var(--pos-primary);
+    border-color: var(--pos-primary);
+    color: #fff;
+}
+
+.pos-price-chip--more {
+    color: var(--pos-primary);
+    border-style: dashed;
+}
+
+/* Selector rápido de precios (diálogo, montado en <body>) */
+
+.pos-price-pick__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pos-price-pick__list li + li {
+    border-top: 1px solid var(--accent-color, #e7edfc);
+}
+
+.pos-price-pick__opt {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 6px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    font-size: 13.5px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background .15s ease;
+}
+
+.pos-price-pick__opt:hover {
+    background: color-mix(in srgb, var(--primary-color, #3d6bf5) 8%, #fff);
+}
+
+.pos-price-pick__info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.pos-price-pick__label {
+    font-weight: 600;
+    color: var(--dark-color, #3a4658);
+    line-height: 1.3;
+}
+
+.pos-price-pick__meta {
+    font-size: 11.5px;
+    color: var(--muted, #8492a6);
+    line-height: 1.3;
+}
+
+.pos-price-pick__price {
+    margin-left: auto;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--dark-color, #3a4658);
+}
+
+/* Nombre de la lista dentro del chip */
+
+.pos-price-chip__label {
+    display: inline-block;
+    max-width: 76px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+    margin-right: 3px;
+    font-weight: 500;
+    color: var(--pos-muted);
+}
+
+.pos-price-chip:hover .pos-price-chip__label {
+    color: #fff;
+}
+
+/* Diálogo de atajos */
+
+.pos-shortcuts__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pos-shortcuts__list li {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--accent-color, #e7edfc);
+    font-size: 13px;
+}
+
+.pos-shortcuts__list li:last-child {
+    border-bottom: 0;
+}
+
+.pos-shortcuts__list li > span:first-child {
+    flex: 0 0 92px;
+    display: flex;
+    gap: 4px;
+}
+
+.pos-shortcuts__note {
+    margin: 10px 0 0;
+    padding: 9px 11px;
+    border-radius: 8px;
+    background: var(--light-color, #f5f8ff);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+/* El diálogo se monta con append-to-body (fuera de .pos): tokens propios */
+.pos-shortcuts .pos-key {
+    --pos-border-strong: color-mix(in srgb, var(--primary-color, #3d6bf5) 28%, #fff);
+    --pos-surface: #fff;
+    --pos-text: var(--dark-color, #3a4658);
 }

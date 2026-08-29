@@ -49,6 +49,7 @@
                                 :min="0"
                                 :controls="false"
                                 :precision="precision"
+                                :step="quantity_step"
                                 @focus="$event.target.select()"
                             ></el-input-number>
                             <small class="form-control-feedback" v-if="errors.quantity"
@@ -149,7 +150,7 @@
 
 import InputLotsForm from '../../../../../../resources/js/views/tenant/items/partials/lots.vue'
 import OutputLotsForm from './partials/lots.vue'
-import {filterWords} from "@helpers/functions";
+import {filterWords, getQuantityPrecisionByUnitType} from "@helpers/functions";
 import { inventory_search_item_barcode } from '../mixins/functions'
 
 export default {
@@ -178,8 +179,14 @@ export default {
             items: [],
             warehouses: [],
             inventory_transactions: [],
-            precision:4,
+            precision: 0,
+            selected_unit_type_id: null,
         }
+    },
+    computed: {
+        quantity_step() {
+            return this.precision > 0 ? 0.01 : 1
+        },
     },
     // created() {
     //     this.initForm()
@@ -199,6 +206,8 @@ export default {
             if (this.items.length > 0) {
                 let item = await _.find(this.items, { id: this.form.item_id });
                 console.log('Producto seleccionado:', item);
+
+                this.selected_unit_type_id = item ? item.unit_type_id : null;
 
                 if (item) {
                     this.form.lots_enabled = item.lots_enabled;
@@ -241,6 +250,7 @@ export default {
         initForm() {
             this.errors = {}
             this.precision = 0
+            this.selected_unit_type_id = null
             this.form = {
                 id: null,
                 item_id: null,
@@ -258,8 +268,8 @@ export default {
 
             }
         },
-        ChangePrecision(){
-            this.precision = 0;
+        ChangePrecision() {
+            this.precision = getQuantityPrecisionByUnitType(this.selected_unit_type_id);
         },
         async initTables() {
             await this.$http.get(`/${this.resource}/tables/transaction/${this.type}`)

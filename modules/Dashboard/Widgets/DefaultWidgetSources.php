@@ -60,7 +60,7 @@ class DefaultWidgetSources
         return [
             new CallbackWidgetSource(array_merge($module, [
                 'key' => 'ventas.ventas_totales',
-                'label' => 'Ventas del mes',
+                'label' => 'Ventas',
                 'description' => 'vs periodo anterior',
                 'unit' => WidgetDataset::UNIT_MONEY,
                 'focus' => 'serie',

@@ -18,6 +18,7 @@ export default {
     color: { type: String, default: "#0f766e" },
     height: { type: [Number, String], default: 46 },
     width: { type: [Number, String], default: "100%" },
+    formatter: { type: Function, default: null },
   },
   computed: {
     series() {
@@ -25,7 +26,13 @@ export default {
     },
     chartOptions() {
       return {
-        chart: { sparkline: { enabled: true }, animations: { enabled: false } },
+        chart: {
+          sparkline: { enabled: true },
+          animations: { enabled: false },
+          fontFamily: "inherit",
+          parentHeightOffset: 0,
+          toolbar: { show: false },
+        },
         colors: [this.color],
         stroke: { curve: "smooth", width: 2 },
         fill: {
@@ -36,12 +43,14 @@ export default {
         tooltip: {
           x: { show: this.labels.length > 0 },
           y: {
-            formatter: (val) =>
-              "Bs. " +
-              Number(val).toLocaleString("es-PE", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              }),
+            formatter:
+              this.formatter ||
+              ((val) =>
+                "Bs. " +
+                Number(val).toLocaleString("es-VE", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })),
             title: { formatter: () => "" },
           },
           marker: { show: false },

@@ -128,11 +128,13 @@ class VenezuelaSourceContractTest extends TestCase
         $garagePayment = (string) file_get_contents(resource_path('js/views/tenant/pos/partials/fast_payment_garage.vue'));
         // ######## FIN CONTRATO VISUAL POS VENEZUELA ########
 
-        self::assertStringContainsString('d-flex flex-column pos-checkout-column', $pos);
-        self::assertStringContainsString('flex-grow-1 pos-checkout-details', $pos);
-        self::assertStringContainsString('data-testid="pos-open-payment"', $pos);
-        self::assertStringContainsString('<span>PAGAR', $pos);
-        self::assertStringContainsString("@click.native=\"selectDocumentType('01')\"", $payment);
+        self::assertStringContainsString('class="col-lg-4 col-md-6 pos-cart"', $pos);
+        self::assertStringContainsString('class="pos-cart__footer"', $pos);
+        self::assertStringContainsString('class="pos-cart__pay"', $pos);
+        self::assertStringContainsString('<span class="pos-cart__pay-label">PAGAR</span>', $pos);
+        self::assertStringContainsString('label="01">FACTURA', $payment);
+        self::assertStringContainsString('label="80">N. VENTA', $payment);
+        self::assertStringNotContainsString('label="03">BOLETA', $payment);
         self::assertStringContainsString('this.form.document_type_id = documentTypeId', $payment);
         self::assertStringContainsString('return Boolean(this.businessTurns && this.businessTurns.active)', $payment);
         self::assertStringNotContainsString('qz.websocket.isActive()', $payment);

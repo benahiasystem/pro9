@@ -19,6 +19,7 @@ use App\Models\Tenant\User;
 use Modules\Inventory\Models\Warehouse;
 use App\Models\Tenant\Cash;
 use App\Models\Tenant\Configuration;
+use App\Models\Tenant\PriceLabel;
 use Modules\Inventory\Models\InventoryConfiguration;
 use Modules\Inventory\Models\ItemWarehouse;
 use Exception;
@@ -72,7 +73,7 @@ class PosController extends Controller
             // ->orWhere('internal_id','like', "%{$request->input_item}%")
             ->with(['warehouse_prices' => function ($q) use ($warehouse) {
                 $q->where('warehouse_id', $warehouse->id);
-            }])
+            }, 'item_unit_types.prices.priceLabel'])
             ->orWhere(function ($query) use ($request) {
                 $query->where('internal_id', 'like', "%{$request->input_item}%")
                     ->orWhere('barcode', "{$request->input_item}");
@@ -91,7 +92,9 @@ class PosController extends Controller
 
         if ($search_item_by_barcode_presentation) $items_query->orFilterItemUnitTypeBarcode($request->input_item);
 
-        $items = $items_query->whereIsActive()->get()->transform(function ($row) use ($configuration, $search_item_by_barcode_presentation, $request) {
+        $all_prices_label = PriceLabel::all();
+
+        $items = $items_query->whereIsActive()->get()->transform(function ($row) use ($configuration, $search_item_by_barcode_presentation, $request, $all_prices_label) {
 
             $full_description = ($row->internal_id) ? $row->internal_id . ' - ' . $row->description : $row->description;
 
@@ -137,6 +140,7 @@ class PosController extends Controller
                         'stock' => $row->stock,
                     ];
                 }),
+                'item_unit_types' => $row->getItemUnitTypesForPos($configuration, $all_prices_label),
                 'unit_type' => $row->getItemUnitTypesBarcode($search_item_by_barcode_presentation, $request->input_item),
                 // 'unit_type' => $row->item_unit_types,
                 'category' => ($row->category) ? $row->category->name : null,

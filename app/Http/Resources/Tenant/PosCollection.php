@@ -97,48 +97,7 @@ class PosCollection extends ResourceCollection
                         $r->individual_item->description,
                     ];
                 }),
-                'item_unit_types' => collect($row->item_unit_types)->transform(function($row) use($configuration, $allPricesLabel){
-                    $row->load('prices');
-                    $labels_id = $row->prices->pluck('price_label_id')->toArray();
-                    $prices = $row->prices->map(function($price)  use($row, $configuration) {
-                            $price_label = $price->priceLabel;
-                                return [
-                                    'id'             => $price->id,
-                                    'price_label_id' => $price->price_label_id,
-                                    'position'       => $price_label->position,
-                                    'description'    => $row->description,  
-                                    'unit_type_id'   => $row->unit_type_id,
-                                    'quantity_unit' => (float)number_format($row->quantity_unit, $configuration->decimal_quantity, ".",""),
-                                    'label'          => $price_label->label,
-                                    'price'          => $price ? number_format($price->price, 2, '.', '') : 0,
-                                    'is_active'      => $price ? (bool) $price->is_active : false,
-                                ];
-                            });
-                    
-                    
-                    $missingLabel = $allPricesLabel->whereNotIn('id', $labels_id)->first();
-
-                    if ($missingLabel) {
-                        $prices->push([
-                            'id' => null,
-                            'price_label_id' => $missingLabel->id,
-                            'position' => $missingLabel->position,
-                            'label' => $missingLabel->label,
-                            'price' => 0,
-                            'is_active' => $missingLabel->is_active
-                        ]);
-                    }
-                    return [
-                        'id' => $row->id,
-                        'description' => "{$row->description}",
-                        'item_id' => $row->item_id,
-                        'unit_type_id' => $row->unit_type_id,
-                        'quantity_unit' => (float)number_format($row->quantity_unit, $configuration->decimal_quantity, ".",""),
-                        'price_default' => $row->price_default,
-                        'barcode' => $row->barcode ?? '',
-                        'prices' => $prices->toArray(),
-                    ];
-                }),
+                'item_unit_types' => $row->getItemUnitTypesForPos($configuration, $allPricesLabel),
                 'unit_type' => $row->item_unit_types,
                 'category' => ($row->category) ? $row->category->name : null,
                 'brand' => ($row->brand) ? $row->brand->name : null,

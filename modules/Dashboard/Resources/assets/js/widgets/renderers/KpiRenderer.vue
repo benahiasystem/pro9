@@ -1,38 +1,52 @@
 <template>
   <div class="wg-kpi">
-    <div class="wg-kpi-main">
-      <div class="wg-kpi-value">{{ valueStr }}</div>
-      <div v-if="hasDelta" class="wg-kpi-delta" :style="{ color: deltaColor }">
-        <i :class="['ti', deltaUp ? 'ti-trending-up' : 'ti-trending-down']"></i>
-        {{ deltaStr }} <span class="wg-kpi-delta-label">vs periodo anterior</span>
+    <div class="kpi-main wg-kpi-main">
+      <div class="kpi-values">
+        <h3 class="font-weight-bold m-0 text-nowrap wg-kpi-value">{{ valueStr }}</h3>
       </div>
+      <kpi-sparkline
+        v-if="spark"
+        class="kpi-spark wg-kpi-spark"
+        :data="sparkData"
+        :labels="sparkLabels"
+        :color="sparkColor"
+        :height="sparkHeight"
+        :formatter="sparkFormatter"
+      ></kpi-sparkline>
     </div>
-    <div v-if="spark && sparkSeries.length" class="wg-kpi-spark">
-      <apexchart type="area" :height="sparkHeight" :options="sparkOptions" :series="sparkSeries"></apexchart>
-    </div>
+    <small v-if="hasDelta" class="kpi-change wg-kpi-delta" :class="deltaUp ? 'is-up' : 'is-down'">
+      {{ deltaUp ? '▲' : '▼' }} {{ deltaStr }}
+      <span class="kpi-change-label text-muted wg-kpi-delta-label">{{ changeLabel }}</span>
+    </small>
   </div>
 </template>
 
 <script>
-import { formatValue, themeColors } from '../registry'
+import KpiSparkline from '../../views/KpiSparkline.vue'
+import { changeLabelForPeriod, formatKpi, formatValue, themeColors } from '../registry'
 
 /** KPI (valor + delta) con sparkline opcional (kpi_spark). */
 export default {
   name: 'KpiRenderer',
+  components: { KpiSparkline },
   props: {
     dataset: { type: Object, required: true },
     spark: { type: Boolean, default: false },
-    sparkHeight: { type: Number, default: 64 },
+    sparkHeight: { type: Number, default: 46 },
+    period: { type: String, default: '' },
   },
   computed: {
     unit() {
       return this.dataset.unit || 'money'
     },
     valueStr() {
-      return formatValue(this.dataset.totals.current, this.unit)
+      return formatKpi(this.dataset.totals.current, this.unit)
     },
     hasDelta() {
-      return this.dataset.totals.delta !== null && this.dataset.totals.delta !== undefined
+      const totals = this.dataset.totals || {}
+      if (totals.delta === null || totals.delta === undefined) return false
+      // Sin valor previo real no hay comparación (espejo de RowTop.changes).
+      return !!Number(totals.previous)
     },
     deltaUp() {
       return (Number(this.dataset.totals.delta) || 0) >= 0
@@ -40,46 +54,42 @@ export default {
     deltaStr() {
       return Math.abs(Number(this.dataset.totals.delta) || 0).toFixed(1) + '%'
     },
-    deltaColor() {
-      const theme = themeColors()
-      return this.deltaUp ? theme.success : theme.danger
+    changeLabel() {
+      return changeLabelForPeriod(this.period)
     },
-    sparkSeries() {
+    sparkData() {
       const serie = (this.dataset.series || [])[0]
-      if (!serie || !serie.data || !serie.data.length) return []
-      return [{ name: '', data: serie.data }]
+      return serie && serie.data && serie.data.length ? serie.data : [0, 0]
+    },
+    sparkLabels() {
+      return this.dataset.labels || []
     },
     sparkColor() {
       // La línea sigue la inclinación real de la curva: sube en verde, baja en rojo.
       const theme = themeColors()
-      const data = (this.sparkSeries[0] && this.sparkSeries[0].data) || []
+      const data = this.sparkData
       if (data.length >= 2) {
         const rising = (Number(data[data.length - 1]) || 0) >= (Number(data[0]) || 0)
         return rising ? theme.success : theme.danger
       }
       return this.deltaUp ? theme.success : theme.danger
     },
-    sparkOptions() {
-      return {
-        chart: { sparkline: { enabled: true }, fontFamily: 'inherit', animations: { enabled: false } },
-        colors: [this.sparkColor],
-        stroke: { curve: 'smooth', width: 2 },
-        fill: { type: 'gradient', gradient: { opacityFrom: 0.22, opacityTo: 0.02 } },
-        tooltip: { enabled: false },
-      }
+    sparkFormatter() {
+      const unit = this.unit
+      return value => formatValue(value, unit)
     },
   },
 }
 </script>
 
 <style scoped>
-/* Formato de lado (mockup): valor a la izquierda, sparkline a la derecha */
 .wg-kpi {
-  align-items: center;
   display: flex;
   flex: 1 1 auto;
-  gap: 0.75rem;
+  flex-direction: column;
+  justify-content: center;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
 }
 .wg-kpi-main {

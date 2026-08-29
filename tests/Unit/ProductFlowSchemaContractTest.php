@@ -28,7 +28,7 @@ class ProductFlowSchemaContractTest extends TestCase
     }
 
     /** @test */
-    public function the_repair_runs_after_every_existing_tenant_migration(): void
+    public function the_repair_precedes_only_the_main_migrations_appended_during_integration(): void
     {
         $files = glob($this->root().'/database/migrations/tenant/*.php');
         self::assertNotFalse($files);
@@ -36,7 +36,13 @@ class ProductFlowSchemaContractTest extends TestCase
         $names = array_map('basename', $files);
         sort($names, SORT_STRING);
 
-        self::assertSame(self::REPAIR_MIGRATION, end($names));
+        $repairPosition = array_search(self::REPAIR_MIGRATION, $names, true);
+        self::assertNotFalse($repairPosition);
+        self::assertSame([
+            '2026_08_23_000002_add_menu_preferences_to_users.php',
+            '2026_08_23_000003_tenant_add_inventory_to_app_modules.php',
+            '2026_08_23_000004_tenant_add_finance_to_app_modules.php',
+        ], array_slice($names, $repairPosition + 1));
     }
 
     /** @test */
