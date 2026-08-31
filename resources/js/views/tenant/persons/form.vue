@@ -1208,6 +1208,15 @@ export default {
             if (this.hasAddressValue(rowValue)) return rowValue
             return this.hasAddressValue(formValue) ? formValue : null
         },
+        isPersonWithOptionalAddress() {
+            // DNI: persona natural sin RUC.
+            if (this.form.identity_document_type_id === '1') return true
+
+            // RUC 10xxxxxxxxx: tambien es persona natural, no se le exige domicilio.
+            const number = (this.form.number || '').toString().trim()
+
+            return this.form.identity_document_type_id === '6' && number.startsWith('10')
+        },
         isEmptyAddressRow(row) {
             if (!row) return true
             // Una fila ya guardada no se descarta: quitarla del envio la borraria en el backend.
@@ -1445,10 +1454,30 @@ export default {
             // La direccion principal se registra tambien dentro de addresses.
             this.upsertMainAddress()
 
+            // Con DNI y con RUC de persona natural (empieza en 10) la direccion y el
+            // ubigeo son opcionales. Para el resto de documentos la direccion principal
+            // es obligatoria y, si el pais es PE, tambien su ubigeo completo.
+            const requires_address = !this.isPersonWithOptionalAddress();
+
+            if (requires_address) {
+                if (!this.hasAddressValue(this.form.address)) {
+                    return this.$message.error('Falta registrar la dirección principal');
+                }
+
+                const main_location_id = this.form.location_id || [];
+
+                if (
+                    this.form.country_id === 'PE'
+                    && (main_location_id.length !== 3 || !main_location_id.every(value => value))
+                ) {
+                    return this.$message.error('Falta registrar el ubigeo en la Dirección principal');
+                }
+            }
+
             let hasErrorInAdditionalAddresses = false;
             let addressWithError = null;
 
-            if (this.form.addresses && this.form.addresses.length > 0) {
+            if (requires_address && this.form.addresses && this.form.addresses.length > 0) {
                 for (let i = 0; i < this.form.addresses.length; i++) {
                     const address = this.form.addresses[i];
                     // Una fila sin ningun dato no se guarda, asi que tampoco se valida.
