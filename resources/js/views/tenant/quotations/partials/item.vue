@@ -1410,25 +1410,12 @@ export default {
                 }
 
                 this.form.quantity = this.recordItem.quantity;
-                this.form.unit_price = this.recordItem.input_unit_price_value;
-                this.form.unit_price_value = this.recordItem.input_unit_price_value;
-                if (
-                    !this.configuration.enable_list_product &&
-                    this.selectedOptionPrice !== 1
-                ) {
-                    if (this.form.item_unit_types.length) {
-                        let first_list = this.form.item_unit_types[0];
-                        let priceSelected =
-                            first_list[this.selectedOptionPrice];
-                        this.form.unit_price_value = priceSelected;
-                    } else {
-                        this.form.unit_price_value = "0";
-                    }
-                }
-                // this.form.unit_price_value = this.recordItem.input_unit_price_value
-                // if (this.recordItem.item.has_igv == false) {
-                //     this.form.unit_price = this.recordItem.total_base_igv
-                // }
+                // Precio de la cotización (no el del catálogo que setea changeItem).
+                // input_unit_price_value no siempre viene del API al editar.
+                const editUnitPrice = this.resolveEditUnitPrice(this.recordItem);
+                this.form.unit_price = editUnitPrice;
+                this.form.unit_price_value = editUnitPrice;
+                this.form.input_unit_price_value = editUnitPrice;
 
                 this.setHasIgvUpdate();
                 this.form.has_plastic_bag_taxes =
@@ -1477,6 +1464,27 @@ export default {
                 if (this.form.item)
                     this.form.item.has_igv = this.recordItem.item.has_igv;
             }
+        },
+        /**
+         * Precio unitario a mostrar al editar una línea ya guardada.
+         * Prioriza el valor ingresado; si no existe, usa unit_price/unit_value de la cotización.
+         */
+        resolveEditUnitPrice(record) {
+            const parsePrice = (value) => {
+                if (value === undefined || value === null || value === '') return null;
+                const n = Number(value);
+                return isNaN(n) ? null : n;
+            };
+
+            const input = parsePrice(record.input_unit_price_value);
+            if (input !== null) return input;
+
+            const hasIgv = !(record.item && record.item.has_igv === false);
+            const fromRow = parsePrice(hasIgv ? record.unit_price : record.unit_value);
+            if (fromRow !== null) return fromRow;
+
+            const fallback = parsePrice(record.unit_price);
+            return fallback !== null ? fallback : 0;
         },
         async regularizeLots() {
             if (this.form.document_item_id && this.form.item.lots.length > 0) {
