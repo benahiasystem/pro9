@@ -120,9 +120,40 @@ class PersonController extends Controller
         }
 
     
-        // restricción para direcciones secundarias - Perú
+        // Con DNI y con RUC de persona natural (empieza en 10) la direccion y el ubigeo
+        // son opcionales. Para el resto de documentos la direccion principal es
+        // obligatoria y, si el pais es PE, tambien su ubigeo.
         $addresses = $request->input('addresses') ?: [];
-        foreach ($addresses as $index => $row) {
+        $requires_address = !$this->hasOptionalAddress(
+            $request->input('identity_document_type_id'),
+            $request->input('number')
+        );
+
+        if ($requires_address) {
+
+            if ($this->resolveMainAddressText($request->input('address'), $addresses) === '') {
+                return [
+                    'success' => false,
+                    'message' => 'Falta registrar la dirección principal'
+                ];
+            }
+
+            $main_location_id = $this->normalizeLocationId($request->input('location_id'));
+
+            if (!$this->isCompleteLocationId($main_location_id)) {
+                $main_location_id = $this->resolveMainAddressLocationId($addresses);
+            }
+
+            if ($request->input('country_id') === 'PE' && !$this->isCompleteLocationId($main_location_id)) {
+                return [
+                    'success' => false,
+                    'message' => 'Falta registrar el ubigeo en la dirección principal'
+                ];
+            }
+        }
+
+        // restricción para direcciones secundarias - Perú
+        foreach (($requires_address ? $addresses : []) as $index => $row) {
             if (isset($row['country_id']) && $row['country_id'] === 'PE') {
                 
                 if (empty($row['location_id']) || !is_array($row['location_id']) || count($row['location_id']) !== 3 || 
@@ -152,22 +183,6 @@ class PersonController extends Controller
         if (!$this->isCompleteLocationId($location_id)) {
             $location_id = $this->resolveMainAddressLocationId($request->input('addresses'));
         }
-
-        // TEMPORAL - diagnostico ubigeo persona. Quitar cuando se confirme la causa.
-        \Illuminate\Support\Facades\Log::info('[ubigeo-persona] store', [
-            'person_id'          => $request->input('id'),
-            'country_id'         => $request->input('country_id'),
-            'location_id_request'=> $request->input('location_id'),
-            'location_id_final'  => $location_id,
-            'addresses'          => collect($request->input('addresses') ?: [])->map(function ($row) {
-                return is_array($row) ? [
-                    'id'            => $row['id'] ?? null,
-                    'main'          => $row['main'] ?? null,
-                    'location_id'   => $row['location_id'] ?? null,
-                    'department_id' => $row['department_id'] ?? null,
-                ] : $row;
-            })->all(),
-        ]);
 
         if ($request->input('country_id') === 'PE' && $this->isCompleteLocationId($location_id)) {
             $person->district_id = $location_id[2];
@@ -250,6 +265,61 @@ class PersonController extends Controller
     private function isCompleteLocationId($locationId): bool
     {
         return is_array($locationId) && count($locationId) === 3;
+    }
+
+    /**
+     * Personas a las que no se les exige domicilio: DNI y RUC de persona natural
+     * (10xxxxxxxxx).
+     *
+     * @param  mixed  $identityDocumentTypeId
+     * @param  mixed  $number
+     * @return bool
+     */
+    private function hasOptionalAddress($identityDocumentTypeId, $number): bool
+    {
+        $identityDocumentTypeId = (string) $identityDocumentTypeId;
+
+        if ($identityDocumentTypeId === '1') {
+            return true;
+        }
+
+        return $identityDocumentTypeId === '6'
+            && strpos(trim((string) $number), '10') === 0;
+    }
+
+    /**
+     * Texto de la direccion principal: se toma la columna de la persona y, si llega
+     * vacia, la fila main del payload de direcciones.
+     *
+     * @param  mixed  $address
+     * @param  mixed  $addresses
+     * @return string
+     */
+    private function resolveMainAddressText($address, $addresses): string
+    {
+        $address = trim((string) $address);
+        if ($address !== '') {
+            return $address;
+        }
+
+        $rows = array_values(array_filter(is_array($addresses) ? $addresses : [], 'is_array'));
+        if (empty($rows)) {
+            return '';
+        }
+
+        $main = null;
+        foreach ($rows as $row) {
+            if (!empty($row['main'])) {
+                $main = $row;
+                break;
+            }
+        }
+
+        if ($main === null) {
+            $main = $rows[0];
+        }
+
+        return trim((string) ($main['address'] ?? ''));
     }
 
     /**
