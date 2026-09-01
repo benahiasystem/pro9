@@ -17,14 +17,13 @@ use App\Models\Tenant\DocumentItem;
 use Illuminate\Support\Facades\DB;
 use Modules\Report\Exports\SaleConsolidatedExport;
 use Modules\Report\Exports\SaleConsolidatedTotalExport;
-use Modules\Report\Jobs\ProcessReportSalesConsolidated;
-use App\Traits\JobReportTrait;
+use Modules\Report\Traits\ConsolidatedReportTrayTrait;
 
 
 class ReportSaleConsolidatedController extends Controller
 {
     use ReportTrait;
-    use JobReportTrait; 
+    use ConsolidatedReportTrayTrait;
 
     public function filter()
     {
@@ -204,44 +203,43 @@ class ReportSaleConsolidatedController extends Controller
     }
 
 
-    public function pdf(Request $request)
+    private function consolidatedDetailCount(Request $request): int
     {
-        $UMBRAL = 500;
+        return $this->getRecordsSalesConsolidated($request->all())->count();
+    }
 
-        // count() es barato — NO carga la data, solo decide la ruta
-        $total = $this->getRecordsSalesConsolidated($request->all())->count();
+    private function consolidatedTotalsCount(Request $request): int
+    {
+        return $this->totalsByItem($request)->count();
+    }
 
-        if ($total > $UMBRAL) {
-            // PESADO → bandeja de descargas (async)
-            $user_id = auth()->id();
-            $tray = $this->createDownloadTray($user_id, 'Reporte', 'pdf', 'Consolidado de items de ventas');
-
-            // Resolver website_id (mismo bloque que ReportGeneralItemController)
-            $host = $request->getHost();
-            $hostname = \Hyn\Tenancy\Models\Hostname::where('fqdn', $host)->first();
-            if (empty($hostname)) {
-                $company    = Company::active();
-                $client     = \App\Models\System\Client::where('number', $company->number)->first();
-                $website_id = $client->hostname->website_id;
-            } else {
-                $website_id = $hostname->website_id;
-            }
-
-            ProcessReportSalesConsolidated::dispatch($tray->id, $website_id, $request->all(), $user_id);
-
-            return [
-                'success' => true,
-                'message' => 'El reporte se esta procesando; puede ver el proceso en bandeja de descargas.'
-            ];
-        }
-
-        // LIVIANO → inline como ahora
+    private function consolidatedCompanyAndEstablishment(Request $request): array
+    {
         $company = Company::first();
         $establishment = ($request->establishment_id)
             ? Establishment::findOrFail($request->establishment_id)
             : auth()->user()->establishment;
+
+        return [$company, $establishment];
+    }
+
+
+    public function pdf(Request $request)
+    {
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'pdf',
+            'detail',
+            'sales',
+            'Consolidado de items de ventas',
+            $this->consolidatedDetailCount($request)
+        )) {
+            return $trayResponse;
+        }
+
+        [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->getRecordsSalesConsolidated($request->all())->get();
-        $params  = $request->all();
+        $params = $request->all();
 
         $pdf = PDF::loadView('report::sales_consolidated.report_pdf', compact('records', 'company', 'establishment', 'params'));
         $filename = 'Reporte_Consolidado_Items_Ventas_'.date('YmdHis');
@@ -251,10 +249,18 @@ class ReportSaleConsolidatedController extends Controller
 
 
     public function excel(Request $request) {
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'xlsx',
+            'detail',
+            'sales',
+            'Consolidado de items de ventas',
+            $this->consolidatedDetailCount($request)
+        )) {
+            return $trayResponse;
+        }
 
-        $company = Company::first();
-        $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
-
+        [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->getRecordsSalesConsolidated($request->all())->get();
         $params = $request->all();
         $filename = 'Reporte_Consolidado_Items_Ventas_'.date('YmdHis');
@@ -265,22 +271,28 @@ class ReportSaleConsolidatedController extends Controller
             ->company($company)
             ->establishment($establishment)
             ->params($params);
-        // return  $saleConsolidatedExport->view();
-        return $saleConsolidatedExport->download($filename.'.xlsx');
 
+        return $saleConsolidatedExport->download($filename.'.xlsx');
     }
 
 
     public function pdfTotals(Request $request) {
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'pdf',
+            'totals',
+            'sales',
+            'Consolidado de items de ventas - totales',
+            $this->consolidatedTotalsCount($request)
+        )) {
+            return $trayResponse;
+        }
 
-        $company = Company::first();
-        $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
+        [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->totalsByItem($request)->sortBy('item_id');
         $params = $request->all();
-        /** @var \Barryvdh\DomPDF\PDF $pdf */
 
         $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals', compact("records", "company", "establishment", "params"));
-
         $filename = 'Reporte_Consolidado_Items_Ventas_Totales_'.date('YmdHis');
 
         return $pdf->stream($filename.'.pdf');
@@ -288,34 +300,48 @@ class ReportSaleConsolidatedController extends Controller
 
 
     public function pdfTicketsTotal(Request $request) {
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'pdf',
+            'ticket',
+            'sales',
+            'Consolidado de items de ventas - totales ticket',
+            $this->consolidatedTotalsCount($request)
+        )) {
+            return $trayResponse;
+        }
 
-        $company = Company::first();
-        $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
+        [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->totalsByItem($request)->sortBy('item_id');
         $params = $request->all();
-        /** @var \Barryvdh\DomPDF\PDF $pdf */
-        $height =( 5.8 / 2.54) * 72; // Cm a inches
-        $customPaper = [0,0,$height,1440];
+        $height = (5.8 / 2.54) * 72;
+        $customPaper = [0, 0, $height, 1440];
         $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals_ticket', compact("records", "company", "establishment", "params"))
             ->setPaper($customPaper);
-
         $filename = 'Reporte_Consolidado_Items_Ventas_Totales_'.date('YmdHis');
 
         return $pdf->stream($filename.'.pdf');
     }
-    public function pdfTicketsTotal80(Request $request) {
 
-        $company = Company::first();
-        $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
+    public function pdfTicketsTotal80(Request $request) {
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'pdf',
+            'ticket80',
+            'sales',
+            'Consolidado de items de ventas - totales ticket 80',
+            $this->consolidatedTotalsCount($request)
+        )) {
+            return $trayResponse;
+        }
+
+        [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->totalsByItem($request)->sortBy('item_id');
         $params = $request->all();
-        /** @var \Barryvdh\DomPDF\PDF $pdf */
-        $height =( 8 / 2.54) * 72; // Cm a inches
-        $customPaper = [0,0,$height,1440];
+        $height = (8 / 2.54) * 72;
+        $customPaper = [0, 0, $height, 1440];
         $pdf = PDF::loadView('report::sales_consolidated.report_pdf_totals_ticket_80', compact("records", "company", "establishment", "params"))
             ->setPaper($customPaper);
-
-
         $filename = 'Reporte_Consolidado_Items_Ventas_Totales_'.date('YmdHis');
 
         return $pdf->stream($filename.'.pdf');
@@ -323,9 +349,18 @@ class ReportSaleConsolidatedController extends Controller
 
 
     public function excelTotals(Request $request) {
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'xlsx',
+            'totals',
+            'sales',
+            'Consolidado de items de ventas - totales',
+            $this->consolidatedTotalsCount($request)
+        )) {
+            return $trayResponse;
+        }
 
-        $company = Company::first();
-        $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
+        [$company, $establishment] = $this->consolidatedCompanyAndEstablishment($request);
         $records = $this->totalsByItem($request)->sortBy('item_id');
         $params = $request->all();
         $filename = 'Reporte_Consolidado_Items_Ventas_Totales_'.date('YmdHis');
@@ -336,7 +371,6 @@ class ReportSaleConsolidatedController extends Controller
                 ->establishment($establishment)
                 ->params($params)
                 ->download($filename.'.xlsx');
-
     }
 
 }

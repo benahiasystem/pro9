@@ -103,8 +103,54 @@
                 const tab = window.open('/dispatches/create', '_BLANK');
                 tab.focus();
             },
-            clickDownload( type) {
-                window.open(`/${this.resource}/${type}-totals/?${this.parameters}`, '_blank');
+            async clickDownload(type) {
+                const routes = {
+                    pdf: 'pdf-totals',
+                    ticket: 'ticket-totals',
+                    ticket80: 'ticket80-totals',
+                    excel: 'excel-totals',
+                };
+                const mimeTypes = {
+                    pdf: 'application/pdf',
+                    ticket: 'application/pdf',
+                    ticket80: 'application/pdf',
+                    excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                };
+                const extensions = {
+                    pdf: 'pdf',
+                    ticket: 'pdf',
+                    ticket80: 'pdf',
+                    excel: 'xlsx',
+                };
+
+                try {
+                    const response = await this.$http.get(
+                        `/${this.resource}/${routes[type]}/?${this.parameters}`,
+                        { responseType: 'blob' }
+                    );
+
+                    if (response.data.type === 'application/json') {
+                        const text = await response.data.text();
+                        const data = JSON.parse(text);
+                        this.$message.success(
+                            data.message || 'El reporte se está procesando; revísalo en la bandeja de descargas.'
+                        );
+                        return;
+                    }
+
+                    const blob = new Blob([response.data], { type: mimeTypes[type] || response.data.type });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Reporte_Consolidado_Totales_${Date.now()}.${extensions[type]}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+                } catch (error) {
+                    console.log(error);
+                    this.$message.error('Ocurrió un error al generar el reporte');
+                }
             },
             close() {
                 this.$emit('update:showDialog', false)
