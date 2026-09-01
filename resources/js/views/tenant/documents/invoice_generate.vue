@@ -4265,6 +4265,9 @@ export default {
             showDialogReportCustomer: false,
             report_to_customer_id: null,
             retention_query_data: null,
+            // La retencion se quito por ser operacion sujeta a detraccion, no
+            // porque el usuario la desmarcara. Solo esa se devuelve despues.
+            retention_removed_by_detraction: false,
             // itemDetailId: null,
             // showDialogItemDetail: false,
             showDialogConsignedForm: false,
@@ -5289,6 +5292,7 @@ export default {
             this.total_exchange_points = 0;
 
             this.retention_query_data = null;
+            this.retention_removed_by_detraction = false;
 
             this.$eventHub.$emit("eventInitTip");
         },
@@ -6544,6 +6548,8 @@ export default {
         //     this.detraction_types =  await _.filter(this.all_detraction_types, {'operation_type_id':this.form.operation_type_id})
         // },
         async setDataDetraction() {
+            this.syncRetentionWithDetraction();
+
             if (this.form.operation_type_id === "1001") {
                 this.showDialogDocumentDetraction = true;
 
@@ -6630,6 +6636,70 @@ export default {
             // }
             this.calculatePayments();
             this.calculateFee();
+        },
+        /**
+         * La operacion esta sujeta a detraccion (catalogo 51: 1001 venta sujeta
+         * a detraccion, 1004 servicio de transporte de carga).
+         */
+        hasDetractionOperation() {
+            return ["1001", "1004"].includes(this.form.operation_type_id);
+        },
+        /**
+         * Detraccion y retencion no pueden convivir en el mismo comprobante:
+         * ambas escriben total_pending_payment y se pisan entre si. Con una
+         * operacion sujeta a detraccion se elimina la retencion, si es que
+         * existe. Devuelve si hubo algo que eliminar.
+         */
+        removeRetentionForDetraction() {
+            if (!this.hasDetractionOperation()) return false;
+
+            if (!this.form.has_retention && _.isEmpty(this.form.retention))
+                return false;
+
+            this.retention_removed_by_detraction = true;
+            this.form.has_retention = false;
+            // Con has_retention en false, changeRetention limpia form.retention,
+            // pone total_pending_payment en 0 y recalcula los pagos.
+            this.changeRetention();
+
+            return true;
+        },
+        /**
+         * Al dejar de ser una operacion sujeta a detraccion se devuelve la
+         * retencion que se habia quitado por ese motivo.
+         *
+         * Solo se restaura la que quito removeRetentionForDetraction: si el
+         * usuario la desmarco a mano, la bandera esta en false y se respeta.
+         */
+        restoreRetentionAfterDetraction() {
+            if (!this.retention_removed_by_detraction) return false;
+            if (this.hasDetractionOperation()) return false;
+
+            this.retention_removed_by_detraction = false;
+
+            const customer = _.find(this.customers, {
+                id: this.form.customer_id
+            });
+
+            // Mismas condiciones que aplican la retencion en el flujo normal:
+            // cliente agente de retencion, con RUC, y monto sobre el minimo.
+            if (!customer || !customer.is_agent_retention) return false;
+            if (customer.identity_document_type_id != "6") return false;
+            if (!this.amountRetentionValidate) return false;
+
+            this.form.has_retention = true;
+            this.changeRetention();
+
+            return true;
+        },
+        /**
+         * Mantiene retencion y detraccion en estados excluyentes, en los dos
+         * sentidos.
+         */
+        syncRetentionWithDetraction() {
+            return this.hasDetractionOperation()
+                ? this.removeRetentionForDetraction()
+                : this.restoreRetentionAfterDetraction();
         },
         validateDetraction() {
             if (["1001", "1004"].includes(this.form.operation_type_id)) {
@@ -7336,6 +7406,14 @@ export default {
             if (["1001", "1004"].includes(this.form.operation_type_id))
                 this.changeDetractionType();
 
+            // Antes de validateCustomerRetention: si la operacion es de
+            // detraccion no puede quedar retencion. Al elegir un cliente agente
+            // de retencion se marca has_retention (validateCustomerRetention lo
+            // vuelve a calcular en cada recalculo), asi que hay que limpiarlo
+            // aqui o la retencion reaparece pisando total_pending_payment.
+            // En sentido inverso devuelve la retencion si la operacion dejo de
+            // estar sujeta a detraccion.
+            this.syncRetentionWithDetraction();
 
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
@@ -8264,6 +8342,12 @@ export default {
                     return this.$message.error(val_detraction.message);
                 }
             }
+
+            if (this.removeRetentionForDetraction()) {
+                this.$message.warning(
+                    "Se quito la retencion: la operacion esta sujeta a detraccion"
+                );
+            }
             if (!this.enabled_payments) {
                 this.form.payments = [];
             }
@@ -8988,6 +9072,16 @@ export default {
                     this.$message.error(val_detraction.message);
                     return false;
                 }
+            }
+
+            if (this.removeRetentionForDetraction()) {
+                this.$message.warning(
+                    "Se quito la retencion: la operacion esta sujeta a detraccion"
+                );
+            }
+
+            if (val_detraction.success) {
+                this.form.retention = []; 
             }
 
             if (!this.enabled_payments) {
