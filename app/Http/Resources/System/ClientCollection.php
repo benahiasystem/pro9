@@ -37,6 +37,7 @@ class ClientCollection extends ResourceCollection
                 'token' => $row->token,
                 'number' => $row->number,
                 'plan' => $row->plan->name,
+                'is_nrus' => (bool) $row->is_nrus,
                 'locked' => (bool) $row->locked,
                 'locked_emission' => (bool) $row->locked_emission,
                 'locked_users' => (bool) $row->locked_users,

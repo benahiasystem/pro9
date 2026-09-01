@@ -1079,8 +1079,8 @@ use Illuminate\Support\Facades\Log;
         }
 
         /**
-         * Indica si la empresa fue creada con el giro de negocio NRUS,
-         * en base al plan almacenado en la configuración (module_permissions.business === 6).
+         * Indica si la empresa opera bajo el régimen NRUS, en base al plan
+         * almacenado en la configuración (module_permissions.nrus).
          *
          * @return bool
          */
@@ -1092,9 +1092,18 @@ use Illuminate\Support\Facades\Log;
             }
 
             $module_permissions = $plan->module_permissions;
-            $business = is_array($module_permissions)
-                ? ($module_permissions['business'] ?? null)
-                : ($module_permissions->business ?? null);
+
+            if (is_array($module_permissions)) {
+                $nrus = $module_permissions['nrus'] ?? null;
+                $business = $module_permissions['business'] ?? null;
+            } else {
+                $nrus = $module_permissions->nrus ?? null;
+                $business = $module_permissions->business ?? null;
+            }
+
+            if (!is_null($nrus)) {
+                return filter_var($nrus, FILTER_VALIDATE_BOOLEAN);
+            }
 
             return (int)$business === 6;
         }
