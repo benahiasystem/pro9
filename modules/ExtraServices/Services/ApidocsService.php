@@ -33,7 +33,7 @@ class ApidocsService
     // Constructor para inicializar las propiedades del servicio
     public function __construct()
     {
-        $this->hostname = env('APP_URL_BASE');
+        $this->hostname = config('app.url_base');
         $this->resellerId = $this->getResellerId();
         $this->secret = config('app.url_base');
         $this->baseUrl = $this->getBaseUrl();

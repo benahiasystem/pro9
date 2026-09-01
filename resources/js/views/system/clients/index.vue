@@ -452,7 +452,10 @@
                                     ></el-switch>
                                 </template>
                             </td>
-                            <td v-if="columns.nombre.visible" class="column-name table-cell">{{ row.name }}</td>
+                            <td v-if="columns.nombre.visible" class="column-name table-cell">
+                                {{ row.name }}
+                                <el-tag type="primary" size="mini" class="ms-1" v-if="row.is_nrus">NRUS</el-tag>
+                            </td>
                             <td v-if="columns.ruc.visible">{{ row.number }}</td>
                             <td v-if="columns.plan.visible">{{ row.plan }}</td>
                             <td v-if="columns.correo.visible">{{ row.email }}</td>

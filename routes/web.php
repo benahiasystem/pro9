@@ -773,6 +773,7 @@ if ($hostname) {
             Route::get('pos/search_items', 'Tenant\PosController@search_items');
             Route::get('pos/tables', 'Tenant\PosController@tables');
             Route::get('pos/table/{table}', 'Tenant\PosController@table');
+            Route::get('pos/search_customers', 'Tenant\PosController@search_customers');
             Route::get('pos/payment_tables', 'Tenant\PosController@payment_tables');
             Route::get('pos/payment', 'Tenant\PosController@payment')->name('tenant.pos.payment');
             Route::get('pos/status_configuration', 'Tenant\PosController@status_configuration');

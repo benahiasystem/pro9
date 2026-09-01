@@ -9,7 +9,7 @@
                     show-icon
                     class="mb-3"
                     title="Giro de negocio de solo lectura"
-                    description="NRUS tiene módulos fijos porque depende de las restricciones del régimen (1 sucursal y hasta S/ 8000 de ventas al mes). Sí puedes activarlo o desactivarlo desde el listado.">
+                    description="Este giro de negocio tiene módulos fijos y no se pueden editar. Sí puedes activarlo o desactivarlo desde el listado.">
                 </el-alert>
 
                 <div class="row">

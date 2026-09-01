@@ -47,6 +47,7 @@
                 'apps' => $this->apps,
                 'levels' => $this->levels,
                 'business' => $this->business,
+                'nrus' => (bool)$this->nrus,
                 //'count_doc' => $this->count_doc,
                 // 'max_documents' => (int) $this->plan->limit_documents,
                 //'count_user' => $this->count_user,

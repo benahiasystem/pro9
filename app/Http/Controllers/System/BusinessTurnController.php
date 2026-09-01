@@ -23,7 +23,7 @@ class BusinessTurnController extends Controller
 
     public function records()
     {
-        return BusinessTurn::sorted()->get();
+        return BusinessTurn::selectable()->sorted()->get();
     }
 
     public function record($id)
@@ -100,8 +100,8 @@ class BusinessTurnController extends Controller
     }
 
     /**
-     * Activa o desactiva un giro. Aplica también a los bloqueados (NRUS): sus
-     * módulos son de solo lectura, pero se puede decidir si se ofrece o no en el
+     * Activa o desactiva un giro. Aplica también a los bloqueados: sus módulos
+     * son de solo lectura, pero se puede decidir si se ofrece o no en el
      * formulario de empresa y de plan.
      */
     public function changeActive(Request $request)

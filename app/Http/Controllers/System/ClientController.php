@@ -138,15 +138,16 @@ use Illuminate\Support\Facades\Mail;
         }
 
         /**
-         * Valida que el plan cumpla los límites NRUS cuando business = 6.
+         * Valida que el plan cumpla los límites NRUS cuando el régimen está activo.
+         * NRUS ya no restringe módulos: solo ventas (S/ 8000) y sucursales (1).
          *
          * @param  mixed $plan_id
-         * @param  mixed $business
+         * @param  bool $is_nrus
          * @return string|null
          */
-        private function validateNrusBusinessPlan($plan_id, $business)
+        private function validateNrusPlan($plan_id, $is_nrus)
         {
-            if ((int) $business !== 6) {
+            if (!$is_nrus) {
                 return null;
             }
 
@@ -160,6 +161,41 @@ use Illuminate\Support\Facades\Mail;
             }
 
             return null;
+        }
+
+        /**
+         * Régimen NRUS enviado por el formulario; si no viene, se toma del plan.
+         *
+         * @param  \Illuminate\Http\Request $request
+         * @param  Plan|null $plan
+         * @return bool
+         */
+        private function resolveNrusFlag($request, $plan): bool
+        {
+            if ($request->has('nrus')) {
+                return filter_var($request->input('nrus'), FILTER_VALIDATE_BOOLEAN);
+            }
+
+            return $this->permissionsAreNrus($plan ? $plan->module_permissions : null);
+        }
+
+        /**
+         * Lee el régimen NRUS de un `module_permissions`. Antes NRUS se guardaba
+         * como el giro de negocio 6; ese valor se sigue reconociendo para las
+         * cuentas creadas antes del switch.
+         *
+         * @param  mixed $module_permissions
+         * @return bool
+         */
+        private function permissionsAreNrus($module_permissions): bool
+        {
+            $nrus = data_get($module_permissions, 'nrus');
+
+            if (!is_null($nrus)) {
+                return filter_var($nrus, FILTER_VALIDATE_BOOLEAN);
+            }
+
+            return (int) data_get($module_permissions, 'business') === BusinessTurn::NRUS_ID;
         }
 
         /**
@@ -213,10 +249,14 @@ use Illuminate\Support\Facades\Mail;
                 $row->count_doc_pse = DB::connection('tenant')->table('documents')->where('send_to_pse', true)->count();
                 //dd($row->count_doc_pse);
 
-                $row->count_doc = DB::connection('tenant')
+                $tenant_configuration = DB::connection('tenant')
                     ->table('configurations')
-                    ->first()
-                    ->quantity_documents;
+                    ->first();
+
+                $row->count_doc = $tenant_configuration->quantity_documents;
+                $row->is_nrus = $this->permissionsAreNrus(
+                    data_get(json_decode($tenant_configuration->plan ?? 'null'), 'module_permissions')
+                );
                 $row->soap_type = DB::connection('tenant')
                     ->table('companies')
                     ->first()
@@ -376,23 +416,14 @@ use Illuminate\Support\Facades\Mail;
 
             $client->config_system_env = $config->config_system_env;
             $tenant_plan = json_decode($config->plan);
-            $business = (int) data_get($tenant_plan, 'module_permissions.business', data_get($client->plan->module_permissions, 'business'));
+            $module_permissions = data_get($tenant_plan, 'module_permissions', $client->plan->module_permissions);
 
-            if ($business !== 6) {
-                $nrus_modules = collect([7, 2, 1, 17, 18, 8, 12, 52, 4])->sort()->values();
-                $nrus_apps = collect([11, 14, 5, 53])->sort()->values();
-                $selected_modules = collect($client->modules)->map(fn($id) => (int) $id)->sort()->values();
-                $selected_apps = collect($client->apps)->map(fn($id) => (int) $id)->sort()->values();
+            $business = data_get($module_permissions, 'business');
+            $business = is_null($business) ? null : (int) $business;
 
-                if ($selected_modules->diff($nrus_modules)->isEmpty()
-                    && $nrus_modules->diff($selected_modules)->isEmpty()
-                    && $selected_apps->diff($nrus_apps)->isEmpty()
-                    && $nrus_apps->diff($selected_apps)->isEmpty()) {
-                    $business = 6;
-                }
-            }
-
-            $client->business = $business;
+            // El giro 6 era NRUS; ahora NRUS es un switch y no ocupa un giro.
+            $client->business = ($business === BusinessTurn::NRUS_ID) ? null : $business;
+            $client->nrus = $this->permissionsAreNrus($module_permissions);
 
             $client->smtp_host       = $config->smtp_host;
             $client->smtp_port       = $config->smtp_port;
@@ -562,8 +593,10 @@ use Illuminate\Support\Facades\Mail;
                 }
 
                 $plan = Plan::find($request->plan_id);
-                $selected_business = (int) $request->input('business', data_get($plan->module_permissions ?? [], 'business', 0));
-                $nrus_error = $this->validateNrusBusinessPlan($request->plan_id, $selected_business);
+                $selected_business = $request->input('business', data_get($plan->module_permissions ?? [], 'business'));
+                $selected_business = is_null($selected_business) ? null : (int) $selected_business;
+                $is_nrus = $this->resolveNrusFlag($request, $plan);
+                $nrus_error = $this->validateNrusPlan($request->plan_id, $is_nrus);
                 if ($nrus_error) {
                     return [
                         'success' => false,
@@ -595,10 +628,16 @@ use Illuminate\Support\Facades\Mail;
                 $module_permissions = $plan_for_config['module_permissions'] ?? [];
                 $module_permissions = is_array($module_permissions) ? $module_permissions : (array) $module_permissions;
                 $module_permissions['business'] = $selected_business;
+                $module_permissions['nrus'] = $is_nrus;
                 $plan_for_config['module_permissions'] = $module_permissions;
 
                 $tenancy = app(Environment::class);
                 $tenancy->tenant($client->hostname->website);
+
+                // Se lee antes de sobreescribir el plan para saber si el régimen cambió.
+                $previous_config = DB::connection('tenant')->table('configurations')->where('id', 1)->first();
+                $was_nrus = $this->permissionsAreNrus(data_get(json_decode($previous_config->plan ?? 'null'), 'module_permissions'));
+
                 $clientData = [
                     'plan' => json_encode($plan_for_config),
                     'config_system_env' => $request->config_system_env,
@@ -683,8 +722,10 @@ use Illuminate\Support\Facades\Mail;
                     ->table('module_level_user')
                     ->insert($array_levels);
 
-                if ($selected_business === 6) {
+                if ($is_nrus) {
                     $this->applyNrusTenantConfig();
+                } elseif ($was_nrus) {
+                    $this->revertNrusTenantConfig();
                 }
 
                 // Actualiza el modulo de farmacia.
@@ -760,8 +801,7 @@ use Illuminate\Support\Facades\Mail;
             }
 
             $plan = Plan::find($request->input('plan_id'));
-            $selected_business = (int) $request->input('business', data_get($plan->module_permissions ?? [], 'business', 0));
-            $nrus_error = $this->validateNrusBusinessPlan($request->input('plan_id'), $selected_business);
+            $nrus_error = $this->validateNrusPlan($request->input('plan_id'), $this->resolveNrusFlag($request, $plan));
             if ($nrus_error) {
                 return [
                     'success' => false,
@@ -880,12 +920,14 @@ use Illuminate\Support\Facades\Mail;
                 \Log::info('Company insertada');
 
             $plan = Plan::findOrFail($request->input('plan_id'));
-            $selected_business = (int) $request->input('business', data_get($plan->module_permissions, 'business'));
-            $is_nrus = $selected_business === 6;
+            $selected_business = $request->input('business', data_get($plan->module_permissions, 'business'));
+            $selected_business = is_null($selected_business) ? null : (int) $selected_business;
+            $is_nrus = $this->resolveNrusFlag($request, $plan);
             $plan_for_config = $plan->toArray();
             $module_permissions = $plan_for_config['module_permissions'] ?? [];
             $module_permissions = is_array($module_permissions) ? $module_permissions : (array) $module_permissions;
             $module_permissions['business'] = $selected_business;
+            $module_permissions['nrus'] = $is_nrus;
             $plan_for_config['module_permissions'] = $module_permissions;
 
             $http = config('tenant.force_https') == true ? 'https://' : 'http://';
@@ -1137,6 +1179,20 @@ use Illuminate\Support\Facades\Mail;
 
             DB::connection('tenant')->table('cat_operation_types')->update(['active' => false]);
             DB::connection('tenant')->table('cat_operation_types')->where('id', '0113')->update(['active' => true]);
+        }
+
+        /**
+         * Deshace la configuración NRUS del tenant al desactivar el régimen: vuelve
+         * a la plantilla y al tipo de operación por defecto (venta interna 0101).
+         */
+        private function revertNrusTenantConfig(): void
+        {
+            DB::connection('tenant')->table('establishments')
+                ->where('template_ticket_pdf', 'nrus')
+                ->update(['template_ticket_pdf' => 'default']);
+
+            DB::connection('tenant')->table('cat_operation_types')->update(['active' => false]);
+            DB::connection('tenant')->table('cat_operation_types')->where('id', '0101')->update(['active' => true]);
         }
 
         private function runGuestRegister($from_guest_register, $user_id, $email, $client_id, $payment_order = null)
