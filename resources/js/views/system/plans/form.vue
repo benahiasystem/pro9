@@ -17,7 +17,7 @@
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.test_days}">
                             <label class="control-label">Dias de prueba</label>
-                            <el-input v-model="form.test_days" :disabled="!test_days_enabled"></el-input>
+                            <el-input v-model="form.test_days" :disabled="!form.test_days_enabled"></el-input>
                             <el-checkbox v-model="form.test_days_enabled" @change="setTestDays">Días de prueba</el-checkbox><br>
                             <small class="form-control-feedback d-block" v-if="errors.test_days" v-text="errors.test_days[0]"></small>
                         </div>
@@ -217,7 +217,6 @@
                 resource: 'plans',
                 documents_unlimited:null,
                 users_unlimited:null,
-                test_days_enabled:false,
                 limit_users:null,
                 limit_documents:null,
                 errors: {},
@@ -295,7 +294,6 @@
                 this.limit_documents = null
                 this.documents_unlimited = false
                 this.users_unlimited = false
-                this.test_days_enabled = false
                 this.errors = {}
                 this.errorLDocument = {}
                 this.errorLUser = {}
@@ -304,6 +302,7 @@
                     id: null,
                     name: null,
                     test_days: null,
+                    test_days_enabled: false,
                     pricing: null,
                     is_popular: false,
                     limit_users: null,
@@ -467,10 +466,8 @@
                 this.form.plan_documents = Object.values(data.plan_documents)
                 this.users_unlimited = (data.limit_users == 0) ? true : false
                 this.documents_unlimited = (data.limit_documents == 0) ? true : false
-                this.test_days_enabled = (data.test_days > 0) ? true : false
-                if (this.test_days_enabled) {
-                    this.form.test_days = data.test_days
-                }
+                this.form.test_days_enabled = !!(data.test_days_enabled || data.test_days > 0)
+                this.form.test_days = this.form.test_days_enabled ? data.test_days : null
                 this.limit_users = (this.users_unlimited) ? "∞": data.limit_users
                 this.limit_documents = (this.documents_unlimited) ? "∞":  data.limit_documents
 
@@ -529,7 +526,7 @@
                     this.form.limit_documents = this.limit_documents
                 }
 
-                if(!this.test_days_enabled){
+                if(!this.form.test_days_enabled){
                     this.form.test_days = null
                 }
 
@@ -567,7 +564,7 @@
 
             },
             setTestDays(){
-                if(!this.test_days_enabled){
+                if(!this.form.test_days_enabled){
                     this.form.test_days = null
                 }
             },
