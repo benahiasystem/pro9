@@ -1166,6 +1166,20 @@
                                                 </el-select>
                                                 <small v-if="errors.global_discount_type_id" class="form-control-feedback"
                                                     v-text="errors.global_discount_type_id[0]"></small>
+                                            </div>
+
+                                            <div :class="{ 'has-danger': errors.enable_global_discount }" class="form-group">
+                                                <label class="control-label">
+                                                    Habilitar descuento global
+                                                    <el-tooltip class="item"
+                                                        content="Permite aplicar descuento global en POS, ventas, cotizaciones y servicios técnicos"
+                                                        effect="dark" placement="top-start">
+                                                        <i class="fa fa-info-circle"></i>
+                                                    </el-tooltip>
+                                                </label>
+                                                <el-switch v-model="form.enable_global_discount" @change="submit"></el-switch>
+                                                <small v-if="errors.enable_global_discount" class="form-control-feedback"
+                                                    v-text="errors.enable_global_discount[0]"></small>
                                             
                                                     <!-- <div class="col-md-12 mt-2">
                                                         <div :class="{ 'has-danger': errors.exact_discoutn }"
@@ -3712,6 +3726,7 @@ export default {
                 affectation_igv_type_id: '10',
                 global_igv_handling: true,
                 global_discount_type_id: '02',
+                enable_global_discount: false,
                 terms_condition: null,
                 header_image: null,
                 legend_footer: false,

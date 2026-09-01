@@ -247,6 +247,7 @@ use Illuminate\Support\Facades\Log;
             'print_new_line_to_observation',
             'show_logo_by_establishment',
             'global_discount_type_id',
+            'enable_global_discount',
             'shipping_time_days',
             'public_search_bg_color',
             'public_search_bg_image_path',
@@ -511,6 +512,7 @@ use Illuminate\Support\Facades\Log;
             'enabled_dispatch_ticket_pdf'=>'bool',
             'register_series_invoice_xml'=>'bool',
             'enable_discount_by_customer' => 'boolean',
+            'enable_global_discount' => 'boolean',
             'show_item_discounts_charges_attributes' => 'boolean',
             'show_price_barcode_ticket' => 'boolean',
             'price_selected_add_product'=>'bool',
@@ -816,6 +818,7 @@ use Illuminate\Support\Facades\Log;
                 'customer_filter_by_seller' => $this->customer_filter_by_seller,
                 'validate_purchase_sale_unit_price' => $this->validate_purchase_sale_unit_price,
                 'global_discount_type_id' => $this->global_discount_type_id,
+                'enable_global_discount' => (bool) $this->enable_global_discount,
                 'show_terms_condition_pos' => (bool)$this->show_terms_condition_pos,
                 'mi_tienda_pe' => $this->isMiTiendaPe(),
                 'show_ticket_80' => (bool)$this->show_ticket_80,
@@ -2617,6 +2620,17 @@ use Illuminate\Support\Facades\Log;
         public static function isEnabledLegendForestToXml()
         {
             return Configuration::select('legend_forest_to_xml')->firstOrFail()->legend_forest_to_xml;
+        }
+
+        public static function isGlobalDiscountEnabled(): bool
+        {
+            $configuration = self::select('enable_global_discount')->first();
+
+            if ($configuration) {
+                return (bool) $configuration->enable_global_discount;
+            }
+
+            return (bool) config('tenant.enabled_discount_global');
         }
 
         /**

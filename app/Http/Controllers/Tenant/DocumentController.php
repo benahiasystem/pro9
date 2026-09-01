@@ -434,7 +434,7 @@ class DocumentController extends Controller
             });
         $payment_method_types = $this->table('payment_method_types');
         $business_turns = BusinessTurn::where('active', true)->get();
-        $enabled_discount_global = config('tenant.enabled_discount_global');
+        $enabled_discount_global = Configuration::isGlobalDiscountEnabled();
         $is_client = $this->getIsClient();
         $select_first_document_type_03 = config('tenant.select_first_document_type_03');
         $payment_conditions = PaymentCondition::all();

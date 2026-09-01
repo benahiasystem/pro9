@@ -226,10 +226,10 @@
 
                 <!-- Descuento y propina -->
                 <div class="pos-card-row"
-                     v-if="!disabledDiscountForSeller || enabledTipsPos">
+                     v-if="(!disabledDiscountForSeller && enableGlobalDiscount) || enabledTipsPos">
 
                     <!-- Descuento -->
-                    <section class="pos-card pos-card--compact" v-if="!disabledDiscountForSeller">
+                    <section class="pos-card pos-card--compact" v-if="!disabledDiscountForSeller && enableGlobalDiscount">
                         <div class="pos-card__head">
                             <h5 class="pos-card__title">Descuento</h5>
                             <el-switch v-model="enabled_discount"
@@ -530,6 +530,10 @@ export default {
         disabledDiscountForSeller()
         {
             return this.configuration.restrict_seller_discount && this.typeUser === 'seller';
+        },
+        enableGlobalDiscount()
+        {
+            return !!(this.configuration && this.configuration.enable_global_discount);
         },
         /**
          * El resumen muestra el bloque de retención (importe total + retención).
