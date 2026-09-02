@@ -17,7 +17,7 @@
                     <div class="col-md-3">
                         <div class="form-group" :class="{'has-danger': errors.test_days}">
                             <label class="control-label">Dias de prueba</label>
-                            <el-input v-model="form.test_days" :disabled="!test_days_enabled"></el-input>
+                            <el-input v-model="form.test_days" :disabled="!form.test_days_enabled"></el-input>
                             <el-checkbox v-model="form.test_days_enabled" @change="setTestDays">Días de prueba</el-checkbox><br>
                             <small class="form-control-feedback d-block" v-if="errors.test_days" v-text="errors.test_days[0]"></small>
                         </div>
@@ -61,10 +61,10 @@
                                 <el-input value="∞" disabled></el-input>
                             </template>
                             <template v-else>
-                                <el-input v-model="form.establishments_limit" :disabled="business === 6"></el-input>
+                                <el-input v-model="form.establishments_limit" :disabled="form.nrus"></el-input>
                             </template>
 
-                            <el-checkbox v-model="form.establishments_unlimited" :disabled="business === 6">Ilimitado</el-checkbox><br>
+                            <el-checkbox v-model="form.establishments_unlimited" :disabled="form.nrus">Ilimitado</el-checkbox><br>
 
                             <small class="form-control-feedback d-block" v-if="errors.establishments_limit" v-text="errors.establishments_limit[0]"></small>
                         </div>
@@ -87,10 +87,10 @@
                                 <el-input value="∞" disabled></el-input>
                             </template>
                             <template v-else>
-                                <el-input v-model="form.sales_limit" @input="normalizeNrusSalesLimit" :disabled="business === 6"></el-input>
+                                <el-input v-model="form.sales_limit" @input="normalizeNrusSalesLimit"></el-input>
                             </template>
 
-                            <el-checkbox v-model="form.sales_unlimited" :disabled="business === 6">Ilimitado</el-checkbox><br>
+                            <el-checkbox v-model="form.sales_unlimited" :disabled="form.nrus">Ilimitado</el-checkbox><br>
                             <el-checkbox v-model="form.include_sale_notes_sales_limit">Incluir notas de venta</el-checkbox><br>
 
 
@@ -112,6 +112,25 @@
                             <el-checkbox v-model="form.whatsapp_messages_unlimited">Ilimitado</el-checkbox><br>
 
                             <small class="form-control-feedback d-block" v-if="errors.whatsapp_messages_limit" v-text="errors.whatsapp_messages_limit[0]"></small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="form-group">
+                            <el-switch
+                                v-model="form.nrus"
+                                @change="changeNrus">
+                            </el-switch>
+                            <span class="ms-2">
+                                Régimen NRUS
+                                <el-tooltip
+                                    class="item"
+                                    content="Fija el plan en 1 sucursal y hasta Bs. 8000 de ventas al mes. No limita los módulos."
+                                    effect="dark"
+                                    placement="top">
+                                    <i class="fa fa-info-circle"></i>
+                                </el-tooltip>
+                            </span>
                         </div>
                     </div>
 
@@ -148,13 +167,28 @@
                                     <el-tree
                                         ref="tree"
                                         :check-strictly="true"
-                                        :data="visibleModules"
+                                        :data="modules"
                                         :props="defaultProps"
                                         accordion
                                         highlight-current
                                         node-key="id"
                                         show-checkbox
                                         @check="FixChildren">
+                                        <span class="nrus-tree-node" slot-scope="{ node, data }">
+                                            <span>{{ node.label }}</span>
+                                            <el-tooltip
+                                                v-if="nrusTag(data)"
+                                                :content="nrusTag(data).tooltip"
+                                                effect="dark"
+                                                placement="right">
+                                                <el-tag
+                                                    :type="nrusTag(data).type"
+                                                    size="mini"
+                                                    class="ms-2">
+                                                    {{ nrusTag(data).text }}
+                                                </el-tag>
+                                            </el-tooltip>
+                                        </span>
                                     </el-tree>
                                 </div>
                             </div>
@@ -166,15 +200,39 @@
                                     <el-tree
                                         ref="Apptree"
                                         :check-strictly="true"
-                                        :data="visibleApps"
+                                        :data="apps"
                                         :props="defaultAppsProps"
                                         accordion
                                         highlight-current
                                         node-key="id"
                                         show-checkbox
                                         @check="FixAppChildren">
+                                        <span class="nrus-tree-node" slot-scope="{ node, data }">
+                                            <span>{{ node.label }}</span>
+                                            <el-tooltip
+                                                v-if="nrusTag(data)"
+                                                :content="nrusTag(data).tooltip"
+                                                effect="dark"
+                                                placement="right">
+                                                <el-tag
+                                                    :type="nrusTag(data).type"
+                                                    size="mini"
+                                                    class="ms-2">
+                                                    {{ nrusTag(data).text }}
+                                                </el-tag>
+                                            </el-tooltip>
+                                        </span>
                                     </el-tree>
                                 </div>
+                            </div>
+                            <div v-if="form.nrus && nrusBlockedSelected" class="col-12 mt-2">
+                                <el-alert
+                                    type="warning"
+                                    :closable="false"
+                                    show-icon
+                                    title="Los módulos «No Recomendado» no están probados con NRUS"
+                                    description="Puedes activarlos, pero bajo tu responsabilidad: pueden no funcionar con el régimen.">
+                                </el-alert>
                             </div>
                         </div>
                     </el-collapse-item>
@@ -204,11 +262,18 @@
 
 <style>
 .plan_documents{ display:block ; margin: 15px 0 ;}
+.nrus-tree-node {
+    display: inline-flex;
+    align-items: center;
+}
 </style>
 
 <script>
 
+    import {nrusModules} from '../../../mixins/nrus-modules'
+
     export default {
+        mixins: [nrusModules],
         props: ['showDialog', 'recordId','plan_documents'],
         data() {
             return {
@@ -217,7 +282,6 @@
                 resource: 'plans',
                 documents_unlimited:null,
                 users_unlimited:null,
-                test_days_enabled:false,
                 limit_users:null,
                 limit_documents:null,
                 errors: {},
@@ -227,25 +291,7 @@
                 collapse: 1,
                 business: null,
                 applyingBusinessModules: false,
-                nrusSpec: {
-                    modules: {
-                        7: '*',
-                        2: '*',
-                        1: ['1-1', '1-2', '1-5', '1-8', '1-15', '1-84'],
-                        17: '*',
-                        18: '*',
-                        8: '*',
-                        12: ['12-16'],
-                        52: '*',
-                        4: '*',
-                    },
-                    apps: {
-                        11: '*',
-                        14: '*',
-                        5: '*',
-                        53: '*',
-                    },
-                },
+                nrus_sales_warned: false,
                 modules: [],
                 apps: [],
                 business_turns: [],
@@ -262,18 +308,6 @@
         computed: {
             visibleBusinessTurns() {
                 return this.business_turns.filter(turn => turn.active || turn.id === this.business);
-            },
-            visibleModules() {
-                if (this.business === 6) {
-                    return this.modules.filter(m => this.nrusSpec.modules[m.id] !== undefined);
-                }
-                return this.modules;
-            },
-            visibleApps() {
-                if (this.business === 6) {
-                    return this.apps.filter(m => this.nrusSpec.apps[m.id] !== undefined);
-                }
-                return this.apps;
             }
         },
         created()
@@ -295,15 +329,17 @@
                 this.limit_documents = null
                 this.documents_unlimited = false
                 this.users_unlimited = false
-                this.test_days_enabled = false
                 this.errors = {}
                 this.errorLDocument = {}
                 this.errorLUser = {}
+                this.nrusBlockedSelected = false
+                this.nrus_sales_warned = false
 
                 this.form = {
                     id: null,
                     name: null,
                     test_days: null,
+                    test_days_enabled: false,
                     pricing: null,
                     is_popular: false,
                     limit_users: null,
@@ -320,6 +356,8 @@
 
                     whatsapp_messages_limit : 0,
                     whatsapp_messages_unlimited : true,
+
+                    nrus: false,
 
                     module_permissions: null
                 }
@@ -338,14 +376,32 @@
                         })
                 }
             },
+            permissionsAreNrus(permissions) {
+                if (!permissions) return false;
+                if (permissions.nrus !== undefined && permissions.nrus !== null) return !!permissions.nrus;
+
+                return Number(permissions.business) === 6;
+            },
+            changeNrus() {
+                if (this.form.nrus) this.applyNrusLimits(true);
+                this.refreshNrusBlocked();
+            },
             normalizeNrusSalesLimit() {
-                if (this.business !== 6 || this.form.sales_unlimited) return;
+                if (!this.form.nrus || this.form.sales_unlimited) return;
 
                 const salesLimit = Number(this.form.sales_limit);
-                if (!isNaN(salesLimit) && salesLimit > 8000) {
-                    this.form.sales_limit = 8000;
-                    this.$message.warning('NRUS permite ventas mensuales hasta Bs. 8000.');
+
+                if (isNaN(salesLimit) || salesLimit <= 8000) {
+                    this.nrus_sales_warned = false;
+                    return;
                 }
+
+                this.form.sales_limit = 8000;
+
+                if (this.nrus_sales_warned) return;
+
+                this.nrus_sales_warned = true;
+                this.$message.warning('El límite de ventas mensual para NRUS es Bs. 8000.');
             },
             applyNrusLimits(showMessages = false) {
                 const messages = [];
@@ -382,8 +438,8 @@
                 if(!this.form.sales_unlimited)
                 {
                     if(isNaN(this.form.sales_limit)) return this.getResponseValidations(false, 'Límite de ventas no es un número válido.')
-                    if(this.business === 6) this.applyNrusLimits()
-                    if(this.business === 6 && Number(this.form.sales_limit) > 8000) return this.getResponseValidations(false, 'El límite de ventas mensual para NRUS no puede ser mayor a 8000.')
+                    if(this.form.nrus) this.applyNrusLimits()
+                    if(this.form.nrus && Number(this.form.sales_limit) > 8000) return this.getResponseValidations(false, 'El límite de ventas mensual para NRUS no puede ser mayor a 8000.')
                 }
 
                 if(!this.form.whatsapp_messages_unlimited)
@@ -431,6 +487,7 @@
 
                 this.form.module_permissions = {
                     business: this.business,
+                    nrus: !!this.form.nrus,
                     modules: selModules,
                     apps: selApps,
                     levels: selLevels
@@ -467,18 +524,21 @@
                 this.form.plan_documents = Object.values(data.plan_documents)
                 this.users_unlimited = (data.limit_users == 0) ? true : false
                 this.documents_unlimited = (data.limit_documents == 0) ? true : false
-                this.test_days_enabled = (data.test_days > 0) ? true : false
-                if (this.test_days_enabled) {
-                    this.form.test_days = data.test_days
-                }
+                this.form.test_days_enabled = !!(data.test_days_enabled || data.test_days > 0)
+                this.form.test_days = this.form.test_days_enabled ? data.test_days : null
                 this.limit_users = (this.users_unlimited) ? "∞": data.limit_users
                 this.limit_documents = (this.documents_unlimited) ? "∞":  data.limit_documents
 
                 const preSelecteds = [];
                 const preAppSelecteds = [];
 
+                // `nrus` no es columna del plan: vive dentro de module_permissions,
+                // por eso se agrega al form de forma reactiva.
+                this.$set(this.form, 'nrus', this.permissionsAreNrus(this.form.module_permissions))
+
                 if (this.form.module_permissions) {
-                    this.business = this.form.module_permissions.business;
+                    const permissions = this.form.module_permissions;
+                    this.business = Number(permissions.business) === 6 ? null : permissions.business;
                     const preSelectedsModules = this.form.module_permissions.modules || [];
                     const preSelectedsApps = this.form.module_permissions.apps || [];
                     const preSelectedsLevels = this.form.module_permissions.levels || [];
@@ -513,6 +573,7 @@
                     if(this.$refs.tree) this.$refs.tree.setCheckedKeys(preSelecteds);
                     if(this.$refs.Apptree) this.$refs.Apptree.setCheckedKeys(preAppSelecteds);
                     this.applyingBusinessModules = false;
+                    this.refreshNrusBlocked();
                 }, 500);
             },
             transform(){
@@ -529,7 +590,7 @@
                     this.form.limit_documents = this.limit_documents
                 }
 
-                if(!this.test_days_enabled){
+                if(!this.form.test_days_enabled){
                     this.form.test_days = null
                 }
 
@@ -567,7 +628,7 @@
 
             },
             setTestDays(){
-                if(!this.test_days_enabled){
+                if(!this.form.test_days_enabled){
                     this.form.test_days = null
                 }
             },
@@ -589,6 +650,7 @@
                         }
                     }
                 }
+                this.refreshNrusBlocked()
             },
             FixAppChildren(currentObj, treeStatus) {
                 this.markCustomBusiness()
@@ -604,9 +666,10 @@
                         }
                     }
                 }
+                this.refreshNrusBlocked()
             },
             markCustomBusiness() {
-                if (this.applyingBusinessModules || this.business === 6 || this.business === 0) return;
+                if (this.applyingBusinessModules || this.business === 0) return;
                 this.business = 0;
             },
             FixSameValueToChild(treeList, isSelected, element) {
@@ -632,20 +695,6 @@
                 if (this.business === 0) return;
 
                 this.applyingBusinessModules = true;
-
-                if (this.business === 6) {
-                    this.applyNrusLimits(true);
-
-                    this.$nextTick(() => {
-                        const treeKeys = this.buildNrusKeys(this.modules, this.nrusSpec.modules);
-                        const appKeys = this.buildNrusKeys(this.apps, this.nrusSpec.apps);
-                        if (this.$refs.tree) this.$refs.tree.setCheckedKeys(treeKeys);
-                        if (this.$refs.Apptree) this.$refs.Apptree.setCheckedKeys(appKeys);
-
-                        this.applyingBusinessModules = false;
-                    });
-                    return;
-                }
 
                 const group = {
                     modules: [],
@@ -675,21 +724,8 @@
                     }
 
                     this.applyingBusinessModules = false;
+                    this.refreshNrusBlocked();
                 });
-            },
-            buildNrusKeys(treeData, spec) {
-                const keys = [];
-                treeData.forEach(m => {
-                    const allowed = spec[m.id];
-                    if (allowed === undefined) return;
-                    keys.push(m.id);
-                    (m.childrens || []).forEach(c => {
-                        if (allowed === '*' || allowed.includes(c.id)) {
-                            keys.push(c.id);
-                        }
-                    });
-                });
-                return keys;
             },
             getIds(modules) {
                 const preSelecteds = [];

@@ -167,6 +167,11 @@ class QuotationResource extends JsonResource
             $rowArray['unit_price'] = (float) $row->unit_price;
             $rowArray['unit_value'] = (float) $row->unit_value;
             $rowArray['total'] = (float) $row->total;
+            // Valor ingresado en el form (sin IGV si has_igv=false); evita NaN al reeditar.
+            $itemHasIgv = !isset($item->has_igv) || (bool) $item->has_igv;
+            $rowArray['input_unit_price_value'] = $itemHasIgv
+                ? (float) $row->unit_price
+                : (float) $row->unit_value;
             $rowArray['warehouse_id'] = $row->warehouse_id ?: $warehouse_id;
 
             if (empty($rowArray['affectation_igv_type']) && ! empty($rowArray['affectation_igv_type_id'])) {

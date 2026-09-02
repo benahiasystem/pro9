@@ -1020,6 +1020,19 @@ export default {
                 }
 
                 row.item = rawItem
+                // Asegura precio editable al abrir el modal de ítem
+                if (
+                    row.input_unit_price_value === undefined
+                    || row.input_unit_price_value === null
+                    || row.input_unit_price_value === ''
+                    || isNaN(Number(row.input_unit_price_value))
+                ) {
+                    const hasIgv = rawItem.has_igv !== false
+                    const fromQuotation = hasIgv ? row.unit_price : row.unit_value
+                    row.input_unit_price_value = Number(
+                        fromQuotation || row.unit_price || rawItem.unit_price || 0
+                    )
+                }
                 row.discounts = row.discounts
                     ? (Array.isArray(row.discounts) ? row.discounts : Object.values(row.discounts))
                     : []

@@ -58,7 +58,8 @@ class DatabaseSeeder extends Seeder
             'sales_limit' => 8000,
             'sales_unlimited' => false,
             'module_permissions' => [
-                'business' => 6,
+                'business' => null,
+                'nrus' => true,
                 'modules' => [7, 2, 1, 17, 18, 8, 12, 52, 4],
                 'apps' => [11, 14, 5, 53],
                 'levels' => [1, 2, 5, 8, 15, 84, 16],

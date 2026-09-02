@@ -226,7 +226,7 @@ class QuotationController extends Controller
         $payment_method_types = PaymentMethodType::orderBy('id', 'desc')->get();
         $payment_destinations = $this->getPaymentDestinations();
         $configuration = Configuration::select('destination_sale')->first();
-        $enabled_discount_global = config('tenant.enabled_discount_global');
+        $enabled_discount_global = Configuration::isGlobalDiscountEnabled();
         $global_discount_types = ChargeDiscountType::whereIn('id', ['02', '03'])->whereActive()->get();
         /*
         carlomagno83/facturadorpro4#233

@@ -17,6 +17,7 @@
     use Modules\Report\Exports\GuidesConsolidatedExport;
     use Modules\Report\Exports\GuidesConsolidatedTotalExport;
     use Modules\Report\Traits\ReportTrait;
+    use Modules\Report\Traits\ConsolidatedReportTrayTrait;
 
 
     /**
@@ -27,6 +28,7 @@
      */
     class ReportGuideController extends Controller {
         use ReportTrait;
+        use ConsolidatedReportTrayTrait;
 
         protected $configuration;
 
@@ -202,6 +204,17 @@
          */
         public function pdf(Request $request) {
 
+            if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+                $request,
+                'pdf',
+                'detail',
+                'guides',
+                'Consolidado de items de guias',
+                $this->getRecordsDispachesItem($request->all())->count()
+            )) {
+                return $trayResponse;
+            }
+
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
@@ -240,6 +253,17 @@
          * @return mixed
          */
         public function pdfTotals(Request $request) {
+
+            if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+                $request,
+                'pdf',
+                'totals',
+                'guides',
+                'Consolidado de items de guias - totales',
+                $this->getRecordsDispachesItem($request->all())->count()
+            )) {
+                return $trayResponse;
+            }
 
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
@@ -289,6 +313,17 @@
          */
         public function excel(Request $request) {
 
+            if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+                $request,
+                'xlsx',
+                'detail',
+                'guides',
+                'Consolidado de items de guias',
+                $this->getRecordsDispachesItem($request->all())->count()
+            )) {
+                return $trayResponse;
+            }
+
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
@@ -313,6 +348,17 @@
          * @return \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\BinaryFileResponse
          */
         public function excelTotals(Request $request) {
+
+            if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+                $request,
+                'xlsx',
+                'totals',
+                'guides',
+                'Consolidado de items de guias - totales',
+                $this->getRecordsDispachesItem($request->all())->count()
+            )) {
+                return $trayResponse;
+            }
 
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)

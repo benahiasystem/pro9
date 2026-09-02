@@ -1,4 +1,3 @@
-<!-- ######## INICIO MIGRACIÓN MONEDA VENEZUELA ######## -->
 <template>
     <div class="row-mx-0">
         <div class="page-header pe-0">
@@ -234,13 +233,11 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Mostrar cantidad unificada al agregar un mismo producto
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Al agregar un mismo producto más de una vez, se unificará en una sola línea sumando las cantidades - Disponible para Factura y Notas de venta"
+                                                    content="Al agregar un mismo producto más de una vez, se unificará en una sola línea sumando las cantidades - Disponible para Factura, Boleta y Notas de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.show_unify_amount_items }" class="form-group">
                                                 <el-switch v-model="form.show_unify_amount_items"
@@ -270,13 +267,11 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Agregar descripción al producto
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Cotización, Notas de venta y Guías de remisión."
+                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Boleta, Cotización, Notas de venta y Guías de remisión."
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
 
                                             <div :class="{ 'has-danger': errors.add_description_to_document_item }"
@@ -342,13 +337,11 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Habilitar opción "Ver" detalles y características completas del producto
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para Factura, Cotización y Notas de venta (Productos agregados y Buscar/Agregar productos)"
+                                                    content="Disponible para Factura, Boleta, Cotización y Notas de venta (Productos agregados y Buscar/Agregar productos)"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
 
                                             <div :class="{ 'has-danger': errors.show_all_item_details }" class="form-group">
@@ -362,13 +355,11 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Mostrar detalle de Conjuntos/Packs/Promociones
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Descripción de los productos individuales del pack. Disponible para Factura, Cotización y Notas de venta."
+                                                    content="Descripción de los productos individuales del pack. Disponible para Factura, Boleta, Cotización y Notas de venta."
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
 
                                             <div :class="{ 'has-danger': errors.show_item_description_pack }" class="form-group">
@@ -382,14 +373,12 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Habilitar consignados
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para factura y nota de venta"
+                                                    content="Disponible para boleta, factura y nota de venta"
                                                     effect="dark"
                                                     placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.enable_consigned }" class="form-group">
                                                 <el-switch v-model="form.enable_consigned"
@@ -490,13 +479,11 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Visualizar precio de productos en GRE Remitente
-                                                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                                                 <el-tooltip class="item"
-                                                    content="Muestra el precio y total de un producto al generar una guía de despacho del remitente"
+                                                    content="Muestra el precio y total de un producto al generar una guía de remisión remitente"
                                                     effect="dark" placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.enabled_price_items_dispatch }" class="form-group">
                                                 <el-switch v-model="form.enabled_price_items_dispatch" @change="submit"></el-switch>
@@ -508,14 +495,12 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Habilitar peso por producto en guias
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para factura y nota de venta"
+                                                    content="Disponible para boleta, factura y nota de venta"
                                                     effect="dark"
                                                     placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.enable_weight_in_dispatches }" class="form-group">
                                                 <el-switch v-model="form.enable_weight_in_dispatches"
@@ -581,13 +566,11 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Buscar/Agregar productos en formulario principal (Venta rápida)
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para Factura, Cotización y Notas de venta"
+                                                    content="Disponible para Factura, Boleta, Cotización y Notas de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.search_items_main_form }" class="form-group">
                                                 <el-switch v-model="form.search_items_main_form"
@@ -922,9 +905,7 @@
 
                                         <div v-if="!form.global_igv_handling" class="col-12">
                                             <label class="control-label">Impuesto incluido en registro de productos
-                                                <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                                <el-tooltip class="item" content="Se asignará automáticamente la opción 'Incluye IVA' al registrar un producto" effect="dark"
-                                                <!-- ######### FIN CAMBIO IGV A IVA -->
+                                                <el-tooltip class="item" content="Se asignará automáticamente la opción 'Incluye IGV' al registrar un producto" effect="dark"
                                                     placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -953,9 +934,32 @@
                                             </div>
                                         </div>
 
-                                        <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                                        <!-- Las opciones de redondeo y umbral de detracción no se exponen. -->
-                                        <!-- ######### FIN SIN DETRACCIONES E ISC -->
+                                        <div class="col-12">
+                                            <label class="control-label">Redondear monto de detracción a valor entero
+                                                <el-tooltip class="item" content="Disponible Nuevo CPE (Facturas/Boletas)"
+                                                    effect="dark" placement="top-start">
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </label>
+                                            <div :class="{ 'has-danger': errors.detraction_amount_rounded_int }" class="form-group">
+                                                <el-switch v-model="form.detraction_amount_rounded_int"
+                                                            @change="submit"></el-switch>
+                                                <small v-if="errors.detraction_amount_rounded_int" class="form-control-feedback"
+                                                    v-text="errors.detraction_amount_rounded_int[0]"></small>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="control-label">Habilitar venta con detracción para montos inferiores a 700</label>
+                                            <div :class="{ 'has-danger': errors.available_detraction_for_amount_minor}"
+                                                    class="form-group">
+                                                <el-switch v-model="form.available_detraction_for_amount_minor"
+                                                               @change="submit"></el-switch>
+                                                <small v-if="errors.available_detraction_for_amount_minor"
+                                                        class="form-control-feedback"
+                                                        v-text="errors.available_detraction_for_amount_minor[0]"></small>
+                                            </div>
+                                        </div>
                                         <div class="col-12">
                                             <label class="control-label">Habilitar fondo de garantia para detracción o retención</label>
                                             <div :class="{ 'has-danger': errors.enabled_guarantee_fund}"
@@ -1152,9 +1156,7 @@
                                                             Si la venta tiene op. gravadas utilice el descuento que afecta a la base
                                                             imponible del IGV/IVAP.<br />
                                                             Si la venta no tiene op. gravadas utilice el descuento que no afecta a
-                                                            <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                                            la base imponible del IVA.<br />
-                                                            <!-- ######### FIN CAMBIO IGV A IVA -->
+                                                            la base imponible del IGV/IVAP.<br />
                                                         </div>
                                                     </el-tooltip>
                                                 </label>
@@ -1164,13 +1166,27 @@
                                                 </el-select>
                                                 <small v-if="errors.global_discount_type_id" class="form-control-feedback"
                                                     v-text="errors.global_discount_type_id[0]"></small>
+                                            </div>
+
+                                            <div :class="{ 'has-danger': errors.enable_global_discount }" class="form-group">
+                                                <label class="control-label">
+                                                    Habilitar descuento global
+                                                    <el-tooltip class="item"
+                                                        content="Permite aplicar descuento global en POS, ventas, cotizaciones y servicios técnicos"
+                                                        effect="dark" placement="top-start">
+                                                        <i class="fa fa-info-circle"></i>
+                                                    </el-tooltip>
+                                                </label>
+                                                <el-switch v-model="form.enable_global_discount" @change="submit"></el-switch>
+                                                <small v-if="errors.enable_global_discount" class="form-control-feedback"
+                                                    v-text="errors.enable_global_discount[0]"></small>
 
                                                     <!-- <div class="col-md-12 mt-2">
                                                         <div :class="{ 'has-danger': errors.exact_discoutn }"
                                                         class="form-group" v-if="validateDiscountAffectBase">
                                                         <label class="control-label"> Ajustar descuento automaticamente
                                                             <el-tooltip class="item"
-                                                            content="Recalcula el monto del descuento para que el comprobante refleje el descuento de forma adecuada. Si indicas Bs.5.00 como descuento, el sistema lo ajustará a Bs.4.24 en la base imponible."
+                                                            content="Recalcula el monto del descuento para que el comprobante refleje el descuento de forma adecuada. Si indicas Bs. 5.00 como descuento, el sistema lo ajustará en la base imponible."
                                                             effect="dark" placement="top-start">
                                                             <i class="fa fa-info-circle"></i>
                                                         </el-tooltip>
@@ -1246,13 +1262,11 @@
                                     <div class="row mx-0 adv-conf-container">
                                         <div class="col-12">
                                             <label class="control-label">Nombre producto PDF para XML
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Registra el campo nombre producto pdf en el XML - Disponible Nuevo CPE (Facturas)"
+                                                    content="Registra el campo nombre producto pdf en el XML - Disponible Nuevo CPE (Facturas/Boletas)"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.name_product_pdf_to_xml }" class="form-group">
                                                 <el-switch v-model="form.name_product_pdf_to_xml"
@@ -1264,13 +1278,11 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Agregar leyenda al XML (Amazonía)
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Registra la leyenda 2001 en el XML - Disponible Nuevo CPE (Facturas)"
+                                                    content="Registra la leyenda 2001 en el XML - Disponible Nuevo CPE (Facturas/Boletas)"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
 
                                             <div :class="{ 'has-danger': errors.legend_forest_to_xml }" class="form-group">
@@ -1288,12 +1300,8 @@
                                                         - Registra las series vendidas como información adicional a nivel de
                                                         item.<br>
                                                         - Usa el atributo con código 5019 - Serie/Chasis del catálogo 55 - Código de
-                                                        <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                        identificación del concepto tributario. <br>
-                                                        <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                                        <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                                                        - Disponible para Facturas. <br>
-                                                        <!-- ######### FIN CAMBIO QUITAR BOLETA -->
+                                                        identificación del concepto tributario de Sunat. <br>
+                                                        - Disponible para Facturas y Boletas. <br>
                                                     </div>
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -1309,13 +1317,11 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Modificar valores en previsualización del documento
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Cantidad, precios, totales - Disponible para Factura, Cotización y Notas de venta"
+                                                    content="Cantidad, precios, totales - Disponible para Factura, Boleta, Cotización y Notas de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.change_values_preview_document }" class="form-group">
                                                 <el-switch v-model="form.change_values_preview_document"
@@ -1500,14 +1506,8 @@
                                                     <label class="control-label ms-2">Manejo de IGV
                                                         <el-tooltip class="item" effect="dark" placement="top-start">
                                                             <div slot="content">
-                                                                <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                                                <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                                                <strong>Activado (global):</strong> todos los productos se registran con IVA incluido. El checkbox "Incluye IVA" se oculta del formulario de productos.<br />
-                                                                <!-- ######### FIN CAMBIO IGV A IVA -->
-                                                                <!-- ######### FIN CAMBIO IGV A IVA -->
-                                                                <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                                                <strong>Desactivado (individual):</strong> el checkbox "Incluye IVA" se muestra y se configura por producto.
-                                                                <!-- ######### FIN CAMBIO IGV A IVA -->
+                                                                <strong>Activado (global):</strong> todos los productos se registran con IGV incluido. El checkbox "Incluye Igv" se oculta del formulario de productos.<br />
+                                                                <strong>Desactivado (individual):</strong> el checkbox "Incluye Igv" se muestra y se configura por producto.
                                                             </div>
                                                             <i class="fa fa-info-circle"></i>
                                                         </el-tooltip>
@@ -1515,16 +1515,10 @@
                                                 </div>
                                                 <div>
                                                     <span v-if="form.global_igv_handling" class="text-muted small">
-                                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                                        Todos los productos se registrarán con IVA incluido. El checkbox "Incluye IVA" no aparecerá en el formulario.
-                                                        <!-- ######### FIN CAMBIO IGV A IVA -->
-                                                        <!-- ######### FIN CAMBIO IGV A IVA -->
+                                                        Todos los productos se registrarán con IGV incluido. El checkbox "Incluye IGV" no aparecerá en el formulario.
                                                     </span>
                                                     <span v-else class="text-muted small">
-                                                        <!-- ########## INICIO CAMBIO IGV A IVA -->
-                                                        El checkbox "Incluye IVA" se mostrará en el formulario y podrás configurarlo producto por producto.
-                                                        <!-- ######### FIN CAMBIO IGV A IVA -->
+                                                        El checkbox "Incluye IGV" se mostrará en el formulario y podrás configurarlo producto por producto.
                                                     </span>
                                                 </div>
                                             </div>
@@ -1564,11 +1558,9 @@
                                         <div class="col-12">
                                             <label class="control-label">Mostrar ticket 58mm
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                                                    <div slot="content">Disponible para Ventas (Facturas/Notas de
+                                                    <div slot="content">Disponible para Ventas (Facturas/Boletas/Notas de
                                                         Crédito-Débito)
                                                     </div>
-                                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
@@ -1585,11 +1577,9 @@
                                         <div class="col-12">
                                             <label class="control-label">Mostrar ticket 80mm
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                                                    <div slot="content">Disponible para Ventas (Facturas/Notas de
+                                                    <div slot="content">Disponible para Ventas (Facturas/Boletas/Notas de
                                                         Crédito-Débito)
                                                     </div>
-                                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
@@ -1624,13 +1614,11 @@
                                     <div class="row mx-0 adv-conf-container">
                                         <div class="inputs-column">
                                             <label class="control-label">Imágen para encabezado - pdf
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para facturas en formato A4, usando la plantilla header_image_full_width"
+                                                    content="Disponible para facturas y boletas en formato a4, usando la plantilla header_image_full_width"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div class="form-group flex-column">
                                                 <el-input v-model="form.header_image" :readonly="true">
@@ -1702,9 +1690,7 @@
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
                                                     <div slot="content">Leyenda: Bienes transferidos y/o servicios prestados
                                                         en la Amazonía para ser consumidos en la misma<br />Disponible
-                                                        <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                                                        para facturas, notas y cotizaciones
-                                                        <!-- ######### FIN CAMBIO QUITAR BOLETA -->
+                                                        para facturas, boletas, notas y cotizaciones
                                                     </div>
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -1721,13 +1707,11 @@
                                             <a class="text-center font-weight-bold text-info" href="#"
                                                 @click.prevent="showDialogLegendFooterSales = true">[+ Leyenda footer - Ventas]
                                             </a>
-                                            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                             <el-tooltip class="item"
-                                                        content="Disponible para factura"
+                                                        content="Disponible para boleta y factura"
                                                         effect="dark" placement="top-start">
                                                         <i class="ms-2 fa fa-info-circle text-info"></i>
                                             </el-tooltip>
-                                            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                         </div>
                                     </div>
                                 </div>
@@ -1753,13 +1737,11 @@
                                                 @click.prevent="showDialogTermsConditionSales = true">[+ Términos y condiciones -
                                                 Ventas]
                                             </a>
-                                            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                             <el-tooltip class="item"
-                                                content="Disponible para factura"
+                                                content="Disponible para boleta y factura"
                                                 effect="dark" placement="top-start">
                                                 <i class="ms-2 fa fa-info-circle text-info"></i>
                                             </el-tooltip>
-                                            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                         </div>
 
                                         <div class="inputs-column">
@@ -1767,24 +1749,20 @@
                                                 @click.prevent="showDialogTermsCondition = true">[+ Términos y condiciones -
                                                 Cotización]
                                             </a>
-                                            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                             <el-tooltip class="item"
-                                                content="Disponible para factura"
+                                                content="Disponible para boleta y factura"
                                                 effect="dark" placement="top-start">
                                                 <i class="ms-2 fa fa-info-circle text-info"></i>
                                             </el-tooltip>
-                                            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                         </div>
 
                                         <div class="col-12">
                                             <label class="control-label">Afectacion de terminos y condiciones - ventas en todos los
                                                 comprobantes
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                                                    <div slot="content">Leyenda: facturas, notas de ventas y guías de
+                                                    <div slot="content">Leyenda: facturas, boletas, notas de ventas, guias de
                                                         remision
                                                     </div>
-                                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
@@ -1879,13 +1857,11 @@
                                         <div class="col-12">
                                             <label class="control-label">Mostrar el nombre del PDF
 
-                                                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                                                 <el-tooltip class="item"
-                                                    content="Muestra el nombre del producto que se ingresa en el pdf, en vez del nombre del producto. Disponible para CPE, Cotización, Guía de despacho, Compra y Nota de venta"
+                                                    content="Muestra el nombre del producto que se ingresa en el pdf, en vez del nombre del producto. Disponible para CPE, Cotización, Guía de Remisión, Compra y Nota de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.show_pdf_name }" class="form-group">
                                                 <el-switch v-model="form.show_pdf_name"
@@ -1928,12 +1904,10 @@
                                             <label class="control-label">
                                                 Usar la descripcion como nombre del producto PDF
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                     <div slot="content">
-                                                        En factura, cotización y nota de venta, se usará la descripción
+                                                        En factura/boleta, cotizacion y nota de venta, se usará la descripcion
                                                         como nombre del producto PDF por defecto.
                                                     </div>
-                                                    <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
                                             </label>
@@ -1949,13 +1923,11 @@
 
                                         <div class="col-12">
                                             <label class="control-label">Modificar cantidad de decimales
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                                                 <el-tooltip class="item"
-                                                    content="Disponible para el precio unitario de Facturas en formato A4/A5, usando la plantilla pdf Default"
+                                                    content="Disponible para el precio unitario de Facturas/Boletas en formato A4/A5, usando la plantilla pdf Default"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.change_decimal_quantity_unit_price_pdf }"
                                                 class="form-group">
@@ -2157,6 +2129,7 @@
                                             <div :class="{ 'has-danger': errors.default_document_type_03 || errors.default_document_type_80 }" class="form-group mb-0 text-right" style="width: 200px;">
                                                 <el-select v-model="selectedDefaultDocument" class="w-100">
                                                     <el-option label="Factura" value="01"></el-option>
+                                                    <el-option label="Boleta" value="03"></el-option>
                                                     <el-option label="Nota de venta" value="80"></el-option>
                                                 </el-select>
                                                 <small v-if="errors.default_document_type_03" class="form-control-feedback"
@@ -2808,9 +2781,7 @@
                                         </div>
                                         <div>
                                             <span class="text-muted">
-                                                <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                                                Reglas para el envío automático de facturas y notas relacionadas.
-                                                <!-- ######### FIN CAMBIO QUITAR BOLETA -->
+                                                Reglas para el envío automático de boletas, facturas y notas relacionadas.
                                             </span>
                                         </div>
                                     </div>
@@ -2825,9 +2796,7 @@
                                         </div>
 
                                         <div class="col-12">
-                                            <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                                            <label class="control-label">Envío de guía de despacho automático</label>
-                                            <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
+                                            <label class="control-label">Envío de guía de remisión automático</label>
                                             <div :class="{ 'has-danger': errors.auto_send_dispatchs_to_sunat }" class="form-group">
                                                 <el-switch v-model="form.auto_send_dispatchs_to_sunat" @change="submit"></el-switch>
                                                 <small v-if="errors.auto_send_dispatchs_to_sunat" class="form-control-feedback"
@@ -2836,9 +2805,7 @@
                                         </div>
 
                                         <div v-if="typeUser != 'integrator'" class="col-12">
-                                            <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
-                                            <label class="control-label">Enviar facturas y notas asociadas (Crédito y Débito) de forma individual</label>
-                                            <!-- ######### FIN CAMBIO QUITAR BOLETA -->
+                                            <label class="control-label">Enviar boletas y notas asociadas (Crédito y Débito) de forma individual</label>
                                             <div :class="{ 'has-danger': errors.ticket_single_shipment }" class="form-group">
                                                 <el-switch v-model="form.ticket_single_shipment" @change="submit"></el-switch>
                                                 <small v-if="errors.ticket_single_shipment" class="form-control-feedback"
@@ -2855,9 +2822,7 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="fw-semibold m-0 d-flex align-items-center gap-2">
                                                 <span class="dot"></span>
-                                                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                                                <span class="text-primary text-uppercase">Guías de despacho</span>
-                                                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
+                                                <span class="text-primary text-uppercase">Guías de Remisión</span>
                                             </h5>
                                         </div>
                                         <div>
@@ -2900,13 +2865,11 @@
                                         <div class="col-12">
                                             <label class="control-label">
                                                 Visualizar precio de productos en GRE Remitente
-                                                <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
                                                 <el-tooltip class="item"
-                                                    content="Muestra el precio y total de un producto al generar una guía de despacho del remitente"
+                                                    content="Muestra el precio y total de un producto al generar una guía de remisión remitente"
                                                     effect="dark" placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
-                                                <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                                             </label>
                                             <div :class="{ 'has-danger': errors.enabled_price_items_dispatch }" class="form-group">
                                                 <el-switch v-model="form.enabled_price_items_dispatch" @change="submit"></el-switch>
@@ -3189,8 +3152,8 @@
                                                     <div slot="content">
                                                         <strong>Disponible en Nuevo cpe y POS</strong><br /><br />
                                                         El monto de venta equivale a X N° de puntos<br /><br />
-                                                        Ejemplo: Si tiene configurado como monto Bs.1, y este es equivalente a 1 punto,
-                                                        al realizar una venta por Bs.100 a cliente X, este acumularía 100 puntos.<br />
+                                                        Ejemplo: Si tiene configurado como monto Bs. 1, y este es equivalente a 1 punto,
+                                                        al realizar una venta por Bs. 100 a cliente X, este acumularía 100 puntos.<br />
                                                     </div>
                                                 </el-tooltip>
                                             </label>
@@ -3496,16 +3459,13 @@ export default {
         },
         selectedDefaultDocument: {
             get() {
-                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                if (this.form.default_document_type_03) return '03';
                 if (this.form.default_document_type_80) return '80';
-                return '01';
-                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
+                return '80';
             },
             set(value) {
-                // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-                this.form.default_document_type_03 = false;
+                this.form.default_document_type_03 = value === '03';
                 this.form.default_document_type_80 = value === '80';
-                // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
                 this.submit();
             }
         }
@@ -3766,6 +3726,7 @@ export default {
                 affectation_igv_type_id: '10',
                 global_igv_handling: true,
                 global_discount_type_id: '02',
+                enable_global_discount: false,
                 terms_condition: null,
                 header_image: null,
                 legend_footer: false,
@@ -4091,5 +4052,3 @@ export default {
     }
 }
 </script>
-
-<!-- ######## FIN MIGRACIÓN MONEDA VENEZUELA ######## -->

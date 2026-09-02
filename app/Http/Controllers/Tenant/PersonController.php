@@ -119,17 +119,43 @@ class PersonController extends Controller
             }
         }
 
-
         // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
-        // Restricción para direcciones secundarias de Venezuela.
+        // Conserva las excepciones de domicilio de main, con la jerarquía venezolana.
         $addresses = $request->input('addresses') ?: [];
-        foreach ($addresses as $index => $row) {
-            if (isset($row['country_id']) && $row['country_id'] === 'VE') {
+        $requires_address = !$this->hasOptionalAddress(
+            $request->input('identity_document_type_id'),
+            $request->input('number')
+        );
 
+        if ($requires_address) {
+
+            if ($this->resolveMainAddressText($request->input('address'), $addresses) === '') {
+                return [
+                    'success' => false,
+                    'message' => 'Falta registrar la dirección principal'
+                ];
+            }
+
+            $main_location_id = $this->normalizeLocationId($request->input('location_id'));
+
+            if (!$this->isCompleteLocationId($main_location_id)) {
+                $main_location_id = $this->resolveMainAddressLocationId($addresses);
+            }
+
+            if ($request->input('country_id') === 'VE' && !$this->isCompleteLocationId($main_location_id)) {
+                return [
+                    'success' => false,
+                    'message' => 'Falta registrar Estado / Municipio / Parroquia en la dirección principal'
+                ];
+            }
+        }
+
+        // Restricción para direcciones secundarias de Venezuela.
+        foreach (($requires_address ? $addresses : []) as $index => $row) {
+            if (isset($row['country_id']) && $row['country_id'] === 'VE') {
                 if (empty($row['location_id']) || !is_array($row['location_id']) || count($row['location_id']) !== 3 ||
                     !isset($row['location_id'][0]) || !isset($row['location_id'][1]) || !isset($row['location_id'][2]) ||
                     empty($row['location_id'][0]) || empty($row['location_id'][1]) || empty($row['location_id'][2])) {
-
                     return [
                         'success' => false,
                         'message' => 'Falta registrar Estado / Municipio / Parroquia en la dirección secundaria #' . ($index + 1)
@@ -144,9 +170,9 @@ class PersonController extends Controller
         unset($data['optional_email'], $data['id']);
         $person->fill($data);
 
-        // El ubigeo de la persona sale de location_id, pero desde que los inputs de
-        // "Direccion principal" quedaron ocultos ese campo depende del espejo del front
-        // y puede llegar vacio. En ese caso se toma el de la direccion principal para
+        // La jerarquía de la persona sale de location_id, pero desde que los inputs de
+        // dirección principal quedaron ocultos ese campo depende del espejo del front
+        // y puede llegar vacío. En ese caso se toma el de la dirección principal para
         // no dejar en null department_id / province_id / district_id.
         $location_id = $this->normalizeLocationId($request->input('location_id'));
 
@@ -154,23 +180,6 @@ class PersonController extends Controller
             $location_id = $this->resolveMainAddressLocationId($request->input('addresses'));
         }
 
-        // TEMPORAL - diagnostico ubigeo persona. Quitar cuando se confirme la causa.
-        \Illuminate\Support\Facades\Log::info('[ubigeo-persona] store', [
-            'person_id'          => $request->input('id'),
-            'country_id'         => $request->input('country_id'),
-            'location_id_request'=> $request->input('location_id'),
-            'location_id_final'  => $location_id,
-            'addresses'          => collect($request->input('addresses') ?: [])->map(function ($row) {
-                return is_array($row) ? [
-                    'id'            => $row['id'] ?? null,
-                    'main'          => $row['main'] ?? null,
-                    'location_id'   => $row['location_id'] ?? null,
-                    'department_id' => $row['department_id'] ?? null,
-                ] : $row;
-            })->all(),
-        ]);
-
-        // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
         if ($request->input('country_id') === 'VE' && $this->isCompleteLocationId($location_id)) {
             $person->district_id = $location_id[2];
             $person->province_id = $location_id[1];
@@ -208,7 +217,6 @@ class PersonController extends Controller
 
             $person->addresses()->create($payload);
         }
-        // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 
         $optional_email = $request->optional_email;
         if (!empty($optional_email)) {
@@ -254,6 +262,61 @@ class PersonController extends Controller
     private function isCompleteLocationId($locationId): bool
     {
         return is_array($locationId) && count($locationId) === 3;
+    }
+
+    /**
+     * Personas a las que no se les exige domicilio: DNI y RUC de persona natural
+     * (10xxxxxxxxx).
+     *
+     * @param  mixed  $identityDocumentTypeId
+     * @param  mixed  $number
+     * @return bool
+     */
+    private function hasOptionalAddress($identityDocumentTypeId, $number): bool
+    {
+        $identityDocumentTypeId = (string) $identityDocumentTypeId;
+
+        if ($identityDocumentTypeId === '1') {
+            return true;
+        }
+
+        return $identityDocumentTypeId === '6'
+            && strpos(trim((string) $number), '10') === 0;
+    }
+
+    /**
+     * Texto de la direccion principal: se toma la columna de la persona y, si llega
+     * vacia, la fila main del payload de direcciones.
+     *
+     * @param  mixed  $address
+     * @param  mixed  $addresses
+     * @return string
+     */
+    private function resolveMainAddressText($address, $addresses): string
+    {
+        $address = trim((string) $address);
+        if ($address !== '') {
+            return $address;
+        }
+
+        $rows = array_values(array_filter(is_array($addresses) ? $addresses : [], 'is_array'));
+        if (empty($rows)) {
+            return '';
+        }
+
+        $main = null;
+        foreach ($rows as $row) {
+            if (!empty($row['main'])) {
+                $main = $row;
+                break;
+            }
+        }
+
+        if ($main === null) {
+            $main = $rows[0];
+        }
+
+        return trim((string) ($main['address'] ?? ''));
     }
 
     /**

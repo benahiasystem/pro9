@@ -23,7 +23,7 @@
                         </el-option>
                     </el-select>
                 </div>
-                <div class="col-3">
+                <div class="col-3" v-if="enableGlobalDiscount">
                     <el-switch v-model="enabled_discount"
                                         active-text="Descuento"
                                         class="control-label font-weight-semibold m-0 text-center m-b-0"
@@ -324,6 +324,11 @@ export default {
     },
     mounted() {
         // console.log(this.currencyTypeActive)
+    },
+    computed: {
+        enableGlobalDiscount() {
+            return !!(this.configuration && this.configuration.enable_global_discount);
+        },
     },
     methods: {
         handleFn113() {

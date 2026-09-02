@@ -37,6 +37,7 @@ if($hostname) {
 
             Route::get('items/{item}/variations', 'ItemVariationController@records')->where('item', '[0-9]+');
             Route::post('items/{item}/variations/bulk', 'ItemVariationController@bulk')->where('item', '[0-9]+');
+            Route::post('items/{item}/variations/{variation}/image', 'ItemVariationController@updateImage')->where(['item' => '[0-9]+', 'variation' => '[0-9]+']);
 
 
 

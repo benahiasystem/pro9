@@ -180,7 +180,7 @@
                         <div class="row mb-3 section-header section-header-first">
                             <div class="col-12">
                                 <h5 class="section-title">Dirección principal</h5>
-                                <p class="section-subtitle">Datos de ubicación, país, ubigeo y dirección de contacto</p>
+                                <p class="section-subtitle">Datos de ubicación, país, Estado / Municipio / Parroquia y dirección de contacto</p>
                             </div>
                         </div>
 
@@ -215,7 +215,7 @@
                                 <div :class="{'has-danger': errors.location_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Ubigeo
+                                        Estado / Municipio / Parroquia
                                         <span v-if="form.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="form.location_id"
@@ -231,7 +231,7 @@
                                         Campo obligatorio
                                     </small>
                                     <small v-if="form.country_id !== 'VE'" class="text-muted">
-                                        Ubigeo solo disponible para Perú
+                                        Estado / Municipio / Parroquia solo disponible para Venezuela
                                     </small>
                                 </div>
                             </div>
@@ -457,7 +457,7 @@
                                 <div :class="{'has-danger': errors.location_id}"
                                      class="form-group">
                                     <label class="control-label">
-                                        Ubigeo
+                                        Estado / Municipio / Parroquia
                                         <span v-if="row.country_id === 'VE'" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="row.location_id"
@@ -473,7 +473,7 @@
                                         Campo obligatorio
                                     </small>
                                     <small v-else class="text-muted">
-                                        Ubigeo solo disponible para Perú
+                                        Estado / Municipio / Parroquia solo disponible para Venezuela
                                     </small>
                                 </div>
                             </div>
@@ -1215,6 +1215,15 @@ export default {
             if (this.hasAddressValue(rowValue)) return rowValue
             return this.hasAddressValue(formValue) ? formValue : null
         },
+        isPersonWithOptionalAddress() {
+            // DNI: persona natural sin RUC.
+            if (this.form.identity_document_type_id === '1') return true
+
+            // RUC 10xxxxxxxxx: tambien es persona natural, no se le exige domicilio.
+            const number = (this.form.number || '').toString().trim()
+
+            return this.form.identity_document_type_id === '6' && number.startsWith('10')
+        },
         isEmptyAddressRow(row) {
             if (!row) return true
             // Una fila ya guardada no se descarta: quitarla del envio la borraria en el backend.
@@ -1452,10 +1461,29 @@ export default {
             // La direccion principal se registra tambien dentro de addresses.
             this.upsertMainAddress()
 
+            // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
+            // La dirección principal exige la jerarquía venezolana cuando corresponde.
+            const requires_address = !this.isPersonWithOptionalAddress();
+
+            if (requires_address) {
+                if (!this.hasAddressValue(this.form.address)) {
+                    return this.$message.error('Falta registrar la dirección principal');
+                }
+
+                const main_location_id = this.form.location_id || [];
+
+                if (
+                    this.form.country_id === 'VE'
+                    && (main_location_id.length !== 3 || !main_location_id.every(value => value))
+                ) {
+                    return this.$message.error('Falta registrar Estado / Municipio / Parroquia en la Dirección principal');
+                }
+            }
+
             let hasErrorInAdditionalAddresses = false;
             let addressWithError = null;
 
-            if (this.form.addresses && this.form.addresses.length > 0) {
+            if (requires_address && this.form.addresses && this.form.addresses.length > 0) {
                 for (let i = 0; i < this.form.addresses.length; i++) {
                     const address = this.form.addresses[i];
                     // Una fila sin ningun dato no se guarda, asi que tampoco se valida.
@@ -1479,8 +1507,9 @@ export default {
                 const label = addressWithError === 0
                     ? 'la Dirección principal'
                     : `la Dirección secundaria #${addressWithError}`;
-                return this.$message.error(`Falta registrar el ubigeo en ${label}`);
+                return this.$message.error(`Falta registrar Estado / Municipio / Parroquia en ${label}`);
             }
+            // ######## FIN CAMBIO GEOPOLITICO VENEZUELA
 
             // if(this.form.location_id.length===3 && this.form.identity_document_type_id === '6'){
             //     if(!this.form.address){

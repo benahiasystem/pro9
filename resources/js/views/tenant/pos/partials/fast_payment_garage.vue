@@ -22,7 +22,7 @@
             <!-- Botones de acción (arriba del monto) -->
             <div class="fp-action-row px-3 pt-2 pb-1 d-flex" style="gap:8px">
                 <button
-                    v-if="!disabledDiscountForSeller"
+                    v-if="!disabledDiscountForSeller && enableGlobalDiscount"
                     class="fp-action-btn flex-grow-1"
                     :class="{'fp-action-btn--on': enabled_discount}"
                     @click="userTouchedDiscount = true; toggleDiscount()"
@@ -409,6 +409,10 @@ export default {
         disabledDiscountForSeller()
         {
             return this.configuration.restrict_seller_discount && this.typeUser === 'seller';
+        },
+        enableGlobalDiscount()
+        {
+            return !!(this.configuration && this.configuration.enable_global_discount);
         }
     },
     methods: {

@@ -1761,7 +1761,9 @@ export default {
 
                 if (this.isOpenFromInvoice) {
                     this.form.attributes = this.recordItem.attributes;
-                    this.form.discounts = this.recordItem.discounts;
+                    this.form.discounts = this.prepareDiscountsForEdit(
+                        this.recordItem.discounts
+                    );
                     this.form.charges = this.recordItem.charges;
                 }
 
@@ -1862,6 +1864,40 @@ export default {
                     .catch(error => {})
                     .then(() => {});
             }
+        },
+        /**
+         * El calculo guarda en `amount` el monto NETO de los descuentos que
+         * afectan la base imponible (monto tecleado / 1.18). El input del modal
+         * es ese mismo campo y al guardar se vuelve a leer como monto CON IGV,
+         * asi que hay que devolverlo a bruto al abrir. Sin esto el descuento se
+         * divide entre el IGV en cada edicion y se va achicando solo.
+         *
+         * Se trabaja sobre copias: mientras el modal esta abierto la fila
+         * original no se toca, y si se cancela no queda a medio editar.
+         */
+        prepareDiscountsForEdit(discounts) {
+            const list = discounts ? Object.values(discounts) : [];
+            const igv_factor = 1 + this.percentageIgv;
+
+            return list.map(discount => {
+                const row = Object.assign({}, discount);
+
+                const affects_base = row.discount_type
+                    ? !!row.discount_type.base
+                    : row.discount_type_id === "00";
+
+                // Solo con monto fijo: si es porcentaje, el input es
+                // row.percentage y amount se recalcula al guardar.
+                if (affects_base && row.is_amount) {
+                    const net = row.amount_without_rounded
+                        ? parseFloat(row.amount_without_rounded)
+                        : parseFloat(row.amount);
+
+                    row.amount = _.round(net * igv_factor, 2);
+                }
+
+                return row;
+            });
         },
         clickAddDiscount() {
             this.form.discounts.push({

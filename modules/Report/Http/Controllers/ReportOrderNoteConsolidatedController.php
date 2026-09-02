@@ -12,12 +12,14 @@ use Carbon\Carbon;
 use Modules\Report\Exports\OrderNoteConsolidatedTotalExport;
 use Modules\Report\Http\Resources\OrderNoteConsolidatedCollection;
 use Modules\Report\Traits\ReportTrait;
+use Modules\Report\Traits\ConsolidatedReportTrayTrait;
 use Modules\Order\Models\OrderNoteItem;
 
 
 class ReportOrderNoteConsolidatedController extends Controller
 {
     use ReportTrait;
+    use ConsolidatedReportTrayTrait;
 
     public function filter() {
 
@@ -92,6 +94,17 @@ class ReportOrderNoteConsolidatedController extends Controller
 
     public function pdf(Request $request) {
 
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'pdf',
+            'detail',
+            'order_notes',
+            'Consolidado de items de pedidos',
+            $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)->count()
+        )) {
+            return $trayResponse;
+        }
+
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id) : auth()->user()->establishment;
         $records = $this->getRecordsOrderNotes($request->all(), OrderNoteItem::class)->get()->sortBy(function($row){return $row->order_note->user->name;});
@@ -140,6 +153,17 @@ class ReportOrderNoteConsolidatedController extends Controller
      */
     public function pdfTotals(Request $request) {
 
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'pdf',
+            'totals',
+            'order_notes',
+            'Consolidado de items de pedidos - totales',
+            $this->totalsByItem($request)->count()
+        )) {
+            return $trayResponse;
+        }
+
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
             : auth()->user()->establishment;
@@ -159,6 +183,17 @@ class ReportOrderNoteConsolidatedController extends Controller
      * @return \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function excelTotals(Request $request) {
+
+        if ($trayResponse = $this->dispatchConsolidatedReportToTray(
+            $request,
+            'xlsx',
+            'totals',
+            'order_notes',
+            'Consolidado de items de pedidos - totales',
+            $this->totalsByItem($request)->count()
+        )) {
+            return $trayResponse;
+        }
 
         $company = Company::first();
         $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)

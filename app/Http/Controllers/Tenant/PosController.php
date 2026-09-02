@@ -37,6 +37,17 @@ class PosController extends Controller
 
     use FinanceTrait;
 
+    /**
+     * Cuántos clientes devuelve como máximo la búsqueda del selector del POS.
+     */
+    const CUSTOMER_SEARCH_LIMIT = 30;
+
+    /**
+     * Cuántos clientes viajan al abrir el POS para que el selector no arranque
+     * vacío. Es solo la primera pantalla del desplegable: el resto se busca.
+     */
+    const CUSTOMER_SEED_LIMIT = 50;
+
     public function index()
     {
         $cash = Cash::where([['user_id', auth()->user()->id], ['state', true]])->first();
@@ -173,7 +184,7 @@ class PosController extends Controller
         $establishment = Establishment::where('id', auth()->user()->establishment_id)->first();
         $currency_types = CurrencyType::whereActive()->get();
 
-        $customers = $this->table('customers');
+        $customers = $this->seedCustomers($establishment);
         $user = User::findOrFail(auth()->user()->id);
 
         $items = $this->table('items');
@@ -216,31 +227,102 @@ class PosController extends Controller
 
     }
 
+    /**
+     * Formato que espera el selector de clientes del POS (resources/js/views/tenant/pos).
+     */
+    private function transformCustomers($customers)
+    {
+        return $customers->transform(function ($row) {
+            return [
+                'id' => $row->id,
+                'description' => $row->number . ' - ' . $row->name,
+                'name' => $row->name,
+                'number' => $row->number,
+                'identity_document_type_id' => $row->identity_document_type_id,
+                'identity_document_type_code' => optional($row->identity_document_type)->code,
+                'has_discount' => $row->has_discount,
+                'is_agent_retention' => $row->is_agent_retention,
+                'discount_type' => $row->discount_type,
+                'discount_amount' => $row->discount_amount,
+                'email' => $row->email,
+                'plates' => $row->plates->transform(function ($plate) {
+                    return [
+                        'id' => $plate->id,
+                        'value' => $plate->value,
+                    ];
+                }),
+            ];
+        });
+    }
+
+    /**
+     * Semilla del selector de clientes al abrir el POS.
+     *
+     * Antes se enviaba la cartera completa: con miles de clientes el <el-select>
+     * (que no virtualiza) montaba decenas de miles de nodos y cada medición del
+     * marquee forzaba un reflow por opción. Ahora viajan los primeros
+     * CUSTOMER_SEED_LIMIT por nombre —para que el desplegable no arranque
+     * vacío— más el cliente por defecto; el resto se busca con search_customers.
+     */
+    private function seedCustomers($establishment)
+    {
+        $customers = Person::whereType('customers')->whereIsEnabled()
+            ->with(['plates', 'identity_document_type'])
+            ->orderBy('name')->take(self::CUSTOMER_SEED_LIMIT)->get();
+
+        // El cliente por defecto del establecimiento tiene que estar sí o sí,
+        // aunque alfabéticamente no entre en el tope.
+        $customer_id = $establishment ? $establishment->customer_id : null;
+
+        if ($customer_id && !$customers->contains('id', $customer_id)) {
+            $default = Person::whereType('customers')->whereIsEnabled()
+                ->with(['plates', 'identity_document_type'])
+                ->where('id', $customer_id)->first();
+
+            if ($default) $customers->prepend($default);
+        }
+
+        return $this->transformCustomers($customers);
+    }
+
+    /**
+     * Búsqueda remota del selector de clientes del POS.
+     *
+     * Acepta `input` (nombre o número de documento) o `id` para rehidratar un
+     * cliente concreto (por ejemplo el recién creado desde el modal).
+     */
+    public function search_customers(Request $request)
+    {
+        $id = $request->input('id');
+        $input = trim((string) $request->input('input', ''));
+
+        $query = Person::whereType('customers')->whereIsEnabled();
+
+        if ($id) {
+            $query->whereIn('id', (array) $id);
+        } elseif ($input !== '') {
+            $query->where(function ($q) use ($input) {
+                $q->where('name', 'like', "%{$input}%")
+                    ->orWhere('number', 'like', "%{$input}%");
+            });
+        } else {
+            return ['data' => $this->seedCustomers(
+                Establishment::where('id', auth()->user()->establishment_id)->first()
+            )];
+        }
+
+        $customers = $query->with(['plates', 'identity_document_type'])
+            ->orderBy('name')->take(self::CUSTOMER_SEARCH_LIMIT)->get();
+
+        return ['data' => $this->transformCustomers($customers)];
+    }
+
     public function table($table)
     {
         if ($table === 'customers') {
-            $customers = Person::whereType('customers')->whereIsEnabled()->orderBy('name')->get()->transform(function ($row) {
-                return [
-                    'id' => $row->id,
-                    'description' => $row->number . ' - ' . $row->name,
-                    'name' => $row->name,
-                    'number' => $row->number,
-                    'identity_document_type_id' => $row->identity_document_type_id,
-                    'identity_document_type_code' => $row->identity_document_type->code,
-                    'has_discount' => $row->has_discount,
-                    'is_agent_retention' => $row->is_agent_retention,
-                    'discount_type' => $row->discount_type,
-                    'discount_amount' => $row->discount_amount,
-                    'email' => $row->email,
-                    'plates' => $row->plates->transform(function ($plate) {
-                        return [
-                            'id' => $plate->id,
-                            'value' => $plate->value,
-                        ];
-                    }),
-                ];
-            });
-            return $customers;
+            return $this->transformCustomers(
+                Person::whereType('customers')->whereIsEnabled()->orderBy('name')->get()
+            );
         }
 
         if ($table === 'items') {

@@ -1660,8 +1660,55 @@
                                         </td> -->
 
                                         <td class="text-end">
-                                            {{ currency_type.symbol }}
-                                            {{ setTextDiscountItem(row) }}
+                                            <div
+                                                v-if="showEditableItems"
+                                                class="input-with-currency"
+                                            >
+                                                <span class="currency-symbol">{{
+                                                    currency_type.symbol
+                                                }}</span>
+                                                <div
+                                                    @keydown.enter="
+                                                        handleEnterKey($event)
+                                                    "
+                                                >
+                                                    <el-input-number
+                                                        :value="
+                                                            rowDiscountValue(row)
+                                                        "
+                                                        :min="0"
+                                                        :precision="2"
+                                                        class="input-custom"
+                                                        :controls="false"
+                                                        style="min-width: 98px !important"
+                                                        :disabled="
+                                                            isRowDiscountLocked(
+                                                                row
+                                                            ) ||
+                                                                !hasPermissionEditItemPrices(
+                                                                    authUser.permission_edit_item_prices
+                                                                )
+                                                        "
+                                                        @change="
+                                                            value =>
+                                                                applyItemDiscount(
+                                                                    index,
+                                                                    value
+                                                                )
+                                                        "
+                                                        @focus="
+                                                            valueInputSelect(
+                                                                $event
+                                                            )
+                                                        "
+                                                    >
+                                                    </el-input-number>
+                                                </div>
+                                            </div>
+                                            <template v-else>
+                                                {{ currency_type.symbol }}
+                                                {{ setTextDiscountItem(row) }}
+                                            </template>
                                         </td>
                                         <td class="text-end">
                                             <div
@@ -4254,6 +4301,9 @@ export default {
             showDialogReportCustomer: false,
             report_to_customer_id: null,
             retention_query_data: null,
+            // La retencion se quito por ser operacion sujeta a detraccion, no
+            // porque el usuario la desmarcara. Solo esa se devuelve despues.
+            retention_removed_by_detraction: false,
             // itemDetailId: null,
             // showDialogItemDetail: false,
             showDialogConsignedForm: false,
@@ -5275,6 +5325,7 @@ export default {
             this.total_exchange_points = 0;
 
             this.retention_query_data = null;
+            this.retention_removed_by_detraction = false;
 
             this.$eventHub.$emit("eventInitTip");
         },
@@ -6534,6 +6585,8 @@ export default {
         //     this.detraction_types =  await _.filter(this.all_detraction_types, {'operation_type_id':this.form.operation_type_id})
         // },
         async setDataDetraction() {
+            this.syncRetentionWithDetraction();
+
             if (this.form.operation_type_id === "1001") {
                 this.showDialogDocumentDetraction = true;
 
@@ -6620,6 +6673,70 @@ export default {
             // }
             this.calculatePayments();
             this.calculateFee();
+        },
+        /**
+         * La operacion esta sujeta a detraccion (catalogo 51: 1001 venta sujeta
+         * a detraccion, 1004 servicio de transporte de carga).
+         */
+        hasDetractionOperation() {
+            return ["1001", "1004"].includes(this.form.operation_type_id);
+        },
+        /**
+         * Detraccion y retencion no pueden convivir en el mismo comprobante:
+         * ambas escriben total_pending_payment y se pisan entre si. Con una
+         * operacion sujeta a detraccion se elimina la retencion, si es que
+         * existe. Devuelve si hubo algo que eliminar.
+         */
+        removeRetentionForDetraction() {
+            if (!this.hasDetractionOperation()) return false;
+
+            if (!this.form.has_retention && _.isEmpty(this.form.retention))
+                return false;
+
+            this.retention_removed_by_detraction = true;
+            this.form.has_retention = false;
+            // Con has_retention en false, changeRetention limpia form.retention,
+            // pone total_pending_payment en 0 y recalcula los pagos.
+            this.changeRetention();
+
+            return true;
+        },
+        /**
+         * Al dejar de ser una operacion sujeta a detraccion se devuelve la
+         * retencion que se habia quitado por ese motivo.
+         *
+         * Solo se restaura la que quito removeRetentionForDetraction: si el
+         * usuario la desmarco a mano, la bandera esta en false y se respeta.
+         */
+        restoreRetentionAfterDetraction() {
+            if (!this.retention_removed_by_detraction) return false;
+            if (this.hasDetractionOperation()) return false;
+
+            this.retention_removed_by_detraction = false;
+
+            const customer = _.find(this.customers, {
+                id: this.form.customer_id
+            });
+
+            // Mismas condiciones que aplican la retencion en el flujo normal:
+            // cliente agente de retencion, con RUC, y monto sobre el minimo.
+            if (!customer || !customer.is_agent_retention) return false;
+            if (customer.identity_document_type_id != "6") return false;
+            if (!this.amountRetentionValidate) return false;
+
+            this.form.has_retention = true;
+            this.changeRetention();
+
+            return true;
+        },
+        /**
+         * Mantiene retencion y detraccion en estados excluyentes, en los dos
+         * sentidos.
+         */
+        syncRetentionWithDetraction() {
+            return this.hasDetractionOperation()
+                ? this.removeRetentionForDetraction()
+                : this.restoreRetentionAfterDetraction();
         },
         validateDetraction() {
             if (["1001", "1004"].includes(this.form.operation_type_id)) {
@@ -7326,6 +7443,14 @@ export default {
             if (["1001", "1004"].includes(this.form.operation_type_id))
                 this.changeDetractionType();
 
+            // Antes de validateCustomerRetention: si la operacion es de
+            // detraccion no puede quedar retencion. Al elegir un cliente agente
+            // de retencion se marca has_retention (validateCustomerRetention lo
+            // vuelve a calcular en cada recalculo), asi que hay que limpiarlo
+            // aqui o la retencion reaparece pisando total_pending_payment.
+            // En sentido inverso devuelve la retencion si la operacion dejo de
+            // estar sujeta a detraccion.
+            this.syncRetentionWithDetraction();
 
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
@@ -7718,6 +7843,231 @@ export default {
                 "36", // Inafecta - Retiro por Publicidad
                 "40"  // Exportacion
             ].includes(item.affectation_igv_type_id);
+        },
+        /**
+         * Valor de la linea sobre el que se calcula un descuento.
+         */
+        itemValueForDiscount(item) {
+            return item.total_value_without_rounding
+                ? parseFloat(item.total_value_without_rounding)
+                : parseFloat(item.total_value);
+        },
+        /**
+         * Descuento vigente de una linea en las mismas unidades que muestra la
+         * fila DESCUENTOS TOTALES: los que afectan la base imponible se guardan
+         * netos y se muestran con IGV; el resto ya esta en su valor final.
+         */
+        itemDiscountDisplayAmount(item, predicate) {
+            if (!item.discounts || item.discounts.length === 0) return 0;
+
+            const igv_factor = 1 + this.percentage_igv;
+            let total = 0;
+
+            item.discounts.forEach(discount => {
+                if (predicate && !predicate(discount)) return;
+
+                if (!this.isBaseDiscount(discount)) {
+                    total += parseFloat(discount.amount);
+                    return;
+                }
+
+                const base_amount = discount.amount_without_rounded
+                    ? discount.amount_without_rounded
+                    : discount.amount;
+
+                total += parseFloat(base_amount) * igv_factor;
+            });
+
+            return total;
+        },
+        /**
+         * Un descuento afecta la base imponible segun el flag `base` de su tipo
+         * (cat_charge_discount_types: "00" true, "01" false). Ese es el flag que
+         * usan item.vue y setTextDiscountItem, no el id. Si el tipo no viene
+         * cargado se cae al id del catalogo 53.
+         */
+        isBaseDiscount(discount) {
+            if (discount.discount_type) return !!discount.discount_type.base;
+
+            return discount.discount_type_id === "00";
+        },
+        /**
+         * Reparte `target` entre los descuentos propios de UNA linea: los escala
+         * a todos por el mismo factor, o crea uno si la linea no tenia ninguno.
+         *
+         * El prorrateo del descuento global queda intacto: no entra en la suma
+         * ni se escala, porque lo regenera calculateTotal en cada recalculo.
+         */
+        spreadItemDiscount(item, target) {
+            item.discounts = item.discounts || [];
+
+            const current = this.itemDiscountDisplayAmount(
+                item,
+                d => !d.from_global_distribution
+            );
+
+            if (current > 0) {
+                if (target <= 0) {
+                    item.discounts = item.discounts.filter(
+                        d => d.from_global_distribution
+                    );
+                    return;
+                }
+
+                const factor = target / current;
+
+                item.discounts.forEach(discount => {
+                    if (discount.from_global_distribution) return;
+
+                    // Los que afectan la base llevan el neto en
+                    // amount_without_rounded; el resto solo tiene amount, que ya
+                    // es el valor final.
+                    const base_amount =
+                        this.isBaseDiscount(discount) &&
+                        discount.amount_without_rounded
+                            ? parseFloat(discount.amount_without_rounded)
+                            : parseFloat(discount.amount);
+
+                    discount.amount_without_rounded = base_amount * factor;
+                    discount.amount = _.round(base_amount * factor, 2);
+                    discount.is_amount = true;
+                    // Mantiene a calculateRowItem en la rama que lee amount
+                    // y no percentage (getAmountFromInputDiscount).
+                    discount.use_input_amount = true;
+                });
+
+                return;
+            }
+
+            if (target <= 0) return;
+
+            const value = this.itemValueForDiscount(item);
+            if (value <= 0) return;
+
+            const discount_type = _.find(this.discount_types, { id: "00" });
+
+            // Si afecta la base imponible, lo tecleado viene con IGV y en la
+            // linea se guarda neto, igual que hace item.vue. Si no la afecta, el
+            // monto ya es el final y se guarda tal cual.
+            const amount =
+                !discount_type || discount_type.base
+                    ? target / (1 + this.percentage_igv)
+                    : target;
+
+            item.discounts.push({
+                discount_type_id: "00",
+                discount_type: discount_type,
+                description: "Descuento",
+                percentage: 0,
+                factor: 0,
+                amount: _.round(amount, 2),
+                amount_without_rounded: amount,
+                base: _.round(value, 2),
+                is_amount: true,
+                use_input_amount: true
+            });
+        },
+        /**
+         * Recalcula solo las lineas cuyos descuentos cambiaron.
+         */
+        recalculateDiscountedItems(indexes) {
+            indexes.forEach(index => {
+                const item = this.form.items[index];
+                if (!item) return;
+
+                const row = calculateRowItem(
+                    item,
+                    this.form.currency_type_id,
+                    this.form.exchange_rate_sale,
+                    this.percentage_igv
+                );
+
+                // Object.assign conserva los campos propios de la fila que
+                // calculateRowItem no reconstruye (has_isc, indexi, lotes...).
+                this.form.items.splice(index, 1, Object.assign({}, item, row));
+            });
+        },
+        /**
+         * hasRowAdvancedOption bloquea la fila cuando ya tiene descuentos, asi
+         * que en la celda de descuento dejaria el input inutilizable apenas se
+         * pone el primero. Aqui solo bloquean cargos e ISC, que si tienen
+         * calculo propio y no se llevan con el escalado de descuentos.
+         */
+        isRowDiscountLocked(row) {
+            const has_charges =
+                row.charges &&
+                Array.isArray(row.charges) &&
+                row.charges.length > 0;
+
+            return !!(has_charges || (row.item && row.item.has_isc));
+        },
+        /**
+         * Descuento vigente de una fila, redondeado, para pintar el input.
+         */
+        rowDiscountValue(row) {
+            return _.round(this.itemDiscountDisplayAmount(row), 2);
+        },
+        /**
+         * Edicion del descuento de una fila de la tabla de items.
+         *
+         * Lo tecleado es el descuento total de esa linea. La parte que viene del
+         * prorrateo del descuento global no se toca: solo se ajusta la parte
+         * propia del item, escalando los descuentos que ya tenga o creando uno.
+         */
+        applyItemDiscount(index, value) {
+            let target = parseFloat(value);
+            if (isNaN(target) || target < 0) target = 0;
+
+            let item = this.form.items[index];
+            if (!item) return;
+
+            const global_amount = this.itemDiscountDisplayAmount(
+                item,
+                d => d.from_global_distribution
+            );
+
+            let item_target = _.round(target - global_amount, 2);
+
+            if (item_target < 0) {
+                item_target = 0;
+                this.$message.warning(
+                    `${this.currency_type.symbol} ${_.round(
+                        global_amount,
+                        2
+                    )} son del descuento global prorrateado y no se editan desde aqui`
+                );
+            }
+
+            // Tope: el valor de la linea antes de sus descuentos propios
+            const max_discount = _.round(
+                this.itemValueForDiscount(item) * (1 + this.percentage_igv) +
+                    this.itemDiscountDisplayAmount(
+                        item,
+                        d => !d.from_global_distribution
+                    ),
+                2
+            );
+
+            if (item_target > max_discount) {
+                item_target = max_discount;
+                this.$message.warning(
+                    `El descuento no puede superar ${this.currency_type.symbol} ${max_discount}`
+                );
+            }
+
+            // El prorrateo global se regenera en cada calculateTotal a partir de
+            // total_global_discount. Hay que limpiarlo antes de recalcular la
+            // linea: si quedara el snapshot, restaurarlo pisaria el cambio.
+            this.clearGlobalDistributionDiscounts();
+
+            // clearGlobalDistributionDiscounts puede reemplazar la fila
+            item = this.form.items[index];
+            if (!item) return;
+
+            this.spreadItemDiscount(item, item_target);
+
+            this.recalculateDiscountedItems([index]);
+            this.calculateTotal();
         },
         discountGlobalItems(ctx) {
              let total_discounts_item = 0;
@@ -8259,6 +8609,12 @@ export default {
                 if (!val_detraction.success){
                     return this.$message.error(val_detraction.message);
                 }
+            }
+
+            if (this.removeRetentionForDetraction()) {
+                this.$message.warning(
+                    "Se quito la retencion: la operacion esta sujeta a detraccion"
+                );
             }
             if (!this.enabled_payments) {
                 this.form.payments = [];
@@ -8984,6 +9340,16 @@ export default {
                     this.$message.error(val_detraction.message);
                     return false;
                 }
+            }
+
+            if (this.removeRetentionForDetraction()) {
+                this.$message.warning(
+                    "Se quito la retencion: la operacion esta sujeta a detraccion"
+                );
+            }
+
+            if (val_detraction.success) {
+                this.form.retention = [];
             }
 
             if (!this.enabled_payments) {

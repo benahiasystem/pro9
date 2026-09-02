@@ -119,27 +119,53 @@ class ItemVariationService
     }
 
     /**
+     * Reemplaza la imagen de una variación ya registrada.
+     *
+     * @param Item $variation
+     * @param array $row con image (nombre original) y temp_path
+     * @return bool false si el temp_path enviado no es válido
+     */
+    public function updateImage(Item $variation, array $row)
+    {
+        if (!$this->applyRowImage($variation, $row)) {
+            return false;
+        }
+
+        $variation->save();
+
+        CacheHelper::forget(['item_detail'], "item_detail_{$variation->id}");
+
+        if ($variation->parent_item_id) {
+            CacheHelper::forget(['item_detail'], "item_detail_{$variation->parent_item_id}");
+        }
+
+        CacheHelper::flush(['items_list']);
+
+        return true;
+    }
+
+    /**
      * Guarda la imagen subida para una combinación (original, medium y small),
      * igual que el alta individual de items. Sin temp_path la variación conserva
      * la imagen heredada del producto principal.
      *
      * @param Item $item variación aún sin guardar, ya con internal_id asignado
      * @param array $row fila enviada desde el formulario
-     * @return void
+     * @return bool true si la imagen se procesó
      */
     private function applyRowImage(Item $item, array $row)
     {
         $temp_path = isset($row['temp_path']) ? $row['temp_path'] : null;
 
         if (!$temp_path) {
-            return;
+            return false;
         }
 
         $real_path = realpath($temp_path);
         $temp_dir = realpath(sys_get_temp_dir());
 
         if (!$real_path || !$temp_dir || strpos($real_path, $temp_dir) !== 0) {
-            return;
+            return false;
         }
 
         $directory = 'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'items'.DIRECTORY_SEPARATOR;
@@ -178,5 +204,7 @@ class ItemVariationService
         $file_name = $prefix_name.'-'.$datenow.'_small.'.$extension;
         Storage::put($directory.$file_name, (string) $image->encode('jpg', 20));
         $item->image_small = $file_name;
+
+        return true;
     }
 }

@@ -7,6 +7,7 @@ use Exception;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Modules\Item\Http\Requests\ItemVariationBulkRequest;
+use Modules\Item\Http\Requests\ItemVariationImageRequest;
 use Modules\Item\Services\ItemVariationService;
 
 class ItemVariationController extends Controller
@@ -24,7 +25,7 @@ class ItemVariationController extends Controller
             ->get();
 
         return [
-            'data' => $variations->map(function (Item $row) {
+            'data' => $variations->map(function (Item $row) use ($parent) {
                 return [
                     'id' => $row->id,
                     'description' => $row->description,
@@ -36,9 +37,48 @@ class ItemVariationController extends Controller
                     'variation_label' => $row->variation_label,
                     'variation_attributes' => $row->getVariationAttributesData(),
                     'variable_value_ids' => $row->variationValues->pluck('product_variable_value_id'),
+                    'image_url' => $row->image ? $row->getImageUrl() : null,
+                    'has_own_image' => (bool) ($row->image && $row->image !== $parent->image),
                 ];
             }),
         ];
+    }
+
+    /**
+     * Reemplaza la imagen de una variación ya registrada.
+     */
+    public function updateImage(ItemVariationImageRequest $request, $item_id, $variation_id)
+    {
+        $parent = Item::findOrFail($item_id);
+        $variation = $parent->variations()->findOrFail($variation_id);
+
+        try {
+            $updated = (new ItemVariationService())->updateImage($variation, $request->only(['image', 'temp_path']));
+
+            if (!$updated) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo procesar la imagen enviada',
+                ], 422);
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Imagen actualizada con éxito',
+                'data' => [
+                    'id' => $variation->id,
+                    'image_url' => $variation->getImageUrl(),
+                    'has_own_image' => (bool) ($variation->image && $variation->image !== $parent->image),
+                ],
+            ];
+        } catch (Exception $e) {
+            Log::error('Error al actualizar la imagen de la variación ' . $variation->id . ': ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo actualizar la imagen: ' . $e->getMessage(),
+            ], 422);
+        }
     }
 
     /**

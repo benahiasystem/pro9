@@ -1053,6 +1053,16 @@
                                         <thead>
                                         <tr>
                                             <th>Combinación</th>
+                                            <th style="width: 70px">
+                                                Imagen
+                                                <el-tooltip placement="top">
+                                                    <div slot="content">
+                                                        Imagen propia de cada variación.<br>
+                                                        Si no tiene una, se muestra la imagen del producto principal.
+                                                    </div>
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </th>
                                             <th>Código interno</th>
                                             <th>Código de barras</th>
                                             <th class="text-end">Precio</th>
@@ -1062,6 +1072,24 @@
                                         <tbody>
                                         <tr v-for="row in existing_variations" :key="'existing-variation-' + row.id">
                                             <td>{{ row.variation_label }}</td>
+                                            <td>
+                                                <el-tooltip placement="top"
+                                                            :content="`${row.has_own_image ? 'Cambiar la imagen de esta variación' : 'Subir una imagen propia (ahora usa la del producto principal)'}. ${imageUploadHint}`">
+                                                    <el-upload :action="`/${resource}/upload`"
+                                                               :data="{'type': 'items'}"
+                                                               :headers="headers"
+                                                               :before-upload="beforeUploadImage"
+                                                               :on-success="(response) => onExistingVariationImageSuccess(response, row)"
+                                                               :show-file-list="false"
+                                                               class="avatar-uploader item-img"
+                                                               style="width: 48px !important; margin-top: 0 !important;">
+                                                        <img v-if="row.image_url"
+                                                             :src="row.image_url"
+                                                             class="avatar">
+                                                        <i v-else class="el-icon-plus avatar-uploader-icon"></i>
+                                                    </el-upload>
+                                                </el-tooltip>
+                                            </td>
                                             <td>{{ row.internal_id }}</td>
                                             <td>{{ row.barcode }}</td>
                                             <td class="text-end">{{ row.sale_unit_price }}</td>
@@ -2198,6 +2226,28 @@ export default {
             row.image = response.data.filename
             row.image_url = response.data.temp_image
             row.temp_path = response.data.temp_path
+        },
+        async onExistingVariationImageSuccess(response, row) {
+            if (!response.success) {
+                return this.$message.error(response.message)
+            }
+
+            try {
+                const { data } = await this.$http.post(`/items/${this.form.id}/variations/${row.id}/image`, {
+                    image: response.data.filename,
+                    temp_path: response.data.temp_path,
+                })
+
+                if (!data.success) {
+                    return this.$message.error(data.message || 'No se pudo actualizar la imagen')
+                }
+
+                row.image_url = data.data.image_url
+                row.has_own_image = data.data.has_own_image
+                this.$message.success(data.message)
+            } catch (error) {
+                this.$message.error(error.response?.data?.message || 'Error inesperado al actualizar la imagen')
+            }
         },
         removeVariationImage(row) {
             row.image = null

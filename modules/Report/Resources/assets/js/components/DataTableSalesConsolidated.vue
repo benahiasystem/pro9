@@ -327,10 +327,10 @@ export default {
             checkScrollShadows() {
                 const el = this.$refs.scrollContainer;
                 if (!el) return;
-                
+
                 const scrollLeft = el.scrollLeft;
                 const scrollRight = el.scrollWidth - el.clientWidth - scrollLeft;
-                
+
                 this.showLeftShadow = scrollLeft > 1;
                 this.showRightShadow = scrollRight > 1;
             },
@@ -380,20 +380,21 @@ export default {
                 this.persons = this.all_persons
             },
             async clickDownload(type) {
-                // Excel: sin cambios (no tiene lógica de bandeja por ahora)
-                if (type === 'excel') {
-                    window.open(`/${this.resource}/${type}/?${this.getQueryParameters()}`, '_blank');
-                    return;
-                }
+                const mimeTypes = {
+                    excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    pdf: 'application/pdf',
+                };
+                const extensions = {
+                    excel: 'xlsx',
+                    pdf: 'pdf',
+                };
 
-                // PDF: puede volver un PDF (liviano) o un JSON (pesado → bandeja)
                 try {
                     const response = await this.$http.get(
                         `/${this.resource}/${type}/?${this.getQueryParameters()}`,
                         { responseType: 'blob' }
                     );
 
-                    // Cuando la respuesta es JSON, el blob tiene type 'application/json'
                     if (response.data.type === 'application/json') {
                         const text = await response.data.text();
                         const data = JSON.parse(text);
@@ -403,18 +404,16 @@ export default {
                         return;
                     }
 
-                    // Es PDF → abrir en pestaña nueva
-                    const blob = new Blob([response.data], { type: 'application/pdf' });
+                    const blob = new Blob([response.data], { type: mimeTypes[type] || response.data.type });
                     const url = window.URL.createObjectURL(blob);
-                    // reemplazo del window.open para el PDF
+                    const extension = extensions[type] || 'bin';
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `Reporte_Consolidado_Items_Ventas_${Date.now()}.pdf`;
+                    a.download = `Reporte_Consolidado_Items_${Date.now()}.${extension}`;
                     document.body.appendChild(a);
                     a.click();
                     a.remove();
                     setTimeout(() => window.URL.revokeObjectURL(url), 10000);
-
                 } catch (error) {
                     console.log(error);
                     this.$message.error('Ocurrió un error al generar el reporte');

@@ -941,8 +941,14 @@
                                 ref="select_person"
                                 v-model="form.customer_id"
                                 filterable
+                                remote
+                                reserve-keyword
+                                :remote-method="searchCustomers"
+                                :loading="loading_customers"
                                 clearable
                                 placeholder="Seleccione un cliente"
+                                loading-text="Buscando..."
+                                no-data-text="Sin coincidencias"
                                 popper-class="pos-customer-dropdown"
                                 @visible-change="visibleChangeCustomer"
                                 @change="changeCustomer"
@@ -1533,6 +1539,12 @@ export default {
             customers: [],
             affectation_igv_types: [],
             all_customers: [],
+            loading_customers: false,
+            default_customer: null,
+            customer_seed: [],
+            customer_search_timer: null,
+            customer_search_promise: null,
+            customer_marquee_frame: null,
             establishment: null,
             currency_types: [],
             currency_type: {},
@@ -1569,6 +1581,13 @@ export default {
             ],
             selected_option_price: null
         };
+    },
+    beforeDestroy() {
+        this.cancelCustomerMarquee();
+        if (this.customer_search_timer) {
+            clearTimeout(this.customer_search_timer);
+            this.customer_search_timer = null;
+        }
     },
     async created() {
         await this.loadPriceOptions();
@@ -2068,10 +2087,19 @@ export default {
             this.showDialogHistorySales = true;
             // console.log(item)
         },
-        keyupEnterCustomer() {
+        async keyupEnterCustomer() {
             if (this.place == "cat3") {
                 return false;
             }
+
+            if (this.form.customer_id) {
+                this.clickPayment();
+                return;
+            }
+
+            // La búsqueda es remota y va con debounce: sin esperarla, Enter
+            // podría abrir el modal de cliente nuevo para uno que sí existe.
+            await this.flushCustomerSearch();
 
             if (this.form.customer_id) {
                 this.clickPayment();
@@ -2100,36 +2128,77 @@ export default {
         },
         visibleChangeCustomer(visible) {
             if (visible) {
-                this.$nextTick(() =>
-                    window.requestAnimationFrame(this.setupCustomerMarquee)
-                );
+                this.scheduleCustomerMarquee();
+            } else {
+                this.cancelCustomerMarquee();
             }
         },
+        /**
+         * Un solo frame pendiente: al escribir en el selector esto se llamaba
+         * en cada tecla y encolaba una medición completa por pulsación.
+         */
+        scheduleCustomerMarquee() {
+            this.cancelCustomerMarquee();
+            this.$nextTick(() => {
+                this.customer_marquee_frame = window.requestAnimationFrame(
+                    () => {
+                        this.customer_marquee_frame = null;
+                        this.setupCustomerMarquee();
+                    }
+                );
+            });
+        },
+        cancelCustomerMarquee() {
+            if (this.customer_marquee_frame) {
+                window.cancelAnimationFrame(this.customer_marquee_frame);
+                this.customer_marquee_frame = null;
+            }
+        },
+        /**
+         * Anima con marquee las opciones cuyo texto se desborda.
+         *
+         * Las lecturas y las escrituras de layout van en pasadas separadas: si
+         * se intercalan (escribir clase -> leer ancho -> escribir estilos) el
+         * navegador recalcula el layout una vez por opción y con dropdowns
+         * grandes eso bloqueaba el hilo varios segundos ("Forced reflow").
+         */
         setupCustomerMarquee() {
             const select = this.$refs.select_person;
             const dropdown =
                 select && select.$refs.popper ? select.$refs.popper.$el : null;
             if (!select || !dropdown) return;
 
+            const texts = Array.prototype.slice.call(
+                dropdown.querySelectorAll(".pos-customer-option__text")
+            );
+            if (!texts.length) return;
+
+            const gap = 40;
+            const speed = 50; // px por segundo
+
+            // 1) Escrituras: ancho del popper y reset del marquee anterior.
             const selectWidth = select.$el.getBoundingClientRect().width;
             if (selectWidth) {
                 dropdown.style.width = `${selectWidth}px`;
             }
+            texts.forEach(text => text.classList.remove("is-marquee"));
 
-            const gap = 40;
-            const speed = 50; // px por segundo
-            const texts = dropdown.querySelectorAll(
-                ".pos-customer-option__text"
-            );
-
-            texts.forEach(text => {
+            // 2) Lecturas: una única medición para todas las opciones.
+            const measures = texts.map(text => {
                 const chunk = text.querySelector(".pos-customer-option__chunk");
-                if (!chunk) return;
+                if (!chunk || text.offsetParent === null) return null;
 
-                text.classList.remove("is-marquee");
+                return {
+                    text,
+                    available: text.clientWidth,
+                    full: chunk.getBoundingClientRect().width
+                };
+            });
 
-                const available = text.clientWidth;
-                const full = chunk.getBoundingClientRect().width;
+            // 3) Escrituras: aplicar la animación a lo que se desborda.
+            measures.forEach(measure => {
+                if (!measure) return;
+                const { text, available, full } = measure;
                 if (!available || full <= available + 1) return;
 
                 const shift = full + gap;
@@ -2142,14 +2211,93 @@ export default {
                 text.classList.add("is-marquee");
             });
         },
+        /**
+         * Búsqueda remota de clientes (remote-method del selector).
+         *
+         * El POS ya no precarga la cartera completa; se consulta al servidor
+         * con debounce y se conserva siempre el cliente seleccionado dentro de
+         * all_customers para que changeCustomer() y customerEmail lo encuentren.
+         */
+        searchCustomers(query) {
+            const input = (query || "").trim();
+
+            if (this.customer_search_timer) {
+                clearTimeout(this.customer_search_timer);
+                this.customer_search_timer = null;
+            }
+
+            if (input.length < 2) {
+                this.loading_customers = false;
+                this.customer_search_promise = null;
+                this.all_customers = this.withPinnedCustomers(
+                    this.customer_seed
+                );
+                return;
+            }
+
+            this.loading_customers = true;
+
+            this.customer_search_promise = new Promise(resolve => {
+                this.customer_search_timer = setTimeout(() => {
+                    this.customer_search_timer = null;
+                    this.$http
+                        .get(`/${this.resource}/search_customers`, {
+                            params: { input }
+                        })
+                        .then(response => {
+                            this.all_customers = this.withPinnedCustomers(
+                                response.data.data
+                            );
+                        })
+                        .catch(() => {})
+                        .then(() => {
+                            this.loading_customers = false;
+                            this.scheduleCustomerMarquee();
+                            resolve();
+                        });
+                }, 250);
+            });
+        },
+        /**
+         * Espera la búsqueda en vuelo para que Enter no decida sobre una lista
+         * a medio actualizar (abrir el modal de cliente nuevo por error).
+         */
+        async flushCustomerSearch() {
+            if (this.customer_search_promise) {
+                await this.customer_search_promise;
+            }
+        },
+        /**
+         * Mantiene fijos en la lista el cliente por defecto del establecimiento
+         * y el actualmente seleccionado: la lista ya no contiene toda la
+         * cartera, y changeCustomer()/customerEmail los buscan ahí por id.
+         */
+        withPinnedCustomers(list) {
+            const seen = new Set();
+            const rows = [];
+
+            const push = row => {
+                if (!row || !row.id) return;
+                const id = String(row.id);
+                if (seen.has(id)) return;
+                seen.add(id);
+                rows.push(row);
+            };
+
+            // La lista real manda; los fijos van al final y solo si faltan,
+            // para no meter dos filas que no coinciden encima de una búsqueda.
+            (list || []).forEach(push);
+            push(this.customer);
+            push(this.default_customer);
+
+            return rows;
+        },
         keyupCustomer(e) {
             if (this.place == "cat3") {
                 return false;
             }
 
-            this.$nextTick(() =>
-                window.requestAnimationFrame(this.setupCustomerMarquee)
-            );
+            this.scheduleCustomerMarquee();
 
             if (e.key !== "Enter") {
                 this.input_person.number = this.$refs.select_person.$el.getElementsByTagName(
@@ -3161,8 +3309,19 @@ export default {
                 //this.all_items = response.data.items;
                 this.affectation_igv_types =
                     response.data.affectation_igv_types;
-                this.all_customers = response.data.customers;
+                this.all_customers = response.data.customers || [];
                 this.establishment = response.data.establishment;
+                // El backend solo manda el cliente por defecto como semilla;
+                // el resto llega por búsqueda remota (pos/search_customers).
+                this.default_customer =
+                    this.all_customers.find(
+                        c =>
+                            String(c.id) ===
+                            String(this.establishment.customer_id)
+                    ) || null;
+                // Primera pantalla del desplegable: es a lo que se vuelve al
+                // borrar la búsqueda o al empezar una venta nueva.
+                this.customer_seed = this.all_customers.slice();
                 this.currency_types = response.data.currency_types;
                 this.user = response.data.user;
                 this.form.establishment_id = this.establishment.id;
@@ -3179,6 +3338,10 @@ export default {
             });
         },
         selectDefaultCustomer() {
+            // Tras una venta la lista puede contener solo el último resultado
+            // de búsqueda; se vuelve a la semilla antes de fijar el defecto.
+            this.all_customers = this.withPinnedCustomers(this.customer_seed);
+
             if (this.establishment.customer_id && !this.form.customer_id) {
                 this.form.customer_id = this.establishment.customer_id;
             }
@@ -3468,10 +3631,21 @@ export default {
             }
         },
         reloadDataCustomers(customer_id) {
+            // Solo el cliente recién creado: recargar la cartera entera era lo
+            // que devolvía miles de opciones al selector.
             this.$http
-                .get(`/${this.resource}/table/customers`)
+                .get(`/${this.resource}/search_customers`, {
+                    params: { id: customer_id }
+                })
                 .then(response => {
-                    this.all_customers = response.data;
+                    const created = response.data.data || [];
+                    // El cliente nuevo queda arriba, pero el desplegable sigue
+                    // mostrando la lista inicial debajo.
+                    this.all_customers = this.withPinnedCustomers(
+                        created.concat(this.customer_seed)
+                    );
+
+                    this.customer_seed = this.all_customers.slice();
                     this.form.customer_id = customer_id;
                     this.changeCustomer();
                 });

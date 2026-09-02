@@ -305,9 +305,12 @@ export default {
                 // Campos calculados para el registro contable
                 unit_value: _.round(unit_value, 6),
                 total_value: _.round(total_value, 2),
+                total_value_without_rounding: total_value,
                 total_base_igv: _.round(total_value, 2),
                 total_igv: _.round(total_igv, 2),
+                total_igv_without_rounding: total_igv,
                 total: _.round(total, 2),
+                total_without_rounding: total,
                 effective_quantity: parseFloat(this.effectiveQuantity),
                 // Campos en 0 para compatibilidad con calculateTotal
                 total_discount: 0,
