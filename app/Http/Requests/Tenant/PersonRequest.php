@@ -24,12 +24,14 @@ class PersonRequest extends FormRequest
 
         $countryId = Localization::countryId();
         $identityDocumentTypeId = (string) $this->input('identity_document_type_id');
+        // ######## INICIO CORRECCION GUARDADO CLIENTES VENEZUELA
         $addresses = $this->normalizeCustomerAddresses($this->input('addresses'));
 
         foreach ($addresses as &$address) {
             $address['country_id'] = $countryId;
         }
         unset($address);
+        // ######## FIN CORRECCION GUARDADO CLIENTES VENEZUELA
 
         $normalized = [
             'country_id' => $countryId,
@@ -43,6 +45,7 @@ class PersonRequest extends FormRequest
         $this->merge($normalized);
     }
 
+    // ######## INICIO CORRECCION GUARDADO CLIENTES VENEZUELA
     /**
      * El formulario conserva filas vacías para permitir añadir establecimientos.
      * Esas filas no representan una dirección y no deben bloquear ni ensuciar el
@@ -70,6 +73,7 @@ class PersonRequest extends FormRequest
             return false;
         }));
     }
+    // ######## FIN CORRECCION GUARDADO CLIENTES VENEZUELA
 
     public function rules()
     {
