@@ -814,27 +814,22 @@ export default {
                 });
 
         },
+        // ######## INICIO PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ########
         keyupCustomer() {
-            if (this.input_person.number) {
-                if (!isNaN(parseInt(this.input_person.number))) {
-                    switch (this.input_person.number.length) {
-                        case 8:
-                            this.input_person.identity_document_type_id = "1";
-                            this.showDialogNewPerson = true;
-                            break;
+            const number = (this.input_person.number || '').trim().toUpperCase();
+            if (!number) return;
 
-                        case 11:
-                            this.input_person.identity_document_type_id = "6";
-                            this.showDialogNewPerson = true;
-                            break;
-                        default:
-                            this.input_person.identity_document_type_id = "6";
-                            this.showDialogNewPerson = true;
-                            break;
-                    }
-                }
-            }
+            this.input_person.number = number;
+            this.input_person.identity_document_type_id = this.identityDocumentTypeFor(number);
+            this.showDialogNewPerson = true;
         },
+        identityDocumentTypeFor(number) {
+            if (/^\d{6,8}$/.test(number)) return "1";
+            if (/^[VEJGP]\d{9}$/.test(number)) return "6";
+
+            return "4";
+        },
+        // ######## FIN PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ########
         async onFetchTables() {
             this.loading = true;
             await this.$http

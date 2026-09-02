@@ -14,6 +14,7 @@
         <br>
         <div style="margin-top:20px; margin-bottom:15px;">
             <table>
+                {{-- ######## INICIO PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ######## --}}
                 <tr>
                     <td>
                         <p><b>Empresa: </b></p>
@@ -30,7 +31,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong></p>
+                        <p><strong>RIF: </strong></p>
                     </td>
                     <td align="center">{{$company->number}}</td>
                     <td>
@@ -38,6 +39,7 @@
                     </td>
                     <td align="center">{{$establishment->address}} - {{$establishment->department->description}} - {{$establishment->district->description}}</td>
                 </tr>
+                {{-- ######## FIN PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ######## --}}
             </table>
         </div>
         <br>
