@@ -1540,32 +1540,39 @@ export default {
             let total_isc = 0
 
             this.form.items.forEach((row) => {
-                total_discount += parseFloat(row.total_discount)
-                total_charge += parseFloat(row.total_charge)
+                total_discount += parseFloat(row.total_discount) || 0
+                total_charge += parseFloat(row.total_charge) || 0
+
+                // Insumos pueden no traer total_value_without_rounding
+                const lineValue = parseFloat(
+                    row.total_value_without_rounding != null
+                        ? row.total_value_without_rounding
+                        : row.total_value
+                ) || 0
 
                 if (row.affectation_igv_type_id === '10') {
-                    total_taxed += parseFloat(row.total_value_without_rounding)
+                    total_taxed += lineValue
                 }
                 if (row.affectation_igv_type_id === '20') {
-                    total_exonerated += parseFloat(row.total_value_without_rounding)
+                    total_exonerated += lineValue
                 }
                 if (row.affectation_igv_type_id === '30') {
-                    total_unaffected += parseFloat(row.total_value_without_rounding)
+                    total_unaffected += lineValue
                 }
                 if (row.affectation_igv_type_id === '40') {
-                    total_exportation += parseFloat(row.total_value_without_rounding)
+                    total_exportation += lineValue
                 }
                 if (['10', '20', '30', '40'].indexOf(row.affectation_igv_type_id) < 0) {
-                    total_free += parseFloat(row.total_value_without_rounding)
+                    total_free += lineValue
                 }
 
-                total_value += parseFloat(row.total_value)
-                total_igv += parseFloat(row.total_igv)
-                total += parseFloat(row.total)
+                total_value += parseFloat(row.total_value) || 0
+                total_igv += parseFloat(row.total_igv) || 0
+                total += parseFloat(row.total) || 0
 
                 // isc
-                total_isc += parseFloat(row.total_isc)
-                total_base_isc += parseFloat(row.total_base_isc)
+                total_isc += parseFloat(row.total_isc) || 0
+                total_base_isc += parseFloat(row.total_base_isc) || 0
 
             });
 
