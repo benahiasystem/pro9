@@ -2,6 +2,7 @@
 
 namespace Modules\ItemFormLayout\Http\Controllers;
 
+use App\Models\Tenant\Configuration;
 use Illuminate\Routing\Controller;
 use Modules\ItemFormLayout\Models\ItemFormLayout;
 use Modules\ItemFormLayout\Http\Requests\UpdateItemFormLayoutRequest;
@@ -18,12 +19,13 @@ class ItemFormLayoutController extends Controller
         }
 
         $record = ItemFormLayout::where('variant', $variant)->first();
+        $pinnedFields = $record ? $record->pinned_fields : [];
 
         return [
             'success' => true,
             'data' => [
                 'variant'       => $variant,
-                'pinned_fields' => $record ? $record->pinned_fields : [],
+                'pinned_fields' => $this->filterPinnedFieldsByConfig($pinnedFields),
             ],
         ];
     }
@@ -31,6 +33,7 @@ class ItemFormLayoutController extends Controller
     public function update(UpdateItemFormLayoutRequest $request, $variant)
     {
         $payload = $this->normalize($request->input('pinned_fields', []));
+        $payload = $this->filterPinnedFieldsByConfig($payload);
 
         $record = ItemFormLayout::updateOrCreate(
             ['variant' => $variant],
@@ -48,6 +51,28 @@ class ItemFormLayoutController extends Controller
                 'pinned_fields' => $record->pinned_fields,
             ],
         ];
+    }
+
+    protected function filterPinnedFieldsByConfig(array $fields): array
+    {
+        if (! $this->isGlobalIgvHandlingEnabled()) {
+            return $fields;
+        }
+
+        return array_values(array_filter($fields, function ($row) {
+            return ($row['field_key'] ?? '') !== 'has_igv';
+        }));
+    }
+
+    protected function isGlobalIgvHandlingEnabled(): bool
+    {
+        $configuration = Configuration::select('global_igv_handling')->first();
+
+        if ($configuration && $configuration->global_igv_handling !== null) {
+            return (bool) $configuration->global_igv_handling;
+        }
+
+        return true;
     }
 
     protected function normalize(array $fields): array

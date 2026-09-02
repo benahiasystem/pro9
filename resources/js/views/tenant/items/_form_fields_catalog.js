@@ -79,6 +79,8 @@ const FIELDS = [
         tab: 'general',
         defaultWidth: 3,
         availableForVariants: ALL_VARIANTS,
+        hiddenWhenGlobalIgvHandling: true,
+        unavailableReason: 'No disponible: el manejo de IGV global está activado en Configuraciones.',
     },
     {
         key: 'has_plastic_bag_taxes',
@@ -244,8 +246,26 @@ function getFieldByKey(key) {
     return FIELDS.find(f => f.key === key) || null;
 }
 
-function getAvailableFields(variant) {
-    return FIELDS.filter(f => f.availableForVariants.includes(variant));
+function isFieldHiddenByGlobalIgv(field, globalIgvHandling = true) {
+    return !!(globalIgvHandling && field.hiddenWhenGlobalIgvHandling);
+}
+
+function getAvailableFields(variant, { globalIgvHandling = true } = {}) {
+    return FIELDS.filter(f =>
+        f.availableForVariants.includes(variant)
+        && !isFieldHiddenByGlobalIgv(f, globalIgvHandling)
+    );
+}
+
+function getUnavailableFields(variant, { globalIgvHandling = true } = {}) {
+    if (!globalIgvHandling) {
+        return [];
+    }
+
+    return FIELDS.filter(f =>
+        f.availableForVariants.includes(variant)
+        && isFieldHiddenByGlobalIgv(f, globalIgvHandling)
+    );
 }
 
 function getDefaultLayout(variant) {
@@ -264,8 +284,8 @@ function getInputTypeLabel(type) {
  * Devuelve los campos disponibles para una variante agrupados por pestaña,
  * en el orden en que aparecen en TAB_LABELS.
  */
-function getAvailableFieldsGrouped(variant) {
-    const fields = getAvailableFields(variant);
+function getAvailableFieldsGrouped(variant, options = {}) {
+    const fields = getAvailableFields(variant, options);
     const tabOrder = Object.keys(TAB_LABELS);
     const groups = {};
     fields.forEach(f => {
@@ -289,7 +309,9 @@ export {
     DEFAULT_LAYOUT_BY_VARIANT,
     getCatalog,
     getFieldByKey,
+    isFieldHiddenByGlobalIgv,
     getAvailableFields,
+    getUnavailableFields,
     getAvailableFieldsGrouped,
     getDefaultLayout,
     getTabLabel,
@@ -304,7 +326,9 @@ export default {
     DEFAULT_LAYOUT_BY_VARIANT,
     getCatalog,
     getFieldByKey,
+    isFieldHiddenByGlobalIgv,
     getAvailableFields,
+    getUnavailableFields,
     getAvailableFieldsGrouped,
     getDefaultLayout,
     getTabLabel,
