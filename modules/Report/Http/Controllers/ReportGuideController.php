@@ -28,6 +28,7 @@
      */
     class ReportGuideController extends Controller {
         use ReportTrait;
+        use ConsolidatedReportTrayTrait;
 
         protected $configuration;
 
