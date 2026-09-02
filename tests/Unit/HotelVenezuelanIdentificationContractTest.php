@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
+// ######## INICIO PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ########
 class HotelVenezuelanIdentificationContractTest extends TestCase
 {
     /** @test */
@@ -36,3 +37,4 @@ class HotelVenezuelanIdentificationContractTest extends TestCase
         self::assertStringContainsString('return "4";', $source);
     }
 }
+// ######## FIN PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ########

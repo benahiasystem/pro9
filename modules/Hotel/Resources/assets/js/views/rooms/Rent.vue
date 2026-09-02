@@ -814,6 +814,7 @@ export default {
                 });
 
         },
+        // ######## INICIO PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ########
         keyupCustomer() {
             const number = (this.input_person.number || '').trim().toUpperCase();
             if (!number) return;
@@ -828,6 +829,7 @@ export default {
 
             return "4";
         },
+        // ######## FIN PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ########
         async onFetchTables() {
             this.loading = true;
             await this.$http

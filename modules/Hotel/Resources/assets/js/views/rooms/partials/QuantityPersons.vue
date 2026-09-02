@@ -11,6 +11,7 @@
         <div class="form-body" v-if="persons">
             <div class="row" >
                 <div class="col-lg-12 col-md-12">
+                    <!-- ######## INICIO PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ######## -->
                     <table width="100%">
                         <thead>
                             <tr width="100%">
@@ -44,6 +45,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    <!-- ######## FIN PC-6 IDENTIFICACIÓN VENEZOLANA HOTEL ######## -->
 
 
                 </div>
