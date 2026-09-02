@@ -14,8 +14,7 @@ trait ConsolidatedReportTrayTrait
 
     protected function consolidatedReportThreshold(): int
     {
-        // En local puedes usar CONSOLIDATED_REPORT_THRESHOLD=1 para probar bandeja sin 500 ventas
-        return (int) config('tenant.consolidated_report_threshold', 500);
+        return 500;
     }
 
     protected function resolveConsolidatedReportWebsiteId(Request $request): int
