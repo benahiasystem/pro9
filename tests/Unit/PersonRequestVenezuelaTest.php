@@ -41,6 +41,44 @@ class PersonRequestVenezuelaTest extends TestCase
     }
 
     /** @test */
+    public function it_discards_empty_or_invalid_address_rows_before_saving_a_customer(): void
+    {
+        $request = PersonRequest::create('/', 'POST', [
+            'type' => 'customers',
+            'identity_document_type_id' => '6',
+            'addresses' => [
+                ['main' => true, 'address' => '', 'location_id' => []],
+                'legacy-invalid-row',
+                ['address' => 'Av. Bolívar', 'location_id' => ['01', '02', '03']],
+            ],
+        ]);
+
+        $this->prepareForValidation($request);
+
+        self::assertSame([
+            [
+                'address' => 'Av. Bolívar',
+                'location_id' => ['01', '02', '03'],
+                'country_id' => 'VE',
+            ],
+        ], $request->input('addresses'));
+    }
+
+    /** @test */
+    public function it_treats_a_non_array_addresses_payload_as_empty(): void
+    {
+        $request = PersonRequest::create('/', 'POST', [
+            'type' => 'customers',
+            'identity_document_type_id' => '1',
+            'addresses' => 'legacy-invalid-payload',
+        ]);
+
+        $this->prepareForValidation($request);
+
+        self::assertSame([], $request->input('addresses'));
+    }
+
+    /** @test */
     public function it_preserves_the_selected_nationality_for_a_foreign_customer(): void
     {
         $request = PersonRequest::create('/', 'POST', [
