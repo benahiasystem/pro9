@@ -119,6 +119,18 @@ class VenezuelaSourceContractTest extends TestCase
     }
 
     /** @test */
+    public function commercial_analysis_report_filter_uses_venezuelan_identity_terminology(): void
+    {
+        // ######## INICIO CONTRATO FILTRO REPORTES VENEZUELA ########
+        $reportFilter = (string) file_get_contents(base_path('modules/Report/Resources/assets/js/components/DataTableCommercialAnalysis.vue'));
+
+        self::assertStringContainsString('RIF/Cédula del cliente', $reportFilter);
+        self::assertStringNotContainsString('RUC Cliente', $reportFilter);
+        self::assertStringContainsString('v-model="form.number"', $reportFilter);
+        // ######## FIN CONTRATO FILTRO REPORTES VENEZUELA ########
+    }
+
+    /** @test */
     public function pos_keeps_payment_visible_and_document_selection_safe(): void
     {
         $pos = (string) file_get_contents(resource_path('js/views/tenant/pos/index.vue'));
