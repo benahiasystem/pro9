@@ -303,9 +303,12 @@ class InventoryKardex extends ModelTenant
                 // $inventory_transfer = InventoryTransfer::query()->where('id', $inventory_kardexable->inventories_transfer_id)->first();
                 $inventory_transfer = $inventory_kardexable->inventories_transfer;
                 if($inventory_transfer) {
-                    $inventory_transfer = $inventory_transfer->first();
+                    // ########## INICIO CORRECCIÓN FECHA EMISIÓN TRASLADO KARDEX ##########
+                    // La relación ya corresponde al traslado del movimiento; usar first()
+                    // consultaba arbitrariamente otra nota de traslado.
                     $data['number'] = $inventory_transfer->series.'-'.$inventory_transfer->number;
                     $data['date_of_issue'] = $inventory_transfer->created_at->format('Y-m-d');
+                    // ########## FIN CORRECCIÓN FECHA EMISIÓN TRASLADO KARDEX ##########
                 }
             
                 if (empty($inventory_kardexable->warehouse_destination_id)) {
