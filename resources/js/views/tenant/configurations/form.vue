@@ -3294,7 +3294,7 @@
                                             </span>
                                         </div>
                                         <div class="col-12 d-flex gap-2">
-                                            <tenant-options-form></tenant-options-form>
+                                            <tenant-options-form :can-delete-test-documents="canDeleteTestDocuments"></tenant-options-form>
                                             <tenant-options-form-item></tenant-options-form-item>
                                         </div>
                                     </div>
@@ -3433,6 +3433,7 @@ export default {
         'typeUser',
         'configuration',
         'soapTypeId',
+        'canDeleteTestDocuments',
     ],
     components: {
         TermsCondition,

@@ -6,7 +6,8 @@
             <tenant-configurations-form
                 :configuration="{{\App\Models\Tenant\Configuration::getPublicConfig()}}"
                 :soap-type-id="{{ json_encode(\App\Models\Tenant\Company::first()->soap_type_id ?? '01') }}"
-                    :type-user="{{ json_encode(auth()->user()->type) }}"></tenant-configurations-form>
+                :type-user="{{ json_encode(auth()->user()->type) }}"
+                :can-delete-test-documents="{{ json_encode(auth()->user()->isAdmin()) }}"></tenant-configurations-form>
         </div>
     </div>
 @endsection
