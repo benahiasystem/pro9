@@ -1965,6 +1965,12 @@ html.sidebar-left-collapsed .sidebar-left:has(.nano.hovered) {
         border-color: oklch(calc(var(--base-l) + 0.69) calc(var(--base-c) - 0.0375) calc(var(--base-h) - 29.86));
         box-shadow: none !important;
     }
+    html.sidebar-left-fixed.has-system-ads-toolbar .sidebar-left {
+        margin-top: 40px !important;
+    }
+    html.has-system-ads-toolbar .sidebar-left {
+        margin-top: 48px !important;
+    }
     html.sidebar-left-fixed section.content-body {
         margin-left: 255px;
     }

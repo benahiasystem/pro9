@@ -22,11 +22,6 @@
         </div>
         <tenant-dialog-header-menu></tenant-dialog-header-menu>
 
-        @if ($tenant_show_ads && $url_tenant_image_ads)
-            <div class="ms-3 me-3">
-                <img src="{{$url_tenant_image_ads}}" style="max-height: 50px; max-width: 500px;">
-            </div>
-        @endif
 
         <!-- @if(config('configuration.multi_user_enabled'))
             <tenant-multi-users-change-client></tenant-multi-users-change-client>

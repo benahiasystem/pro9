@@ -98,50 +98,6 @@
                 </div>
 
                 <div class="col-md-6">
-
-                    <label class="control-label">
-                        Mostrar publicidad
-                        <el-tooltip class="item"
-                                    content="Se visualizará la imágen cargada en el header de todos los clientes."
-                                    effect="dark"
-                                    placement="top-start">
-                            <i class="fa fa-info-circle"></i>
-                        </el-tooltip>
-                    </label>
-                    
-                    <div :class="{'has-danger': errors.tenant_show_ads}"
-                            class="form-group">
-                        <el-switch v-model="form.tenant_show_ads"
-                                    active-text="Si"
-                                    inactive-text="No"
-                                    @change="submit"></el-switch>
-                        <small v-if="errors.tenant_show_ads"
-                                class="form-control-feedback"
-                                v-text="errors.tenant_show_ads[0]"></small>
-                    </div>
-                </div>
-
-                <div class="col-md-6" v-if="form.tenant_show_ads">
-                    <div class="form-group">
-                        <label class="control-label">Imágen para publicidad</label>
-                        <el-input v-model="form.tenant_image_ads" :readonly="true">
-                            <el-upload
-                                slot="append"
-                                :headers="headers"
-                                :on-success="successUpload"
-                                :on-error="errorUpload"
-                                :show-file-list="false"
-                                action="/configurations/upload-tenant-ads">
-                                <el-button icon="el-icon-upload" type="primary"></el-button>
-                            </el-upload>
-                        </el-input>
-                        <div class="sub-title text-danger"><small>Se recomienda resoluciones 500x50</small>
-                        </div>
-                    </div>
-                </div>
-
-                
-                <div class="col-md-6">
                     
                     <label class="control-label">
                         Habilitar contraseña segura
@@ -164,6 +120,7 @@
                                 v-text="errors.regex_password_client[0]"></small>
                     </div>
                 </div>
+
             </div>
             <!-- <div class="form-actions text-right pt-2">
                 <el-button type="primary" native-type="submit" :loading="loading_submit">Guardar</el-button>
@@ -183,7 +140,6 @@ export default {
     },
     data() {
         return {
-            headers: headers_token,
             loading_submit: false,
             resource: 'configurations',
             errors: {},
@@ -193,8 +149,6 @@ export default {
                 enable_guest_register: true,
                 validate_ruc_register: true,
                 regex_password_client: false,
-                tenant_show_ads: false,
-                tenant_image_ads: null,
                 guest_register_plan_id: null,
             }
         }
@@ -285,26 +239,11 @@ export default {
                     this.form.enable_guest_register = data.enable_guest_register;
                     this.form.validate_ruc_register = data.validate_ruc_register;
                     this.form.regex_password_client = data.regex_password_client;
-                    this.form.tenant_show_ads = data.tenant_show_ads;
-                    this.form.tenant_image_ads = data.tenant_image_ads;
                     this.form.guest_register_plan_id = data.guest_register_plan_id;
                 })
                 .catch(error => {
                     console.error('Error loading configuration:', error);
                 });
-        },
-        successUpload(response, file, fileList) 
-        { 
-            if (response.success) {
-                this.$message.success(response.message)
-                this.form.tenant_image_ads = response.name
-            } else {
-                this.$message({message: 'Error al subir el archivo', type: 'error'})
-            }
-        },
-        errorUpload(error)
-        {
-            this.$message({message: 'Error al subir el archivo', type: 'error'})
         },
         initForm() {
             this.errors = {}
@@ -312,8 +251,6 @@ export default {
                 enable_guest_register: true,
                 validate_ruc_register: true,
                 regex_password_client: false,
-                tenant_show_ads: false,
-                tenant_image_ads: null,
                 guest_register_plan_id: null,
             }
         },
@@ -342,3 +279,4 @@ export default {
     }
 }
 </script>
+

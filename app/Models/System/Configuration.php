@@ -33,6 +33,9 @@ class Configuration extends Model
         'regex_password_client',
         'tenant_show_ads',
         'tenant_image_ads',
+        'tenant_ads_link',
+        'tenant_ads_toolbar',
+        'tenant_ads_notification',
         'mail_host',
         'mail_port',
         'mail_username',
@@ -90,7 +93,16 @@ class Configuration extends Model
         'notify_wa_connected_at' => 'datetime',
         'mozo_configuration' => 'array',
         'vendeya_configuration' => 'array',
+        'tenant_ads_toolbar' => 'array',
+        'tenant_ads_notification' => 'array',
     ];
+
+    /**
+     * Memoria del request con la fila de publicidad. false = aun no consultado.
+     *
+     * @var self|null|false
+     */
+    private static $tenant_ads_configuration = false;
 
 
     public static function boot()
@@ -133,17 +145,15 @@ class Configuration extends Model
     public static function getDataModuleViewComposer()
     {
         return self::select([
-                        'use_login_global',
-                        'tenant_show_ads',
-                        'tenant_image_ads'
+                        'use_login_global'
                     ])
                     ->firstOrFail();
     }
 
-    
+
     /**
-     * 
-     * Url de imagen para publicidad en clientes (header)
+     *
+     * Url de imagen para publicidad en clientes
      *
      * @return string
      */
@@ -156,6 +166,195 @@ class Configuration extends Model
         }
 
         return null;
+    }
+
+    /**
+     *
+     * Fila con la publicidad que se muestra en los tenant. Memoizada porque el
+     * layout consulta varios tipos de anuncio en el mismo request.
+     *
+     * @return self|null
+     */
+    private static function tenantAdsConfiguration()
+    {
+        if(self::$tenant_ads_configuration === false)
+        {
+            self::$tenant_ads_configuration = self::select([
+                                                    'tenant_show_ads',
+                                                    'tenant_image_ads',
+                                                    'tenant_ads_link',
+                                                    'tenant_ads_toolbar',
+                                                    'tenant_ads_notification'
+                                                ])
+                                                ->first();
+        }
+
+        return self::$tenant_ads_configuration;
+    }
+
+    /**
+     *
+     * Solo se aceptan enlaces http/https: se pintan en un href del layout del
+     * tenant y un javascript: seria XSS.
+     *
+     * @param  string|null $link
+     * @return string|null
+     */
+    private static function sanitizeTenantAdsLink($link)
+    {
+        return ($link && preg_match('#^https?://#i', $link)) ? $link : null;
+    }
+
+    /**
+     *
+     * El color termina en un atributo style, asi que solo se acepta hexadecimal.
+     *
+     * @param  string|null $color
+     * @param  string      $fallback
+     * @return string
+     */
+    private static function sanitizeTenantAdsColor($color, $fallback)
+    {
+        $color = trim((string) $color);
+
+        return preg_match('/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $color) ? $color : $fallback;
+    }
+
+    /**
+     *
+     * El svg del icono se inyecta sin escapar en el layout del tenant, asi que
+     * se valida contra lista blanca: el catalogo de Tabler solo usa <path> con
+     * los atributos d, fill, opacity y stroke. Cualquier otra cosa se descarta.
+     *
+     * @param  string|null $svg
+     * @return string|null
+     */
+    private static function sanitizeTenantAdsIconSvg($svg)
+    {
+        $svg = trim((string) $svg);
+
+        if($svg === '')
+        {
+            return null;
+        }
+
+        $allowed = '#^(?:<path(?:\s+(?:d|fill|opacity|stroke)="[^"<>]*")+\s*/?>)+$#';
+
+        return preg_match($allowed, $svg) ? $svg : null;
+    }
+
+    /**
+     *
+     * Publicidad tipo modal que se muestra centrada en los tenant.
+     *
+     * @return object|null
+     */
+    public static function getTenantModalAds()
+    {
+        $configuration = self::tenantAdsConfiguration();
+
+        if($configuration && $configuration->tenant_show_ads && $configuration->tenant_image_ads)
+        {
+            $link = self::sanitizeTenantAdsLink($configuration->tenant_ads_link);
+
+            return (object) [
+                'image' => $configuration->getUrlTenantImageAds(),
+                'link' => $link,
+                'version' => substr(md5($configuration->tenant_image_ads.'|'.$configuration->tenant_ads_link), 0, 12),
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     *
+     * Publicidad tipo barra que se muestra encima del header de los tenant.
+     *
+     * @return object|null
+     */
+    public static function getTenantToolbarAds()
+    {
+        $configuration = self::tenantAdsConfiguration();
+        $toolbar = $configuration ? $configuration->tenant_ads_toolbar : null;
+
+        if(!is_array($toolbar) || empty($toolbar['enabled']))
+        {
+            return null;
+        }
+
+        $text = trim((string) ($toolbar['text'] ?? ''));
+
+        if($text === '')
+        {
+            return null;
+        }
+
+        $link = self::sanitizeTenantAdsLink($toolbar['link'] ?? null);
+
+        return (object) [
+            'text' => $text,
+            'link' => $link,
+            'background_color' => self::sanitizeTenantAdsColor($toolbar['background_color'] ?? null, '#1b7fd4'),
+            'text_color' => self::sanitizeTenantAdsColor($toolbar['text_color'] ?? null, '#ffffff'),
+            'dismissible' => (bool) ($toolbar['dismissible'] ?? true),
+            'version' => substr(md5($text.'|'.$link), 0, 12),
+        ];
+    }
+
+    /**
+     *
+     * Publicidad tipo notificacion (toast) que se muestra en una esquina.
+     *
+     * @return object|null
+     */
+    public static function getTenantNotificationAds()
+    {
+        $configuration = self::tenantAdsConfiguration();
+        $notification = $configuration ? $configuration->tenant_ads_notification : null;
+
+        if(!is_array($notification) || empty($notification['enabled']))
+        {
+            return null;
+        }
+
+        $title = trim((string) ($notification['title'] ?? ''));
+        $description = trim((string) ($notification['description'] ?? ''));
+
+        if($title === '' && $description === '')
+        {
+            return null;
+        }
+
+        $positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
+        $position = $notification['position'] ?? null;
+        $icon_type = $notification['icon_type'] ?? 'none';
+        $icon_svg = self::sanitizeTenantAdsIconSvg($notification['icon_svg'] ?? null);
+        $emoji = trim((string) ($notification['emoji'] ?? ''));
+
+        if($icon_type === 'tabler' && $icon_svg === null)
+        {
+            $icon_type = 'none';
+        }
+
+        if($icon_type === 'emoji' && $emoji === '')
+        {
+            $icon_type = 'none';
+        }
+
+        $link = self::sanitizeTenantAdsLink($notification['link'] ?? null);
+
+        return (object) [
+            'position' => in_array($position, $positions, true) ? $position : 'bottom-right',
+            'duration' => max(0, (int) ($notification['duration'] ?? 0)),
+            'icon_type' => in_array($icon_type, ['none', 'tabler', 'emoji'], true) ? $icon_type : 'none',
+            'icon_svg' => $icon_svg,
+            'emoji' => $emoji,
+            'title' => $title,
+            'description' => $description,
+            'link' => $link,
+            'version' => substr(md5($title.'|'.$description.'|'.$link), 0, 12),
+        ];
     }
 
     /**
