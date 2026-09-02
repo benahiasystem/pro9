@@ -15,6 +15,7 @@ description: Adaptar, corregir y validar el alta y edición de clientes venezola
 - Mostrar la jerarquía heredada como Estado / Municipio / Parroquia.
 - Conservar `website` y `observation` como campos opcionales de `persons`; asegurar que existan en instalaciones limpias y tenants históricos.
 - Tratar una colección de direcciones ausente como `[]`; no ejecutar `count()` sobre `null`.
+- Descartar filas vacías o inválidas de `addresses` antes de validar o persistir; el formulario las usa como borradores y no deben impedir guardar un cliente válido.
 
 ## Flujo de implementación
 

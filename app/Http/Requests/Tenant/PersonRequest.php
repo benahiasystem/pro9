@@ -24,17 +24,14 @@ class PersonRequest extends FormRequest
 
         $countryId = Localization::countryId();
         $identityDocumentTypeId = (string) $this->input('identity_document_type_id');
-        $addresses = collect($this->input('addresses', []))
-            ->map(static function ($address) use ($countryId) {
-                if (!is_array($address)) {
-                    return $address;
-                }
+        // ######## INICIO CORRECCION GUARDADO CLIENTES VENEZUELA
+        $addresses = $this->normalizeCustomerAddresses($this->input('addresses'));
 
-                $address['country_id'] = $countryId;
-
-                return $address;
-            })
-            ->all();
+        foreach ($addresses as &$address) {
+            $address['country_id'] = $countryId;
+        }
+        unset($address);
+        // ######## FIN CORRECCION GUARDADO CLIENTES VENEZUELA
 
         $normalized = [
             'country_id' => $countryId,
@@ -47,6 +44,36 @@ class PersonRequest extends FormRequest
 
         $this->merge($normalized);
     }
+
+    // ######## INICIO CORRECCION GUARDADO CLIENTES VENEZUELA
+    /**
+     * El formulario conserva filas vacías para permitir añadir establecimientos.
+     * Esas filas no representan una dirección y no deben bloquear ni ensuciar el
+     * guardado; además, payloads heredados pueden enviar addresses como null.
+     */
+    private function normalizeCustomerAddresses($addresses): array
+    {
+        if (!is_array($addresses)) {
+            return [];
+        }
+
+        return array_values(array_filter($addresses, static function ($address): bool {
+            if (!is_array($address)) {
+                return false;
+            }
+
+            foreach (['address', 'phone', 'email', 'location_id', 'department_id', 'province_id', 'district_id'] as $field) {
+                $value = $address[$field] ?? null;
+
+                if (is_array($value) ? !empty(array_filter($value, static fn ($item) => $item !== null && $item !== '')) : $value !== null && $value !== '') {
+                    return true;
+                }
+            }
+
+            return false;
+        }));
+    }
+    // ######## FIN CORRECCION GUARDADO CLIENTES VENEZUELA
 
     public function rules()
     {
