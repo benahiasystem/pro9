@@ -5756,7 +5756,14 @@ export default {
             if (this.isCreditPaymentCondition) {
                 // credito
                 if (this.form.payment_condition_id === "02") {
-                    this.clickAddFeeNew();
+                    // Las cuotas ya vienen de la cotizacion (form.fee). Agregar
+                    // otra dejaba una fila de mas, y encima el bloque de abajo
+                    // escribe siempre sobre fee[0]: la fila recien agregada
+                    // quedaba al final, sin tocar y con valores por defecto.
+                    if (this.form.fee.length === 0) {
+                        this.clickAddFeeNew();
+                    }
+
                     const index = 0;
                     this.readonly_date_of_due = true;
 
