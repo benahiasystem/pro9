@@ -20,7 +20,9 @@
                 <div class="row mt-2" v-if="see_more"> 
                     <div class="col-lg-4 col-md-4">
                         <div class="form-group"  >
-                            <label class="control-label">RUC Cliente</label> 
+                            <!-- ######## INICIO TERMINOLOGÍA FISCAL VENEZUELA REPORTES ######## -->
+                            <label class="control-label">RIF/Cédula del cliente</label>
+                            <!-- ######## FIN TERMINOLOGÍA FISCAL VENEZUELA REPORTES ######## -->
                             <el-input placeholder="Ingresar"
                                 v-model="form.number">
                             </el-input>
