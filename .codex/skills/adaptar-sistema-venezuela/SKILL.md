@@ -25,6 +25,7 @@ description: Coordinar y documentar una adaptación funcional integral de Pro9 a
 - POS: mantener `PAGAR` visible, permitir seleccionar FACTURA/BOLETA/NOTA DE VENTA y proteger accesos opcionales a QZ y turnos de negocio.
 - Importación: validar íntegramente `public/formats/items.xlsx` antes de `ItemsImport` y entregar un XLSX corregible cuando haya errores.
 - Datos de prueba: usar `TenancyMockDataSeeder` sólo para registros identificados con `MOCK-`; no confundirlos con datos productivos.
+- Eliminación de documentos de prueba: limitar la acción a administradores, exigir la confirmación literal `ELIMINAR` en frontend y backend, y borrar relaciones dentro de una transacción tenant antes del registro principal. Nunca incluir documentos históricos ni productivos fuera del alcance marcado como prueba.
 
 ## Migraciones consolidadas
 

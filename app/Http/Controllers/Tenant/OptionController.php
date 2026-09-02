@@ -2,6 +2,7 @@
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Tenant\DeleteTestDocumentsRequest;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\Quotation;
@@ -67,10 +68,11 @@ class OptionController extends Controller
         return view('tenant.options.form');
     }
 
-    public function deleteDocuments(Request $request)
+    public function deleteDocuments(DeleteTestDocumentsRequest $request)
     {
-
-        $this->delete_quantity = 0;
+        // ######## INICIO PC-17 ELIMINACIÓN SEGURA DE DOCUMENTOS DE PRUEBA ########
+        return DB::connection('tenant')->transaction(function () {
+            $this->delete_quantity = 0;
 
         Summary::where('soap_type_id', '01')->delete();
         Voided::where('soap_type_id', '01')->delete();
@@ -91,15 +93,13 @@ class OptionController extends Controller
         PurchaseOrder::where('soap_type_id', '01')->delete();
         PurchaseQuotation::where('soap_type_id', '01')->delete();
 
-        $quantity = Document::where('soap_type_id', '01')->count();
+        $documents = Document::where('soap_type_id', '01')->get();
+        $quantity = $documents->count();
 
-        //Document
+        // Los comprobantes de prueba se eliminan junto a sus relaciones de detalle.
         $this->deleteInventoryKardex(Document::class);
-
-        Document::where('soap_type_id', '01')
-        ->whereIn('document_type_id', ['07', '08'])->delete();
-
         $this->deleteRecordsCash(Document::class);
+        $this->deleteDocumentRelations($documents);
         // Document::where('soap_type_id', '01')->delete();
 
         $this->update_quantity_documents($quantity);
@@ -114,6 +114,7 @@ class OptionController extends Controller
         $this->deleteRecordsCash(SaleNote::class);
 
         $this->deleteInventoryKardex(SaleNote::class, $sale_notes);
+        $this->deleteSaleNoteRelations($sale_notes);
 
 
         Contract::where('soap_type_id', '01')->delete();
@@ -143,11 +144,65 @@ class OptionController extends Controller
         Packaging::where('soap_type_id', '01')->delete();
         $this->deleteMill();
 
-        return [
-            'success' => true,
-            'message' => 'Documentos de prueba eliminados',
-            'delete_quantity' => $this->delete_quantity,
-        ];
+            return [
+                'success' => true,
+                'message' => 'Documentos de prueba eliminados',
+                'delete_quantity' => $this->delete_quantity,
+            ];
+        });
+        // ######## FIN PC-17 ELIMINACIÓN SEGURA DE DOCUMENTOS DE PRUEBA ########
+    }
+
+    /** @param \Illuminate\Support\Collection<int, Document> $documents */
+    private function deleteDocumentRelations($documents): void
+    {
+        $documentIds = $documents->pluck('id');
+
+        foreach ($documents as $document) {
+            $document->inventory_kardex()->delete();
+            $document->items()->delete();
+            $document->payments()->each(function ($payment) {
+                $payment->cashDocumentPayments()->delete();
+                $payment->global_payment()->delete();
+                $payment->delete();
+            });
+            $document->fee()->delete();
+            $document->hotel()->delete();
+            $document->transport()->delete();
+            $document->invoice()->delete();
+            $document->note()->delete();
+            $document->summary_document()->delete();
+            $document->affected_documents()->delete();
+            Kardex::where('document_id', $document->id)->delete();
+        }
+
+        CashDocument::whereIn('document_id', $documentIds)->delete();
+        Document::whereIn('id', $documentIds)->delete();
+    }
+
+    /** @param \Illuminate\Support\Collection<int, SaleNote> $saleNotes */
+    private function deleteSaleNoteRelations($saleNotes): void
+    {
+        $saleNoteIds = $saleNotes->pluck('id');
+
+        foreach ($saleNotes as $saleNote) {
+            $saleNote->inventory_kardex()->delete();
+            $saleNote->items()->delete();
+            $saleNote->payments()->each(function ($payment) {
+                $payment->global_payment()->delete();
+                $payment->delete();
+            });
+            $saleNote->fee()->delete();
+            Kardex::where('sale_note_id', $saleNote->id)->delete();
+        }
+
+        $hotelOrderIds = HotelRentOrder::whereIn('sale_note_id', $saleNoteIds)->pluck('id');
+        $hotelItemIds = HotelRentItem::whereIn('hotel_rent_order_id', $hotelOrderIds)->pluck('id');
+        HotelRentItemPayment::whereIn('hotel_rent_item_id', $hotelItemIds)->delete();
+        HotelRentItem::whereIn('id', $hotelItemIds)->delete();
+        HotelRentOrder::whereIn('id', $hotelOrderIds)->delete();
+        CashDocument::whereIn('sale_note_id', $saleNoteIds)->delete();
+        SaleNote::whereIn('id', $saleNoteIds)->delete();
     }
 
 
@@ -243,7 +298,7 @@ class OptionController extends Controller
         //     });
         // } 
 
-        $model::where('soap_type_id', '01')->delete();
+        // La eliminación del registro principal se hace después de sus relaciones.
     }
 
 
