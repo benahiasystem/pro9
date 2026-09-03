@@ -1110,14 +1110,8 @@ export default {
         },
         formatNameProductPdf(value) {
             if (!value || !String(value).trim()) return ''
-
-            return String(value)
-                .trim()
-                .split(/\r?\n/)
-                .map(line => line.trim())
-                .filter(Boolean)
-                .map(line => `<p>${line}</p>`)
-                .join('')
+            // Texto plano: el PDF lo imprime igual y no aparecen etiquetas <p>
+            return String(value).trim()
         },
         filterItems() {
             this.$store.commit('setItems', this.all_items)
