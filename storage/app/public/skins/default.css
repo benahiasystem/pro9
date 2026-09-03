@@ -1358,10 +1358,6 @@ ul.nav-main li.nav-parent > a:after {
     text-overflow: ellipsis;
     overflow: hidden;
 }
-.card-body.pointer.px-2.pt-2 .img-custom {
-    height: 150px !important;
-    object-fit: cover;
-}
 .transfer-data-table{
     border: 1px solid var(--accent-color);
     border-radius: 0 0 5px 5px;

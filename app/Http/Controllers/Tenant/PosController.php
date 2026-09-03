@@ -421,6 +421,31 @@ class PosController extends Controller
         return $configuration;
     }
 
+    public function save_view_settings(Request $request)
+    {
+        $request->validate([
+            'pos_image_aspect_ratio' => 'required|in:' . implode(',', Configuration::POS_IMAGE_ASPECT_RATIOS),
+            'pos_image_fit' => 'required|in:' . implode(',', Configuration::POS_IMAGE_FITS),
+            'colums_grid_item' => 'required|integer|min:2|max:6',
+        ]);
+
+        $configuration = Configuration::firstOrFail();
+        $configuration->pos_image_aspect_ratio = $request->input('pos_image_aspect_ratio');
+        $configuration->pos_image_fit = $request->input('pos_image_fit');
+        $configuration->colums_grid_item = (int)$request->input('colums_grid_item');
+        $configuration->save();
+
+        return [
+            'success' => true,
+            'message' => 'Configuración de vista actualizada',
+            'data' => [
+                'pos_image_aspect_ratio' => $configuration->getPosImageAspectRatio(),
+                'pos_image_fit' => $configuration->getPosImageFit(),
+                'colums_grid_item' => (int)$configuration->colums_grid_item,
+            ],
+        ];
+    }
+
     public function validate_stock($item_id, $quantity)
     {
 

@@ -1572,11 +1572,6 @@ ol.breadcrumbs li span {
     overflow: hidden;
 }
 
-.card-body.pointer.px-2.pt-2 .img-custom {
-    height: 150px !important;
-    object-fit: cover;
-}
-
 .card h5.font-weight-semibold.text-right.text-white {
     margin: 0;
 }

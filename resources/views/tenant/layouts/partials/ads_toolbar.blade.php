@@ -3,15 +3,16 @@
          id="systemAdsToolbar"
          data-version="{{ $vc_system_ads_toolbar->version }}"
          data-dismissible="{{ $vc_system_ads_toolbar->dismissible ? '1' : '0' }}"
-         style="display: none; background-color: {{ $vc_system_ads_toolbar->background_color }}; color: {{ $vc_system_ads_toolbar->text_color }};">
+         style="display: none; background-color: {{ $vc_system_ads_toolbar->background_color }}; color: {{ $vc_system_ads_toolbar->text_color }} !important;">
 
         @if($vc_system_ads_toolbar->link)
             <a class="system-ads-toolbar__text system-ads-toolbar__link"
+               style="color: {{ $vc_system_ads_toolbar->text_color }} !important;"
                href="{{ $vc_system_ads_toolbar->link }}"
                target="_blank"
                rel="noopener noreferrer">{{ $vc_system_ads_toolbar->text }}</a>
         @else
-            <span class="system-ads-toolbar__text">{{ $vc_system_ads_toolbar->text }}</span>
+            <span style="color: {{ $vc_system_ads_toolbar->text_color }} !important;" class="system-ads-toolbar__text">{{ $vc_system_ads_toolbar->text }}</span>
         @endif
 
         @if($vc_system_ads_toolbar->dismissible)

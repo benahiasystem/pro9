@@ -1,3 +1,14 @@
+@php
+    $storeImageRatio = in_array(data_get($preferences ?? [], 'image_aspect_ratio'), ['4:5', '5:4', '1:1'], true)
+        ? data_get($preferences, 'image_aspect_ratio')
+        : '1:1';
+    $storeImageFit = in_array(data_get($preferences ?? [], 'image_fit'), ['cover', 'contain'], true)
+        ? data_get($preferences, 'image_fit')
+        : 'contain';
+    $storeMediaClass = 'store-card-media store-card-media--' . str_replace(':', '-', $storeImageRatio)
+        . ' store-card-media--fit-' . $storeImageFit;
+@endphp
+
 @foreach ($dataPaginate as $item)
     @php
         $configuration = \App\Models\Tenant\Configuration::first();
@@ -59,11 +70,11 @@
             <figure class="product-image-container product-image-container-ecommerce h-auto">
 
                 @if($variationSelector)
-                <a href="javascript:void(0)" role="button" class="product-image product-image-list open-variations" title="Elegir opciones">
+                <a href="javascript:void(0)" role="button" class="product-image product-image-list open-variations {{ $storeMediaClass }}" title="Elegir opciones">
                     <img src="{{ $imagePath }}" class="image" alt="{{ $item->description }}">
                 </a>
                 @else
-                <a href="/ecommerce/item/{{ $item->id }}/{{ \Illuminate\Support\Str::slug($item->description) }}" class="product-image product-image-list">
+                <a href="/ecommerce/item/{{ $item->id }}/{{ \Illuminate\Support\Str::slug($item->description) }}" class="product-image product-image-list {{ $storeMediaClass }}">
                     <img src="{{ $imagePath }}" class="image" alt="{{ $item->description }}">
                 </a>
                 @endif
@@ -254,6 +265,45 @@
             object-fit: cover;
             object-position: center;
         }
+    }
+
+    .product.product-style .store-card-media {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-height: 0;
+        max-height: none;
+        overflow: hidden;
+    }
+
+    .product.product-style .store-card-media--1-1 {
+        aspect-ratio: 1 / 1;
+    }
+
+    .product.product-style .store-card-media--4-5 {
+        aspect-ratio: 4 / 5;
+    }
+
+    .product.product-style .store-card-media--5-4 {
+        aspect-ratio: 5 / 4;
+    }
+
+    .product.product-style .store-card-media .image {
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    .product.product-style .store-card-media--fit-cover .image {
+        object-fit: cover;
+        object-position: center;
+    }
+
+    .product.product-style .store-card-media--fit-contain .image {
+        object-fit: contain;
+        object-position: center;
     }
 </style>
 
