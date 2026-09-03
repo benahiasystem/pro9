@@ -161,6 +161,28 @@
                     >{{ option }}</el-radio-button>
                   </el-radio-group>
                 </div>
+                <div class="form-group form-modern mb-3">
+                  <label class="control-label">Cómo se acomoda la foto</label>
+                  <small class="d-block text-muted mb-2" style="line-height: 1.5;">
+                    Qué hacer cuando la foto no tiene la misma forma que el recuadro.
+                  </small>
+                  <div class="store-image-fit">
+                    <div
+                      v-for="fit in image_fit_options"
+                      :key="fit.value"
+                      class="store-image-fit__option"
+                      :class="{ 'is-active': form.image_fit === fit.value }"
+                      @click="form.image_fit = fit.value"
+                    >
+                      <el-radio v-model="form.image_fit" :label="fit.value">
+                        <span class="store-image-fit__text">
+                          <span class="store-image-fit__title">{{ fit.label }}</span>
+                          <small class="store-image-fit__hint">{{ fit.hint }}</small>
+                        </span>
+                      </el-radio>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div class="col-md-6">
                 <div class="form-group form-modern">
@@ -245,6 +267,19 @@
                       </a>
                     </div>
                   </div>
+                </div>
+                <div class="form-group form-modern mb-3">
+                  <label class="control-label">Relación de aspecto de la imagen</label>
+                  <small class="d-block text-muted mb-2" style="line-height: 1.5;">
+                    La forma del recuadro donde se muestra la foto de cada producto en la tienda y en el restaurante.
+                  </small>
+                  <el-radio-group class="btn-pagination" v-model="form.image_aspect_ratio">
+                    <el-radio-button
+                      v-for="ratio in image_aspect_ratio_options"
+                      :key="ratio.value"
+                      :label="ratio.value"
+                    >{{ ratio.label }}</el-radio-button>
+                  </el-radio-group>
                 </div>
               </div>
 
@@ -689,6 +724,50 @@
     border-left: 3px solid #ebeef5;
     padding-left: 18px;
 }
+
+.store-image-fit {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.store-image-fit__option {
+    padding: 10px 12px;
+    border: 1px solid #dcdfe6;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.store-image-fit__option.is-active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 6%, transparent);
+}
+.store-image-fit__option.is-active .el-radio__input.is-checked+.el-radio__label,
+.store-image-fit__option.is-active .el-radio__input.is-checked+.el-radio__label {
+  color: var(--primary) !important;
+}
+.store-image-fit__option .el-radio {
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    white-space: normal;
+}
+.store-image-fit__option .el-radio__input {
+    margin-top: 2px;
+}
+.store-image-fit__option .el-radio__label {
+    padding-left: 8px;
+}
+.store-image-fit__text {
+    display: flex;
+    flex-direction: column;
+}
+.store-image-fit__title {
+    line-height: 1.3;
+}
+.store-image-fit__hint {
+    color: #909399;
+    font-size: 12px;
+    line-height: 1.35;
+}
 </style>
 <script>
 import ConfigurationLinks from '../configuration_links/index.vue';
@@ -763,6 +842,23 @@ export default {
       soap_sends: [],
       soap_types: [],
       products_per_page_options: [8, 12, 16, 24, 32, 40],
+      image_aspect_ratio_options: [
+        { value: '4:5', label: '4:5' },
+        { value: '5:4', label: '5:4' },
+        { value: '1:1', label: '1:1' }
+      ],
+      image_fit_options: [
+        {
+          value: 'contain',
+          label: 'Mostrar la foto completa',
+          hint: 'Se ve toda la foto, sin recortes. Puede quedar espacio a los lados.'
+        },
+        {
+          value: 'cover',
+          label: 'Llenar el recuadro',
+          hint: 'La foto cubre todo el espacio. Se recortan los bordes que sobran.'
+        }
+      ],
       editors: {
           classic: ClassicEditor
       },
@@ -820,6 +916,12 @@ export default {
           full_width_banner: parseInt(preferences.full_width_banner) || 0,
           header_theme: preferences.header_theme || 'light',
           products_per_page: parseInt(preferences.products_per_page) || 16,
+          image_aspect_ratio: this.image_aspect_ratio_options.some(r => r.value === preferences.image_aspect_ratio)
+            ? preferences.image_aspect_ratio
+            : '1:1',
+          image_fit: this.image_fit_options.some(f => f.value === preferences.image_fit)
+            ? preferences.image_fit
+            : 'contain',
           // campos de páginas personalizadas
           terms_conditions: data.terms_conditions || '',
           privacy_policy: data.privacy_policy || '',
@@ -970,6 +1072,8 @@ export default {
           full_width_banner: this.form.full_width_banner,
           header_theme: this.form.header_theme,
           products_per_page: this.form.products_per_page,
+          image_aspect_ratio: this.form.image_aspect_ratio,
+          image_fit: this.form.image_fit,
           trust_badges_enabled: this.trustBadgesEnabled ? 1 : 0,
           trust_badges: this.trustBadges.filter(b => (b.text || '').trim() !== ''),
         }
@@ -1025,6 +1129,8 @@ export default {
         full_width_banner: 0,
         header_theme: 'light',
         products_per_page: 16,
+        image_aspect_ratio: '1:1',
+        image_fit: 'contain',
         terms_conditions: '',
         privacy_policy: '',
         about_us: '',
@@ -1048,7 +1154,9 @@ export default {
         only_available_products: this.form.only_available_products,
         full_width_banner: this.form.full_width_banner,
         header_theme: this.form.header_theme,
-        products_per_page: this.form.products_per_page
+        products_per_page: this.form.products_per_page,
+        image_aspect_ratio: this.form.image_aspect_ratio,
+        image_fit: this.form.image_fit
       };
       // Eliminar los switches planos para evitar duplicidad
       delete payload.show_description;
@@ -1109,7 +1217,9 @@ export default {
         only_available_products: this.form.only_available_products,
         full_width_banner: this.form.full_width_banner,
         header_theme: this.form.header_theme,
-        products_per_page: this.form.products_per_page
+        products_per_page: this.form.products_per_page,
+        image_aspect_ratio: this.form.image_aspect_ratio,
+        image_fit: this.form.image_fit
       };
       this.$http
         .post(`/${this.resource}/configuration_color`, payload)

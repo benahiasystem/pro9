@@ -781,6 +781,7 @@ if ($hostname) {
             Route::get('pos/items', 'Tenant\PosController@item');
             Route::get('pos/item/{id}', 'Tenant\PosController@singleItem')->where('id', '[0-9]+');
             Route::get('pos/search_items_cat', 'Tenant\PosController@search_items_cat');
+            Route::post('pos/view-settings', 'Tenant\PosController@save_view_settings');
 
             Route::get('cash', 'Tenant\CashController@index')->name('tenant.cash.index')->middleware('redirect.level');
             Route::get('cash/columns', 'Tenant\CashController@columns');

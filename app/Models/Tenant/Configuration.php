@@ -90,6 +90,8 @@ use Illuminate\Support\Facades\Log;
      * @property bool        $change_free_affectation_igv
      * @property bool        $pos_history
      * @property bool        $pos_cost_price
+     * @property string|null $pos_image_aspect_ratio
+     * @property string|null $pos_image_fit
      * @property bool        $show_totals_on_cpe_list
      * @property string|null $currency_type_id
      * @property bool        $select_available_price_list
@@ -154,6 +156,14 @@ use Illuminate\Support\Facades\Log;
      */
     class Configuration extends ModelTenant
     {
+        const POS_IMAGE_ASPECT_RATIOS = ['4:5', '5:4', '1:1'];
+
+        const POS_IMAGE_ASPECT_RATIO_DEFAULT = '1:1';
+
+        const POS_IMAGE_FITS = ['cover', 'contain'];
+
+        const POS_IMAGE_FIT_DEFAULT = 'contain';
+
         protected $fillable = [
             'active_allowance_charge',
             'active_warehouse_prices',
@@ -232,6 +242,8 @@ use Illuminate\Support\Facades\Log;
             'ticket_58',
             'pos_history',
             'pos_cost_price',
+            'pos_image_aspect_ratio',
+            'pos_image_fit',
             'update_document_on_dispaches',
             'show_service_on_pos',
             'visual',
@@ -456,6 +468,8 @@ use Illuminate\Support\Facades\Log;
             'change_free_affectation_igv' => 'bool',
             'pos_history' => 'bool',
             'pos_cost_price' => 'bool',
+            'pos_image_aspect_ratio' => 'string',
+            'pos_image_fit' => 'string',
             'show_totals_on_cpe_list' => 'bool',
             'auto_print' => 'bool',
             'detraction_amount_rounded_int' => 'bool',
@@ -813,6 +827,8 @@ use Illuminate\Support\Facades\Log;
                 'show_service_on_pos' => (bool)$this->show_service_on_pos,
                 'pos_history' => $this->isPosHistory(),
                 'pos_cost_price' => $this->isPosCostPrice(),
+                'pos_image_aspect_ratio' => $this->getPosImageAspectRatio(),
+                'pos_image_fit' => $this->getPosImageFit(),
                 'show_totals_on_cpe_list' => $this->isShowTotalsOnCpeList(),
                 'detraction_amount_rounded_int' => $this->detraction_amount_rounded_int,
                 'customer_filter_by_seller' => $this->customer_filter_by_seller,
@@ -2545,6 +2561,28 @@ use Illuminate\Support\Facades\Log;
         public function isPosCostPrice(): bool
         {
             return (bool)$this->pos_cost_price;
+        }
+
+        /**
+         *
+         * @return string
+         */
+        public function getPosImageAspectRatio(): string
+        {
+            return in_array($this->pos_image_aspect_ratio, self::POS_IMAGE_ASPECT_RATIOS, true)
+                ? $this->pos_image_aspect_ratio
+                : self::POS_IMAGE_ASPECT_RATIO_DEFAULT;
+        }
+
+        /**
+         *
+         * @return string
+         */
+        public function getPosImageFit(): string
+        {
+            return in_array($this->pos_image_fit, self::POS_IMAGE_FITS, true)
+                ? $this->pos_image_fit
+                : self::POS_IMAGE_FIT_DEFAULT;
         }
 
         /**

@@ -273,7 +273,8 @@ html.dark .pos .product-item .card-body  {
    `--border-color` no existe en ningún tema: no se consulta. */
 
 .pos,
-.pos-table {
+.pos-table,
+.garage {
     --pos-primary: var(--primary-color, #3d6bf5);
     --pos-text: var(--dark-color, var(--black-dark, #3a4658));
     --pos-muted: var(--muted, var(--black-accent, color-mix(in srgb, var(--pos-text) 62%, #fff)));
@@ -290,7 +291,8 @@ html.dark .pos .product-item .card-body  {
 }
 
 html.dark .pos,
-html.dark .pos-table {
+html.dark .pos-table,
+html.dark .garage {
     --pos-text: #d1d2d6;
     --pos-muted: #8b93ab;
     --pos-surface: var(--contents-dark, var(--black-content-dark, var(--md-content-dark, #283046)));
@@ -390,12 +392,163 @@ html.dark .pos-table {
     line-height: 1.3;
     font-size: 14px;
 }
-
-/* Contenedor de la imagen: solo ancla el indicador de pack
-   (la imagen conserva su altura fija original) */
-
 .pos .product-item .card-body .pos-card-media {
     position: relative;
+}
+.pos-card-media--1-1 {
+    aspect-ratio: 1 / 1;
+}
+
+.pos-card-media--4-5 {
+    aspect-ratio: 4 / 5;
+}
+
+.pos-card-media--5-4 {
+    aspect-ratio: 5 / 4;
+}
+.pos-card-media[class*="pos-card-media--"] {
+    position: relative;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.pos-card-media[class*="pos-card-media--"] .img-custom {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+}
+.pos-card-media--fit-cover .img-custom {
+    object-fit: cover;
+    object-position: center;
+}
+.pos-card-media--fit-contain .img-custom {
+    object-fit: contain;
+    object-position: center;
+}
+.pos-view-dialog .pos-view-dialog__body .control-label {
+    display: block;
+    font-weight: 600;
+    color: var(--pos-text);
+}
+
+.pos-view-dialog .pos-view-dialog__ratios {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.pos-view-dialog .pos-view-dialog__ratio {
+    flex: 1 1 115px;
+    margin: 0;
+    padding: 10px 8px;
+    border: 1px solid var(--pos-border);
+    border-radius: var(--pos-radius);
+    cursor: pointer;
+}
+
+.pos-view-dialog .pos-view-dialog__ratio.is-active {
+    border-color: var(--pos-primary);
+    background: color-mix(in srgb, var(--pos-primary) 6%, transparent);
+}
+
+.pos-view-dialog .pos-view-dialog__ratio .el-radio {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    white-space: normal;
+}
+
+.pos-view-dialog .pos-view-dialog__ratio .el-radio__label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 8px;
+}
+.pos-view-dialog .pos-view-dialog__shape {
+    flex: 0 0 auto;
+    display: inline-block;
+    width: 22px;
+    border-radius: 3px;
+    background: var(--pos-border-strong);
+}
+
+.pos-view-dialog .pos-view-dialog__shape--1-1 {
+    height: 22px;
+}
+
+.pos-view-dialog .pos-view-dialog__shape--4-5 {
+    height: 27px;
+}
+
+.pos-view-dialog .pos-view-dialog__shape--5-4 {
+    height: 18px;
+}
+
+.pos-view-dialog .pos-view-dialog__ratio.is-active .pos-view-dialog__shape {
+    background: var(--pos-primary);
+}
+.pos-view-dialog .pos-view-dialog__ratio.is-active .pos-view-dialog__ratio-text{
+    color: var(--pos-primary);
+}
+.pos-view-dialog__ratio-text,
+.pos-view-dialog__fit-hint {
+    overflow-wrap: normal;
+    word-break: normal;
+}
+.pos-view-dialog .pos-view-dialog__fits {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.pos-view-dialog .pos-view-dialog__fit {
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--pos-border);
+    border-radius: var(--pos-radius);
+    cursor: pointer;
+}
+
+.pos-view-dialog .pos-view-dialog__fit.is-active {
+    border-color: var(--pos-primary);
+    background: color-mix(in srgb, var(--pos-primary) 6%, transparent);
+}
+
+.pos-view-dialog .pos-view-dialog__fit .el-radio {
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    white-space: normal;
+}
+
+.pos-view-dialog .pos-view-dialog__fit .el-radio__input {
+    margin-top: 2px;
+}
+
+.pos-view-dialog .pos-view-dialog__fit .el-radio__label {
+    padding-left: 8px;
+}
+
+.pos-view-dialog .pos-view-dialog__fit-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.pos-view-dialog .pos-view-dialog__fit-title {
+    color: var(--pos-text);
+    line-height: 1.3;
+}
+
+.pos-view-dialog .pos-view-dialog__fit-hint {
+    color: var(--pos-muted);
+    font-size: 12px;
+    line-height: 1.35;
 }
 
 /* Indicador de pack: dentro de la imagen, esquina inferior izquierda,

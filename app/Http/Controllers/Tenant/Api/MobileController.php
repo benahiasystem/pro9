@@ -42,6 +42,7 @@ use Modules\Dispatch\Models\DispatchAddress;
 use App\Models\Tenant\PersonAddress;
 use App\Models\Tenant\PriceLabel;
 use App\Models\Tenant\SaleNote;
+use Illuminate\Database\Eloquent\Collection;
 use Modules\QrApi\Http\Controllers\QrApiController;
 use Modules\BusinessTurn\Models\BusinessTurn;
 use Modules\MobileApp\Http\Controllers\Api\BankAccountController;
@@ -62,6 +63,10 @@ class MobileController extends Controller
 
         $company = Company::active();
         $configuration = Configuration::first();
+        /** @var Collection */
+        $business_turn = BusinessTurn::all();
+        $configuration_tap = DB::connection('tenant')->table('configuration_taps')->first();
+
         $business_turn_tap = BusinessTurn::where('value','tap')->first();
 
         $user = $request->user();
@@ -94,6 +99,16 @@ class MobileController extends Controller
                 'qr_api_key_ws' => $configuration->qr_api_apiKey,
                 'url_logo' => ($company->logo)?asset('storage/uploads/logos/'.$company->logo):'',
                 'logo_base64' => $company->logo ? 'data:image/png;base64,' . base64_encode(file_get_contents(public_path('storage/uploads/logos/' . $company->logo))) : '',
+                'business_turn' => [
+                    'tap'  => [
+                        'active' => $business_turn->where('value','tap')->first()?->active,
+                        'save_plates_client' => $configuration_tap->save_plates_client
+                    ],  
+                    'hotel'  => ['active' => $business_turn->where('value','hotel')->first()?->active],  
+                    'transport'  => ['active' =>$business_turn->where('value','transport')->first()?->active],  
+                    'pharmarcy'  => [ 'active' => $business_turn->where('value','pharmarcy')->first()?->active],  
+                    'restaurant'  => [ 'active' =>$business_turn->where('value','restaurant')->first()?->active ],  
+                ],
                 'is_business_turn_tap' => ($business_turn_tap)?$business_turn_tap->active:0,
             ],
             'app_configuration' => $this->getAppConfiguration(),
