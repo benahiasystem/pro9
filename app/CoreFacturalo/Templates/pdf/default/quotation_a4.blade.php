@@ -230,15 +230,15 @@
     @endif
 </table>
 
+@if ($document->description)
 <table class="full-width mt-3">
-    @if ($document->description)
         <tr>
             <td width="15%" class="align-top">Observación: </td>
             <td width="85%">{!! str_replace("\n", "<br/>", $document->description) !!}</td>
             {{-- <td width="85%">{{ $document->description }}</td> --}}
         </tr>
-    @endif
 </table>
+@endif
 
 @if ($document->guides)
 <br/>
