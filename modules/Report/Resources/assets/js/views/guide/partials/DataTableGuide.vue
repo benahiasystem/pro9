@@ -455,11 +455,60 @@ export default {
         filterItems() {
             this.items = this.all_items
         },
-        clickDownload(type) {
-            let query = queryString.stringify({
+        async clickDownload(type) {
+            const mimeTypes = {
+                excel: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                pdf: 'application/pdf',
+            };
+            const extensions = {
+                excel: 'xlsx',
+                pdf: 'pdf',
+            };
+            const query = queryString.stringify({
                 ...this.form
             });
-            window.open(`/${this.resource}/${type}/?${query}`, '_blank');
+
+            try {
+                const response = await this.$http.get(
+                    `/${this.resource}/${type}/?${query}`,
+                    { responseType: 'blob' }
+                );
+
+                const contentType = (response.headers && (response.headers['content-type'] || response.headers['Content-Type'])) || response.data.type || '';
+                const looksLikeJsonHeader = contentType.includes('application/json') || contentType.includes('text/json');
+
+                if (looksLikeJsonHeader || (!contentType.includes('pdf') && !contentType.includes('sheet') && !contentType.includes('octet-stream'))) {
+                    const text = await response.data.text();
+                    const trimmed = (text || '').trim();
+                    if (trimmed.startsWith('{')) {
+                        try {
+                            const data = JSON.parse(trimmed);
+                            if (data && (data.success !== undefined || data.message)) {
+                                this.$message.success(
+                                    data.message || 'El reporte se está procesando; revísalo en la bandeja de descargas.'
+                                );
+                                return;
+                            }
+                        } catch (e) {
+                            // no era JSON válido
+                        }
+                    }
+                    response.data = new Blob([text], { type: mimeTypes[type] || contentType || 'application/octet-stream' });
+                }
+
+                const blob = new Blob([response.data], { type: mimeTypes[type] || response.data.type });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Reporte_Consolidado_Items_${Date.now()}.${extensions[type] || 'bin'}`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+            } catch (error) {
+                console.log(error);
+                this.$message.error('Ocurrió un error al generar el reporte');
+            }
         },
         initForm() {
 
