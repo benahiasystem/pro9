@@ -893,43 +893,20 @@
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
                                         <div class="col-12">
-                                            <div class="d-flex flex-column align-items-start">
-                                                <div class="d-flex">
-                                                    <div :class="{ 'has-danger': errors.global_igv_handling }" class="form-group">
-                                                        <el-switch v-model="form.global_igv_handling"
-                                                            @change="submit"></el-switch>
-                                                        <small v-if="errors.global_igv_handling" class="form-control-feedback"
-                                                            v-text="errors.global_igv_handling[0]"></small>
+                                            <label class="control-label">Manejo de IGV
+                                                <el-tooltip class="item" effect="dark" placement="top-start">
+                                                    <div slot="content">
+                                                        <strong>Activado (global):</strong> todos los productos se registran con IGV incluido. El checkbox "Incluye Igv" se oculta del formulario de productos.<br />
+                                                        <strong>Desactivado (individual):</strong> el checkbox "Incluye Igv" se muestra y se configura por producto.
                                                     </div>
-                                                    <label class="control-label ms-2">Manejo de IGV
-                                                        <el-tooltip class="item" effect="dark" placement="top-start">
-                                                            <div slot="content">
-                                                                <strong>Activado (global):</strong> todos los productos se registran con IGV incluido. El checkbox "Incluye Igv" se oculta del formulario de productos.<br />
-                                                                <strong>Desactivado (individual):</strong> el checkbox "Incluye Igv" se muestra y se configura por producto.
-                                                            </div>
-                                                            <i class="fa fa-info-circle"></i>
-                                                        </el-tooltip>
-                                                    </label>
-                                                </div>
-                                                <div>
-                                                    <span v-if="form.global_igv_handling" class="text-muted small">
-                                                        Todos los productos se registrarán con IGV incluido. El checkbox "Incluye IGV" no aparecerá en el formulario.
-                                                    </span>
-                                                    <span v-else class="text-muted small">
-                                                        El checkbox "Incluye IGV" se mostrará en el formulario y podrás configurarlo producto por producto.
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div v-if="typeUser != 'integrator'" class="inputs-column">
-                                            <label class="control-label">Impuesto bolsa plástica</label>
-                                            <div :class="{ 'has-danger': errors.amount_plastic_bag_taxes }" class="form-group w-50">
-                                                <el-input-number v-model="form.amount_plastic_bag_taxes" :max="0.5" :min="0.1"
-                                                    :precision="2" :step="0.1"
-                                                    @change="changeAmountPlasticBagTaxes"></el-input-number>
-                                                <small v-if="errors.amount_plastic_bag_taxes" class="form-control-feedback"
-                                                    v-text="errors.amount_plastic_bag_taxes[0]"></small>
+                                                    <i class="fa fa-info-circle"></i>
+                                                </el-tooltip>
+                                            </label>
+                                            <div :class="{ 'has-danger': errors.global_igv_handling }" class="form-group">
+                                                <el-switch v-model="form.global_igv_handling"
+                                                    @change="submit"></el-switch>
+                                                <small v-if="errors.global_igv_handling" class="form-control-feedback"
+                                                    v-text="errors.global_igv_handling[0]"></small>
                                             </div>
                                         </div>
 
@@ -945,6 +922,17 @@
                                                     @change="submit"></el-switch>
                                                 <small v-if="errors.include_igv" class="form-control-feedback"
                                                     v-text="errors.include_igv[0]"></small>
+                                            </div>
+                                        </div>
+
+                                        <div v-if="typeUser != 'integrator'" class="inputs-column">
+                                            <label class="control-label">Impuesto bolsa plástica</label>
+                                            <div :class="{ 'has-danger': errors.amount_plastic_bag_taxes }" class="form-group w-50">
+                                                <el-input-number v-model="form.amount_plastic_bag_taxes" :max="0.5" :min="0.1"
+                                                    :precision="2" :step="0.1"
+                                                    @change="changeAmountPlasticBagTaxes"></el-input-number>
+                                                <small v-if="errors.amount_plastic_bag_taxes" class="form-control-feedback"
+                                                    v-text="errors.amount_plastic_bag_taxes[0]"></small>
                                             </div>
                                         </div>
 
