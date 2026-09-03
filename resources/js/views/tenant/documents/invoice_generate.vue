@@ -8123,9 +8123,15 @@ export default {
                 }
             }
 
+            const percentage_base = this.isGlobalDiscountBase
+                ? total_base
+                : parseFloat(ctx.total);
+
+            if (!this.is_amount && percentage_base <= 0) return;
+
             let global_amount = this.is_amount
                 ? parseFloat(amount_discount)
-                : _.round((parseFloat(amount_discount) / 100) * total_base, 2);
+                : _.round((parseFloat(amount_discount) / 100) * percentage_base, 2);
 
             // Suma de los items que reciben descuento (denominador de la formula)
             let sum_items_value = _.sumBy(this.form.items, item => {
@@ -8392,23 +8398,30 @@ export default {
             const total = total_value + total_taxes;
 
             const quantity = parseFloat(item.quantity) || 1;
-            // 3270: precio unitario de la operación = total de línea con impuestos / cant.
-            const unit_price_operation =
-                quantity > 0 ? total / quantity : orig.unit_price;
-
-            // 3271: unit_value ORIGINAL; 3270: unit_price = precio operación post-dto.
+            // 3270: precio de venta unitario = total de linea con impuestos,
+            // MENOS los descuentos que no afectan la BI, entre la cantidad.
             //
-            // Si el descuento NO afecta la base imponible (catalogo 53 '01') el
-            // item queda intacto: total_value y total_igv no cambian, asi que el
-            // precio unitario tampoco puede cambiar sin romper 3270
-            // (PriceAmount ≈ (LineExtensionAmount + IGV) / cantidad).
-            // Antes se hacia `orig.unit_price - discount_no_base`, que resta un
-            // importe de linea a un precio unitario: con cantidad > 1 el precio
-            // caia el descuento completo en lugar de la parte proporcional, y ni
-            // siquiera con cantidad 1 cuadraba contra total_value.
+            // El descuento '01' no toca total_value ni el IGV, pero igual viaja
+            // dentro de la linea como <cac:AllowanceCharge ChargeIndicator=false>
+            // y SUNAT lo resta al validar el precio de venta unitario. Por eso
+            // hay que descontarlo aqui aunque la base quede intacta.
+            //
+            // Ojo con las dos versiones anteriores, ambas rechazadas o rotas:
+            // - `orig.unit_price - discount_no_base` restaba un importe de linea
+            //   a un precio unitario: con cantidad > 1 bajaba el descuento
+            //   completo en vez de la parte proporcional.
+            // - Dejar `orig.unit_price` intacto cuadra contra (LEA + IGV)/cant,
+            //   pero SUNAT rechaza con 3270 porque su calculo resta el
+            //   AllowanceCharge de la linea.
+            const unit_price_operation =
+                quantity > 0
+                    ? (total - discount_no_base) / quantity
+                    : orig.unit_price;
+
+            // 3271: unit_value ORIGINAL; 3270: unit_price = precio de venta post-dto.
             item.unit_value = orig.unit_value;
             item.unit_price =
-                discount_base > 0
+                discount_base > 0 || discount_no_base > 0
                     ? _.round(unit_price_operation, 6)
                     : orig.unit_price;
             item.total_value = _.round(total_value, 2);
