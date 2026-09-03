@@ -679,6 +679,9 @@ html.fixed.sidebar-white:not(.dark) .sidebar-left a{
         margin-left: -18px;
         margin-top: -18px;
     }
+    html.fixed.has-system-ads-toolbar .page-header {
+        top: 60px;
+    }
 }
 .btn-sun-ren-container div div.el-input-group div.el-input-group__append button.btn-sunat-reniec,
 button.btn-sunat-reniec {

@@ -216,6 +216,7 @@
 <body class="pr-0"
     data-tenant="true"
     data-company-title="{{ $vc_company->title_web ?: $vc_company->trade_name }}">
+    @include('tenant.layouts.partials.ads_toolbar')
     @include('tenant.layouts.partials.outdoor_mode')
     <section class="body">
         <!-- start: header -->
@@ -252,6 +253,9 @@
     @endif
 
     <div id="mozo-access-modal-root"></div>
+
+    @include('tenant.layouts.partials.ads_modal')
+    @include('tenant.layouts.partials.ads_notification')
 
     <!-- Vendor -->
     <script src="{{ asset('porto-light/vendor/jquery/jquery.js')}}"></script>

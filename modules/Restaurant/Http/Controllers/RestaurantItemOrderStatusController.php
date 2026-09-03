@@ -8,6 +8,7 @@ use Illuminate\Routing\Controller;
 use Exception;
 use App\Models\Tenant\Item;
 use Modules\Restaurant\Models\RestaurantItemOrderStatus;
+use Modules\Restaurant\Models\RestaurantTable;
 use Modules\Restaurant\Services\RestaurantStockService;
 use App\Services\CentrifugoService;
 use Hyn\Tenancy\Contracts\CurrentHostname;
@@ -120,12 +121,18 @@ class RestaurantItemOrderStatusController extends Controller
         $orderStatus->status_description = $request->status_description;
         $orderStatus->save();
 
+        // Si se agrega un ítem nuevo a una mesa ya "served", volver a pending
+        // (cocina tiene trabajo pendiente). No degradar shipped/delivered.
+        $sync = $this->syncTableOrderStatusFromKitchen((int) $request->table_id);
+
         $this->publishCommandUpdate();
         $this->publishStockUpdate();
 
         return [
             'success' => true,
-            'message' => 'Producto agregado con éxito.'
+            'message' => 'Producto agregado con éxito.',
+            'kitchen_complete' => $sync['kitchen_complete'],
+            'order_status' => $sync['order_status'],
         ];
 
     }
@@ -171,12 +178,17 @@ class RestaurantItemOrderStatusController extends Controller
 
     public function isProductsCommandStatusServer($tableId)
     {
-        // Contar cuántos productos NO están en estado 4
+        $total = RestaurantItemOrderStatus::where('table_id', $tableId)->count();
+
+        // Sin ítems de comanda no se considera "servido" (evita true vacío).
+        if ($total === 0) {
+            return false;
+        }
+
         $notCompleted = RestaurantItemOrderStatus::where('table_id', $tableId)
-            ->where('status', '!=', 4)
+            ->where('status', '!=', self::STATUS_DELIVERED)
             ->count();
 
-        // Si hay alguno que no esté en 4 => false
         return $notCompleted === 0;
     }
 
@@ -216,17 +228,94 @@ class RestaurantItemOrderStatusController extends Controller
         }
 
         // Solo incrementar el estado (supplies ya fueron descontados en saveItemOrder)
-        if ($order->status < 4) {
+        if ($order->status < self::STATUS_DELIVERED) {
             $order->status += 1;
         }
         $order->save();
+
+        // Si cocina terminó todos los ítems, promover la mesa a "served"
+        // para desbloquear En camino / Despachado en Delivery (aunque ya esté pagado).
+        $sync = $this->syncTableOrderStatusFromKitchen((int) $order->table_id);
 
         $this->publishCommandUpdate();
 
         return [
             'success' => true,
-            'message' => 'Estado cambiado con éxito'
+            'message' => 'Estado cambiado con éxito',
+            'kitchen_complete' => $sync['kitchen_complete'],
+            'order_status' => $sync['order_status'],
+            'table_id' => $order->table_id,
+            'is_paid' => $sync['is_paid'],
         ];
+    }
+
+    /**
+     * Sincroniza restaurant_tables.order_status con el avance de comanda.
+     *
+     * Reglas:
+     * - Si todos los ítems están en status 4 y order_status es pending/precuenta → served
+     * - Si hay ítems incompletos y order_status es served → pending (vuelve a cocina)
+     * - Nunca degrada shipped ni delivered (flujo de repartidor)
+     * - No toca is_paid
+     */
+    private function syncTableOrderStatusFromKitchen(int $tableId): array
+    {
+        $table = RestaurantTable::find($tableId);
+
+        if (!$table) {
+            return [
+                'kitchen_complete' => false,
+                'order_status' => null,
+                'is_paid' => false,
+                'changed' => false,
+            ];
+        }
+
+        $kitchenComplete = $this->isProductsCommandStatusServer($tableId);
+        $current = $table->order_status ?: 'pending';
+        $next = $current;
+        $changed = false;
+
+        // Estados avanzados de delivery/reparto: no degradar
+        $lockedStatuses = ['shipped', 'delivered', 'deleted'];
+
+        if ($kitchenComplete) {
+            if (in_array($current, ['pending', 'precuenta', null, ''], true)) {
+                $next = 'served';
+            }
+        } else {
+            // Hay trabajo pendiente en cocina: solo bajar desde served → pending
+            if ($current === 'served') {
+                $next = 'pending';
+            } elseif (in_array($current, $lockedStatuses, true)) {
+                $next = $current;
+            }
+        }
+
+        if ($next !== $current) {
+            $table->order_status = $next;
+            $table->save();
+            $changed = true;
+            $this->publishTablesUpdate();
+        }
+
+        return [
+            'kitchen_complete' => $kitchenComplete,
+            'order_status' => $table->order_status,
+            'is_paid' => (bool) $table->is_paid,
+            'changed' => $changed,
+        ];
+    }
+
+    private function publishTablesUpdate(): void
+    {
+        $fqdn = app(CurrentHostname::class)?->fqdn ?? 'local';
+        $payload = app(RestaurantConfigurationController::class)->tablesAndEnv();
+
+        app(CentrifugoService::class)->publish("restaurant:{$fqdn}", [
+            'event'   => 'tables-env-updated',
+            'payload' => $payload,
+        ]);
     }
 
     /**

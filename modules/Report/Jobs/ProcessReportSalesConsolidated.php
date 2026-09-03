@@ -69,9 +69,15 @@ class ProcessReportSalesConsolidated implements ShouldQueue
             $this->login($this->user_id);
 
             $company = Company::first();
+            $user = auth()->user();
             $establishment = (!empty($this->request['establishment_id']))
                 ? Establishment::findOrFail($this->request['establishment_id'])
-                : auth()->user()->establishment;
+                : ($user ? $user->establishment : Establishment::first());
+
+            if (!$establishment) {
+                throw new \RuntimeException('No se encontró establecimiento para generar el reporte consolidado.');
+            }
+
             $params = $this->request;
 
             $tray = $this->findDownloadTray($this->tray_id);
@@ -91,12 +97,30 @@ class ProcessReportSalesConsolidated implements ShouldQueue
 
             $this->finishedDownloadTray($tray, $filename, $path);
         } catch (\Throwable $th) {
-            $tray = $this->findDownloadTray($this->tray_id);
-            if ($tray) {
-                $tray->date_end = date('Y-m-d H:i:s');
-                $tray->status = 'FAILED';
-                $tray->save();
+            \Log::error('ProcessReportSalesConsolidated FAILED', [
+                'tray_id' => $this->tray_id,
+                'website_id' => $this->website_id,
+                'user_id' => $this->user_id,
+                'export_mode' => $this->export_mode,
+                'format' => $this->format,
+                'report_source' => $this->report_source,
+                'message' => $th->getMessage(),
+                'file' => $th->getFile().':'.$th->getLine(),
+            ]);
+
+            try {
+                $tray = $this->findDownloadTray($this->tray_id);
+                if ($tray) {
+                    $tray->date_end = date('Y-m-d H:i:s');
+                    $tray->status = 'FAILED';
+                    $tray->save();
+                }
+            } catch (\Throwable $trayError) {
+                \Log::error('ProcessReportSalesConsolidated no pudo marcar FAILED en bandeja', [
+                    'message' => $trayError->getMessage(),
+                ]);
             }
+
             $this->fail($th);
         }
     }

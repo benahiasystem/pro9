@@ -266,6 +266,9 @@ a:active {
         top: 60px;
         background-color: #fff;
     }
+    html.fixed.has-system-ads-toolbar .page-header {
+        top: 100px;
+    }
 
     html.fixed.header-floating .page-header,
     html.fixed.header-static .page-header {

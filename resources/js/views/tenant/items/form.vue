@@ -41,6 +41,7 @@
                                   :variant="resolvedVariant"
                                   :pinned-fields="pinned_fields"
                                   :saving="layout_saving"
+                                  :global-igv-handling="globalIgvHandling"
                                   @editing-changed="editingLayout = $event"
                                   @save="onSaveLayout">
                 <template #internal_id>
@@ -3176,7 +3177,9 @@ this.activeName = null
             this.$http.get(`/item-form-layout/${this.resolvedVariant}`)
                 .then(response => {
                     const data = response.data && response.data.data ? response.data.data : null
-                    const available = getAvailableFields(this.resolvedVariant).map(f => f.key)
+                    const available = getAvailableFields(this.resolvedVariant, {
+                        globalIgvHandling: this.globalIgvHandling,
+                    }).map(f => f.key)
                     const remote = data && Array.isArray(data.pinned_fields) ? data.pinned_fields : []
                     const filtered = remote.filter(p =>
                         (typeof p.field_key === 'string' && p.field_key.indexOf('__spacer__') === 0)
@@ -3190,6 +3193,10 @@ this.activeName = null
                 })
         },
         pinFromForm(fieldKey) {
+            if (fieldKey === 'has_igv' && this.globalIgvHandling) {
+                this.$message.warning('No puede fijar "Incluye IGV" mientras el manejo de IGV global está activado en Configuraciones.');
+                return;
+            }
             if (this.$refs.pinnedBar && typeof this.$refs.pinnedBar.pinField === 'function') {
                 this.$refs.pinnedBar.pinField(fieldKey);
             }
