@@ -854,7 +854,38 @@
 
                             <div class="pos-cart-item__meta">
                                 <span class="pos-cart-item__unit">{{ item.unit_type_id }}</span>
-                                <span class="pos-cart-item__unit-price">
+                                <span
+                                    v-if="edit_unit_price && edit_price_index === index"
+                                    class="pos-cart-item__price-edit"
+                                >
+                                    <span class="pos-cart-item__currency">
+                                        {{ currency_type.symbol }}
+                                    </span>
+                                    <el-input
+                                        :ref="'row_unit_price_' + index"
+                                        class="pos-cart-item__price-input"
+                                        size="mini"
+                                        inputmode="decimal"
+                                        v-model="edit_price_value"
+                                        @focus="valueInputSelect"
+                                        @click.native="valueInputSelect"
+                                        @blur="applyRowUnitPrice(index)"
+                                        @keyup.enter.native="applyRowUnitPrice(index)"
+                                        @keyup.esc.native="cancelRowUnitPrice"
+                                    ></el-input>
+                                    <span class="pos-cart-item__price-suffix">c/u</span>
+                                </span>
+                                <button
+                                    v-else-if="edit_unit_price"
+                                    type="button"
+                                    class="pos-cart-item__unit-price is-editable"
+                                    title="Editar precio unitario"
+                                    @click="openRowUnitPrice(item, index)"
+                                >
+                                    {{ currency_type.symbol }} {{ rowUnitPrice(item) }} c/u
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" /></svg>
+                                </button>
+                                <span v-else class="pos-cart-item__unit-price">
                                     {{ currency_type.symbol }} {{ rowUnitPrice(item) }} c/u
                                 </span>
                                 <small
@@ -1629,6 +1660,8 @@ export default {
             // Solo celular: despliega la lista del carrito dentro de la
             // barra fija inferior (en escritorio la lista siempre se ve)
             show_cart_mobile: false,
+            edit_price_index: null,
+            edit_price_value: "",
             // Producto cuya cantidad se está actualizando (la validación de
             // stock es una petición) y el que acaba de cambiar, para avisar
             // al usuario sin que tenga que mirar el número fijamente
@@ -3330,6 +3363,100 @@ export default {
          */
         rowTotal(row) {
             return this.money(row.total);
+        },
+        /**
+         * Abre el input para editar el precio unitario de una fila del carrito.
+         */
+        openRowUnitPrice(item, index) {
+            if (!this.edit_unit_price) return;
+
+            this.edit_price_index = index;
+            this.edit_price_value = this.rowUnitPrice(item);
+
+            this.$nextTick(() => {
+                let input = this.$refs["row_unit_price_" + index];
+                if (Array.isArray(input)) input = input[0];
+                if (!input) return;
+
+                if (typeof input.focus === "function") input.focus();
+                if (typeof input.select === "function") input.select();
+            });
+        },
+        /**
+         * Cierra el input del precio unitario sin aplicar el cambio.
+         */
+        cancelRowUnitPrice() {
+            this.edit_price_index = null;
+            this.edit_price_value = "";
+        },
+        /**
+         * Aplica lo tecleado en el precio unitario (Enter o al salir del input).
+         */
+        applyRowUnitPrice(index) {
+            // El blur que llega después de Enter/Escape ya no tiene nada que aplicar
+            if (this.edit_price_index !== index) return;
+
+            const value = this.edit_price_value;
+            this.cancelRowUnitPrice();
+            this.changeRowUnitPrice(index, value);
+        },
+        changeRowUnitPrice(index, value) {
+            const item = this.form.items[index];
+            if (!item) return;
+
+            const unit_price = parseFloat(value);
+            const current_unit_price = parseFloat(item.unit_price);
+
+            if (isNaN(unit_price) || unit_price <= 0) {
+                return this.$message.error(
+                    "El precio unitario debe ser mayor a 0"
+                );
+            }
+
+            if (
+                this.config.condition_sale_purchase_price_to_item &&
+                unit_price < parseFloat(item.purchase_unit_price)
+            ) {
+                return this.$message.error(
+                    "El Precio Unitario debe ser mayor o igual al costo de compra"
+                );
+            }
+
+            if (
+                !isNaN(current_unit_price) &&
+                _.round(current_unit_price, 4) === _.round(unit_price, 4)
+            ) {
+                return;
+            }
+
+            item.item.unit_price = unit_price;
+            item.item.sale_unit_price = item.item.has_igv
+                ? unit_price
+                : unit_price / (1 + this.percentage_igv);
+
+            if (item.item.calculate_quantity) {
+                const total = parseFloat(item.total);
+                const quantity = isNaN(total)
+                    ? 0
+                    : _.round(total / unit_price, 4);
+
+                item.quantity = quantity;
+                item.item.aux_quantity = quantity;
+            }
+
+            this.row = calculateRowItem(
+                item,
+                this.form.currency_type_id,
+                1,
+                this.percentage_igv
+            );
+            this.row["unit_type_id"] = item.unit_type_id;
+            this.row.presentation = item.presentation;
+
+            this.$set(this.form.items, index, this.row);
+
+            this.calculateTotal();
+            this.setFormPosLocalStorage();
         },
         /**
          * Aumenta/disminuye en una unidad la cantidad de una fila del carrito.
