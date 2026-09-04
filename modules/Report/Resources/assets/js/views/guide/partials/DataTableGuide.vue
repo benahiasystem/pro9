@@ -325,8 +325,10 @@ export default {
             establishment: null,
             establishments: [],
             web_platforms: [],
-            customers: {},
-            users: {},
+            customers: [],
+            all_customers: [],
+            users: [],
+            all_users: [],
             form: {
                 min: 1,
                 max: 2,
@@ -363,8 +365,10 @@ export default {
                 this.all_items = response.data.items
                 this.document_types = response.data.document_types;
                 this.web_platforms = response.data.web_platforms
-                this.customers = response.data.customers
-                this.users = response.data.users
+                this.customers = response.data.customers || []
+                this.all_customers = this.customers
+                this.users = response.data.users || []
+                this.all_users = this.users
             });
 
 
@@ -402,55 +406,62 @@ export default {
         searchRemoteCustomers(input) {
             if (input.length > 0) {
                 this.loading_search = true
-                let parameters = `input=${input}`
-                this.$http.post(`/${this.resource}/customers`, {id: parameters})
+                this.$http.get(`/reports/data-table/persons/customers?input=${encodeURIComponent(input)}`)
                     .then(response => {
-                        console.error(resposne)/*
-                                this.items = response.data.items
-                                this.loading_search = false
-                                if(this.items.length == 0){
-                                    this.filterItems()
-                                }*/
+                        this.customers = response.data.persons || []
+                        if (this.customers.length === 0) {
+                            this.filterCustomers()
+                        }
+                    })
+                    .catch(() => {
+                        this.filterCustomers()
+                    })
+                    .finally(() => {
+                        this.loading_search = false
                     })
             } else {
-                this.filterItems()
+                this.filterCustomers()
             }
-
         },
         searchRemoteUsers(input) {
             if (input.length > 0) {
-                this.loading_search = true
-                let parameters = `input=${input}`
-                this.$http.post(`/${this.resource}/users`, {id: parameters})
-                    .then(response => {
-                        console.error(resposne)/*
-                                this.items = response.data.items
-                                this.loading_search = false
-                                if(this.items.length == 0){
-                                    this.filterItems()
-                                }*/
-                    })
+                const q = input.toLowerCase()
+                this.users = (this.all_users || []).filter(u =>
+                    (u.name || '').toLowerCase().includes(q)
+                )
+                if (this.users.length === 0) {
+                    this.filterUsers()
+                }
             } else {
-                this.filterItems()
+                this.filterUsers()
             }
-
         },
         searchRemoteItems(input) {
             if (input.length > 0) {
                 this.loading_search = true
-                let parameters = `input=${input}`
+                let parameters = `input=${encodeURIComponent(input)}`
                 this.$http.get(`/reports/data-table/items/?${parameters}`)
                     .then(response => {
                         this.items = response.data.items
-                        this.loading_search = false
                         if (this.items.length == 0) {
                             this.filterItems()
                         }
                     })
+                    .catch(() => {
+                        this.filterItems()
+                    })
+                    .finally(() => {
+                        this.loading_search = false
+                    })
             } else {
                 this.filterItems()
             }
-
+        },
+        filterCustomers() {
+            this.customers = this.all_customers
+        },
+        filterUsers() {
+            this.users = this.all_users
         },
         filterItems() {
             this.items = this.all_items
