@@ -9,6 +9,7 @@ use Modules\Inventory\Traits\InventoryTrait;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Note;
 use App\Models\Tenant\VoidedDocument;
+use Modules\Inventory\Models\InventoryTransfer;
 
 class InventoryVoidedServiceProvider extends ServiceProvider
 {
@@ -288,6 +289,12 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                         return;
                     }
 
+                    // Motivo 04: revertir el traslado inventario (destino → origen)
+                    if ($dispatch->transfer_reason_type_id === '04') {
+                        $this->reverseInventoryTransferFromDispatch($dispatch);
+                        return;
+                    }
+
                     $warehouse = $this->findWarehouse($dispatch->establishment_id);
 
                     foreach ($dispatch->items as $detail) {
@@ -302,6 +309,39 @@ class InventoryVoidedServiceProvider extends ServiceProvider
                     }
             }
         });
+    }
+
+    /**
+     * Revierte el InventoryTransfer creado por la guía (motivo 04).
+     */
+    private function reverseInventoryTransferFromDispatch(Dispatch $dispatch): void
+    {
+        $transfer = InventoryTransfer::query()->where('dispatch_id', $dispatch->id)->first();
+        if (!$transfer) {
+            // Fallback: descuento simple sin traslado registrado
+            $warehouse = $this->findWarehouse($dispatch->establishment_id);
+            foreach ($dispatch->items as $detail) {
+                $this->createInventoryKardex($dispatch, $detail->item_id, $detail->quantity, $warehouse->id);
+                if (!$detail->dispatch->reference_sale_note_id && !$detail->dispatch->reference_order_note_id && !$detail->dispatch->reference_document_id) {
+                    $this->updateStock($detail->item_id, $detail->quantity, $warehouse->id);
+                }
+                $this->updateDataLots($detail);
+            }
+            return;
+        }
+
+        foreach ($transfer->inventories as $inventory) {
+            // Quitar del destino
+            $this->createInventoryKardex($dispatch, $inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_destination_id);
+            $this->updateStock($inventory->item_id, -1 * $inventory->quantity, $inventory->warehouse_destination_id);
+            // Devolver al origen
+            $this->createInventoryKardex($dispatch, $inventory->item_id, $inventory->quantity, $inventory->warehouse_id);
+            $this->updateStock($inventory->item_id, $inventory->quantity, $inventory->warehouse_id);
+        }
+
+        foreach ($dispatch->items as $detail) {
+            $this->updateDataLots($detail);
+        }
     }
 
     /**

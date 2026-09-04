@@ -907,6 +907,7 @@ class DispatchController extends Controller
         foreach ($other_establishments as $establishment) {
             $records[] = [
                 'id' => $establishment->id,
+                'establishment_id' => $establishment->id,
                 'location_id' => [
                     $establishment->department_id,
                     $establishment->province_id,
@@ -924,11 +925,14 @@ class DispatchController extends Controller
         foreach ($origin_addresses as $row) {
             $records[] = [
                 'id' => $row->id,
+                'establishment_id' => $row->establishment_id,
                 'address' => $row->address,
                 'location_id' => $row->location_id,
             ];
         }
 
+        // ids secuenciales solo para el select (evita choque establishment vs origin_address);
+        // establishment_id conserva el destino real para el traslado de inventario
         foreach ($records as $index => &$record) {
             $record['id'] = $index + 1;
         }

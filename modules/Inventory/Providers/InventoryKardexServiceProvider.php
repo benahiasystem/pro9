@@ -16,6 +16,9 @@ use Modules\Order\Models\OrderNoteItem;
 use Modules\Item\Models\ItemLotsGroup;
 use Modules\Item\Models\ItemLot;
 use Modules\Inventory\Models\DevolutionItem;
+use Modules\Inventory\Models\Inventory;
+use Modules\Inventory\Models\InventoryTransfer;
+use Modules\Inventory\Models\InventoryTransferItem;
 use App\Models\Tenant\DispatchItem;
 
 
@@ -744,6 +747,13 @@ class InventoryKardexServiceProvider extends ServiceProvider
             if($dispatch->document_type_id === '09') {
                 if($dispatch->transfer_reason_type->discount_stock){
 
+                    // Traslado entre establecimientos: crear registro en Movimiento > Traslados
+                    // (type 2 mueve stock origen→destino; evita el doble descuento del flujo simple)
+                    if ($dispatch->transfer_reason_type_id === '04') {
+                        $this->createInventoryTransferFromDispatchItem($dispatch, $dispatch_item);
+                        return;
+                    }
+
                     $warehouse = $this->findWarehouse();
 
                     $this->createInventoryKardex($dispatch, $dispatch_item->item_id, -$dispatch_item->quantity, $warehouse->id);
@@ -766,6 +776,132 @@ class InventoryKardexServiceProvider extends ServiceProvider
                 }
             }
         });
+    }
+
+    /**
+     * Crea/actualiza InventoryTransfer ligado a la guía (motivo 04).
+     * El detalle del traslado muestra el número de la guía (ej. T001-10).
+     */
+    private function createInventoryTransferFromDispatchItem($dispatch, DispatchItem $dispatch_item): void
+    {
+        $destinationEstablishmentId = $this->resolveDispatchDestinationEstablishmentId($dispatch);
+        if (!$destinationEstablishmentId || (int) $destinationEstablishmentId === (int) $dispatch->establishment_id) {
+            // Sin destino válido: mantiene el descuento simple en el almacén de origen
+            $warehouse = $this->findWarehouse($dispatch->establishment_id);
+            $this->createInventoryKardex($dispatch, $dispatch_item->item_id, -$dispatch_item->quantity, $warehouse->id);
+            if (!$dispatch->reference_sale_note_id && !$dispatch->reference_order_note_id && !$dispatch->reference_document_id) {
+                $this->updateStock($dispatch_item->item_id, -$dispatch_item->quantity, $warehouse->id);
+            }
+            return;
+        }
+
+        $warehouseOrigin = $this->findWarehouse($dispatch->establishment_id);
+        $warehouseDestination = $this->findWarehouse($destinationEstablishmentId);
+
+        $transfer = InventoryTransfer::query()->where('dispatch_id', $dispatch->id)->first();
+
+        if (!$transfer) {
+            $series = \App\Models\Tenant\Series::query()
+                ->where('establishment_id', $dispatch->establishment_id)
+                ->where('document_type_id', 'U4')
+                ->first();
+
+            $transfer = InventoryTransfer::query()->create([
+                'description' => $dispatch->number_full,
+                'dispatch_id' => $dispatch->id,
+                'warehouse_id' => $warehouseOrigin->id,
+                'warehouse_destination_id' => $warehouseDestination->id,
+                'quantity' => 0,
+                'document_type_id' => 'U4',
+                'series' => $series ? $series->number : 'NT',
+                'number' => '#',
+            ]);
+        }
+
+        $inventory = new Inventory();
+        $inventory->type = 2;
+        $inventory->description = 'Traslado';
+        $inventory->detail = $dispatch->number_full;
+        $inventory->item_id = $dispatch_item->item_id;
+        $inventory->warehouse_id = $warehouseOrigin->id;
+        $inventory->warehouse_destination_id = $warehouseDestination->id;
+        $inventory->quantity = $dispatch_item->quantity;
+        $inventory->inventories_transfer_id = $transfer->id;
+        $inventory->save();
+
+        $transfer->quantity = (float) $transfer->inventories()->sum('quantity');
+        $transfer->save();
+
+        if (isset($dispatch_item->item->IdLoteSelected) && $dispatch_item->item->IdLoteSelected != null) {
+            $lot = ItemLotsGroup::query()->find($dispatch_item->item->IdLoteSelected);
+            if ($lot) {
+                $lot->quantity = $lot->quantity - $dispatch_item->quantity;
+                $lot->save();
+                InventoryTransferItem::query()->create([
+                    'inventory_transfer_id' => $transfer->id,
+                    'item_lots_group_id' => $lot->id,
+                ]);
+            }
+        }
+
+        if (isset($dispatch_item->item->lots) && is_array($dispatch_item->item->lots)) {
+            foreach ($dispatch_item->item->lots as $lotData) {
+                $lotData = (object) $lotData;
+                if (!empty($lotData->has_sale) && !empty($lotData->id)) {
+                    $itemLot = ItemLot::find($lotData->id);
+                    if ($itemLot) {
+                        $itemLot->warehouse_id = $warehouseDestination->id;
+                        $itemLot->update();
+                        InventoryTransferItem::query()->create([
+                            'inventory_transfer_id' => $transfer->id,
+                            'item_lot_id' => $itemLot->id,
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Destino del traslado 04.
+     * Prioriza delivery.establishment_id (el select usa ids ficticios 1,2,3…).
+     */
+    private function resolveDispatchDestinationEstablishmentId($dispatch): ?int
+    {
+        $delivery = $dispatch->delivery;
+        if (is_array($delivery)) {
+            $delivery = (object) $delivery;
+        }
+        if (is_object($delivery) && !empty($delivery->establishment_id)) {
+            return (int) $delivery->establishment_id;
+        }
+
+        // Fallback: coincidir dirección de llegada con otro establecimiento
+        if (is_object($delivery) && !empty($delivery->address)) {
+            $byAddress = \App\Models\Tenant\Establishment::query()
+                ->where('id', '!=', $dispatch->establishment_id)
+                ->where('address', $delivery->address)
+                ->value('id');
+            if ($byAddress) {
+                return (int) $byAddress;
+            }
+        }
+
+        $deliveryId = $dispatch->delivery_address_id;
+        if (!$deliveryId) {
+            return null;
+        }
+
+        if (\App\Models\Tenant\Establishment::query()->whereKey($deliveryId)->exists()) {
+            return (int) $deliveryId;
+        }
+
+        $originAddress = \Modules\Dispatch\Models\OriginAddress::query()->find($deliveryId);
+        if ($originAddress && $originAddress->establishment_id) {
+            return (int) $originAddress->establishment_id;
+        }
+
+        return null;
     }
 
 
