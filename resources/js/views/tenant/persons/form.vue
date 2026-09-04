@@ -1209,8 +1209,9 @@ export default {
             return this.hasAddressValue(formValue) ? formValue : null
         },
         isPersonWithOptionalAddress() {
-            // DNI: persona natural sin RUC.
-            if (this.form.identity_document_type_id === '1') return true
+            // DNI (1): persona natural sin RUC.
+            // No Domiciliado sin RUC (0): no tiene domicilio fiscal en el pais.
+            if (['1', '0'].includes(this.form.identity_document_type_id)) return true
 
             // RUC 10xxxxxxxxx: tambien es persona natural, no se le exige domicilio.
             const number = (this.form.number || '').toString().trim()

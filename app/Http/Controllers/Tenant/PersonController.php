@@ -279,7 +279,9 @@ class PersonController extends Controller
     {
         $identityDocumentTypeId = (string) $identityDocumentTypeId;
 
-        if ($identityDocumentTypeId === '1') {
+        // DNI (1): persona natural sin RUC.
+        // No Domiciliado sin RUC (0): no tiene domicilio fiscal en el pais.
+        if (in_array($identityDocumentTypeId, ['1', '0'], true)) {
             return true;
         }
 
