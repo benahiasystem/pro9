@@ -353,7 +353,13 @@ class InventoryKardex extends ModelTenant
                 $data['output'] = ($qty < 0) ? (isset($inventory_kardexable->reference_sale_note_id) || isset($inventory_kardexable->reference_order_note_id) || isset($inventory_kardexable->reference_document_id) ? "-" : $qty) : "-";
                 $data['balance'] = (isset($inventory_kardexable->reference_sale_note_id) || isset($inventory_kardexable->reference_order_note_id) || isset($inventory_kardexable->reference_document_id)) ? $balance += 0 : $balance += $qty;
                 $data['number'] = optional($inventory_kardexable)->number_full;
-                $data['type_transaction'] = isset($inventory_kardexable->transfer_reason_type->description) ? $inventory_kardexable->transfer_reason_type->description : '';
+                $dispatch_reason = isset($inventory_kardexable->transfer_reason_type->description)
+                    ? $inventory_kardexable->transfer_reason_type->description
+                    : 'Guía';
+                // qty > 0 = reingreso por anulación interna de la guía
+                $data['type_transaction'] = ($qty > 0)
+                    ? $dispatch_reason.' (Anulación)'
+                    : $dispatch_reason;
                 $data['date_of_issue'] = isset($inventory_kardexable->date_of_issue) ? $inventory_kardexable->date_of_issue->format('Y-m-d') : '';
                 $data['sale_note_asoc'] = isset($inventory_kardexable->reference_sale_note_id) ? optional($inventory_kardexable)->sale_note->number_full : "-";
                 $data['order_note_asoc'] = isset($inventory_kardexable->reference_order_note_id) ? optional($inventory_kardexable)->order_note->number_full : "-";
