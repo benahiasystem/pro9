@@ -119,37 +119,23 @@
                 <tbody>
                 @foreach($records as $key => $value)
                     <tr>
-                        <?php
-                        /** @var \App\Models\Tenant\DispatchItem $value */
-
-                        $data = $value->getCollectionData();
-                        $qty = $data['quantity'];
-                        $item = $data['item'];
-                        $item_description = $item['description'];
-                        $dispatches = $data['dispatches'];
-                        $date_of_issue = $dispatches['date_of_issue'];
-                        $customer_number = $dispatches['customer_number'];
-                        $customer_name = $dispatches['customer_name'];
-                        $date_of_shipping = $dispatches['date_of_shipping'];
-                        $user_name = $dispatches['user_name'];
-                        $number = $dispatches['number'];
-                        $state_type_description = $dispatches['state_type_description'];
-                        $state_type_id = $dispatches['state_type_id'];
-                        $order_form_description = $dispatches['order_form_description'];
-
-                        ?>
+                        @php
+                            /** @var \App\Models\Tenant\DispatchItem $value */
+                            $row = $value->getConsolidatedReportRow();
+                            $qty = $row['quantity'];
+                        @endphp
 
                         <td class="celda">{{$loop->iteration}}</td>
 
-                        <td class="celda">{{ $date_of_issue }}</td>
-                        <td class="celda">{{ $customer_name }} <br/> <small>{{ $customer_number }}</small></td>
-                        <td class="celda">{{ $user_name }}</td>
-                        <td class="celda">{{ $number }}</td>
-                        <td class="celda"> {{$state_type_description}} </td>
-                        <td class="celda">{{ $date_of_shipping }}</td>
-                        <td class="celda">{{ $order_form_description }}</td>
-                        <td class="celda"> {{$item_description}} </td>
-                        <td class="celda"> {{$value->getQtyFormated()}} </td>
+                        <td class="celda">{{ $row['date_of_issue'] }}</td>
+                        <td class="celda">{{ $row['customer_name'] }} <br/> <small>{{ $row['customer_number'] }}</small></td>
+                        <td class="celda">{{ $row['user_name'] }}</td>
+                        <td class="celda">{{ $row['number'] }}</td>
+                        <td class="celda"> {{$row['state_type_description']}} </td>
+                        <td class="celda">{{ $row['date_of_shipping'] }}</td>
+                        <td class="celda">{{ $row['order_form_description'] }}</td>
+                        <td class="celda"> {{$row['item_description']}} </td>
+                        <td class="celda"> {{$row['quantity_formatted']}} </td>
                     @php
                         $acum_total += $qty
                     @endphp

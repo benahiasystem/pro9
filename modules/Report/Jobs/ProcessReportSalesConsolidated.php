@@ -247,7 +247,17 @@ class ProcessReportSalesConsolidated implements ShouldQueue
                     return $controller->totalsByItem($request)->sortBy('item_id');
                 }
 
-                return $controller->getRecordsDispachesItem($params)->get();
+                return $controller->getRecordsDispachesItem($params)
+                    ->with([
+                        'dispatch.customer.identity_document_type',
+                        'dispatch.user',
+                        'dispatch.state_type',
+                        'dispatch.transfer_reason_type',
+                        'dispatch.order_note',
+                        'dispatch.order_form',
+                        'relation_item',
+                    ])
+                    ->get();
 
             default:
                 $controller = new ReportSaleConsolidatedController();

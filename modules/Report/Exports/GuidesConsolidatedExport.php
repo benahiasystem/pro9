@@ -5,10 +5,8 @@ namespace Modules\Report\Exports;
 use Illuminate\Contracts\View\View;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
-use Maatwebsite\Excel\Concerns\FromCollection;
 
-class GuidesConsolidatedExport implements  FromView, ShouldAutoSize
+class GuidesConsolidatedExport implements FromView
 {
     use Exportable;
 

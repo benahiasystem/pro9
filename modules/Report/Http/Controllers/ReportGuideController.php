@@ -218,7 +218,17 @@
             $company = Company::first();
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
-            $records = $this->getRecordsDispachesItem($request->all())->get();
+            $records = $this->getRecordsDispachesItem($request->all())
+                ->with([
+                    'dispatch.customer.identity_document_type',
+                    'dispatch.user',
+                    'dispatch.state_type',
+                    'dispatch.transfer_reason_type',
+                    'dispatch.order_note',
+                    'dispatch.order_form',
+                    'relation_item',
+                ])
+                ->get();
             $params = $request->all();
             self::setParams($params);
             /*
@@ -328,7 +338,17 @@
             $establishment = ($request->establishment_id) ? Establishment::findOrFail($request->establishment_id)
                 : auth()->user()->establishment;
 
-            $records = $this->getRecordsDispachesItem($request->all())->get();
+            $records = $this->getRecordsDispachesItem($request->all())
+                ->with([
+                    'dispatch.customer.identity_document_type',
+                    'dispatch.user',
+                    'dispatch.state_type',
+                    'dispatch.transfer_reason_type',
+                    'dispatch.order_note',
+                    'dispatch.order_form',
+                    'relation_item',
+                ])
+                ->get();
             $params = $request->all();
             self::setParams($params);
             $filename = 'Reporte_Consolidado_Items_Guias_'.date('YmdHis');
