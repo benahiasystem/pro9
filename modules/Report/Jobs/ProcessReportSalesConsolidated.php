@@ -162,7 +162,13 @@ class ProcessReportSalesConsolidated implements ShouldQueue
         $pdf = PDF::loadView($view, compact('records', 'company', 'establishment', 'params'));
 
         if ($this->report_source === 'guides') {
-            $pdf->setPaper('a4', 'landscape');
+            $pdf->setPaper('a4', 'portrait')
+                ->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => false,
+                    'defaultFont' => 'DejaVu Sans',
+                    'dpi' => 96,
+                ]);
         }
 
         if ($this->export_mode === 'ticket') {
