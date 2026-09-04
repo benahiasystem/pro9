@@ -211,7 +211,9 @@ class InventoryKardex extends ModelTenant
                 if (isset($inventory_kardexable->dispatch)) {
                     if ($inventory_kardexable->dispatch->transfer_reason_type->discount_stock) {
                         $cpe_output = '-';
-                        $cpe_discounted_stock = true;
+                        // La salida del CPE no afecta saldo (ya descontó la guía).
+                        // La anulación del CPE sí, porque ahí se reingresa el stock.
+                        $cpe_discounted_stock = ($qty < 0);
                     }
                     $cpe_doc_asoc = ($cpe_doc_asoc == '-') ? $inventory_kardexable->dispatch->number_full : $cpe_doc_asoc . ' | ' . $inventory_kardexable->dispatch->number_full;
                 }
