@@ -220,7 +220,7 @@
                 : auth()->user()->establishment;
             $records = $this->getRecordsDispachesItem($request->all())
                 ->with([
-                    'dispatch.customer.identity_document_type',
+                    'dispatch.person.identity_document_type',
                     'dispatch.user',
                     'dispatch.state_type',
                     'dispatch.transfer_reason_type',
@@ -340,7 +340,7 @@
 
             $records = $this->getRecordsDispachesItem($request->all())
                 ->with([
-                    'dispatch.customer.identity_document_type',
+                    'dispatch.person.identity_document_type',
                     'dispatch.user',
                     'dispatch.state_type',
                     'dispatch.transfer_reason_type',

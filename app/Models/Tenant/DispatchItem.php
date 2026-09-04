@@ -141,16 +141,27 @@ class DispatchItem extends ModelTenant
     {
         $dispatch = $this->dispatch;
         $itemJson = $this->item;
-        $customer = $dispatch ? $dispatch->customer : null;
+        $person = $dispatch ? $dispatch->person : null;
+        $customerJson = $dispatch ? $dispatch->customer : null;
 
-        $customerName = $customer->name ?? '';
+        $customerName = '';
         $customerNumber = '';
-        if ($customer) {
-            $docType = optional($customer->identity_document_type)->description;
-            $customerNumber = trim(($docType ? $docType.' ' : '').($customer->number ?? ''));
+        if ($person) {
+            $customerName = $person->name ?? '';
+            $docType = optional($person->identity_document_type)->description;
+            $customerNumber = trim(($docType ? $docType.' ' : '').($person->number ?? ''));
+        } elseif ($customerJson) {
+            $customerName = $customerJson->name ?? '';
+            $docType = is_object($customerJson->identity_document_type ?? null)
+                ? ($customerJson->identity_document_type->description ?? '')
+                : '';
+            $customerNumber = trim(($docType ? $docType.' ' : '').($customerJson->number ?? ''));
         }
 
         $dispatcher = $dispatch ? $dispatch->dispatcher : null;
+        if (is_array($dispatcher)) {
+            $dispatcher = (object) $dispatcher;
+        }
         $dispatcherNumber = $dispatcher->number ?? '';
         $dispatcherName = $dispatcher->name ?? '';
         $dispatcherDocType = '';
@@ -160,17 +171,31 @@ class DispatchItem extends ModelTenant
                 $identityTypes = \App\Models\Tenant\Catalogs\IdentityDocumentType::query()
                     ->pluck('description', 'id');
             }
-            $dispatcherDocType = $identityTypes[$dispatcher->identity_document_type_id] ?? '';
+            $dispatcherDocType = (string) ($identityTypes->get($dispatcher->identity_document_type_id) ?? '');
         }
 
         $orderNote = '';
         if ($dispatch && $dispatch->order_note) {
-            $orderNote = ($dispatch->order_note->prefix ?? 'OP').'-'.$dispatch->order_note->id;
+            $orderNote = $dispatch->order_note->number_full
+                ?? (($dispatch->order_note->prefix ?? 'OP').'-'.$dispatch->order_note->id);
         }
 
         $transferReason = '';
         if ($dispatch && $dispatch->transfer_reason_type) {
             $transferReason = $dispatch->transfer_reason_type->description ?? '';
+        }
+
+        $dateOfIssue = '';
+        $dateOfShipping = '';
+        if ($dispatch && $dispatch->date_of_issue) {
+            $dateOfIssue = $dispatch->date_of_issue instanceof \DateTimeInterface
+                ? $dispatch->date_of_issue->format('Y-m-d')
+                : \Illuminate\Support\Carbon::parse($dispatch->date_of_issue)->format('Y-m-d');
+        }
+        if ($dispatch && $dispatch->date_of_shipping) {
+            $dateOfShipping = $dispatch->date_of_shipping instanceof \DateTimeInterface
+                ? $dispatch->date_of_shipping->format('Y-m-d')
+                : \Illuminate\Support\Carbon::parse($dispatch->date_of_shipping)->format('Y-m-d');
         }
 
         return [
@@ -179,12 +204,8 @@ class DispatchItem extends ModelTenant
             'item_description' => optional($itemJson)->description
                 ?? optional($this->relation_item)->description
                 ?? '',
-            'date_of_issue' => $dispatch && $dispatch->date_of_issue
-                ? $dispatch->date_of_issue->format('Y-m-d')
-                : '',
-            'date_of_shipping' => $dispatch && $dispatch->date_of_shipping
-                ? $dispatch->date_of_shipping->format('Y-m-d')
-                : '',
+            'date_of_issue' => $dateOfIssue,
+            'date_of_shipping' => $dateOfShipping,
             'customer_name' => $customerName,
             'customer_number' => $customerNumber,
             'user_name' => optional(optional($dispatch)->user)->name ?? '',
@@ -196,7 +217,7 @@ class DispatchItem extends ModelTenant
             'num_doc' => $dispatcherNumber,
             'name_dispatcher' => $dispatcherName,
             'order_note' => $orderNote,
-            'order_form_description' => $dispatch ? $dispatch->getOrderFormDescription() : '',
+            'order_form_description' => $dispatch ? ($dispatch->getOrderFormDescription() ?? '') : '',
         ];
     }
 
