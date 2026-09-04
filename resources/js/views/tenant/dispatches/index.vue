@@ -286,14 +286,6 @@
                             >
                                 Consultar ticket
                             </button>
-                            <button
-                                type="button"
-                                class="btn waves-effect waves-light btn-xs btn-info me-1"
-                                @click.prevent="clickOptions(row.id)"
-                                v-if="row.btn_options"
-                            >
-                                Opciones
-                            </button>
                             <el-dropdown
                                 trigger="click"
                                 size="small"
