@@ -238,7 +238,13 @@
 
             $pdf = PDF::loadView('report::guides.report_pdf',
                                  compact('records', 'company', 'establishment', 'params'))
-                ->setPaper('a4', 'landscape');
+                ->setPaper('a4', 'portrait')
+                ->setOptions([
+                    'isHtml5ParserEnabled' => true,
+                    'isRemoteEnabled' => false,
+                    'defaultFont' => 'DejaVu Sans',
+                    'dpi' => 96,
+                ]);
 
             $filename = 'Reporte_Consolidado_Items_Guias_'.date('YmdHis');
 
