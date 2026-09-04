@@ -237,7 +237,8 @@
                     */
 
             $pdf = PDF::loadView('report::guides.report_pdf',
-                                 compact('records', 'company', 'establishment', 'params'));
+                                 compact('records', 'company', 'establishment', 'params'))
+                ->setPaper('a4', 'landscape');
 
             $filename = 'Reporte_Consolidado_Items_Guias_'.date('YmdHis');
 

@@ -161,6 +161,10 @@ class ProcessReportSalesConsolidated implements ShouldQueue
 
         $pdf = PDF::loadView($view, compact('records', 'company', 'establishment', 'params'));
 
+        if ($this->report_source === 'guides') {
+            $pdf->setPaper('a4', 'landscape');
+        }
+
         if ($this->export_mode === 'ticket') {
             $height = (5.8 / 2.54) * 72;
             $pdf->setPaper([0, 0, $height, 1440]);
