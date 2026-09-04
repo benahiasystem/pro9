@@ -2194,18 +2194,31 @@ export default {
             const apply_defaults = force || !this.recordId
 
             if (apply_defaults) {
-                this.form.sale_affectation_igv_type_id = (this.config) ? this.config.affectation_igv_type_id : '10'
+                // Valor provisional mientras llega la configuración del servidor.
+                // El store puede venir en null (sin `config` en localStorage) o con
+                // el objeto por defecto, donde affectation_igv_type_id es 0: por eso
+                // el fallback va sobre el valor y no sobre la existencia de config.
+                this.form.sale_affectation_igv_type_id = this.config?.affectation_igv_type_id || '10'
             }
 
             return this.$http.get(`/configurations/record`).then(response => {
-                const isGlobal = response.data.data.global_igv_handling !== false
+                const configuration = response.data.data || {}
+                const isGlobal = configuration.global_igv_handling !== false
                 if (apply_defaults) {
-                    this.form.has_igv = isGlobal ? true : response.data.data.include_igv
-                    this.form.purchase_has_igv = isGlobal ? true : response.data.data.include_igv
+                    // La respuesta manda sobre el store: es el dato fresco.
+                    this.form.sale_affectation_igv_type_id = configuration.affectation_igv_type_id
+                        || this.config?.affectation_igv_type_id
+                        || '10'
+                    this.form.has_igv = isGlobal ? true : configuration.include_igv
+                    this.form.purchase_has_igv = isGlobal ? true : configuration.include_igv
                 }
                 // this.$setStorage('configuration',response.data.data)
-                this.$store.commit('setConfiguration', response.data.data);
-                this.loadConfiguration()
+                // Solo se comitea si hay dato: la mutación asigna tal cual, y un
+                // null quedaría guardado en localStorage arrastrando el problema.
+                if (response.data.data) {
+                    this.$store.commit('setConfiguration', response.data.data);
+                    this.loadConfiguration()
+                }
             })
         },
         purchaseChangeIsc() {
