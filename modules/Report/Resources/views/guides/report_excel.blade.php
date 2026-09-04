@@ -140,19 +140,19 @@
                         @endphp
                         <td class="celda">{{$loop->iteration}}</td>
                         <td class="celda">{{ $row['date_of_issue'] }}</td>
-                        <td class="celda">{{ $row['customer_name'] }} <br/> <small>{{ $row['customer_number'] }}</small></td>
+                        <td class="celda">{{ trim($row['customer_name'].($row['customer_number'] ? ' - '.$row['customer_number'] : '')) }}</td>
                         <td class="celda">{{ $row['user_name'] }}</td>
                         <td class="celda">{{ $row['number'] }}</td>
-                        <td class="celda"> {{$row['state_type_description']}} </td>
+                        <td class="celda">{{ $row['state_type_description'] }}</td>
                         <td class="celda">{{ $row['date_of_shipping'] }}</td>
-                        <td class="celda"> {{$row['item_description']}} </td>
-                        <td class="celda"> {{$row['quantity_formatted']}} </td>
-                        <td class="celda">{{$row['transfer_reason']}}</td>
-                        <td class="celda">{{$row['transfer_description']}}</td>
-                        <td class="celda">{{$row['type_doc']}}</td>
-                        <td class="celda">{{$row['num_doc']}}</td>
-                        <td class="celda">{{$row['name_dispatcher']}}</td>
-                        <td class="celda">{{$row['order_note']}}</td>
+                        <td class="celda">{{ $row['item_description'] }}</td>
+                        <td class="celda">{{ $row['quantity_formatted'] }}</td>
+                        <td class="celda">{{ $row['transfer_reason'] }}</td>
+                        <td class="celda">{{ $row['transfer_description'] }}</td>
+                        <td class="celda">{{ $row['type_doc'] }}</td>
+                        <td class="celda">{{ $row['num_doc'] }}</td>
+                        <td class="celda">{{ $row['name_dispatcher'] }}</td>
+                        <td class="celda">{{ $row['order_note'] }}</td>
                         <td class="celda">{{ $row['order_form_description'] }}</td>
                     </tr>
                     @php
