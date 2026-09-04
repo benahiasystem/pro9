@@ -103,14 +103,14 @@
             </nav>
             <div class="container">
                 <div class="row">
-                    <div class="col-lg-9">
+                    <div class="col-lg-12">
 
                         @yield('content')
 
                     </div><!-- End .col-lg-9 -->
 
                     <div class="sidebar-overlay"></div>
-                    @include('ecommerce::layouts.partials_ecommerce.sidebar_product_right')
+                    {{-- @include('ecommerce::layouts.partials_ecommerce.sidebar_product_right') --}}
                 </div><!-- End .row -->
             </div><!-- End .container -->
 

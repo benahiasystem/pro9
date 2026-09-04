@@ -85,8 +85,21 @@
         </div><!-- End .col-lg-7 -->
 
         <div class="col-lg-5 col-md-6">
-            <div id="product-detail-vue" class="product-single-details">
-                <h1 class="product-title mb-0">{{$record->description}}</h1>
+            <div id="product-detail-vue" class="product-single-details pdp">
+                @if(($record->category && $record->category->name) || ($record->brand && $record->brand->id))
+                <div class="pdp-tags">
+                    @if($record->category && $record->category->name)
+                        <span class="pdp-chip">{{ $record->category->name }}</span>
+                    @endif
+                    @if($record->brand && $record->brand->id)
+                        <a class="pdp-chip pdp-chip--ghost"
+                           href="{{ route('tenant.ecommerce.brand', ['id' => $record->brand->id, 'slug' => \Illuminate\Support\Str::slug($record->brand->name)]) }}">{{ $record->brand->name }}</a>
+                    @endif
+                </div>
+                @endif
+
+                <h1 class="product-title pdp-title mb-0">{{$record->description}}</h1>
+
 
                 @php
                     $activeCampaign = null;
@@ -138,62 +151,65 @@
 
                 <style>[v-cloak]{display:none}@keyframes sp-pulse{0%{opacity:1}50%{opacity:.75}100%{opacity:1}}</style>
                 <div class="social-proof-container" v-cloak>
-                    <div class="ratings-container mb-2 d-flex align-items-center gap-2" v-if="socialProofConfig.sp_rating">
-                        <div class="card-rating-social-proof" style="margin: 4px 0; font-size: 16px;">
-                            <span style="color: #333; font-weight: bold; margin-right: 4px;">5.0</span>
-                            <span style="color: #ffc107;">★★★★★</span>
-                            <span style="color: #777; margin-left: 4px; font-size: 13px;">(@{{ sp_rating_count }} opiniones)</span>
-                        </div>
+                    <div class="pdp-rating" v-if="socialProofConfig.sp_rating">
+                        <span class="pdp-rating__score">5.0</span>
+                        <span class="pdp-rating__stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                        <span class="pdp-rating__count">(@{{ sp_rating_count }} opiniones)</span>
                     </div>
 
-                    @if($storefront_show_prices ?? true)
-                    <div class="price-box my-2">
-                        <template v-if="compareAtPrice">
-                            <span class="old-price text-muted text-decoration-line-through mr-2">
+                    <div class="pdp-price-row">
+                        @if($storefront_show_prices ?? true)
+                        <div class="price-box w-auto">
+                            <span class="pdp-price-old" v-if="compareAtPrice">
                                 @{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}
                             </span>
-                            <span class="product-price text-danger font-weight-bold" style="font-size: 1.5rem;">
+                            <span class="pdp-price">
                                 @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
                             </span>
-                        </template>
-                        <template v-else>
-                            <span class="product-price font-weight-bold" style="font-size: 1.5rem;">
-                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
-                            </span>
-                        </template>
-                    </div>
-                    @endif
+                        </div>
+                        @endif
 
-                    <div v-if="offerExpiresAt && !sp_countdown_ended" class="countdown-badge alert alert-warning p-2 mb-2 d-inline-block shadow-sm" style="border-radius: 8px; font-size: 0.9rem; border-left: 4px solid #dc3545;">
-                        <i class="far fa-clock text-danger"></i> ¡Termina en:
-                        <strong class="time-left">@{{ sp_countdown_text }}</strong>!
+                        <span class="pdp-countdown" v-if="offerExpiresAt && !sp_countdown_ended">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            Termina en <b>@{{ sp_countdown_text }}</b>
+                        </span>
                     </div>
 
-                    <div v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" class="text-danger font-weight-bold small mt-1" style="animation: sp-pulse 2s infinite;">
-                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan @{{ Math.round(stock) }} unidades.
-                    </div>
-
-                    <div v-if="socialProofConfig.sp_views_count" class="text-muted small mt-2">
-                        <i class="far fa-eye text-info"></i> <strong v-text="sp_viewers"></strong> personas están viendo este producto.
-                    </div>
-
-                    <div v-if="socialProofConfig.sp_purchase_count" class="text-success small mt-1 font-weight-bold">
-                        <i class="fas fa-shopping-cart"></i> <span v-text="sp_purchases"></span> personas lo compraron en los últimos 7 días.
+                    <div class="pdp-notes">
+                        <p class="pdp-note pdp-note--hot" v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 1 0 12 0c0 -1.532 -1.056 -3.94 -2 -5c-1.786 3 -2.791 3 -4 2z"/></svg>
+                            &iexcl;Se agota r&aacute;pido! Solo quedan @{{ Math.round(stock) }} unidades.
+                        </p>
+                        <p class="pdp-note pdp-note--ok" v-if="socialProofConfig.sp_purchase_count">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                            <span><span v-text="sp_purchases"></span> personas lo compraron en los &uacute;ltimos 7 d&iacute;as.</span>
+                        </p>
+                        <p class="pdp-note pdp-note--muted" v-if="socialProofConfig.sp_views_count">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            <span><strong v-text="sp_viewers"></strong> personas est&aacute;n viendo este producto.</span>
+                        </p>
                     </div>
                 </div>
 
                 @if(!empty($record->variation_selector))
+                <div class="pdp-sep"></div>
+
                 <div class="variation-selector">
                     <div v-for="variable in variationSelector.variables"
                          :key="'variation-group-' + variable.id"
                          class="variation-group">
-                        <span class="variation-group-name">@{{ variable.name }}</span>
+                        <span class="variation-group-name">
+                            @{{ variable.name }}: <b class="pdp-picked">@{{ selectedVariationLabel(variable) }}</b>
+                        </span>
                         <div class="variation-options">
                             <button type="button"
                                     v-for="value in variable.values"
                                     :key="'variation-value-' + value.id"
                                     class="variation-chip"
-                                    :class="{active: isVariationValueSelected(variable.id, value.id)}"
+                                    :class="{
+                                        active: isVariationValueSelected(variable.id, value.id),
+                                        'variation-chip--box': variable.value_type !== 'color'
+                                    }"
                                     :disabled="!variationValueAvailable(variable.id, value.id)"
                                     @click.prevent="selectVariationValue(variable.id, value.id)">
                                 <span v-if="variable.value_type === 'color' && value.color"
@@ -205,77 +221,65 @@
                 </div>
                 @endif
 
-                <div class="product-desc pb-0">
-                    @if ($record->category && $record->category->name)
-                        <p class="product-category">Categoría: <span> {{$record->category->name}} </span></p>
-                    @endif
-                    @if ($record->brand && $record->brand->id)
-                        <p class="product-category">Marca:
-                            <a href="{{ route('tenant.ecommerce.brand', ['id' => $record->brand->id, 'slug' => \Illuminate\Support\Str::slug($record->brand->name)]) }}">
-                                {{ $record->brand->name }}
-                            </a>
-                        </p>
-                    @endif
-                <p class="product-stock">Disponible: <span>{{number_format(($record->stock), 0)}} </span>
-                <?php
-                if($record->stock > 0){?>
-                    <span 
-                    class="alert-stock" role="alert">En stock</span>
-                <?php
-                }else{?>
-                    <span 
-                    class="alert-sin-stock" 
-                    role="alert">Sin stock</span> 
-                <?php
-                }
-                ?>
-                <div class="product-description-wrapper">
+                <div class="pdp-stock {{ $record->stock > 0 ? '' : 'pdp-stock--out' }}">
+                    <span class="pdp-stock__dot"></span>
+                    <span class="pdp-stock__text"><b>Disponible:</b> {{ number_format($record->stock, 0) }} unidades</span>
+                    <span class="pdp-stock__chip">{{ $record->stock > 0 ? 'En stock' : 'Sin stock' }}</span>
+                </div>
+
+                @if(trim(strip_tags((string) $record->name)) !== '')
+                <div class="product-description-wrapper pdp-desc">
                     <div id="productShortDescription" class="product-description-clamp">
                         {!! $record->name !!}
                     </div>
 
-                    <a href="javascript:void(0);" 
-                       id="toggleProductDescription" 
+                    <a href="javascript:void(0);"
+                       id="toggleProductDescription"
                        class="product-description-toggle"
                        style="display:none;">
                         Ver todo
                     </a>
                 </div>
-                </div><!-- End .product-desc -->
+                @endif
 
-                <div>
-                @foreach($record->attributes as $at)
-                   <small> {{$at->description}}: {{$at->value}} </small> <br>
-                @endforeach
-                </div>
+                @if(count($record->attributes))
+                <ul class="pdp-attrs">
+                    @foreach($record->attributes as $at)
+                        <li><span>{{ $at->description }}:</span> <b>{{ $at->value }}</b></li>
+                    @endforeach
+                </ul>
+                @endif
 
-                <div class="product-action product-all-icons">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="quantity-container d-flex align-items-center mb-1">
+                <div class="pdp-sep"></div>
+
+                <div class="product-action product-all-icons pdp-actions">
+                    <div class="pdp-buy">
+                        <div class="quantity-container pdp-qty">
                             <button v-if="quantity <= 1 && getCartQuantity(product.id)" @click.stop.prevent="removeFromCart(product)" title="Quitar del carrito">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
                             </button>
-                            <button 
-                                @click.stop.prevent="decrementQuantity(product)" 
+                            <button
+                                @click.stop.prevent="decrementQuantity(product)"
                                 v-if="!getCartQuantity(product.id) || quantity > 1"
                                 title="Disminuir cantidad">
-                                
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
                                     <path d="M5 12l14 0" />
                                 </svg>
                             </button>
-                            <input type="number" class="input-quantity mx-2" v-model.number="quantity" min="1" style="width: 50px; text-align: center;" @change="onQuantityInput">
-                            <button @click.stop.prevent="incrementQuantity(product)">
+                            <input type="number" class="input-quantity" v-model.number="quantity" min="1" @change="onQuantityInput">
+                            <button @click.stop.prevent="incrementQuantity(product)" title="Aumentar cantidad">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                             </button>
                         </div>
-                        <button class="paction add-cart mb-1 mr-0 ml-2" @click.stop.prevent="addOrUpdateCart(product)">
+
+                        <button class="paction add-cart pdp-add" @click.stop.prevent="addOrUpdateCart(product)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                             <span v-if="getCartQuantity(product.id)">Actualizar cantidad</span>
-                            <span v-else>Agregar a Carrito</span>
+                            <span v-else>Agregar al carrito</span>
                         </button>
                     </div>
-                    
+
 
                     @php
                         $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
@@ -296,23 +300,16 @@
                             <span>Consultar por WhatsApp</span>
                         </a>
                     @endif
-                    
-                    <!-- <a href="#" class="paction add-wishlist" title="Add to Wishlist">
-                        <span>Add to Wishlist</span>
-                    </a>
-                    <a href="#" class="paction add-compare" title="Add to Compare">
-                        <span>Add to Compare</span>
-                    </a> -->
                 </div><!-- End .product-action -->
 
                 <div class="product-single-share">
-                    <!--<label>Share:</label> -->
-                    <!-- www.addthis.com share plugin-->
                     <div class="addthis_inline_share_toolbox"></div>
                 </div><!-- End .product single-share -->
             </div><!-- End .product-single-details -->
 
-            <div id="product-trust-badges" class="mt-2"></div>
+            <div id="pdp-trust" class="pdp-trust">
+                <div id="product-trust-badges"></div>
+            </div>
         </div><!-- End .col-lg-5 -->
     </div><!-- End .row -->
 </div><!-- End .product-single-container -->
@@ -449,23 +446,7 @@
 
 @endsection
 
-<style>
-    .variation-selector { margin: 10px 0 6px; }
-    .variation-group { margin-bottom: 10px; }
-    .variation-group-name { display: block; font-weight: 600; margin-bottom: 6px; }
-    .variation-chip {
-        border: 1px solid #d7dae3; border-radius: 20px; padding: 6px 14px;
-        background: #fff; margin: 0 6px 6px 0; cursor: pointer; font-size: 13px;
-    }
-    .variation-chip.active { border-color: #1b2653; color: #1b2653; font-weight: 700; box-shadow: inset 0 0 0 1px #1b2653; }
-    .variation-chip:disabled { opacity: .35; cursor: not-allowed; }
-    .variation-swatch {
-        display: inline-block; width: 12px; height: 12px; border-radius: 50%;
-        margin-right: 5px; vertical-align: middle; border: 1px solid rgba(0,0,0,.2);
-    }
-</style>
-
-@push('scripts')¿
+@push('scripts')
 <script>
 window.__socialProofBoot = {
     itemId: {{ (int) $record->id }},
@@ -549,12 +530,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.addEventListener('productAddedToCart', this.loadCartQuantities);
                 this.startCountdown();
                 this.startViewersDrift();
+                this.initVariationSelector();
             },
             beforeDestroy() {
                 if (this._countdownTimer) clearInterval(this._countdownTimer);
                 if (this._viewersTimer) clearInterval(this._viewersTimer);
                 window.removeEventListener('productAddedToCart', this.loadCartQuantities);
-                this.initVariationSelector();
             },
             watch: {
                 cartQuantities: {
@@ -608,6 +589,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         const match = variable.values.find(value => current.indexOf(value.id) !== -1);
                         if (match) this.$set(this.selectedVariationValues, variable.id, match.id);
                     });
+                },
+                selectedVariationLabel(variable) {
+                    const selectedId = this.selectedVariationValues[variable.id];
+                    const match = (variable.values || []).find(value => value.id === selectedId);
+                    return match ? match.value : '';
                 },
                 isVariationValueSelected(variableId, valueId) {
                     return this.selectedVariationValues[variableId] === valueId;
