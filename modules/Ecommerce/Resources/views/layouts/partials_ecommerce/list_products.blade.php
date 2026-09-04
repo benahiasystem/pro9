@@ -308,7 +308,7 @@
 </style>
 
 @once
-<div class="app-modal pdp" id="variations-modal" role="dialog" aria-modal="true" aria-labelledby="variations-modal-toptitle" aria-hidden="true">
+<div class="app-modal pdp store-card-media--fit-{{ $storeImageFit }}" id="variations-modal" role="dialog" aria-modal="true" aria-labelledby="variations-modal-toptitle" aria-hidden="true">
     <div class="app-modal__dialog">
         <div class="app-modal__header">
             <span class="app-modal__icon">
@@ -325,7 +325,7 @@
         </div>
 
         <div class="app-modal__body">
-            <div class="vmodal__media">
+            <div class="vmodal__media {{ $storeMediaClass }}">
                 <img id="variations-modal-image" src="" alt="">
             </div>
 
@@ -380,6 +380,14 @@
         width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 10px;
         background: #f4f5f7; border: 1px solid var(--vm-line); display: block;
     }
+    .vmodal__media.store-card-media--1-1 img { aspect-ratio: 1 / 1; }
+    .vmodal__media.store-card-media--4-5 img { aspect-ratio: 4 / 5; }
+    .vmodal__media.store-card-media--5-4 img { aspect-ratio: 5 / 4; }
+    .vmodal__media.store-card-media--fit-cover img { object-fit: cover; object-position: center; }
+    .vmodal__media.store-card-media--fit-contain img { object-fit: contain; object-position: center; }
+
+    #variations-modal.store-card-media--fit-cover .vmodal__row img { object-fit: cover; }
+    #variations-modal.store-card-media--fit-contain .vmodal__row img { object-fit: contain; }
     .vmodal__panel { flex: 1 1 auto; min-width: 0; padding-top: 4px; }
 
     #variations-modal .pdp-title { margin: 0 0 10px; font-size: 20px; line-height: 1.3; }
