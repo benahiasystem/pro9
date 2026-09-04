@@ -30,6 +30,9 @@ class Cash extends ModelTenant
 
     protected $table = 'cash';
 
+    /** Estados de comprobante que suman a la caja (catalogo 23 de SUNAT). */
+    private const CURRENT_TOTALS_VALID_STATES = ['01', '03', '05', '07', '13'];
+
     protected $fillable = [
         'user_id',
         'date_opening',
@@ -206,13 +209,29 @@ class Cash extends ModelTenant
      */
     public function scopeWhereFilterRecordsApi($query, $input)
     {
+        // Filtro obligatorio primero: es el unico que puede usar indice
+        // (user_id tiene indice por la foreign key).
+        $query->where('user_id', auth()->id());
 
-        return $query->where(function($q) use($input){
-                        $q->where('income', 'like', "%{$input}%" )
-                            ->orWhere('reference_number','like', "%{$input}%");
-                    })
-                    ->where('user_id', auth()->id())
-                    ->latest();
+        $input = trim((string) $input);
+
+        // Sin busqueda no se arma el bloque de LIKE. Es el caso habitual del
+        // listado y antes igual comparaba cadena por cadena en cada fila con
+        // un '%%' que siempre daba verdadero.
+        if ($input === '') {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($input) {
+            $q->where('reference_number', 'like', "%{$input}%");
+
+            // income es decimal(12,4): el LIKE obligaba a convertir la columna a
+            // texto fila por fila y anulaba su indice. Solo tiene sentido
+            // compararlo cuando lo buscado es un numero.
+            if (is_numeric($input)) {
+                $q->orWhere('income', $input);
+            }
+        });
     }
 
         
@@ -271,104 +290,18 @@ class Cash extends ModelTenant
     public function getCurrentTotals()
     {
         $id = $this->id;
-        $final_balance = 0;
-        $valid_states = ['01', '03', '05', '07', '13'];
+        $valid_states = self::CURRENT_TOTALS_VALID_STATES;
 
-        foreach ($this->cash_documents as $cash_document) {
+        // Cada bloque es un agregado sobre cash_documents. Antes esto era un
+        // foreach que cargaba relacion por relacion: ~24 consultas por movimiento
+        // (una caja con 5.000 movimientos superaba las 100.000 consultas).
+        $final_balance = $this->sumSaleNotePayments($valid_states)
+            + $this->sumDocumentPayments($valid_states)
+            - $this->sumExpensePayments()
+            - $this->sumCanceledPurchases($valid_states)
+            + $this->sumQuotations();
 
-            if ($cash_document->sale_note) {
-
-                if (in_array($cash_document->sale_note->state_type_id, $valid_states)) {
-                    $balance = $cash_document->sale_note->payments()
-                        ->whereHas('cashDocumentPayments', function ($query) use ($id) {
-                            $query->where('cash_id', $id);
-                        })
-                        ->sum('payment');
-
-                    $final_balance += ($cash_document->sale_note->currency_type_id == 'PEN')
-                        ? $balance
-                        : ($balance * $cash_document->sale_note->exchange_rate_sale);
-                }
-
-            }
-            else if ($cash_document->document) {
-
-                $note = $cash_document->document->getNotes();
-
-                if (is_null($note) || count($note) === 0) {
-                    if (in_array($cash_document->document->state_type_id, $valid_states)) {
-                        $balance = $cash_document->document->payments()
-                            ->whereHas('cashDocumentPayments', function ($query) use ($id) {
-                                $query->where('cash_id', $id);
-                            })
-                            ->sum('payment');
-                        $final_balance += ($cash_document->document->currency_type_id == 'PEN')
-                            ? $balance
-                            : ($balance * $cash_document->document->exchange_rate_sale);
-                    }
-                } else {
-                    foreach ($note as $n) {
-                        if ($n->isDebit()) {
-                            $final_balance += ($n->currency_type_id == 'PEN')
-                                ? $n->total
-                                : ($n->total * $n->exchange_rate_sale);
-                        } else {
-                            $final_balance -= ($n->currency_type_id == 'PEN')
-                                ? $n->total
-                                : ($n->total * $n->exchange_rate_sale);
-                        }
-                    }
-                }
-
-            }
-            else if ($cash_document->expense_payment) {
-
-                $expense = $cash_document->expense_payment->expense;
-                if ($expense->state_type_id == '05') {
-                    $final_balance -= ($expense->currency_type_id == 'PEN')
-                        ? $cash_document->expense_payment->payment
-                        : ($cash_document->expense_payment->payment * $expense->exchange_rate_sale);
-                }
-
-            }
-            else if ($cash_document->purchase) {
-
-                if (in_array($cash_document->purchase->state_type_id, $valid_states)) {
-                    if ($cash_document->purchase->total_canceled == 1) {
-                        $final_balance -= ($cash_document->purchase->currency_type_id == 'PEN')
-                            ? $cash_document->purchase->total
-                            : ($cash_document->purchase->total * $cash_document->purchase->exchange_rate_sale);
-                    }
-                }
-
-            }
-            else if ($cash_document->quotation) {
-
-                $final_balance += ($cash_document->quotation->applyQuotationToCash())
-                    ? $cash_document->quotation->getTransformTotal()
-                    : 0;
-
-            }
-
-        }
-
-        // Ingresos (finanzas): si la caja sigue abierta, usamos la fecha/hora actual como tope
-        $date_closed = $this->date_closed ?: date('Y-m-d');
-        $time_closed = $this->time_closed ?: date('H:i:s');
-
-        $incomes = \Modules\Finance\Models\Income::where('user_id', $this->user_id)
-            ->whereTypeUser()
-            ->whereBetween('date_of_issue', [$this->date_opening, $date_closed])
-            ->whereBetween('time_of_issue', [$this->time_opening, $time_closed])
-            ->get();
-
-        foreach ($incomes as $income) {
-            if (in_array($income->state_type_id, $valid_states)) {
-                $final_balance += ($income->currency_type_id == 'PEN')
-                    ? $income->total
-                    : ($income->total * $income->exchange_rate_sale);
-            }
-        }
+        $final_balance += $this->sumFinanceIncomes($valid_states);
 
         return [
             'income' => round($final_balance, 2),
@@ -376,9 +309,214 @@ class Cash extends ModelTenant
         ];
     }
 
-    
+
     /**
-     * 
+     * Base comun de los agregados: los movimientos de esta caja.
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
+    private function currentTotalsBase()
+    {
+        return $this->getConnection()
+                    ->table('cash_documents as cd')
+                    ->where('cd.cash_id', $this->id);
+    }
+
+
+    /**
+     * Importe en soles: si la moneda no es PEN se aplica el tipo de cambio.
+     *
+     * @param  string $amount
+     * @param  string $currency
+     * @param  string $rate
+     * @return \Illuminate\Database\Query\Expression
+     */
+    private function amountInPen($amount, $currency, $rate)
+    {
+        return $this->getConnection()->raw(
+            "COALESCE(SUM(CASE WHEN {$currency} = 'PEN' THEN {$amount} ELSE {$amount} * {$rate} END), 0)"
+        );
+    }
+
+
+    /**
+     * Pagos de notas de venta imputados a esta caja.
+     *
+     * @param  array $valid_states
+     * @return float
+     */
+    private function sumSaleNotePayments(array $valid_states)
+    {
+        $id = $this->id;
+
+        $row = $this->currentTotalsBase()
+            ->join('sale_notes as sn', 'sn.id', '=', 'cd.sale_note_id')
+            ->join('sale_note_payments as snp', 'snp.sale_note_id', '=', 'sn.id')
+            ->whereIn('sn.state_type_id', $valid_states)
+            // whereExists y no join: un pago con varias filas en
+            // cash_document_payments debe contarse una sola vez.
+            ->whereExists(function ($q) use ($id) {
+                $q->selectRaw('1')->from('cash_document_payments as cdp')
+                  ->whereColumn('cdp.sale_note_payment_id', 'snp.id')
+                  ->where('cdp.cash_id', $id);
+            })
+            ->selectRaw($this->amountInPen('snp.payment', 'sn.currency_type_id', 'sn.exchange_rate_sale').' as total')
+            ->first();
+
+        return (float) ($row->total ?? 0);
+    }
+
+
+    /**
+     * Pagos de comprobantes imputados a esta caja.
+     *
+     * Se excluyen los que tienen nota asociada, igual que hacia la version por
+     * bucle: esos movimientos no suman (ver nota en la constante).
+     *
+     * @param  array $valid_states
+     * @return float
+     */
+    private function sumDocumentPayments(array $valid_states)
+    {
+        $id = $this->id;
+
+        $row = $this->currentTotalsBase()
+            ->join('documents as d', 'd.id', '=', 'cd.document_id')
+            ->join('document_payments as dp', 'dp.document_id', '=', 'd.id')
+            ->whereIn('d.state_type_id', $valid_states)
+            // La nota de venta tiene prioridad en la cadena de decision original.
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('sale_notes as sn2')->whereColumn('sn2.id', 'cd.sale_note_id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('notes as n')->whereColumn('n.affected_document_id', 'd.id');
+            })
+            ->whereExists(function ($q) use ($id) {
+                $q->selectRaw('1')->from('cash_document_payments as cdp')
+                  ->whereColumn('cdp.document_payment_id', 'dp.id')
+                  ->where('cdp.cash_id', $id);
+            })
+            ->selectRaw($this->amountInPen('dp.payment', 'd.currency_type_id', 'd.exchange_rate_sale').' as total')
+            ->first();
+
+        return (float) ($row->total ?? 0);
+    }
+
+
+    /**
+     * Pagos de gastos de esta caja. Se restan del saldo.
+     *
+     * @return float
+     */
+    private function sumExpensePayments()
+    {
+        $row = $this->currentTotalsBase()
+            ->join('expense_payments as ep', 'ep.id', '=', 'cd.expense_payment_id')
+            ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
+            ->where('e.state_type_id', '05')
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('sale_notes as sn2')->whereColumn('sn2.id', 'cd.sale_note_id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('documents as d2')->whereColumn('d2.id', 'cd.document_id');
+            })
+            ->selectRaw($this->amountInPen('ep.payment', 'e.currency_type_id', 'e.exchange_rate_sale').' as total')
+            ->first();
+
+        return (float) ($row->total ?? 0);
+    }
+
+
+    /**
+     * Compras canceladas en su totalidad. Se restan del saldo.
+     *
+     * @param  array $valid_states
+     * @return float
+     */
+    private function sumCanceledPurchases(array $valid_states)
+    {
+        $row = $this->currentTotalsBase()
+            ->join('purchases as p', 'p.id', '=', 'cd.purchase_id')
+            ->whereIn('p.state_type_id', $valid_states)
+            ->where('p.total_canceled', 1)
+            // Purchase usa SoftDeletes: la relacion del modelo excluia las borradas.
+            ->whereNull('p.deleted_at')
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('sale_notes as sn2')->whereColumn('sn2.id', 'cd.sale_note_id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('documents as d2')->whereColumn('d2.id', 'cd.document_id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('expense_payments as ep2')->whereColumn('ep2.id', 'cd.expense_payment_id');
+            })
+            ->selectRaw($this->amountInPen('p.total', 'p.currency_type_id', 'p.exchange_rate_sale').' as total')
+            ->first();
+
+        return (float) ($row->total ?? 0);
+    }
+
+
+    /**
+     * Cotizaciones que suman a caja: aceptadas, con pagos y sin cambios.
+     * Equivale a Quotation::applyQuotationToCash().
+     *
+     * @return float
+     */
+    private function sumQuotations()
+    {
+        $row = $this->currentTotalsBase()
+            ->join('quotations as q', 'q.id', '=', 'cd.quotation_id')
+            ->whereIn('q.state_type_id', ['01', '05'])
+            ->where(function ($q) {
+                $q->where('q.changed', 0)->orWhereNull('q.changed');
+            })
+            ->whereExists(function ($q) {
+                $q->selectRaw('1')->from('quotation_payments as qp')->whereColumn('qp.quotation_id', 'q.id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('sale_notes as sn2')->whereColumn('sn2.id', 'cd.sale_note_id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('documents as d2')->whereColumn('d2.id', 'cd.document_id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('expense_payments as ep2')->whereColumn('ep2.id', 'cd.expense_payment_id');
+            })
+            ->whereNotExists(function ($q) {
+                $q->selectRaw('1')->from('purchases as p2')->whereColumn('p2.id', 'cd.purchase_id');
+            })
+            ->selectRaw($this->amountInPen('q.total', 'q.currency_type_id', 'q.exchange_rate_sale').' as total')
+            ->first();
+
+        return (float) ($row->total ?? 0);
+    }
+
+
+    /**
+     * Ingresos de finanzas del periodo de la caja.
+     *
+     * @param  array $valid_states
+     * @return float
+     */
+    private function sumFinanceIncomes(array $valid_states)
+    {
+        // Si la caja sigue abierta, el tope es la fecha/hora actual.
+        $date_closed = $this->date_closed ?: date('Y-m-d');
+        $time_closed = $this->time_closed ?: date('H:i:s');
+
+        return (float) \Modules\Finance\Models\Income::where('user_id', $this->user_id)
+            ->whereTypeUser()
+            ->whereBetween('date_of_issue', [$this->date_opening, $date_closed])
+            ->whereBetween('time_of_issue', [$this->time_opening, $time_closed])
+            ->whereIn('state_type_id', $valid_states)
+            ->selectRaw($this->amountInPen('total', 'currency_type_id', 'exchange_rate_sale').' as total')
+            ->value('total');
+    }
+
+
+    /**
+     *
      * @return string
      */
     public function getStateDescriptionAttribute()
