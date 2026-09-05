@@ -115,7 +115,7 @@ class GenerateClientBackup implements ShouldQueue
 
         $command = array_merge(
             [config('backup.mysqldump')],
-            config('backup.dump_options'),
+            $this->supportedDumpOptions(),
             ['-h', $this->host, '-u', $this->username, $this->database]
         );
 
@@ -156,6 +156,48 @@ class GenerateClientBackup implements ShouldQueue
         }
 
         return $path;
+    }
+
+    /**
+     * Descarta las banderas que el binario instalado no conozca.
+     *
+     * El cliente de MariaDB y el de MySQL no comparten todo el juego de opciones:
+     * --set-gtid-purged, por ejemplo, solo existe en MySQL y en MariaDB aborta con
+     * "unknown variable". Como la imagen puede traer uno u otro segun el paquete
+     * (default-mysql-client en Debian instala el de MariaDB), se consulta el --help
+     * del binario en vez de asumir cual es.
+     */
+    protected function supportedDumpOptions()
+    {
+        $options = config('backup.dump_options');
+
+        $help = new Process([config('backup.mysqldump'), '--help']);
+        $help->run();
+
+        $text = $help->getOutput();
+
+        // Si no se pudo leer la ayuda no se filtra nada: es preferible fallar con el
+        // error real de mysqldump antes que dejarlo sin --single-transaction.
+        if (trim($text) === '') return $options;
+
+        $supported = [];
+        $dropped = [];
+
+        foreach ($options as $option) {
+            $name = explode('=', ltrim($option, '-'))[0];
+
+            str_contains($text, '--' . $name)
+                ? $supported[] = $option
+                : $dropped[] = $option;
+        }
+
+        if ($dropped) {
+            Log::warning(
+                'El mysqldump instalado no soporta estas opciones y se omitieron: ' . implode(' ', $dropped)
+            );
+        }
+
+        return $supported;
     }
 
     protected function packZip($sql_path)

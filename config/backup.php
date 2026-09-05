@@ -16,6 +16,10 @@ return [
      * --quick               no carga la tabla entera en memoria
      * --no-tablespaces      evita el error de privilegio PROCESS con cliente 8.0
      * --routines --events   sin esto el restore queda sin procedimientos ni triggers
+     *
+     * Las banderas que el binario instalado no reconozca se descartan solas: el
+     * cliente de MariaDB y el de MySQL no comparten todo el juego de opciones
+     * (--set-gtid-purged solo existe en MySQL). Ver GenerateClientBackup::supportedDumpOptions.
      */
     'dump_options' => [
         '--single-transaction',
