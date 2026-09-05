@@ -127,6 +127,7 @@ class PersonController extends Controller
             $request->input('identity_document_type_id'),
             $request->input('number')
         );
+        $requires_location = !$this->hasOptionalLocation($request->input('identity_document_type_id'));
 
         if ($requires_address) {
 
@@ -143,7 +144,7 @@ class PersonController extends Controller
                 $main_location_id = $this->resolveMainAddressLocationId($addresses);
             }
 
-            if ($request->input('country_id') === 'VE' && !$this->isCompleteLocationId($main_location_id)) {
+            if ($requires_location && $request->input('country_id') === 'VE' && !$this->isCompleteLocationId($main_location_id)) {
                 return [
                     'success' => false,
                     'message' => 'Falta registrar Estado / Municipio / Parroquia en la dirección principal'
@@ -152,7 +153,7 @@ class PersonController extends Controller
         }
 
         // Restricción para direcciones secundarias de Venezuela.
-        foreach (($requires_address ? $addresses : []) as $index => $row) {
+        foreach (($requires_address && $requires_location ? $addresses : []) as $index => $row) {
             if (isset($row['country_id']) && $row['country_id'] === 'VE') {
                 if (empty($row['location_id']) || !is_array($row['location_id']) || count($row['location_id']) !== 3 ||
                     !isset($row['location_id'][0]) || !isset($row['location_id'][1]) || !isset($row['location_id'][2]) ||
@@ -277,6 +278,18 @@ class PersonController extends Controller
         $identityDocumentTypeId = (string) $identityDocumentTypeId;
 
         return $identityDocumentTypeId === '1';
+    }
+
+    /**
+     * Extranjero y Pasaporte no usan Estado / Municipio / Parroquia.
+     * PersonRequest elimina ademas cualquier valor heredado antes de persistir.
+     *
+     * @param  mixed  $identityDocumentTypeId
+     * @return bool
+     */
+    private function hasOptionalLocation($identityDocumentTypeId): bool
+    {
+        return in_array((string) $identityDocumentTypeId, ['E', '7'], true);
     }
 
     /**

@@ -86,8 +86,11 @@ class VenezuelaIdentityDocumentContractTest extends TestCase
         self::assertStringContainsString('option.selection_label || option.description', $form);
         self::assertStringContainsString("identity_document_type_id === 'E'", $form);
         self::assertStringContainsString("'formatted_number' => \$this->formatted_number", $person);
-        self::assertStringContainsString('IdentityDocument::normalizeNumber', $request);
+        self::assertStringContainsString("'number' => (string) \$this->input('number')", $request);
+        self::assertStringNotContainsString("'number' => IdentityDocument::normalizeNumber", $request);
         self::assertStringContainsString('Rule::in(IdentityDocument::ids())', $request);
+        self::assertStringContainsString("if (this.type !== 'customers')", $form);
+        self::assertStringContainsString('const patternNumber = /^[0-9]+$/', $form);
     }
 
     /** @test */

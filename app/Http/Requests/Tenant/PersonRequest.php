@@ -11,6 +11,7 @@ class PersonRequest extends FormRequest
 {
     // ########### INICIO CAMBIO CLIENTES VENEZUELA
     private const FOREIGN_DOCUMENT_TYPE_ID = 'E';
+    private const LOCATION_EXEMPT_DOCUMENT_TYPE_IDS = ['E', '7'];
 
     public function authorize()
     {
@@ -26,7 +27,11 @@ class PersonRequest extends FormRequest
         $countryId = Localization::countryId();
         $identityDocumentTypeId = (string) $this->input('identity_document_type_id');
         // ######## INICIO CORRECCION GUARDADO CLIENTES VENEZUELA
-        $addresses = $this->normalizeCustomerAddresses($this->input('addresses'));
+        $addresses = $this->input('addresses');
+        if ($this->isLocationExemptDocument($identityDocumentTypeId)) {
+            $addresses = $this->clearAddressLocations($addresses);
+        }
+        $addresses = $this->normalizeCustomerAddresses($addresses);
 
         foreach ($addresses as &$address) {
             $address['country_id'] = $countryId;
@@ -37,8 +42,19 @@ class PersonRequest extends FormRequest
         $normalized = [
             'country_id' => $countryId,
             'addresses' => $addresses,
-            'number' => IdentityDocument::normalizeNumber($identityDocumentTypeId, $this->input('number')),
+            // El formulario de clientes recibe únicamente dígitos; el prefijo
+            // corresponde a la presentación y no debe normalizar entradas inválidas.
+            'number' => (string) $this->input('number'),
         ];
+
+        if ($this->isLocationExemptDocument($identityDocumentTypeId)) {
+            $normalized = array_merge($normalized, [
+                'location_id' => [],
+                'department_id' => null,
+                'province_id' => null,
+                'district_id' => null,
+            ]);
+        }
 
         if ($identityDocumentTypeId !== self::FOREIGN_DOCUMENT_TYPE_ID) {
             $normalized['nationality_id'] = $countryId;
@@ -75,6 +91,35 @@ class PersonRequest extends FormRequest
             return false;
         }));
     }
+
+    /**
+     * Extranjero y Pasaporte no conservan la jerarquia territorial venezolana,
+     * ni siquiera cuando una edicion envia valores antiguos desde el navegador.
+     */
+    private function clearAddressLocations($addresses): array
+    {
+        if (!is_array($addresses)) {
+            return [];
+        }
+
+        return array_map(static function ($address) {
+            if (!is_array($address)) {
+                return $address;
+            }
+
+            $address['location_id'] = [];
+            $address['department_id'] = null;
+            $address['province_id'] = null;
+            $address['district_id'] = null;
+
+            return $address;
+        }, $addresses);
+    }
+
+    private function isLocationExemptDocument(string $identityDocumentTypeId): bool
+    {
+        return in_array($identityDocumentTypeId, self::LOCATION_EXEMPT_DOCUMENT_TYPE_IDS, true);
+    }
     // ######## FIN CORRECCION GUARDADO CLIENTES VENEZUELA
 
     public function rules()
@@ -95,7 +140,7 @@ class PersonRequest extends FormRequest
             if ((string) $this->input('identity_document_type_id') === '1') {
                 $numberRules[] = 'regex:/^[0-9]{6,8}$/';
             } else {
-                $numberRules[] = 'regex:/^[A-Z0-9-]{1,20}$/i';
+                $numberRules[] = 'regex:/^[0-9]{1,20}$/';
             }
         }
 
@@ -151,7 +196,7 @@ class PersonRequest extends FormRequest
         return [
             'nationality_id.required' => 'La nacionalidad es obligatoria para un cliente extranjero.',
             'nationality_id.not_in' => 'Seleccione una nacionalidad extranjera.',
-            'number.regex' => 'El formato del documento de identidad no es válido.',
+            'number.regex' => 'El campo número debe contener solo números.',
         ];
     }
     // ########### FIN CAMBIO CLIENTES VENEZUELA

@@ -211,7 +211,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-9">
+                            <div v-if="!isLocationExemptDocument" class="col-md-9">
                                 <div :class="{'has-danger': errors.location_id}"
                                      class="form-group">
                                     <label class="control-label">
@@ -453,7 +453,7 @@
                                            v-text="errors.country_id[0]"></small>
                                 </div>
                             </div>
-                            <div class="col-md-8">
+                            <div v-if="!isLocationExemptDocument" class="col-md-8">
                                 <div :class="{'has-danger': errors.location_id}"
                                      class="form-group">
                                     <label class="control-label">
@@ -922,6 +922,10 @@ export default {
         isForeignDocument() {
             return this.form.identity_document_type_id === 'E'
         },
+        isLocationExemptDocument() {
+            return this.type === 'customers'
+                && ['E', '7'].includes(this.form.identity_document_type_id)
+        },
         establishmentsNote() {
             const selected = this.establishments.filter(e => e.selected).length
             const principal = this.establishments.find(e => e.codigo === this.principal_establishment_code)
@@ -1109,6 +1113,7 @@ export default {
                             this.form.district_id
                         )
                         this.normalizeFormAddresses()
+                        this.clearLocationForExemptDocument()
                         this.filterProvinces()
                         this.filterDistricts()
                     }).then(() => {
@@ -1150,6 +1155,22 @@ export default {
             }))
 
             this.ensureMainAddressRow()
+        },
+        clearLocationForExemptDocument() {
+            if (!this.isLocationExemptDocument) return
+
+            this.form.location_id = []
+            this.$set(this.form, 'department_id', null)
+            this.$set(this.form, 'province_id', null)
+            this.$set(this.form, 'district_id', null)
+
+            const addresses = this.form.addresses || []
+            addresses.forEach(row => {
+                this.$set(row, 'location_id', [])
+                this.$set(row, 'department_id', null)
+                this.$set(row, 'province_id', null)
+                this.$set(row, 'district_id', null)
+            })
         },
         buildDefaultAddressRow(main = false) {
             return {
@@ -1289,7 +1310,7 @@ export default {
             // (misma validacion que corre en submit), asi que no se crea todavia.
             const country_id = payload.country_id || 'VE'
             const location_id = payload.location_id || []
-            if (country_id === 'VE' && (location_id.length !== 3 || !location_id.every(item => item))) return
+            if (!this.isLocationExemptDocument && country_id === 'VE' && (location_id.length !== 3 || !location_id.every(item => item))) return
 
             // La vista rotula addresses[0] como "Direccion principal": va al inicio.
             this.form.addresses.unshift({
@@ -1375,40 +1396,37 @@ export default {
 
         },
         validateDigits() {
+            // ########### INICIO CAMBIO CLIENTES VENEZUELA ###########
+            if (this.type !== 'customers') {
+                return {success: true}
+            }
 
-            const pattern_number = new RegExp('^[0-9]+$', 'i');
+            const number = String(this.form.number || '')
+            const patternNumber = /^[0-9]+$/
+
+            if (!patternNumber.test(number)) {
+                return {
+                    success: false,
+                    message: `El campo número debe contener solo números.`
+                }
+            }
 
             if (this.form.identity_document_type_id === '1') {
-
-                if (this.form.number.length !== 8) {
+                if (number.length < 6 || number.length > 8) {
                     return {
                         success: false,
-                        message: `El campo número debe tener 8 dígitos.`
-                    }
-                }
-
-                if (!pattern_number.test(this.form.number)) {
-                    return {
-                        success: false,
-                        message: `El campo número debe contener solo números`
+                        message: `El campo número debe tener entre 6 y 8 dígitos.`
                     }
                 }
             }
 
-
-            if (['0', '6', '7', 'E', 'C', 'G', 'R'].includes(this.form.identity_document_type_id)) {
-
-                const pattern = new RegExp('^[A-Z0-9\-]+$', 'i');
-
-                if (!pattern.test(this.form.number)) {
-                    return {
-                        success: false,
-                        message: `El campo número no cumple con el formato establecido`
-                    }
+            if (number.length > 20) {
+                return {
+                    success: false,
+                    message: `El campo número no debe exceder 20 dígitos.`
                 }
-
             }
-
+            // ########### FIN CAMBIO CLIENTES VENEZUELA ###########
 
             return {
                 success: true
@@ -1436,6 +1454,9 @@ export default {
                }
             }*/
 
+            // Extranjero y Pasaporte nunca envian jerarquia territorial venezolana.
+            this.clearLocationForExemptDocument()
+
             // La direccion principal se registra tambien dentro de addresses.
             this.upsertMainAddress()
 
@@ -1451,7 +1472,8 @@ export default {
                 const main_location_id = this.form.location_id || [];
 
                 if (
-                    this.form.country_id === 'VE'
+                    !this.isLocationExemptDocument
+                    && this.form.country_id === 'VE'
                     && (main_location_id.length !== 3 || !main_location_id.every(value => value))
                 ) {
                     return this.$message.error('Falta registrar Estado / Municipio / Parroquia en la Dirección principal');
@@ -1467,7 +1489,8 @@ export default {
                     // Una fila sin ningun dato no se guarda, asi que tampoco se valida.
                     if (this.isEmptyAddressRow(address)) continue;
                     if (
-                        address.country_id === 'VE'
+                        !this.isLocationExemptDocument
+                        && address.country_id === 'VE'
                         && (
                             !address.location_id
                             || address.location_id.length !== 3
@@ -1539,7 +1562,8 @@ export default {
             if (!this.isForeignDocument) {
                 this.form.nationality_id = 'VE'
             }
-            (this.recordId == null) ? this.setDataDefaultCustomer() : null
+            this.clearLocationForExemptDocument()
+            if (this.recordId == null) this.setDataDefaultCustomer()
         },
         setDataDefaultCustomer() {
 

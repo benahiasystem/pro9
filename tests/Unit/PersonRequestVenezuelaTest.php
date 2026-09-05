@@ -2,7 +2,9 @@
 
 namespace Tests\Unit;
 
+use App\Http\Controllers\Tenant\PersonController;
 use App\Http\Requests\Tenant\PersonRequest;
+use Illuminate\Support\Facades\Validator;
 use ReflectionMethod;
 use Tests\TestCase;
 
@@ -95,6 +97,68 @@ class PersonRequestVenezuelaTest extends TestCase
         self::assertSame('CO', $request->input('nationality_id'));
     }
 
+    /**
+     * @test
+     * @dataProvider locationExemptDocuments
+     */
+    public function it_clears_territorial_data_for_foreign_and_passport_customers_on_create_and_edit(
+        string $documentTypeId
+    ): void {
+        foreach ([null, 25] as $id) {
+            $request = PersonRequest::create('/', 'POST', [
+                'id' => $id,
+                'type' => 'customers',
+                'identity_document_type_id' => $documentTypeId,
+                'location_id' => ['01', '02', '03'],
+                'department_id' => '01',
+                'province_id' => '02',
+                'district_id' => '03',
+                'addresses' => [[
+                    'id' => 8,
+                    'main' => true,
+                    'address' => 'Dirección internacional',
+                    'location_id' => ['01', '02', '03'],
+                    'department_id' => '01',
+                    'province_id' => '02',
+                    'district_id' => '03',
+                ]],
+            ]);
+
+            $this->prepareForValidation($request);
+
+            self::assertSame([], $request->input('location_id'));
+            self::assertNull($request->input('department_id'));
+            self::assertNull($request->input('province_id'));
+            self::assertNull($request->input('district_id'));
+            self::assertSame('Dirección internacional', $request->input('addresses.0.address'));
+            self::assertSame([], $request->input('addresses.0.location_id'));
+            self::assertNull($request->input('addresses.0.department_id'));
+            self::assertNull($request->input('addresses.0.province_id'));
+            self::assertNull($request->input('addresses.0.district_id'));
+        }
+    }
+
+    public function locationExemptDocuments(): array
+    {
+        return [
+            'Extranjero' => ['E'],
+            'Pasaporte' => ['7'],
+        ];
+    }
+
+    /** @test */
+    public function the_controller_skips_location_only_for_foreign_and_passport_customers(): void
+    {
+        $controller = new PersonController();
+        $method = new ReflectionMethod(PersonController::class, 'hasOptionalLocation');
+        $method->setAccessible(true);
+
+        self::assertTrue($method->invoke($controller, 'E'));
+        self::assertTrue($method->invoke($controller, '7'));
+        self::assertFalse($method->invoke($controller, '6'));
+        self::assertFalse($method->invoke($controller, '1'));
+    }
+
     /** @test */
     public function it_does_not_change_supplier_nationality_data(): void
     {
@@ -131,12 +195,13 @@ class PersonRequestVenezuelaTest extends TestCase
     {
         return [
             'cedula' => ['1', 'regex:/^[0-9]{6,8}$/'],
-            'juridico' => ['6', 'regex:/^[A-Z0-9-]{1,20}$/i'],
-            'extranjero' => ['E', 'regex:/^[A-Z0-9-]{1,20}$/i'],
-            'pasaporte' => ['7', 'regex:/^[A-Z0-9-]{1,20}$/i'],
-            'comuna' => ['C', 'regex:/^[A-Z0-9-]{1,20}$/i'],
-            'gubernamental' => ['G', 'regex:/^[A-Z0-9-]{1,20}$/i'],
-            'firma personal' => ['R', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'juridico' => ['6', 'regex:/^[0-9]{1,20}$/'],
+            'extranjero' => ['E', 'regex:/^[0-9]{1,20}$/'],
+            'pasaporte' => ['7', 'regex:/^[0-9]{1,20}$/'],
+            'comuna' => ['C', 'regex:/^[0-9]{1,20}$/'],
+            'gubernamental' => ['G', 'regex:/^[0-9]{1,20}$/'],
+            'firma personal' => ['R', 'regex:/^[0-9]{1,20}$/'],
+            'sin rif' => ['0', 'regex:/^[0-9]{1,20}$/'],
         ];
     }
 
@@ -144,7 +209,7 @@ class PersonRequestVenezuelaTest extends TestCase
      * @test
      * @dataProvider customerIdentitySelections
      */
-    public function it_preserves_the_selected_id_and_removes_its_visible_prefix_before_persistence(
+    public function it_preserves_the_selected_id_and_numeric_value_before_persistence(
         string $id,
         string $input,
         string $expectedNumber
@@ -165,13 +230,65 @@ class PersonRequestVenezuelaTest extends TestCase
     public function customerIdentitySelections(): array
     {
         return [
-            'Venezolano' => ['1', 'V-12345678', '12345678'],
-            'Juridico' => ['6', 'J-123456789', '123456789'],
-            'Pasaporte' => ['7', 'P-AB123', 'AB123'],
-            'Extranjero' => ['E', 'E-998877', '998877'],
-            'Comuna' => ['C', 'C-112233', '112233'],
-            'Gubernamental' => ['G', 'G-445566', '445566'],
-            'Firma Personal' => ['R', 'R-778899', '778899'],
+            'Venezolano' => ['1', '12345678', '12345678'],
+            'Juridico' => ['6', '123456789', '123456789'],
+            'Pasaporte' => ['7', '123456', '123456'],
+            'Extranjero' => ['E', '998877', '998877'],
+            'Comuna' => ['C', '112233', '112233'],
+            'Gubernamental' => ['G', '445566', '445566'],
+            'Firma Personal' => ['R', '778899', '778899'],
+        ];
+    }
+
+    /** @test */
+    public function it_does_not_strip_letters_or_special_characters_before_validation(): void
+    {
+        $request = PersonRequest::create('/', 'POST', [
+            'type' => 'customers',
+            'identity_document_type_id' => '6',
+            'number' => 'J-123456789',
+            'addresses' => [],
+        ]);
+
+        $this->prepareForValidation($request);
+
+        self::assertSame('J-123456789', $request->input('number'));
+        self::assertSame(0, preg_match('/^[0-9]{1,20}$/', $request->input('number')));
+    }
+
+    /**
+     * @test
+     * @dataProvider invalidCustomerNumbers
+     */
+    public function it_rejects_non_numeric_values_when_creating_or_editing_customers(string $number): void
+    {
+        foreach ([null, 25] as $id) {
+            $request = PersonRequest::create('/', 'POST', [
+                'id' => $id,
+                'type' => 'customers',
+                'identity_document_type_id' => '6',
+                'number' => $number,
+            ]);
+
+            $rules = $request->rules()['number'];
+            $formatRules = array_values(array_filter($rules, 'is_string'));
+
+            self::assertContains('regex:/^[0-9]{1,20}$/', $rules);
+            self::assertTrue(Validator::make(
+                ['number' => $number],
+                ['number' => $formatRules]
+            )->fails());
+        }
+    }
+
+    public function invalidCustomerNumbers(): array
+    {
+        return [
+            'letras' => ['ABC123'],
+            'prefijo y guion' => ['J-123456789'],
+            'punto' => ['123.456'],
+            'espacio interno' => ['123 456'],
+            'espacio exterior' => [' 123456'],
         ];
     }
 
