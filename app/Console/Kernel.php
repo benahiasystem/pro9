@@ -44,6 +44,9 @@ class Kernel extends ConsoleKernel
         // Limpieza de archivos por empresa segun lo programado en storage_cleanup_configurations.
         // Corre cada 30 min porque la hora la define cada configuracion, no el schedule
         $schedule->command('storage:clean')->everyMinute()->timezone('America/Lima')->appendOutputTo(storage_path('logs/storage_clean.log'));
+        // Bandeja de backups del central: borra vencidos, libera procesos colgados y
+        // limpia parciales huerfanos. Corre despues de las otras purgas nocturnas.
+        $schedule->command('backup:prune')->dailyAt('05:00')->timezone('America/Lima')->appendOutputTo(storage_path('logs/backup_prune.log'));
         $schedule->command('mozo:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/mozo_sync.log'));
         $schedule->command('vendeya:sync')->everyThirtyMinutes()->sendOutputTo(storage_path('logs/vendeya_sync.log'));
         // Llena las tablas para libro mayor - Se desactiva CMAR - buscar opcion de url

@@ -1,15 +1,57 @@
 [supervisord]
 nodaemon=true
 
+; ============================================================
+; Worker principal: colas high y default
+; Procesa jobs urgentes y normales (emails, notificaciones, etc.)
+; ============================================================
+
 [program:laravel-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/html/artisan queue:work --sleep=3 --tries=3 --timeout=300 --max-jobs=1
+command=php /var/www/html/artisan queue:work --queue=high,default --sleep=3 --tries=3 --timeout=300 --max-jobs=1
 autostart=true
 autorestart=true
 stopasgroup=true
 killasgroup=true
 user=root
-numprocs=8
+numprocs=7
 redirect_stderr=true
 stdout_logfile=/var/www/html/storage/logs/supervisor.log
+priority=1
 stopwaitsecs=3600
+
+
+
+; ============================================================
+; Worker de backup: cola dedicada exclusivamente a backups
+; Aislado para que no bloquee ni sea bloqueado por jobs urgentes
+; ============================================================
+
+[program:laravel-worker-backup]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/html/artisan queue:work --queue=backups --sleep=3 --tries=3 --timeout=600 --max-jobs=1
+numprocs=1
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=root
+stdout_logfile=/var/www/html/storage/logs/supervisor-backup.log
+priority=2
+stopwaitsecs=3600
+
+
+; ============================================================
+; Interfaz de control para supervisorctl
+; Necesaria para poder consultar el estado de los workers
+; ============================================================
+
+[unix_http_server]
+file=/var/run/supervisor.sock
+chmod=0700
+ 
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+ 
+[supervisorctl]
+serverurl=unix:///var/run/supervisor.sock

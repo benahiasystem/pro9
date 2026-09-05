@@ -1237,9 +1237,13 @@ if ($hostname) {
 
             // backup
             Route::get('backup', 'System\BackupController@index')->name('system.backup');
-            Route::post('backup/db', 'System\BackupController@db')->name('system.backup.db');
-            Route::post('backup/files', 'System\BackupController@files')->name('system.backup.files');
+            Route::post('backup/generate', 'System\BackupController@generate')->name('system.backup.generate');
             Route::post('backup/upload', 'System\BackupController@upload')->name('system.backup.upload');
+
+            // bandeja de descargas del central
+            Route::get('backup/tray', 'System\BackupController@tray')->name('system.backup.tray');
+            Route::get('backup/tray/{id}/download', 'System\BackupController@trayDownload')->name('system.backup.tray.download');
+            Route::delete('backup/tray/{id}', 'System\BackupController@trayDestroy')->name('system.backup.tray.destroy');
 
             Route::get('backup/last-backup', 'System\BackupController@mostRecent');
             Route::get('backup/download/{filename}', 'System\BackupController@download');
