@@ -19,9 +19,9 @@ class ProductFlowSchemaContractTest extends TestCase
     }
 
     /** @test */
-    public function the_legacy_migration_is_safe_when_it_runs_before_items_are_created(): void
+    public function the_reordered_parent_item_migration_remains_idempotent(): void
     {
-        $source = $this->source('database/migrations/tenant/2026_08_08_130100_tenant_add_parent_item_id_to_items.php');
+        $source = $this->source('database/migrations/tenant/2026_08_17_010010_tenant_add_parent_item_id_to_items.php');
 
         self::assertStringContainsString("! Schema::hasTable('items')", $source);
         self::assertStringContainsString("Schema::hasColumn('items', 'parent_item_id')", $source);
@@ -45,6 +45,12 @@ class ProductFlowSchemaContractTest extends TestCase
             '2026_08_31_120000_tenant_add_enable_global_discount_to_configurations.php',
             '2026_08_31_130000_tenant_set_nrus_flag_in_plan_config.php',
             '2026_09_04_000001_sync_venezuela_identity_document_types.php',
+            '2026_09_04_000002_ensure_warehouse_transfer_series.php',
+            '2026_09_04_000003_rename_dispatch_document_types_to_delivery_orders.php',
+            '2026_09_04_000004_disable_carrier_dispatch_document_types.php',
+            '2026_09_04_000005_ensure_warehouse_internal_series.php',
+            '2026_09_04_000006_add_transfer_id_to_temporary_kardex_records.php',
+            '2026_09_04_000007_rename_warehouse_guides_to_notes.php',
         ], array_slice($names, $repairPosition + 1));
     }
 

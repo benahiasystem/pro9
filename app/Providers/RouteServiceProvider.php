@@ -51,9 +51,15 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapWebRoutes()
     {
-        Route::middleware('web')
-             ->namespace($this->namespace)
-             ->group(base_path('routes/web.php'));
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // Hyn identifica el tenant al terminar el arranque de la aplicación.
+        // Cargar antes este archivo omite todas las rutas comerciales del tenant.
+        $this->app->booted(function () {
+            Route::middleware('web')
+                 ->namespace($this->namespace)
+                 ->group(base_path('routes/web.php'));
+        });
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
     }
 
     /**
@@ -65,9 +71,14 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function mapApiRoutes()
     {
-        Route::prefix('api')
-             ->middleware('api')
-             ->namespace($this->namespace)
-             ->group(base_path('routes/api.php'));
+        // ########## INICIO CAMBIO SIN XML CDR SUNAT
+        // Las rutas API tenant necesitan la misma identificación previa del hostname.
+        $this->app->booted(function () {
+            Route::prefix('api')
+                 ->middleware('api')
+                 ->namespace($this->namespace)
+                 ->group(base_path('routes/api.php'));
+        });
+        // ######### FIN CAMBIO SIN XML CDR SUNAT
     }
 }

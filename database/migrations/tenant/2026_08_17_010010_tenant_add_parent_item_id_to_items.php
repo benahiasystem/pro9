@@ -10,8 +10,8 @@ return new class extends Migration
 {
     public function up()
     {
-        // En una instalación reconstruida esta migración precede a create_items_table.
-        // El contrato definitivo se completa en la migración de reparación posterior.
+        // En instalaciones reconstruidas la tabla ya contiene el contrato definitivo.
+        // Este paso conserva compatibilidad con tenants históricos que aún no lo tengan.
         if (! Schema::hasTable('items') || Schema::hasColumn('items', 'parent_item_id')) {
             return;
         }

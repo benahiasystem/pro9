@@ -12,6 +12,12 @@ class TenantCreateDashboardLayoutsTable extends Migration
      * @return void
      */
     public function up() {
+        // ########### INICIO: permitir reordenar la migración sin duplicar la tabla existente ###########
+        if (Schema::hasTable('dashboard_layouts')) {
+            return;
+        }
+        // ########### FIN: permitir reordenar la migración sin duplicar la tabla existente ###########
+
         Schema::create('dashboard_layouts', function(Blueprint $table) {
             $table->increments('id');
             $table->unsignedInteger('user_id')->unique();

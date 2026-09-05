@@ -8,6 +8,12 @@ return new class extends Migration
 {
     public function up()
     {
+        // ########### INICIO: permitir reordenar la migración sin duplicar la tabla existente ###########
+        if (Schema::hasTable('item_variation_values')) {
+            return;
+        }
+        // ########### FIN: permitir reordenar la migración sin duplicar la tabla existente ###########
+
         Schema::create('item_variation_values', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('item_id');
