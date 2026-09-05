@@ -12,9 +12,15 @@
 
 :root {
     --pdp-surface: #fff;
-    --pdp-line: var(--line, #e9edf1);
-    --pdp-ink: var(--price-color, #001524);
-    --pdp-muted: var(--subtitle-color, #6b7785);
+    /* Todo se deriva del color de marca del tenant para que al cambiarlo la
+       ficha siga armónica. El tono fuerte es el mismo --title-color que usa la
+       portada de la tienda; el resto son variantes del mismo matiz. */
+    --pdp-ink: var(--title-color);
+    --pdp-muted: hsl(var(--primary-h), 14%, 45%);
+    --pdp-line: hsl(var(--primary-h), 30%, 92%);
+    --pdp-soft: hsl(var(--primary-h), var(--primary-s), 97.5%);
+    --pdp-chevron-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 6l-6 6l6 6'/%3E%3C/svg%3E");
+    --pdp-chevron-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6l6 6l-6 6'/%3E%3C/svg%3E");
     --pdp-radius: 16px;
     --pdp-radius-sm: 10px;
     --pdp-shadow: 0 1px 2px rgba(16, 26, 40, .04), 0 12px 32px rgba(16, 26, 40, .06);
@@ -83,6 +89,8 @@
 body {
     overflow-x: clip;
     overflow-y: visible;
+    /* El detalle va sobre blanco, no sobre el tinte general de la tienda. */
+    background-color: #fff;
 }
 
 /* Queda fija mientras se recorre la ficha: el producto siempre a la vista. */
@@ -99,6 +107,11 @@ body {
     border: 1px solid var(--pdp-line);
     border-radius: var(--pdp-radius);
     padding: 24px;
+}
+
+/* El recorte del carrusel lo hace owl en su propio contenedor; si lo hiciera
+   .product-slider-container, las flechas pegadas al borde quedarían cortadas. */
+.pdp-gallery .owl-stage-outer {
     overflow: hidden;
 }
 
@@ -113,12 +126,17 @@ body {
 
 /* styles_ecommerce.css inyecta el texto "Ampliar Imagen" con un :after sobre
    la <i>. En vez de pelearse con eso, se le da forma de píldora junto al icono. */
+/* Porto lo declara con `bottom`; al fijar solo `top` el elemento se estiraba
+   en una columna invisible que se tragaba los clics de la flecha derecha. */
 .pdp-gallery .prod-full-screen {
     top: 16px;
     right: 16px;
+    bottom: auto;
+    left: auto;
     opacity: 1;
     width: auto;
     height: auto;
+    line-height: 1;
     background: transparent;
     border: 0;
 }
@@ -148,6 +166,76 @@ body {
     background: var(--primary-color);
     border-color: var(--primary-color);
     color: #fff;
+}
+
+/* Flechas del carrusel: pegadas al borde de la tarjeta y con los mismos
+   chevrons de tabler que usa el resto de la ficha. El glyph de la fuente de
+   Porto se neutraliza y el icono se pinta con una máscara, así hereda color. */
+.pdp-gallery .owl-nav {
+    position: static;
+}
+
+.pdp-gallery .owl-nav button.owl-prev,
+.pdp-gallery .owl-nav button.owl-next {
+    width: 40px;
+    height: 40px;
+    /* style.min.css fija `margin: 0 2rem !important` en estas flechas; sin
+       anularlo el desplazamiento al borde se queda a medias. */
+    margin: 0 !important;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--pdp-surface);
+    border: 1px solid var(--pdp-line);
+    box-shadow: 0 2px 10px rgba(16, 26, 40, .08);
+    color: var(--pdp-ink);
+    opacity: 1;
+    transition: .18s;
+}
+
+/* Porto centra la flecha con translateY y le deja un margen lateral; se
+   desplazan con transform para no pelearse ni con el margen ni con el
+   left/right que owl calcula. */
+.pdp-gallery .owl-nav button.owl-prev {
+    transform: translate(-22px, -20px);
+}
+
+.pdp-gallery .owl-nav button.owl-next {
+    transform: translate(22px, -20px);
+}
+
+.pdp-gallery .owl-nav button.owl-prev:hover,
+.pdp-gallery .owl-nav button.owl-next:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.pdp-gallery .owl-nav button i {
+    display: block;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    font-size: 0;
+    border-radius: 0;
+    background: currentColor;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.pdp-gallery .owl-nav button.owl-prev i {
+    -webkit-mask-image: var(--pdp-chevron-left);
+    mask-image: var(--pdp-chevron-left);
+}
+
+.pdp-gallery .owl-nav button.owl-next i {
+    -webkit-mask-image: var(--pdp-chevron-right);
+    mask-image: var(--pdp-chevron-right);
 }
 
 .pdp-gallery .prod-thumbnail {
@@ -588,20 +676,23 @@ body {
 .pdp .product-single-details .pdp-actions {
     margin-top: 12px;
     display: grid;
+    grid-template-columns: 1fr;
     gap: 10px;
     width: 100%;
 }
 
+/* La cantidad va en su propia fila para que el botón de compra ocupe el ancho
+   completo del bloque, igual que el de WhatsApp. */
 .pdp-buy {
-    display: flex;
-    align-items: stretch;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
 }
 
 .pdp .pdp-buy .quantity-container {
     height: 50px;
     width: 132px;
-    flex: 0 0 132px;
     border-radius: 12px;
     border: 1px solid var(--pdp-line);
     background: #fff;
@@ -636,10 +727,8 @@ body {
     color: var(--primary-color);
 }
 
-/* Ocupa todo el ancho que deja el selector de cantidad. */
 .pdp .product-single-details .paction.add-cart.pdp-cta {
-    flex: 1 1 auto;
-    width: auto;
+    width: 100%;
     min-width: 0;
     margin: 0;
     height: 50px;
@@ -667,6 +756,7 @@ body {
 }
 
 .pdp .btn-whatsapp.pdp-whatsapp {
+    width: 100%;
     height: 50px;
     border-radius: 12px;
     font-weight: 600;
@@ -725,4 +815,160 @@ body {
         grid-template-columns: 1fr;
         gap: 12px;
     }
+}
+
+/* ---------- Productos relacionados ---------- */
+
+.featured-section {
+    background-color: var(--pdp-soft);
+}
+
+.featured-section .carousel-title {
+    color: var(--pdp-ink);
+}
+
+/* Los puntos del carrusel arriba a la derecha no decían nada. Se ocultan y en
+   su lugar se muestran las flechas, que owl ya deja cableadas aunque las
+   marque como deshabilitadas. */
+.featured-section .owl-carousel .owl-dots {
+    display: none !important;
+}
+
+.featured-section .owl-carousel .owl-nav,
+.featured-section .owl-carousel .owl-nav.disabled {
+    display: flex;
+    gap: 8px;
+    position: absolute;
+    right: 0;
+    top: -52px;
+    margin: 0;
+}
+
+.featured-section .owl-carousel .owl-nav button {
+    /* owl las posiciona en absoluto sobre el carrusel; aquí forman una barra
+       propia, así que vuelven al flujo para que el flex las ordene. */
+    position: static;
+    transform: none;
+    width: 36px;
+    height: 36px;
+    margin: 0 !important;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--pdp-surface);
+    border: 1px solid var(--pdp-line);
+    color: var(--pdp-ink);
+    opacity: 1;
+    transition: .18s;
+}
+
+.featured-section .owl-carousel .owl-nav button:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.featured-section .owl-carousel .owl-nav button.disabled {
+    opacity: .4;
+    cursor: default;
+}
+
+.featured-section .owl-carousel .owl-nav button i {
+    display: block;
+    width: 16px;
+    height: 16px;
+    font-size: 0;
+    background: currentColor;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.featured-section .owl-carousel .owl-nav .owl-prev i {
+    -webkit-mask-image: var(--pdp-chevron-left);
+    mask-image: var(--pdp-chevron-left);
+}
+
+.featured-section .owl-carousel .owl-nav .owl-next i {
+    -webkit-mask-image: var(--pdp-chevron-right);
+    mask-image: var(--pdp-chevron-right);
+}
+
+/* ---------- Visor de imagen ampliada ---------- */
+
+/* Por encima de la barra de promoción y del header, que si no se colaban.
+   La barra además se oculta: magnific marca el body mientras el visor está
+   abierto. */
+body.mfp-zoom-out-cur .announcement-bar {
+    display: none;
+}
+
+.mfp-bg {
+    z-index: 1000000;
+}
+
+.mfp-wrap {
+    z-index: 1000001;
+}
+
+/* Magnific dibuja sus flechas con bordes CSS; se sustituyen por los mismos
+   chevrons de tabler del resto de la ficha. */
+.mfp-arrow,
+.mfp-arrow:active {
+    width: 52px;
+    height: 52px;
+    margin: -26px 0 0;
+    padding: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .14);
+    opacity: 1;
+    transition: background-color .18s;
+}
+
+.mfp-arrow:hover {
+    background: rgba(255, 255, 255, .28);
+}
+
+.mfp-arrow::after {
+    display: none;
+}
+
+.mfp-arrow::before {
+    content: "";
+    display: block;
+    position: static;
+    width: 24px;
+    height: 24px;
+    margin: 14px auto;
+    border: 0;
+    opacity: 1;
+    background: #fff;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+.mfp-arrow-left::before {
+    -webkit-mask-image: var(--pdp-chevron-left);
+    mask-image: var(--pdp-chevron-left);
+}
+
+.mfp-arrow-right::before {
+    -webkit-mask-image: var(--pdp-chevron-right);
+    mask-image: var(--pdp-chevron-right);
+}
+
+.mfp-arrow-left {
+    left: 24px;
+}
+
+.mfp-arrow-right {
+    right: 24px;
 }
