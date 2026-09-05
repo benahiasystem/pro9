@@ -1,0 +1,735 @@
+/*
+ * Detalle de producto (PDP)
+ * ------------------------------------------------------------------
+ * Capa visual sobre Porto para la ficha de producto de la tienda.
+ * Consume los tokens que define styles_ecommerce.css y el color de
+ * marca del tenant (--primary-h/s/l), así que no fija colores propios
+ * salvo los semánticos de stock, oferta y WhatsApp.
+ */
+
+:root {
+    --pdp-surface: #fff;
+    --pdp-line: var(--line, #e9edf1);
+    --pdp-ink: var(--price-color, #001524);
+    --pdp-muted: var(--subtitle-color, #6b7785);
+    --pdp-radius: 16px;
+    --pdp-radius-sm: 10px;
+    --pdp-gap: 20px;
+    --pdp-tint: hsl(var(--primary-h), var(--primary-s), var(--primary-l), .08);
+    --pdp-shadow: 0 1px 2px rgba(16, 26, 40, .04), 0 12px 32px rgba(16, 26, 40, .06);
+}
+
+/* ---------- Breadcrumb ---------- */
+
+/* El header del storefront es fixed y el contenido de .main pasa por debajo.
+   Antes ese despeje lo daba el margin-top de .product-single-container; ahora
+   que el breadcrumb es el primer bloque, la separación vive aquí. */
+.pdp-breadcrumb-nav {
+    background: transparent;
+    border: 0;
+    padding: 8rem 0 0;
+}
+
+.pdp-breadcrumb-nav .breadcrumb {
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    font-size: 13px;
+}
+
+/* Porto capitaliza cada palabra; en español rompe nombres como
+   "Jarrones y maceteros". */
+.pdp-breadcrumb-nav .breadcrumb-item {
+    text-transform: none;
+}
+
+.pdp-breadcrumb-nav .breadcrumb-item a {
+    color: var(--pdp-muted);
+}
+
+.pdp-breadcrumb-nav .breadcrumb-item a:hover {
+    color: var(--primary-color);
+}
+
+.pdp-breadcrumb-nav .breadcrumb-item.active {
+    color: var(--pdp-ink);
+    font-weight: 600;
+    max-width: 46ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- Estructura ---------- */
+
+.product-single-container.product-single-default.pdp {
+    margin-top: 1rem;
+    margin-bottom: 3.2rem;
+}
+
+.pdp-row {
+    align-items: flex-start;
+}
+
+/* ---------- Galería ---------- */
+
+.pdp-gallery .product-slider-container {
+    background: var(--pdp-surface);
+    border: 1px solid var(--pdp-line);
+    border-radius: var(--pdp-radius);
+    padding: 24px;
+    overflow: hidden;
+}
+
+.pdp-gallery .product-single-image {
+    max-height: 520px;
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+}
+
+.pdp-gallery .prod-full-screen {
+    background: var(--pdp-surface);
+    border: 1px solid var(--pdp-line);
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    top: 16px;
+    right: 16px;
+    opacity: 1;
+    color: var(--pdp-ink);
+    transition: .18s;
+}
+
+.pdp-gallery .prod-full-screen:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: #fff;
+}
+
+.pdp-gallery .prod-thumbnail {
+    margin: 12px -6px 0;
+}
+
+.pdp-gallery .prod-thumbnail .owl-dot {
+    padding: 0 6px;
+}
+
+.pdp-gallery .prod-thumbnail img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    background: var(--pdp-surface);
+    border: 1px solid var(--pdp-line) !important;
+    border-radius: var(--pdp-radius-sm);
+    padding: 8px;
+    cursor: pointer;
+    transition: .18s;
+}
+
+.pdp-gallery .prod-thumbnail .owl-dot.active img,
+.pdp-gallery .prod-thumbnail img:hover {
+    border-color: var(--primary-color) !important;
+    filter: none;
+    box-shadow: 0 0 0 1px var(--primary-color);
+}
+
+/* ---------- Panel de información ---------- */
+
+.pdp-aside .product-single-details.pdp-panel {
+    margin-top: 0;
+    background: var(--pdp-surface);
+    border: 1px solid var(--pdp-line);
+    border-radius: var(--pdp-radius);
+    padding: 28px;
+    box-shadow: var(--pdp-shadow);
+}
+
+@media (max-width: 991.98px) {
+    .pdp-aside .product-single-details.pdp-panel {
+        margin-top: 16px;
+        padding: 22px 20px;
+    }
+}
+
+/* Cabecera */
+
+.pdp-eyebrow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin-bottom: 10px;
+}
+
+.pdp-brand {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--primary-color);
+}
+
+.pdp-brand:hover {
+    color: var(--title-color);
+}
+
+.pdp-sku {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--pdp-muted);
+    background: hsl(var(--primary-h), var(--primary-s), 97%);
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+
+.pdp .pdp-title {
+    font-size: 26px;
+    line-height: 1.25;
+    font-weight: 700;
+    color: var(--pdp-ink);
+    margin: 0;
+    height: auto;
+    overflow: visible;
+    display: block;
+}
+
+@media (min-width: 1200px) {
+    .pdp .pdp-title {
+        font-size: 29px;
+    }
+}
+
+.pdp-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+.pdp-rating-stars {
+    color: #f5a623;
+    letter-spacing: 1px;
+    font-size: 14px;
+}
+
+.pdp-rating-score {
+    font-weight: 700;
+    color: var(--pdp-ink);
+}
+
+.pdp-rating-count {
+    color: var(--pdp-muted);
+}
+
+/* Precio */
+
+.pdp-price-block {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--pdp-line);
+}
+
+.pdp-price-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pdp-price {
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    color: var(--pdp-ink);
+}
+
+.pdp-price-old {
+    font-size: 16px;
+    color: var(--pdp-muted);
+    text-decoration: line-through;
+}
+
+.pdp-price-off {
+    font-size: 12px;
+    font-weight: 700;
+    color: #b3103f;
+    background: #ffe9f0;
+    border-radius: 999px;
+    padding: 4px 10px;
+}
+
+.pdp-price-note {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: var(--pdp-muted);
+}
+
+/* Señales sociales */
+
+.pdp-signals {
+    margin-top: 18px;
+    border: 1px solid var(--pdp-line);
+    border-radius: var(--pdp-radius-sm);
+    background: hsl(var(--primary-h), var(--primary-s), 98.5%);
+    padding: 6px 14px;
+}
+
+.pdp-signal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--pdp-muted);
+}
+
+.pdp-signal + .pdp-signal {
+    border-top: 1px solid var(--pdp-line);
+}
+
+.pdp-signal strong {
+    color: var(--pdp-ink);
+    font-weight: 700;
+}
+
+.pdp-signal-icon {
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    border: 1px solid var(--pdp-line);
+    color: var(--pdp-muted);
+}
+
+.pdp-signal--deadline .pdp-signal-icon {
+    color: #b3103f;
+    border-color: #ffd7e3;
+    background: #fff2f6;
+}
+
+.pdp-signal--deadline strong {
+    color: #b3103f;
+    font-variant-numeric: tabular-nums;
+}
+
+.pdp-signal--stock .pdp-signal-icon {
+    color: #c2670a;
+    border-color: #ffe2bf;
+    background: #fff6ea;
+}
+
+.pdp-signal--stock strong {
+    color: #c2670a;
+}
+
+/* Punto "en vivo" para el contador de visitas */
+
+.pdp-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success, #00c666);
+    position: relative;
+}
+
+.pdp-live-dot::after {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    border: 1px solid var(--success, #00c666);
+    opacity: .55;
+    animation: pdp-ping 2.4s ease-out infinite;
+}
+
+@keyframes pdp-ping {
+    0% { transform: scale(.6); opacity: .6; }
+    70% { transform: scale(1.25); opacity: 0; }
+    100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pdp-live-dot::after { animation: none; }
+}
+
+/* Variaciones */
+
+.pdp-panel .variation-selector {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--pdp-line);
+}
+
+/* Ficha: categoría, colección, disponibilidad */
+
+.pdp-meta {
+    margin: 20px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid var(--pdp-line);
+    display: grid;
+    gap: 10px;
+}
+
+.pdp-meta-item {
+    display: grid;
+    grid-template-columns: 116px 1fr;
+    align-items: baseline;
+    gap: 12px;
+    font-size: 13px;
+}
+
+.pdp-meta dt {
+    margin: 0;
+    font-weight: 500;
+    color: var(--pdp-muted);
+}
+
+.pdp-meta dd {
+    margin: 0;
+    color: var(--pdp-ink);
+    font-weight: 600;
+}
+
+.pdp-meta dd a {
+    color: var(--primary-color);
+}
+
+.pdp-meta dd a:hover {
+    text-decoration: underline !important;
+}
+
+.pdp-stock {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+
+.pdp-stock::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.pdp-stock--in {
+    color: #10794c;
+    background: #e6f7ef;
+}
+
+.pdp-stock--out {
+    color: #b3103f;
+    background: #ffe9f0;
+}
+
+.pdp-stock-qty {
+    margin-left: 6px;
+    font-weight: 500;
+    color: var(--pdp-muted);
+}
+
+/* Descripción */
+
+.pdp-description {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--pdp-line);
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--pdp-muted);
+}
+
+.pdp-description .product-description-clamp {
+    -webkit-line-clamp: 4;
+}
+
+.pdp .product-description-toggle {
+    color: var(--primary-color);
+    font-size: 13px;
+}
+
+/* Atributos adicionales */
+
+.pdp-attrs {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.pdp-attrs li {
+    display: flex;
+    gap: 8px;
+}
+
+.pdp-attr-label {
+    color: var(--pdp-muted);
+}
+
+.pdp-attr-label::after {
+    content: ":";
+}
+
+.pdp-attr-value {
+    color: var(--pdp-ink);
+    font-weight: 600;
+}
+
+/* ---------- Acciones ---------- */
+
+.pdp .product-single-details .pdp-actions {
+    margin-top: 22px;
+    padding-top: 20px;
+    border-top: 1px solid var(--pdp-line);
+    display: grid;
+    gap: 10px;
+    width: 100%;
+}
+
+.pdp-buy {
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
+}
+
+.pdp .pdp-buy .quantity-container {
+    height: 48px;
+    width: 132px;
+    flex: none;
+    border-radius: 12px;
+    border: 1px solid var(--pdp-line);
+    background: #fff;
+    padding: 0 4px;
+}
+
+.pdp .pdp-buy .quantity-container .input-quantity {
+    width: 100%;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--pdp-ink);
+    background: transparent;
+    -moz-appearance: textfield;
+}
+
+.pdp .pdp-buy .quantity-container .input-quantity::-webkit-outer-spin-button,
+.pdp .pdp-buy .quantity-container .input-quantity::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.pdp .pdp-buy .quantity-container button {
+    height: 32px !important;
+    width: 32px !important;
+    border-radius: 8px;
+    color: var(--pdp-ink);
+}
+
+.pdp .pdp-buy .quantity-container button:hover {
+    background: hsl(var(--primary-h), var(--primary-s), 96%);
+    color: var(--primary-color);
+}
+
+.pdp .product-single-details .paction.add-cart.pdp-cta {
+    flex: 1 1 auto;
+    height: 48px;
+    min-width: 0;
+    width: auto;
+    border-radius: 12px;
+    background: var(--primary-color);
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: .01em;
+    box-shadow: 0 10px 22px hsla(var(--primary-h), var(--primary-s), var(--primary-l), .25);
+    transition: transform .18s, box-shadow .18s, background-color .18s;
+}
+
+.pdp .product-single-details .paction.add-cart.pdp-cta span {
+    font-size: 15px;
+}
+
+.pdp .product-single-details .paction.add-cart.pdp-cta:hover {
+    background: var(--title-color);
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px hsla(var(--primary-h), var(--primary-s), var(--primary-l), .3);
+}
+
+.pdp .product-single-details .paction.add-cart.pdp-cta:active {
+    transform: none;
+}
+
+.pdp .btn-whatsapp.pdp-whatsapp {
+    height: 48px;
+    border-radius: 12px;
+    font-weight: 600;
+    background: #fff;
+    border-color: #cfeeda;
+    color: #128c4a;
+    gap: 8px;
+}
+
+.pdp .btn-whatsapp.pdp-whatsapp:hover {
+    background: #25d366;
+    border-color: #25d366;
+    color: #fff;
+}
+
+/* ---------- Sellos de confianza ---------- */
+
+/* Especificidad alta a propósito: el componente Vue trae estilos scoped.
+   El nodo #product-trust-badges lo reemplaza Vue al montar, por eso la clase
+   vive en un envoltorio y no en el propio punto de montaje. */
+.pdp-aside .pdp-assurances {
+    margin-top: 14px;
+}
+
+.pdp-aside .pdp-assurances .sp-trust-badges {
+    margin: 0;
+    gap: 0;
+    flex-wrap: nowrap;
+    border: 1px solid var(--pdp-line);
+    border-radius: var(--pdp-radius-sm);
+    background: var(--pdp-surface);
+    overflow: hidden;
+}
+
+.pdp-aside .pdp-assurances .sp-trust-badges .sp-trust-badge {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+    padding: 14px 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--pdp-ink);
+}
+
+.pdp-aside .pdp-assurances .sp-trust-badges .sp-trust-badge + .sp-trust-badge {
+    border-left: 1px solid var(--pdp-line);
+}
+
+.pdp-aside .pdp-assurances .sp-trust-badges .sp-trust-badge__icon {
+    color: var(--primary-color);
+}
+
+@media (max-width: 575.98px) {
+    .pdp-aside .pdp-assurances .sp-trust-badges {
+        flex-wrap: wrap;
+    }
+    .pdp-aside .pdp-assurances .sp-trust-badges .sp-trust-badge {
+        flex-basis: 100%;
+        flex-direction: row;
+        justify-content: flex-start;
+        text-align: left;
+        padding: 11px 14px;
+    }
+    .pdp-aside .pdp-assurances .sp-trust-badges .sp-trust-badge + .sp-trust-badge {
+        border-left: 0;
+        border-top: 1px solid var(--pdp-line);
+    }
+}
+
+/* ---------- Pestañas inferiores ---------- */
+
+.pdp-tabs.product-single-tabs {
+    margin-top: 32px;
+    background: var(--pdp-surface);
+    border: 1px solid var(--pdp-line);
+    border-radius: var(--pdp-radius);
+    padding: 8px 28px 28px;
+}
+
+.pdp-tabs .nav-tabs {
+    border-bottom: 1px solid var(--pdp-line);
+    gap: 4px;
+}
+
+/* styles_ecommerce.css oculta la segunda pestaña por posición porque antes ahí
+   estaba la de opiniones. Al sumar "Ficha técnica" esa regla dejaba de apuntar
+   a lo que se quería, así que aquí se anula y se oculta la correcta por clase. */
+.pdp-tabs .nav-tabs li.nav-item:nth-child(2) {
+    display: block;
+}
+
+.pdp-tabs .nav-tabs li.nav-item.pdp-tab-reviews {
+    display: none;
+}
+
+.pdp-tabs .nav-tabs .nav-link {
+    border: 0;
+    padding: 16px 4px;
+    margin-right: 24px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--pdp-muted);
+    background: transparent;
+}
+
+.pdp-tabs .nav-tabs .nav-link:hover {
+    color: var(--pdp-ink);
+}
+
+.pdp-tabs .nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    box-shadow: inset 0 -2px 0 var(--primary-color);
+}
+
+.pdp-tabs .tab-content {
+    padding-top: 22px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--pdp-muted);
+}
+
+/* Ficha técnica */
+
+.pdp-specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0 32px;
+    margin: 0;
+}
+
+.pdp-specs .pdp-spec {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--pdp-line);
+    font-size: 13.5px;
+}
+
+.pdp-specs dt {
+    margin: 0;
+    font-weight: 500;
+    color: var(--pdp-muted);
+}
+
+.pdp-specs dd {
+    margin: 0;
+    font-weight: 600;
+    color: var(--pdp-ink);
+    word-break: break-word;
+}

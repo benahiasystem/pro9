@@ -15,9 +15,9 @@
         : $defaultImagePath;
 @endphp
 
-<div class="product-single-container product-single-default">
-    <div class="row">
-        <div class="col-lg-7 col-md-6 product-single-gallery">
+<div class="product-single-container product-single-default pdp">
+    <div class="row pdp-row">
+        <div class="col-lg-7 col-md-6 product-single-gallery pdp-gallery">
             <div class="product-slider-container product-item">
                 <div class="product-single-carousel owl-carousel owl-theme">
                     <div class="product-item">
@@ -84,9 +84,8 @@
             @endif
         </div><!-- End .col-lg-7 -->
 
-        <div class="col-lg-5 col-md-6">
-            <div id="product-detail-vue" class="product-single-details">
-                <h1 class="product-title mb-0">{{$record->description}}</h1>
+        <div class="col-lg-5 col-md-6 pdp-aside">
+            <div id="product-detail-vue" class="product-single-details pdp-panel">
 
                 @php
                     $activeCampaign = null;
@@ -136,49 +135,63 @@
                     $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
                 @endphp
 
-                <style>[v-cloak]{display:none}@keyframes sp-pulse{0%{opacity:1}50%{opacity:.75}100%{opacity:1}}</style>
-                <div class="social-proof-container" v-cloak>
-                    <div class="ratings-container mb-2 d-flex align-items-center gap-2" v-if="socialProofConfig.sp_rating">
-                        <div class="card-rating-social-proof" style="margin: 4px 0; font-size: 16px;">
-                            <span style="color: #333; font-weight: bold; margin-right: 4px;">5.0</span>
-                            <span style="color: #ffc107;">★★★★★</span>
-                            <span style="color: #777; margin-left: 4px; font-size: 13px;">(@{{ sp_rating_count }} opiniones)</span>
-                        </div>
-                    </div>
+                <style>[v-cloak]{display:none}</style>
 
-                    @if($storefront_show_prices ?? true)
-                    <div class="price-box my-2">
-                        <template v-if="compareAtPrice">
-                            <span class="old-price text-muted text-decoration-line-through mr-2">
-                                @{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}
-                            </span>
-                            <span class="product-price text-danger font-weight-bold" style="font-size: 1.5rem;">
-                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
-                            </span>
-                        </template>
-                        <template v-else>
-                            <span class="product-price font-weight-bold" style="font-size: 1.5rem;">
-                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
-                            </span>
-                        </template>
+                <div class="pdp-head">
+                    @if(($record->brand && $record->brand->id) || !empty($record->internal_id))
+                    <div class="pdp-eyebrow">
+                        @if ($record->brand && $record->brand->id)
+                            <a class="pdp-brand" href="{{ route('tenant.ecommerce.brand', ['id' => $record->brand->id, 'slug' => \Illuminate\Support\Str::slug($record->brand->name)]) }}">{{ $record->brand->name }}</a>
+                        @endif
+                        @if(!empty($record->internal_id))
+                            <span class="pdp-sku">SKU {{ $record->internal_id }}</span>
+                        @endif
                     </div>
                     @endif
 
-                    <div v-if="offerExpiresAt && !sp_countdown_ended" class="countdown-badge alert alert-warning p-2 mb-2 d-inline-block shadow-sm" style="border-radius: 8px; font-size: 0.9rem; border-left: 4px solid #dc3545;">
-                        <i class="far fa-clock text-danger"></i> ¡Termina en:
-                        <strong class="time-left">@{{ sp_countdown_text }}</strong>!
+                    <h1 class="product-title pdp-title">{{ $record->description }}</h1>
+
+                    <div class="pdp-rating" v-if="socialProofConfig.sp_rating" v-cloak>
+                        <span class="pdp-rating-stars" aria-hidden="true">★★★★★</span>
+                        <span class="pdp-rating-score">5.0</span>
+                        <span class="pdp-rating-count">(@{{ sp_rating_count }} opiniones)</span>
+                    </div>
+                </div>
+
+                @if($storefront_show_prices ?? true)
+                <div class="pdp-price-block" v-cloak>
+                    <div class="pdp-price-row">
+                        <span class="pdp-price">@{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}</span>
+                        <template v-if="discountPercent">
+                            <span class="pdp-price-old">@{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}</span>
+                            <span class="pdp-price-off">-@{{ discountPercent }}%</span>
+                        </template>
+                    </div>
+                    @if($record->has_igv)
+                        <p class="pdp-price-note">Precio con IGV incluido</p>
+                    @endif
+                </div>
+                @endif
+
+                <div class="pdp-signals" v-if="hasSignals" v-cloak>
+                    <div class="pdp-signal pdp-signal--deadline" v-if="offerExpiresAt && !sp_countdown_ended">
+                        <span class="pdp-signal-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                        <span class="pdp-signal-text">La oferta termina en <strong>@{{ sp_countdown_text }}</strong></span>
                     </div>
 
-                    <div v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" class="text-danger font-weight-bold small mt-1" style="animation: sp-pulse 2s infinite;">
-                        <i class="fas fa-fire"></i> ¡Se agota rápido! Solo quedan @{{ Math.round(stock) }} unidades.
+                    <div class="pdp-signal pdp-signal--stock" v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold">
+                        <span class="pdp-signal-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.5 3 4.5 4.5 4.5 8a4.5 4.5 0 1 1-9 0c0-1.4.5-2.4 1.3-3.3.3 1 .9 1.6 1.7 1.8C10 7.5 10.6 5 12 3z"/></svg></span>
+                        <span class="pdp-signal-text">Últimas <strong>@{{ Math.round(stock) }} unidades</strong> en stock</span>
                     </div>
 
-                    <div v-if="socialProofConfig.sp_views_count" class="text-muted small mt-2">
-                        <i class="far fa-eye text-info"></i> <strong v-text="sp_viewers"></strong> personas están viendo este producto.
+                    <div class="pdp-signal" v-if="socialProofConfig.sp_views_count">
+                        <span class="pdp-signal-icon"><span class="pdp-live-dot"></span></span>
+                        <span class="pdp-signal-text"><strong v-text="sp_viewers"></strong> personas viendo este producto ahora</span>
                     </div>
 
-                    <div v-if="socialProofConfig.sp_purchase_count" class="text-success small mt-1 font-weight-bold">
-                        <i class="fas fa-shopping-cart"></i> <span v-text="sp_purchases"></span> personas lo compraron en los últimos 7 días.
+                    <div class="pdp-signal" v-if="socialProofConfig.sp_purchase_count">
+                        <span class="pdp-signal-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg></span>
+                        <span class="pdp-signal-text"><strong v-text="sp_purchases"></strong> compras en los últimos 7 días</span>
                     </div>
                 </div>
 
@@ -205,77 +218,78 @@
                 </div>
                 @endif
 
-                <div class="product-desc pb-0">
+                <dl class="pdp-meta">
                     @if ($record->category && $record->category->name)
-                        <p class="product-category">Categoría: <span> {{$record->category->name}} </span></p>
+                    <div class="pdp-meta-item">
+                        <dt>Categoría</dt>
+                        <dd><a href="{{ route('tenant.ecommerce.category', \Illuminate\Support\Str::slug($record->category->name, '-')) }}">{{ $record->category->name }}</a></dd>
+                    </div>
                     @endif
-                    @if ($record->brand && $record->brand->id)
-                        <p class="product-category">Marca:
-                            <a href="{{ route('tenant.ecommerce.brand', ['id' => $record->brand->id, 'slug' => \Illuminate\Support\Str::slug($record->brand->name)]) }}">
-                                {{ $record->brand->name }}
-                            </a>
-                        </p>
+                    @if (!empty($record->model))
+                    <div class="pdp-meta-item">
+                        <dt>Colección</dt>
+                        <dd>{{ $record->model }}</dd>
+                    </div>
                     @endif
-                <p class="product-stock">Disponible: <span>{{number_format(($record->stock), 0)}} </span>
-                <?php
-                if($record->stock > 0){?>
-                    <span 
-                    class="alert-stock" role="alert">En stock</span>
-                <?php
-                }else{?>
-                    <span 
-                    class="alert-sin-stock" 
-                    role="alert">Sin stock</span> 
-                <?php
-                }
-                ?>
-                <div class="product-description-wrapper">
+                    <div class="pdp-meta-item">
+                        <dt>Disponibilidad</dt>
+                        <dd>
+                            @if($record->stock > 0)
+                                <span class="pdp-stock pdp-stock--in">En stock</span>
+                                <span class="pdp-stock-qty">{{ number_format($record->stock, 0) }} unid.</span>
+                            @else
+                                <span class="pdp-stock pdp-stock--out">Sin stock</span>
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
+
+                @if(filled(strip_tags($record->name)))
+                <div class="pdp-description product-description-wrapper">
                     <div id="productShortDescription" class="product-description-clamp">
                         {!! $record->name !!}
                     </div>
 
-                    <a href="javascript:void(0);" 
-                       id="toggleProductDescription" 
+                    <a href="javascript:void(0);"
+                       id="toggleProductDescription"
                        class="product-description-toggle"
                        style="display:none;">
                         Ver todo
                     </a>
                 </div>
-                </div><!-- End .product-desc -->
+                @endif
 
-                <div>
-                @foreach($record->attributes as $at)
-                   <small> {{$at->description}}: {{$at->value}} </small> <br>
-                @endforeach
-                </div>
+                @if(!empty($record->attributes))
+                <ul class="pdp-attrs">
+                    @foreach($record->attributes as $at)
+                        <li><span class="pdp-attr-label">{{ $at->description }}</span><span class="pdp-attr-value">{{ $at->value }}</span></li>
+                    @endforeach
+                </ul>
+                @endif
 
-                <div class="product-action product-all-icons">
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="quantity-container d-flex align-items-center mb-1">
+                <div class="pdp-actions product-action product-all-icons">
+                    <div class="pdp-buy">
+                        <div class="quantity-container pdp-qty">
                             <button v-if="quantity <= 1 && getCartQuantity(product.id)" @click.stop.prevent="removeFromCart(product)" title="Quitar del carrito">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
                             </button>
-                            <button 
-                                @click.stop.prevent="decrementQuantity(product)" 
+                            <button
+                                @click.stop.prevent="decrementQuantity(product)"
                                 v-if="!getCartQuantity(product.id) || quantity > 1"
                                 title="Disminuir cantidad">
-                                
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                    <path d="M5 12l14 0" />
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
                             </button>
-                            <input type="number" class="input-quantity mx-2" v-model.number="quantity" min="1" style="width: 50px; text-align: center;" @change="onQuantityInput">
-                            <button @click.stop.prevent="incrementQuantity(product)">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                            <input type="number" class="input-quantity" v-model.number="quantity" min="1" @change="onQuantityInput" aria-label="Cantidad">
+                            <button @click.stop.prevent="incrementQuantity(product)" title="Aumentar cantidad">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                             </button>
                         </div>
-                        <button class="paction add-cart mb-1 mr-0 ml-2" @click.stop.prevent="addOrUpdateCart(product)">
+
+                        <button class="paction add-cart pdp-cta" @click.stop.prevent="addOrUpdateCart(product)">
                             <span v-if="getCartQuantity(product.id)">Actualizar cantidad</span>
                             <span v-else>Agregar a Carrito</span>
                         </button>
                     </div>
-                    
 
                     @php
                         $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
@@ -291,28 +305,17 @@
                             );
                             $waLink = "https://wa.me/{$waPhone}?text={$waText}";
                         @endphp
-                        <a href="{{ $waLink }}" class="btn-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-whatsapp" style="margin-top: -3px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
+                        <a href="{{ $waLink }}" class="btn-whatsapp pdp-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
                             <span>Consultar por WhatsApp</span>
                         </a>
                     @endif
-                    
-                    <!-- <a href="#" class="paction add-wishlist" title="Add to Wishlist">
-                        <span>Add to Wishlist</span>
-                    </a>
-                    <a href="#" class="paction add-compare" title="Add to Compare">
-                        <span>Add to Compare</span>
-                    </a> -->
-                </div><!-- End .product-action -->
-
-                <div class="product-single-share">
-                    <!--<label>Share:</label> -->
-                    <!-- www.addthis.com share plugin-->
-                    <div class="addthis_inline_share_toolbox"></div>
-                </div><!-- End .product single-share -->
+                </div><!-- End .pdp-actions -->
             </div><!-- End .product-single-details -->
 
-            <div id="product-trust-badges" class="mt-2"></div>
+            <div class="pdp-assurances">
+                <div id="product-trust-badges"></div>
+            </div>
         </div><!-- End .col-lg-5 -->
     </div><!-- End .row -->
 </div><!-- End .product-single-container -->
@@ -353,15 +356,35 @@
 </section>
 @endif
 
-<div class="product-single-tabs">
+@php
+    $productSpecs = collect([
+        'Código interno'   => $record->internal_id,
+        'Código de barras' => $record->barcode,
+        'Marca'            => optional($record->brand)->name,
+        'Colección'        => $record->model,
+        'Línea'            => $record->line,
+        'Categoría'        => optional($record->category)->name,
+        'Nombre de fábrica'=> $record->second_name,
+        'Unidad de medida' => optional($record->unit_type)->description,
+    ])->filter(fn($value) => filled($value));
+    $hasSpecsTab = filled($record->technical_specifications) || $productSpecs->isNotEmpty();
+@endphp
+
+<div class="product-single-tabs pdp-tabs">
     <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item">
             <a class="nav-link active"  id="product-tab-desc" data-toggle="tab" href="#product-desc-content" role="tab"
-                aria-controls="product-desc-content" aria-selected="true">Descripcion</a>
+                aria-controls="product-desc-content" aria-selected="true">Descripción</a>
         </li>
+        @if($hasSpecsTab)
         <li class="nav-item">
+            <a class="nav-link" id="product-tab-specs" data-toggle="tab" href="#product-specs-content" role="tab"
+                aria-controls="product-specs-content" aria-selected="false">Ficha técnica</a>
+        </li>
+        @endif
+        <li class="nav-item pdp-tab-reviews">
             <a class="nav-link" onclick="getRating('{{ $record->id}}')" id="product-tab-reviews" data-toggle="tab" href="#product-reviews-content" role="tab"
-                aria-controls="product-reviews-content" aria-selected="false">Reviews</a>
+                aria-controls="product-reviews-content" aria-selected="false">Opiniones</a>
         </li>
         {{-- <li class="nav-item">
             <a class="nav-link" id="product-tab-especTecn" data-toggle="tab" href="#product-especTecn-content" role="tab" aria-controls="product-especTecn-content" aria-selected="true">Especificaciones Técnicas</a>
@@ -371,10 +394,31 @@
         <div class="tab-pane fade show active" id="product-desc-content" role="tabpanel"
             aria-labelledby="product-tab-desc">
             <div class="product-desc-content">
-                <p> {{ $record->description}} </p>
-                <p> {!! $record->name !!} </p>
+                @if(filled($record->name))
+                    {!! $record->name !!}
+                @else
+                    <p class="text-muted mb-0">Este producto todavía no tiene una descripción.</p>
+                @endif
             </div><!-- End .product-desc-content -->
         </div><!-- End .tab-pane -->
+
+        @if($hasSpecsTab)
+        <div class="tab-pane fade" id="product-specs-content" role="tabpanel" aria-labelledby="product-tab-specs">
+            @if(filled($record->technical_specifications))
+                <p class="pdp-specs-lead">{{ $record->technical_specifications }}</p>
+            @endif
+            @if($productSpecs->isNotEmpty())
+            <dl class="pdp-specs">
+                @foreach($productSpecs as $label => $value)
+                    <div class="pdp-spec">
+                        <dt>{{ $label }}</dt>
+                        <dd>{{ $value }}</dd>
+                    </div>
+                @endforeach
+            </dl>
+            @endif
+        </div><!-- End .tab-pane -->
+        @endif
 
         <div class="tab-pane fade" id="product-reviews-content" role="tabpanel" aria-labelledby="product-tab-reviews">
             <div class="product-reviews-content">
@@ -543,6 +587,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 _viewersTimer: null,
                 variationSelector: @json($record->variation_selector ?? null),
                 selectedVariationValues: {},
+            },
+            computed: {
+                // Evita que la tarjeta de señales se dibuje vacía cuando la campaña
+                // no tiene ninguna activa.
+                hasSignals() {
+                    const config = this.socialProofConfig;
+                    return Boolean(
+                        (this.offerExpiresAt && !this.sp_countdown_ended)
+                        || (config.sp_stock_alert && this.stock > 0 && this.stock <= this.stockThreshold)
+                        || config.sp_views_count
+                        || config.sp_purchase_count
+                    );
+                },
+                discountPercent() {
+                    if (!this.compareAtPrice || this.compareAtPrice <= this.activeOfferPrice) return 0;
+                    return Math.round((1 - this.activeOfferPrice / this.compareAtPrice) * 100);
+                },
             },
             created() {
                 this.loadCartQuantities();
