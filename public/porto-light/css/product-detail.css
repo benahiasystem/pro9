@@ -177,6 +177,9 @@ body {
 
 .pdp-gallery .owl-nav button.owl-prev,
 .pdp-gallery .owl-nav button.owl-next {
+    /* Solo aparecen al pasar el cursor por la imagen. */
+    opacity: 0;
+    visibility: hidden;
     width: 40px;
     height: 40px;
     /* style.min.css fija `margin: 0 2rem !important` en estas flechas; sin
@@ -190,7 +193,6 @@ body {
     border: 1px solid var(--pdp-line);
     box-shadow: 0 2px 10px rgba(16, 26, 40, .08);
     color: var(--pdp-ink);
-    opacity: 1;
     transition: .18s;
 }
 
@@ -203,6 +205,13 @@ body {
 
 .pdp-gallery .owl-nav button.owl-next {
     transform: translate(22px, -20px);
+}
+
+.pdp-gallery .product-slider-container:hover .owl-nav button.owl-prev,
+.pdp-gallery .product-slider-container:hover .owl-nav button.owl-next,
+.pdp-gallery .owl-nav button:focus-visible {
+    opacity: 1;
+    visibility: visible;
 }
 
 .pdp-gallery .owl-nav button.owl-prev:hover,
@@ -219,6 +228,9 @@ body {
     padding: 0;
     font-size: 0;
     border-radius: 0;
+    /* styles_ecommerce.css le fija un color propio a la <i>; sin heredar, el
+       icono se quedaba oscuro sobre el fondo de marca al hacer hover. */
+    color: inherit;
     background: currentColor;
     -webkit-mask-position: center;
     mask-position: center;
@@ -681,18 +693,19 @@ body {
     width: 100%;
 }
 
-/* La cantidad va en su propia fila para que el botón de compra ocupe el ancho
-   completo del bloque, igual que el de WhatsApp. */
+/* Cantidad y botón de compra comparten fila; el botón toma el ancho restante.
+   WhatsApp sí ocupa el bloque completo, en su propia fila. */
 .pdp-buy {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
+    display: flex;
+    align-items: stretch;
+    gap: 12px;
     width: 100%;
 }
 
 .pdp .pdp-buy .quantity-container {
     height: 50px;
     width: 132px;
+    flex: 0 0 132px;
     border-radius: 12px;
     border: 1px solid var(--pdp-line);
     background: #fff;
@@ -728,7 +741,8 @@ body {
 }
 
 .pdp .product-single-details .paction.add-cart.pdp-cta {
-    width: 100%;
+    flex: 1 1 auto;
+    width: auto;
     min-width: 0;
     margin: 0;
     height: 50px;
@@ -879,6 +893,7 @@ body {
     width: 16px;
     height: 16px;
     font-size: 0;
+    color: inherit;
     background: currentColor;
     -webkit-mask-position: center;
     mask-position: center;

@@ -312,14 +312,14 @@
                                 title="Disminuir cantidad">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
                             </button>
-                            <input type="number" class="input-quantity" v-model.number="quantity" min="1" @change="onQuantityInput" aria-label="Cantidad">
+                            <input type="number" class="input-quantity" v-model.number="quantity" min="1" @change="onQuantityInput(product)" aria-label="Cantidad">
                             <button @click.stop.prevent="incrementQuantity(product)" title="Aumentar cantidad">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                             </button>
                         </div>
 
                         <button class="paction add-cart pdp-cta" @click.stop.prevent="addOrUpdateCart(product)">
-                            <span v-if="getCartQuantity(product.id)">Actualizar cantidad</span>
+                            <span v-if="cartQuantity">@{{ cartQuantity }} @{{ cartQuantity === 1 ? 'producto añadido' : 'productos añadidos' }}</span>
                             <span v-else>Agregar a Carrito</span>
                         </button>
                     </div>
@@ -496,6 +496,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const config = this.socialProofConfig;
                     return Boolean(config.sp_views_count || config.sp_purchase_count);
                 },
+                // Cantidad de este producto que hay en el carrito; de aquí sale la
+                // etiqueta del botón.
+                cartQuantity() {
+                    return this.cartQuantities[this.product.id] || 0;
+                },
                 discountPercent() {
                     if (!this.compareAtPrice || this.compareAtPrice <= this.activeOfferPrice) return 0;
                     return Math.round((1 - this.activeOfferPrice / this.compareAtPrice) * 100);
@@ -603,49 +608,87 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = match.url;
                     }
                 },
+                // Un producto nuevo entra con la cantidad elegida; si ya está en el
+                // carrito, cada clic suma una unidad más (1, 2, 3...).
                 addOrUpdateCart(item) {
-                    let array = localStorage.getItem('products_cart');
-                    array = array ? JSON.parse(array) : [];
-                    let found = array.find(x => x.id == item.id);
-                    const cartItem = {
-                        ...item,
+                    const enCarrito = this.getCartQuantity(item.id);
+                    const objetivo = this.limitToStock(enCarrito ? this.quantity + 1 : this.quantity);
+
+                    this.quantity = objetivo;
+                    this.writeCart(item, objetivo, { mode: enCarrito ? 'exists' : 'added' });
+                },
+
+                /**
+                 * Guarda la cantidad en el carrito y refresca el contador del header.
+                 * En modo silencioso no abre el modal de confirmación: se usa desde
+                 * los botones +/-, donde un modal por cada pulsación sobraría.
+                 */
+                writeCart(item, quantity, options) {
+                    options = options || {};
+
+                    const payload = Object.assign({}, item, {
                         sale_unit_price: this.activeOfferPrice,
                         original_price: parseFloat(item.sale_unit_price),
                         has_discount: this.hasActiveOffer,
-                        quantity: this.quantity,
+                        quantity: quantity,
                         stock: Math.round(this.stock),
-                    };
+                    });
 
-                    if (typeof cartAddOrUpdateItem === 'function') {
-                        cartAddOrUpdateItem(cartItem, {
-                            quantity: this.quantity,
+                    if (!options.silent && typeof cartAddOrUpdateItem === 'function') {
+                        cartAddOrUpdateItem(payload, {
+                            quantity: quantity,
                             replaceQuantity: true,
-                            mode: found ? 'exists' : 'added',
+                            mode: options.mode,
                         });
-                        this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: this.quantity });
-                        return;
+                    } else if (typeof cartReadCart === 'function' && typeof cartWriteCart === 'function') {
+                        const array = cartReadCart();
+                        const found = array.find(x => x.id == item.id);
+                        if (found) {
+                            found.quantity = quantity;
+                            found.sale_unit_price = payload.sale_unit_price;
+                        } else {
+                            array.push(payload);
+                        }
+                        cartWriteCart(array);
+                        if (typeof cartRefreshHeader === 'function') {
+                            cartRefreshHeader();
+                        }
+                    } else {
+                        let array = localStorage.getItem('products_cart');
+                        array = array ? JSON.parse(array) : [];
+                        const found = array.find(x => x.id == item.id);
+                        if (found) {
+                            found.quantity = quantity;
+                            found.sale_unit_price = payload.sale_unit_price;
+                        } else {
+                            array.push(payload);
+                        }
+                        localStorage.setItem('products_cart', JSON.stringify(array));
                     }
 
-                    const price = this.activeOfferPrice;
-                    if (found) {
-                        found.quantity = this.quantity;
-                        found.sale_unit_price = price;
-                    } else {
-                        array.push({
-                            ...item,
-                            sale_unit_price: price,
-                            quantity: this.quantity
-                        });
-                    }
-                    localStorage.setItem('products_cart', JSON.stringify(array));
-                    this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: this.quantity });
+                    this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: quantity });
                     window.dispatchEvent(new Event('productAddedToCart'));
                 },
+
+                // Mientras el producto ya esté en el carrito, el selector lo edita:
+                // así el botón, el header y el checkout muestran siempre lo mismo.
+                syncCart(item) {
+                    if (!this.getCartQuantity(item.id)) return;
+                    this.writeCart(item, this.quantity, { silent: true });
+                },
+
+                limitToStock(value) {
+                    const max = Math.round(this.stock);
+                    if (value < 1) return 1;
+                    return (max > 0 && value > max) ? max : value;
+                },
+
                 getCartQuantity(id) {
                     return this.cartQuantities[id] || 0;
                 },
-                onQuantityInput() {
-                    if (this.quantity < 1) this.quantity = 1;
+                onQuantityInput(item) {
+                    this.quantity = this.limitToStock(this.quantity || 1);
+                    this.syncCart(item);
                 },
                 loadCartQuantities() {
                     let array = localStorage.getItem('products_cart');
@@ -657,10 +700,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.cartQuantities = obj;
                 },
                 incrementQuantity(item) {
-                    this.quantity++;
+                    this.quantity = this.limitToStock(this.quantity + 1);
+                    this.syncCart(item);
                 },
                 decrementQuantity(item) {
-                    if (this.quantity > 1) this.quantity--;
+                    if (this.quantity <= 1) return;
+                    this.quantity--;
+                    this.syncCart(item);
                 },
                 removeFromCart(item) {
                     let array = localStorage.getItem('products_cart');
