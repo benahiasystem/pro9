@@ -98,9 +98,9 @@ class KardexExport implements FromQuery, WithMapping, WithHeadings, WithEvents, 
         }
 
         $headings = array_merge($headings, [
-            'Fecha y hora transacción',
-            'Tipo transacción',
-            'Número',
+            'Fecha y hora del movimiento',
+            'Tipo de movimiento',
+            'N.º de documento',
             'NV. Asociada',
             'Pedido',
             'CPE. Asociado',

@@ -110,9 +110,9 @@
                     @if(!$item_id)
                         <th>Producto</th>
                     @endif
-                    <th>Fecha y hora transacción</th>
-                    <th>Tipo transacción</th>
-                    <th>Número</th>
+                    <th>Fecha y hora del movimiento</th>
+                    <th>Tipo de movimiento</th>
+                    <th>N.º de documento</th>
                     <th>NV. Asociada</th>
                     <th>Pedido</th>
                     <th>CPE. Asociado</th>

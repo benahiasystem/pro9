@@ -4420,7 +4420,9 @@ export default {
             }
         },
         showOperationTypeField() {
-            return this.operation_types_filter.length > 1;
+            // Mantener visible el tipo seleccionado, incluso cuando el tenant
+            // solo tenga una operación disponible.
+            return this.operation_types_filter.length > 0;
         },
         showCurrencyExchangeFields() {
             return this.currency_types.length > 1;
