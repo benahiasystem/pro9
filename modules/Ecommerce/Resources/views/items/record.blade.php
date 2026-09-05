@@ -15,6 +15,20 @@
         : $defaultImagePath;
 @endphp
 
+@php
+    $productSpecs = collect([
+        'Código interno'   => $record->internal_id,
+        'Código de barras' => $record->barcode,
+        'Marca'            => optional($record->brand)->name,
+        'Colección'        => $record->model,
+        'Línea'            => $record->line,
+        'Categoría'        => optional($record->category)->name,
+        'Nombre de fábrica'=> $record->second_name,
+        'Unidad de medida' => optional($record->unit_type)->description,
+    ])->filter(fn($value) => filled($value));
+    $hasSpecs = filled($record->technical_specifications) || $productSpecs->isNotEmpty();
+@endphp
+
 <div class="product-single-container product-single-default pdp">
     <div class="row pdp-row">
         <div class="col-lg-7 col-md-6 product-single-gallery pdp-gallery">
@@ -167,33 +181,16 @@
                             <span class="pdp-price-off">-@{{ discountPercent }}%</span>
                         </template>
                     </div>
-                    @if($record->has_igv)
-                        <p class="pdp-price-note">Precio con IGV incluido</p>
-                    @endif
+
+                    <p class="pdp-price-note">
+                        <span class="pdp-price-tax">{{ $record->has_igv ? 'Precio con IGV incluido' : 'Precio sin IGV' }}</span>
+                        <span class="pdp-price-deadline" v-if="offerExpiresAt && !sp_countdown_ended">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                            Oferta válida por <strong>@{{ sp_countdown_text }}</strong>
+                        </span>
+                    </p>
                 </div>
                 @endif
-
-                <div class="pdp-signals" v-if="hasSignals" v-cloak>
-                    <div class="pdp-signal pdp-signal--deadline" v-if="offerExpiresAt && !sp_countdown_ended">
-                        <span class="pdp-signal-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-                        <span class="pdp-signal-text">La oferta termina en <strong>@{{ sp_countdown_text }}</strong></span>
-                    </div>
-
-                    <div class="pdp-signal pdp-signal--stock" v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold">
-                        <span class="pdp-signal-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c1.5 3 4.5 4.5 4.5 8a4.5 4.5 0 1 1-9 0c0-1.4.5-2.4 1.3-3.3.3 1 .9 1.6 1.7 1.8C10 7.5 10.6 5 12 3z"/></svg></span>
-                        <span class="pdp-signal-text">Últimas <strong>@{{ Math.round(stock) }} unidades</strong> en stock</span>
-                    </div>
-
-                    <div class="pdp-signal" v-if="socialProofConfig.sp_views_count">
-                        <span class="pdp-signal-icon"><span class="pdp-live-dot"></span></span>
-                        <span class="pdp-signal-text"><strong v-text="sp_viewers"></strong> personas viendo este producto ahora</span>
-                    </div>
-
-                    <div class="pdp-signal" v-if="socialProofConfig.sp_purchase_count">
-                        <span class="pdp-signal-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg></span>
-                        <span class="pdp-signal-text"><strong v-text="sp_purchases"></strong> compras en los últimos 7 días</span>
-                    </div>
-                </div>
 
                 @if(!empty($record->variation_selector))
                 <div class="variation-selector">
@@ -237,6 +234,7 @@
                             @if($record->stock > 0)
                                 <span class="pdp-stock pdp-stock--in">En stock</span>
                                 <span class="pdp-stock-qty">{{ number_format($record->stock, 0) }} unid.</span>
+                                <span class="pdp-stock-low" v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" v-cloak>últimas unidades</span>
                             @else
                                 <span class="pdp-stock pdp-stock--out">Sin stock</span>
                             @endif
@@ -244,17 +242,45 @@
                     </div>
                 </dl>
 
-                @if(filled(strip_tags($record->name)))
+                @if(filled(strip_tags($record->name)) || $hasSpecs)
                 <div class="pdp-description product-description-wrapper">
+                    @if(filled(strip_tags($record->name)))
                     <div id="productShortDescription" class="product-description-clamp">
                         {!! $record->name !!}
                     </div>
+                    @endif
 
+                    @if($hasSpecs)
+                    <div id="productSpecsInline" class="pdp-specs-inline" hidden>
+                        <h2 class="pdp-specs-title">Ficha técnica</h2>
+                        @if(filled($record->technical_specifications))
+                            <p class="pdp-specs-lead">{{ $record->technical_specifications }}</p>
+                        @endif
+                        @if($productSpecs->isNotEmpty())
+                        <dl class="pdp-specs">
+                            @foreach($productSpecs as $label => $value)
+                                <div class="pdp-spec">
+                                    <dt>{{ $label }}</dt>
+                                    <dd>{{ $value }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                        @endif
+                    </div>
+                    @endif
+
+                    @php
+                        // Sin descripción, "Ver todo" no dice nada: el botón nombra lo que abre.
+                        $toggleShow = filled(strip_tags($record->name)) ? 'Ver todo' : 'Ver ficha técnica';
+                        $toggleHide = filled(strip_tags($record->name)) ? 'Ver menos' : 'Ocultar ficha técnica';
+                    @endphp
                     <a href="javascript:void(0);"
                        id="toggleProductDescription"
                        class="product-description-toggle"
+                       data-label-show="{{ $toggleShow }}"
+                       data-label-hide="{{ $toggleHide }}"
                        style="display:none;">
-                        Ver todo
+                        {{ $toggleShow }}
                     </a>
                 </div>
                 @endif
@@ -266,6 +292,13 @@
                     @endforeach
                 </ul>
                 @endif
+
+                <p class="pdp-activity" v-if="hasActivity" v-cloak>
+                    <span class="pdp-live-dot" aria-hidden="true"></span>
+                    <span v-if="socialProofConfig.sp_views_count"><strong v-text="sp_viewers"></strong> viendo ahora</span>
+                    <span class="pdp-activity-sep" v-if="socialProofConfig.sp_views_count && socialProofConfig.sp_purchase_count">·</span>
+                    <span v-if="socialProofConfig.sp_purchase_count"><strong v-text="sp_purchases"></strong> compras esta semana</span>
+                </p>
 
                 <div class="pdp-actions product-action product-all-icons">
                     <div class="pdp-buy">
@@ -355,138 +388,6 @@
     </div>
 </section>
 @endif
-
-@php
-    $productSpecs = collect([
-        'Código interno'   => $record->internal_id,
-        'Código de barras' => $record->barcode,
-        'Marca'            => optional($record->brand)->name,
-        'Colección'        => $record->model,
-        'Línea'            => $record->line,
-        'Categoría'        => optional($record->category)->name,
-        'Nombre de fábrica'=> $record->second_name,
-        'Unidad de medida' => optional($record->unit_type)->description,
-    ])->filter(fn($value) => filled($value));
-    $hasSpecsTab = filled($record->technical_specifications) || $productSpecs->isNotEmpty();
-@endphp
-
-<div class="product-single-tabs pdp-tabs">
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active"  id="product-tab-desc" data-toggle="tab" href="#product-desc-content" role="tab"
-                aria-controls="product-desc-content" aria-selected="true">Descripción</a>
-        </li>
-        @if($hasSpecsTab)
-        <li class="nav-item">
-            <a class="nav-link" id="product-tab-specs" data-toggle="tab" href="#product-specs-content" role="tab"
-                aria-controls="product-specs-content" aria-selected="false">Ficha técnica</a>
-        </li>
-        @endif
-        <li class="nav-item pdp-tab-reviews">
-            <a class="nav-link" onclick="getRating('{{ $record->id}}')" id="product-tab-reviews" data-toggle="tab" href="#product-reviews-content" role="tab"
-                aria-controls="product-reviews-content" aria-selected="false">Opiniones</a>
-        </li>
-        {{-- <li class="nav-item">
-            <a class="nav-link" id="product-tab-especTecn" data-toggle="tab" href="#product-especTecn-content" role="tab" aria-controls="product-especTecn-content" aria-selected="true">Especificaciones Técnicas</a>
-        </li> --}}
-    </ul>
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="product-desc-content" role="tabpanel"
-            aria-labelledby="product-tab-desc">
-            <div class="product-desc-content">
-                @if(filled($record->name))
-                    {!! $record->name !!}
-                @else
-                    <p class="text-muted mb-0">Este producto todavía no tiene una descripción.</p>
-                @endif
-            </div><!-- End .product-desc-content -->
-        </div><!-- End .tab-pane -->
-
-        @if($hasSpecsTab)
-        <div class="tab-pane fade" id="product-specs-content" role="tabpanel" aria-labelledby="product-tab-specs">
-            @if(filled($record->technical_specifications))
-                <p class="pdp-specs-lead">{{ $record->technical_specifications }}</p>
-            @endif
-            @if($productSpecs->isNotEmpty())
-            <dl class="pdp-specs">
-                @foreach($productSpecs as $label => $value)
-                    <div class="pdp-spec">
-                        <dt>{{ $label }}</dt>
-                        <dd>{{ $value }}</dd>
-                    </div>
-                @endforeach
-            </dl>
-            @endif
-        </div><!-- End .tab-pane -->
-        @endif
-
-        <div class="tab-pane fade" id="product-reviews-content" role="tabpanel" aria-labelledby="product-tab-reviews">
-            <div class="product-reviews-content">
-                <div class="collateral-box">
-
-                    <div class="page">
-                        <div class="page__demo">
-
-                            <div class="page__group">
-                                <div class="rating">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc6" onclick="sendRating(1,{{$record->id}})">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc7" onclick="sendRating(2,{{$record->id}})">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc8" onclick="sendRating(3,{{$record->id}})">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc9" onclick="sendRating(4,{{$record->id}})">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc10" onclick="sendRating(5,{{$record->id}})" >
-                                    <label for="rc6" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">1</span>
-                                    </label>
-                                    <label for="rc7" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">2</span>
-                                    </label>
-                                    <label for="rc8" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">3</span>
-                                    </label>
-                                    <label for="rc9" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">4</span>
-                                    </label>
-                                    <label for="rc10" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">5</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
-                        <symbol id="star" viewBox="0 0 26 28">
-                            <path
-                                d="M26 10.109c0 .281-.203.547-.406.75l-5.672 5.531 1.344 7.812c.016.109.016.203.016.313 0 .406-.187.781-.641.781a1.27 1.27 0 0 1-.625-.187L13 21.422l-7.016 3.687c-.203.109-.406.187-.625.187-.453 0-.656-.375-.656-.781 0-.109.016-.203.031-.313l1.344-7.812L.39 10.859c-.187-.203-.391-.469-.391-.75 0-.469.484-.656.875-.719l7.844-1.141 3.516-7.109c.141-.297.406-.641.766-.641s.625.344.766.641l3.516 7.109 7.844 1.141c.375.063.875.25.875.719z" />
-                        </symbol>
-                    </svg>
-
-                </div>
-
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="product-especTecn-content" role="tabpanel" aria-labelledby="product-tab-especTecn">
-            <div class="product-especTecn-content">
-                <p> {!! $record->technical_specifications !!} </p>
-            </div><!-- End .product-desc-content -->
-        </div><!-- End .tab-pane -->
-    </div>
-</div>
 
 <div id="product-frequently-bought" class="mt-4 mb-2"
      data-item-id="{{ $record->id }}"></div>
@@ -589,16 +490,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 selectedVariationValues: {},
             },
             computed: {
-                // Evita que la tarjeta de señales se dibuje vacía cuando la campaña
-                // no tiene ninguna activa.
-                hasSignals() {
+                // La línea de actividad solo aparece si la campaña habilitó alguna
+                // de las dos métricas que la componen.
+                hasActivity() {
                     const config = this.socialProofConfig;
-                    return Boolean(
-                        (this.offerExpiresAt && !this.sp_countdown_ended)
-                        || (config.sp_stock_alert && this.stock > 0 && this.stock <= this.stockThreshold)
-                        || config.sp_views_count
-                        || config.sp_purchase_count
-                    );
+                    return Boolean(config.sp_views_count || config.sp_purchase_count);
                 },
                 discountPercent() {
                     if (!this.compareAtPrice || this.compareAtPrice <= this.activeOfferPrice) return 0;
@@ -647,7 +543,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                         this.sp_countdown_ended = false;
-                        this.sp_countdown_text = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+                        // Con varios días por delante un cronómetro al segundo se lee
+                        // como presión artificial; solo cuenta fino el último día.
+                        if (days >= 1) {
+                            this.sp_countdown_text = days === 1 ? '1 día' : days + ' días';
+                        } else if (hours >= 1) {
+                            this.sp_countdown_text = hours + 'h ' + minutes + 'm';
+                        } else {
+                            this.sp_countdown_text = minutes + 'm ' + seconds + 's';
+                        }
                     };
                     tick();
                     this._countdownTimer = setInterval(tick, 1000);
@@ -771,23 +675,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const description = document.getElementById('productShortDescription');
+    const specs = document.getElementById('productSpecsInline');
     const toggleBtn = document.getElementById('toggleProductDescription');
 
-    if (description && toggleBtn) {
-        const isOverflowing = description.scrollHeight > description.clientHeight + 2;
+    if (toggleBtn) {
+        const isOverflowing = description
+            ? description.scrollHeight > description.clientHeight + 2
+            : false;
 
-        if (isOverflowing) {
+        // El botón también aparece cuando no hay descripción larga pero sí ficha técnica.
+        if (isOverflowing || specs) {
             toggleBtn.style.display = 'inline-block';
         }
 
         toggleBtn.addEventListener('click', function() {
-            description.classList.toggle('expanded');
+            const expanded = !toggleBtn.classList.contains('is-expanded');
 
-            if (description.classList.contains('expanded')) {
-                toggleBtn.textContent = 'Ver menos';
-            } else {
-                toggleBtn.textContent = 'Ver todo';
-            }
+            toggleBtn.classList.toggle('is-expanded', expanded);
+            if (description) description.classList.toggle('expanded', expanded);
+            if (specs) specs.hidden = !expanded;
+
+            toggleBtn.textContent = expanded
+                ? (toggleBtn.dataset.labelHide || 'Ver menos')
+                : (toggleBtn.dataset.labelShow || 'Ver todo');
         });
     }
 });

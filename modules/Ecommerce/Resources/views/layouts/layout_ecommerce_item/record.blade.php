@@ -79,7 +79,8 @@
 
     <!-- Estilos personalizados -->
     <link rel="stylesheet" href="{{ asset('porto-light/css/styles_ecommerce.css') }}" />
-    <link rel="stylesheet" href="{{ asset('porto-light/css/product-detail.css') }}" />
+    @php($pdpCssPath = public_path('porto-light/css/product-detail.css'))
+    <link rel="stylesheet" href="{{ asset('porto-light/css/product-detail.css') }}?v={{ is_file($pdpCssPath) ? filemtime($pdpCssPath) : 1 }}" />
     @include('ecommerce::layouts.partials_ecommerce.primary_color_style')
 </head>
 
