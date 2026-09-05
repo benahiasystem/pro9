@@ -1,47 +1,63 @@
 ---
 name: gestionar-clientes-venezuela
-description: Adaptar, corregir y validar el alta y edición de clientes venezolanos en Pro9. Usar al trabajar con PersonRequest, PersonController, persons/form.vue, RIF, cédula, documento Extranjero, nacionalidad, country_id, nationality_id, direcciones Estado/Municipio/Parroquia, website, observation o errores SQL al guardar personas.
+description: Mantener el alta, edición, catálogo, persistencia y presentación de documentos de identidad de clientes venezolanos en Pro9. Usar al tocar persons, PersonRequest, PersonController, formularios o selectores de clientes, RIF/cédula/pasaporte, cat_identity_document_types, documentos, reportes, PDFs, APIs o seeders tenant.
 ---
 
 # Gestionar clientes de Venezuela
 
-## Contrato funcional
+## Catálogo inmutable de documentos de identidad
 
-- Tratar a todo cliente como domiciliado en Venezuela: persistir `country_id = VE`.
-- Persistir `nationality_id = VE` y ocultar Nacionalidad para cualquier documento excepto `Extranjero`.
-- Usar el tipo de documento `4` como `Extranjero`; mostrar y exigir una nacionalidad distinta de VE sólo en ese caso.
-- Usar `6` para RIF con una letra `V`, `E`, `J`, `G` o `P` seguida de nueve dígitos.
-- Usar `1` para Cédula de Identidad venezolana con seis a ocho dígitos.
-- Mostrar la jerarquía heredada como Estado / Municipio / Parroquia.
-- Conservar `website` y `observation` como campos opcionales de `persons`; asegurar que existan en instalaciones limpias y tenants históricos.
-- Tratar una colección de direcciones ausente como `[]`; no ejecutar `count()` sobre `null`.
-- Descartar filas vacías o inválidas de `addresses` antes de validar o persistir; el formulario las usa como borradores y no deben impedir guardar un cliente válido.
+`cat_identity_document_types` debe contener exactamente estos registros y conservar este orden contractual:
 
-## Flujo de implementación
+| Orden | id | active | description | Prefijo del número |
+|---:|---|---:|---|---|
+| 1 | `0` | `1` | `Doc.sin.rif` | Sin prefijo |
+| 2 | `1` | `1` | `Venezolano` | `V` |
+| 3 | `6` | `1` | `Juridico` | `J` |
+| 4 | `7` | `1` | `Pasaporte` | `P` |
+| 5 | `E` | `0` | `Extranjero` | `E` |
+| 6 | `C` | `0` | `Comuna` | `C` |
+| 7 | `G` | `0` | `Gubernamental` | `G` |
+| 8 | `R` | `0` | `Firma Personal` | `R` |
 
-1. Cambiar el formulario real `resources/js/views/tenant/persons/form.vue`, no sólo formularios antiguos de customers.
-2. Mantener Nacionalidad fuera del DOM para clientes no extranjeros; no limitarse a ocultarla con estilos.
-3. Normalizar en `PersonRequest::prepareForValidation` para proteger el sistema de bundles o payloads antiguos que aún envíen PE.
-4. Validar en backend que la nacionalidad extranjera exista y sea distinta de VE.
-5. Procesar `location_id` para VE en `PersonController`; esperar exactamente Estado, Municipio y Parroquia en la dirección principal y las secundarias.
-6. Persistir `department_id`, `province_id` y `district_id` desde `location_id`; limpiar esos campos cuando no exista una jerarquía válida.
-7. Mantener la estructura final de documentos de identidad en la migración consolidada de `cat_identity_document_types`; poblar Cédula, Extranjero y RIF mediante `TenantMigrationDataSeeder`.
-8. Conservar `website` y `observation`, incluidos sus comentarios MySQL, en la migración consolidada de `persons`.
-9. Verificar el DDL consolidado contra un tenant fuente y ejecutar rollback completo antes de usarlo para instalaciones nuevas.
-10. Compilar el frontend antes de validar en el hostname del tenant.
+- No agregar, quitar, renombrar, reordenar ni cambiar `active` en estos registros durante otras modificaciones.
+- Mantener la misma lista y orden en `database/seeders/data/tenant_initial_data.php`.
+- Considerar `active` un dato contractual heredado, no una regla de visibilidad: los siete tipos con letra deben estar disponibles para registrar clientes aunque `E`, `C`, `G` y `R` tengan `active = 0`.
+- Toda migración de tenants existentes debe terminar con esos ocho registros exactos, remapear referencias antiguas antes de eliminar filas obsoletas y preservar las claves foráneas.
 
-## Validación
+## Selección y persistencia
 
-- Reproducir primero el fallo y revisar el error SQL; considerar `country_id = PE` un payload histórico y `Unknown column observation/website` una desalineación de esquema.
-- Ejecutar pruebas unitarias de normalización de clientes venezolanos, extranjeros y proveedores.
-- Crear un cliente con RIF desde el navegador y verificar el mensaje de éxito, la fila en el listado y los valores VE/VE en base.
-- Elegir `Extranjero`, confirmar que aparece Nacionalidad y que el servidor rechaza el formulario vacío con un error legible.
-- Editar una dirección y confirmar que se guardan Estado/Municipio/Parroquia junto con Sitio Web y Observaciones, incluso cuando sean nulos.
-- Comprobar las columnas en todos los tenants y ejecutar un guardado transaccional reversible cuando no haya navegador autenticado.
-- Descartar o identificar claramente los registros de prueba.
+- El tipo de documento debe mostrarse siempre sólo con su descripción: `Venezolano`, `Extranjero`, `Pasaporte`, `Juridico`, `Comuna`, `Gubernamental`, `Firma Personal` o `Doc.sin.rif`.
+- No concatenar la letra del documento al nombre del tipo en selectores, tablas, formularios, reportes, PDFs ni respuestas de presentación. Son incorrectas etiquetas como `Venezolano V`, `Juridico J` o `Pasaporte P`.
+- Guardar en `persons.identity_document_type_id` el `id` del registro elegido, no la letra visible salvo cuando ambos coinciden. Por tanto: Venezolano=`1`, Extranjero=`E`, Pasaporte=`7`, Juridico=`6`, Comuna=`C`, Gubernamental=`G`, Firma Personal=`R` y Doc.sin.rif=`0`.
+- Guardar en `persons.number` únicamente el número del documento. Si el usuario escribe el prefijo correspondiente con o sin guion, normalizarlo antes de validar y persistir para evitar duplicarlo en la presentación.
+- Validar en backend que `identity_document_type_id` pertenezca al catálogo contractual; no confiar sólo en el selector Vue.
 
-<!-- ######## INICIO VALIDACIÓN DOCUMENTAL EN TENANT HISTÓRICO ######## -->
+## Presentación global
 
-En tenants existentes, ejecutar el puente `tenant:migrate-venezuela {uuid}` y confirmar directamente en `cat_identity_document_types` los valores activos `Cédula de Identidad (V)`, `Extranjero` y `RIF (V/E/J/G/P)`. La fuente Vue correcta no basta si el catálogo persistido continúa en DNI/CE/RUC.
+- Separar la etiqueta del tipo y el formato del número: la descripción visible no lleva letra, mientras que el número presentado sí conserva el prefijo contractual cuando corresponde.
+- En todo el sistema donde se presente el documento del cliente, usar `<letra>-<persons.number>`.
+- Ejemplos obligatorios: Venezolano `V-persons.number`, Extranjero `E-persons.number`, Pasaporte `P-persons.number`, Juridico `J-persons.number`, Comuna `C-persons.number`, Gubernamental `G-persons.number` y Firma Personal `R-persons.number`.
+- Aplicar el formato en listados, buscadores, selecciones, comprobantes, PDFs, reportes, módulos y respuestas de presentación. Mantener además el número crudo cuando una integración, consulta o validación necesite `persons.number` sin prefijo.
+- Centralizar la relación id/letra y el formateo; no inferir la letra desde la descripción ni duplicar mapas divergentes en componentes.
+- No anteponer letra ni guion a `Doc.sin.rif`.
 
-<!-- ######## FIN VALIDACIÓN DOCUMENTAL EN TENANT HISTÓRICO ######## -->
+## Reglas del formulario de clientes
+
+- Trabajar en el formulario real `resources/js/views/tenant/persons/form.vue` y en cualquier otro alta de cliente que comparta el catálogo.
+- Tratar a todo cliente como domiciliado en Venezuela y persistir `country_id = VE`.
+- Mostrar y exigir una nacionalidad distinta de `VE` sólo cuando `identity_document_type_id = E`; para los demás documentos persistir `nationality_id = VE` y mantener Nacionalidad fuera del DOM.
+- Mostrar Estado / Municipio / Parroquia para la jerarquía territorial heredada.
+- Conservar `website` y `observation` como campos opcionales.
+- Tratar `addresses` ausente como `[]` y descartar filas vacías o inválidas antes de validar o persistir.
+
+## Verificación obligatoria
+
+- Comprobar por prueba automatizada la lista completa, valores, orden, descripciones y banderas `active` tanto en la fuente central como en `tenant_initial_data.php`.
+- Probar la normalización y persistencia de cada selección, incluido un valor escrito como `J-123456789` que debe guardar tipo `6`, número `123456789` y presentar `J-123456789`.
+- Probar que los siete tipos aparecen en el selector con descripciones limpias, sin concatenar su letra, y que el número formateado conserva el prefijo correspondiente.
+- En Facturación, admitir para Facturas todos los tipos del catálogo venezolano. El filtro y la validación no pueden restringirse a Juridico; el cliente debe seguir visible, seleccionable y facturable con sus datos completos.
+- Probar el formato global en los recursos centrales de clientes y en las plantillas/documentos de presentación; no considerar suficiente una prueba que sólo cubra el formulario.
+- Verificar tenants nuevos y existentes. En un tenant histórico, ejecutar `tenant:migrate-venezuela {uuid}` o la migración tenant correspondiente y consultar directamente `cat_identity_document_types`.
+- Compilar el frontend mediante la skill `frontend-build` antes de validar el flujo en navegador.
+- Al generar una Factura desde una o varias Notas de venta, conservar y resolver el cliente de origen en Facturación aunque su tipo de identidad no sea `Juridico`. El filtro ordinario de Facturas no puede reemplazar ni vaciar ese cliente precargado; debe seguir visible, seleccionable y facturable con sus datos completos.

@@ -33,8 +33,8 @@ class DispatchEmail extends Mailable
         }
 
         $pdf = $this->getStorage($this->dispatch->filename, 'pdf');
-        return $this->subject('Envio de guía')
-                    ->from(config('mail.username'), 'Guía')
+        return $this->subject('Envío de orden de entrega')
+                    ->from(config('mail.username'), 'Orden de entrega')
                     ->view('order::dispatches.templates.email')
                     ->attachData($pdf, $this->dispatch->filename.'.pdf');
     }

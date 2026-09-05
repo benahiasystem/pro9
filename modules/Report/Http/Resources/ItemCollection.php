@@ -21,7 +21,7 @@ class ItemCollection extends ResourceCollection
                 /** @var \App\Models\Tenant\PurchaseItem $row */
                 $document = $row->purchase;
                 $customer_name = $document->supplier->name;
-                $customer_number = $document->supplier->number;
+                $customer_number = format_person_identity_document($document->supplier);
                 /** @var \App\Models\Tenant\PurchaseItem $row */
                 $purchase = $row->purchase;
                 $observation=$purchase->observation;
@@ -29,7 +29,7 @@ class ItemCollection extends ResourceCollection
                 /** @var \App\Models\Tenant\DocumentItem $row */
                 $document = $row->document;
                 $customer_name = $document->customer->name;
-                $customer_number = $document->customer->number;
+                $customer_number = format_person_identity_document($document->customer);
             }
             return [
                 'id'                        => $row->id,

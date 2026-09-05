@@ -42,6 +42,9 @@ class ProductFlowSchemaContractTest extends TestCase
             '2026_08_23_000002_add_menu_preferences_to_users.php',
             '2026_08_23_000003_tenant_add_inventory_to_app_modules.php',
             '2026_08_23_000004_tenant_add_finance_to_app_modules.php',
+            '2026_08_31_120000_tenant_add_enable_global_discount_to_configurations.php',
+            '2026_08_31_130000_tenant_set_nrus_flag_in_plan_config.php',
+            '2026_09_04_000001_sync_venezuela_identity_document_types.php',
         ], array_slice($names, $repairPosition + 1));
     }
 

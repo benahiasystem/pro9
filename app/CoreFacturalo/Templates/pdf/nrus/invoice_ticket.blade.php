@@ -82,7 +82,7 @@
         <td class="text-center"><h5>{{ $company->trade_name }}</h5></td>
     </tr>--}}
     <tr>
-        <td class="text-center"><h5>{{ 'RUC '.$company->number }}</h5></td>
+        <td class="text-center"><h5>{{ 'RIF '.$company->number }}</h5></td>
     </tr>
     <tr>
         <td class="text-center" style="text-transform: uppercase;">
@@ -116,7 +116,7 @@
         </tr>
     @endisset
     <tr>
-        <td class="text-center pt-3 border-top"><h3>{{ 'R.U.C. '.$company->number }}</h3></td>
+        <td class="text-center pt-3 border-top"><h3>{{ 'R.I.F. '.$company->number }}</h3></td>
     </tr>
     <tr>
         <td class="text-center"><h4>{{ $document->document_type->description }}</h4></td>
@@ -147,7 +147,7 @@
     </tr>
     <tr>
         <td><p class="desc">{{ $customer->identity_document_type->description }}:</p></td>
-        <td><p class="desc">{{ $customer->number }}</p></td>
+        <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
     @if ($customer->address !== '')
         <tr>
@@ -359,7 +359,7 @@
 </table>
 
 @if ($document->guides)
-    {{--<strong>Guías:</strong>--}}
+    {{--<strong>Órdenes de entrega:</strong>--}}
     <table>
         @foreach($document->guides as $guide)
             <tr>
@@ -442,7 +442,7 @@
 
 @if ($document->dispatch)
     <br/>
-    <strong>Guías de remisión</strong>
+    <strong>Órdenes de entrega</strong>
     <table>
         <tr>
             <td>{{ $document->dispatch->number_full }}</td>
@@ -451,7 +451,7 @@
 
 @elseif (count($document->reference_guides) > 0)
     <br/>
-    <strong>Guias de remisión</strong>
+    <strong>Órdenes de entrega</strong>
     <table>
         @foreach($document->reference_guides as $guide)
             <tr>

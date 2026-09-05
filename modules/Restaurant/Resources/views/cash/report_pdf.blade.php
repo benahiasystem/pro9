@@ -193,7 +193,7 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
                 </tr>
                 <tr>
                     <td class="td-custom">
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                     <td class="width-custom">
                         <p><strong>Establecimiento: </strong>{{$establishment->address}} - {{$establishment->department->description}} - {{$establishment->district->description}}</p>
@@ -319,7 +319,7 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
                                             $number = $value->sale_note->number_full;
                                             $date_of_issue = $value->sale_note->date_of_issue->format('Y-m-d');
                                             $customer_name = $value->sale_note->customer->name;
-                                            $customer_number = $value->sale_note->customer->number;
+                                            $customer_number = format_person_identity_document($value->sale_note->customer);
 
                                             $total = $value->sale_note->total;
 
@@ -337,7 +337,7 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
                                             $number = $value->document->number_full;
                                             $date_of_issue = $value->document->date_of_issue->format('Y-m-d');
                                             $customer_name = $value->document->customer->name;
-                                            $customer_number = $value->document->customer->number;
+                                            $customer_number = format_person_identity_document($value->document->customer);
                                             $total = $value->document->total;
 
                                             if(!in_array($value->document->state_type_id, ['01','03','05','07','13'])){
@@ -354,7 +354,7 @@ $cash_final_balance = $final_balance + $cash->beginning_balance;
                                             $number = $value->expense_payment->expense->number;
                                             $date_of_issue = $value->expense_payment->expense->date_of_issue->format('Y-m-d');
                                             $customer_name = $value->expense_payment->expense->supplier->name;
-                                            $customer_number = $value->expense_payment->expense->supplier->number;
+                                            $customer_number = format_person_identity_document($value->expense_payment->expense->supplier);
                                             $total = -$value->expense_payment->payment;
                                             $currency_type_id = $value->expense_payment->expense->currency_type_id;
 

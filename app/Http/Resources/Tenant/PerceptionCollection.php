@@ -23,7 +23,7 @@ class PerceptionCollection extends ResourceCollection
                 'document_type_short' => $row->document_type->short,
                 'number' => $row->number_full,
                 'customer_name' => $row->customer->name,
-                'customer_number' => $row->customer->identity_document_type->description . ' ' . $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'total_retention' => $row->total_retention,
                 'perception_type_description' => $row->perception_type->description,
                 'total' => $row->total,

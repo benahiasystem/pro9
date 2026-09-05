@@ -14,8 +14,7 @@ class ExistingTenantVenezuelaMigrationTest extends TestCase
 
         self::assertStringContainsString("'country_id', 'PE', 'VE'", $source);
         self::assertStringContainsString("'nationality_id', 'PE', 'VE'", $source);
-        self::assertStringContainsString("'Cédula de Identidad (V)'", $source);
-        self::assertStringContainsString("'RIF (V/E/J/G/P)'", $source);
+        self::assertStringContainsString('IdentityDocumentCatalogMigrator', $source);
         self::assertStringContainsString("DEFAULT 'VE'", $source);
         self::assertStringContainsString('25 estados, 335 municipios y 1138 parroquias', $source);
     }

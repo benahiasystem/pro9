@@ -259,7 +259,7 @@
                 description: 'DNI'
             }, {
                 id: '6',
-                description: 'RUC'
+                description: 'RIF'
             }],
             formIdentity: {
                 identity_document_type_id: ''
@@ -284,7 +284,7 @@
             numberDocument: '',
             history_records: {!! json_encode($history_records ) !!},
             phone_whatsapp: {!! json_encode($configuration->phone_whatsapp ) !!},
-            all_identity_document_types : [{id: '6', name: 'RUC'}, {id: '0', name: 'DOC'},{id: '4', name: 'CE'},{id: '1', name: 'DNI'}]
+            all_identity_document_types : [{id: '6', name: 'RIF'}, {id: '0', name: 'DOC'},{id: '4', name: 'CE'},{id: '1', name: 'DNI'}]
         },
         computed: {
             maxLength: function () {

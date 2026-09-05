@@ -82,7 +82,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
         </tr>
         <tr>
             <td>
-                <p><strong>Ruc: </strong></p>
+                <p><strong>RIF: </strong></p>
             </td>
             <td align="center">{{$company->number}}</td>
             <td>
@@ -194,7 +194,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @endif
 
                         @if ($columns->guides->visible)
-                            <th># Guía</th>
+                            <th># Orden de entrega</th>
                         @endif
                         @if ($columns->quote->visible)
                             <th>Cotización</th>
@@ -217,7 +217,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @endif
                         <th>Cliente</th>
                         @if ($columns->ruc->visible)
-                        <th>RUC</th>
+                        <th>RIF</th>
                         @endif
 
                         <th>Estado</th>
@@ -383,7 +383,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                             @endif
                             <td class="celda">{{$value->customer->name}}</td>
                             @if ($columns->ruc->visible)
-                            <td class="celda">{{$value->customer->number}}</td>
+                            <td class="celda">{{format_person_identity_document($value->customer)}}</td>
                             @endif
                             <td class="celda">{{$value->state_type->description}}</td>
 

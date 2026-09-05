@@ -30,7 +30,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong></p>
+                        <p><strong>RIF: </strong></p>
                     </td>
                     <td align="center">{{$company->number}}</td>
                   
@@ -135,7 +135,7 @@
                             <tr>
                                 <td>{{$loop->iteration}}</td> 
                                 <td>{{$customer->name}}</td>
-                                <td>{{ $customer->identity_document_type->description}} - {{ $customer->number }}<br/></td> 
+                                <td>{{ format_person_identity_document($customer) }}<br/></td>
                                 <td>{{$zone}}</td> 
                                 <td>{{$customer->telephone}}</td> 
                                 <td>{{$first_document_date}}</td> 

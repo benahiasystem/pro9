@@ -271,7 +271,7 @@ class PurchaseSettlement extends ModelTenant
             'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
             'number_full' => $this->number_full,
             'supplier_name' => $this->supplier->name,
-            'supplier_number' => $this->supplier->identity_document_type->description.' '.$this->supplier->number,
+            'supplier_number' => format_person_identity_document($this->supplier),
             'total_unaffected' => $this->total_unaffected,
             'total_exonerated' => $this->total_exonerated,
             'total_taxed' => $this->total_taxed,

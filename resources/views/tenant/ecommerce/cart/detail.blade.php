@@ -243,7 +243,7 @@
                 description: 'DNI'
             }, {
                 id: '6',
-                description: 'RUC'
+                description: 'RIF'
             }],
             formIdentity: {
                 identity_document_type_id: '6'

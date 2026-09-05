@@ -184,6 +184,7 @@ class InventoryKardex extends ModelTenant
             'type_transaction' => null,
             'date_of_register'=> null,
             'guide_id' => null,
+            'transfer_id' => null,
         ];
         $inventory_kardexable = $this->inventory_kardexable;
         $qty = $this->quantity;
@@ -308,6 +309,7 @@ class InventoryKardex extends ModelTenant
                     // consultaba arbitrariamente otra nota de traslado.
                     $data['number'] = $inventory_transfer->series.'-'.$inventory_transfer->number;
                     $data['date_of_issue'] = $inventory_transfer->created_at->format('Y-m-d');
+                    $data['transfer_id'] = $inventory_transfer->id;
                     // ########## FIN CORRECCIÓN FECHA EMISIÓN TRASLADO KARDEX ##########
                 }
             

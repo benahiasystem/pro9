@@ -125,7 +125,7 @@ $isSaleNote = ($document_type_id != '80' && $type == 'sale') ? true : false;
 
     @endif
     <td class="celda">{{ $document->customer->identity_document_type_id }}</td>
-    <td class="celda">{{ $document->customer->number }}</td>
+    <td class="celda">{{ format_person_identity_document($document->customer) }}</td>
     <td class="celda">{{ $document->customer->name }}</td>
     <td class="celda">{{ $document->currency_type_id }} {{ $description_apply_conversion_to_pen ?? ''}}</td>
     <td class="celda">{{ $unit_type_id }}</td>

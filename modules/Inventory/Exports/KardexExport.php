@@ -152,7 +152,7 @@ class KardexExport implements FromQuery, WithMapping, WithHeadings, WithEvents, 
     }
 
     /**
-     * Inserta el bloque de encabezado (empresa, RUC, producto, precios) por
+     * Inserta el bloque de encabezado (empresa, RIF, producto, precios) por
      * encima de la tabla. WithHeadings solo genera la fila de títulos, así que
      * este bloque se escribe a mano desplazando las filas hacia abajo.
      */
@@ -177,7 +177,7 @@ class KardexExport implements FromQuery, WithMapping, WithHeadings, WithEvents, 
                 $lines = [
                     ['Reporte Kardex'],
                     ['Empresa: ' . CompanyDocumentDisplay::commercialLine($this->company), 'Fecha: ' . date('d/m/Y')],
-                    ['Ruc: ' . $this->company->number, 'Establecimiento: ' . $establecimiento],
+                    ['RIF: ' . $this->company->number, 'Establecimiento: ' . $establecimiento],
                     ['Producto: ' . $producto, $precios ? 'Precios por almacenes: ' . $precios : ''],
                     [],
                 ];

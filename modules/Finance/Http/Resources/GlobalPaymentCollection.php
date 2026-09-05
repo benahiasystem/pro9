@@ -58,7 +58,7 @@ class GlobalPaymentCollection extends ResourceCollection
                 // 'document_type_description' => ($row->payment->associated_record_payment->document_type) ? $row->payment->associated_record_payment->document_type->description:'NV',
                 'document_type_description' => $document_type,
                 'person_name' => $personName,
-                'person_number' => $data_person->number,
+                'person_number' => format_person_identity_document($data_person),
                 // 'payment' => $row->payment,
                 // 'payment_type' => $row->payment_type,
                 'instance_type' => $row->instance_type,

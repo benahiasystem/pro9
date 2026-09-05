@@ -4,6 +4,7 @@ namespace Modules\Inventory\Helpers;
 
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
+use App\Services\SeriesCodeGenerator;
 use Modules\Inventory\Entities\Guide\GuideEntity;
 use Modules\Inventory\Entities\Guide\GuideItemEntity;
 use Modules\Inventory\Models\Guide;
@@ -28,9 +29,9 @@ class GuideStore
         if($inventory_transaction->type === 'output') {
             $data['document_type_id'] = 'U3';
         }
-        //'U2': 'Guía de Ingreso Almacén'
-        //'U3': 'Guía de Salida Almacén'
-        //'U3': 'Guía de Transferencia Almacén'
+        //'U2': 'Nota de Ingreso Almacén'
+        //'U3': 'Nota de Salida Almacén'
+        //'U4': 'Guía de Transferencia Almacén'
 
         // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
         $series = app(SeriesResolver::class)->applyContext(Series::query()
@@ -38,7 +39,12 @@ class GuideStore
             ->where('document_type_id', $data['document_type_id']))
             ->first();
 
-        if(is_null($series)) throw new Exception("No se encontró una serie para el tipo de documento {$data['document_type_id']}, registre la serie en Establecimientos/Series");
+        if (is_null($series)) {
+            $series = app(SeriesCodeGenerator::class)->ensureWarehouseDocumentSeries(
+                (int) $data['establishment_id'],
+                $data['document_type_id']
+            );
+        }
 
         $data['series'] = $series->number;
         $data['number'] = '#';

@@ -539,10 +539,31 @@ const getQuantityPrecisionByUnitType = (unit_type_id, fallback = 0) => {
     return DECIMAL_UNIT_TYPES.includes(unit_type) ? 4 : fallback
 }
 
+// ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+/**
+ * Resuelve la afectación permitida para una línea nueva en Venezuela.
+ * Los ítems históricos pueden conservar IDs ocultos (21, 30, 31, etc.),
+ * pero una emisión nueva solo debe usar Gravado (10) o Exento (20).
+ */
+const resolveSelectableAffectationType = (requestedId, affectationTypes = []) => {
+    const requested = String(requestedId || '')
+    const exact = affectationTypes.find(type => String(type.id) === requested)
+
+    if (exact) return exact
+
+    const fallbackId = requested === '10' ? '10' : '20'
+
+    return affectationTypes.find(type => String(type.id) === fallbackId)
+        || affectationTypes.find(type => String(type.id) === '10')
+        || affectationTypes[0]
+        || null
+}
+// ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
+
 export {
     calculateRowItem, getUniqueArray, showNamePdfOfDescription,
     sumAmountDiscountsNoBaseByItem, FormatUnitPriceRow, filterWords,
-    getQuantityPrecisionByUnitType
+    getQuantityPrecisionByUnitType, resolveSelectableAffectationType
 }
 
 // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########

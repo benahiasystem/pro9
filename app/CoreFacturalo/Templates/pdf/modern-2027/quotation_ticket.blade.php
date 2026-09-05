@@ -62,7 +62,7 @@
         ])</td>
     </tr>
     <tr>
-        <td class="m27-head-line">RUC: {{ $company->number }}</td>
+        <td class="m27-head-line">RIF: {{ $company->number }}</td>
     </tr>
     <tr>
         <td class="m27-head-line" style="text-transform: uppercase;">
@@ -141,7 +141,7 @@
     </tr>
     <tr>
         <td class="m27-label">{{ $customer->identity_document_type->description }}:</td>
-        <td class="m27-value">{{ $customer->number }}</td>
+        <td class="m27-value">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</td>
     </tr>
     @if(isset($configurationInPdf) && $configurationInPdf->show_seller_in_pdf)
         <tr>

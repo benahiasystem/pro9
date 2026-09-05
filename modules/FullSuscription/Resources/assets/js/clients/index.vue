@@ -78,7 +78,7 @@
                             {{ row.document_type }}
                         </td>
                         <td class="text-end">
-                            {{ row.number }}
+                            {{ row.formatted_number || row.number }}
                         </td>
                         <td class="text-end">
                             {{ row.telephone }}

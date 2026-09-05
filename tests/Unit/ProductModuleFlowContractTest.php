@@ -54,6 +54,26 @@ class ProductModuleFlowContractTest extends TestCase
     }
 
     /** @test */
+    public function new_sales_normalize_hidden_historical_affectations_before_adding_items(): void
+    {
+        $helpers = $this->source('resources/js/helpers/functions.js');
+        self::assertStringContainsString('resolveSelectableAffectationType', $helpers);
+        self::assertStringContainsString("const fallbackId = requested === '10' ? '10' : '20'", $helpers);
+
+        foreach ([
+            'resources/js/views/tenant/documents/partials/item.vue',
+            'resources/js/views/tenant/quotations/partials/item.vue',
+            'resources/js/views/tenant/sale_notes/partials/item.vue',
+        ] as $file) {
+            self::assertStringContainsString(
+                'resolveSelectableAffectationType(',
+                $this->source($file),
+                $file
+            );
+        }
+    }
+
+    /** @test */
     public function pos_vende_ya_and_restaurant_keep_their_product_visibility_queries(): void
     {
         $pos = $this->source('app/Http/Controllers/Tenant/PosController.php');

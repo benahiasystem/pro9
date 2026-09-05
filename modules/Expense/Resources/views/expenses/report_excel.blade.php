@@ -59,7 +59,7 @@
                                     {{$record->supplier->name}}
                                 </td>
                                 <td class="celda">
-                                    {{$record->supplier->number}}
+                                    {{format_person_identity_document($record->supplier)}}
                                 </td>
                                 <td class="celda">
                                     {{$record->expense_type->description}}

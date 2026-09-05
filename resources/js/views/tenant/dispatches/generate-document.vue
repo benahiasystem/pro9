@@ -1019,7 +1019,7 @@ export default {
                 this.document.exchange_rate_sale = res;
             });
             this.document.items = this.items;
-            this.titleDialog = `Guía ${this.form.dispatch.series}-${this.form.dispatch.number}: Crear comprobante`;
+            this.titleDialog = `Orden de entrega ${this.form.dispatch.series}-${this.form.dispatch.number}: Crear comprobante`;
 
             await this.onCalculateTotals();
 

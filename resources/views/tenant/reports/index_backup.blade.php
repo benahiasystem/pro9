@@ -54,7 +54,7 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
-                                {{ Form::label('ruc', 'RUC Cliente') }}
+                                {{ Form::label('ruc', 'RIF Cliente') }}
                                 {{ Form::text('ruc', null, array('class' => 'form-control')) }}
                             </div>
                         </div>

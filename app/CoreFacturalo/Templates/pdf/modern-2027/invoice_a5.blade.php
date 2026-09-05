@@ -75,7 +75,7 @@
             <td width="50%" class="pl-3 text-center">
                 <div>
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-') ? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-') ? ', '.$establishment->district->description : '' }}
@@ -96,7 +96,7 @@
                 </div>
             </td>
             <td width="30%" class="border-box py-4 px-2 text-center">
-                <h3 class="font-bold">{{ 'R.U.C. '.$company->number }}</h3>
+                <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h5>{{ $document->document_type->description }}</h5>
                 <h3>{{ $document_number }}</h3>
             </td>
@@ -104,7 +104,7 @@
             <td colspan="2" width="70%" class="pl-1 text-left">
                 <div>
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUCs '.$company->number }}</h5>
+                    <h5>{{ 'R.I.F. '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-') ? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-') ? ', '.$establishment->district->description : '' }}
@@ -125,7 +125,7 @@
                 </div>
             </td>
             <td width="30%" class="border-box py-4 px-2 text-center">
-                <h3 class="font-bold">{{ 'R.U.C. '.$company->number }}</h3>
+                <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h5>{{ $document->document_type->description }}</h5>
                 <h3>{{ $document_number }}</h3>
             </td>
@@ -147,7 +147,7 @@
     </tr>
     <tr>
         <td>{{ $customer->identity_document_type->description }}:</td>
-        <td>{{$customer->number}}</td>
+        <td>{{format_identity_document($customer->identity_document_type_id ?? null, $customer->number)}}</td>
         <td>FECHA VENC.:</td>
         <td>
             @if($invoice)
@@ -253,7 +253,7 @@
 
 @if ($document->dispatch)
     <br/>
-    <strong>Guías de remisión</strong>
+    <strong>Órdenes de entrega</strong>
     <table>
         <tr>
             <td>{{ $document->dispatch->number_full }}</td>
@@ -263,7 +263,7 @@
 @elseif ($document->reference_guides)
     @if (count($document->reference_guides) > 0)
         <br/>
-        <strong>Guias de remisión</strong>
+        <strong>Órdenes de entrega</strong>
         <table>
             @foreach($document->reference_guides as $guide)
                 <tr>

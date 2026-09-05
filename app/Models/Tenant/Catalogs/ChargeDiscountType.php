@@ -30,7 +30,11 @@ class ChargeDiscountType extends ModelCatalog
      */
     public static function getGlobalDiscounts()
     {
-        return self::whereIn('id', ['02', '03'])->whereActive()->get();
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        // Estos IDs siguen siendo el contrato interno del descuento global aunque
+        // estén ocultos de los selectores fiscales generales mediante `active`.
+        return self::whereIn('id', ['02', '03'])->orderBy('id')->get();
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     }
     
 }

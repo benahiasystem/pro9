@@ -17,7 +17,7 @@ class GetCompanyInfoTool implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $this->name(),
-                'description' => 'Devuelve los datos básicos del negocio: RUC, razón social y nombre comercial.',
+                'description' => 'Devuelve los datos básicos del negocio: RIF, razón social y nombre comercial.',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => new \stdClass(),

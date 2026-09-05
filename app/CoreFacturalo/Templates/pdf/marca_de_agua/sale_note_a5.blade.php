@@ -91,7 +91,7 @@
         <td width="50%" class="pl-3">
             <div class="text-left">
                 @include('pdf.partials.company_document_header_names')
-                <h5>{{ 'RUC '.$company->number }}</h5>
+                <h5>{{ 'RIF '.$company->number }}</h5>
                 <h6 style="text-transform: uppercase;">
                     {{ ($establishment->address !== '-')? $establishment->address : '' }}
                     {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -126,7 +126,7 @@
                             <strong>{{$customer->identity_document_type->description}}</strong>
                             <td class="font-sm" width="8px">:</td>
                             <td class="font-sm">
-                                {{$customer->number}}
+                                {{format_identity_document($customer->identity_document_type_id ?? null, $customer->number)}}
                             </td>
                         </td>
                 </tr>

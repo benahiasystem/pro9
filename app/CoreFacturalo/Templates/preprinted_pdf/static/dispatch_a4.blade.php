@@ -31,7 +31,7 @@
             </div>
         </td>
         <td width="40%" class="border-box p-4 text-center">
-            <h4>{{ 'RUC '.$company->number }}</h4>
+            <h4>{{ 'RIF '.$company->number }}</h4>
         </td>
     </tr>
 </table>
@@ -55,7 +55,7 @@
     </tr>
     <tr>
         <td class="half-width border-bottom border-left-right">Costo Minimo _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ </td>
-        <td class="half-width border-bottom border-left-right">RUC _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  DNI _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _</td>
+        <td class="half-width border-bottom border-left-right">RIF _ _ _ _ _ _ _ _ _ _ _ _ _ _ _  DNI _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _</td>
     </tr>
     <tr>
         <td class="text-center border-left-right">UNIDAD DE TRANSPORTES Y CONDUCTOR </td>
@@ -71,7 +71,7 @@
     </tr>
     <tr>
         <td class="border-left-right">N (s) de Licencia (s) de conducir  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ </td>
-        <td class="border-left-right">RUC _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ </td>
+        <td class="border-left-right">RIF _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ </td>
     </tr>
     </tbody>
 </table>

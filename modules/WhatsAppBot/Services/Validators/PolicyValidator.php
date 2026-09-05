@@ -30,7 +30,7 @@ class PolicyValidator implements DocumentValidator
         if ($type === '01') {
             $docType = $draft['customer_identity_document_type_id'] ?? null;
             if ($docType !== '6') {
-                return ValidationResult::fail('Para factura el cliente debe tener RUC.', 'factura_requires_ruc');
+                return ValidationResult::fail('Para factura el cliente debe tener RIF.', 'factura_requires_ruc');
             }
         }
 

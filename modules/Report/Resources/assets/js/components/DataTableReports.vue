@@ -199,7 +199,7 @@
                     </div>
                     <div class="col-lg-3 col-md-3" v-if="resource !=='reports/state-account'">
                         <div class="form-group">
-                            <label class="control-label">Numero de Guía</label>
+                            <label class="control-label">Número de orden de entrega</label>
                             <el-input v-model="form.guides"
                                       clearable></el-input>
                         </div>

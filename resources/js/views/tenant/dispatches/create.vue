@@ -8,7 +8,7 @@
             </a></h2>
             <ol class="breadcrumbs">
                 <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                <li class="active"><span>Nueva Guía de despacho</span></li>
+                <li class="active"><span>Nueva Orden de entrega</span></li>
                 <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
             </ol>
         </div>
@@ -16,7 +16,7 @@
             <!-- <div class="card-header bg-info">
 
                 <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                <h3 class="my-0">Nueva Guía de despacho</h3>
+                <h3 class="my-0">Nueva Orden de entrega</h3>
                 <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
             </div> -->
             <div class="invoice p-3 invoice-dispatch">
@@ -263,7 +263,7 @@
                                                 <th class="font-weight-bold">Tipo de Documento</th>
                                                 <th class="font-weight-bold">Número</th>
                                                 <th class="font-weight-bold">Proveedor</th>
-                                                <th class="font-weight-bold">RUC</th>
+                                                <th class="font-weight-bold">RIF</th>
                                                 <th></th>
                                             </tr>
                                         </thead>
@@ -1543,7 +1543,7 @@ export default {
         searchRemoteCustomers(input) {
             this.customerSearchTerm = input
             this.loading_search = true
-            let identity_document_type_id = ['6', '4', '1', '0'];
+            let identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
             if (this.form.transfer_reason_type_id === '09') {
                 identity_document_type_id = ['6'];
             }
@@ -1559,7 +1559,7 @@ export default {
         },
         searchRemoteDispatchers(input) {
             this.loading_search_dispatcher = true
-            let identity_document_type_id = ['6', '4', '1', '0'];
+            let identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
             if (this.form.transfer_reason_type_id === '09') {
                 identity_document_type_id = ['0'];
             }
@@ -1889,7 +1889,7 @@ export default {
                     this.form.dispatcher.number_mtc = v.number_mtc;
 
                     if (this.form.dispatcher.identity_document_type_id !== '6') {
-                        return this.$message.error('El transportista debe tener RUC')
+                        return this.$message.error('El transportista debe tener RIF')
                     }
                     if (this.form.dispatcher.number === '' || _.isNull(this.form.dispatcher.number)) {
                         return this.$message.error('El número del transportista es requerido')

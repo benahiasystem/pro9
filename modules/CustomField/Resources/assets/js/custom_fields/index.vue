@@ -36,7 +36,7 @@
                 <th>Factura/Boleta</th>
                 <th>Nota de venta</th>
                 <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                <th>Guía de despacho</th>
+                <th>Orden de entrega</th>
                 <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                 <th>Pedido</th>
                 <th>Cotización</th>

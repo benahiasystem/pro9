@@ -149,17 +149,7 @@ final class ExistingTenantMigrator
 
     private function migrateIdentityDocuments(ConnectionInterface $connection): void
     {
-        $documents = [
-            '1' => 'Cédula de Identidad (V)',
-            '4' => 'Extranjero',
-            '6' => 'RIF (V/E/J/G/P)',
-        ];
-
-        foreach ($documents as $id => $description) {
-            $connection->table('cat_identity_document_types')
-                ->whereRaw('BINARY `id` = ?', [(string) $id])
-                ->update(['active' => true, 'description' => $description]);
-        }
+        (new IdentityDocumentCatalogMigrator())->migrate($connection);
     }
 
     private function assertFinalState(ConnectionInterface $connection): void
@@ -185,6 +175,26 @@ final class ExistingTenantMigrator
 
         if (!$defaultExists || $connection->table('countries')->where('id', 'PE')->exists()) {
             throw new RuntimeException('El catálogo territorial venezolano no quedó íntegro.');
+        }
+
+        $identityDocuments = $connection->table('cat_identity_document_types')
+            ->orderByRaw("FIELD(id, '0', '1', '6', '7', 'E', 'C', 'G', 'R')")
+            ->get(['id', 'active', 'description']);
+
+        if ($identityDocuments->count() !== count(IdentityDocument::TYPES)) {
+            throw new RuntimeException('El catálogo de documentos de identidad venezolanos no contiene exactamente ocho registros.');
+        }
+
+        foreach (IdentityDocument::TYPES as $index => $expected) {
+            $actual = $identityDocuments[$index];
+
+            if (
+                (string) $actual->id !== $expected['id']
+                || (int) $actual->active !== $expected['active']
+                || (string) $actual->description !== $expected['description']
+            ) {
+                throw new RuntimeException('El catálogo de documentos de identidad venezolanos no coincide con el contrato requerido.');
+            }
         }
     }
 }

@@ -12,6 +12,7 @@ use App\Models\Tenant\Catalogs\District;
 use Exception;
 use App\Models\Tenant\Configuration;
 use App\Services\SeriesCodeGenerator;
+use App\Support\Venezuela\IdentityDocument;
 use Carbon\Carbon;
 
 class Functions
@@ -29,7 +30,13 @@ class Functions
     public static function person($inputs, $type) {
         $district_id = $inputs['district_id'];
 
-        if(in_array($inputs['identity_document_type_id'],['6'])){
+        $identityDocumentTypeId = (string) $inputs['identity_document_type_id'];
+        $number = IdentityDocument::normalizeNumber(
+            $identityDocumentTypeId,
+            $inputs['number'] ?? ''
+        );
+
+        if ($identityDocumentTypeId === '6') {
             $ubigeo = Functions::validateUbigeo($district_id);
         }
 
@@ -38,8 +45,8 @@ class Functions
 
         $person = Person::updateOrCreate([
             'type' => $type,
-            'identity_document_type_id' => $inputs['identity_document_type_id'],
-            'number' => $inputs['number'],
+            'identity_document_type_id' => $identityDocumentTypeId,
+            'number' => $number,
         ], [
             'name' => $inputs['name'],
             'trade_name' => $inputs['trade_name'],
@@ -187,7 +194,9 @@ class Functions
                 ->with('identity_document_type')
                 ->find($inputs['customer_id']);
 
-            if (!in_array($person->identity_document_type_id, ['01','04','06','07'])) throw new Exception("El tipo doc. identidad {$person->identity_document_type->description} del cliente no es valido.");
+            if (!in_array((string) $person->identity_document_type_id, IdentityDocument::ids(), true)) {
+                throw new Exception("El tipo doc. identidad {$person->identity_document_type->description} del cliente no es válido.");
+            }
         }
     }
 
@@ -196,9 +205,11 @@ class Functions
         if($inputs['document_type_id'] == '01') {
             if($inputs['operation_type_id'] === '0101') {
                 $person = Person::find($inputs['customer_id']);
-                if (!in_array($person->identity_document_type_id, ['6'], true)) {
+                // ########## INICIO FACTURAS PARA TODOS LOS DOCUMENTOS VENEZOLANOS ##########
+                if (!in_array((string) $person->identity_document_type_id, IdentityDocument::ids(), true)) {
                     throw new Exception("El tipo doc. identidad {$person->identity_document_type->description} del cliente no es válido.");
                 }
+                // ######### FIN FACTURAS PARA TODOS LOS DOCUMENTOS VENEZOLANOS #########
             }
         }
     }

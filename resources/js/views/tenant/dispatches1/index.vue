@@ -3,7 +3,7 @@
         <div class="page-header pr-0">
             <h2><a href="/dashboard"><i class="fas fa-tachometer-alt"></i></a></h2>
             <ol class="breadcrumbs">
-                <li class="active"><span>Guias de remisión</span></li>
+                <li class="active"><span>Órdenes de entrega</span></li>
             </ol>
             <div class="right-wrapper pull-right" v-if="typeUser != 'integrator'">
                 <a :href="`/${resource}/create`" class="btn btn-custom btn-sm  mt-2 mr-2"><i class="fa fa-plus-circle"></i> Nuevo</a>

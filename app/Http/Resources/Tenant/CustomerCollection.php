@@ -18,6 +18,7 @@ class CustomerCollection extends ResourceCollection
             return [
                 'id' => $row->id,
                 'number' => $row->number,
+                'formatted_number' => format_identity_document($row->identity_document_type_id, $row->number),
                 'name' => $row->name,
                 'created_at' => $row->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $row->updated_at->format('Y-m-d H:i:s'),

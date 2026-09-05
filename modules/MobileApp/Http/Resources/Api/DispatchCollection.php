@@ -8,7 +8,7 @@ class DispatchCollection extends ResourceCollection
 {
     /**
      *
-     * Transformar el listado de guias de remision (09 y 31) para scroll infinito en la app
+     * Transformar el listado de órdenes de entrega (09) para scroll infinito en la app
      *
      * @param  \Illuminate\Http\Request  $request
      * @return array
@@ -19,15 +19,8 @@ class DispatchCollection extends ResourceCollection
 
             // snapshot JSON del cliente guardado en el documento (accessor getCustomerAttribute)
             $customer = $dispatch->customer;
-            $is_carrier = $dispatch->document_type_id === '31';
-
-            // 09: el "contraparte" es el cliente. 31: remitente y destinatario.
-            $receiver_name = $is_carrier
-                ? ($dispatch->receiver_data['name'] ?? null)
-                : (optional($customer)->name);
-            $receiver_number = $is_carrier
-                ? ($dispatch->receiver_data['number'] ?? null)
-                : (optional($customer)->number);
+            $receiver_name = optional($customer)->name;
+            $receiver_number = optional($customer)->number;
 
             return [
                 'id'                          => $dispatch->id,
@@ -37,11 +30,11 @@ class DispatchCollection extends ResourceCollection
                 'number'                      => $dispatch->number,
                 'number_full'                 => $dispatch->number_full,
                 'filename'                    => $dispatch->filename,
-                'date_of_issue'               => $dispatch->date_of_issue?->format('Y-m-d'),
-                'date_of_shipping'            => $dispatch->date_of_shipping?->format('Y-m-d'),
+                'date_of_issue'               => optional($dispatch->date_of_issue)->format('Y-m-d'),
+                'date_of_shipping'            => optional($dispatch->date_of_shipping)->format('Y-m-d'),
                 'transport_mode_type_id'      => $dispatch->transport_mode_type_id,
                 'transfer_reason_type_id'     => $dispatch->transfer_reason_type_id,
-                'transfer_reason_description' => $dispatch->transfer_reason_type?->description,
+                'transfer_reason_description' => optional($dispatch->transfer_reason_type)->description,
                 'total_weight'                => (float) $dispatch->total_weight,
                 'unit_type_id'                => $dispatch->unit_type_id,
                 'packages_number'             => $dispatch->packages_number,
@@ -51,7 +44,7 @@ class DispatchCollection extends ResourceCollection
                 'sender_name'                 => $dispatch->sender_data['name'] ?? null,
                 'sender_number'               => $dispatch->sender_data['number'] ?? null,
                 'state_type_id'               => $dispatch->state_type_id,
-                'state_type_description'      => $dispatch->state_type?->description,
+                'state_type_description'      => optional($dispatch->state_type)->description,
                 'has_xml'                     => (bool) $dispatch->has_xml,
                 'has_pdf'                     => (bool) $dispatch->has_pdf,
                 'has_cdr'                     => (bool) $dispatch->has_cdr,
@@ -59,7 +52,7 @@ class DispatchCollection extends ResourceCollection
                 'download_external_xml'       => $dispatch->download_external_xml,
                 'download_external_cdr'       => $dispatch->download_external_cdr,
                 'sunat_error_response'        => $dispatch->sunat_error_response,
-                'created_at'                  => $dispatch->created_at?->format('Y-m-d H:i:s'),
+                'created_at'                  => optional($dispatch->created_at)->format('Y-m-d H:i:s'),
             ];
         });
     }

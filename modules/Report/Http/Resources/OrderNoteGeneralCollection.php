@@ -24,7 +24,7 @@ class OrderNoteGeneralCollection extends ResourceCollection
                 'number_full' => $row->number_full,  
                 'user_name' => $row->user->name,  
                 'customer_name' => $row->customer->name,  
-                'customer_number' => $row->customer->number,  
+                'customer_number' => format_person_identity_document($row->customer),
                 'total' => $row->total,  
                 'state_description' => strtoupper(optional($row->state_type)->description ?? 'PENDIENTE'),  
             ];

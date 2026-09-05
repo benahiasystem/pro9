@@ -28,6 +28,11 @@ class JiraInProgressMigrationContractTest extends TestCase
         $email = $this->source('app/Mail/Tenant/DocumentEmail.php');
         self::assertStringContainsString('!LocalFiscalDocumentPolicy::enabled() && $xml !== null', $email);
 
+        $configuration = $this->source('app/Models/Tenant/Configuration.php');
+        self::assertStringContainsString('$localDocumentEmission = LocalFiscalDocumentPolicy::enabled()', $configuration);
+        self::assertStringContainsString("'send_auto' => \$localDocumentEmission ? false", $configuration);
+        self::assertStringContainsString("'ticket_single_shipment' => \$localDocumentEmission ? false", $configuration);
+
         foreach ([
             'resources/js/views/tenant/pos/partials/payment.vue',
             'resources/js/views/tenant/pos/partials/fast_payment.vue',

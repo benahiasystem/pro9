@@ -511,7 +511,7 @@
                                                         <th>Días de retraso</th>
                                                         <th v-if="columns.estado.visible">Estado</th>
                                                         <th>Penalidad</th>
-                                                        <th>Guías</th>
+                                                        <th>Órdenes de entrega</th>
                                                         <th
                                                             class="text-center"
                                                             v-if="
@@ -679,7 +679,7 @@
                                                                                     slot-scope="scope"
                                                                                 >
                                                                                     <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                                                                                    <!-- Las guías asociadas ofrecen únicamente PDF. -->
+                                                                                    <!-- Las órdenes de entrega asociadas ofrecen únicamente PDF. -->
                                                                                     <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                                                                                     <button
                                                                                         type="button"

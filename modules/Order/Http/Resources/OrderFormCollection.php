@@ -27,7 +27,7 @@ class OrderFormCollection extends ResourceCollection
                 'number' => $row->number_full,
                 'driver_name' => $row->driver->name,
                 'customer_name' => $row->customer->name,
-                'customer_number' => $row->customer->identity_document_type->description . ' ' . $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'date_of_shipping' => $row->date_of_shipping->format('d-m-Y'),
                 'state_type_id' => $row->state_type_id,
                 'state_type_description' => $row->state_type->description,

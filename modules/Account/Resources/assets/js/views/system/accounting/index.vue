@@ -11,7 +11,7 @@
                         <th>#</th>
                         <th>Dominio</th>
                         <th>Nombre</th>
-                        <th>RUC</th>
+                        <th>RIF</th>
                         <th>Correo</th>
                         <th>Acciones</th>
                     </tr>

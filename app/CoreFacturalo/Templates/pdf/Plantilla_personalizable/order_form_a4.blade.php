@@ -21,7 +21,7 @@
             <td width="50%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
+                    <h4>{{ 'RIF '.$company->number }}</h4>
                     <h5 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -40,7 +40,7 @@
             <td width="50%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
+                    <h4>{{ 'RIF '.$company->number }}</h4>
                     <h5 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -70,7 +70,7 @@
         <td>Razón Social: {{ $customer->name }}</td>
     </tr>
     <tr>
-        <td>RUC: {{ $customer->number }}
+        <td>RIF: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}
                  {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
                  {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
                  {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}

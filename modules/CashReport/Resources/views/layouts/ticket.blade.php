@@ -27,7 +27,7 @@
 <body>
     <div class="ticket-header">
         <span class="company-name">{{ $header['company_name'] }}</span><br>
-        RUC: {{ $header['company_number'] }}<br>
+        RIF: {{ $header['company_number'] }}<br>
         @if(!empty($header['establishment_address'])){{ $header['establishment_address'] }}<br>@endif
         <span class="report-title">{{ $title }}</span>
     </div>

@@ -63,7 +63,7 @@ class TemplatePdf
         } else {
             if($model === 'dispatch') {
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-                $document->document_type_name = 'GUÍA DE DESPACHO REMITENTE';
+                $document->document_type_name = 'ORDEN DE ENTREGA';
                 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             } else {
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES

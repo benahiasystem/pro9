@@ -42,7 +42,7 @@
         </tr>
         <tr>
             <td>
-                <p><strong>Ruc: </strong></p>
+                <p><strong>RIF: </strong></p>
             </td>
             <td align="center">{{$company->number}}</td>
             <td>
@@ -102,7 +102,7 @@
                     <th>Fecha emisión</th>
                     <th>Fecha Vencimiento</th>
                     <th>Doc. Afectado</th>
-                    <th># Guía</th>
+                    <th># Orden de entrega</th>
                     <th>Cotización</th>
                     <th>Caso</th>
 
@@ -113,7 +113,7 @@
                     <th>Direccion de cliente</th>
                     <th>Tipo de Cliente</th>
                     <th>Cliente</th>
-                    <th>RUC</th>
+                    <th>RIF</th>
                     <th>Estado</th>
                     <th class="">Moneda</th>
                     <th>Plataforma</th>
@@ -222,7 +222,7 @@
                         @endphp
                         <td class="celda">{{ optional($customer->person_type)->description}}</td>
                         <td class="celda">{{$value->customer->name}}</td>
-                        <td class="celda">{{$value->customer->number}}</td>
+                        <td class="celda">{{format_person_identity_document($value->customer)}}</td>
                         <td class="celda">{{$value->state_type->description}}</td>
 
                         @php

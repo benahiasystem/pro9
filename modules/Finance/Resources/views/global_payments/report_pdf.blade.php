@@ -68,7 +68,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                     <td>
                         <p><strong>Establecimiento: </strong>{{$establishment->address}} - {{$establishment->department->description}} - {{$establishment->district->description}}</p>
@@ -159,7 +159,7 @@
                             // 'document_type_description' => ($value->payment->associated_record_payment->document_type) ? $value->payment->associated_record_payment->document_type->description:'NV',
                             'document_type_description' => $document_type,
                             'person_name' => $personName,
-                            'person_number' => $data_person->number,
+                            'person_number' => format_person_identity_document($data_person),
                             // 'payment' => $value->payment,
                             // 'payment_type' => $value->payment_type,
                             'instance_type' => $value->instance_type,

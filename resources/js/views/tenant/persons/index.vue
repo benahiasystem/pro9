@@ -219,7 +219,7 @@
                         </td>
                         <td class="text-end">{{ row.internal_code }}</td>
                         <td class="text-start">{{ row.document_type }}</td>
-                        <td class="text-end">{{ row.number }}</td>
+                        <td class="text-end">{{ row.formatted_number || row.number }}</td>
                         <td
                             v-if="columns.person_type.visible === true"
                             class="text-start"

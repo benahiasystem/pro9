@@ -31,6 +31,7 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 - En formularios de items, documentos y configuración retirar controles de ISC y detracción.
 - En reportes y plantillas PDF gobernar cualquier presentación de ISC con `LocalFiscalDocumentPolicy::showIsc()`.
 - Retirar todos los controles `v-model` de `has_plastic_bag_taxes`, conservando el campo en el estado y payload histórico.
+- En Hotel, el modal **Agregar Producto o Servicio** no debe mostrar la sección **Agregar Descuentos/Cargos/Atributos especiales**. Ocultarla solo para ese flujo y conservar los datos y payloads históricos de los ítems existentes.
 
 ## Marcadores y verificación
 
@@ -38,4 +39,3 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 - Ejecutar `tests/Unit/LocalFiscalDocumentPolicyTest.php` y `tests/Unit/JiraInProgressMigrationContractTest.php` junto con las pruebas de contratos Venezuela afectadas.
 - Ejecutar validación de sintaxis PHP y `git diff --check`.
 - Si se modifican Vue o JavaScript, aplicar `frontend-build` antes de compilar. No ejecutar una compilación por iniciativa propia cuando ese skill la prohíba; informar que el bundle queda pendiente.
-

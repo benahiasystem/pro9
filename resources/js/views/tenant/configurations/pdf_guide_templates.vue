@@ -12,7 +12,7 @@
         </div>
         <div class="card">
             <div class="card-header bg-info">
-                <h3 class="my-0">Selección de plantilla de impresión para guías de remisión</h3>
+                <h3 class="my-0">Selección de plantilla de impresión para órdenes de entrega</h3>
             </div>
             <div class="card-body pt-0 pb-5">
                 <h3>Plantilla actual: <a :href="'#'+form.formats" class="text-secondary">{{form.formats}}</a></h3>

@@ -149,7 +149,7 @@ class DispatchController extends Controller
 
 
     /**
-     * Devuelve una guia de remision por su id.
+     * Devuelve una orden de entrega por su id.
      *
      * whereTypeUser() evita que un vendedor pueda leer registros de otro usuario
      * pasando ids ajenos; para los demas perfiles no restringe nada.
@@ -161,7 +161,7 @@ class DispatchController extends Controller
         if (!$record) {
             return response()->json([
                 'success' => false,
-                'message' => 'No se encontró la guía de remisión solicitada.',
+                'message' => 'No se encontró la orden de entrega solicitada.',
             ], 404);
         }
 

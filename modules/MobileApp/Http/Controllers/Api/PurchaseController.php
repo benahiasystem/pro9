@@ -179,7 +179,7 @@ class PurchaseController extends Controller
      * - cursor: posición actual (null en primera petición)
      * - input: búsqueda por número o nombre
      * - document_type_id: tipo de comprobante a emitir; '01' (factura) restringe
-     *   identity_document_type_id a [6] (RUC), cualquier otro a [1,4,6,7,0]
+     *   identity_document_type_id a [6] (Juridico), cualquier otro al catálogo venezolano.
      *
      * @param  Request $request
      * @return array
@@ -193,7 +193,7 @@ class PurchaseController extends Controller
         $query = Person::whereType('suppliers')->orderBy('name', 'asc');
 
         if ($request->filled('document_type_id')) {
-            $identity_document_type_id = ($request->input('document_type_id') == '01') ? [6] : [1, 4, 6, 7, 0];
+            $identity_document_type_id = ($request->input('document_type_id') == '01') ? ['6'] : ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
             $query->whereIn('identity_document_type_id', $identity_document_type_id);
         }
 

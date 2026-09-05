@@ -542,35 +542,6 @@ if ($hostname) {
                 Route::get('/anulate/{id}', 'Tenant\DispatchController@anulate');
             });
 
-            Route::prefix('dispatch_carrier')->group(function () {
-                Route::get('', 'Tenant\DispatchCarrierController@index')->name('tenant.dispatch_carrier.index');
-                Route::get('/columns', 'Tenant\DispatchCarrierController@columns');
-                Route::get('/records', 'Tenant\DispatchCarrierController@records');
-                Route::get('/create/{document?}/{type?}/{dispatch?}', 'Tenant\DispatchCarrierController@create');
-                Route::post('/tables', 'Tenant\DispatchCarrierController@tables');
-                Route::post('', 'Tenant\DispatchCarrierController@store');
-                Route::get('/record/{id}', 'Tenant\DispatchCarrierController@record');
-                // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                // La guía del transportista no expone envío SUNAT.
-                // ######### FIN CAMBIO SIN XML CDR SUNAT
-                Route::post('/email', 'Tenant\DispatchCarrierController@email');
-                Route::get('/generate/{sale_note}', 'Tenant\DispatchCarrierController@generate');
-                Route::get('/record/{id}/tables', 'Tenant\DispatchCarrierController@generateDocumentTables');
-                Route::post('/record/{id}/set-document-id', 'Tenant\DispatchCarrierController@setDocumentId');
-                Route::get('/client/{id}', 'Tenant\DispatchCarrierController@dispatchesByClient');
-                Route::post('/items', 'Tenant\DispatchCarrierController@getItemsFromDispatches');
-                Route::post('/getDocumentType', 'Tenant\DispatchCarrierController@getDocumentTypeToDispatches');
-                Route::get('/data_table', 'Tenant\DispatchCarrierController@data_table');
-                Route::get('/search/customers', 'Tenant\DispatchCarrierController@searchCustomers');
-                Route::get('/search/customer/{id}', 'Tenant\DispatchCarrierController@searchClientById');
-                // ########## INICIO CAMBIO SIN XML CDR SUNAT
-                // La operación local no consulta tickets fiscales de guías.
-                // ######### FIN CAMBIO SIN XML CDR SUNAT
-                Route::get('create_new/{table}/{id}', 'Tenant\DispatchCarrierController@createNew');
-                Route::get('/get_origin_addresses/{establishment_id}', 'Tenant\DispatchCarrierController@getOriginAddresses');
-                Route::get('/get_delivery_addresses/{person_id}', 'Tenant\DispatchCarrierController@getDeliveryAddresses');
-            });
-
             Route::get('customers/list', 'Tenant\PersonController@clientsForGenerateCPE');
             Route::get('reports/consistency-documents', 'Tenant\ReportConsistencyDocumentController@index')->name('tenant.consistency-documents.index')->middleware('tenant.internal.mode');
             Route::post('reports/consistency-documents/lists', 'Tenant\ReportConsistencyDocumentController@lists');

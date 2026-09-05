@@ -85,7 +85,7 @@
             R.Fecha
         </th>
         <th>
-            RUC
+            RIF
         </th>
         <th>
             R.Social

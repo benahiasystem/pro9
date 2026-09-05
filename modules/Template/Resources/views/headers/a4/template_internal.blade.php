@@ -16,7 +16,7 @@
             @if($legal = TemplateCompanyHdr::legalLine($company))
                 <div class="t-row header-font-11pt t-text-left" style="font-weight:400;">{{ $legal }}</div>
             @endif
-                <div class="t-row header-font-10pt t-text-left">RUC {{ $company->number }}</div>
+                <div class="t-row header-font-10pt t-text-left">RIF {{ $company->number }}</div>
             @if($establishment->print_header_text)
                 <div class="t-row header-font-7pt t-text-left">{!! $establishment->print_header_text !!}</div>
             @endif

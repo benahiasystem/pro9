@@ -49,7 +49,7 @@
             <td width="50%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
+                    <h4>{{ 'RIF '.$company->number }}</h4>
                     <h5>{{ ($establishment->address !== '-')? $establishment->address : '' }}</h5>
                     <h5>{{ ($establishment->email !== '-')? $establishment->email : '' }}</h5>
                     <h5>{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</h5>
@@ -63,7 +63,7 @@
         <td width="60%" class="pl-1">
             <div class="text-left">
                 @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                <h4>{{ 'RUC '.$company->number }}</h4>
+                <h4>{{ 'RIF '.$company->number }}</h4>
                 <h5>{{ ($establishment->address !== '-')? $establishment->address : '' }}</h5>
                 <h5>{{ ($establishment->email !== '-')? $establishment->email : '' }}</h5>
                 <h5>{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</h5>
@@ -95,7 +95,7 @@
                     </td>
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">
-                        {{ $customer->number }}
+                        {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}
                     </td>
                 </tr>
                 <tr>

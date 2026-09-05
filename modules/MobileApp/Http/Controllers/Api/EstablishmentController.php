@@ -22,8 +22,8 @@ class EstablishmentController extends Controller
     public function withSeries()
     {
         // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-        // Las guías 09/31 se conservan para el módulo móvil; no se ofrecen nuevas boletas 03.
-        $document_type_ids = ['01', '80', '09', '31'];
+        // Las órdenes de entrega 09 se conservan para el módulo móvil; no se ofrecen nuevas boletas 03.
+        $document_type_ids = ['01', '80', '09'];
         // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
 
         $series_by_establishment = app(SeriesResolver::class)->applyContext(Series::whereIn('document_type_id', $document_type_ids))
@@ -51,7 +51,7 @@ class EstablishmentController extends Controller
                     'address' => $establishment->address,
                     'trade_address' => $establishment->trade_address,
                     'code' => $establishment->code,
-                    // ubigeo y contacto: punto de partida / datos del emisor en guias de remision
+                    // ubigeo y contacto: punto de partida / datos del emisor en Ã³rdenes de entrega
                     'district_id' => $establishment->district_id,
                     'email' => $establishment->email,
                     'telephone' => $establishment->telephone,

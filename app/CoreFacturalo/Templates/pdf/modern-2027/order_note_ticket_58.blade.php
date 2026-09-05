@@ -49,7 +49,7 @@
         ])</td>
     </tr>
     <tr>
-        <td class="m27-head-line m27-head-line-sm">RUC: {{ $company->number }}</td>
+        <td class="m27-head-line m27-head-line-sm">RIF: {{ $company->number }}</td>
     </tr>
     <tr>
         <td class="m27-head-line m27-head-line-sm" style="text-transform: uppercase;">
@@ -128,7 +128,7 @@
     </tr>
     <tr>
         <td class="m27-label m27-label-sm">{{ $customer->identity_document_type->description }}:</td>
-        <td class="m27-value m27-value-sm">{{ $customer->number }}</td>
+        <td class="m27-value m27-value-sm">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</td>
     </tr>
     <tr>
         <td class="m27-label m27-label-sm">Vendedor:</td>

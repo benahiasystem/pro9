@@ -15,6 +15,12 @@ use App\Models\Tenant\Series;
  */
 class SeriesCodeGenerator
 {
+    private const WAREHOUSE_DOCUMENT_SERIES = [
+        'U2' => 'AI',
+        'U3' => 'AS',
+        'U4' => 'AT',
+    ];
+
     // ########## INICIO CAMBIO QUITAR BOLETAS A CRÉDITO
     public const PROHIBITED_NEW_SERIES_KEYS = ['receipt', 'credit_note_receipt', 'debit_note_receipt'];
     // ######### FIN CAMBIO QUITAR BOLETAS A CRÉDITO
@@ -44,20 +50,17 @@ class SeriesCodeGenerator
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         ['key' => 'retention',           'document_type_id' => '20', 'prefix' => 'RR', 'category' => 'advanced', 'label' => 'COMPROBANTE DE RETENCIÓN'],
         ['key' => 'perception',          'document_type_id' => '40', 'prefix' => 'PP', 'category' => 'advanced', 'label' => 'COMPROBANTE DE PERCEPCIÓN'],
-        ['key' => 'dispatch_sender',     'document_type_id' => '09', 'prefix' => 'TT', 'category' => 'advanced', 'label' => 'GUÍA DE DESPACHO REMITENTE'],
-        ['key' => 'dispatch_carrier',    'document_type_id' => '31', 'prefix' => 'VV', 'category' => 'advanced', 'label' => 'GUÍA DE DESPACHO TRANSPORTISTA'],
+        ['key' => 'dispatch_sender',     'document_type_id' => '09', 'prefix' => 'TT', 'category' => 'advanced', 'label' => 'ORDEN DE ENTREGA'],
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ['key' => 'purchase_settlement', 'document_type_id' => '04', 'prefix' => 'LL', 'category' => 'advanced', 'label' => 'LIQUIDACIÓN DE COMPRA'],
         ['key' => 'sale_note',           'document_type_id' => '80', 'prefix' => 'NV', 'category' => 'internal', 'label' => 'NOTA DE VENTA'],
-        ['key' => 'warehouse_entry',     'document_type_id' => 'U2', 'prefix' => 'AI', 'category' => 'internal', 'label' => 'GUÍA DE INGRESO ALMACÉN'],
-        ['key' => 'warehouse_exit',      'document_type_id' => 'U3', 'prefix' => 'AS', 'category' => 'internal', 'label' => 'GUÍA DE SALIDA ALMACÉN'],
+        ['key' => 'warehouse_entry',     'document_type_id' => 'U2', 'prefix' => 'AI', 'category' => 'internal', 'label' => 'NOTA DE INGRESO ALMACÉN'],
+        ['key' => 'warehouse_exit',      'document_type_id' => 'U3', 'prefix' => 'AS', 'category' => 'internal', 'label' => 'NOTA DE SALIDA ALMACÉN'],
         ['key' => 'warehouse_transfer',  'document_type_id' => 'U4', 'prefix' => 'AT', 'category' => 'internal', 'label' => 'GUÍA DE TRANSFERENCIA ALMACÉN'],
     ];
 
     /**
-     * Series que se siembran al crear un tenant (§4.5 / §9-F): básicas + NV.
-     * Las internas de almacén (U2/U3/U4) quedan FUERA por ahora (no confirmadas).
-     * Las avanzadas (RR/PP/TT/VV/LL) se crean a demanda desde la UI.
+     * Series que se siembran al crear un tenant: básicas, nota de venta y movimientos internos.
      *
      * @param  int $establishment_id
      * @return array<int, array<string, mixed>>
@@ -65,7 +68,7 @@ class SeriesCodeGenerator
     public static function defaultTenantSeries(int $establishment_id): array
     {
         // ########## INICIO CAMBIO QUITAR BOLETAS A CRÉDITO
-        $keys = ['invoice', 'credit_note_invoice', 'debit_note_invoice', 'sale_note'];
+        $keys = ['invoice', 'credit_note_invoice', 'debit_note_invoice', 'sale_note', 'warehouse_entry', 'warehouse_exit', 'warehouse_transfer'];
         // ######### FIN CAMBIO QUITAR BOLETAS A CRÉDITO
         $rows = [];
 
@@ -81,6 +84,60 @@ class SeriesCodeGenerator
         }
 
         return $rows;
+    }
+
+    /**
+     * Garantiza la serie interna solicitada para el establecimiento indicado.
+     */
+    public function ensureWarehouseDocumentSeries(int $establishment_id, string $document_type_id): Series
+    {
+        $prefix = self::WAREHOUSE_DOCUMENT_SERIES[$document_type_id] ?? null;
+
+        if ($prefix === null) {
+            throw new \InvalidArgumentException("El tipo de documento {$document_type_id} no corresponde a un movimiento interno de almacén.");
+        }
+
+        $existing = Series::query()
+            ->where('establishment_id', $establishment_id)
+            ->where('document_type_id', $document_type_id)
+            ->where('dedicated', false)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        return Series::query()->create([
+            'establishment_id' => $establishment_id,
+            'document_type_id' => $document_type_id,
+            'number' => $this->nextCode($prefix),
+            'contingency' => false,
+            'dedicated' => false,
+        ]);
+    }
+
+    /**
+     * Garantiza las series de ingreso (U2), salida (U3) y traslado (U4).
+     *
+     * @return array<string, Series>
+     */
+    public function ensureWarehouseInternalSeries(int $establishment_id): array
+    {
+        $series = [];
+
+        foreach (array_keys(self::WAREHOUSE_DOCUMENT_SERIES) as $document_type_id) {
+            $series[$document_type_id] = $this->ensureWarehouseDocumentSeries($establishment_id, $document_type_id);
+        }
+
+        return $series;
+    }
+
+    /**
+     * Compatibilidad con consumidores existentes de la serie de traslado U4.
+     */
+    public function ensureWarehouseTransferSeries(int $establishment_id): Series
+    {
+        return $this->ensureWarehouseDocumentSeries($establishment_id, 'U4');
     }
 
     /**

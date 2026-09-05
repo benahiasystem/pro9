@@ -247,8 +247,7 @@ JS;
         app(Environment::class)->tenant($hostname->website);
 
         $claim_channels          = $this->buildEnrichedChannels();
-        $identity_document_types = IdentityDocumentType::where('active', true)
-            ->orderBy('description')
+        $identity_document_types = IdentityDocumentType::orderByPersonPriority()
             ->get(['id', 'description']);
         $locations               = $this->buildLocationCascade();
         $company                 = $this->getCompanyData();
@@ -273,8 +272,7 @@ JS;
     {
         $status_claims       = StatusClaim::orderBy('sort_order')->get()->map->getCollectionData();
         $claim_channels      = $this->buildEnrichedChannels();
-        $identity_document_types = IdentityDocumentType::where('active', true)
-            ->orderBy('description')
+        $identity_document_types = IdentityDocumentType::orderByPersonPriority()
             ->get(['id', 'description']);
         $locations = $this->buildLocationCascade();
         $company   = $this->getCompanyData();

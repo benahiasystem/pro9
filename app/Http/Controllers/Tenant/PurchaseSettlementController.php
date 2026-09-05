@@ -206,7 +206,7 @@ class PurchaseSettlementController extends Controller
         switch ($table) {
             case 'suppliers':
                 // Se emitirá para personas naturales (RUC, DNI, CE) y juridicas (RUC 10 y RUC 20)
-                $suppliers = Person::whereType('suppliers')->whereIn('identity_document_type_id',[1,4,7,6])->orderBy('name')->get()->transform(function ($row) {
+                $suppliers = Person::whereType('suppliers')->whereIn('identity_document_type_id', ['1', '6', '7', 'E', 'C', 'G', 'R'])->orderBy('name')->get()->transform(function ($row) {
                     return [
                         'id' => $row->id,
                         'description' => $row->number . ' - ' . $row->name,

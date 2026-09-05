@@ -26,7 +26,7 @@
                                     <div class="form-group mb-2 me-2"  >
                                         <el-input
                                             v-model="row.number"
-                                            placeholder="Cédula, RIF o documento extranjero"
+                                            placeholder="Cédula, RIF o documento extranjero (V, E, P, J, C, G o R)"
                                             @blur="duplicateDocument(row.number, index)"
                                         ></el-input>
                                     </div>

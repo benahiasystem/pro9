@@ -34,7 +34,7 @@ class TransactionCollection extends ResourceCollection
                 'bank_account_id' => $row->bank_account_id,
                 'bank_account_number' => $row->data_bank_account->account_number,
                 'customer_fullname' => "{$row->data_bank_account->user->name} {$row->data_bank_account->user->lastname}",
-                'customer_number' => "{$row->data_bank_account->user->identity_document_type->name}: {$row->data_bank_account->user->number}",
+                'customer_number' => format_person_identity_document($row->data_bank_account->user),
             ];
 
         });

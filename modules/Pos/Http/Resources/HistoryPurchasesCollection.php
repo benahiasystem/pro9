@@ -26,7 +26,7 @@ class HistoryPurchasesCollection extends ResourceCollection
                 'date_of_issue' => $row->date_of_issue,
                 'price' => $row->price, 
                 'supplier_name' => $supplier->name, 
-                'supplier_number' => $supplier->number, 
+                'supplier_number' => format_person_identity_document($supplier),
             ];
         });
     }

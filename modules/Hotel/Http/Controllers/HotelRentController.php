@@ -337,7 +337,7 @@ class HotelRentController extends Controller
 		$customers = Person::with('addresses')
 			->whereType('customers')
 			->whereIsEnabled()
-			->whereIn('identity_document_type_id', [1, 4, 6])
+			->whereIn('identity_document_type_id', ['1', '6', '7', 'E', 'C', 'G', 'R'])
 			->orderBy('name');
 
 		$query = request('input');

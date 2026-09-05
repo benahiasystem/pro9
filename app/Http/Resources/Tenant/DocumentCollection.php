@@ -23,7 +23,7 @@ class DocumentCollection extends ResourceCollection
             $has_pdf = true;
             $has_cdr = false;
             $btn_note = false;
-            $btn_guide = true; // Boton para generar guia
+            $btn_guide = true; // Boton para generar orden de entrega
             $btn_resend = false;
             $btn_voided = false;
             $btn_consult_cdr = false;
@@ -163,7 +163,7 @@ class DocumentCollection extends ResourceCollection
                 'date_of_due' => (in_array($row->document_type_id, ['01', '03'])) ? $row->invoice->date_of_due->format('d-m-Y') : null,
                 'number' => $row->number_full,
                 'customer_name' => $row->customer->name,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'customer_identity_document_type_description' => optional(optional($row->customer)->identity_document_type)->description,
                 'customer_telephone' => $row->customer->telephone,
                 'customer_email' => optional($row->customer)->email,

@@ -92,7 +92,7 @@
         <td>SERIE</td>
         <td>NUMERO</td>
         <td>TIPO</td>
-        <td>R.U.C.</td>
+        <td>R.I.F.</td>
         <td>APELLIDOS Y NOMBRES</td>
         <td></td>
         <td></td>

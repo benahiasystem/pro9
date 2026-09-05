@@ -66,8 +66,7 @@ if ($hostname)
                 Route::post('change-user', '\App\Http\Controllers\Tenant\EstablishmentController@changeUserEstablishment');
             });
 
-            // guias de remision (09 remitente, 31 transportista): catalogos livianos y listado unificado.
-            // La emision usa los endpoints core: POST api/dispatches (09) y POST api/dispatch-carrier (31).
+            // Ã³rdenes de entrega (09 remitente, 31 transportista): catalogos livianos y listado unificado.
             Route::prefix('dispatches')->group(function () {
                 Route::get('tables', 'Api\DispatchController@tables');
                 Route::get('records-scroll', 'Api\DispatchController@byScroll');

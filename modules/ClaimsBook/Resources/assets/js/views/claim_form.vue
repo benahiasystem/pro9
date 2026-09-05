@@ -18,7 +18,7 @@
         <p class="cf-subtitle" style="margin-bottom:16px;">
           <span v-if="tables.company.trade_name && tables.company.name !== tables.company.trade_name">{{ tables.company.name }}</span>
           <span v-if="tables.company.trade_name && tables.company.name !== tables.company.trade_name && tables.company.ruc" style="margin:0 5px;">·</span>
-          <span v-if="tables.company.ruc">RUC {{ tables.company.ruc }}</span>
+          <span v-if="tables.company.ruc">RIF {{ tables.company.ruc }}</span>
         </p>
       </template>
 

@@ -838,7 +838,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                                                                                                                                     {{ ($firstLevel === 'drivers') ? 'nav-active nav-expanded' : '' }}
                                                                                                                                                     {{ ($firstLevel === 'dispatchers') ? 'nav-active nav-expanded' : '' }}
                                                                                                                                                     {{ ($firstLevel === 'transports') ? 'nav-active nav-expanded' : '' }}
-                                                                                                                                                    {{ ($firstLevel === 'dispatch_carrier') ? 'nav-active nav-expanded' : '' }}
                                                                                                                                                     {{ ($firstLevel === 'dispatch_addresses') ? 'nav-active nav-expanded' : '' }}">
                             <a class="nav-link" href="#">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -849,34 +848,19 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                     <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
                                     <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
                                 </svg>
-                                <span>Guías de remisión</span>
+                                <span>Órdenes de entrega</span>
                             </a>
                             <ul class="nav nav-children" style="">
                                 @if(in_array('dispatches', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'dispatches') ? 'nav-active' : '' }} nav-item-with-action">
-                                        <a class="nav-link pe-5" href="{{route('tenant.dispatches.index')}}">G.R. Remitente</a>
+                                        <a class="nav-link pe-5" href="{{route('tenant.dispatches.index')}}">Orden de entrega</a>
                                         <button
                                             type="button"
                                             class="{{ ($firstLevel === 'dispatches') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"
                                             {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
-                                            title="Nueva guía de despacho"
+                                            title="Nueva orden de entrega"
                                             {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                                             onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ url('dispatches/create') }}';"
-                                        >
-                                            Crear
-                                        </button>
-                                    </li>
-                                @endif
-                                @if(in_array('dispatch_carrier', $vc_module_levels))
-                                    <li class="{{ ($firstLevel === 'dispatch_carrier') ? 'nav-active' : '' }} nav-item-with-action">
-                                        <a class="nav-link pe-5" href="{{route('tenant.dispatch_carrier.index')}}">G.R. Transportista</a>
-                                        <button
-                                            type="button"
-                                            class="{{ ($firstLevel === 'dispatch_carrier') ? 'second-buton' : 'btn-primary' }} btn btn-xs nav-action m-0 py-0"
-                                            {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
-                                            title="Nueva guía de despacho"
-                                            {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
-                                            onclick="event.preventDefault(); event.stopPropagation(); window.location.href='{{ url('dispatch_carrier/create') }}';"
                                         >
                                             Crear
                                         </button>
@@ -2123,7 +2107,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
             ['caja', 'efectivo', 'dinero', 'tesoreria', 'arqueo', 'apertura', 'cierre', 'turno'],
             ['reporte', 'informe', 'estadistica', 'resumen', 'consulta', 'listado', 'analisis'],
             ['cotizacion', 'presupuesto', 'proforma', 'propuesta', 'oferta', 'estimacion'],
-            ['guia', 'guia de remision', 'despacho', 'envio', 'traslado', 'transporte', 'transportista', 'remitente'],
+            ['guia', 'orden de entrega', 'despacho', 'envio', 'traslado', 'transporte', 'transportista', 'remitente'],
             ['devolucion', 'retorno', 'reintegro', 'nota de credito', 'anulacion', 'reversion'],
             ['serie', 'numeracion', 'correlativo', 'secuencia', 'folio'],
             ['moneda', 'divisa', 'tipo de cambio', 'cambio', 'conversion'],

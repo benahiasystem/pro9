@@ -95,7 +95,7 @@
             margin: 0 0 16px;
         }
 
-        /* RUC row in header */
+        /* RIF row in header */
         .ruc-row {
             display: flex;
             align-items: center;
@@ -726,9 +726,9 @@
                 <p class="sc-company">{{ $brand['name'] ?? 'Mi Empresa S.A.C.' }}</p>
                 <p class="sc-desc">Consulta de validez de comprobantes electrónicos de pago.</p>
 
-                {{-- RUC Emisor --}}
+                {{-- RIF Emisor --}}
                 <div style="max-width:380px; margin:0 auto; text-align:left;">
-                    <label class="ruc-label-sm" for="ruc_emisor">RUC Emisor <span style="color:#e53935">*</span></label>
+                    <label class="ruc-label-sm" for="ruc_emisor">RIF Emisor <span style="color:#e53935">*</span></label>
                     <div class="ruc-row">
                         <div class="ruc-input-wrap">
                             <svg class="ruc-icon" viewBox="0 0 24 24" fill="none" stroke="#0B2545" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -803,7 +803,7 @@
                     </div>
 
                     {{-- Datos del cliente --}}
-                    <p class="sc-section-label">Datos del Cliente (RUC / DNI)</p>
+                    <p class="sc-section-label">Datos del Cliente (RIF / DNI)</p>
                     <div class="form-row-2">
                         <div class="form-group-field">
                             <label class="field-label" for="customer_number">Número de documento</label>

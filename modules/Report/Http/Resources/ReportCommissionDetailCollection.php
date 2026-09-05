@@ -55,7 +55,7 @@ class ReportCommissionDetailCollection extends ResourceCollection
                 'date_of_issue' => $relation->date_of_issue->format('Y-m-d'),
                 'type_document' => $type_document,
                 'serie' => $relation->number_full,
-                'customer_number' => $relation->customer->number,
+                'customer_number' => format_person_identity_document($relation->customer),
                 'customer_name' => $relation->customer->name,
                 'name' => $row->relation_item->description,
                 'quantity' => $commission_values->quantity,

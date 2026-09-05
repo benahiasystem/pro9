@@ -5,7 +5,7 @@
     <tr>
         <td class="label">Empresa:</td>
         <td class="value" style="text-transform: uppercase">{{ $header['company_name'] }}</td>
-        <td class="label">RUC:</td>
+        <td class="label">RIF:</td>
         <td class="value">{{ $header['company_number'] }}</td>
     </tr>
     <tr>

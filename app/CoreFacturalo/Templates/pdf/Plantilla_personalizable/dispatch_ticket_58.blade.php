@@ -32,7 +32,7 @@
         <td class="text-center">@include('pdf.partials.company_document_header_names')</td>
     </tr>
     <tr>
-        <td class="text-center"><h5>{{ 'RUC '.$company->number }}</h5></td>
+        <td class="text-center"><h5>{{ 'RIF '.$company->number }}</h5></td>
     </tr>
     <tr>
         <td class="text-center" style="text-transform: uppercase;">
@@ -67,7 +67,7 @@
         <td>Razón Social: {{ $customer->name }}</td>
     </tr>
     <tr>
-        <td>RUC: {{ $customer->number }}
+        <td>RIF: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}
         </td>
     </tr>
     <tr>

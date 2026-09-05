@@ -150,7 +150,7 @@ class DocumentResource extends JsonResource
             'state_type_id' => $document->state_type_id,
             'state_type_description' => optional($document->state_type)->description,
             'customer_name' => optional($customer)->name,
-            'customer_number' => optional($customer)->number,
+            'customer_number' => format_person_identity_document($customer),
             'customer_identity_document_type_description' => optional($identityDocumentType)->description,
             'customer_address' => optional($customer)->address ?: optional($person)->address,
             'user_name' => optional($document->user)->name,

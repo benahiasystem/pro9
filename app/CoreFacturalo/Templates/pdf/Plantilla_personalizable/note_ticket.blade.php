@@ -15,13 +15,13 @@
         '-' => 'S/D',
         '0' => 'S/D',
         '1' => 'DNI',
-        '6' => 'RUC',
+        '6' => 'RIF',
     ];
     $currency_type_description_array = [
         'VES' => 'S/D',
         '0' => 'S/D',
         '1' => 'DNI',
-        '6' => 'RUC',
+        '6' => 'RIF',
     ];
 
     $affected_document_number = ($document_base->affected_document) ? $document_base->affected_document->series.'-'.str_pad($document_base->affected_document->number, 8, '0', STR_PAD_LEFT) : $document_base->data_affected_document->series.'-'.str_pad($document_base->data_affected_document->number, 8, '0', STR_PAD_LEFT);
@@ -72,7 +72,7 @@
         <td class="text-center">@include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])</td>
     </tr>
     <tr>
-        <td class="text-center"><h4>{{ 'RUC '.$company->number }}</h4></td>
+        <td class="text-center"><h4>{{ 'RIF '.$company->number }}</h4></td>
     </tr>
     <tr>
         <td class="text-center" style="text-transform: uppercase;">
@@ -113,7 +113,7 @@
     </tr>
     <tr>
         <td><p class="desc">{{ $customer->identity_document_type->description }}:</p></td>
-        <td><p class="desc">{{ $customer->number }}</p></td>
+        <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
     @if ($customer->address !== '')
         <tr>

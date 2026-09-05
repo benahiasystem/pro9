@@ -38,7 +38,7 @@
                                 
                                 <th  class="celda">Documento Asociado</th>
                                 {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
-                                <th class="celda">Guía de despacho</th>
+                                <th class="celda">Orden de entrega</th>
                                 {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                             </tr>
                         </thead>

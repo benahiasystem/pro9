@@ -51,11 +51,11 @@ export default {
     label: { type: String, default: 'Reemplazar nombre' },
     placeholder: {
       type: String,
-      default: 'Nombre que se mostrará en la guía (PDF)',
+      default: 'Nombre que se mostrará en la orden de entrega (PDF)',
     },
     tooltip: {
       type: String,
-      default: 'Reemplazar nombre en la guía',
+      default: 'Reemplazar nombre en la orden de entrega',
     },
   },
   data() {

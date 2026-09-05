@@ -665,7 +665,8 @@
                             </div>
                         </div>
 
-                        <div v-if="showDiscounts" class="col-md-12 mt-2">
+                        <!-- ######## INICIO HOTEL SIN DESCUENTOS/CARGOS/ATRIBUTOS ######## -->
+                        <div v-if="showDiscounts && showDiscountsChargesAttributes !== false" class="col-md-12 mt-2">
                             <el-collapse v-model="activePanel">
                                 <!--                                <el-collapse-item-->
                                 <!--                                    v-if="!(recordItem != null)"-->
@@ -946,6 +947,7 @@
                                 </el-collapse-item>
                             </el-collapse>
                         </div>
+                        <!-- ######## FIN HOTEL SIN DESCUENTOS/CARGOS/ATRIBUTOS ######## -->
                     </template>
                 </div>
             </div>
@@ -1079,7 +1081,10 @@ import ItemForm from "../../items/form.vue";
 import VariationChips from "../../items/partials/variation_chips.vue";
 import LotsGroup from "./lots_group.vue";
 
-import { calculateRowItem } from "../../../../helpers/functions";
+import {
+    calculateRowItem,
+    resolveSelectableAffectationType
+} from "../../../../helpers/functions";
 import WarehousesDetail from "./select_warehouses.vue";
 import SelectLotsForm from "./lots.vue";
 
@@ -1119,7 +1124,8 @@ export default {
         "selectedOptionPrice",
         "documentId",
         'isCreditNote',
-        'presetItemId'
+        'presetItemId',
+        'showDiscountsChargesAttributes'
     ],
     components: {
         ItemForm,
@@ -2113,7 +2119,15 @@ export default {
 
             this.form.has_igv = this.form.item.has_igv;
             this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
-            this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            const selectableAffectation = resolveSelectableAffectationType(
+                this.form.item.sale_affectation_igv_type_id,
+                this.affectation_igv_types
+            );
+            this.form.affectation_igv_type_id = selectableAffectation
+                ? selectableAffectation.id
+                : null;
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             this.form.quantity = 1;
             this.cleanTotalItem();
             this.showListStock = true;

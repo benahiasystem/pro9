@@ -18,6 +18,7 @@ class CustomerResource extends JsonResource
             'id' => $this->id,
             'identity_document_type_id' => $this->identity_document_type_id,
             'number' => $this->number,
+            'formatted_number' => format_identity_document($this->identity_document_type_id, $this->number),
             'name' => $this->name,
             'trade_name' => $this->trade_name,
             'country_id' => $this->country_id,

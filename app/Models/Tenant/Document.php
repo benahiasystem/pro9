@@ -427,7 +427,7 @@ class Document extends ModelTenant
             'currency_type_id'       => $this->currency_type_id,
 
             'customer_name'          => optional($this->customer)->name,
-            'customer_number'        => optional($this->customer)->number,
+            'customer_number'        => format_person_identity_document($this->customer),
             'customer_address'       => $this->getApiResourceCustomerAddress(),
             'department_id'          => $person_ubigeo['department_id'],
             'province_id'            => $person_ubigeo['province_id'],

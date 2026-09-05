@@ -782,7 +782,7 @@
                 'identifier' => $this->identifier,
                 'user_name' => $this->user->name,
                 'customer_name' => $this->customer->name,
-                'customer_number' => $this->customer->number,
+                'customer_number' => format_person_identity_document($this->customer),
                 'customer_telephone' => optional($this->customer)->telephone,
                 'customer_email' => optional($this->customer)->email,
                 'custom_fields_data' => $this->custom_fields_data,

@@ -195,7 +195,7 @@
                                         placeholder="Enter name" name="name">
                                 </div>
                                 <div class="form-group">
-                                    <label for="ruc">RUC/DNI:</label>
+                                    <label for="ruc">RIF/DNI:</label>
                                     <input type="text" required autocomplete="off" maxlength="11" class="form-control" id="ruc_reg"
                                         placeholder="Ingrese ruc/dni" name="ruc">
                                 </div>

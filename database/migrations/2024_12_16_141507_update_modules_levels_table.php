@@ -16,8 +16,8 @@ class UpdateModulesLevelsTable extends Migration
     {
 
         DB::table('module_levels')->insert([
-            ['id'=>'90','value' => 'dispatches', 'description' => 'G.R. Remitente', 'module_id' => 51],
-            ['id'=>'91','value' => 'dispatch_carrier', 'description' => 'G.R. Transportista', 'module_id' => 51],
+            ['id'=>'90','value' => 'dispatches', 'description' => 'Orden de entrega', 'module_id' => 51],
+            ['id'=>'91','value' => 'dispatch_carrier', 'description' => 'Orden de entrega del transportista', 'module_id' => 51],
             ['id'=>'92','value' => 'dispatchers', 'description' => 'Transportistas', 'module_id' => 51],
             ['id'=>'93','value' => 'drivers', 'description' => 'Conductores', 'module_id' => 51],
             ['id'=>'94','value' => 'transports', 'description' => 'Vehículos', 'module_id' => 51],
@@ -130,7 +130,7 @@ class UpdateModulesLevelsTable extends Migration
     {
         
         DB::table('module_levels')->insert([
-            ['id'=>'48','value' => 'advanced_dispatches', 'description' => 'Guías de remisión', 'module_id' => 3],
+            ['id'=>'48','value' => 'advanced_dispatches', 'description' => 'Órdenes de entrega', 'module_id' => 3],
         ]);
 
         DB::table('module_levels')->where('value', 'new_document')->update(['module_id' => 1]);

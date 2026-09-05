@@ -19,13 +19,13 @@ class LookupPersonTool implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $this->name(),
-                'description' => 'Busca un cliente registrado por número de documento (DNI/RUC) o por nombre/razón social.',
+                'description' => 'Busca un cliente registrado por número de documento (DNI/RIF) o por nombre/razón social.',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
                         'document' => [
                             'type' => 'string',
-                            'description' => 'Número de DNI (8 dígitos) o RUC (11 dígitos). Opcional si se busca por nombre.',
+                            'description' => 'Número de DNI (8 dígitos) o RIF (11 dígitos). Opcional si se busca por nombre.',
                         ],
                         'name' => [
                             'type' => 'string',

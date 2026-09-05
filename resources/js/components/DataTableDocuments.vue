@@ -160,7 +160,7 @@
                     </div>
                     <div class="col-lg-2 col-md-2 col-sm-12 pb-2">
                         <div class="form-group"  >
-                            <label class="control-label">Numero de Guía</label>
+                            <label class="control-label">Numero de Orden de entrega</label>
                             <el-input v-model="search.guides" clearable></el-input>
                         </div>
                     </div>

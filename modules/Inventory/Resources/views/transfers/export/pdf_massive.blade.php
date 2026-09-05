@@ -37,7 +37,7 @@
                         <td
                             align="center"
                         >
-                            <h3 class="font-bold">{{ 'R.U.C. '.$company->number }}</h3>
+                            <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                             <h3 class="text-center font-bold">{{ $document_type }}</h3>
                             <h3 class="text-center font-bold">{{ $serie }} - {{ $number }}</h3>
                         </td>

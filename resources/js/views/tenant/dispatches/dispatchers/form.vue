@@ -133,7 +133,8 @@ export default {
         },
         validateForm() {
             const errors = {}
-            const number = (this.form.number || '').trim()
+            const number = (this.form.number || '').trim().toUpperCase().replace(/[\s.-]/g, '')
+            const normalizedNumber = number.charAt(0) === 'J' ? number.substring(1) : number
             const name = (this.form.name || '').trim()
             const address = (this.form.address || '').trim()
             const mtc = (this.form.number_mtc || '').trim()
@@ -145,8 +146,10 @@ export default {
 
             if (!number) {
                 errors.number = ['El número es obligatorio.']
-            } else if (!/^(10|15|16|17|20)\d{9}$/.test(number)) {
-                errors.number = ['El RIF debe tener 11 dígitos y un prefijo válido (10, 15, 16, 17 o 20).']
+            } else if (!/^(?:\d{9}|\d{11})$/.test(normalizedNumber)) {
+                errors.number = ['El RIF debe contener 9 dígitos (J-#########) o 11 dígitos numéricos.']
+            } else {
+                this.form.number = normalizedNumber
             }
 
             if (!name) {

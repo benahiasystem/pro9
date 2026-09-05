@@ -31,7 +31,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong></p>
+                        <p><strong>RIF: </strong></p>
                     </td>
                     <td align="center">{{$company->number}}</td>
                     <td>
@@ -87,7 +87,7 @@
                                 <th class="">F. Vencimiento</th>
 
                                 <th>Proveedor</th>
-                                <th>RUC</th>
+                                <th>RIF</th>
                                 <th>Cliente</th>
                                 <th class="">F. Pago</th>
                                 <th>Estado</th>
@@ -120,10 +120,10 @@
                                 <td class="celda">{{$value->date_of_due->format('Y-m-d')}}</td>
 
                                 <td class="celda">{{$value->supplier->name}}</td>
-                                <td class="celda">{{$value->supplier->number}}</td>
+                                <td class="celda">{{format_person_identity_document($value->supplier)}}</td>
                                 <td class="celda">
                                     {{$value->customer ? $value->customer->name : ''}}<br>
-                                    {{$value->customer ? $value->customer->identity_document_type->description : ''}} {{$value->customer ? $value->customer->number : ''}}
+                                    {{$value->customer ? $value->customer->identity_document_type->description : ''}} {{$value->customer ? format_person_identity_document($value->customer) : ''}}
                                 </td>
                                 <td class="celda">
                                     {{-- {{isset($value->purchase_payments['payment_method_type']['description'])?$value->purchase_payments['payment_method_type']['description']:'-'}} --}}

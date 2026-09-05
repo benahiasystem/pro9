@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
             // ########## INICIO CAMBIO QUITAR BOLETA
             ['id' => 1, 'description' => 'Facturas, notas de débito y crédito y anulaciones' ],
             // ######### FIN CAMBIO QUITAR BOLETA
-            ['id' => 2, 'description' => 'Guias de remisión' ],
+            ['id' => 2, 'description' => 'Órdenes de entrega' ],
             ['id' => 3, 'description' => 'Retenciones'],
             ['id' => 4, 'description' => 'Percepciones']
         ]);

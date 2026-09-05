@@ -10,7 +10,7 @@
         <div class="card card-config">
             <div class="card-header bg-info d-flex justify-content-between align-items-center">
                 <h3 class="my-0">Datos de la Empresa</h3>
-                <h4 class="d-flex m-0 align-items-center">RUC: {{ form.number }}</h4>
+                <h4 class="d-flex m-0 align-items-center">RIF: {{ form.number }}</h4>
             </div>
             <div class="card-body">
                 <form autocomplete="off"
@@ -438,7 +438,7 @@
         </div>
         <div class="card card-config">
             <div class="card-header bg-info">
-                <h3 class="my-0">Guías electrónicas</h3>
+                <h3 class="my-0">Órdenes de entrega</h3>
             </div>
             <div class="card-body">
                 <form autocomplete="off"
@@ -458,7 +458,7 @@
                                     <label class="control-label">SOAP Usuario</label>
                                     <el-input v-model="form.soap_sunat_username"
                                               :disabled="!form.config_system_env"></el-input>
-                                    <div class="sub-title text-muted"><small>RUC + Usuario. Ejemplo:
+                                    <div class="sub-title text-muted"><small>RIF + Usuario. Ejemplo:
                                         01234567890ELUSUARIO</small></div>
                                     <small v-if="errors.soap_sunat_username"
                                            class="form-control-feedback"

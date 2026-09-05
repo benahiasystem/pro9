@@ -18,7 +18,7 @@
             </div>
         </div>
         <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-        <!-- El cierre de la guía local no muestra firma, envío, ticket ni CDR fiscal. -->
+        <!-- El cierre de la orden de entrega local no muestra firma, envío, ticket ni CDR fiscal. -->
         <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
 
         <template v-if="showDocumentActions">
@@ -149,7 +149,7 @@ export default {
     },
     async created() {
         this.initForm()
-        this.text_button = 'Nueva guía'
+        this.text_button = 'Nueva orden de entrega'
     },
     computed: {
         ...mapState([
@@ -255,7 +255,7 @@ export default {
             // ########### FIN CAMBIO TELEFONÍA VENEZUELA
         },
         // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        // La descarga CDR fue retirada del cierre de guía.
+        // La descarga CDR fue retirada del cierre de orden de entrega.
         // ######### FIN CAMBIO SIN XML CDR SUNAT
         timeout(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
@@ -265,10 +265,10 @@ export default {
             this.loading_sunat_send = true;
             await this.$http.get(`/${this.resource}/record/${this.recordId}`).then(response => {
                 this.form = response.data.data;
-                this.titleDialog = 'Guía: ' + this.form.number;
+                this.titleDialog = 'Orden de entrega: ' + this.form.number;
             });
             // ########## INICIO CAMBIO SIN XML CDR SUNAT
-            // La guía ya está registrada localmente; no se envía ni consulta ticket.
+            // La orden de entrega ya está registrada localmente; no se envía ni consulta ticket.
             // ######### FIN CAMBIO SIN XML CDR SUNAT
             this.loading_sunat_send = false;
         },
@@ -300,18 +300,10 @@ export default {
                 })
         },
         clickFinalize() {
-            if (this.form.document_type_id === '31') {
-                location.href = `/dispatch_carrier`
-            } else {
-                location.href = `/${this.resource}`
-            }
+            location.href = `/${this.resource}`
         },
         clickNewDocument() {
-            if (this.form.document_type_id === '31') {
-                location.href = `/dispatch_carrier/create`
-            } else {
-                location.href = `/${this.resource}/create`
-            }
+            location.href = `/${this.resource}/create`
             // this.clickClose()
         },
         clickClose() {

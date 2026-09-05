@@ -82,7 +82,8 @@ class PersonController extends Controller
     public function tables()
     {
         $countries = Country::whereActive()->orderByDescription()->get();
-        $identity_document_types = IdentityDocumentType::whereActive()->orderByPersonPriority()->get();
+        // El contrato venezolano incluye tipos con active=0 por compatibilidad de catálogo.
+        $identity_document_types = IdentityDocumentType::orderByPersonPriority()->get();
         $person_types = PersonType::get();
         $locations = func_get_locations();
         $zones = Zone::all();
@@ -265,8 +266,7 @@ class PersonController extends Controller
     }
 
     /**
-     * Personas a las que no se les exige domicilio: DNI y RUC de persona natural
-     * (10xxxxxxxxx).
+     * A las personas naturales venezolanas no se les exige domicilio.
      *
      * @param  mixed  $identityDocumentTypeId
      * @param  mixed  $number
@@ -276,12 +276,7 @@ class PersonController extends Controller
     {
         $identityDocumentTypeId = (string) $identityDocumentTypeId;
 
-        if ($identityDocumentTypeId === '1') {
-            return true;
-        }
-
-        return $identityDocumentTypeId === '6'
-            && strpos(trim((string) $number), '10') === 0;
+        return $identityDocumentTypeId === '1';
     }
 
     /**

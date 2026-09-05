@@ -227,7 +227,9 @@ class QuotationController extends Controller
         $payment_destinations = $this->getPaymentDestinations();
         $configuration = Configuration::select('destination_sale')->first();
         $enabled_discount_global = Configuration::isGlobalDiscountEnabled();
-        $global_discount_types = ChargeDiscountType::whereIn('id', ['02', '03'])->whereActive()->get();
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         /*
         carlomagno83/facturadorpro4#233
 

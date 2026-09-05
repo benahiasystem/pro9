@@ -13,6 +13,7 @@ use App\Http\Resources\Tenant\EstablishmentCollection;
 use App\Models\Tenant\Warehouse;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\User;
+use App\Services\SeriesCodeGenerator;
 use Illuminate\Http\Request;
 use Modules\Finance\Helpers\UploadFileHelper;
 use Illuminate\Support\Facades\Storage;
@@ -120,6 +121,8 @@ class EstablishmentController extends Controller
                 $warehouse->establishment_id = $establishment->id;
                 $warehouse->description = 'Almacén - '.$establishment->description;
                 $warehouse->save();
+
+                app(SeriesCodeGenerator::class)->ensureWarehouseInternalSeries($establishment->id);
 
                 foreach ($addresses as $row) {
                     $establishment->addresses()->create($row);

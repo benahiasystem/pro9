@@ -153,7 +153,7 @@
         public function scopeOnlyAvaibleDocuments($query)
         {
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            return $query->OnlyActive()->wherein('id', ['01', '07', '08', '09', '20', '40', '80', '04', 'U2', 'U3', 'U4', '31']);
+            return $query->OnlyActive()->wherein('id', ['01', '07', '08', '09', '20', '40', '80', '04', 'U2', 'U3', 'U4']);
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         }
 
@@ -267,12 +267,10 @@
          * @return string
          */
         public function getCurrentRelatiomClass(){
-            //09	1		GUIA DE REMISIÓN REMITENTE
+            //09	1		ORDEN DE ENTREGA
             //20	1		COMPROBANTE DE RETENCIÓN ELECTRÓNICA
-            //31	1		Guía de remisión transportista
             //40	1		COMPROBANTE DE PERCEPCIÓN ELECTRÓNICA
-            //71	0		Guia de remisión remitente complementaria
-            //72	0		Guia de remisión transportista complementaria
+            //71	0		Orden de entrega complementaria
             //GU75	1		GUÍA
             //NE76	1		NOTA DE ENTRADA
             //02	1		RECIBO POR HONORARIOS

@@ -59,7 +59,7 @@
         <td width="50%" class="pl-3">
             <div class="text-left">
                 @include('pdf.partials.company_document_header_names')
-                <h5>{{ 'RUC '.$company->number }}</h5>
+                <h5>{{ 'RIF '.$company->number }}</h5>
                 <h6 style="text-transform: uppercase;">
                     {{ ($establishment->address !== '-')? $establishment->address : '' }}
                     {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -133,7 +133,7 @@
     <tr>
         <td>{{ $customer->identity_document_type->description }}</td>
         <td>:</td>
-        <td>{{$customer->number}}</td>
+        <td>{{format_identity_document($customer->identity_document_type_id ?? null, $customer->number)}}</td>
 
         @if ($document->detraction)
 
@@ -191,7 +191,7 @@
 
 @if ($document->guides)
 <br/>
-{{--<strong>Guías:</strong>--}}
+{{--<strong>Órdenes de entrega:</strong>--}}
 <table>
     @foreach($document->guides as $guide)
         <tr>
@@ -211,7 +211,7 @@
 
 @if ($document->reference_guides)
 <br/>
-<strong>Guias de remisión</strong>
+<strong>Órdenes de entrega</strong>
 <table>
     @foreach($document->reference_guides as $guide)
         <tr>

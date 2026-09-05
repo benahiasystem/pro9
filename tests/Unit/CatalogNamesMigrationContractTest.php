@@ -100,6 +100,30 @@ class CatalogNamesMigrationContractTest extends TestCase
     }
 
     /** @test */
+    public function hidden_global_discount_ids_remain_available_to_configured_sales_flows(): void
+    {
+        $model = $this->source('app/Models/Tenant/Catalogs/ChargeDiscountType.php');
+
+        self::assertStringContainsString("whereIn('id', ['02', '03'])", $model);
+        self::assertStringNotContainsString("whereIn('id', ['02', '03'])->whereActive()", $model);
+
+        foreach ([
+            'app/Http/Controllers/Tenant/DocumentController.php',
+            'app/Http/Controllers/Tenant/QuotationController.php',
+            'app/Http/Controllers/Tenant/PurchaseController.php',
+            'app/Http/Controllers/Tenant/PosController.php',
+            'app/Http/Controllers/Tenant/ConfigurationController.php',
+            'modules/Restaurant/Models/ConfigurationController.php',
+        ] as $file) {
+            self::assertStringContainsString(
+                'ChargeDiscountType::getGlobalDiscounts()',
+                $this->source($file),
+                $file
+            );
+        }
+    }
+
+    /** @test */
     public function presentation_contract_uses_final_names_and_hides_ubl_panels_by_capability(): void
     {
         $invoiceType = collect(SeriesCodeGenerator::SERIES_TYPES)->firstWhere('document_type_id', '01');

@@ -20,7 +20,7 @@ class SystemGuardValidator implements DocumentValidator
         }
 
         if (empty($company->number) || strlen($company->number) !== 11) {
-            return ValidationResult::fail('El RUC del negocio no es válido.', 'invalid_company_ruc');
+            return ValidationResult::fail('El RIF del negocio no es válido.', 'invalid_company_ruc');
         }
 
         if ($company->soap_type_id === '02' && (empty($company->soap_username) || empty($company->soap_password))) {

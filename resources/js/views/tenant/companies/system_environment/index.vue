@@ -55,7 +55,7 @@
 										class="text-danger">*</span></label>
 									<el-input v-model="form.soap_username"
 											  :disabled="!form.config_system_env"></el-input>
-									<div class="sub-title text-muted"><small>RUC + Usuario. Ejemplo:
+									<div class="sub-title text-muted"><small>RIF + Usuario. Ejemplo:
 										01234567890ELUSUARIO</small></div>
 									<small v-if="errors.soap_username"
 										   class="form-control-feedback"

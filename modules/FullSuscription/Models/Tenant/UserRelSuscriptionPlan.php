@@ -656,7 +656,7 @@ use App\Http\Controllers\Tenant\SaleNoteController;
                 'date_of_due' => (in_array($document->document_type_id, ['01', '03'])) ? $document->invoice->date_of_due->format('Y-m-d') : null,
                 'number' => $document->number_full,
                 'customer_name' => $document->customer->name,
-                'customer_number' => $document->customer->number,
+                'customer_number' => format_person_identity_document($document->customer),
                 'customer_telephone' => $document->customer->telephone,
                 'currency_type_id' => $document->currency_type_id,
                 'total_exportation' => $document->total_exportation,

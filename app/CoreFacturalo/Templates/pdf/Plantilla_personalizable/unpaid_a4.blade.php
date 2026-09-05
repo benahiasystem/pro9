@@ -24,7 +24,7 @@
             <td width="50%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -56,7 +56,7 @@
             <td width="50%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}

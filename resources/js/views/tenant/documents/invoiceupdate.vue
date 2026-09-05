@@ -1238,7 +1238,7 @@
                                                 <template v-if="!is_client">
                                                     <div class="form-group">
                                                         <label class="control-label">
-                                                            Guías
+                                                            Órdenes de entrega
                                                         </label>
                                                         <table style="width: 100%">
                                                             <tr v-for="(guide,index) in form.guides">
@@ -1271,7 +1271,7 @@
                                                                            @click.prevent="clickAddGuide"><i
                                                                             class="fa fa-plus font-weight-bold text-info"></i>
                                                                             <span
-                                                                                style="color: #777777">Agregar guía</span></a>
+                                                                                style="color: #777777">Agregar orden de entrega</span></a>
 
                                                                     </label>
                                                                 </td>
@@ -1284,7 +1284,7 @@
                                                 <template v-if="!is_client">
                                                     <div class="form-group">
                                                         <label class="control-label">
-                                                            Guías
+                                                            Órdenes de entrega
                                                         </label>
                                                         <table style="width: 100%">
                                                             <tr v-for="(guide,index) in form.guides">
@@ -1317,7 +1317,7 @@
                                                                            @click.prevent="clickAddGuide"><i
                                                                             class="fa fa-plus font-weight-bold text-info"></i>
                                                                             <span
-                                                                                style="color: #777777">Agregar guía</span></a>
+                                                                                style="color: #777777">Agregar orden de entrega</span></a>
 
                                                                     </label>
                                                                 </td>
@@ -3070,9 +3070,6 @@ export default {
         clickAddInitGuides() {
             this.form.guides.push({
                 document_type_id: '09',
-                number: null
-            }, {
-                document_type_id: '31',
                 number: null
             })
         },

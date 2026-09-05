@@ -81,7 +81,7 @@
                                 v-if="columns.guides.visible"
                                 class="text-end"
                             >
-                                Guia
+                                Orden de entrega
                             </th>
                             <th
                                 v-if="columns.options.visible"
@@ -120,7 +120,7 @@
                             </th>
                             <th>Cliente</th>
                             <th v-if="columns.ruc.visible" class="text-end">
-                                Ruc
+                                RIF
                             </th>
                             <th v-if="columns.items.visible">Productos</th>
                             <th>Estado</th>
@@ -449,7 +449,7 @@ export default {
             form: {},
             columns: {
                 guides: {
-                    title: "Guias",
+                    title: "Órdenes de entrega",
                     visible: false
                 },
                 options: {
@@ -484,7 +484,7 @@ export default {
                     visible: false
                 },
                 ruc: {
-                    title: "Ruc",
+                    title: "RIF",
                     visible: false
                 },
                 note_sale: {

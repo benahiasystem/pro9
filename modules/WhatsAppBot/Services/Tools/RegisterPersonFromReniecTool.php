@@ -24,7 +24,7 @@ class RegisterPersonFromReniecTool implements ToolInterface
             'type' => 'function',
             'function' => [
                 'name' => $this->name(),
-                'description' => 'Consulta RENIEC/SUNAT vía apiperu.dev para registrar automáticamente un cliente nuevo cuando su DNI o RUC no está en el catálogo. Si el cliente ya existía, devuelve el existente sin crear duplicado.',
+                'description' => 'Consulta RENIEC/SUNAT vía apiperu.dev para registrar automáticamente un cliente nuevo cuando su DNI o RIF no está en el catálogo. Si el cliente ya existía, devuelve el existente sin crear duplicado.',
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
@@ -35,7 +35,7 @@ class RegisterPersonFromReniecTool implements ToolInterface
                         ],
                         'document_number' => [
                             'type' => 'string',
-                            'description' => 'Número del documento. DNI=8 dígitos, RUC=11 dígitos.',
+                            'description' => 'Número del documento. DNI=8 dígitos, RIF=11 dígitos.',
                         ],
                     ],
                     'required' => ['document_type', 'document_number'],

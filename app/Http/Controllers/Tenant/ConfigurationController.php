@@ -141,7 +141,7 @@ class ConfigurationController extends Controller
 
     //     return [
     //         'success' => true,
-    //         'message' => "Se creo la guía de remisión {$document->series}-{$document->number}",
+    //         'message' => "Se creo la orden de entrega {$document->series}-{$document->number}",
     //         'data' => [
     //             'id' => $document->id,
     //         ],
@@ -640,7 +640,9 @@ class ConfigurationController extends Controller
     public function tables()
     {
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $global_discount_types = ChargeDiscountType::whereIn('id', ['02', '03'])->whereActive()->get();
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         // Impresoras activas registradas por BuhoPrinter, para el selector de impresora en auto_print
         $printers = Printer::where('active', true)

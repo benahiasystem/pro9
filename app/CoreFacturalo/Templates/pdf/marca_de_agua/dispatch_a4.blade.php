@@ -22,7 +22,7 @@
             <td>Razón Social: {{ $company->name }}</td>
         </tr>
         <tr>
-            <td>RUC: {{ $company->number }}
+            <td>RIF: {{ $company->number }}
             </td>
         </tr>
         </tbody>
@@ -39,7 +39,7 @@
             <td>Razón Social: {{ $customer->name }}</td>
         </tr>
         <tr>
-            <td>{{ $customer->identity_document_type->description }}: {{ $customer->number }}
+            <td>{{ $customer->identity_document_type->description }}: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}
             </td>
         </tr>
         <tr>
@@ -114,7 +114,7 @@
             </tr>
             <tr>
                 <td>PROVEEDOR {{ $row['name'] }}</td>
-                <td>RUC: {{ $row['customer'] }}</td>
+                <td>RIF: {{ $row['customer'] }}</td>
             </tr>
         @endforeach
         </tbody>

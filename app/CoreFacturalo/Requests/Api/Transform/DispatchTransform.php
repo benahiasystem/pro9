@@ -47,7 +47,6 @@ class DispatchTransform
             'legends' => LegendTransform::transform($inputs),
             'actions' => ActionTransform::transform($inputs),
             'additional_data' => Functions::valueKeyInArray($inputs, 'dato_adicional'),
-            //dispatchCarrier
             'supplier_addresses' => Functions::valueKeyInArray($inputs, 'direcciones_proveedores'),
             'sender_id' => Functions::valueKeyInArray($inputs, 'remitente_id'),
             'sender_data' => self::senderData($inputs),

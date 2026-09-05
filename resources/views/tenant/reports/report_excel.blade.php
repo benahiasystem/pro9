@@ -31,7 +31,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong></p>
+                        <p><strong>RIF: </strong></p>
                     </td>
                     <td align="center">{{$company->number}}</td>
                     <td>
@@ -69,7 +69,7 @@
                                 <th>Fecha emisión</th>
                                 <th>Doc. Afectado</th>
                                 <th>Cliente</th>
-                                <th>RUC</th>
+                                <th>RIF</th>
                                 <th>Estado</th>
                                 <th class="">Moneda</th>
                                 <th>Total Exonerado</th>
@@ -102,7 +102,7 @@
                                     @endif
                                 <td class="celda">{{$serie_affec }} </td>
                                 <td class="celda">{{$value->customer->name}}</td>
-                                <td class="celda">{{$value->customer->number}}</td>
+                                <td class="celda">{{format_person_identity_document($value->customer)}}</td>
                                 <td class="celda">{{$value->state_type->description}}</td>
 
                                 @php

@@ -58,7 +58,7 @@ use App\Models\Tenant\Item;$type = isset($type)?$type:'';
         </tr>
         <tr>
             <td>
-                <p><strong>Ruc: </strong></p>
+                <p><strong>RIF: </strong></p>
             </td>
             <td align="center">{{$company->number}}</td>
             <td>
@@ -112,11 +112,11 @@ use App\Models\Tenant\Item;$type = isset($type)?$type:'';
                     if($type === 'purchase'){
                         $document = $value->purchase;
                         $customer_name = $document->supplier->name;
-                        $customer_number = $document->supplier->number;
+                        $customer_number = format_person_identity_document($document->supplier);
                     }else{
                         $document = $value->document;
                         $customer_name = $document->customer->name;
-                        $customer_number = $document->customer->number;
+                        $customer_number = format_person_identity_document($document->customer);
                     }
                     ?>
 

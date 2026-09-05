@@ -38,7 +38,7 @@
         </tr>
         <tr>
             <td>
-                <p><b>RUC: </b></p>
+                <p><b>RIF: </b></p>
             </td>
             <td>
                 {{ $company->number }}

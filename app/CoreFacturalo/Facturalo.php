@@ -477,7 +477,7 @@ class Facturalo
 
         $height_logo = HelperFacturalo::logo_heigth($this->document->establishment_id, $this->company);
         $heightQr = 95;
-        if(in_array($this->document->document_type_id, ['09', '31'])) {
+        if($this->document->document_type_id === '09') {
             if($this->document->qr_url) {
                 $qrCode = new QrCodeGenerate();
                 $this->document->qr = $qrCode->displayPNGBase64($this->document->qr_url);
@@ -879,7 +879,7 @@ class Facturalo
         }
 
         if ($base_pdf_template === 'distpatch_pharmacy' && in_array($this->document->document_type_id, ['09'])) {
-            // Solo para guia #1192
+            // Solo para orden de entrega #1192
             $pdf->setAutoTopMargin = 'stretch'; //margen autommatico
             $pdf->autoMarginPadding  = 0;
             $pdf->setAutoBottomMargin = 'stretch';
@@ -1022,7 +1022,7 @@ class Facturalo
 
     /**
      *
-     * Agregar altura para ticket de guia
+     * Agregar altura para ticket de orden de entrega
      *
      * @param  float $append_height
      * @param  $document
@@ -2035,7 +2035,7 @@ class Facturalo
         $format_pdf = ($format != null) ? $format : $format_pdf;
         $this->type = ($type != null) ? $type : $this->type;
 
-        if(in_array($this->document->document_type_id, ['09', '31'])) {
+        if($this->document->document_type_id === '09') {
             if($this->document->qr_url) {
                 $qrCode = new QrCodeGenerate();
                 $this->document->qr = $qrCode->displayPNGBase64($this->document->qr_url);
@@ -2395,7 +2395,7 @@ class Facturalo
         }
 
         if ($base_pdf_template === 'distpatch_pharmacy' && in_array($this->document->document_type_id, ['09'])) {
-            // Solo para guia #1192
+            // Solo para orden de entrega #1192
             $pdf->setAutoTopMargin = 'stretch'; //margen autommatico
             $pdf->autoMarginPadding  = 0;
             $pdf->setAutoBottomMargin = 'stretch';

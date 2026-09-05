@@ -70,7 +70,7 @@
             <td width="40%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -96,7 +96,7 @@
                 </div>
             </td>
             <td width="40%" class="border-box py-2 px-2 text-center">
-                <h3 class="font-bold">{{ 'R.U.C. '.$company->number }}</h3>
+                <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h3 class="text-center font-bold">{{ $document->document_type->description }}</h3>
                 <br>
                 <h3 class="text-center font-bold">{{ $document_number }}</h3>
@@ -105,7 +105,7 @@
             <td width="40%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -131,7 +131,7 @@
                 </div>
             </td>
             <td width="40%" class="border-box py-2 px-2 text-center">
-                <h3 class="font-bold">{{ 'R.U.C. '.$company->number }}</h3>
+                <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h3 class="text-center font-bold">{{ $document->document_type->description }}</h3>
                 <br>
                 <h3 class="text-center font-bold">{{ $document_number }}</h3>

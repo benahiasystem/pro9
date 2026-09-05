@@ -71,7 +71,7 @@
                             <el-tooltip
                                 class="item"
                                 effect="dark"
-                                content="Nombre que se mostrará en la guía (PDF). Útil para un producto genérico y describir materiales distintos sin crearlos en el catálogo."
+                                content="Nombre que se mostrará en la orden de entrega (PDF). Útil para un producto genérico y describir materiales distintos sin crearlos en el catálogo."
                                 placement="top-start"
                             >
                                 <i class="fa fa-info-circle"></i>

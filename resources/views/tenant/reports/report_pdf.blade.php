@@ -68,7 +68,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                     <td>
                         <p><strong>Establecimiento: </strong>{{$establishment->address}} - {{$establishment->department->description}} - {{$establishment->district->description}}</p>
@@ -105,7 +105,7 @@
                                 <th>Doc. Afectado</th>
 
                                 <th>Cliente</th>
-                                <th>RUC</th>
+                                <th>RIF</th>
                                 <th>Estado</th>
                                 <th class="">Moneda</th>
                                 <!-- <th>Total Exonerado</th>
@@ -141,7 +141,7 @@
 
                                     <td class="celda">{{  $serie_affec }} </td>
                                     <td class="celda">{{$value->customer->name}}</td>
-                                    <td class="celda">{{$value->customer->number}}</td>
+                                    <td class="celda">{{format_person_identity_document($value->customer)}}</td>
                                     <td class="celda">{{$value->state_type->description}}</td>
 
                                     <td class="celda">{{$value->currency_type_id}}</td>

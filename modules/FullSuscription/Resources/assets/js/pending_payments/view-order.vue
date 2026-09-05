@@ -6,7 +6,7 @@
     <div class="company-header">
       <img v-if="company.logo" :src="company.logo" :alt="company.name" class="company-logo" />
       <p class="company-name">{{ company.name }}</p>
-      <p v-if="company.ruc" class="company-ruc">RUC {{ company.ruc }}</p>
+      <p v-if="company.ruc" class="company-ruc">RIF {{ company.ruc }}</p>
     </div>
 
     <div class="order-card">

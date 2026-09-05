@@ -137,10 +137,25 @@ var app_cart = new Vue({
         loading_search: false,
         identity_document_types: [{
             id: '1',
-            description: 'Cédula'
+            description: 'Venezolano'
         }, {
             id: '6',
-            description: 'RIF'
+            description: 'Juridico'
+        }, {
+            id: '7',
+            description: 'Pasaporte'
+        }, {
+            id: 'E',
+            description: 'Extranjero'
+        }, {
+            id: 'C',
+            description: 'Comuna'
+        }, {
+            id: 'G',
+            description: 'Gubernamental'
+        }, {
+            id: 'R',
+            description: 'Firma Personal'
         }],
         formIdentity: {
             identity_document_type_id: ''
@@ -177,11 +192,14 @@ var app_cart = new Vue({
         enable_whatsapp: window.__ecommerce_config?.enable_whatsapp || false,
         global_discount_type: window.__ecommerce_config?.global_discount_type || {},
         all_identity_document_types : [
-            {id: '1', name: 'Cédula'},
-            {id: '6', name: 'RIF'},
-            {id: '0', name: 'Otro documento'},
-            {id: '4', name: 'Carnet de extranjería'},
+            {id: '0', name: 'Doc.sin.rif'},
+            {id: '1', name: 'Venezolano'},
+            {id: '6', name: 'Juridico'},
             {id: '7', name: 'Pasaporte'},
+            {id: 'E', name: 'Extranjero'},
+            {id: 'C', name: 'Comuna'},
+            {id: 'G', name: 'Gubernamental'},
+            {id: 'R', name: 'Firma Personal'},
         ],
         addressSuggestions: [],
         departments: [],
@@ -664,23 +682,26 @@ var app_cart = new Vue({
             const docType = String(this.guest_form.identity_document_type_id || '0');
             // ########## INICIO CAMBIO SOLO FACTURA Y NOTA DE VENTA
             if (docType === '1') {
-                return 'Al ingresar tu Cédula se generará automáticamente una Nota de venta.';
+                return 'Al ingresar tu documento Venezolano se generará automáticamente una Nota de venta.';
             }
             if (docType === '6') {
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-                return 'Al ingresar tu RIF se generará automáticamente tu Factura de venta.';
+                return 'Al ingresar tu documento Juridico se generará automáticamente tu Factura de venta.';
                 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             }
-            return 'Sin Cédula ni RIF se emitirá una Nota de venta.';
+            return 'Sin documento Venezolano ni Juridico se emitirá una Nota de venta.';
             // ######### FIN CAMBIO SOLO FACTURA Y NOTA DE VENTA
         },
         guestDocumentTypeOptions() {
             return [
-                { id: '1', label: 'Cédula' },
-                { id: '6', label: 'RIF' },
-                { id: '0', label: 'Otro documento' },
-                { id: '4', label: 'Carnet de extranjería' },
+                { id: '0', label: 'Doc.sin.rif' },
+                { id: '1', label: 'Venezolano' },
+                { id: '6', label: 'Juridico' },
                 { id: '7', label: 'Pasaporte' },
+                { id: 'E', label: 'Extranjero' },
+                { id: 'C', label: 'Comuna' },
+                { id: 'G', label: 'Gubernamental' },
+                { id: 'R', label: 'Firma Personal' },
             ];
         },
         guestDocumentNumberMaxLength() {
@@ -2529,7 +2550,7 @@ var app_cart = new Vue({
                 this.typeDocumentList = (this.payment_cash.amount >= 700) ? this.getIdentityDocumentTypes(['6', '1']) : this.getIdentityDocumentTypes()
             }
             else {
-                this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', '4'])
+                this.typeDocumentList = this.getIdentityDocumentTypes(['0', '1', 'E', '7', 'C', 'G', 'R'])
             }
         },
         getIdentityDocumentTypes(identity_document_types_id = null){

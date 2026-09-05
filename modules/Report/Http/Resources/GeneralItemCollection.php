@@ -203,7 +203,7 @@ class GeneralItemCollection extends ResourceCollection
             $document = $row->document;
             $data['date_of_issue'] = $document->date_of_issue->format('Y-m-d');
             $data['customer_name'] = $document->customer->name;
-            $data['customer_number'] = $document->customer->number;
+            $data['customer_number'] = format_person_identity_document($document->customer);
             $data['series'] = $document->series;
             $data['alone_number'] = $document->number;
             $data['document_type_description'] = $document->document_type->description;
@@ -217,7 +217,7 @@ class GeneralItemCollection extends ResourceCollection
             $document = $row->purchase;
             $data['date_of_issue'] = $document->date_of_issue->format('Y-m-d');
             $data['customer_name'] = $document->supplier->name;
-            $data['customer_number'] = $document->supplier->number;
+            $data['customer_number'] = format_person_identity_document($document->supplier);
             $data['series'] = $document->series;
             $data['alone_number'] = $document->number;
             $data['document_type_description'] = $document->document_type->description;
@@ -229,7 +229,7 @@ class GeneralItemCollection extends ResourceCollection
             $document = $row->sale_note;
             $data['date_of_issue'] = $document->date_of_issue->format('Y-m-d');
             $data['customer_name'] = $document->customer->name;
-            $data['customer_number'] = $document->customer->number;
+            $data['customer_number'] = format_person_identity_document($document->customer);
             $data['series'] = $document->series;
             $data['alone_number'] = $document->number;
             $data['document_type_description'] = 'NOTA DE VENTA';

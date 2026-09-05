@@ -46,12 +46,10 @@
     @endif
     @if($document->guides)
     @foreach($document->guides as $guide)
-        @if($guide->document_type_id!='31')
         <cac:DespatchDocumentReference>
             <cbc:ID>{{ $guide->number }}</cbc:ID>
             <cbc:DocumentTypeCode>{{ $guide->document_type_id }}</cbc:DocumentTypeCode>
         </cac:DespatchDocumentReference>
-        @endif
     @endforeach
     @endif
     @if($document->related)

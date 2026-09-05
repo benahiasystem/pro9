@@ -310,7 +310,7 @@ class MobileController extends Controller
 
         return app(SeriesResolver::class)->applyContext(
                     Series::where('establishment_id', auth()->user()->establishment_id)
-                    ->whereIn('document_type_id', ['01', '03', '09', '31'])
+                    ->whereIn('document_type_id', ['01', '03', '09'])
                 )->get()
                     ->transform(function($row) {
                         return $row->getApiRowResource();
@@ -321,7 +321,7 @@ class MobileController extends Controller
     public function getSeriesDispatch()
     {
 
-        return app(SeriesResolver::class)->applyContext(Series::whereIn('document_type_id', ['09', '31']))
+        return app(SeriesResolver::class)->applyContext(Series::whereIn('document_type_id', ['09']))
                     ->get()
                     ->transform(function($row) {
                         return $row->getApiRowResource();

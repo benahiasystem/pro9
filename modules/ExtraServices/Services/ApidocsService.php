@@ -190,7 +190,7 @@ class ApidocsService
     }
 
     /**
-     * Consultar RUC
+     * Consultar RIF
      */
     public function queryRuc(string $ruc): array
     {
@@ -199,7 +199,7 @@ class ApidocsService
         if (strlen($ruc) !== 11) {
             return [
                 'success' => false,
-                'message' => 'El RUC debe tener 11 dígitos',
+                'message' => 'El RIF debe tener 11 dígitos',
             ];
         }
 

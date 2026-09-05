@@ -52,6 +52,7 @@ use Modules\Item\Models\{
 };
 use Modules\Purchase\Models\WeightedAverageCost;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Modules\Hotel\Models\HotelRent;
 use Modules\Hotel\Models\HotelRentItem;
 use Modules\Hotel\Models\HotelRentItemPayment;
@@ -97,7 +98,7 @@ class OptionController extends Controller
         $quantity = $documents->count();
 
         // Los comprobantes de prueba se eliminan junto a sus relaciones de detalle.
-        $this->deleteInventoryKardex(Document::class);
+        $this->delete_quantity += $quantity;
         $this->deleteRecordsCash(Document::class);
         $this->deleteDocumentRelations($documents);
         // Document::where('soap_type_id', '01')->delete();
@@ -113,7 +114,7 @@ class OptionController extends Controller
 
         $this->deleteRecordsCash(SaleNote::class);
 
-        $this->deleteInventoryKardex(SaleNote::class, $sale_notes);
+        $this->delete_quantity += $sale_notes->count();
         $this->deleteSaleNoteRelations($sale_notes);
 
 
@@ -159,8 +160,8 @@ class OptionController extends Controller
         $documentIds = $documents->pluck('id');
 
         foreach ($documents as $document) {
-            $document->inventory_kardex()->delete();
             $document->items()->delete();
+            $document->inventory_kardex()->delete();
             $document->payments()->each(function ($payment) {
                 $payment->cashDocumentPayments()->delete();
                 $payment->global_payment()->delete();
@@ -186,9 +187,12 @@ class OptionController extends Controller
         $saleNoteIds = $saleNotes->pluck('id');
 
         foreach ($saleNotes as $saleNote) {
-            $saleNote->inventory_kardex()->delete();
+            // sale_note_items.inventory_kardex_id restringe el borrado del Kardex.
+            // Primero se elimina el detalle que mantiene esa referencia.
             $saleNote->items()->delete();
+            $saleNote->inventory_kardex()->delete();
             $saleNote->payments()->each(function ($payment) {
+                $payment->cashDocumentPayments()->delete();
                 $payment->global_payment()->delete();
                 $payment->delete();
             });
@@ -201,6 +205,9 @@ class OptionController extends Controller
         HotelRentItemPayment::whereIn('hotel_rent_item_id', $hotelItemIds)->delete();
         HotelRentItem::whereIn('id', $hotelItemIds)->delete();
         HotelRentOrder::whereIn('id', $hotelOrderIds)->delete();
+        if (Schema::connection('tenant')->hasTable('dispatch_sale_notes')) {
+            DB::connection('tenant')->table('dispatch_sale_notes')->whereIn('sale_note_id', $saleNoteIds)->delete();
+        }
         CashDocument::whereIn('sale_note_id', $saleNoteIds)->delete();
         SaleNote::whereIn('id', $saleNoteIds)->delete();
     }
@@ -331,7 +338,7 @@ class OptionController extends Controller
     private function update_quantity_documents($quantity)
     {
         $configuration = Configuration::first();
-        $configuration->quantity_documents -= $quantity;
+        $configuration->quantity_documents = max(0, (int) $configuration->quantity_documents - $quantity);
         $configuration->save();
     }
 

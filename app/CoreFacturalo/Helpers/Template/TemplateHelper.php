@@ -175,7 +175,7 @@ use Illuminate\Support\Str;
          * @endphp
          * @if(!empty($guias))
          *     <td class="font-sm" width="100px">
-         *     <strong>Guía de Remisión</strong>
+         *     <strong>Orden de entrega</strong>
          *     </td>
          *     <td class="font-sm" width="8px">:</td>
          *     <td class="font-sm" colspan="4">

@@ -843,7 +843,10 @@
 import ItemForm from "../../items/form.vue";
 import LotsGroup from "./lots_group.vue";
 
-import { calculateRowItem } from "../../../../helpers/functions";
+import {
+    calculateRowItem,
+    resolveSelectableAffectationType
+} from "../../../../helpers/functions";
 import WarehousesDetail from "../../documents/partials/select_warehouses.vue";
 import SelectLotsForm from "../../documents/partials/lots.vue";
 
@@ -873,9 +876,9 @@ export default {
         "percentageIgv",
         "currencyTypes",
         "showOptionChangeCurrency",
-        "permissionEditItemPrices",
-        "selectedOptionPrice",
-        "customerId"
+                        "permissionEditItemPrices",
+                        "selectedOptionPrice",
+                        "customerId"
     ],
     components: {
         ItemForm,
@@ -1605,7 +1608,15 @@ export default {
 
             this.form.has_igv = this.form.item.has_igv;
             this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
-            this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            const selectableAffectation = resolveSelectableAffectationType(
+                this.form.item.sale_affectation_igv_type_id,
+                this.affectation_igv_types
+            );
+            this.form.affectation_igv_type_id = selectableAffectation
+                ? selectableAffectation.id
+                : null;
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             this.form.quantity = 1;
             this.cleanTotalItem();
             this.showListStock = true;

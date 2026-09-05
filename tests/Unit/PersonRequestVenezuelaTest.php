@@ -83,7 +83,7 @@ class PersonRequestVenezuelaTest extends TestCase
     {
         $request = PersonRequest::create('/', 'POST', [
             'type' => 'customers',
-            'identity_document_type_id' => '4',
+            'identity_document_type_id' => 'E',
             'country_id' => 'PE',
             'nationality_id' => 'CO',
             'addresses' => [],
@@ -100,7 +100,7 @@ class PersonRequestVenezuelaTest extends TestCase
     {
         $request = PersonRequest::create('/', 'POST', [
             'type' => 'suppliers',
-            'identity_document_type_id' => '4',
+            'identity_document_type_id' => 'E',
             'country_id' => 'CO',
             'nationality_id' => 'CO',
         ]);
@@ -130,9 +130,48 @@ class PersonRequestVenezuelaTest extends TestCase
     public function venezuelanDocumentRules(): array
     {
         return [
-            'RIF' => ['6', 'regex:/^[VEJGP][0-9]{9}$/i'],
             'cedula' => ['1', 'regex:/^[0-9]{6,8}$/'],
-            'extranjero' => ['4', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'juridico' => ['6', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'extranjero' => ['E', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'pasaporte' => ['7', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'comuna' => ['C', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'gubernamental' => ['G', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'firma personal' => ['R', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider customerIdentitySelections
+     */
+    public function it_preserves_the_selected_id_and_removes_its_visible_prefix_before_persistence(
+        string $id,
+        string $input,
+        string $expectedNumber
+    ): void {
+        $request = PersonRequest::create('/', 'POST', [
+            'type' => 'customers',
+            'identity_document_type_id' => $id,
+            'number' => $input,
+            'addresses' => [],
+        ]);
+
+        $this->prepareForValidation($request);
+
+        self::assertSame($id, $request->input('identity_document_type_id'));
+        self::assertSame($expectedNumber, $request->input('number'));
+    }
+
+    public function customerIdentitySelections(): array
+    {
+        return [
+            'Venezolano' => ['1', 'V-12345678', '12345678'],
+            'Juridico' => ['6', 'J-123456789', '123456789'],
+            'Pasaporte' => ['7', 'P-AB123', 'AB123'],
+            'Extranjero' => ['E', 'E-998877', '998877'],
+            'Comuna' => ['C', 'C-112233', '112233'],
+            'Gubernamental' => ['G', 'G-445566', '445566'],
+            'Firma Personal' => ['R', 'R-778899', '778899'],
         ];
     }
 

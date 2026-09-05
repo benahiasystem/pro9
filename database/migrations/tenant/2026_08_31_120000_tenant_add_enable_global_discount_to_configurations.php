@@ -14,9 +14,11 @@ class TenantAddEnableGlobalDiscountToConfigurations extends Migration
      */
     public function up()
     {
-        Schema::table('configurations', function (Blueprint $table) {
-            $table->boolean('enable_global_discount')->default(false);
-        });
+        if (!Schema::hasColumn('configurations', 'enable_global_discount')) {
+            Schema::table('configurations', function (Blueprint $table) {
+                $table->boolean('enable_global_discount')->default(false);
+            });
+        }
 
         DB::table('configurations')->update([
             'enable_global_discount' => (bool) config('tenant.enabled_discount_global'),
@@ -30,8 +32,10 @@ class TenantAddEnableGlobalDiscountToConfigurations extends Migration
      */
     public function down()
     {
-        Schema::table('configurations', function (Blueprint $table) {
-            $table->dropColumn('enable_global_discount');
-        });
+        if (Schema::hasColumn('configurations', 'enable_global_discount')) {
+            Schema::table('configurations', function (Blueprint $table) {
+                $table->dropColumn('enable_global_discount');
+            });
+        }
     }
 }

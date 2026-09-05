@@ -62,17 +62,17 @@ class DownloadController extends Controller
 
         // Cambio para que se refleje el qr_url de ose o sunat  dentro del pdf de gre ("a4") para el listado
         //if(isset($document->document_type) && $document->document_type->id == '09' && $document->qr_url) $this->reloadPDF($document, 'dispatch', 'a4');
-        // Guías de remisión: siempre regenerar el PDF al descargar/imprimir para que tomen la plantilla actual (p. ej. marca de agua).
+        // Órdenes de entrega: siempre regenerar el PDF al descargar/imprimir para que tomen la plantilla actual (p. ej. marca de agua).
         if (
             isset($document->document_type_id)
-            && in_array($document->document_type_id, ['09', '31'], true)
+            && $document->document_type_id === '09'
             && $type === 'pdf'
         ) {
             $this->reloadPDF($document, 'dispatch', $format ?? 'a4');
         }
 
 
-        if(in_array($document->document_type_id, ['09', '31']) && $type === 'cdr') {
+        if($document->document_type_id === '09' && $type === 'cdr') {
             if((new Facturalo)->hasPseSend()) {
                 $type = 'cdr';
             } else {

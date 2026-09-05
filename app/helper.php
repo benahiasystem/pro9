@@ -5,6 +5,7 @@ use App\Models\Tenant\Catalogs\Country;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\Department;
 use App\Models\Tenant\Catalogs\IdentityDocumentType;
+use App\Support\Venezuela\IdentityDocument;
 use App\Models\Tenant\Catalogs\OperationType;
 use Illuminate\Support\Facades\Cache;
 // ######## INICIO CAMBIO GEOPOLITICO VENEZUELA
@@ -157,13 +158,29 @@ if (!function_exists('func_get_identity_document_types')) {
         }
 
         $identity_document_types = IdentityDocumentType::query()
-            ->where('active', true)
             ->orderByPersonPriority()
             ->get();
 
         Cache::put('identity_document_types', $identity_document_types, 1440);
 
         return $identity_document_types;
+    }
+}
+
+if (!function_exists('format_identity_document')) {
+    function format_identity_document($identityDocumentTypeId, $number): string
+    {
+        return IdentityDocument::format($identityDocumentTypeId, $number);
+    }
+}
+
+if (!function_exists('format_person_identity_document')) {
+    function format_person_identity_document($person): string
+    {
+        return IdentityDocument::format(
+            data_get($person, 'identity_document_type_id'),
+            data_get($person, 'number')
+        );
     }
 }
 

@@ -76,7 +76,7 @@
                                 v-if="columns.guides.visible"
                                 class="text-end"
                             >
-                                Guia
+                                Orden de entrega
                             </th>
                             <th
                                 v-if="columns.options.visible"
@@ -290,7 +290,7 @@ export default {
             form: {},
             columns: {
                 guides: {
-                    title: "Guias",
+                    title: "Órdenes de entrega",
                     visible: false
                 },
                 options: {

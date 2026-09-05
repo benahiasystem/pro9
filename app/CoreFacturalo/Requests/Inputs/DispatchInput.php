@@ -228,7 +228,7 @@ class DispatchInput
     {
         $has_transport_driver = isset($inputs['has_transport_driver_01']) ? $inputs['has_transport_driver_01'] : false;
 
-        if ((($inputs['document_type_id'] === '09') && ($inputs['transport_mode_type_id'] === '02'||$has_transport_driver===true)) || $inputs['document_type_id'] === '31') {
+        if (($inputs['document_type_id'] === '09') && ($inputs['transport_mode_type_id'] === '02'||$has_transport_driver===true)) {
             if (array_key_exists('driver', $inputs) && isset($inputs['driver'])) {
                 $driver = $inputs['driver'];
                 $identity_document_type_id = $driver['identity_document_type_id'];
@@ -254,7 +254,7 @@ class DispatchInput
     {
         $has_transport_driver = isset($inputs['has_transport_driver_01']) ? $inputs['has_transport_driver_01'] : false;
 
-        if ((($inputs['document_type_id'] === '09') && ($inputs['transport_mode_type_id'] === '02'||$has_transport_driver===true)) || $inputs['document_type_id'] === '31') {
+        if (($inputs['document_type_id'] === '09') && ($inputs['transport_mode_type_id'] === '02'||$has_transport_driver===true)) {
             if (array_key_exists('transport', $inputs) && isset($inputs['transport'])) {
                 $transport = $inputs['transport'];
                 $plate_number = $transport['plate_number'];
@@ -276,7 +276,7 @@ class DispatchInput
 
     private static function senderData($inputs)
     {
-        if ($inputs['document_type_id'] === '31') {
+        if (false) {
             if (array_key_exists('sender_data', $inputs)) {
                 $sender = $inputs['sender_data'];
                 $identity_document_type_id = $sender['identity_document_type_id'];
@@ -298,7 +298,7 @@ class DispatchInput
 
     private static function receiverData($inputs)
     {
-        if ($inputs['document_type_id'] === '31') {
+        if (false) {
             if (array_key_exists('receiver_data', $inputs)) {
                 $receiver = $inputs['receiver_data'];
                 $identity_document_type_id = $receiver['identity_document_type_id'];
@@ -320,7 +320,7 @@ class DispatchInput
 
     private static function receiverAddressData($inputs)
     {
-        if ($inputs['document_type_id'] === '31') {
+        if (false) {
             if (array_key_exists('receiver_address_data', $inputs)) {
                 $address = $inputs['receiver_address_data'];
                 $location_id = $address['location_id'][2];
@@ -338,7 +338,7 @@ class DispatchInput
 
     private static function senderAddressData($inputs)
     {
-        if ($inputs['document_type_id'] === '31') {
+        if (false) {
             if (array_key_exists('sender_address_data', $inputs)) {
                 $address = $inputs['sender_address_data'];
                 $location_id = $address['location_id'][2];
@@ -476,7 +476,7 @@ class DispatchInput
         // dd($inputs);
         $is_transport_m1l = isset($inputs['is_transport_m1l']) ? $inputs['is_transport_m1l'] : false;
         if (!$is_transport_m1l) {
-            if (($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '02') || $inputs['document_type_id'] === '31') {
+            if ($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '02') {
     //            if (key_exists('driver_id', $inputs)) {
                     // return $inputs['driver_id'];
     //            }
@@ -499,7 +499,7 @@ class DispatchInput
 
     private static function getTransportId($inputs)
     {
-        if (($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '02')  || $inputs['document_type_id'] === '31') {
+        if ($inputs['document_type_id'] === '09' && $inputs['transport_mode_type_id'] === '02') {
 //            if (key_exists('transport_id', $inputs)) {
                 return $inputs['transport_id'];
 //            }
@@ -519,7 +519,7 @@ class DispatchInput
 
     private static function getSenderId($inputs)
     {
-        if ( $inputs['document_type_id'] === '31') {
+        if (false) {
             if (key_exists('sender_id', $inputs)) {
                 return $inputs['sender_id'];
             }
@@ -539,7 +539,7 @@ class DispatchInput
 
     private static function getReceiverId($inputs)
     {
-        if ( $inputs['document_type_id'] === '31') {
+        if (false) {
             if (key_exists('receiver_id', $inputs)) {
                 return $inputs['receiver_id'];
             }
@@ -560,7 +560,7 @@ class DispatchInput
     private static function getReceiverAddressId($inputs)
     {
         return null;
-        if ( $inputs['document_type_id'] === '31') {
+        if (false) {
             return $inputs['receiver_address_id'];
 //            if (key_exists('receiver_address_id', $inputs)) {
 //            }
@@ -580,7 +580,7 @@ class DispatchInput
     private static function getSenderAddressId($inputs)
     {
         return null;
-        if ( $inputs['document_type_id'] === '31') {
+        if (false) {
             return $inputs['sender_address_id'];
 //            if (key_exists('sender_address_id', $inputs)) {
 //

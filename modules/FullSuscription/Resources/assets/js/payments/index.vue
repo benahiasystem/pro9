@@ -41,7 +41,7 @@
                         <td class="text-start">
                             <div class="fw-bold">{{ row.parent_customer.name }}</div>
                             <div class="text-muted" style="font-size:12px;">
-                                {{ row.parent_customer.document_type }}&nbsp;{{ row.parent_customer.number }}
+                                {{ formatIdentityDocument(row.parent_customer) }}
                             </div>
                         </td>
 
@@ -239,6 +239,15 @@ export default {
             'loadConfiguration',
             'clearFormData',
         ]),
+        formatIdentityDocument(person) {
+            if (!person) return ''
+            if (person.formatted_number) return person.formatted_number
+
+            const prefixes = {'1': 'V', '6': 'J', '7': 'P', 'E': 'E', 'C': 'C', 'G': 'G', 'R': 'R'}
+            const prefix = prefixes[String(person.identity_document_type_id || '')]
+
+            return prefix ? `${prefix}-${person.number || ''}` : (person.number || '')
+        },
         getCommonData() {
             this.$http.post('CommonData', {})
                 .then((response) => {

@@ -83,7 +83,7 @@ class CommercialAnalysisCollection extends ResourceCollection
                 'number' => $row->number_full,
                 'customer_name' => $row->name,
                 'customer_doc' => $row->identity_document_type->description,
-                'customer_number' => $row->number,
+                'customer_number' => format_person_identity_document($row),
                 'zone' => "{$country} {$department} {$province} {$district}",
                 'telephone' => $row->telephone,
                 'first_document' => ($documents) ? ($documents->first() ? $documents->first()->series.'-'.$documents->first()->number:'-'):'-',

@@ -133,7 +133,7 @@ export default {
     async created() {
         this.initForm()
 
-        this.text_button = 'Nueva guía'
+        this.text_button = 'Nueva orden de entrega'
     },
     methods: {
 
@@ -183,12 +183,12 @@ export default {
             }
         },
         // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        // La descarga CDR fue retirada de las opciones de guía.
+        // La descarga CDR fue retirada de las opciones de orden de entrega.
         // ######### FIN CAMBIO SIN XML CDR SUNAT
         async create() {
             await this.$http.get(`/${this.resource}/record/${this.recordId}`).then(response => {
                 this.form = response.data.data;
-                this.titleDialog = 'Guía: ' + this.form.number;
+                this.titleDialog = 'Orden de entrega: ' + this.form.number;
             });
 
         },

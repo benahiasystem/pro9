@@ -925,7 +925,10 @@
 import itemForm from "../../items/form.vue";
 import LotsGroup from "../../documents/partials/lots_group.vue";
 
-import { calculateRowItem } from "../../../../helpers/functions";
+import {
+    calculateRowItem,
+    resolveSelectableAffectationType
+} from "../../../../helpers/functions";
 import WarehousesDetail from "./warehouses.vue";
 
 import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
@@ -1639,7 +1642,15 @@ export default {
 
             this.form.has_igv = this.form.item.has_igv;
             this.form.has_plastic_bag_taxes = this.form.item.has_plastic_bag_taxes;
-            this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            const selectableAffectation = resolveSelectableAffectationType(
+                this.form.item.sale_affectation_igv_type_id,
+                this.affectation_igv_types
+            );
+            this.form.affectation_igv_type_id = selectableAffectation
+                ? selectableAffectation.id
+                : null;
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             this.form.quantity = 1;
             this.item_unit_types.length > 0
                 ? (this.has_list_prices = true)

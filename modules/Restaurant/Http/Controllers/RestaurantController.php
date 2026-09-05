@@ -38,6 +38,8 @@ use App\Services\System\MozoConfigurationService;
 use App\Services\System\VendeyaConfigurationService;
 use App\Helpers\MozoAccessHelper;
 use App\Models\Tenant\User;
+use App\Support\Venezuela\IdentityDocument;
+use Illuminate\Validation\Rule;
 
 
 class RestaurantController extends Controller
@@ -467,12 +469,24 @@ class RestaurantController extends Controller
 
     public function paymentCash(Request $request)
     {
-        $validator = Validator::make($request->customer, [
+        $customer = $request->customer;
+        $identityDocumentTypeId = (string) ($customer['identity_document_type_id']
+            ?? $customer['codigo_tipo_documento_identidad']
+            ?? '0');
+        $customer['identity_document_type_id'] = $identityDocumentTypeId;
+        $customer['codigo_tipo_documento_identidad'] = $identityDocumentTypeId;
+        $customer['numero_documento'] = IdentityDocument::normalizeNumber(
+            $identityDocumentTypeId,
+            $customer['numero_documento'] ?? ''
+        );
+        $request->merge(['customer' => $customer]);
+
+        $validator = Validator::make($customer, [
             'telefono' => 'required|numeric',
             'direccion' => 'required',
-            'codigo_tipo_documento_identidad' => 'required|numeric',
-            'numero_documento' => 'required|numeric',
-            'identity_document_type_id' => 'required|numeric'
+            'codigo_tipo_documento_identidad' => ['required', Rule::in(IdentityDocument::ids())],
+            'numero_documento' => ['required', 'string', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'identity_document_type_id' => ['required', Rule::in(IdentityDocument::ids())],
         ]);
 
         if ($validator->fails()) {
@@ -480,10 +494,13 @@ class RestaurantController extends Controller
         } else {
             try {
 
-                $type = ($request->purchase["datos_del_cliente_o_receptor"]["codigo_tipo_documento_identidad"]=='6')?'ruc':'dni';
+                $purchaseIdentityTypeId = (string) $request->purchase["datos_del_cliente_o_receptor"]["codigo_tipo_documento_identidad"];
+                $type = $purchaseIdentityTypeId === '6' ? 'ruc' : 'dni';
                 $document_number = $request->purchase["datos_del_cliente_o_receptor"]["numero_documento"];
 
-                $dataDocument = $this->searchDocument($type,$document_number);
+                $dataDocument = in_array($purchaseIdentityTypeId, ['1', '6'], true)
+                    ? $this->searchDocument($type, $document_number)
+                    : ['success' => false];
                 if ($dataDocument["success"]) {
                     $clientData = [ "apellidos_y_nombres_o_razon_social" => $dataDocument["data"]["name"] ];
                     if ($type === 'ruc') {

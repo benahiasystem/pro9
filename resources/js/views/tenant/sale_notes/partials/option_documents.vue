@@ -12,7 +12,7 @@
                             <el-option v-for="option in document_types" :key="option.id" :value="option.id" :label="option.description"></el-option>
                         </el-select>
                         <small class="form-control-feedback" v-if="errors.document_type_id" v-text="errors.document_type_id[0]"></small>
-                        <!-- <el-checkbox  v-model="generate_dispatch">Generar Guía Remisión</el-checkbox> -->
+                        <!-- <el-checkbox  v-model="generate_dispatch">Generar Orden de entrega</el-checkbox> -->
                     </div>
                 </div>
                 <div class="col-lg-4">
@@ -100,7 +100,7 @@
                 <div class="col-lg-8 mt-3">
                     <div class="form-group" :class="{'has-danger': errors.dipatch_id}">
                         <!-- <label class="control-label">Tipo comprobante</label> -->
-                        <el-checkbox  v-model="generate_dispatch">Generar Guía Remisión</el-checkbox>
+                        <el-checkbox  v-model="generate_dispatch">Generar Orden de entrega</el-checkbox>
                         <el-select v-model="dispatch_id" popper-class="el-select-document_type" filterable  class="border-left rounded-left border-info" v-if="generate_dispatch">
                             <el-option v-for="option in dispatches" :key="option.id" :value="option.id" :label="option.number_full"></el-option>
                         </el-select>
@@ -595,7 +595,7 @@
 
                 if(this.generate_dispatch){
                     if(!this.dispatch_id){
-                        return this.$message.error('Debe seleccionar una guía base')
+                        return this.$message.error('Debe seleccionar una orden de entrega base')
                     }
                 }
 

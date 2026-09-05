@@ -25,7 +25,7 @@
                         <small v-if="errors.document_type_id"
                                class="form-control-feedback"
                                v-text="errors.document_type_id[0]"></small>
-                        <!-- <el-checkbox  v-model="generate_dispatch">Generar Guía Remisión</el-checkbox> -->
+                        <!-- <el-checkbox  v-model="generate_dispatch">Generar Orden de entrega</el-checkbox> -->
                     </div>
                 </div>
                 <div class="col-lg-4">
@@ -133,7 +133,7 @@
                 <div class="col-lg-8 mt-3">
                     <div :class="{'has-danger': errors.dipatch_id}"
                          class="form-group">
-                        <el-checkbox v-model="generate_dispatch">Generar Guía Remisión</el-checkbox>
+                        <el-checkbox v-model="generate_dispatch">Generar Orden de entrega</el-checkbox>
                         <el-select v-if="generate_dispatch"
                                    v-model="dispatch_id"
                                    class="border-left rounded-left border-info"
@@ -500,7 +500,7 @@ export default {
 
             if (this.generate_dispatch) {
                 if (!this.dispatch_id) {
-                    return this.$message.error('Debe seleccionar una guía base')
+                    return this.$message.error('Debe seleccionar una orden de entrega base')
                 }
             }
 

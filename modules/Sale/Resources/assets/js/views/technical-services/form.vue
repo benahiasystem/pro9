@@ -2578,10 +2578,6 @@ export default {
                 {
                     document_type_id: "09",
                     number: null
-                },
-                {
-                    document_type_id: "31",
-                    number: null
                 }
             );
         },

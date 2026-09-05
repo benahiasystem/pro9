@@ -28,5 +28,6 @@ class TemporaryKardexRecord extends ModelTenant
         'type_transaction',
         'date_of_register',
         'guide_id',
+        'transfer_id',
     ];
 }

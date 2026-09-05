@@ -29,13 +29,13 @@
             </h2>
             <ol class="breadcrumbs">
                 <li class="active">
-                    <span> Consulta de guías por producto </span>
+                    <span> Consulta de órdenes de entrega por producto </span>
                 </li>
             </ol>
         </div>
         <div class="card mb-0 pt-2 pt-md-0 tab-content-default row-new">
             <!-- <div class="card-header bg-info">
-                <h3 class="my-0">Consulta de guías por producto</h3>
+                <h3 class="my-0">Consulta de órdenes de entrega por producto</h3>
             </div> -->
             <div class="card mb-0">
                 <div class="card-body">

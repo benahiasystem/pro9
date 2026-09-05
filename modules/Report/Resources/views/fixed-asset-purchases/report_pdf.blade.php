@@ -68,7 +68,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                     <td>
                         <p><strong>Establecimiento: </strong>{{$establishment->address}} - {{$establishment->department->description}} - {{$establishment->district->description}}</p>
@@ -111,7 +111,7 @@
                                 <th>F. Emisión</th>
                                 <th class="">F. Vencimiento</th>
                                 <th>Cliente</th>
-                                <th>RUC</th>
+                                <th>RIF</th>
                                 {{-- <th class="">F. Pago</th> --}}
                                 <!-- <th class="" >T.Exonerado</th>
                                 <th class="" >T.Inafecta</th>
@@ -135,7 +135,7 @@
                                     <td class="celda">{{$value->date_of_issue->format('Y-m-d')}}</td>
                                     <td class="celda">{{$value->date_of_due->format('Y-m-d')}}</td>
                                     <td class="celda">{{$value->supplier->name}}</td>
-                                    <td class="celda">{{$value->supplier->number}}</td>
+                                    <td class="celda">{{format_person_identity_document($value->supplier)}}</td>
                                     {{-- <td class="celda">{{isset($value->purchase_payments['payment_method_type']['description'])?$value->purchase_payments['payment_method_type']['description']:'-'}}</td> --}}
 
                                     <!-- <td class="celda">{{$value->total_exonerated}}</td>

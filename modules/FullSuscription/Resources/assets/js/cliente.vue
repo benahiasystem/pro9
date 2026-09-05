@@ -944,7 +944,7 @@ export default {
             }
 
 
-            if (['4', '7', '0'].includes(this.form.identity_document_type_id)) {
+            if (['E', 'C', 'G', 'R', '7', '0'].includes(this.form.identity_document_type_id)) {
 
                 const pattern = new RegExp('^[A-Z0-9\-]+$', 'i');
 

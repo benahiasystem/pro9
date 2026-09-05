@@ -332,7 +332,7 @@ class Purchase extends ModelTenant
             'currency_type_id'       => $this->currency_type_id,
 
             'supplier_name'          => optional($this->supplier)->name,
-            'supplier_number'        => optional($this->supplier)->number,
+            'supplier_number'        => format_person_identity_document($this->supplier),
             'supplier_address'       => $this->buildApiResourcePersonAddress($this->supplier, $person_ubigeo),
             'department_id'          => $person_ubigeo['department_id'],
             'province_id'            => $person_ubigeo['province_id'],
@@ -612,7 +612,7 @@ class Purchase extends ModelTenant
             'purchase_order'                         => $this->purchase_order,
             'number'                         => $this->number_full,
             'supplier_name'                  => $this->supplier->name,
-            'supplier_number'                => $this->supplier->number,
+            'supplier_number'                => format_person_identity_document($this->supplier),
             'supplier_telephone'             => optional($this->supplier)->telephone,
             'supplier_email'                 => optional($this->supplier)->email,
             'currency_type_id'               => $this->currency_type_id,

@@ -27,7 +27,7 @@ class RetentionCollection extends ResourceCollection
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
                 'number' => $row->number_full,
                 'supplier_name' => $row->supplier->name,
-                'supplier_number' => $row->supplier->identity_document_type->description . ' ' . $row->supplier->number,
+                'supplier_number' => format_person_identity_document($row->supplier),
                 'state_type_id' => $row->state_type_id,
                 'state_type_description' => $row->state_type->description,
                 'total_retention' => $row->total_retention,

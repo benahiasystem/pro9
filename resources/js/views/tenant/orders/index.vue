@@ -236,7 +236,7 @@
                                     type="default"
                                     size="mini"
                                     icon="el-icon-truck"
-                                    title="Generar guía"
+                                    title="Generar orden de entrega"
                                     @click.prevent="goToGuide(row)"
                                 ></el-button>
                             </div>
@@ -325,7 +325,7 @@
             @close="closeTrackingModal"
         >
             <div class="tracking-modal-body">
-                <label class="tracking-modal-label">Código de guía / tracking</label>
+                <label class="tracking-modal-label">Código de orden de entrega / tracking</label>
                 <div class="tracking-modal-input-row">
                     <el-input
                         v-model="trackingForm.code"
@@ -675,7 +675,7 @@ export default {
             ];
             return this.options.some(o => ids.includes(o.id) && o.action_void_order);
         },
-        // La guía se arma sobre la nota de venta: basta con que exista para permitirla.
+        // La orden de entrega se arma sobre la nota de venta: basta con que exista para permitirla.
         canGenerateGuide(row) {
             return !!row.sale_note_id;
         },

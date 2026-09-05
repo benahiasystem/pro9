@@ -6,11 +6,26 @@ use App\CoreFacturalo\Requests\Api\Transform\Common\EstablishmentTransform;
 use App\CoreFacturalo\Requests\Api\Transform\Common\PersonTransform;
 use App\CoreFacturalo\Requests\Api\Transform\Common\ActionTransform;
 use App\CoreFacturalo\Requests\Api\Transform\Common\LegendTransform;
+use App\Models\Tenant\User;
+use App\Support\Venezuela\VendeyaDocumentPayloadNormalizer;
 
 class DocumentTransform
 {
     public static function transform($inputs)
     {
+        // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
+        // ########## INICIO CAMBIO AFECTACIÓN IVA
+        $inputs = VendeyaDocumentPayloadNormalizer::normalize($inputs);
+        // ######### FIN CAMBIO AFECTACIÓN IVA
+        // ######## FIN MIGRACIÓN MONEDA VENEZUELA ########
+
+        if (strtoupper((string) ($inputs['source_module'] ?? '')) === 'VENDEYA') {
+            $sellerId = $inputs['codigo_vendedor'] ?? null;
+
+            if (!$sellerId || !User::query()->whereKey($sellerId)->exists()) {
+                $inputs['codigo_vendedor'] = auth()->id();
+            }
+        }
 
         $totals = $inputs['totales'];
 

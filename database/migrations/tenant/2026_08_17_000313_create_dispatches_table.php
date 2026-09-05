@@ -24,7 +24,7 @@
  * - `number`: int(11); NOT NULL — Sin comentario definido en el esquema fuente.
  * - `date_of_issue`: date; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `time_of_issue`: time; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `date_delivery_to_transport`: date; NULL — para guia remision solo con transporte publico
+ * - `date_delivery_to_transport`: date; NULL — para orden de entrega solo con transporte publico
  * - `customer_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
  * - `buyer_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
  * - `buyer`: json; NULL — Sin comentario definido en el esquema fuente.
@@ -120,7 +120,7 @@ CREATE TABLE `dispatches` (
   `number` int(11) NOT NULL,
   `date_of_issue` date NOT NULL,
   `time_of_issue` time NOT NULL,
-  `date_delivery_to_transport` date DEFAULT NULL COMMENT 'para guia remision solo con transporte publico',
+  `date_delivery_to_transport` date DEFAULT NULL COMMENT 'para orden de entrega solo con transporte publico',
   `customer_id` int(10) unsigned DEFAULT NULL,
   `buyer_id` int(10) unsigned DEFAULT NULL,
   `buyer` json DEFAULT NULL,

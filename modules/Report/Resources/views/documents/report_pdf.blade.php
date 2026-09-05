@@ -65,7 +65,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                     <td>
                         <p><strong>Establecimiento: </strong>{{$establishment->address}} - {{$establishment->department->description}} - {{$establishment->district->description}}</p>
@@ -169,7 +169,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @endif
 
                         @if ($columns->guides->visible)
-                            <th style="padding: 5px; text-align: center;"># Guía</th>
+                            <th style="padding: 5px; text-align: center;"># Orden de entrega</th>
                         @endif
                         @if ($columns->quote->visible)
                             <th style="padding: 5px; text-align: center;">Cotización</th>
@@ -192,7 +192,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                         @endif
                         <th style="padding: 5px; text-align: center;">Cliente</th>
                         @if ($columns->ruc->visible)
-                        <th style="padding: 5px; text-align: center;">RUC</th>
+                        <th style="padding: 5px; text-align: center;">RIF</th>
                         @endif
 
                         <th style="padding: 5px; text-align: center;">Estado</th>
@@ -342,7 +342,7 @@ $document_types=DocumentType::OnlyAvaibleDocuments()->get();
                                 @endif
                                 <td style="padding: 5px; text-align: center;" class="celda">{{$value->customer->name}}</td>
                                 @if ($columns->ruc->visible)
-                                <td style="padding: 5px; text-align: center;" class="celda">{{$value->customer->number}}</td>
+                                <td style="padding: 5px; text-align: center;" class="celda">{{format_person_identity_document($value->customer)}}</td>
                                 @endif
                                 <td style="padding: 5px; text-align: center;" class="celda">{{$value->state_type->description}}</td>
 

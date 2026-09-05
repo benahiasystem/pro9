@@ -15,7 +15,7 @@
         '-' => 'S/D',
         '0' => 'S/D',
         '1' => 'DNI',
-        '6' => 'RUC',
+        '6' => 'RIF',
     ];
 
     $affected_document_number = ($document_base->affected_document) ? $document_base->affected_document->series.'-'.str_pad($document_base->affected_document->number, 8, '0', STR_PAD_LEFT) : $document_base->data_affected_document->series.'-'.str_pad($document_base->data_affected_document->number, 8, '0', STR_PAD_LEFT);
@@ -76,7 +76,7 @@
             <td width="50%" class="text-center pl-3">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -95,7 +95,7 @@
             <td width="50%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -128,7 +128,7 @@
     <tr>
         <td>{{ $customer->identity_document_type->description }}</td>
         <td>:</td>
-        <td>{{ $customer->number }}</td>
+        <td>{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</td>
         {{--@isset($document->date_of_due)--}}
             {{--<td>Fecha de vencimiento:</td>--}}
             {{--<td>{{ $document->date_of_due->format('Y-m-d') }}</td>--}}

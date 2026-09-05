@@ -66,7 +66,7 @@
                                         <th class="">Fecha emisión</th>
                                         <th>Doc. Afectado</th>
                                         <th class="">Cliente</th>
-                                        <th class="">RUC</th>
+                                        <th class="">RIF</th>
                                         <th class="">Estado</th>
                                         <th class="">Moneda</th>
                                         <th class="">Total Exonerado</th>
@@ -104,7 +104,7 @@
 
                                         <td>{{$serie_affec}} </td>
                                         <td>{{$value->person->name}}</td>
-                                        <td>{{$value->person->number}}</td>
+                                        <td>{{format_person_identity_document($value->person)}}</td>
                                         <td>{{$value->state_type->description}}</td>
 
                                         @php

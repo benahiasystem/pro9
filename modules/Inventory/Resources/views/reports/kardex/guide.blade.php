@@ -35,7 +35,7 @@
 <table style="border:2px solid black;">
     <tr>
         <td style="text-align: center">
-            <strong>R.U.C. {{$company_number}}</strong>
+            <strong>R.I.F. {{$company_number}}</strong>
         </td>
     </tr>
     <tr>

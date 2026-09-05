@@ -65,7 +65,7 @@
     <tr>
         <td class="text-center text-uppercase">
             @include('pdf.partials.company_document_header_names_plain')<br>
-            {{ 'RUC '.$company->number }}
+            {{ 'RIF '.$company->number }}
         </td>
     </tr>
     <tr>
@@ -109,7 +109,7 @@
                 F. Vencimiento: {{ $invoice->date_of_due->format('Y-m-d') }} <br>
             @endisset
             Cliente: {{ $customer->name }} <br>
-            {{ $customer->identity_document_type->description }}: {{ $customer->number }} <br>
+            {{ $customer->identity_document_type->description }}: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }} <br>
             Dirección: {{ $customer->address }}
             {{ ($customer->district_id !== '-')? ', '.$customer->district->description : '' }}
             {{ ($customer->province_id !== '-')? ', '.$customer->province->description : '' }}
@@ -283,7 +283,7 @@
 
 @if ($document->dispatch)
     <br/>
-    <strong>Guías de remisión</strong>
+    <strong>Órdenes de entrega</strong>
     <table>
         <tr>
             <td>{{ $document->dispatch->number_full }}</td>
@@ -292,7 +292,7 @@
 
 @elseif (count($document->reference_guides) > 0)
     <br/>
-    <span>Guias de remisión</span>
+    <span>Órdenes de entrega</span>
     <table>
         @foreach($document->reference_guides as $guide)
             <tr>

@@ -52,7 +52,7 @@ class DispatchAddress extends ModelTenant
         return [
             'id' => $this->id,
             'person_name' => $this->person->name,
-            'person_number' => $this->person->number,
+            'person_number' => format_person_identity_document($this->person),
             'address' => $this->address,
             'location_name' => $this->location_id,
             'establishment_code' => $this->establishment_code,

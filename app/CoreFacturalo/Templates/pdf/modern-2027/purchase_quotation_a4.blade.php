@@ -20,7 +20,7 @@
             <td width="50%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -52,7 +52,7 @@
             <td width="50%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -97,7 +97,7 @@
             @foreach($document->suppliers as $supplier)
                 @php
                     $supplier_name = $supplier->name ?? $supplier->description ?? '';
-                    $supplier_number = $supplier->number ?? '';
+                    $supplier_number = format_person_identity_document($supplier);
                     $supplier_email = $supplier->email ?? '';
                 @endphp
                 {{ $supplier_name }}{{ $supplier_number ? ' ('.$supplier_number.')' : '' }}{{ $supplier_email ? ' - '.$supplier_email : '' }}{{ !$loop->last ? ', ' : '' }}

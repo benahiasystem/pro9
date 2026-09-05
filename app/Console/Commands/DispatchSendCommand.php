@@ -35,7 +35,7 @@ class DispatchSendCommand extends Command
                 ->whereNull('ticket')
                 ->get();
 
-            $this->info('Cantidad de guias para enviar: ' . $dispatches->count());
+            $this->info('Cantidad de órdenes de entrega para enviar: ' . $dispatches->count());
 
             if ($dispatches->isEmpty()) {
                 $this->info('No dispatches pending to send');
@@ -62,7 +62,7 @@ class DispatchSendCommand extends Command
                                     'reception_date' => $reception_date,
                                     'state_type_id' => '03'
                                 ]);
-                            $this->info("Se obtuvo el nro. de ticket correctamente. Ticket: {$ticket}, Fecha de recepción: {$reception_date}, guia: {$dispatch->series}-{$dispatch->number}");
+                            $this->info("Se obtuvo el nro. de ticket correctamente. Ticket: {$ticket}, Fecha de recepción: {$reception_date}, orden de entrega: {$dispatch->series}-{$dispatch->number}");
 
                         } else {
                             Log::error('No se obtuvo el numero de ticket', $res);

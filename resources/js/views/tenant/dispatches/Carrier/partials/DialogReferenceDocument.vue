@@ -43,7 +43,7 @@
       
       <div class="col-6">
         <div class="form-group position-relative" :class="{ 'has-error': !!errors.ruc }">
-          <label class="control-label mb-0">Número RUC<span class="text-danger"> *</span></label>
+          <label class="control-label mb-0">Número RIF<span class="text-danger"> *</span></label>
           <el-input
             v-model="form.ruc"
             :maxlength="11"
@@ -120,7 +120,7 @@ export default {
     } else {
       this.document_types = [
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        { id: '09', description: 'Guía de despacho remitente' }
+        { id: '09', description: 'Orden de entrega remitente' }
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
       ]
     }
@@ -189,7 +189,7 @@ export default {
           return false
         }
         if (value.length !== 11) {
-          setError('El RUC debe contener 11 dígitos')
+          setError('El RIF debe contener 11 dígitos')
           return false
         }
         return true

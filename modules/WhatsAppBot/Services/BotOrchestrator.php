@@ -491,7 +491,7 @@ class BotOrchestrator
 
     /**
      * Traduce mensajes técnicos de error a textos amigables para el vendedor.
-     * Si el mensaje contiene patrones conocidos (stock, caja, RUC, etc.), devuelve
+     * Si el mensaje contiene patrones conocidos (stock, caja, RIF, etc.), devuelve
      * un texto claro y accionable. Si no, devuelve el mensaje genérico.
      */
     private function humanizeEmissionError(string $message, string $type): string
@@ -512,9 +512,9 @@ class BotOrchestrator
             return "Para emitir comprobantes primero debes abrir caja en el sistema. Apertura tu caja desde Pro8 y vuelve a intentar.";
         }
 
-        // RUC / cliente
+        // RIF / cliente
         if (str_contains($lower, 'ruc') && (str_contains($lower, 'inválido') || str_contains($lower, 'invalido') || str_contains($lower, 'no válido') || str_contains($lower, 'invalid'))) {
-            return "No se puede emitir la {$type}: el RUC del cliente no es válido. Verifica el documento del cliente.";
+            return "No se puede emitir la {$type}: el RIF del cliente no es válido. Verifica el documento del cliente.";
         }
 
         // Configuración SUNAT

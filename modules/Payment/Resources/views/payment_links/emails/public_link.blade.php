@@ -25,7 +25,7 @@
     <li>Nombre comercial: {{ PayLinkCo::commercialLine($company) }}</li>
     <li>Razón social: {{ $company->name }}</li>
     @endif
-    <li>RUC: {{ $company->number }}</li>
+    <li>RIF: {{ $company->number }}</li>
 </ul>
 </body>
 </html>

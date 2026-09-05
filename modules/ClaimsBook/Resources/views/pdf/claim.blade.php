@@ -211,7 +211,7 @@
                 <td class="company-info-cell">
                     <div class="company-name">{{ $company->name }}</div>
                     @if(!empty($company->number))
-                        <div class="company-detail" style="margin-bottom: 10px !important">RUC: {{ $company->number }}</div>                        
+                        <div class="company-detail" style="margin-bottom: 10px !important">RIF: {{ $company->number }}</div>
                     @endif
                     @if($establishment)
                         @php

@@ -625,7 +625,7 @@ export default {
             let customer = this.customers.filter(element => element.id === this.form.customer_id)[0]
 
             if (customer.identity_document_type_id == '6' && this.form.document_type_id === "03") {
-                return this.$message.error('Los clientes con RUC no pueden generar boleta');
+                return this.$message.error('Los clientes con RIF no pueden generar boleta');
             }
             if ((customer.identity_document_type_id == '1' || customer.identity_document_type_id == '0' ) && this.form.document_type_id === "01") {
                 return this.$message.error('Los clientes con DNI no pueden generar factura');

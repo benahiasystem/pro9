@@ -33,7 +33,7 @@
         <td class="text-center">@include('pdf.partials.company_document_header_names')</td>
     </tr>
     <tr>
-        <td class="text-center"><h5>{{ 'RUC '.$company->number }}</h5></td>
+        <td class="text-center"><h5>{{ 'RIF '.$company->number }}</h5></td>
     </tr>
     <tr>
         <td class="text-center" style="text-transform: uppercase;">
@@ -50,7 +50,7 @@
         <td class="text-center pb-3">{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</td>
     </tr>
     <tr>
-        <td class="text-center pt-3 border-top"><h4 class="font-bold">{{ 'R.U.C. '.$company->number }}</h4></td>
+        <td class="text-center pt-3 border-top"><h4 class="font-bold">{{ 'R.I.F. '.$company->number }}</h4></td>
     </tr>
     <tr>
         <td class="text-center"><h4>{{ $document->document_type->description }}</h4></td>
@@ -71,7 +71,7 @@
         <td>Razón Social: {{ $customer->name }}</td>
     </tr>
     <tr>
-        <td>RUC: {{ $customer->number }}
+        <td>RIF: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}
         </td>
     </tr>
     <tr>

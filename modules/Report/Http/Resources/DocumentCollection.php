@@ -56,7 +56,7 @@ class DocumentCollection extends ResourceCollection
                 'serie' => $row->series,
                 'number' => $row->number,
                 'customer_name' => $row->customer->name,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'currency_type_id' => $row->currency_type_id,
                 'district' => $stablishment_info['district'],
                 'department' => $stablishment_info['department'],

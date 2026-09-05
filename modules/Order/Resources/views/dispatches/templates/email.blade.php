@@ -18,7 +18,7 @@
 
     {{ $dispatch->customer->name }}
   
-    , informamos que su guía ha sido emitida exitosamente.</p>
+    , informamos que su orden de entrega ha sido emitida exitosamente.</p>
 
 <ul>
 

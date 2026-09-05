@@ -420,7 +420,7 @@ class DispatchController extends Controller
         }
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-        $message = "Se creó la guía de despacho {$document->series}-{$document->number}";
+        $message = "Se creó la orden de entrega {$document->series}-{$document->number}";
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         return [
@@ -611,7 +611,7 @@ class DispatchController extends Controller
             case 'pdf':
                 $folder = 'pdf';
                 // Validar existencia física del PDF. 
-                // Si el archivo fue purgado, invocar al orquestador para reconstruir la guía en segundo plano.
+                // Si el archivo fue purgado, invocar al orquestador para reconstruir la orden de entrega en segundo plano.
                 if (!$this->existFileInStorage($retention->filename, $folder)) {
                     (new \App\CoreFacturalo\Facturalo)->createPdf($retention, 'dispatch', 'a4');
                 }
@@ -767,7 +767,7 @@ class DispatchController extends Controller
 
 
     /**
-     * Obtener precio unitario desde registro relacionado a la guia - convertir guia a cpe
+     * Obtener precio unitario desde registro relacionado a la orden de entrega - convertir orden de entrega a CPE
      *
      * @param Item $item
      * @param Dispatch $dispatch
@@ -809,7 +809,7 @@ class DispatchController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error al asociar la guía con el comprobante. Detalles: ' . $th->getMessage()
+                'message' => 'Ocurrió un error al asociar la orden de entrega con el comprobante. Detalles: ' . $th->getMessage()
             ], 500);
         }
 
@@ -851,13 +851,13 @@ class DispatchController extends Controller
     }
 
     /**
-     * Devuelve un conjuto de tipo de documento 9 y 31 para Guías
+     * Devuelve el tipo de documento disponible para órdenes de entrega.
      *
      * @return DocumentType[]|\Illuminate\Database\Eloquent\Collection|\Illuminate\Database\Query\Builder[]|\Illuminate\Support\Collection
      */
     public function getDocumentTypeToDispatches()
     {
-        $doc_type = ['09', '31'];
+        $doc_type = ['09'];
         $document_types_guide = DocumentType::whereIn('id', $doc_type)->get()->transform(function ($row) {
             return [
                 'id' => $row->id,
@@ -983,7 +983,7 @@ class DispatchController extends Controller
     }
 
     /**
-     * Anulación interna de guía de remisión.
+     * Anulación interna de orden de entrega.
      * No comunica con SUNAT; solo cambia el estado y restaura stock si el motivo descuenta.
      */
     public function anulate($id)
@@ -993,21 +993,21 @@ class DispatchController extends Controller
         if ($dispatch->document_type_id !== '09') {
             return [
                 'success' => false,
-                'message' => 'Solo se pueden anular guías de remisión remitente.',
+                'message' => 'Solo se pueden anular órdenes de entrega del remitente.',
             ];
         }
 
         if (!$dispatch->discountsPhysicalStock()) {
             return [
                 'success' => false,
-                'message' => 'Solo se pueden anular guías que descontaron stock en el sistema.',
+                'message' => 'Solo se pueden anular órdenes de entrega que descontaron stock en el sistema.',
             ];
         }
 
         if (in_array($dispatch->state_type_id, ['09', '11'], true)) {
             return [
                 'success' => false,
-                'message' => 'La guía ya se encuentra anulada o rechazada.',
+                'message' => 'La orden de entrega ya se encuentra anulada o rechazada.',
             ];
         }
 
@@ -1016,7 +1016,7 @@ class DispatchController extends Controller
 
         return [
             'success' => true,
-            'message' => 'Guía anulada internamente con éxito',
+            'message' => 'Orden de entrega anulada internamente con éxito',
         ];
     }
 }

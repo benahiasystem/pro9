@@ -29,7 +29,7 @@ class TechnicalServiceCollection extends ResourceCollection
                 'balance' => $row->cost - collect($row->payments)->sum('payment'),
                 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                 'customer_name' => $row->customer->name,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
             ];
         });
     }

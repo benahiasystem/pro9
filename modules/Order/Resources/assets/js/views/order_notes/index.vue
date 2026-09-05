@@ -131,7 +131,7 @@
                             <th v-if="col.visible && col.key === 'documents'" :key="col.key">Comprobantes</th>
                             <th v-if="col.visible && col.key === 'sale_notes'" :key="col.key">Notas de venta</th>
                             <th v-if="col.visible && col.key === 'quotation'" :key="col.key">Cotizacion</th>
-                            <th v-if="col.visible && col.key === 'dispatches'" :key="col.key">Guías</th>
+                            <th v-if="col.visible && col.key === 'dispatches'" :key="col.key">Órdenes de entrega</th>
                             <th v-if="col.visible && col.key === 'mi_tienda_pe'" :key="col.key">#Pedido MiTienda.Pe</th>
                             <th v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">Moneda</th>
                             <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
@@ -266,7 +266,7 @@
                                         </el-dropdown-item>
                                         <el-dropdown-item :command="{action: 'createGuide', id: row.id}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path></svg>
-                                            Crear Guía
+                                            Crear orden de entrega
                                         </el-dropdown-item>
                                         <el-dropdown-item divided v-if="canAnulate(row)"></el-dropdown-item>
                                         <el-dropdown-item v-if="canAnulate(row)" :command="{action: 'anulate', id: row.id}" class="text-danger option-delete">
@@ -386,7 +386,7 @@ export default {
                 documents:         { title: "Comprobantes",        visible: true,  order: 7  },
                 sale_notes:        { title: "Notas de venta",      visible: true,  order: 8  },
                 quotation:         { title: "Cotizacion",          visible: false, order: 9  },
-                dispatches:        { title: "Guías de Remisión",   visible: false, order: 10 },
+                dispatches:        { title: "Órdenes de entrega",   visible: false, order: 10 },
                 mi_tienda_pe:      { title: "Pedido MiTienda.Pe",  visible: false, order: 11 },
                 currency_type:     { title: "Moneda",              visible: true,  order: 12 },
                 total_exportation: { title: "T.Exportación",       visible: false, order: 13 },

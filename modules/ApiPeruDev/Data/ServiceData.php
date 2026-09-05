@@ -446,7 +446,7 @@ class ServiceData
     }
 
     /**
-     * Consulta los establecimientos anexos de un RUC.
+     * Consulta los establecimientos anexos de un RIF.
      * Endpoint: POST /api/ruc-establecimientos-anexos  (body: ruc)
      *
      * @param string $number

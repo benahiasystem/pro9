@@ -47,7 +47,7 @@
     --}}
     <td class="celda"> {{$purchase->state_type_id == '11' ? 'SI':'NO'}}</td>
     <td class="celda"> {{$purchase->supplier->identity_document_type->description}}</td>
-    <td class="celda"> {{$purchase->supplier->number}}</td>
+    <td class="celda"> {{format_person_identity_document($purchase->supplier)}}</td>
     <td class="celda"> {{$purchase->supplier->name}}</td>
     {{--
     <td class="celda">

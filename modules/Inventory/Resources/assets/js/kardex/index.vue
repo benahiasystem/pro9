@@ -38,8 +38,8 @@
             <td class="text-end">
                 <button class="btn waves-effect waves-light btn-xs btn-info"
                         type="button"
-                        @click.prevent="downloadPdfGuide(row.guide_id)"
-                        v-if="row.guide_id">
+                        @click.prevent="downloadPdf(row)"
+                        v-if="row.guide_id || row.transfer_id">
                     <i class="fa fa-file-pdf"></i>
                 </button>
             </td>
@@ -75,9 +75,14 @@ export default {
         })
     },
     methods: {
-        downloadPdfGuide(guide_id) {
-            if (guide_id) {
-                window.open(`/${this.resource}/get_pdf_guide/${guide_id}`, "_blank");
+        downloadPdf(row) {
+            if (row.guide_id) {
+                window.open(`/${this.resource}/get_pdf_guide/${row.guide_id}`, "_blank");
+                return
+            }
+
+            if (row.transfer_id) {
+                window.open(`/transfers/download/pdf/${row.transfer_id}`, "_blank");
             }
         }
     }

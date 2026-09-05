@@ -16,7 +16,7 @@ class UpdateModulesTable extends Migration
     {
         DB::table('modules')->insert([
             ['id'=>'50','value' => 'preventa', 'description' => 'PreVenta', 'sort' => 2],
-            ['id'=>'51','value' => 'guia', 'description' => 'Guías de Remisión', 'sort' => 9],
+            ['id'=>'51','value' => 'guia', 'description' => 'Órdenes de entrega', 'sort' => 9],
             ['id'=>'52','value' => 'comprobante', 'description' => 'Comprobantes Pendientes', 'sort' => 10],
         ]);
         DB::table('modules')->where('value', 'dashboard')->update(['sort' => 1]);

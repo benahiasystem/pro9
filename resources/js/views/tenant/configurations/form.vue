@@ -268,7 +268,7 @@
                                             <label class="control-label">
                                                 Agregar descripción al producto
                                                 <el-tooltip class="item"
-                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Boleta, Cotización, Notas de venta y Guías de remisión."
+                                                    content="Asigna el nombre y descripción al campo 'Reemplazar nombre'. Disponible para Factura, Boleta, Cotización, Notas de venta y Órdenes de entrega."
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -403,7 +403,7 @@
                                         </div>
                                         <div>
                                             <span class="text-muted">
-                                                Reglas para CPE, caja, registros de ingreso, vouchers y guías.
+                                                Reglas para CPE, caja, registros de ingreso, vouchers y órdenes de entrega.
                                             </span>
                                         </div>
                                     </div>
@@ -480,7 +480,7 @@
                                             <label class="control-label">
                                                 Visualizar precio de productos en GRE Remitente
                                                 <el-tooltip class="item"
-                                                    content="Muestra el precio y total de un producto al generar una guía de remisión remitente"
+                                                    content="Muestra el precio y total de un producto al generar una orden de entrega remitente"
                                                     effect="dark" placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
@@ -494,7 +494,7 @@
 
                                         <div class="col-12">
                                             <label class="control-label">
-                                                Habilitar peso por producto en guias
+                                                Habilitar peso por producto en órdenes de entrega
                                                 <el-tooltip class="item"
                                                     content="Disponible para boleta, factura y nota de venta"
                                                     effect="dark"
@@ -1082,7 +1082,7 @@
                                             <label class="control-label">Asignar precio unitario a los productos desde registro
                                                 relacionado
                                                 <el-tooltip class="item"
-                                                    content="Se asignará el precio unitario desde el registro relacionado (Cotización, Nota de venta) a la guía - Generar CPE desde Guía"
+                                                    content="Se asignará el precio unitario desde el registro relacionado (Cotización, Nota de venta) a la orden de entrega - Generar CPE desde Orden de entrega"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -1760,7 +1760,7 @@
                                             <label class="control-label">Afectacion de terminos y condiciones - ventas en todos los
                                                 comprobantes
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <div slot="content">Leyenda: facturas, boletas, notas de ventas, guias de
+                                                    <div slot="content">Leyenda: facturas, boletas, notas de ventas y órdenes de entrega de
                                                         remision
                                                     </div>
                                                     <i class="fa fa-info-circle"></i>
@@ -1858,7 +1858,7 @@
                                             <label class="control-label">Mostrar el nombre del PDF
 
                                                 <el-tooltip class="item"
-                                                    content="Muestra el nombre del producto que se ingresa en el pdf, en vez del nombre del producto. Disponible para CPE, Cotización, Guía de Remisión, Compra y Nota de venta"
+                                                    content="Muestra el nombre del producto que se ingresa en el pdf, en vez del nombre del producto. Disponible para CPE, Cotización, Orden de entrega, Compra y Nota de venta"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -1976,9 +1976,9 @@
                                     <div class="row mx-0 adv-conf-container">
                                         <div class="col-md-6 col-12">
                                             <label class="control-label">
-                                                Actualizar documento al generar guía.
+                                                Actualizar documento al generar orden de entrega.
                                                 <el-tooltip class="item" effect="dark" placement="top-start">
-                                                    <div slot="content">Al generar una guia basado en el documento, se
+                                                    <div slot="content">Al generar una orden de entrega basado en el documento, se
                                                         actualizará el comprobante de pago
                                                     </div>
                                                     <i class="fa fa-info-circle"></i>
@@ -2796,7 +2796,7 @@
                                         </div>
 
                                         <div class="col-12">
-                                            <label class="control-label">Envío de guía de remisión automático</label>
+                                            <label class="control-label">Envío de orden de entrega automático</label>
                                             <div :class="{ 'has-danger': errors.auto_send_dispatchs_to_sunat }" class="form-group">
                                                 <el-switch v-model="form.auto_send_dispatchs_to_sunat" @change="submit"></el-switch>
                                                 <small v-if="errors.auto_send_dispatchs_to_sunat" class="form-control-feedback"
@@ -2822,20 +2822,20 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <h5 class="fw-semibold m-0 d-flex align-items-center gap-2">
                                                 <span class="dot"></span>
-                                                <span class="text-primary text-uppercase">Guías de Remisión</span>
+                                                <span class="text-primary text-uppercase">Órdenes de entrega</span>
                                             </h5>
                                         </div>
                                         <div>
                                             <span class="text-muted">
-                                                Direcciones y precios visibles en las guías electrónicas (GRE).
+                                                Direcciones y precios visibles en las órdenes de entrega (GRE).
                                             </span>
                                         </div>
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
                                         <div class="col-12">
-                                            <label class="control-label">Permitir Colocar direccion de llegada en guía
+                                            <label class="control-label">Permitir Colocar dirección de llegada en orden de entrega
                                                 <el-tooltip class="item"
-                                                    content="En guías, cambia el selector a texto para poder introducir el valor. Maximo 100 caracteres"
+                                                    content="En órdenes de entrega, cambia el selector a texto para poder introducir el valor. Maximo 100 caracteres"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -2848,9 +2848,9 @@
                                         </div>
 
                                         <div class="col-12">
-                                            <label class="control-label">Asignar dirección de partida - guía
+                                            <label class="control-label">Asignar dirección de partida - orden de entrega
                                                 <el-tooltip class="item"
-                                                    content="Se asigna la dirección de partida mediante la informacion registrada en sucursal - Disponible en guías"
+                                                    content="Se asigna la dirección de partida mediante la informacion registrada en sucursal - Disponible en órdenes de entrega"
                                                     effect="dark" placement="top-start">
                                                     <i class="fa fa-info-circle"></i>
                                                 </el-tooltip>
@@ -2866,7 +2866,7 @@
                                             <label class="control-label">
                                                 Visualizar precio de productos en GRE Remitente
                                                 <el-tooltip class="item"
-                                                    content="Muestra el precio y total de un producto al generar una guía de remisión remitente"
+                                                    content="Muestra el precio y total de un producto al generar una orden de entrega remitente"
                                                     effect="dark" placement="top-start">
                                                     <i class="ri-information-line"></i>
                                                 </el-tooltip>
@@ -3569,7 +3569,7 @@ export default {
                 ['caja', 'efectivo', 'dinero', 'tesoreria', 'arqueo', 'apertura', 'cierre', 'turno'],
                 ['reporte', 'informe', 'estadistica', 'resumen', 'consulta', 'listado', 'analisis'],
                 ['cotizacion', 'presupuesto', 'proforma', 'propuesta', 'oferta', 'estimacion'],
-                ['guia', 'guia de remision', 'despacho', 'envio', 'traslado', 'transporte', 'transportista', 'remitente'],
+                ['guia', 'orden de entrega', 'despacho', 'envio', 'traslado', 'transporte', 'transportista', 'remitente'],
                 ['devolucion', 'retorno', 'reintegro', 'nota de credito', 'anulacion', 'reversion'],
                 ['serie', 'numeracion', 'correlativo', 'secuencia', 'folio'],
                 ['moneda', 'divisa', 'tipo de cambio', 'cambio', 'conversion'],

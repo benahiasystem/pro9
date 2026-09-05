@@ -50,7 +50,7 @@
                                         <th class="">F. Vencimiento</th>
 
                                         <th class="">Cliente</th>
-                                        <th class="">RUC</th>
+                                        <th class="">RIF</th>
                                         <th class="">F. Pago</th>
                                         <th class="">Estado</th>
                                         <th class="" >T.Exonerado</th>
@@ -74,7 +74,7 @@
                                         <td>{{$value->date_of_due->format('Y-m-d')}}</td>
 
                                         <td>{{$value->supplier->name}}</td>
-                                        <td>{{$value->supplier->number}}</td>
+                                        <td>{{format_person_identity_document($value->supplier)}}</td>
                                         <td>{{isset($value->purchase_payments['payment_method_type']['description'])?$value->purchase_payments['payment_method_type']['description']:'-'}}</td>
                                         <td>{{$value->state_type->description}}</td>
                                         <td>{{ $value->total_exonerated}}</td>

@@ -21,7 +21,7 @@
                             <p><b>Cliente: </b></p>
                         </td>
                         <td align="center">
-                            <p><strong>{{$records[0]->customer->number}} - {{$records[0]->customer->name}}</strong></p>
+                            <p><strong>{{format_person_identity_document($records[0]->customer)}} - {{$records[0]->customer->name}}</strong></p>
                         </td>
                     </tr>
                 @endif
@@ -41,7 +41,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong></p>
+                        <p><strong>RIF: </strong></p>
                     </td>
                     <td align="center">{{$company->number}}</td>
                     <td>

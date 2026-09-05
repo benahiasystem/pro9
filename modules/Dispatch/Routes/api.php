@@ -22,12 +22,6 @@ if ($hostname) {
 
         Route::middleware(['auth:api', 'locked.tenant'])->group(function () {
 
-            Route::prefix('dispatch-carrier')
-                ->group(function () {
-                Route::post('/', 'Api\DispatchCarrierController@store');
-                Route::get('/records', 'Api\DispatchCarrierController@records');
-            });
-
             Route::prefix('dispatch-addresses')->group(function () {
                 Route::get('/tables', 'DispatchAddressController@tables');
                 Route::post('/save', 'DispatchAddressController@saveAddressPerson');

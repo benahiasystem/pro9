@@ -209,7 +209,7 @@
                 'pdf',
                 'detail',
                 'guides',
-                'Consolidado de items de guias',
+                'Consolidado de items de órdenes de entrega',
                 $this->getRecordsDispachesItem($request->all())->count()
             )) {
                 return $trayResponse;
@@ -229,7 +229,7 @@
             $pdf = PDF::loadView('report::guides.report_pdf',
                                  compact('records', 'company', 'establishment', 'params'));
 
-            $filename = 'Reporte_Consolidado_Items_Guias_'.date('YmdHis');
+            $filename = 'Reporte_Consolidado_Items_Ordenes_Entrega_'.date('YmdHis');
 
             return $pdf->download($filename.'.pdf');
         }
@@ -259,7 +259,7 @@
                 'pdf',
                 'totals',
                 'guides',
-                'Consolidado de items de guias - totales',
+                'Consolidado de items de órdenes de entrega - totales',
                 $this->getRecordsDispachesItem($request->all())->count()
             )) {
                 return $trayResponse;
@@ -279,7 +279,7 @@
             $pdf = PDF::loadView('report::guides.report_pdf_totals',
                                  compact('records', 'company', 'establishment', 'params'));
 
-            $filename = 'Reporte_Consolidado_Items_Guias_Totales_'.date('YmdHis');
+            $filename = 'Reporte_Consolidado_Items_Ordenes_Entrega_Totales_'.date('YmdHis');
 
             return $pdf->download($filename.'.pdf');
         }
@@ -318,7 +318,7 @@
                 'xlsx',
                 'detail',
                 'guides',
-                'Consolidado de items de guias',
+                'Consolidado de items de órdenes de entrega',
                 $this->getRecordsDispachesItem($request->all())->count()
             )) {
                 return $trayResponse;
@@ -331,7 +331,7 @@
             $records = $this->getRecordsDispachesItem($request->all())->get();
             $params = $request->all();
             self::setParams($params);
-            $filename = 'Reporte_Consolidado_Items_Guias_'.date('YmdHis');
+            $filename = 'Reporte_Consolidado_Items_Ordenes_Entrega_'.date('YmdHis');
 
             return (new GuidesConsolidatedExport())
                 ->records($records)
@@ -354,7 +354,7 @@
                 'xlsx',
                 'totals',
                 'guides',
-                'Consolidado de items de guias - totales',
+                'Consolidado de items de órdenes de entrega - totales',
                 $this->getRecordsDispachesItem($request->all())->count()
             )) {
                 return $trayResponse;
@@ -366,7 +366,7 @@
             $records = $this->totalsByItem($request)->sortBy('item_id');
             $params = $request->all();
             self::setParams($params);
-            $filename = 'Reporte_Consolidado_Items_Guias_Totales_'.date('YmdHis');
+            $filename = 'Reporte_Consolidado_Items_Ordenes_Entrega_Totales_'.date('YmdHis');
 
             return (new GuidesConsolidatedTotalExport())
                 ->records($records)

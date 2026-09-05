@@ -240,7 +240,7 @@ class PaymentLink extends ModelTenant
             'is_paid' => $this->is_paid,
             'customer_id' => $this->person_id,
             // usado para recargar la busqueda remota del cliente en el formulario
-            'customer_number' => optional($this->person)->number,
+            'customer_number' => format_person_identity_document($this->person),
             'documents' => $this->getDocumentsResource(),
         ];
 

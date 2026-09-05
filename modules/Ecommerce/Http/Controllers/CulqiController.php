@@ -21,7 +21,9 @@ use App\Models\Tenant\ConfigurationEcommerce;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Models\Tenant\StatusOrder;
+use App\Support\Venezuela\IdentityDocument;
 use App\Services\Tenant\OrderDocumentFromStatusService;
+use Illuminate\Validation\Rule;
 use Modules\Payment\Models\PaymentConfiguration;
 
 
@@ -81,9 +83,9 @@ class CulqiController extends Controller
 
         $rules = [
             'telefono' => 'required|numeric',
-            'codigo_tipo_documento_identidad' => 'required|numeric',
-            'numero_documento' => 'required|numeric',
-            'identity_document_type_id' => 'required|numeric',
+            'codigo_tipo_documento_identidad' => ['required', Rule::in(IdentityDocument::ids())],
+            'numero_documento' => ['required', 'string', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'identity_document_type_id' => ['required', Rule::in(IdentityDocument::ids())],
         ];
 
         if ($this->isPickupShippingAddress($shippingAddress)) {
@@ -548,7 +550,10 @@ class CulqiController extends Controller
         }
         $customer['codigo_tipo_documento_identidad'] = $docType;
         $customer['identity_document_type_id'] = $docType;
-        $customer['numero_documento'] = preg_replace('/\D/', '', (string) ($customer['numero_documento'] ?? '0')) ?: '0';
+        $customer['numero_documento'] = IdentityDocument::normalizeNumber(
+            $docType,
+            $customer['numero_documento'] ?? '0'
+        ) ?: '0';
 
         $direccion = trim((string) ($customer['direccion'] ?? ''));
         if ($direccion === '' && trim((string) $shippingAddress) !== '') {

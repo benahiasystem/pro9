@@ -35,7 +35,7 @@
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info" @click.prevent="clickDownload(row.external_id, 'a4')">PDF</button>
                         </td>
                         <td class="text-end">
-                            <a v-if="row.btn_dispatch" :href="`/order-forms/dispatch-create/${row.id}`" class="btn waves-effect waves-light btn-xs btn-primary m-1__2 me-1">Generar Guía</a>
+                            <a v-if="row.btn_dispatch" :href="`/order-forms/dispatch-create/${row.id}`" class="btn waves-effect waves-light btn-xs btn-primary m-1__2 me-1">Generar orden de entrega</a>
                             <a v-if="row.btn_dispatch" :href="`/order-forms/create/${row.id}`" class="btn waves-effect waves-light btn-xs btn-warning m-1__2 me-1">Editar</a>
                             <button type="button" class="btn waves-effect waves-light btn-xs btn-info me-1" @click.prevent="clickOptions(row.id)">Opciones</button>
                         </td>

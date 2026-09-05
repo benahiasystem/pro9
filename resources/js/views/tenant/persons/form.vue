@@ -33,7 +33,7 @@
                                                @change="changeIdentityDocType">
                                         <el-option v-for="option in identity_document_types"
                                                    :key="option.id"
-                                                   :label="option.description"
+                                                   :label="option.selection_label || option.description"
                                                    :value="option.id"></el-option>
                                     </el-select>
                                     <small v-if="errors.identity_document_type_id"
@@ -920,7 +920,7 @@ export default {
                 && this.form.number.length === 11
         },
         isForeignDocument() {
-            return this.form.identity_document_type_id === '4'
+            return this.form.identity_document_type_id === 'E'
         },
         establishmentsNote() {
             const selected = this.establishments.filter(e => e.selected).length
@@ -1216,13 +1216,10 @@ export default {
             return this.hasAddressValue(formValue) ? formValue : null
         },
         isPersonWithOptionalAddress() {
-            // DNI: persona natural sin RUC.
+            // DNI: persona natural sin RIF.
             if (this.form.identity_document_type_id === '1') return true
 
-            // RUC 10xxxxxxxxx: tambien es persona natural, no se le exige domicilio.
-            const number = (this.form.number || '').toString().trim()
-
-            return this.form.identity_document_type_id === '6' && number.startsWith('10')
+            return false
         },
         isEmptyAddressRow(row) {
             if (!row) return true
@@ -1381,25 +1378,6 @@ export default {
 
             const pattern_number = new RegExp('^[0-9]+$', 'i');
 
-            if (this.form.identity_document_type_id === '6') {
-
-                if (this.form.number.length !== 11) {
-                    return {
-                        success: false,
-                        message: `El campo número debe tener 11 dígitos.`
-                    }
-                }
-
-                if (!pattern_number.test(this.form.number)) {
-                    return {
-                        success: false,
-                        message: `El campo número debe contener solo números`
-                    }
-                }
-
-            }
-
-
             if (this.form.identity_document_type_id === '1') {
 
                 if (this.form.number.length !== 8) {
@@ -1418,7 +1396,7 @@ export default {
             }
 
 
-            if (['4', '7', '0'].includes(this.form.identity_document_type_id)) {
+            if (['0', '6', '7', 'E', 'C', 'G', 'R'].includes(this.form.identity_document_type_id)) {
 
                 const pattern = new RegExp('^[A-Z0-9\-]+$', 'i');
 

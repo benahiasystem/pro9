@@ -325,7 +325,7 @@ class ServiceDispatchController extends Controller
                                 DB::connection('tenant')->commit();
                                 return [
                                     'success' => true,
-                                    'message' => "Se obtuvo el nro. de ticket correctamente. Ticket: {$ticket}, Fecha de recepción: {$reception_date}, ID guia: {$dispatch->id}",
+                                    'message' => "Se obtuvo el nro. de ticket correctamente. Ticket: {$ticket}, Fecha de recepción: {$reception_date}, ID orden de entrega: {$dispatch->id}",
                                 ];
                             } else {
                                 Log::error('No se obtuvo ticket', $res);
@@ -592,7 +592,7 @@ class ServiceDispatchController extends Controller
                         switch ($res['codRespuesta']) {
                             case '98':
                                 $state_type_id = '03';
-                                $message = 'La guía aún está en proceso, vuelva a consultar.';
+                                $message = 'La orden de entrega aún está en proceso, vuelva a consultar.';
                                 break;
                             case '0':
                                 $state_type_id = '05';
@@ -604,7 +604,7 @@ class ServiceDispatchController extends Controller
                                     $has_cdr = true;
                                 } else {
                                     $sunat_code = $res['error']['numError'] ?? null;
-                                    $message = $res['error']['desError'] ?? 'La guía fue rechazada por SUNAT.';
+                                    $message = $res['error']['desError'] ?? 'La orden de entrega fue rechazada por SUNAT.';
                                     $error_json = [
                                         'codigo' => $sunat_code,
                                         'descripcion' => 'Error de sunat',
@@ -699,7 +699,7 @@ class ServiceDispatchController extends Controller
         }
         // ######### FIN CAMBIO SIN XML CDR SUNAT
         $template = new Template();
-        $template_name = ($document['document_type_id'] === '31')?'dispatch_carrier':'dispatch';
+        $template_name = 'dispatch';
         Log::info($template_name);
         $xmlUnsigned = XmlFormat::format($template->xml($template_name, null, $document));
         $this->uploadStorage($document['filename'], $xmlUnsigned, 'unsigned');

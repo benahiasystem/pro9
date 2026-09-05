@@ -150,7 +150,7 @@
                                             <div class="col-md-5">
                                                 <div class="form-group">
                                                     <label class="control-label">
-                                                        Guias
+                                                        Órdenes de entrega
                                                         <a href="#" @click.prevent="clickAddGuide">[+ Agregar]</a>
                                                     </label>
                                                     <table style="width: 100%">

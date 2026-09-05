@@ -51,7 +51,7 @@
             <td width="50%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -83,7 +83,7 @@
             <td width="50%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -133,7 +133,7 @@
                     </td>
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">
-                        {{ $supplier->number }}
+                        {{ format_identity_document($supplier->identity_document_type_id ?? null, $supplier->number) }}
                     </td>
                 </tr>
                 @php

@@ -69,11 +69,11 @@
                     if (config('tenant.document_type_03_filter')) {
                         $identity_document_type_id = [1];
                     } else {
-                        $identity_document_type_id = [1, 4, 6, 7, 0];
+                        $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
                     }
                 }
             } else {
-                $identity_document_type_id = [1, 4, 6, 7, 0];
+                $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
             }
 
             return $identity_document_type_id;

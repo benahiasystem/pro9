@@ -28,7 +28,7 @@ class DispatchQueryCommand extends Command
                 return;
             }
 
-            $this->info('Cantidad de guias para consultar: ' . $dispatches->count());
+            $this->info('Cantidad de órdenes de entrega para consultar: ' . $dispatches->count());
 
             $serviceController = new ServiceDispatchController();
 

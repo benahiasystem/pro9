@@ -160,7 +160,9 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
             $payment_conditions = GeneralPaymentCondition::get();
             $warehouses = Warehouse::get();
             $permissions = auth()->user()->getPermissionsPurchase();
-            $global_discount_types = ChargeDiscountType::whereIn('id', ['02', '03'])->whereActive()->get();
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
             return compact('suppliers', 'establishment', 'currency_types', 'discount_types', 'affectation_igv_types', 'configuration', 'payment_conditions',
                 'charge_types', 'document_types_invoice', 'company', 'payment_method_types', 'payment_destinations', 'customers', 'warehouses','permissions', 'global_discount_types');

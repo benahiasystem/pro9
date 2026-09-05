@@ -20,7 +20,7 @@
                 <p>@include('partials.report_company_header')</p>
             </td>
             <td>
-                <p><strong>Ruc: </strong>{{$company->number}}</p>
+                <p><strong>RIF: </strong>{{$company->number}}</p>
             </td>
         </tr>
         <tr>

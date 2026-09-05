@@ -50,7 +50,7 @@
         </tr>
         <tr>
             <td>
-                <p><strong>Ruc: </strong></p>
+                <p><strong>RIF: </strong></p>
             </td>
             <td align="center">{{$company->number}}</td>
             <td>
@@ -110,9 +110,9 @@
                     <th>Fecha emisión</th>
                     <th>Fecha Vencimiento</th>
                     <th>Doc. Afectado</th>
-                    <th># Guía</th>
+                    <th># Orden de entrega</th>
                     <th>Cliente</th>
-                    <th>RUC</th>
+                    <th>RIF</th>
                     <th>Estado</th>
                     <th class="">Moneda</th>
                     <th class="">Forma de pago</th>
@@ -190,7 +190,7 @@
 
                         <?php $stablihsment = \App\CoreFacturalo\Helpers\Template\ReportHelper::getLocationData($value); ?>
                         <td class="celda">{{$value->customer?$value->customer->name:($value->person?$value->person->name:null)}}</td>
-                        <td class="celda">{{$value->customer?$value->customer->number:($value->person?$value->person->number:null)}}</td>
+                        <td class="celda">{{$value->customer?format_person_identity_document($value->customer):($value->person?format_person_identity_document($value->person):null)}}</td>
                         <td class="celda">{{$value->state_type->description}}</td>
 
                         @php

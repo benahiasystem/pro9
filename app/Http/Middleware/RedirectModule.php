@@ -99,8 +99,7 @@
                 $group = "advanced";
             } ///* Module reports */
             elseif (
-                $firstLevel == "dispatches" ||
-                $firstLevel == "dispatch_carrier"
+                $firstLevel == "dispatches"
             ) {
                 $group = "guia";
             }

@@ -216,7 +216,7 @@
                     <p class="footer-tagline m-0">{{ $company->name }}</p>
                 @endif
                 @if(!empty($company->number))
-                    <p class="footer-tagline m-0 pb-4">RUC: {{ $company->number }}</p>
+                    <p class="footer-tagline m-0 pb-4">RIF: {{ $company->number }}</p>
                 @endif
 
                 <p class="footer-col-title">Síguenos</p>
@@ -880,7 +880,7 @@ body.cart-added-modal-open #announcement-bar.announcement-bar {
                                     <div class="unified-input-group position-relative">
                                         <select class="select-part" id="selectDocument">
                                             <option value="dni" selected>DNI</option>
-                                            <option value="ruc">RUC</option>
+                                            <option value="ruc">RIF</option>
                                         </select>
                                         <input type="number" required autocomplete="off" maxlength="11" class="input-part" id="ruc_reg" placeholder="Ingrese su número de documento" name="ruc">
                                         <span id="counter" class="text-center counter-part">0/8</span>
@@ -890,7 +890,7 @@ body.cart-added-modal-open #announcement-bar.announcement-bar {
                                     </button>
                                     <small id="document_status" class="d-block mt-1" style="display:none;"></small>
                                     <small id="document_hint" class="d-block mt-1 text-muted">
-                                        Ingresa tu DNI o RUC y verifícalo para continuar.
+                                        Ingresa tu DNI o RIF y verifícalo para continuar.
                                     </small>
                                 </div>
                                 <div id="register-fields" class="register-extra-fields px-2">
@@ -972,7 +972,7 @@ function setDocumentsCounter() {
             counter.textContent = '0/8';
         } else if (select.value === 'ruc') {
             ruc_reg.setAttribute('maxlength', '11');
-            ruc_reg.setAttribute('placeholder', 'Ingrese su RUC');
+            ruc_reg.setAttribute('placeholder', 'Ingrese su RIF');
             counter.textContent = '0/11';
         }
     }

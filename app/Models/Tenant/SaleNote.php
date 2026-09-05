@@ -408,7 +408,7 @@ use Modules\Sale\Models\Agent;
                 'currency_type_id'       => $this->currency_type_id,
 
                 'customer_name'          => optional($this->customer)->name,
-                'customer_number'        => optional($this->customer)->number,
+                'customer_number'        => format_person_identity_document($this->customer),
                 'customer_address'       => $this->getApiResourceCustomerAddress(),
 
                 // Operaciones segun su afectacion al IGV.
@@ -987,7 +987,7 @@ use Modules\Sale\Models\Agent;
                 'identifier' => $this->identifier,
                 'full_number' => $this->series . '-' . $this->number,
                 'customer_name' => $customer->name,
-                'customer_number' => $customer->number,
+                'customer_number' => format_person_identity_document($customer),
                 'children_name' => $child_name,
                 'children_number' => $child_number,
                 'exchange_rate_sale' => $this->exchange_rate_sale,

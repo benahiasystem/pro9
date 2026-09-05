@@ -14,13 +14,13 @@
         '-' => 'Bs.D',
         '0' => 'Bs.D',
         '1' => 'DNI',
-        '6' => 'RUC',
+        '6' => 'RIF',
     ];
     $currency_type_description_array = [
         'VES' => 'Bs.D',
         '0' => 'Bs.D',
         '1' => 'DNI',
-        '6' => 'RUC',
+        '6' => 'RIF',
     ];
 
     $affected_document_number = ($document_base->affected_document) ? $document_base->affected_document->series.'-'.str_pad($document_base->affected_document->number, 8, '0', STR_PAD_LEFT) : $document_base->data_affected_document->series.'-'.str_pad($document_base->data_affected_document->number, 8, '0', STR_PAD_LEFT);
@@ -85,7 +85,7 @@
         ])</td>
     </tr>
     <tr>
-        <td class="m27-head-line">RUC: {{ $company->number }}</td>
+        <td class="m27-head-line">RIF: {{ $company->number }}</td>
     </tr>
     <tr>
         <td class="m27-head-line" style="text-transform: uppercase;">
@@ -143,7 +143,7 @@
     </tr>
     <tr>
         <td class="m27-label">{{ $customer->identity_document_type->description }}:</td>
-        <td class="m27-value">{{ $customer->number }}</td>
+        <td class="m27-value">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</td>
     </tr>
     <tr>
         <td class="m27-label">Cajero:</td>

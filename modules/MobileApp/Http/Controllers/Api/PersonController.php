@@ -36,7 +36,7 @@ class PersonController extends Controller
      * Crear un nuevo cliente/proveedor
      * Payload requerido:
      * - name: nombre
-     * - number: DNI/RUC
+     * - number: DNI/RIF
      * - identity_document_type_id: ID del tipo de documento
      * - address: dirección principal
      * - telephone: teléfono (opcional)
@@ -112,7 +112,7 @@ class PersonController extends Controller
      * - limit: cantidad de registros (máximo 100, default 15)
      * - cursor: posición actual (null en primera petición)
      * - type: tipo de persona (customers/suppliers) - requerido en la ruta
-     * - input: búsqueda por nombre o número (DNI/RUC)
+     * - input: búsqueda por nombre o número (DNI/RIF)
      * - identity_document_type_id: filtrar por tipo de documento (ID)
      * - enabled: filtrar por estado habilitado (true/false, opcional)
      *

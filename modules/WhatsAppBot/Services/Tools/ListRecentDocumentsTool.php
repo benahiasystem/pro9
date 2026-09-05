@@ -34,7 +34,7 @@ class ListRecentDocumentsTool implements ToolInterface
                         ],
                         'customer_document' => [
                             'type' => 'string',
-                            'description' => 'Filtrar por DNI o RUC del cliente (opcional).',
+                            'description' => 'Filtrar por DNI o RIF del cliente (opcional).',
                         ],
                     ],
                 ],

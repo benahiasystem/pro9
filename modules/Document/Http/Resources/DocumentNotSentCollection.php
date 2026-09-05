@@ -65,7 +65,7 @@ class DocumentNotSentCollection extends ResourceCollection
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
                 'number' => $row->number_full,
                 'customer_name' => $row->customer->name,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'total' => $row->total,
                 'group_id' => $row->group_id,
                 'state_type_id' => $row->state_type_id,

@@ -46,7 +46,7 @@ class QuotationCollection extends ResourceCollection
                 'identifier' => $row->identifier,
                 'user_name' => $row->user->name,
                 'customer_name' => $row->customer->name,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'currency_type_id' => $row->currency_type_id,
                 'total_exportation' => number_format($row->total_exportation,2),
                 'total_free' => number_format($row->total_free,2),

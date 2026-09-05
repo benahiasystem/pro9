@@ -26,7 +26,7 @@
                 </a>
             </h2>
             <ol class="breadcrumbs">
-                <li class="active"><span>Guías de remisión</span></li>
+                <li class="active"><span>Órdenes de entrega</span></li>
             </ol>
             <div class="right-wrapper pull-right">
                 <a
@@ -38,7 +38,7 @@
                     href="#"
                     @click.prevent="showModalGenerateCPE = true"
                     class="btn btn-custom btn-sm  mt-2 me-2"
-                    >Generar comprobante desde múltiples guías</a
+                    >Generar comprobante desde múltiples órdenes de entrega</a
                 >
             </div>
         </div>
@@ -238,7 +238,7 @@
                         </td>
                         <td class="text-center">
                             <!-- ########## INICIO CAMBIO SIN XML CDR SUNAT -->
-                            <!-- La guía local ofrece únicamente PDF. -->
+                            <!-- La orden de entrega local ofrece únicamente PDF. -->
                             <!-- ######### FIN CAMBIO SIN XML CDR SUNAT -->
                             <button
                                 type="button"
@@ -422,8 +422,8 @@ export default {
         },
         clickVoided(id) {
             this.$confirm(
-                "Esta anulación es únicamente interna y no tiene efecto ante SUNAT. Si la guía descontó stock, se restaurará en inventario.",
-                "Anular guía de remisión",
+                "Esta anulación es únicamente interna y no tiene efecto ante SUNAT. Si la orden de entrega descontó stock, se restaurará en inventario.",
+                "Anular orden de entrega",
                 {
                     confirmButtonText: "Anular",
                     cancelButtonText: "Cancelar",

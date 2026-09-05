@@ -52,6 +52,7 @@ use App\Models\Tenant\SaleNote;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
 use App\Support\Venezuela\Localization;
+use App\Support\Venezuela\IdentityDocument;
 use App\Models\Tenant\StateType;
 use App\Models\Tenant\User;
 use App\Traits\OfflineTrait;
@@ -453,7 +454,7 @@ class DocumentController extends Controller
         ->where('active', 1)
         ->exists();
 
-        $document_types_guide = DocumentType::whereIn('id', ['09', '31'])->get()->transform(function ($row) {
+        $document_types_guide = DocumentType::whereIn('id', ['09'])->get()->transform(function ($row) {
             return [
                 'id' => $row->id,
                 'active' => (bool)$row->active,
@@ -476,7 +477,9 @@ class DocumentController extends Controller
         $payment_destinations = $this->getPaymentDestinations();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $user = $userType;
-        $global_discount_types = ChargeDiscountType::whereIn('id', ['02', '03'])->whereActive()->get();
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         $enable_consigned = Configuration::first()->enable_consigned;
 
         return compact(
@@ -1346,16 +1349,16 @@ class DocumentController extends Controller
         if (in_array($operation_type_id, ['0101', '1001', '1004'])) {
 
             if ($document_type_id == '01') {
-                $identity_document_type_id = [6, 0];
+                $identity_document_type_id = IdentityDocument::ids();
             } else {
                 if (config('tenant.document_type_03_filter')) {
                     $identity_document_type_id = [1];
                 } else {
-                    $identity_document_type_id = [1, 4, 6, 7, 0];
+                    $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
                 }
             }
         } else {
-            $identity_document_type_id = [1, 4, 6, 7, 0];
+            $identity_document_type_id = ['0', '1', '6', '7', 'E', 'C', 'G', 'R'];
         }
 
         return $identity_document_type_id;

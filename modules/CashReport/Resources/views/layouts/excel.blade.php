@@ -1,7 +1,7 @@
 {{-- Layout para exportación Excel (FromView). Cada reporte define @section('content') con sus tablas --}}
 <table>
     <tr><td colspan="6"><strong>{{ $header['company_name'] }}</strong></td></tr>
-    <tr><td colspan="6"><strong>RUC:</strong> {{ $header['company_number'] }}</td></tr>
+    <tr><td colspan="6"><strong>RIF:</strong> {{ $header['company_number'] }}</td></tr>
     <tr><td colspan="6"><strong>{{ strtoupper($title) }}</strong></td></tr>
     <tr><td colspan="6"></td></tr>
     <tr><td colspan="6"><strong>Vendedor:</strong> {{ $header['cash_user_name'] }}</td></tr>

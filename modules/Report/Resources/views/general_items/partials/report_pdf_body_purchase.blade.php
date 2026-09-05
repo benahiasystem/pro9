@@ -38,7 +38,7 @@
     @endif
     --}}
     <td class="celda">{{$document->supplier->identity_document_type_id}}</td>
-    <td class="celda">{{$document->supplier->number}}</td>
+    <td class="celda">{{format_person_identity_document($document->supplier)}}</td>
     <td class="celda">{{$document->supplier->name}}</td>
     <td class="celda">{{$document->currency_type_id}} {{ $description_apply_conversion_to_pen ?? ''}}</td>
     {{-- <td class="celda">{{$document->exchange_rate_sale}}</td> --}}

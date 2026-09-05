@@ -167,17 +167,8 @@ return array (
         array (
           'id' => 14,
           'value' => 'dispatches',
-          'description' => 'G.R. Remitente',
+          'description' => 'Orden de entrega',
           'order_menu' => 14,
-          'created_at' => NULL,
-          'updated_at' => NULL,
-        ),
-        14 =>
-        array (
-          'id' => 15,
-          'value' => 'carrier_dispatches',
-          'description' => 'G.R. Transportista',
-          'order_menu' => 15,
           'created_at' => NULL,
           'updated_at' => NULL,
         ),
@@ -1788,7 +1779,7 @@ return array (
           'active' => 1,
           'short' => NULL,
           // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-          'description' => 'GUÍA DE DESPACHO REMITENTE',
+          'description' => 'ORDEN DE ENTREGA',
           // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'is_sunat' => 1,
         ),
@@ -1810,16 +1801,6 @@ return array (
           // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
           'is_sunat' => 1,
         ),
-        9 =>
-        array (
-          'id' => '31',
-          'active' => 1,
-          'short' => NULL,
-          // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-          'description' => 'GUÍA DE DESPACHO TRANSPORTISTA',
-          // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-          'is_sunat' => 1,
-        ),
         10 =>
         array (
           'id' => '40',
@@ -1835,15 +1816,7 @@ return array (
           'id' => '71',
           'active' => 0,
           'short' => NULL,
-          'description' => 'Guia de remisión remitente complementaria',
-          'is_sunat' => 1,
-        ),
-        12 =>
-        array (
-          'id' => '72',
-          'active' => 0,
-          'short' => NULL,
-          'description' => 'Guia de remisión transportista complementaria',
+          'description' => 'Orden de entrega complementaria',
           'is_sunat' => 1,
         ),
         13 =>
@@ -1875,7 +1848,7 @@ return array (
           'id' => 'U2',
           'active' => 1,
           'short' => NULL,
-          'description' => 'Guía de Ingreso Almacén',
+          'description' => 'Nota de Ingreso Almacén',
           'is_sunat' => 1,
         ),
         17 =>
@@ -1883,7 +1856,7 @@ return array (
           'id' => 'U3',
           'active' => 1,
           'short' => NULL,
-          'description' => 'Guía de Salida Almacén',
+          'description' => 'Nota de Salida Almacén',
           'is_sunat' => 1,
         ),
         18 =>
@@ -1917,57 +1890,45 @@ return array (
         array (
           'id' => '1',
           'active' => 1,
-          'description' => 'Cédula de Identidad',
+          'description' => 'Venezolano',
         ),
         2 =>
         array (
-          'id' => '4',
-          'active' => 1,
-          'description' => 'Extranjero',
-        ),
-        3 =>
-        array (
           'id' => '6',
           'active' => 1,
-          'description' => 'RIF',
+          'description' => 'Juridico',
         ),
-        // ########### FIN CAMBIO CLIENTES VENEZUELA
-        4 =>
+        3 =>
         array (
           'id' => '7',
           'active' => 1,
           'description' => 'Pasaporte',
         ),
-        5 =>
-        array (
-          'id' => 'A',
-          'active' => 0,
-          'description' => 'Ced. Diplomática de identidad',
-        ),
-        6 =>
-        array (
-          'id' => 'B',
-          'active' => 0,
-          'description' => 'Documento identidad país residencia-no.d',
-        ),
-        7 =>
-        array (
-          'id' => 'C',
-          'active' => 0,
-          'description' => 'Tax Identification Number - TIN – Doc Trib PP.NN',
-        ),
-        8 =>
-        array (
-          'id' => 'D',
-          'active' => 0,
-          'description' => 'Identification Number - IN – Doc Trib PP. JJ',
-        ),
-        9 =>
+        4 =>
         array (
           'id' => 'E',
           'active' => 0,
-          'description' => 'TAM- Tarjeta Andina de Migración',
+          'description' => 'Extranjero',
         ),
+        5 =>
+        array (
+          'id' => 'C',
+          'active' => 0,
+          'description' => 'Comuna',
+        ),
+        6 =>
+        array (
+          'id' => 'G',
+          'active' => 0,
+          'description' => 'Gubernamental',
+        ),
+        7 =>
+        array (
+          'id' => 'R',
+          'active' => 0,
+          'description' => 'Firma Personal',
+        ),
+        // ########### FIN CAMBIO CLIENTES VENEZUELA
       ),
     ),
     'cat_legend_types' =>
@@ -6249,7 +6210,7 @@ return array (
         array (
           'id' => 51,
           'value' => 'guia',
-          'description' => 'Guías de Remisión',
+          'description' => 'Órdenes de entrega',
           'order_menu' => 9,
           'created_at' => NULL,
           'updated_at' => NULL,
@@ -8946,20 +8907,7 @@ return array (
         array (
           'id' => 90,
           'value' => 'dispatches',
-          'description' => 'G.R. Remitente',
-          'module_id' => 51,
-          'route_name' => NULL,
-          'route_path' => NULL,
-          'label_menu' => NULL,
-          'icon_id' => NULL,
-          'created_at' => NULL,
-          'updated_at' => NULL,
-        ),
-        84 =>
-        array (
-          'id' => 91,
-          'value' => 'dispatch_carrier',
-          'description' => 'G.R. Transportista',
+          'description' => 'Orden de entrega',
           'module_id' => 51,
           'route_name' => NULL,
           'route_path' => NULL,

@@ -186,7 +186,7 @@ use App\Models\Tenant\{
                                     'series'                             => $row->series,
                                     'number'                             => $row->number,
                                     'customer_identity_document_type_id' => $row->customer->identity_document_type_id,
-                                    'customer_number'                    => $row->customer->number,
+                                    'customer_number'                    => format_person_identity_document($row->customer),
                                     'customer_name'                      => $row->customer->name,
                                     'total_exportation'                  => $total_exportation,
                                     'total_taxed'                        => $total_taxed,
@@ -238,12 +238,11 @@ use App\Models\Tenant\{
             '03',//    BOLETA DE VENTA ELECTRÓNICA
             //'07',//    NOTA DE CRÉDITO
             //'08',//    NOTA DE DÉBITO
-            //'09',//    GUIA DE REMISIÓN REMITENTE
+            //'09',//    ORDEN DE ENTREGA
             //'20',//    COMPROBANTE DE RETENCIÓN ELECTRÓNICA
-            //'31',//    Guía de remisión transportista
+            //'31',//    Orden de entrega transportista
             //'40',//    COMPROBANTE DE PERCEPCIÓN ELECTRÓNICA
-            //'71',//    Guia de remisión remitente complementaria
-            //'72',//	Guia de remisión transportista complementaria
+            //'71',//    Orden de entrega complementaria
             //'GU75',//	GUÍA
             //'NE76',//	NOTA DE ENTRADA
             //'80',//	NOTA DE VENTA
@@ -320,7 +319,7 @@ use App\Models\Tenant\{
                     'series' => $row->series,
                     'number' => $row->number,
                     'supplier_identity_document_type_id' => $row->supplier->identity_document_type_id,
-                    'supplier_number' => $row->supplier->number,
+                    'supplier_number' => format_person_identity_document($row->supplier),
                     'supplier_name' => $row->supplier->name,
                                     'total_exportation'                  => $total_exportation,
                                     'total_exonerated'                   => $total_exonerated,

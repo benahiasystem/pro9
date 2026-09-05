@@ -1,6 +1,6 @@
 <table>
     <tr>
-        <th>Ruc</th>
+        <th>RIF</th>
         <th>tipo documento</th>
         <th>serie documento</th>
         <th>numero documento</th>

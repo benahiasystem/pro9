@@ -45,7 +45,7 @@ class IncomeResource extends JsonResource
             'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
             'payments' => $payments,
             'customer_name' => $customerName,
-            'customer_number' => optional($matchedPerson)->number,
+            'customer_number' => format_person_identity_document($matchedPerson),
             'customer_telephone' => optional($matchedPerson)->telephone,
             'customer_email' => optional($matchedPerson)->email,
             'customer_identity_document_type_description' => optional(optional($matchedPerson)->identity_document_type)->description,

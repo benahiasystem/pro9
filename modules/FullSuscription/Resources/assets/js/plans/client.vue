@@ -16,7 +16,7 @@
       <div class="company-header">
         <img v-if="company.logo" :src="company.logo" :alt="company.name" class="company-logo" />
         <p class="company-name">{{ company.name }}</p>
-        <p v-if="company.ruc" class="company-ruc">RUC {{ company.ruc }}</p>
+        <p v-if="company.ruc" class="company-ruc">RIF {{ company.ruc }}</p>
       </div>
 
       <div class="pricing-card">
@@ -154,7 +154,7 @@
                 <label class="control-label">Tipo doc.</label>
                 <el-select v-model="form.customer.identity_document_type_id" style="width:100%">
                   <el-option label="DNI" value="1" />
-                  <el-option label="RUC" value="6" />
+                  <el-option label="RIF" value="6" />
                 </el-select>
               </div>
               <div class="form-group col-7">

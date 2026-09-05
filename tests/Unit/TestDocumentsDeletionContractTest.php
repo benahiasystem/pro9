@@ -28,7 +28,17 @@ class TestDocumentsDeletionContractTest extends TestCase
         self::assertStringContainsString("Document::where('soap_type_id', '01')->get()", $controller);
         self::assertStringContainsString('$document->items()->delete();', $controller);
         self::assertStringContainsString('$document->payments()->each', $controller);
+        self::assertStringContainsString('$document->items()->delete();', $controller);
         self::assertStringContainsString('$document->inventory_kardex()->delete();', $controller);
+        self::assertLessThan(
+            strpos($controller, '$document->inventory_kardex()->delete();'),
+            strpos($controller, '$document->items()->delete();')
+        );
+        self::assertLessThan(
+            strpos($controller, '$saleNote->inventory_kardex()->delete();'),
+            strpos($controller, '$saleNote->items()->delete();')
+        );
+        self::assertStringContainsString('$payment->cashDocumentPayments()->delete();', $controller);
         self::assertStringContainsString('CashDocument::whereIn(\'document_id\', $documentIds)->delete();', $controller);
         self::assertStringContainsString('Document::whereIn(\'id\', $documentIds)->delete();', $controller);
         self::assertStringContainsString('SaleNote::whereIn(\'id\', $saleNoteIds)->delete();', $controller);

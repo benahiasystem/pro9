@@ -427,7 +427,7 @@
                         <template #ruc_itinerant>
                             <div :class="{ 'has-danger': errors.exchange_rate_sale }" class="form-group">
                                 <label class="control-label"
-                                    >Ruc del establecimiento
+                                    >RIF del establecimiento
                                     <el-tooltip
                                         class="item"
                                         content=""
@@ -979,7 +979,7 @@
                                                     <label
                                                         class="control-label"
                                                     >
-                                                        Guías
+                                                        Órdenes de entrega
                                                     </label>
                                                     <table style="width: 100%">
                                                         <tr
@@ -1044,8 +1044,8 @@
                                                                             class="fa fa-plus font-weight-bold text-info"
                                                                         ></i>
                                                                         <span
-                                                                            >Agregar
-                                                                            guía</span
+                                                                            >Agregar orden
+                                                                            de entrega</span
                                                                         ></a
                                                                     >
                                                                 </label>
@@ -1061,7 +1061,7 @@
                                                     <label
                                                         class="control-label"
                                                     >
-                                                        Guías
+                                                        Órdenes de entrega
                                                     </label>
                                                     <table style="width: 100%">
                                                         <tr
@@ -1127,8 +1127,8 @@
                                                                         ></i>
                                                                         <span
                                                                             style="color: #777777"
-                                                                            >Agregar
-                                                                            guía</span
+                                                                            >Agregar orden
+                                                                            de entrega</span
                                                                         ></a
                                                                     >
                                                                 </label>
@@ -4185,7 +4185,7 @@ export default {
                     tag: "Paso 2 de 2",
                     badge: "Solo la primera vez",
                     title: "Información adicional",
-                    body: "Aquí agregas datos extra al comprobante: <b>observaciones, orden de compra, guías</b> y más.",
+                    body: "Aquí agregas datos extra al comprobante: <b>observaciones, orden de compra, órdenes de entrega</b> y más.",
                     placement: "bottom"
                 }
             ],
@@ -4323,7 +4323,7 @@ export default {
                 },
                 {
                     id: 2,
-                    description: "Establecimiento de un tercero inscrito en el RUC"
+                    description: "Establecimiento de un tercero inscrito en el RIF"
                 },
             ],
             itinerant_option_id: 1,
@@ -4766,13 +4766,18 @@ export default {
             // ########## INICIO CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
             this.form.document_type_id = this.isNrus ? null : "01";
             // ######### FIN CAMBIO SOLO FACTURAS Y NOTAS DE VENTA
-            this.searchRemoteCustomers(client.number);
-            this.form.customer_id = client.id;
+            // ########## INICIO FACTURA DESDE MÚLTIPLES NOTAS PARA TODO CLIENTE ##########
+            this.preloadedCustomerId = client.id;
+            this.preloadedCustomer = client;
+            await this.reloadDataCustomers(client.id);
+            this.preloadedCustomer =
+                _.find(this.customers, { id: client.id }) || client;
+            // ######### FIN FACTURA DESDE MÚLTIPLES NOTAS PARA TODO CLIENTE #########
             this.changeEstablishment();
             this.filterSeries();
-            // this.filterCustomers();
+            this.filterCustomers();
             this.changeCurrencyType();
-            // localStorage.removeItem("client");
+            localStorage.removeItem("client");
         }
         const dispatchesNumbersFromDispatches = localStorage.getItem(
             "dispatches"
@@ -5086,7 +5091,7 @@ export default {
             }
 
             this.$message.success(
-                'Se agrego la dirección del RUC: ' + this.ruc_itinerant
+                'Se agrego la dirección del RIF: ' + this.ruc_itinerant
                 );
 
 
@@ -5500,7 +5505,7 @@ export default {
         // #307 Ajuste para seleccionar automaticamente el tipo de comprobante y serie
         setDefaultDocumentType(from_function) {
             if (this.authUser.multiple_default_document_types) return;
-            if (this.isGeneratedFromExternal && this.preloadedCustomerId) return;
+            if (this.shouldProtectPreloadedCustomer()) return;
 
             this.default_series_type = this.config.user.serie;
             this.default_document_type = this.config.user.document_id;
@@ -6719,7 +6724,7 @@ export default {
             });
 
             // Mismas condiciones que aplican la retencion en el flujo normal:
-            // cliente agente de retencion, con RUC, y monto sobre el minimo.
+            // cliente agente de retencion, con RIF, y monto sobre el minimo.
             if (!customer || !customer.is_agent_retention) return false;
             if (customer.identity_document_type_id != "6") return false;
             if (!this.amountRetentionValidate) return false;
@@ -6867,9 +6872,7 @@ export default {
             this.verifyDocumentType03ForDetraction();
         },
         shouldProtectPreloadedCustomer() {
-            return Boolean(
-                this.isGeneratedFromExternal && this.preloadedCustomerId
-            );
+            return Boolean(this.preloadedCustomerId);
         },
         ensurePreloadedCustomerInList() {
             if (!this.shouldProtectPreloadedCustomer()) {
@@ -7010,18 +7013,7 @@ export default {
                 ["0101", "1001", "1004"].includes(this.form.operation_type_id)
             ) {
                 if (this.form.document_type_id === "01") {
-                    if (!_.isNull(this.form.customer_id) && !protectCustomer) {
-                        const cus = _.find(this.all_customers, {
-                            id: this.form.customer_id
-                        });
-                        if (cus && cus.identity_document_type_id !== "6") {
-                            this.form.customer_id = null;
-                        }
-                    }
-
-                    this.customers = _.filter(this.all_customers, {
-                        identity_document_type_id: "6"
-                    });
+                    this.customers = this.all_customers;
                 } else {
                     if (this.document_type_03_filter) {
                         this.customers = _.filter(this.all_customers, c => {
@@ -7041,10 +7033,6 @@ export default {
             this.form.guides.push(
                 {
                     document_type_id: "09",
-                    number: null
-                },
-                {
-                    document_type_id: "31",
                     number: null
                 }
             );
@@ -8560,7 +8548,7 @@ export default {
 
             if(this.form.operation_type_id === '0101' && this.form.is_itinerant) {
                 if (this.form.guides.length == 0 ) {
-                    this.errors = { is_itinerant : ['Debe tener una guia vinculada al documento']}
+                    this.errors = { is_itinerant : ['Debe tener una orden de entrega vinculada al documento']}
                     return;
                 }
 

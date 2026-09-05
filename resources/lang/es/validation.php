@@ -286,7 +286,7 @@ return [
 		'time_register'                            => 'hora de registro',
 		'person_id'                                => 'remitente',
 		'documentary_process_id'                   => 'proceso',
-		'dispatches_id'                            => 'guías',
+		'dispatches_id'                            => 'órdenes de entrega',
 		'hostname_id'                              => 'cliente',
 		'license_plate'           => 'N° placa',
 		'system_isc_type_id'           => 'tipo de sistema ISC',

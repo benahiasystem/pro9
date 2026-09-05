@@ -5,7 +5,7 @@
                 <!-- ########## INICIO CAMBIO QUITAR BOLETA -->
                 <el-tooltip
                     class="item"
-                    content="Solicitar datos al PSE - Disponible en facturas, resúmenes, anulaciones y guías"
+                    content="Solicitar datos al PSE - Disponible en facturas, resúmenes, anulaciones y órdenes de entrega"
                     effect="dark"
                     placement="top-start">
                     <i class="fa fa-info-circle"></i>

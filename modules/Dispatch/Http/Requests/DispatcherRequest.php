@@ -4,9 +4,17 @@ namespace Modules\Dispatch\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Support\Venezuela\IdentityDocument;
 
 class DispatcherRequest extends FormRequest
 {
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'number' => IdentityDocument::normalizeNumber('6', $this->input('number')),
+        ]);
+    }
+
     public function authorize()
     {
         return true;
@@ -20,7 +28,7 @@ class DispatcherRequest extends FormRequest
             'identity_document_type_id' => ['required', 'in:6'],
             'number' => [
                 'required',
-                'regex:/^(10|15|16|17|20)\d{9}$/',
+                'regex:/^(?:\d{9}|\d{11})$/',
                 Rule::unique('tenant.dispatchers')->ignore($id),
             ],
             'name' => ['required', 'string', 'min:2', 'regex:/[A-Za-zÁÉÍÓÚáéíóúÑñ]/'],
@@ -33,10 +41,10 @@ class DispatcherRequest extends FormRequest
     {
         return [
             'identity_document_type_id.required' => 'Seleccione el tipo de documento.',
-            'identity_document_type_id.in' => 'El transportista solo puede registrarse con RUC.',
+            'identity_document_type_id.in' => 'El transportista solo puede registrarse con RIF.',
             'number.required' => 'El número es obligatorio.',
             'number.unique' => 'Ya existe un transportista con este número.',
-            'number.regex' => 'El RUC debe tener 11 dígitos y un prefijo válido (10, 15, 16, 17 o 20).',
+            'number.regex' => 'El RIF debe contener 9 dígitos (J-#########) o 11 dígitos numéricos.',
             'name.required' => 'El nombre es obligatorio.',
             'name.min' => 'El nombre debe tener al menos 2 caracteres.',
             'name.regex' => 'El nombre debe contener al menos una letra.',

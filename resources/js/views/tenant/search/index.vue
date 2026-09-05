@@ -45,7 +45,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group" :class="{'has-danger': errors.customer_number}">
-                                <label class="control-label mt-2">Número Cliente (RUC/DNI/CE)<span class="text-danger"> *</span></label>
+                                <label class="control-label mt-2">Número Cliente (RIF/DNI/CE)<span class="text-danger"> *</span></label>
                                 <el-input v-model="form.customer_number" :maxlength="11"></el-input>
                                 <small class="form-control-feedback" v-if="errors.customer_number" v-text="errors.customer_number[0]"></small>
                             </div>

@@ -1,7 +1,7 @@
 @if ($document->reference_guides)
     @if (count($document->reference_guides) > 0)
         <br/>
-        <strong>Guias de remisión</strong>
+        <strong>Órdenes de entrega</strong>
         <table>
             @foreach($document->reference_guides as $guide)
                 <tr>

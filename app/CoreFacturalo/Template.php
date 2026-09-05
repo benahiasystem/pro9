@@ -10,10 +10,6 @@ class Template
         if($template === 'credit' || $template === 'debit') {
             $template = 'note';
         }
-        if($document->document_type_id === '31') {
-            $template = 'dispatch_carrier';
-        }
-
         $path_template =  $this->validate_template($base_template, $template, $format_pdf);
         // Log::info($document);
         return self::render($path_template, $company, $document, $configuration);

@@ -16,7 +16,7 @@ $plus = $plus ?? 4;
     <th style="width:4%;">ORDEN DE COMPRA</th>
     <th style="width:{{$plus+1}}%;">PLATAFORMA</th>
 @endif
-<th style="width:{{$plus+2}}%;">DOC ENTIDAD TIPO DNI RUC</th>
+<th style="width:{{$plus+2}}%;">DOC ENTIDAD TIPO DNI RIF</th>
 <th style="width:{{$plus+4}}%;">DOC ENTIDAD NÚMERO</th>
 <th style="width:11%;">DENOMINACIÓN ENTIDAD</th>
 <th style="width:{{$plus}}%;">MONEDA</th>

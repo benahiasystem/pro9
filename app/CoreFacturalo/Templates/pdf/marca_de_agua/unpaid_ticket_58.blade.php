@@ -26,7 +26,7 @@
     <tr>
         <td class="text-center text-uppercase">
             @include('pdf.partials.company_document_header_names_plain')<br>
-            {{ 'RUC '.$company->number }}
+            {{ 'RIF '.$company->number }}
         </td>
     </tr>
     <tr>

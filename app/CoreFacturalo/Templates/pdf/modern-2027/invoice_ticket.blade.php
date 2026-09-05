@@ -117,7 +117,7 @@
         ])</td>
     </tr>
     <tr>
-        <td class="m27-head-line">RUC: {{ $company->number }}</td>
+        <td class="m27-head-line">RIF: {{ $company->number }}</td>
     </tr>
     <tr>
         <td class="m27-head-line" style="text-transform: uppercase;">
@@ -190,7 +190,7 @@
     </tr>
     <tr>
         <td class="m27-label"><p class="m27-label">{{ $customer->identity_document_type->description }}:</p></td>
-        <td class="m27-value"><p class="m27-value">{{ $customer->number }}</p></td>
+        <td class="m27-value"><p class="m27-value">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
     <tr>
         <td class="m27-label"><p class="m27-label">Cajero:</p></td>
@@ -406,7 +406,7 @@
 </table>
 
 @if ($document->guides)
-    {{--<strong>Guías:</strong>--}}
+    {{--<strong>Órdenes de entrega:</strong>--}}
     <table>
         @foreach($document->guides as $guide)
             <tr>
@@ -489,7 +489,7 @@
 
 @if ($document->dispatch)
     <br/>
-    <strong>Guías de remisión</strong>
+    <strong>Órdenes de entrega</strong>
     <table>
         <tr>
             <td>{{ $document->dispatch->number_full }}</td>
@@ -498,7 +498,7 @@
 
 @elseif (count($document->reference_guides) > 0)
     <br/>
-    <strong>Guias de remisión</strong>
+    <strong>Órdenes de entrega</strong>
     <table>
         @foreach($document->reference_guides as $guide)
             <tr>

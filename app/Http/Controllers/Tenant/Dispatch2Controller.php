@@ -74,7 +74,7 @@ class Dispatch2Controller extends Controller
         return [
             'success' => true,
             // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-            'message' => "Se creó la guía de despacho {$document->series}-{$document->number}",
+            'message' => "Se creó la orden de entrega {$document->series}-{$document->number}",
             // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ];
     }

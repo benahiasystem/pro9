@@ -30,7 +30,7 @@ class ReportAccountingEjbExport extends DefaultValueBinder implements FromArray,
     public function headings(): array
     {
         return [
-            'Ruc',
+            'RIF',
             'tipo documento',
             'serie documento',
             'numero documento',

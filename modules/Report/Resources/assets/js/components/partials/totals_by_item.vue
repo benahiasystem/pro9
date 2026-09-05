@@ -23,7 +23,7 @@
                         <el-button class="submit" type="success" @click.prevent="clickDownload('excel')"><i class="fa fa-file-excel" ></i>  Exportal Excel</el-button>
                         -->
                         <template v-if="canGenerateGuide">
-                            <el-button class="submit" type="success" @click.prevent="onGenerateGuide">Generar guía
+                            <el-button class="submit" type="success" @click.prevent="onGenerateGuide">Generar orden de entrega
                             </el-button>
                         </template>
                     </div>

@@ -585,7 +585,7 @@
                 'document_type_id' => $this->document->document_type_id,
                 'series' => $this->document->series,
                 'number' => $this->document->number,
-                'customer_number' => $this->document->customer->number,
+                'customer_number' => format_person_identity_document($this->document->customer),
                 'customer_name' => $this->document->customer->name,
                 'total_value' => $this->document->total_value,
                 'total_igv' => $this->document->total_igv,

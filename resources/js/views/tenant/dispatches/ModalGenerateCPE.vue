@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-dialog
-      title="Generar comprobante desde múltiples guías"
+      title="Generar comprobante desde múltiples órdenes de entrega"
       :visible="show"
       @open="onOpened"
       :close-on-click-modal="false"
@@ -45,7 +45,7 @@
         </div>
       </div>
       <div class="table-responsive pt-5" v-if="dispatches">
-        <span>Seleccione una o más guías para poder continuar</span>
+        <span>Seleccione una o más órdenes de entrega para poder continuar</span>
         <div
           v-if="errors.dispatches_id"
           class="alert alert-warning"
@@ -58,7 +58,7 @@
           <thead>
             <tr>
               <th></th>
-              <th>Guía</th>
+              <th>Orden de entrega</th>
               <th>Fecha de emisión</th>
             </tr>
           </thead>
@@ -124,7 +124,7 @@ export default {
     onFetchDispatchItems() {
       if (this.form.selecteds.length === 0) {
         this.$message({
-          message: "Seleccione una o más guías por favor",
+          message: "Seleccione una o más órdenes de entrega por favor",
           type: "warning",
         });
         return;

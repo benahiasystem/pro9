@@ -76,9 +76,6 @@ import TenantPurchasesForm from './views/tenant/purchases/form.vue'
 import TenantPurchasesEdit from './views/tenant/purchases/form_edit.vue'
 import TenantTransferReasonTypesIndex from './views/tenant/transfer_reason_types/index.vue'
 
-import TenantDispatchCarrierIndex from './views/tenant/dispatches/Carrier/Index.vue'
-import TenantDispatchCarrierForm from './views/tenant/dispatches/Carrier/Form.vue'
-
 import TenantPurchasesItems from './views/tenant/dispatches/items.vue'
 import TenantAttributeTypesIndex from './views/tenant/attribute_types/index.vue'
 import TenantCalendar from './views/tenant/components/calendar.vue'
@@ -493,9 +490,6 @@ Vue.component('tenant-purchases-index', TenantPurchasesIndex)
 Vue.component('tenant-purchases-form', TenantPurchasesForm)
 Vue.component('tenant-purchases-edit', TenantPurchasesEdit)
 Vue.component('tenant-transfer-reason-types-index', TenantTransferReasonTypesIndex)
-
-Vue.component('tenant-dispatch_carrier-index', TenantDispatchCarrierIndex)
-Vue.component('tenant-dispatch_carrier-form', TenantDispatchCarrierForm)
 
 Vue.component('tenant-purchases-items', TenantPurchasesItems)
 Vue.component('tenant-attribute_types-index', TenantAttributeTypesIndex)

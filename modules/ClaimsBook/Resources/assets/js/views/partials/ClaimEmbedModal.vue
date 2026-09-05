@@ -36,7 +36,7 @@
                         <div class="cem-option-control">
                             <el-switch v-model="showCompany" active-color="#18181b" @change="onShowCompanyChange"></el-switch>
                             <span class="cem-color-hint">
-                                {{ showCompany ? 'Logo, razón social y RUC visibles' : 'Se mostrará el ícono del libro' }}
+                                {{ showCompany ? 'Logo, razón social y RIF visibles' : 'Se mostrará el ícono del libro' }}
                             </span>
                         </div>
                     </div>

@@ -25,7 +25,7 @@ class MillCollection extends ResourceCollection
                 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                 'number' => $row->number,
                 'supplier_name' => $row->supplier->name,
-                'supplier_number' => $row->supplier->number,
+                'supplier_number' => format_person_identity_document($row->supplier),
                 'currency_type_id' => $row->currency_type_id,
                 'state_type_id' => $row->state_type_id,
                 'total' => $row->total,

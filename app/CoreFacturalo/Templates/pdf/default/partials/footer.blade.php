@@ -12,7 +12,7 @@
             @if($configurationInPdf->legend_footer_sale)
                 {!! $configurationInPdf->legend_footer_sale !!}
             @endif
-            {{-- Condición para omitir la línea de enlace si es Guía de Remisión --}}
+            {{-- Condición para omitir la línea de enlace si es Orden de entrega --}}
             @if(!is_null($document) && !in_array($document->document_type_id, ['09']))
                 Para consultar el comprobante ingresar a {!! url('/buscar') !!}
                 <br>

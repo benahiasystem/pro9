@@ -18,7 +18,7 @@
     use App\CoreFacturalo\Helpers\CompanyDocumentDisplay as MobileAppRepCo;
 @endphp
 <ul>
-    <li>RUC/DNI: {{ $company->number}}</li>
+    <li>RIF/DNI: {{ $company->number}}</li>
     @if(MobileAppRepCo::namesAreSame($company))
     <li>Razón social: {{ MobileAppRepCo::commercialLine($company) }}</li>
     @else

@@ -71,7 +71,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                     <td>
                         <p><strong>Establecimiento: </strong>{{$establishment->address}} - {{$establishment->department->description}} - {{$establishment->district->description}}</p>
@@ -123,14 +123,14 @@
                                 <th>Fecha Vencimiento</th>
                                 <th>Doc. Afectado</th>
 
-                                <th># Guía</th>
+                                <th># Orden de entrega</th>
 
                                 <th>DIST</th>
                                 <th>DPTO</th>
                                 <th>PROV</th>
 
                                 <th>Cliente</th>
-                                <th>RUC</th>
+                                <th>RIF</th>
                                 <th>Estado</th>
                                 <th class="">Moneda</th>
                                 <th>Plataforma</th>
@@ -196,7 +196,7 @@
                                     <td class="celda">{{$stablihsment['province']}}</td>
 
                                     <td class="celda">{{$value->customer->name}}</td>
-                                    <td class="celda">{{$value->customer->number}}</td>
+                                    <td class="celda">{{format_person_identity_document($value->customer)}}</td>
                                     <td class="celda">{{$value->state_type->description}}</td>
 
                                     <td class="celda">{{$value->currency_type_id}}</td>

@@ -63,7 +63,7 @@
                         <p>@include('partials.report_company_header')</p>
                     </td>
                     <td>
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                 </tr>
                 <tr>
@@ -72,7 +72,7 @@
                     </td>
                     <td>
                         @if($params['person_id'])
-                            <p><strong>Cliente: </strong>{{ (!empty($records)) ? $records->first()->order_note->customer->name:'' }} - {{ (!empty($records)) ? $records->first()->order_note->customer->number:'' }}</p>
+                            <p><strong>Cliente: </strong>{{ (!empty($records)) ? $records->first()->order_note->customer->name:'' }} - {{ (!empty($records)) ? format_person_identity_document($records->first()->order_note->customer):'' }}</p>
                         @else
                             <p><strong>Vendedor: </strong>{{ (!empty($records)) ? $records->first()->order_note->user->name:'' }}</p>
                         @endif

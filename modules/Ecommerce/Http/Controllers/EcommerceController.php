@@ -46,6 +46,8 @@ use Modules\Ecommerce\Jobs\SendOrderStatusEmail;
 use Illuminate\Support\Facades\Log;
 use Exception;
 use App\Services\Tenant\OrderDocumentFromStatusService;
+use App\Support\Venezuela\IdentityDocument;
+use Illuminate\Validation\Rule;
 use Modules\Ecommerce\Services\CampaignPriceService;
 
 
@@ -942,7 +944,7 @@ class EcommerceController extends Controller
             {
                 return [
                     'success' => false,
-                    'message' => 'Email o RUC/DNI no disponible'
+                    'message' => 'Email o RIF/DNI no disponible'
                 ];
             }
 
@@ -2449,7 +2451,7 @@ class EcommerceController extends Controller
     }
 
     /**
-     * Consulta pública de RUC/DNI para autocompletar el nombre / razón social
+     * Consulta pública de RIF/DNI para autocompletar el nombre / razón social
      * en el formulario de registro del ecommerce (invitados, sin auth).
      *
      * Con ?checkout=1 devuelve datos del cliente existente para autocompletar
@@ -2466,7 +2468,7 @@ class EcommerceController extends Controller
         } else {
             return [
                 'success' => false,
-                'message' => 'El número debe tener 8 dígitos (DNI) u 11 dígitos (RUC).',
+                'message' => 'El número debe tener 8 dígitos (DNI) u 11 dígitos (RIF).',
             ];
         }
 
@@ -2627,15 +2629,17 @@ class EcommerceController extends Controller
 
     protected function guestDocumentTypeMatchesNumber(string $docTypeId, string $number): bool
     {
+        if (!in_array($docTypeId, IdentityDocument::ids(), true)) {
+            return false;
+        }
+
+        $number = IdentityDocument::normalizeNumber($docTypeId, $number);
+
         if ($docTypeId === '1') {
-            return strlen($number) === 8;
+            return preg_match('/^\d{6,8}$/', $number) === 1;
         }
 
-        if ($docTypeId === '6') {
-            return strlen($number) === 11;
-        }
-
-        return false;
+        return preg_match('/^[A-Z0-9-]{1,20}$/i', $number) === 1;
     }
 
     protected function personMatchesGuestTriple(
@@ -2645,8 +2649,8 @@ class EcommerceController extends Controller
         string $email,
         string $telephone
     ): bool {
-        $personNumber = preg_replace('/\D/', '', (string) $person->number);
-        $personDocType = (string) ($person->identity_document_type_id ?? (strlen($personNumber) === 11 ? '6' : '1'));
+        $personDocType = (string) ($person->identity_document_type_id ?? '0');
+        $personNumber = IdentityDocument::normalizeNumber($personDocType, $person->number);
         $personEmail = strtolower(trim((string) ($person->email ?? '')));
         $personPhone = preg_replace('/\D/', '', (string) ($person->telephone ?? ''));
 
@@ -2687,8 +2691,11 @@ class EcommerceController extends Controller
                 continue;
             }
 
-            $customerNumber = preg_replace('/\D/', '', (string) ($customer->numero_documento ?? ''));
             $customerDocType = (string) ($customer->identity_document_type_id ?? $customer->codigo_tipo_documento_identidad ?? '');
+            $customerNumber = IdentityDocument::normalizeNumber(
+                $customerDocType,
+                $customer->numero_documento ?? ''
+            );
             $customerEmail = strtolower(trim((string) ($customer->correo_electronico ?? '')));
             $customerPhone = preg_replace('/\D/', '', (string) ($customer->telefono ?? ''));
 
@@ -3356,7 +3363,10 @@ class EcommerceController extends Controller
             ?? '0');
         $customer['codigo_tipo_documento_identidad'] = $docType;
         $customer['identity_document_type_id'] = $docType;
-        $customer['numero_documento'] = preg_replace('/\D/', '', (string) ($customer['numero_documento'] ?? '0')) ?: '0';
+        $customer['numero_documento'] = IdentityDocument::normalizeNumber(
+            $docType,
+            $customer['numero_documento'] ?? '0'
+        ) ?: '0';
 
         $direccion = trim((string) ($customer['direccion'] ?? ''));
         if ($direccion === '' && $this->isPickupShippingAddress($shippingAddress)) {
@@ -3370,9 +3380,9 @@ class EcommerceController extends Controller
     {
         $rules = [
             'telefono' => 'required|numeric',
-            'codigo_tipo_documento_identidad' => 'required|numeric',
-            'numero_documento' => 'required|numeric',
-            'identity_document_type_id' => 'required|numeric',
+            'codigo_tipo_documento_identidad' => ['required', Rule::in(IdentityDocument::ids())],
+            'numero_documento' => ['required', 'string', 'regex:/^[A-Z0-9-]{1,20}$/i'],
+            'identity_document_type_id' => ['required', Rule::in(IdentityDocument::ids())],
         ];
 
         if (!$this->isPickupShippingAddress($shippingAddress)) {

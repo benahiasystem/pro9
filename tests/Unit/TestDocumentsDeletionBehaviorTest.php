@@ -5,6 +5,8 @@ namespace Tests\Unit;
 use App\Http\Controllers\Tenant\OptionController;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\DocumentPayment;
+use App\Models\Tenant\SaleNote;
+use App\Models\Tenant\SaleNotePayment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -32,6 +34,8 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
             'invoices', 'notes', 'summary_documents', 'kardex', 'cash_documents',
             'payment_method_types', 'card_brands', 'inventory_kardex', 'payment_files', 'payment_links',
             'payment_link_payments', 'users', 'soap_types',
+            'sale_notes', 'sale_note_items', 'sale_note_payments', 'sale_note_fees',
+            'hotel_rent_orders', 'hotel_rent_items', 'hotel_rent_item_payments', 'dispatch_sale_notes',
         ] as $table) {
             $schema->create($table, function ($table): void {
                 $table->increments('id');
@@ -44,7 +48,51 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
                 $table->unsignedInteger('card_brand_id')->nullable();
                 $table->string('inventory_kardexable_type')->nullable();
                 $table->unsignedInteger('inventory_kardexable_id')->nullable();
+                $table->unsignedInteger('sale_note_id')->nullable();
+                $table->unsignedInteger('sale_note_payment_id')->nullable();
+                $table->unsignedInteger('inventory_kardex_id')->nullable();
+                $table->unsignedInteger('hotel_rent_order_id')->nullable();
+                $table->unsignedInteger('hotel_rent_item_id')->nullable();
             });
+        }
+    }
+
+    /** @test */
+    public function it_removes_sale_note_items_before_their_inventory_kardex(): void
+    {
+        $connection = DB::connection('tenant');
+        $connection->table('sale_notes')->insert(['id' => 301]);
+        $connection->table('inventory_kardex')->insert([
+            'id' => 401,
+            'inventory_kardexable_type' => SaleNote::class,
+            'inventory_kardexable_id' => 301,
+        ]);
+        $connection->table('sale_note_items')->insert([
+            'sale_note_id' => 301,
+            'inventory_kardex_id' => 401,
+        ]);
+        $connection->table('sale_note_payments')->insert(['id' => 501, 'sale_note_id' => 301]);
+        $connection->table('cash_document_payments')->insert(['sale_note_payment_id' => 501]);
+        $connection->table('global_payments')->insert([
+            'payment_type' => SaleNotePayment::class,
+            'payment_id' => 501,
+        ]);
+        $connection->table('kardex')->insert(['sale_note_id' => 301]);
+        $connection->table('cash_documents')->insert(['sale_note_id' => 301]);
+
+        $saleNote = new SaleNote();
+        $saleNote->setRawAttributes(['id' => 301], true);
+
+        $method = new \ReflectionMethod(OptionController::class, 'deleteSaleNoteRelations');
+        $method->setAccessible(true);
+        $method->invoke(new OptionController(), collect([$saleNote]));
+
+        foreach ([
+            'sale_note_items', 'inventory_kardex', 'sale_note_payments',
+            'cash_document_payments', 'global_payments', 'kardex',
+            'cash_documents', 'sale_notes',
+        ] as $table) {
+            self::assertSame(0, $connection->table($table)->count(), $table);
         }
     }
 

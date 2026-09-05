@@ -47,7 +47,7 @@
         </tr>
         <tr>
             <td>
-                <p><strong>Ruc: </strong></p>
+                <p><strong>RIF: </strong></p>
             </td>
             <td align="center">{{$company->number}}</td>
 
@@ -253,7 +253,7 @@
                         <td>{{ $nationality }}</td>{{-- NACIONALIDAD --}}
                         <td>{{ $country }}</td>{{-- PAIS RESIDENCIA --}}
                         <td>{{ $document_type }}</td>{{-- TIPO DOCUMENTO --}}
-                        <td>{{ $customer->number }}</td>{{-- # DOCUMENTO --}}
+                        <td>{{ format_person_identity_document($customer) }}</td>{{-- # DOCUMENTO --}}
                         {{-- <td>{{$room->name ?? ''}}</td>
                         <td>{{ $value ->payment_status === "PAID" ? "Pagado" : "Debe" }}</td>
                         <td>{{$value ->status}}</td> --}}

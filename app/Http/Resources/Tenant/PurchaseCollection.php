@@ -39,7 +39,7 @@ class PurchaseCollection extends ResourceCollection
                 'date_of_due' => ($row->date_of_due) ? $row->date_of_due->format('Y-m-d'):'-',
                 'number' => $row->number_full,
                 'supplier_name' => $row->supplier->name,
-                'supplier_number' => $row->supplier->number,
+                'supplier_number' => format_person_identity_document($row->supplier),
                 'currency_type_id' => $row->currency_type_id,
                 'total_exportation' => $row->total_exportation,
                 'total_free' => number_format($row->total_free, 2, ".",""),

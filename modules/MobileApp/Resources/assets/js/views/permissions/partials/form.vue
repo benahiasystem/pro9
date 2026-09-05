@@ -60,7 +60,7 @@
                 loading: false,
                 pos_document_types: [],
                 // modulos aun no implementados en la app movil, se ocultan del dialog
-                hidden_app_modules: ['order-note', 'report-sales', 'configuration', 'dispatches', 'carrier_dispatches']
+                hidden_app_modules: ['order-note', 'report-sales', 'configuration', 'dispatches']
             }
         },
         computed: {

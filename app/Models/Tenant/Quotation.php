@@ -276,7 +276,7 @@ class Quotation extends ModelTenant
             'currency_type_id'       => $this->currency_type_id,
 
             'customer_name'          => optional($this->customer)->name,
-            'customer_number'        => optional($this->customer)->number,
+            'customer_number'        => format_person_identity_document($this->customer),
             'customer_address'       => $this->buildApiResourcePersonAddress($this->customer, $person_ubigeo),
             'department_id'          => $person_ubigeo['department_id'],
             'province_id'            => $person_ubigeo['province_id'],
@@ -581,7 +581,7 @@ class Quotation extends ModelTenant
             'seller_name' => $seller->name,
             'customer_id' => $row->customer_id,
             'customer_name' => $row->customer->name,
-            'customer_number' => $row->customer->number,
+            'customer_number' => format_person_identity_document($row->customer),
             'customer_telephone' => $row->customer->telephone,
             'customer_email' => optional($row->customer)->email,
             'exchange_rate_sale' => $row->exchange_rate_sale,

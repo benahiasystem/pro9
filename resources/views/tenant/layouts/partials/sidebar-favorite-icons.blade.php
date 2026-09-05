@@ -156,8 +156,7 @@
         ['kind' => 'route', 'target' => 'tenant.finances.balance.index', 'icon' => 'scale'], // Balance
         ['kind' => 'route', 'target' => 'tenant.finances.payment_method_types.index', 'icon' => 'coin'], // Ingresos y egresos - M. Pago
         ['kind' => 'route', 'target' => 'tenant.bank_loan.index', 'icon' => 'building-bank'], // Credito bancario
-        ['kind' => 'route', 'target' => 'tenant.dispatches.index', 'icon' => 'truck'], // G.R. Remitente
-        ['kind' => 'route', 'target' => 'tenant.dispatch_carrier.index', 'icon' => 'steering-wheel'], // G.R. Transportista
+        ['kind' => 'route', 'target' => 'tenant.dispatches.index', 'icon' => 'truck'], // Orden de entrega
         ['kind' => 'route', 'target' => 'tenant.dispatchers.index', 'icon' => 'users-group'], // Transportistas
         ['kind' => 'route', 'target' => 'tenant.drivers.index', 'icon' => 'id-badge-2'], // Conductores
         ['kind' => 'route', 'target' => 'tenant.transports.index', 'icon' => 'car'], // Vehiculos

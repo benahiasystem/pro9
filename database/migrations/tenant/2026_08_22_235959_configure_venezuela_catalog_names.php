@@ -11,9 +11,9 @@ return new class extends Migration
         '01' => 'FACTURA DE VENTA',
         '07' => 'NOTA DE CRÉDITO',
         '08' => 'NOTA DE DÉBITO',
-        '09' => 'GUÍA DE DESPACHO REMITENTE',
+        '09' => 'ORDEN DE ENTREGA',
         '20' => 'COMPROBANTE DE RETENCIÓN',
-        '31' => 'GUÍA DE DESPACHO TRANSPORTISTA',
+        '31' => 'ORDEN DE ENTREGA DEL TRANSPORTISTA',
         '40' => 'COMPROBANTE DE PERCEPCIÓN',
     ];
 
@@ -115,9 +115,9 @@ return new class extends Migration
                 '01' => 'FACTURA ELECTRÓNICA',
                 '07' => 'NOTA DE CRÉDITO',
                 '08' => 'NOTA DE DÉBITO',
-                '09' => 'GUIA DE REMISIÓN REMITENTE',
+                '09' => 'ORDEN DE ENTREGA',
                 '20' => 'COMPROBANTE DE RETENCIÓN ELECTRÓNICA',
-                '31' => 'GUÍA DE REMISIÓN TRANSPORTISTA',
+                '31' => 'ORDEN DE ENTREGA DEL TRANSPORTISTA',
                 '40' => 'COMPROBANTE DE PERCEPCIÓN ELECTRÓNICA',
             ];
 

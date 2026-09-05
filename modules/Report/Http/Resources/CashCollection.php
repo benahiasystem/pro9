@@ -23,7 +23,7 @@ class CashCollection extends ResourceCollection
                 // 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                 // 'number' => $row->number_full,
                 // 'customer_name' => $row->customer->name,
-                // 'customer_number' => $row->customer->number,
+                // 'customer_number' => format_person_identity_document($row->customer),
                 // 'currency_type_id' => $row->currency_type_id, 
                 // 'total_taxed' => $row->total_taxed,
                 // 'total_igv' =>  $row->total_igv,

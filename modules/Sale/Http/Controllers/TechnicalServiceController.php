@@ -140,7 +140,7 @@
             $select_first_document_type_03 = config('tenant.select_first_document_type_03');
             $payment_conditions = PaymentCondition::all();
 
-            $document_types_guide = DocumentType::whereIn('id', ['09', '31'])->get()->transform(function ($row) {
+            $document_types_guide = DocumentType::whereIn('id', ['09'])->get()->transform(function ($row) {
                 return [
                     'id' => $row->id,
                     'active' => (bool)$row->active,

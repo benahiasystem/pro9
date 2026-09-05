@@ -199,7 +199,7 @@ use Illuminate\Support\Str;
                 return $sections;
             }
 
-            // Las guías de remisión solo se generan en el formato a4
+            // Las órdenes de entrega solo se generan en el formato A4.
             $only_a4_types = ['09'];
 
             foreach ($this->getDocumentTypesForChunk($document_types) as $document_type) {

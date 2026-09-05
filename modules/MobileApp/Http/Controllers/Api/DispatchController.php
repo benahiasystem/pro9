@@ -18,7 +18,7 @@ use Modules\MobileApp\Http\Resources\Api\DispatchCollection;
 class DispatchController extends Controller
 {
     /**
-     * Catalogos livianos para el formulario de guias de remision de la app.
+     * Catalogos livianos para el formulario de Ã³rdenes de entrega de la app.
      * Reune en una sola llamada lo que la app necesita ademas de lo que ya precarga
      * (establecimientos/series, personas, ubigeo, items).
      *
@@ -117,12 +117,12 @@ class DispatchController extends Controller
     }
 
     /**
-     * Listado unificado de guias (09 y 31) para scroll infinito.
+     * Listado de órdenes de entrega (09) para scroll infinito.
      *
      * Parametros soportados:
      * - limit: cantidad de registros (maximo 100, default 15)
      * - cursor: posicion actual (null en primera peticion)
-     * - document_type_id: 09 | 31 (sin filtro devuelve ambas)
+     * - document_type_id: 09
      * - state_type_id: estado SUNAT
      * - input: busqueda parcial por serie o numero
      * - date_start / date_end: rango sobre date_of_issue (Y-m-d)
@@ -137,7 +137,7 @@ class DispatchController extends Controller
 
         // `customer` es un snapshot JSON del documento (accessor), no una relacion
         $query = Dispatch::with(['state_type', 'transfer_reason_type'])
-            ->whereIn('document_type_id', ['09', '31'])
+            ->whereIn('document_type_id', ['09'])
             ->whereTypeUser()
             ->orderBy('date_of_issue', 'desc')
             ->orderBy('id', 'desc');
@@ -173,7 +173,7 @@ class DispatchController extends Controller
             'success' => true,
             'data' => new DispatchCollection($records),
             'pagination' => [
-                'next_cursor' => $records->nextCursor()?->encode() ?? null,
+                'next_cursor' => optional($records->nextCursor())->encode(),
                 'has_more' => $records->hasMorePages(),
             ],
         ];

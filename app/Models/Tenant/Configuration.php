@@ -7,6 +7,7 @@
 use App\Models\System\Configuration as SystemConfiguration;
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\Catalogs\ChargeDiscountType;
+use App\Services\LocalFiscalDocumentPolicy;
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Config\Repository;
@@ -703,6 +704,11 @@ use Illuminate\Support\Facades\Log;
          */
         public function getCollectionData()
         {
+            // ########## INICIO CAMBIO SIN XML CDR SUNAT
+            // El valor histórico se conserva en BD, pero la operación local nunca
+            // debe solicitar las rutas fiscales de envío que están desregistradas.
+            $localDocumentEmission = LocalFiscalDocumentPolicy::enabled();
+            // ######### FIN CAMBIO SIN XML CDR SUNAT
             $company = Company::first();
             /** @var User $user */
             $user = new User();
@@ -738,7 +744,9 @@ use Illuminate\Support\Facades\Log;
                 'establishment' => $establishment,
                 'production_app' => $productionApp,
                 'warehouse_id' => $warehouse->id,
-                'send_auto' => (bool)$this->send_auto,
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                'send_auto' => $localDocumentEmission ? false : (bool) $this->send_auto,
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 'formats' => $this->formats,
                 'stock' => (bool)$this->stock,
                 'cron' => (bool)$this->cron,
@@ -854,7 +862,9 @@ use Illuminate\Support\Facades\Log;
                 'order_cash_income' => $this->order_cash_income,
                 'generate_order_note_from_quotation' => $this->generate_order_note_from_quotation,
                 'list_items_by_warehouse' => $this->list_items_by_warehouse,
-                'ticket_single_shipment' => $this->ticket_single_shipment,
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                'ticket_single_shipment' => $localDocumentEmission ? false : (bool) $this->ticket_single_shipment,
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
                 'hide_pdf_view_documents' => $this->hide_pdf_view_documents,
                 'regex_password_user' => $this->regex_password_user,
                 'enabled_remember_change_password' => $this->enabled_remember_change_password,

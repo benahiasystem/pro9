@@ -58,7 +58,7 @@ class CompanyController extends Controller
                    array_unshift($message, 'Nota de Venta'); 
                 } else if ($model === Dispatch::class) {
                    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-                   array_unshift($message, 'Guía de despacho');
+                   array_unshift($message, 'Orden de entrega');
                    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 }
 

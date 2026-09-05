@@ -108,12 +108,12 @@ const FIELDS = [
     },
     {
         key: 'ruc_itinerant',
-        label: 'Ruc del establecimiento',
+        label: 'RIF del establecimiento',
         type: 'text',
         group: 'main',
         defaultWidth: 4,
         availableForVariants: ALL_VARIANTS,
-        conditionHint: 'Solo se muestra cuando el punto de venta itinerante requiere el RUC del establecimiento.',
+        conditionHint: 'Solo se muestra cuando el punto de venta itinerante requiere el RIF del establecimiento.',
     },
     {
         key: 'purchase_order',

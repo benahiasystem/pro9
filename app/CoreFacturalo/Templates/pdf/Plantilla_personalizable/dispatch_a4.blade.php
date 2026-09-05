@@ -46,7 +46,7 @@
             <td width="50%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
+                    <h4>{{ 'RIF '.$company->number }}</h4>
                     <h5 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -65,7 +65,7 @@
             <td width="70%" class="pl-1 text-left">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
+                    <h4>{{ 'RIF '.$company->number }}</h4>
                     <h5 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -96,7 +96,7 @@
             <td>Razón Social: {{ $company->name }}</td>
         </tr>
         <tr>
-            <td>RUC: {{ $company->number }}
+            <td>RIF: {{ $company->number }}
             </td>
         </tr>
         </tbody>
@@ -113,7 +113,7 @@
             <td>Razón Social: {{ $customer->name }}</td>
         </tr>
         <tr>
-            <td>{{ $customer->identity_document_type->description }}: {{ $customer->number }}
+            <td>{{ $customer->identity_document_type->description }}: {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}
             </td>
         </tr>
         <tr>
@@ -162,7 +162,7 @@
         <td>Razón Social: {{ $company['company']->name }}</td>
     </tr>
     <tr>
-        <td>RUC: {{ $company['company']->number }}
+        <td>RIF: {{ $company['company']->number }}
         </td>
     </tr>
     <tr>
@@ -223,7 +223,7 @@
         @foreach($document['reference_documents'] as $row)
             <tr>
                 <td>RAZON SOCIAL: {{ $row['name'] }}</td>
-                <td>RUC: {{ $row['customer'] }}</td>
+                <td>RIF: {{ $row['customer'] }}</td>
             </tr>
         @endforeach
         </tbody>
@@ -242,7 +242,7 @@
             </tr>
             <tr>
                 <td>PROVEEDOR {{ $row['name'] }}</td>
-                <td>RUC: {{ $row['customer'] }}</td>
+                <td>RIF: {{ $row['customer'] }}</td>
             </tr>
         @endforeach
         </tbody>

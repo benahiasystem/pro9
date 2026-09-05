@@ -169,7 +169,7 @@
                             <th v-if="col.visible && col.key === 'number'" :key="col.key">Número</th>
                             <th v-if="col.visible && col.key === 'notes'" :key="col.key">Notas C/D</th>
                             <!-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES -->
-                            <th v-if="col.visible && col.key === 'dispatch'" :key="col.key">Guía de despacho</th>
+                            <th v-if="col.visible && col.key === 'dispatch'" :key="col.key">Orden de entrega</th>
                             <!-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES -->
                             <th v-if="col.visible && col.key === 'sales_note'" :key="col.key">Nota de venta</th>
                             <th v-if="col.visible && col.key === 'order_note'" :key="col.key">Pedidos</th>
@@ -185,7 +185,7 @@
                             <th v-if="col.visible && col.key === 'source_module'" :key="col.key" class="text-center">Origen</th>
                             <th v-if="col.visible && col.key === 'exchange_rate_sale'" :key="col.key" class="text-end">T.C.</th>
                             <th v-if="col.visible && col.key === 'currency_type_id'" :key="col.key" class="text-center">Moneda</th>
-                            <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Guia</th>
+                            <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Orden de entrega</th>
                             <th v-if="col.visible && col.key === 'plate_numbers'" :key="col.key" class="text-center">Placa</th>
                             <th v-if="col.visible && col.key === 'total_exportation'" :key="col.key" class="text-end">T.Exportación</th>
                             <th v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">T.Gratuita</th>
@@ -428,7 +428,7 @@
                                         <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path>
                                         <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path>
                                       </svg>
-                                      Guía
+                                      Orden de entrega
                                   </el-dropdown-item>
 
                                   <!-- ########## INICIO SIN DETRACCIONES E ISC -->
@@ -757,7 +757,7 @@ export default {
                 number:             { title: "Número",                         visible: true,  order: 5  },
                 notes:              { title: "Notas C/D",                      visible: false, order: 6  },
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-                dispatch:           { title: "Guía de despacho",               visible: false, order: 7  },
+                dispatch:           { title: "Orden de entrega",               visible: false, order: 7  },
                 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 sales_note:         { title: "Nota de ventas",                 visible: false, order: 8  },
                 order_note:         { title: "Pedidos",                        visible: false, order: 9  },
@@ -768,7 +768,7 @@ export default {
                 source_module:      { title: "Origen",                         visible: false, order: 14 },
                 exchange_rate_sale: { title: "Tipo de cambio",                 visible: false, order: 15 },
                 currency_type_id:   { title: "Moneda",                         visible: false, order: 16 },
-                guides:             { title: "Guias",                          visible: false, order: 17 },
+                guides:             { title: "Órdenes de entrega",                          visible: false, order: 17 },
                 plate_numbers:      { title: "Placa",                          visible: false, order: 18 },
                 total_exportation:  { title: "T.Exportación",                  visible: false, order: 19 },
                 total_free:         { title: "T.Gratuito",                     visible: false, order: 20 },

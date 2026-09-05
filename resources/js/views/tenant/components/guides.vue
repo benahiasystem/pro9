@@ -15,7 +15,7 @@
             -->
             <div class="form-group">
                 <label class="control-label">
-                    Guías
+                    Órdenes de entrega
                 </label>
                 <table style="width: 100%">
                     <tr v-for="(guide,index) in form.guides">
@@ -85,7 +85,7 @@
                         <td colspan="4">
                             <div v-if="!loading" class="col add-row-table mx-0" @click.prevent="clickAddGuide">
                                 <svg data-v-d812ec56="" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-circle-plus"><path data-v-d812ec56="" stroke="none" d="M0 0h24v24H0z" fill="none"></path><path data-v-d812ec56="" d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path><path data-v-d812ec56="" d="M9 12h6"></path><path data-v-d812ec56="" d="M12 9v6"></path></svg>
-                                Agregar guía
+                                Agregar orden de entrega
                             </div>
                         </td>
                     </tr>
@@ -105,7 +105,7 @@
                     :disabled="loading"
                     type="primary"                    
                     @click="saveGuides"
-                >Guardar Guia
+                >Guardar Orden de entrega
                 </el-button>                
             </div>
 
@@ -181,7 +181,7 @@ export default {
             this.$http.post(`/${this.type}/guide/${this.id}`)
                 .then((result) => {
                     this.form = result.data
-                    this.title = 'Guia para Documento: ' + this.form.number + "";
+                    this.title = 'Orden de entrega para Documento: ' + this.form.number + "";
                     if (this.form.guides === undefined) {
                         this.form.guides = [];
                     }
@@ -194,9 +194,6 @@ export default {
         clickAddInitGuides() {
             this.form.guides.push({
                 document_type_id: '09',
-                number: null
-            }, {
-                document_type_id: '31',
                 number: null
             })
         },
@@ -235,7 +232,7 @@ export default {
             })
         },
         onClose() {
-            this.title = 'Guias';
+            this.title = 'Órdenes de entrega';
             this.loading = false;
             this.form = {};
             this.form.guides = [];

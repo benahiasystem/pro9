@@ -3,13 +3,14 @@
 namespace App\Http\Requests\Tenant;
 
 use App\Support\Venezuela\Localization;
+use App\Support\Venezuela\IdentityDocument;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class PersonRequest extends FormRequest
 {
     // ########### INICIO CAMBIO CLIENTES VENEZUELA
-    private const FOREIGN_DOCUMENT_TYPE_ID = '4';
+    private const FOREIGN_DOCUMENT_TYPE_ID = 'E';
 
     public function authorize()
     {
@@ -36,6 +37,7 @@ class PersonRequest extends FormRequest
         $normalized = [
             'country_id' => $countryId,
             'addresses' => $addresses,
+            'number' => IdentityDocument::normalizeNumber($identityDocumentTypeId, $this->input('number')),
         ];
 
         if ($identityDocumentTypeId !== self::FOREIGN_DOCUMENT_TYPE_ID) {
@@ -90,11 +92,9 @@ class PersonRequest extends FormRequest
         ];
 
         if ($type === 'customers') {
-            if ((string) $this->input('identity_document_type_id') === '6') {
-                $numberRules[] = 'regex:/^[VEJGP][0-9]{9}$/i';
-            } elseif ((string) $this->input('identity_document_type_id') === '1') {
+            if ((string) $this->input('identity_document_type_id') === '1') {
                 $numberRules[] = 'regex:/^[0-9]{6,8}$/';
-            } elseif ($isForeignCustomer) {
+            } else {
                 $numberRules[] = 'regex:/^[A-Z0-9-]{1,20}$/i';
             }
         }
@@ -109,6 +109,7 @@ class PersonRequest extends FormRequest
             ],
             'identity_document_type_id' => [
                 'required',
+                Rule::in(IdentityDocument::ids()),
             ],
             'country_id' => [
                 'required',

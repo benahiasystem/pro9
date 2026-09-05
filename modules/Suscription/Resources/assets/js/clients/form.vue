@@ -818,7 +818,7 @@
                                             :key="index">
                                             <td>{{ index + 1 }}</td>
                                             <td>{{ getTextDocumentType(row.identity_document_type_id) }}</td>
-                                            <td>{{ row.number }}</td>
+                                            <td>{{ row.formatted_number || row.number }}</td>
                                             <td>{{ row.name }}</td>
 
                                             <td class="text-end">

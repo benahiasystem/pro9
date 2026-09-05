@@ -421,7 +421,7 @@
                 'balance' => ($total) - collect($this->payments)->sum('payment'),
                 'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
                 'customer_name' => $this->customer->name,
-                'customer_number' => $this->customer->number,
+                'customer_number' => format_person_identity_document($this->customer),
 
                 'customer_id' => $this->customer_id,
                 'time_of_issue' => $this->time_of_issue,

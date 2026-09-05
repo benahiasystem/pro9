@@ -71,7 +71,7 @@
                             <th v-if="col.visible && col.key === 'warehouse'" :key="col.key">Almacén</th>
                             <th v-if="col.visible && col.key === 'payments'" :key="col.key">Pagos</th>
                             <th v-if="col.visible && col.key === 'currency_type'" :key="col.key" class="text-center">Moneda</th>
-                            <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Guía</th>
+                            <th v-if="col.visible && col.key === 'guides'" :key="col.key" class="text-end">Orden de entrega</th>
                             <th v-if="col.visible && col.key === 'purchase_order'" :key="col.key" class="text-end">Orden de compra</th>
                             <th v-if="col.visible && col.key === 'total_free'" :key="col.key" class="text-end">T.Gratuita</th>
                             <th v-if="col.visible && col.key === 'total_unaffected'" :key="col.key" class="text-end">T.Inafecta</th>
@@ -168,7 +168,7 @@
                                             </el-dropdown-item>
                                             <el-dropdown-item :disabled="disableGuideBtn" command="guide">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5"></path></svg>
-                                                Guía
+                                                Orden de entrega
                                             </el-dropdown-item>
                                             <el-dropdown-item v-if="permissions.annular_purchase && row.state_type_id != '11' || permissions.delete_purchase && row.state_type_id == '11'" divided></el-dropdown-item>
                                             <el-dropdown-item v-if="permissions.annular_purchase && row.state_type_id != '11'" command="anulate" class="option-delete text-danger">
@@ -295,7 +295,7 @@ export default {
                 warehouse:        { title: "Almacén",        visible: true,  order: 7  },
                 payments:         { title: "Pagos",          visible: true,  order: 8  },
                 currency_type:    { title: "Moneda",         visible: true,  order: 9  },
-                guides:           { title: "Guias",          visible: false, order: 10 },
+                guides:           { title: "Órdenes de entrega",          visible: false, order: 10 },
                 purchase_order:   { title: "Orden de Compra",visible: false, order: 11 },
                 total_free:       { title: "T.Gratuita",     visible: false, order: 12 },
                 total_unaffected: { title: "T.Inafecta",     visible: false, order: 13 },

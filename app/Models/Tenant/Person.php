@@ -8,6 +8,7 @@
     use App\Models\Tenant\Catalogs\District;
     use App\Models\Tenant\Catalogs\IdentityDocumentType;
     use App\Models\Tenant\Catalogs\Province;
+    use App\Support\Venezuela\IdentityDocument;
     use Hyn\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Collection;
@@ -115,6 +116,15 @@ use Illuminate\Support\Facades\DB;
             'province',
             'district'
         ];
+
+        protected $appends = [
+            'formatted_number',
+        ];
+
+        public function getFormattedNumberAttribute(): string
+        {
+            return IdentityDocument::format($this->identity_document_type_id, $this->number);
+        }
 
         protected $fillable = [
             'type',
@@ -600,9 +610,10 @@ use Illuminate\Support\Facades\DB;
 
             $data = [
                 'id' => $this->id,
-                'description' => $this->number . ' - ' . $this->name,
+                'description' => $this->formatted_number . ' - ' . $this->name,
                 'name' => $this->name,
                 'number' => $this->number,
+                'formatted_number' => $this->formatted_number,
                 'identity_document_type_id' => $this->identity_document_type_id,
                 'identity_document_type_code' => $this->identity_document_type->code,
                 'address' => $this->address,
@@ -870,6 +881,7 @@ use Illuminate\Support\Facades\DB;
                 'description' => $this->getPersonDescription(),
                 'name' => $this->name,
                 'number' => $this->number,
+                'formatted_number' => $this->formatted_number,
                 'addresses' => $addresses,
                 'identity_document_type_id' => $this->identity_document_type_id,
                 'identity_document_type_code' => $this->identity_document_type->code,
@@ -894,7 +906,7 @@ use Illuminate\Support\Facades\DB;
          */
         public function getPersonDescription()
         {
-            return "{$this->number} - {$this->name}";
+            return "{$this->formatted_number} - {$this->name}";
         }
 
 
@@ -1084,7 +1096,7 @@ use Illuminate\Support\Facades\DB;
          */
         public function getSearchFullNameAttribute()
         {
-            return "{$this->number} - {$this->name}";
+            return "{$this->formatted_number} - {$this->name}";
         }
 
     }

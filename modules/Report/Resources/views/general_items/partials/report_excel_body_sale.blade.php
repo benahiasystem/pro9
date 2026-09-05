@@ -161,7 +161,7 @@ $isSaleNote = ($document_type_id != '80' && $type == 'sale') ? true : false;
     <td class="celda">{{ $web_platform }}</td>
     <td class="celda">{{ $document->state_type_id == '11' ? 'SI':'NO' }}</td>
     <td class="celda">{{ $document->customer->identity_document_type->description }}</td>
-    <td class="celda">{{ $document->customer->number }}</td>
+    <td class="celda">{{ format_person_identity_document($document->customer) }}</td>
     <td class="celda">{{ $document->customer->name }}</td>
     <td class="celda">
         @if($isSaleNote)

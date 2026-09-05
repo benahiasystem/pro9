@@ -146,7 +146,7 @@
             <td width="40%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -172,7 +172,7 @@
                 </div>
             </td>
             <td width="40%" class="border-box py-2 px-2 text-center">
-                <h3 class="font-bold">{{ 'R.U.C. '.$company->number }}</h3>
+                <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h3 class="text-center font-bold">{{ $document->document_type->description }}</h3>
                 <br>
                 <h3 class="text-center font-bold">{{ $document_number }}</h3>
@@ -181,7 +181,7 @@
             <td width="40%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names')
-                    <h5>{{ 'RUC '.$company->number }}</h5>
+                    <h5>{{ 'RIF '.$company->number }}</h5>
                     <h6 style="text-transform: uppercase;">
                         {{ ($establishment->address !== '-')? $establishment->address : '' }}
                         {{ ($establishment->district_id !== '-')? ', '.$establishment->district->description : '' }}
@@ -207,7 +207,7 @@
                 </div>
             </td>
             <td width="40%" class="border-box py-2 px-2 text-center">
-                <h3 class="font-bold">{{ 'R.U.C. '.$company->number }}</h3>
+                <h3 class="font-bold">{{ 'R.I.F. '.$company->number }}</h3>
                 <h3 class="text-center font-bold">{{ $document->document_type->description }}</h3>
                 <br>
                 <h3 class="text-center font-bold">{{ $document_number }}</h3>
@@ -234,7 +234,7 @@
                     </td>
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">
-                        {{$customer->number}}
+                        {{format_identity_document($customer->identity_document_type_id ?? null, $customer->number)}}
                     </td>
                 </tr>
                 @php
@@ -362,7 +362,7 @@
                     <tr>
                         <td class="font-sm" width="100px">
                             {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
-                            <strong>Guía de despacho</strong>
+                            <strong>Orden de entrega</strong>
                             {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                         </td>
                         <td class="font-sm" width="8px">:</td>
@@ -376,7 +376,7 @@
                 @if ($document->dispatch)
                 <tr>
                     <td class="font-sm" width="100px">
-                        <strong>Guías de remisión</strong>
+                        <strong>Órdenes de entrega</strong>
                     </td>
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm" colspan="4">
@@ -387,7 +387,7 @@
                     @if (count($document->reference_guides) > 0)
                         <tr>
                             <td class="font-sm" width="100px">
-                                <strong>Guías de remisión</strong>
+                                <strong>Órdenes de entrega</strong>
                             </td>
                             <td class="font-sm" width="8px">:</td>
                             <td class="font-sm" colspan="4">

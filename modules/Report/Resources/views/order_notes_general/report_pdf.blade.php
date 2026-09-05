@@ -62,7 +62,7 @@
                         <p>@include('partials.report_company_header')</p>
                     </td>
                     <td>
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                 </tr>
                 <tr>
@@ -71,7 +71,7 @@
                     </td>
                     <td>
                         @if($params['person_id'])
-                            <p><strong>Cliente: </strong>{{ (!empty($records)) ? $records->first()->customer->name:'' }} - {{ (!empty($records)) ? $records->first()->customer->number:'' }}</p>
+                            <p><strong>Cliente: </strong>{{ (!empty($records)) ? $records->first()->customer->name:'' }} - {{ (!empty($records)) ? format_person_identity_document($records->first()->customer):'' }}</p>
                         @else
                             <p><strong>Vendedor: </strong>{{ (!empty($records)) ? $records->first()->user->name:'' }}</p>
                         @endif
@@ -110,7 +110,7 @@
                                         <td  class="celda" >{{$value->user->name}}</td>
                                     @else
                                         <td class="celda" >{{ $value->customer->name }}</td>
-                                        <td class="celda" >{{ $value->customer->number }}</td>
+                                        <td class="celda" >{{ format_person_identity_document($value->customer) }}</td>
                                     @endif
                                     <td  class="celda">{{$value->total}}</td>
                                     <td  class="celda">{{($value->documents->count() > 0) ? 'PROCESADO' : 'PENDIENTE'}}</td>

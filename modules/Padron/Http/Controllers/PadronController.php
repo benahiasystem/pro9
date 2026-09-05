@@ -39,7 +39,7 @@ class PadronController extends Controller
         {
             return [
                 'success' => false,
-                'message'=> "El número de RUC ingresado es inválido."
+                'message'=> "El número de RIF ingresado es inválido."
             ];
         }
         $site = Padron::where('ruc', $ruc)->first();
@@ -63,7 +63,7 @@ class PadronController extends Controller
         }
         return [
             'success' => false,
-            'message'=> "El número de RUC ingresado es inválido."
+            'message'=> "El número de RIF ingresado es inválido."
         ];
     }
 

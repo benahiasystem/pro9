@@ -14,10 +14,8 @@ class DispatchValidation
 
         Functions::validateSeries($inputs);
 
-        if($inputs['document_type_id'] != '31') {
-            $inputs['customer_id'] = Functions::person($inputs['customer'], 'customers');
-            unset($inputs['customer']);
-        }
+        $inputs['customer_id'] = Functions::person($inputs['customer'], 'customers');
+        unset($inputs['customer']);
 
         $inputs['items'] = self::items($inputs['items']);
 

@@ -204,7 +204,7 @@ class AccountController extends Controller
                 'date_of_due' => $row->invoice->date_of_due->format('d/m/Y'),
                 'document_type_id' => $row->document_type_id,
                 'number_full' => $row->number_full,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
                 'customer_identity_document_type_id' => $row->customer->identity_document_type_id,
                 'total_exportation' => $total_exportation,
@@ -239,7 +239,7 @@ class AccountController extends Controller
                 'number' => str_pad($row->number, 7, '0', STR_PAD_LEFT),
                 'col_G' => '',
                 'customer_identity_document_type_id' => $row->customer->identity_document_type_id,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
                 'total_isc' => number_format($row->total_isc, 2, ".", ""),
                 'total_exportation' => number_format($row->total_exportation, 2, ".", ""),
@@ -352,7 +352,7 @@ class AccountController extends Controller
                 'series' => $row->series,
                 'number' => str_pad($row->number, 7, '0', STR_PAD_LEFT),
                 'customer_identity_document_type_id' => $row->customer->identity_document_type_id,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
                 'total_isc' => number_format($row->total_isc, 2, ".", ""),
                 'total_exportation' => number_format($row->total_exportation, 2, ".", ""),
@@ -487,7 +487,7 @@ class AccountController extends Controller
             }
 
             return [
-                'customer_number' => (string) $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'document_type' => $document_type,
                 'series' => $row->series,
                 'number' => $number,
@@ -1590,7 +1590,7 @@ class AccountController extends Controller
                 'series' => '00' . $row->series,
                 'number' => str_pad($row->number, 13, '0', STR_PAD_LEFT),
                 'customer_identity_document_type_id' => $row->customer->identity_document_type_id,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'customer_name' => $row->customer->name,
 
                 'total_exportation' => number_format($row->total_exportation, 2, ".", ""),

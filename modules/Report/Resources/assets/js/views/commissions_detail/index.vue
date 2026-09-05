@@ -59,7 +59,7 @@
                             <th>Fecha</th>
                             <th class="text-center">Comprobante</th>
                             <th class="text-center">Serie</th>
-                            <th class="text-center">Ruc/Dni</th>
+                            <th class="text-center">RIF/Dni</th>
 
                             <th class="text-center">Comercial</th>
                             <th class="text-center">Detalle</th>

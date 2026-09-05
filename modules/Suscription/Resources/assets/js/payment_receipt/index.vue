@@ -359,7 +359,7 @@
                             </button>
                             <!--
                             <el-tooltip class="item"
-                                        content="Generar guía desde CPE"
+                                        content="Generar orden de entrega desde CPE"
                                         effect="dark"
                                         placement="top-start">
                                 <template v-for="(document,i) in row.documents">
@@ -373,7 +373,7 @@
                                 </template>
                             </el-tooltip>
                             <el-tooltip class="item"
-                                        content="Generar guía desde Nota Venta"
+                                        content="Generar orden de entrega desde Nota de venta"
                                         effect="dark"
                                         placement="top-start">
                                 <a :href="`/dispatches/generate/${row.id}`"

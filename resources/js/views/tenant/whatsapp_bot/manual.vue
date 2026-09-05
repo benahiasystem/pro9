@@ -51,13 +51,13 @@
                                 </template>
                                 <ul>
                                     <li>Consultar productos del catálogo con precio (IGV incluido) y stock.</li>
-                                    <li>Buscar clientes por nombre, DNI o RUC.</li>
+                                    <li>Buscar clientes por nombre, DNI o RIF.</li>
                                     <li>Registrar nuevos clientes desde RENIEC con solo el DNI.</li>
                                     <li>Emitir boletas y facturas reales contra SUNAT.</li>
                                     <li>Enviar el PDF del comprobante por WhatsApp después de emitir.</li>
                                     <li>Listar comprobantes recientes y reenviar sus PDFs.</li>
                                     <li>Consultar el estado SUNAT de cualquier comprobante.</li>
-                                    <li>Devolver datos del negocio (RUC, razón social).</li>
+                                    <li>Devolver datos del negocio (RIF, razón social).</li>
                                 </ul>
                             </el-collapse-item>
 
@@ -69,7 +69,7 @@
                                     <li>Atender a números que no estén en la lista de usuarios autorizados.</li>
                                     <li>Emitir un comprobante sin que el vendedor confirme con un mensaje afirmativo.</li>
                                     <li>Emitir si el vendedor no tiene una caja abierta (debe aperturarla primero).</li>
-                                    <li>Emitir factura si el cliente no tiene RUC.</li>
+                                    <li>Emitir factura si el cliente no tiene RIF.</li>
                                     <li>Emitir boleta a consumidor final si el monto supera Bs. 700 sin DNI del cliente.</li>
                                     <li>Procesar mensajes en ráfaga del mismo usuario: solo atiende uno a la vez por número.</li>
                                     <li>Detectar automáticamente cuando el dueño responde manualmente desde otra app: el vendedor debe escribir <code>{{ pauseCmd }}</code> para pausar.</li>

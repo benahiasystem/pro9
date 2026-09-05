@@ -88,7 +88,7 @@ class StateAccountCollection extends ResourceCollection
                 'date_of_due' => (in_array($document_type_id, ['01', '03'])) ?$row->invoice->date_of_due->format('Y-m-d') : (($date_of_due) ? $date_of_due->format('Y-m-d') : null),
                 'number' => $row->number_full,
                 'customer_name' => (in_array($document_type_id, ['01', '03']) && isset($row->person)) ? $row->person->name : ($document_type_id=='80' ? $row->person->name : null),
-                'customer_number' => (in_array($document_type_id, ['01', '03'])&& isset($row->person)) ? $row->person->number : ($document_type_id=='80' ? $row->person->number : null),
+                'customer_number' => (in_array($document_type_id, ['01', '03'])&& isset($row->person)) ? format_person_identity_document($row->person) : ($document_type_id=='80' ? format_person_identity_document($row->person) : null),
                 'currency_type_id' => $row->currency_type_id,
                 'series' => $row->series,
                 'establishment_id' => $row->establishment_id,

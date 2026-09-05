@@ -220,7 +220,9 @@ class PosController extends Controller
         $payment_method_types = PaymentMethodType::NotCredit()->get();
         $cards_brand = CardBrand::all();
         $payment_destinations = $this->getPaymentDestinations();
-        $global_discount_types = ChargeDiscountType::whereIn('id', ['02', '03'])->whereActive()->get();
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        $global_discount_types = ChargeDiscountType::getGlobalDiscounts();
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
 
         return compact('series', 'payment_method_types', 'cards_brand', 'payment_destinations', 'global_discount_types');

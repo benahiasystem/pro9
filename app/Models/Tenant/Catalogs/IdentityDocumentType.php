@@ -4,6 +4,7 @@
 
     use App\Models\Tenant\Company;
     use App\Models\Tenant\Person;
+    use App\Support\Venezuela\IdentityDocument;
     use Hyn\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Collection;
@@ -54,6 +55,26 @@
             'active',
             'description'
         ];
+
+        protected $appends = [
+            'code',
+            'selection_label',
+        ];
+
+        public function getCodeAttribute(): ?string
+        {
+            return IdentityDocument::code($this->id);
+        }
+
+        public function getDescriptionAttribute($value): string
+        {
+            return IdentityDocument::selectionLabel($this->id, (string) $value);
+        }
+
+        public function getSelectionLabelAttribute(): string
+        {
+            return $this->description;
+        }
 
         /**
          * @return HasMany
@@ -113,8 +134,15 @@
          */
         public function scopeFilterDataForPersons($query)
         {
-            return $query->whereIn('id', ['0','1','4','7'])
-                         ->orderByRaw("FIELD(id, '1', '7', '4', '0')");
+            return $query->orderByPersonPriority();
+        }
+
+        /**
+         * `active` es parte del contrato de datos, no una regla de visibilidad.
+         */
+        public function scopeWhereActive($query)
+        {
+            return $query->orderByPersonPriority();
         }
 
         /**
@@ -126,7 +154,11 @@
          */
         public function scopeOrderByPersonPriority($query)
         {
-            return $query->orderByRaw("FIELD(id, '1', '6', '7', '4', '0') = 0, FIELD(id, '1', '6', '7', '4', '0')");
+            $ids = IdentityDocument::ids();
+            $quotedIds = implode(', ', array_map(static fn ($id) => "'{$id}'", $ids));
+
+            return $query->whereIn('id', $ids)
+                ->orderByRaw("FIELD(id, {$quotedIds})");
         }
 
     }

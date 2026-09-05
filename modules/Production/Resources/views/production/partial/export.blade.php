@@ -90,7 +90,7 @@ $half = 50;
                 <p><strong>Fecha reporte: </strong>{{date('Y-m-d')}}</p>
             </td>
             <td class="td-custom">
-                <p><strong>Ruc: </strong>{{$company->number}}</p>
+                <p><strong>RIF: </strong>{{$company->number}}</p>
             </td>
     </tr>
 

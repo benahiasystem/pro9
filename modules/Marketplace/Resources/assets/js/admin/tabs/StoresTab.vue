@@ -24,7 +24,7 @@
                 </div>
                 <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2">
                     <label class="control-label">Buscar</label>
-                    <el-input v-model="filters.q" placeholder="Nombre o RUC" clearable
+                    <el-input v-model="filters.q" placeholder="Nombre o RIF" clearable
                               prefix-icon="el-icon-search"
                               @keyup.enter.native="load(1)" @clear="load(1)"/>
                 </div>
@@ -63,7 +63,7 @@
                                 <span v-else class="mkt-logo mkt-logo--placeholder">{{ row.name.charAt(0) }}</span>
                                 <div>
                                     <strong>{{ row.name }}</strong><br>
-                                    <small class="text-muted">{{ row.tax_id || 'Sin RUC' }}</small>
+                                    <small class="text-muted">{{ row.tax_id || 'Sin RIF' }}</small>
                                 </div>
                             </div>
                         </td>

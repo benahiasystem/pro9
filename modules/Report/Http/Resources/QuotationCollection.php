@@ -25,7 +25,7 @@ class QuotationCollection extends ResourceCollection
                 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                 'identifier' => $row->identifier,
                 'customer_name' => $row->customer->name,
-                'customer_number' => $row->customer->number,
+                'customer_number' => format_person_identity_document($row->customer),
                 'currency_type_id' => $row->currency_type_id,
                 'total_exportation' => (in_array($row->state_type_id,['09','11'])) ? number_format(0,2) : number_format($row->total_exportation,2),
                 // 'total_free' => (in_array($row->state_type_id,['09','11'])) ? number_format(0,2) : number_format($row->total_free,2),

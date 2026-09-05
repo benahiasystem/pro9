@@ -20,7 +20,7 @@
             <td width="50%" class="text-center">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
+                    <h4>{{ 'RIF '.$company->number }}</h4>
                     <h5>{{ ($establishment->address !== '-')? $establishment->address : '' }}</h5>
                     <h5>{{ ($establishment->email !== '-')? $establishment->email : '' }}</h5>
                     <h5>{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</h5>
@@ -34,7 +34,7 @@
             <td width="50%" class="pl-1">
                 <div class="text-left">
                     @include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h3', 'tagLegal' => 'h4'])
-                    <h4>{{ 'RUC '.$company->number }}</h4>
+                    <h4>{{ 'RIF '.$company->number }}</h4>
                     <h5>{{ ($establishment->address !== '-')? $establishment->address : '' }}</h5>
                     <h5>{{ ($establishment->email !== '-')? $establishment->email : '' }}</h5>
                     <h5>{{ ($establishment->telephone !== '-')? $establishment->telephone : '' }}</h5>
@@ -56,7 +56,7 @@
     </tr>
     <tr>
         <td>{{ $supplier->identity_document_type->description }}:</td>
-        <td>{{ $supplier->number }}</td>
+        <td>{{ format_identity_document($supplier->identity_document_type_id ?? null, $supplier->number) }}</td>
         <td>Moneda:</td>
         <td>{{ $document->currency_type_id }}</td>
     </tr>

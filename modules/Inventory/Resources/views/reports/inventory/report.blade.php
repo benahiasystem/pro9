@@ -29,7 +29,7 @@
     </tr>
     <tr>
         <td colspan="2"
-            class="label">RUC:
+            class="label">RIF:
         </td>
         <td align="left">{{$company->number}}</td>
     </tr>

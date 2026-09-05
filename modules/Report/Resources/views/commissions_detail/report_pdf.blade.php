@@ -70,7 +70,7 @@
                 </tr>
                 <tr>
                     <td>
-                        <p><strong>Ruc: </strong>{{$company->number}}</p>
+                        <p><strong>RIF: </strong>{{$company->number}}</p>
                     </td>
                 
                 </tr>
@@ -91,7 +91,7 @@
                                 <th>Fecha</th>
                                 <th class="text-center">Comprobante</th>
                                 <th class="text-center">Serie</th>
-                                <th class="text-center">Ruc/Dni</th>
+                                <th class="text-center">RIF/Dni</th>
 
                                 <th class="text-center">Comercial</th>
                                 <th class="text-center">Detalle</th>
@@ -138,7 +138,7 @@
                                     <td class="celda">{{$relation->date_of_issue->format('Y-m-d')}}</td>
                                     <td class="celda">{{$type_document}}</td>
                                     <td class="celda">{{$relation->number_full}}</td> 
-                                    <td class="celda">{{ $relation->customer->number}}</td> 
+                                    <td class="celda">{{ format_person_identity_document($relation->customer)}}</td>
 
                                     <td class="celda">{{$relation->customer->name}}</td> 
                                     <td class="celda">{{$row->relation_item->description}}</td> 

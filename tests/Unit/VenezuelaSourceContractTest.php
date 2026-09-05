@@ -97,7 +97,7 @@ class VenezuelaSourceContractTest extends TestCase
         $form = (string) file_get_contents(resource_path('js/views/tenant/persons/form.vue'));
         self::assertStringContainsString("v-if=\"type !== 'customers' || isForeignDocument\"", $form);
         self::assertStringContainsString("nationality_id: 'VE'", $form);
-        self::assertStringContainsString("return this.form.identity_document_type_id === '4'", $form);
+        self::assertStringContainsString("return this.form.identity_document_type_id === 'E'", $form);
         self::assertStringContainsString("address.country_id === 'VE'", $form);
     }
 

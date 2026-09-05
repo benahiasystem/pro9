@@ -76,7 +76,7 @@ class TemplatePreview
 //            $person = new Person();
 //            $person->name = 'IMPORTACION & EXPORTACION YU HUA S.A.C.';
 //            $person->number = '20392962761';
-//            $person->identity_document_type_name = 'RUC';
+//            $person->identity_document_type_name = 'RIF';
 //
 //            $person_address = new PersonAddress();
 //            $person_address->address = 'JR. PARURO Nro. 745 BARRIOS ALTOS';

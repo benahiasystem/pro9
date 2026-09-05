@@ -390,9 +390,9 @@ class Dispatch extends ModelTenant
      * @return HasMany
      */
     /**
-     * Datos esenciales de la guia de remision para consumo por API.
+     * Datos esenciales de la orden de entrega para consumo por API.
      *
-     * A diferencia de document / sale-note / quotation / purchase, la guia no tiene
+     * A diferencia de document / sale-note / quotation / purchase, la orden de entrega no tiene
      * importes: lo relevante es el traslado (motivo, fechas, pesos, bultos, origen,
      * destino y transporte). Por eso las lineas solo llevan cantidad y descripcion.
      *
@@ -420,7 +420,7 @@ class Dispatch extends ModelTenant
             'date_of_shipping'            => optional($this->date_of_shipping)->format('Y-m-d'),
 
             'customer_name'               => optional($this->customer)->name,
-            'customer_number'             => optional($this->customer)->number,
+            'customer_number'             => format_person_identity_document($this->customer),
             'customer_address'            => $this->buildApiResourcePersonAddress($this->customer, $person_ubigeo),
             'department_id'               => $person_ubigeo['department_id'],
             'province_id'                 => $person_ubigeo['province_id'],
@@ -446,7 +446,7 @@ class Dispatch extends ModelTenant
             'observations'                => $this->observations,
             'terms_condition'             => $this->terms_condition,
             'legends'                     => $this->legends,
-            // La guia electronica no genera 'qr' como Document; expone qr_url y hash.
+            // La orden de entrega no genera 'qr' como Document; expone qr_url y hash.
             'qr_url'                      => $this->qr_url,
             'hash'                        => $this->hash,
         ];
@@ -615,7 +615,7 @@ class Dispatch extends ModelTenant
 
 
     /**
-     * Indica si la guía descontó stock físico al crearse.
+     * Indica si la orden de entrega descontó stock físico al crearse.
      * Misma regla que InventoryKardexServiceProvider::dispatch().
      */
     public function discountsPhysicalStock(): bool
@@ -694,7 +694,7 @@ class Dispatch extends ModelTenant
         $customer_number = null;
         if($this->customer) {
             $customer_name= $this->customer->name;
-            $customer_number = $this->customer->identity_document_type->description . ' ' . $this->customer->number;
+            $customer_number = format_person_identity_document($this->customer);
         }
 
         $sender_name = null;
@@ -897,7 +897,7 @@ class Dispatch extends ModelTenant
      *
      * Retornar registro relacionado
      *
-     * Guia generada desde: Cot, Nv, Ped
+     * Orden de entrega generada desde: Cot, Nv, Ped
      *
      */
     public function getRelationExternalDocument()

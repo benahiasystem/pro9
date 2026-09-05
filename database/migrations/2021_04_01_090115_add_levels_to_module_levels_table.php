@@ -54,7 +54,7 @@ class AddLevelsToModuleLevelsTable extends Migration
 			['id' => 46, 'module_id' => 14, 'value' => 'users_establishments', 'description' => 'Establecimientos'],
 			// $advanced = [
 			['id' => 47, 'module_id' => 3, 'value' => 'advanced_retentions', 'description' => 'Retenciones'],
-			['id' => 48, 'module_id' => 3, 'value' => 'advanced_dispatches', 'description' => 'Guías de remisión'],
+			['id' => 48, 'module_id' => 3, 'value' => 'advanced_dispatches', 'description' => 'Órdenes de entrega'],
 			['id' => 49, 'module_id' => 3, 'value' => 'advanced_perceptions', 'description' => 'Percepciones'],
 			['id' => 50, 'module_id' => 3, 'value' => 'advanced_order_forms', 'description' => 'Ordenes de pedido'],
 			// $account = [

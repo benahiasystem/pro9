@@ -17,8 +17,8 @@ const BLOCKED_MODULES = [51, 3, 9]
 
 const TAGS = {
     base: {text: 'Recomendado', type: 'success', tooltip: 'Funciona sin problemas con NRUS: cubre la operación habitual del régimen.'},
-    extra: {text: 'Compatible', type: 'info', tooltip: 'Se puede usar con NRUS: no depende de facturas, guías ni libros contables.'},
-    blocked: {text: 'No Recomendado', type: 'warning', tooltip: 'Usa comprobantes u obligaciones que NRUS no tiene (guías, retención/percepción, libros contables).'},
+    extra: {text: 'Compatible', type: 'info', tooltip: 'Se puede usar con NRUS: no depende de facturas, órdenes de entrega ni libros contables.'},
+    blocked: {text: 'No Recomendado', type: 'warning', tooltip: 'Usa comprobantes u obligaciones que NRUS no tiene (órdenes de entrega, retención/percepción, libros contables).'},
 }
 
 export const nrusModules = {

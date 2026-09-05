@@ -29,7 +29,7 @@
         <td class="text-center">@include('pdf.partials.company_document_header_names', ['tagPrimary' => 'h5', 'tagLegal' => 'h6'])</td>
     </tr>
     <tr>
-        <td class="text-center"><h5>{{ 'RUC '.$company->number }}</h5></td>
+        <td class="text-center"><h5>{{ 'RIF '.$company->number }}</h5></td>
     </tr>
     <tr>
         <td class="text-center">
@@ -97,7 +97,7 @@
     </tr>
     <tr>
         <td><p class="desc">{{ $customer->identity_document_type->description }}:</p></td>
-        <td><p class="desc">{{ $customer->number }}</p></td>
+        <td><p class="desc">{{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number) }}</p></td>
     </tr>
     @if ($customer->address !== '')
         <tr>

@@ -20,7 +20,7 @@
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Ruc</th>
+                                <th>RIF</th>
                                 <th>Fecha</th>
                                 <th>Factura</th>
                                 <th class="">Nombre Comercial</th>

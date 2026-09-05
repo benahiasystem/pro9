@@ -256,6 +256,7 @@
             :recordItem="recordItem"
             :showDialog.sync="showDialogAddItem"
             :typeUser="typeUser"
+            :show-discounts-charges-attributes="false"
             :percentageIgv="percentage_igv"
             currency-type-id-active="VES"
             operation-type-id="0101"

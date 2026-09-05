@@ -244,13 +244,13 @@ class TransferController extends Controller
      * @param  string $document_type_id
      * @return void
      */
-    public function checkIfExistSerie($series, $document_type_id)
+    public function checkIfExistSerie($series, $document_type_id, Establishment $establishment)
     {
         if(is_null($series))
         {
             $document_type_description = $this->generalGetDocumentTypeDescription($document_type_id);
 
-            throw new Exception("No se encontró una serie para el tipo de documento {$document_type_id} - {$document_type_description}, registre la serie en Establecimientos/Series");
+            throw new Exception("No se encontró una serie para el tipo de documento {$document_type_id} - {$document_type_description} en el establecimiento de origen \"{$establishment->description}\". Regístrela en Establecimientos > Series > Interno.");
         }
     }
 
@@ -263,9 +263,10 @@ class TransferController extends Controller
             $warehouse_id = $request->input('warehouse_id');
 
             $warehouse = Warehouse::query()
+                ->with('establishment:id,description')
                 ->select('id', 'establishment_id')
                 ->where('id', $warehouse_id)
-                ->first();
+                ->firstOrFail();
 
             // Series filtradas por contexto (oculta dedicadas / restringe al grupo activo). Ver SeriesResolver.
             $series = app(SeriesResolver::class)->applyContext(Series::query()
@@ -274,7 +275,7 @@ class TransferController extends Controller
                 ->where('document_type_id', 'U4'))
                 ->first();
 
-            $this->checkIfExistSerie($series, $document_type_id);
+            $this->checkIfExistSerie($series, $document_type_id, $warehouse->establishment);
 
             $row = InventoryTransfer::query()
                 ->create([

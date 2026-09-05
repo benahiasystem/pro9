@@ -46,6 +46,23 @@ class HotelRentProductsTemplateContractTest extends TestCase
         self::assertStringContainsString('regla de presentación exclusiva de Hotel', $skill);
     }
 
+    /** @test */
+    public function hotel_product_modal_hides_discounts_charges_and_special_attributes_only_for_hotel(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $hotel = file_get_contents($root.'/modules/Hotel/Resources/assets/js/views/rooms/AddProductToRoom.vue');
+        $sharedItemForm = file_get_contents($root.'/resources/js/views/tenant/documents/partials/item.vue');
+        $skill = file_get_contents($root.'/.codex/skills/mantener-operacion-local-fiscal-pro9/SKILL.md');
+
+        self::assertStringContainsString(':show-discounts-charges-attributes="false"', $hotel);
+        self::assertStringContainsString("'showDiscountsChargesAttributes'", $sharedItemForm);
+        self::assertStringContainsString(
+            'v-if="showDiscounts && showDiscountsChargesAttributes !== false"',
+            $sharedItemForm
+        );
+        self::assertStringContainsString('conservar los datos y payloads históricos', $skill);
+    }
+
     private function between(string $source, string $start, string $end): string
     {
         $startPosition = strpos($source, $start);

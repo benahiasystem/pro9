@@ -32,7 +32,7 @@ $half = 50;
             @php
                 use App\CoreFacturalo\Helpers\CompanyDocumentDisplay as LedgerHdr;
             @endphp
-            {{ LedgerHdr::commercialLine($company) }}@if($lh = LedgerHdr::legalLine($company)) — {{ $lh }}@endif {{ 'RUC '.$company->number }}
+            {{ LedgerHdr::commercialLine($company) }}@if($lh = LedgerHdr::legalLine($company)) — {{ $lh }}@endif {{ 'RIF '.$company->number }}
 
         </th>
     </tr>
