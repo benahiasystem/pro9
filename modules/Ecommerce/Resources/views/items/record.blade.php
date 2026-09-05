@@ -15,9 +15,23 @@
         : $defaultImagePath;
 @endphp
 
-<div class="product-single-container product-single-default">
-    <div class="row">
-        <div class="col-lg-7 col-md-6 product-single-gallery">
+@php
+    $productSpecs = collect([
+        'Código interno'   => $record->internal_id,
+        'Código de barras' => $record->barcode,
+        'Marca'            => optional($record->brand)->name,
+        'Colección'        => $record->model,
+        'Línea'            => $record->line,
+        'Categoría'        => optional($record->category)->name,
+        'Nombre de fábrica'=> $record->second_name,
+        'Unidad de medida' => optional($record->unit_type)->description,
+    ])->filter(fn($value) => filled($value));
+    $hasSpecs = filled($record->technical_specifications) || $productSpecs->isNotEmpty();
+@endphp
+
+<div class="product-single-container product-single-default pdp">
+    <div class="row pdp-row">
+        <div class="col-lg-7 col-md-6 product-single-gallery pdp-gallery">
             <div class="product-slider-container product-item">
                 <div class="product-single-carousel owl-carousel owl-theme">
                     <div class="product-item">
@@ -84,22 +98,8 @@
             @endif
         </div><!-- End .col-lg-7 -->
 
-        <div class="col-lg-5 col-md-6">
-            <div id="product-detail-vue" class="product-single-details pdp">
-                @if(($record->category && $record->category->name) || ($record->brand && $record->brand->id))
-                <div class="pdp-tags">
-                    @if($record->category && $record->category->name)
-                        <span class="pdp-chip">{{ $record->category->name }}</span>
-                    @endif
-                    @if($record->brand && $record->brand->id)
-                        <a class="pdp-chip pdp-chip--ghost"
-                           href="{{ route('tenant.ecommerce.brand', ['id' => $record->brand->id, 'slug' => \Illuminate\Support\Str::slug($record->brand->name)]) }}">{{ $record->brand->name }}</a>
-                    @endif
-                </div>
-                @endif
-
-                <h1 class="product-title pdp-title mb-0">{{$record->description}}</h1>
-
+        <div class="col-lg-5 col-md-6 pdp-aside">
+            <div id="product-detail-vue" class="product-single-details pdp-panel">
 
                 @php
                     $activeCampaign = null;
@@ -149,67 +149,61 @@
                     $hasActiveOffer = $campaignPricing['has_social_proof_price'] || $campaignPricing['has_real_discount'];
                 @endphp
 
-                <style>[v-cloak]{display:none}@keyframes sp-pulse{0%{opacity:1}50%{opacity:.75}100%{opacity:1}}</style>
-                <div class="social-proof-container" v-cloak>
-                    <div class="pdp-rating" v-if="socialProofConfig.sp_rating">
-                        <span class="pdp-rating__score">5.0</span>
-                        <span class="pdp-rating__stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-                        <span class="pdp-rating__count">(@{{ sp_rating_count }} opiniones)</span>
-                    </div>
+                <style>[v-cloak]{display:none}</style>
 
-                    <div class="pdp-price-row">
-                        @if($storefront_show_prices ?? true)
-                        <div class="price-box w-auto">
-                            <span class="pdp-price-old" v-if="compareAtPrice">
-                                @{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}
-                            </span>
-                            <span class="pdp-price">
-                                @{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}
-                            </span>
-                        </div>
+                <div class="pdp-head">
+                    @if(($record->brand && $record->brand->id) || !empty($record->internal_id))
+                    <div class="pdp-eyebrow">
+                        @if ($record->brand && $record->brand->id)
+                            <a class="pdp-brand" href="{{ route('tenant.ecommerce.brand', ['id' => $record->brand->id, 'slug' => \Illuminate\Support\Str::slug($record->brand->name)]) }}">{{ $record->brand->name }}</a>
                         @endif
-
-                        <span class="pdp-countdown" v-if="offerExpiresAt && !sp_countdown_ended">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                            Termina en <b>@{{ sp_countdown_text }}</b>
-                        </span>
+                        @if(!empty($record->internal_id))
+                            <span class="pdp-sku">SKU {{ $record->internal_id }}</span>
+                        @endif
                     </div>
+                    @endif
 
-                    <div class="pdp-notes">
-                        <p class="pdp-note pdp-note--hot" v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 1 0 12 0c0 -1.532 -1.056 -3.94 -2 -5c-1.786 3 -2.791 3 -4 2z"/></svg>
-                            &iexcl;Se agota r&aacute;pido! Solo quedan @{{ Math.round(stock) }} unidades.
-                        </p>
-                        <p class="pdp-note pdp-note--ok" v-if="socialProofConfig.sp_purchase_count">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                            <span><span v-text="sp_purchases"></span> personas lo compraron en los &uacute;ltimos 7 d&iacute;as.</span>
-                        </p>
-                        <p class="pdp-note pdp-note--muted" v-if="socialProofConfig.sp_views_count">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                            <span><strong v-text="sp_viewers"></strong> personas est&aacute;n viendo este producto.</span>
-                        </p>
+                    <h1 class="product-title pdp-title">{{ $record->description }}</h1>
+
+                    <div class="pdp-rating" v-if="socialProofConfig.sp_rating" v-cloak>
+                        <span class="pdp-rating-stars" aria-hidden="true">★★★★★</span>
+                        <span class="pdp-rating-score">5.0</span>
+                        <span class="pdp-rating-count">(@{{ sp_rating_count }} opiniones)</span>
                     </div>
                 </div>
 
-                @if(!empty($record->variation_selector))
-                <div class="pdp-sep"></div>
+                @if($storefront_show_prices ?? true)
+                <div class="pdp-price-block" v-cloak>
+                    <div class="pdp-price-row">
+                        <span class="pdp-price">@{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}</span>
+                        <template v-if="discountPercent">
+                            <span class="pdp-price-old">@{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}</span>
+                            <span class="pdp-price-off">-@{{ discountPercent }}%</span>
+                        </template>
+                    </div>
 
+                    <p class="pdp-price-note">
+                        <span class="pdp-price-tax">{{ $record->has_igv ? 'Precio con IGV incluido' : 'Precio sin IGV' }}</span>
+                        <span class="pdp-price-deadline" v-if="offerExpiresAt && !sp_countdown_ended">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                            Oferta válida por <strong>@{{ sp_countdown_text }}</strong>
+                        </span>
+                    </p>
+                </div>
+                @endif
+
+                @if(!empty($record->variation_selector))
                 <div class="variation-selector">
                     <div v-for="variable in variationSelector.variables"
                          :key="'variation-group-' + variable.id"
                          class="variation-group">
-                        <span class="variation-group-name">
-                            @{{ variable.name }}: <b class="pdp-picked">@{{ selectedVariationLabel(variable) }}</b>
-                        </span>
+                        <span class="variation-group-name">@{{ variable.name }}</span>
                         <div class="variation-options">
                             <button type="button"
                                     v-for="value in variable.values"
                                     :key="'variation-value-' + value.id"
                                     class="variation-chip"
-                                    :class="{
-                                        active: isVariationValueSelected(variable.id, value.id),
-                                        'variation-chip--box': variable.value_type !== 'color'
-                                    }"
+                                    :class="{active: isVariationValueSelected(variable.id, value.id)}"
                                     :disabled="!variationValueAvailable(variable.id, value.id)"
                                     @click.prevent="selectVariationValue(variable.id, value.id)">
                                 <span v-if="variable.value_type === 'color' && value.color"
@@ -221,65 +215,114 @@
                 </div>
                 @endif
 
-                <div class="pdp-stock {{ $record->stock > 0 ? '' : 'pdp-stock--out' }}">
-                    <span class="pdp-stock__dot"></span>
-                    <span class="pdp-stock__text"><b>Disponible:</b> {{ number_format($record->stock, 0) }} unidades</span>
-                    <span class="pdp-stock__chip">{{ $record->stock > 0 ? 'En stock' : 'Sin stock' }}</span>
-                </div>
+                <dl class="pdp-meta">
+                    @if ($record->category && $record->category->name)
+                    <div class="pdp-meta-item">
+                        <dt>Categoría</dt>
+                        <dd><a href="{{ route('tenant.ecommerce.category', \Illuminate\Support\Str::slug($record->category->name, '-')) }}">{{ $record->category->name }}</a></dd>
+                    </div>
+                    @endif
+                    @if (!empty($record->model))
+                    <div class="pdp-meta-item">
+                        <dt>Colección</dt>
+                        <dd>{{ $record->model }}</dd>
+                    </div>
+                    @endif
+                    <div class="pdp-meta-item">
+                        <dt>Disponibilidad</dt>
+                        <dd>
+                            @if($record->stock > 0)
+                                <span class="pdp-stock pdp-stock--in">En stock</span>
+                                <span class="pdp-stock-qty">{{ number_format($record->stock, 0) }} unid.</span>
+                                <span class="pdp-stock-low" v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" v-cloak>últimas unidades</span>
+                            @else
+                                <span class="pdp-stock pdp-stock--out">Sin stock</span>
+                            @endif
+                        </dd>
+                    </div>
+                </dl>
 
-                @if(trim(strip_tags((string) $record->name)) !== '')
-                <div class="product-description-wrapper pdp-desc">
+                @if(filled(strip_tags($record->name)) || $hasSpecs)
+                <div class="pdp-description product-description-wrapper">
+                    @if(filled(strip_tags($record->name)))
                     <div id="productShortDescription" class="product-description-clamp">
                         {!! $record->name !!}
                     </div>
+                    @endif
 
+                    @if($hasSpecs)
+                    <div id="productSpecsInline" class="pdp-specs-inline" hidden>
+                        <h2 class="pdp-specs-title">Ficha técnica</h2>
+                        @if(filled($record->technical_specifications))
+                            <p class="pdp-specs-lead">{{ $record->technical_specifications }}</p>
+                        @endif
+                        @if($productSpecs->isNotEmpty())
+                        <dl class="pdp-specs">
+                            @foreach($productSpecs as $label => $value)
+                                <div class="pdp-spec">
+                                    <dt>{{ $label }}</dt>
+                                    <dd>{{ $value }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                        @endif
+                    </div>
+                    @endif
+
+                    @php
+                        // Sin descripción, "Ver todo" no dice nada: el botón nombra lo que abre.
+                        $toggleShow = filled(strip_tags($record->name)) ? 'Ver todo' : 'Ver ficha técnica';
+                        $toggleHide = filled(strip_tags($record->name)) ? 'Ver menos' : 'Ocultar ficha técnica';
+                    @endphp
                     <a href="javascript:void(0);"
                        id="toggleProductDescription"
                        class="product-description-toggle"
+                       data-label-show="{{ $toggleShow }}"
+                       data-label-hide="{{ $toggleHide }}"
                        style="display:none;">
-                        Ver todo
+                        {{ $toggleShow }}
                     </a>
                 </div>
                 @endif
 
-                @if(count($record->attributes))
+                @if(!empty($record->attributes))
                 <ul class="pdp-attrs">
                     @foreach($record->attributes as $at)
-                        <li><span>{{ $at->description }}:</span> <b>{{ $at->value }}</b></li>
+                        <li><span class="pdp-attr-label">{{ $at->description }}</span><span class="pdp-attr-value">{{ $at->value }}</span></li>
                     @endforeach
                 </ul>
                 @endif
 
-                <div class="pdp-sep"></div>
+                <p class="pdp-activity" v-if="hasActivity" v-cloak>
+                    <span class="pdp-live-dot" aria-hidden="true"></span>
+                    <span v-if="socialProofConfig.sp_views_count"><strong v-text="sp_viewers"></strong> viendo ahora</span>
+                    <span class="pdp-activity-sep" v-if="socialProofConfig.sp_views_count && socialProofConfig.sp_purchase_count">·</span>
+                    <span v-if="socialProofConfig.sp_purchase_count"><strong v-text="sp_purchases"></strong> compras esta semana</span>
+                </p>
 
-                <div class="product-action product-all-icons pdp-actions">
+                <div class="pdp-actions product-action product-all-icons">
                     <div class="pdp-buy">
                         <div class="quantity-container pdp-qty">
                             <button v-if="quantity <= 1 && getCartQuantity(product.id)" @click.stop.prevent="removeFromCart(product)" title="Quitar del carrito">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
                             </button>
                             <button
                                 @click.stop.prevent="decrementQuantity(product)"
                                 v-if="!getCartQuantity(product.id) || quantity > 1"
                                 title="Disminuir cantidad">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                    <path d="M5 12l14 0" />
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>
                             </button>
-                            <input type="number" class="input-quantity" v-model.number="quantity" min="1" @change="onQuantityInput">
+                            <input type="number" class="input-quantity" v-model.number="quantity" min="1" @change="onQuantityInput(product)" aria-label="Cantidad">
                             <button @click.stop.prevent="incrementQuantity(product)" title="Aumentar cantidad">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
                             </button>
                         </div>
 
-                        <button class="paction add-cart pdp-add" @click.stop.prevent="addOrUpdateCart(product)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                            <span v-if="getCartQuantity(product.id)">Actualizar cantidad</span>
-                            <span v-else>Agregar al carrito</span>
+                        <button class="paction add-cart pdp-cta" @click.stop.prevent="addOrUpdateCart(product)">
+                            <span v-if="cartQuantity">@{{ cartQuantity }} @{{ cartQuantity === 1 ? 'producto añadido' : 'productos añadidos' }}</span>
+                            <span v-else>Agregar a Carrito</span>
                         </button>
                     </div>
-
 
                     @php
                         $showWhatsapp = ($configurationModel->enable_whatsapp ?? false) && !empty($phoneWhatsapp);
@@ -295,19 +338,15 @@
                             );
                             $waLink = "https://wa.me/{$waPhone}?text={$waText}";
                         @endphp
-                        <a href="{{ $waLink }}" class="btn-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-whatsapp" style="margin-top: -3px"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
+                        <a href="{{ $waLink }}" class="btn-whatsapp pdp-whatsapp" target="_blank" rel="noopener" title="Consultar por WhatsApp">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" /><path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" /></svg>
                             <span>Consultar por WhatsApp</span>
                         </a>
                     @endif
-                </div><!-- End .product-action -->
-
-                <div class="product-single-share">
-                    <div class="addthis_inline_share_toolbox"></div>
-                </div><!-- End .product single-share -->
+                </div><!-- End .pdp-actions -->
             </div><!-- End .product-single-details -->
 
-            <div id="pdp-trust" class="pdp-trust">
+            <div class="pdp-assurances">
                 <div id="product-trust-badges"></div>
             </div>
         </div><!-- End .col-lg-5 -->
@@ -350,103 +389,28 @@
 </section>
 @endif
 
-<div class="product-single-tabs">
-    <ul class="nav nav-tabs" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active"  id="product-tab-desc" data-toggle="tab" href="#product-desc-content" role="tab"
-                aria-controls="product-desc-content" aria-selected="true">Descripcion</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" onclick="getRating('{{ $record->id}}')" id="product-tab-reviews" data-toggle="tab" href="#product-reviews-content" role="tab"
-                aria-controls="product-reviews-content" aria-selected="false">Reviews</a>
-        </li>
-        {{-- <li class="nav-item">
-            <a class="nav-link" id="product-tab-especTecn" data-toggle="tab" href="#product-especTecn-content" role="tab" aria-controls="product-especTecn-content" aria-selected="true">Especificaciones Técnicas</a>
-        </li> --}}
-    </ul>
-    <div class="tab-content">
-        <div class="tab-pane fade show active" id="product-desc-content" role="tabpanel"
-            aria-labelledby="product-tab-desc">
-            <div class="product-desc-content">
-                <p> {{ $record->description}} </p>
-                <p> {!! $record->name !!} </p>
-            </div><!-- End .product-desc-content -->
-        </div><!-- End .tab-pane -->
-
-        <div class="tab-pane fade" id="product-reviews-content" role="tabpanel" aria-labelledby="product-tab-reviews">
-            <div class="product-reviews-content">
-                <div class="collateral-box">
-
-                    <div class="page">
-                        <div class="page__demo">
-
-                            <div class="page__group">
-                                <div class="rating">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc6" onclick="sendRating(1,{{$record->id}})">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc7" onclick="sendRating(2,{{$record->id}})">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc8" onclick="sendRating(3,{{$record->id}})">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc9" onclick="sendRating(4,{{$record->id}})">
-                                    <input type="radio" name="rating-star2" class="rating__control" id="rc10" onclick="sendRating(5,{{$record->id}})" >
-                                    <label for="rc6" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">1</span>
-                                    </label>
-                                    <label for="rc7" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">2</span>
-                                    </label>
-                                    <label for="rc8" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">3</span>
-                                    </label>
-                                    <label for="rc9" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">4</span>
-                                    </label>
-                                    <label for="rc10" class="rating__item">
-                                        <svg class="rating__star">
-                                            <use xlink:href="#star"></use>
-                                        </svg>
-                                        <span class="rating__label">5</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" style="display: none">
-                        <symbol id="star" viewBox="0 0 26 28">
-                            <path
-                                d="M26 10.109c0 .281-.203.547-.406.75l-5.672 5.531 1.344 7.812c.016.109.016.203.016.313 0 .406-.187.781-.641.781a1.27 1.27 0 0 1-.625-.187L13 21.422l-7.016 3.687c-.203.109-.406.187-.625.187-.453 0-.656-.375-.656-.781 0-.109.016-.203.031-.313l1.344-7.812L.39 10.859c-.187-.203-.391-.469-.391-.75 0-.469.484-.656.875-.719l7.844-1.141 3.516-7.109c.141-.297.406-.641.766-.641s.625.344.766.641l3.516 7.109 7.844 1.141c.375.063.875.25.875.719z" />
-                        </symbol>
-                    </svg>
-
-                </div>
-
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="product-especTecn-content" role="tabpanel" aria-labelledby="product-tab-especTecn">
-            <div class="product-especTecn-content">
-                <p> {!! $record->technical_specifications !!} </p>
-            </div><!-- End .product-desc-content -->
-        </div><!-- End .tab-pane -->
-    </div>
-</div>
-
 <div id="product-frequently-bought" class="mt-4 mb-2"
      data-item-id="{{ $record->id }}"></div>
 
 @endsection
 
-@push('scripts')
+<style>
+    .variation-selector { margin: 10px 0 6px; }
+    .variation-group { margin-bottom: 10px; }
+    .variation-group-name { display: block; font-weight: 600; margin-bottom: 6px; }
+    .variation-chip {
+        border: 1px solid #d7dae3; border-radius: 20px; padding: 6px 14px;
+        background: #fff; margin: 0 6px 6px 0; cursor: pointer; font-size: 13px;
+    }
+    .variation-chip.active { border-color: #1b2653; color: #1b2653; font-weight: 700; box-shadow: inset 0 0 0 1px #1b2653; }
+    .variation-chip:disabled { opacity: .35; cursor: not-allowed; }
+    .variation-swatch {
+        display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+        margin-right: 5px; vertical-align: middle; border: 1px solid rgba(0,0,0,.2);
+    }
+</style>
+
+@push('scripts')¿
 <script>
 window.__socialProofBoot = {
     itemId: {{ (int) $record->id }},
@@ -525,17 +489,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 variationSelector: @json($record->variation_selector ?? null),
                 selectedVariationValues: {},
             },
+            computed: {
+                // La línea de actividad solo aparece si la campaña habilitó alguna
+                // de las dos métricas que la componen.
+                hasActivity() {
+                    const config = this.socialProofConfig;
+                    return Boolean(config.sp_views_count || config.sp_purchase_count);
+                },
+                // Cantidad de este producto que hay en el carrito; de aquí sale la
+                // etiqueta del botón.
+                cartQuantity() {
+                    return this.cartQuantities[this.product.id] || 0;
+                },
+                discountPercent() {
+                    if (!this.compareAtPrice || this.compareAtPrice <= this.activeOfferPrice) return 0;
+                    return Math.round((1 - this.activeOfferPrice / this.compareAtPrice) * 100);
+                },
+            },
             created() {
                 this.loadCartQuantities();
                 window.addEventListener('productAddedToCart', this.loadCartQuantities);
                 this.startCountdown();
                 this.startViewersDrift();
-                this.initVariationSelector();
             },
             beforeDestroy() {
                 if (this._countdownTimer) clearInterval(this._countdownTimer);
                 if (this._viewersTimer) clearInterval(this._viewersTimer);
                 window.removeEventListener('productAddedToCart', this.loadCartQuantities);
+                this.initVariationSelector();
             },
             watch: {
                 cartQuantities: {
@@ -567,7 +548,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                         this.sp_countdown_ended = false;
-                        this.sp_countdown_text = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+                        // Con varios días por delante un cronómetro al segundo se lee
+                        // como presión artificial; solo cuenta fino el último día.
+                        if (days >= 1) {
+                            this.sp_countdown_text = days === 1 ? '1 día' : days + ' días';
+                        } else if (hours >= 1) {
+                            this.sp_countdown_text = hours + 'h ' + minutes + 'm';
+                        } else {
+                            this.sp_countdown_text = minutes + 'm ' + seconds + 's';
+                        }
                     };
                     tick();
                     this._countdownTimer = setInterval(tick, 1000);
@@ -589,11 +578,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         const match = variable.values.find(value => current.indexOf(value.id) !== -1);
                         if (match) this.$set(this.selectedVariationValues, variable.id, match.id);
                     });
-                },
-                selectedVariationLabel(variable) {
-                    const selectedId = this.selectedVariationValues[variable.id];
-                    const match = (variable.values || []).find(value => value.id === selectedId);
-                    return match ? match.value : '';
                 },
                 isVariationValueSelected(variableId, valueId) {
                     return this.selectedVariationValues[variableId] === valueId;
@@ -624,49 +608,87 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = match.url;
                     }
                 },
+                // Un producto nuevo entra con la cantidad elegida; si ya está en el
+                // carrito, cada clic suma una unidad más (1, 2, 3...).
                 addOrUpdateCart(item) {
-                    let array = localStorage.getItem('products_cart');
-                    array = array ? JSON.parse(array) : [];
-                    let found = array.find(x => x.id == item.id);
-                    const cartItem = {
-                        ...item,
+                    const enCarrito = this.getCartQuantity(item.id);
+                    const objetivo = this.limitToStock(enCarrito ? this.quantity + 1 : this.quantity);
+
+                    this.quantity = objetivo;
+                    this.writeCart(item, objetivo, { mode: enCarrito ? 'exists' : 'added' });
+                },
+
+                /**
+                 * Guarda la cantidad en el carrito y refresca el contador del header.
+                 * En modo silencioso no abre el modal de confirmación: se usa desde
+                 * los botones +/-, donde un modal por cada pulsación sobraría.
+                 */
+                writeCart(item, quantity, options) {
+                    options = options || {};
+
+                    const payload = Object.assign({}, item, {
                         sale_unit_price: this.activeOfferPrice,
                         original_price: parseFloat(item.sale_unit_price),
                         has_discount: this.hasActiveOffer,
-                        quantity: this.quantity,
+                        quantity: quantity,
                         stock: Math.round(this.stock),
-                    };
+                    });
 
-                    if (typeof cartAddOrUpdateItem === 'function') {
-                        cartAddOrUpdateItem(cartItem, {
-                            quantity: this.quantity,
+                    if (!options.silent && typeof cartAddOrUpdateItem === 'function') {
+                        cartAddOrUpdateItem(payload, {
+                            quantity: quantity,
                             replaceQuantity: true,
-                            mode: found ? 'exists' : 'added',
+                            mode: options.mode,
                         });
-                        this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: this.quantity });
-                        return;
+                    } else if (typeof cartReadCart === 'function' && typeof cartWriteCart === 'function') {
+                        const array = cartReadCart();
+                        const found = array.find(x => x.id == item.id);
+                        if (found) {
+                            found.quantity = quantity;
+                            found.sale_unit_price = payload.sale_unit_price;
+                        } else {
+                            array.push(payload);
+                        }
+                        cartWriteCart(array);
+                        if (typeof cartRefreshHeader === 'function') {
+                            cartRefreshHeader();
+                        }
+                    } else {
+                        let array = localStorage.getItem('products_cart');
+                        array = array ? JSON.parse(array) : [];
+                        const found = array.find(x => x.id == item.id);
+                        if (found) {
+                            found.quantity = quantity;
+                            found.sale_unit_price = payload.sale_unit_price;
+                        } else {
+                            array.push(payload);
+                        }
+                        localStorage.setItem('products_cart', JSON.stringify(array));
                     }
 
-                    const price = this.activeOfferPrice;
-                    if (found) {
-                        found.quantity = this.quantity;
-                        found.sale_unit_price = price;
-                    } else {
-                        array.push({
-                            ...item,
-                            sale_unit_price: price,
-                            quantity: this.quantity
-                        });
-                    }
-                    localStorage.setItem('products_cart', JSON.stringify(array));
-                    this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: this.quantity });
+                    this.cartQuantities = Object.assign({}, this.cartQuantities, { [item.id]: quantity });
                     window.dispatchEvent(new Event('productAddedToCart'));
                 },
+
+                // Mientras el producto ya esté en el carrito, el selector lo edita:
+                // así el botón, el header y el checkout muestran siempre lo mismo.
+                syncCart(item) {
+                    if (!this.getCartQuantity(item.id)) return;
+                    this.writeCart(item, this.quantity, { silent: true });
+                },
+
+                limitToStock(value) {
+                    const max = Math.round(this.stock);
+                    if (value < 1) return 1;
+                    return (max > 0 && value > max) ? max : value;
+                },
+
                 getCartQuantity(id) {
                     return this.cartQuantities[id] || 0;
                 },
-                onQuantityInput() {
-                    if (this.quantity < 1) this.quantity = 1;
+                onQuantityInput(item) {
+                    this.quantity = this.limitToStock(this.quantity || 1);
+                    this.syncCart(item);
                 },
                 loadCartQuantities() {
                     let array = localStorage.getItem('products_cart');
@@ -678,10 +700,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     this.cartQuantities = obj;
                 },
                 incrementQuantity(item) {
-                    this.quantity++;
+                    this.quantity = this.limitToStock(this.quantity + 1);
+                    this.syncCart(item);
                 },
                 decrementQuantity(item) {
-                    if (this.quantity > 1) this.quantity--;
+                    if (this.quantity <= 1) return;
+                    this.quantity--;
+                    this.syncCart(item);
                 },
                 removeFromCart(item) {
                     let array = localStorage.getItem('products_cart');
@@ -696,23 +721,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const description = document.getElementById('productShortDescription');
+    const specs = document.getElementById('productSpecsInline');
     const toggleBtn = document.getElementById('toggleProductDescription');
 
-    if (description && toggleBtn) {
-        const isOverflowing = description.scrollHeight > description.clientHeight + 2;
+    if (toggleBtn) {
+        const isOverflowing = description
+            ? description.scrollHeight > description.clientHeight + 2
+            : false;
 
-        if (isOverflowing) {
+        // El botón también aparece cuando no hay descripción larga pero sí ficha técnica.
+        if (isOverflowing || specs) {
             toggleBtn.style.display = 'inline-block';
         }
 
         toggleBtn.addEventListener('click', function() {
-            description.classList.toggle('expanded');
+            const expanded = !toggleBtn.classList.contains('is-expanded');
 
-            if (description.classList.contains('expanded')) {
-                toggleBtn.textContent = 'Ver menos';
-            } else {
-                toggleBtn.textContent = 'Ver todo';
-            }
+            toggleBtn.classList.toggle('is-expanded', expanded);
+            if (description) description.classList.toggle('expanded', expanded);
+            if (specs) specs.hidden = !expanded;
+
+            toggleBtn.textContent = expanded
+                ? (toggleBtn.dataset.labelHide || 'Ver menos')
+                : (toggleBtn.dataset.labelShow || 'Ver todo');
         });
     }
 });
