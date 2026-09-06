@@ -14,7 +14,12 @@ if($current_hostname) {
                 Route::post('get_customers', 'StoreController@getCustomers');
             });
             Route::prefix('documents')->group(function () {
-                Route::get('create/{table?}/{table_id?}', 'StoreController@tableToDocument');
+                // ########## INICIO CAMBIO SIN XML CDR SUNAT
+                // Esta ruta solo convierte un registro de origen. Los segmentos son
+                // obligatorios para no capturar /documents/create, cuya entrada local
+                // corresponde a Tenant\DocumentController@create.
+                Route::get('create/{table}/{table_id}', 'StoreController@tableToDocument');
+                // ######### FIN CAMBIO SIN XML CDR SUNAT
             });
         });
     });
