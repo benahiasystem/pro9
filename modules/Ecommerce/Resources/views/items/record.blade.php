@@ -29,7 +29,7 @@
     $hasSpecs = filled($record->technical_specifications) || $productSpecs->isNotEmpty();
 @endphp
 
-<div class="product-single-container product-single-default pdp">
+<div class="product-single-container product-single-default pdp-page">
     <div class="row pdp-row">
         <div class="col-lg-7 col-md-6 product-single-gallery pdp-gallery">
             <div class="product-slider-container product-item">
@@ -165,30 +165,32 @@
 
                     <h1 class="product-title pdp-title">{{ $record->description }}</h1>
 
-                    <div class="pdp-rating" v-if="socialProofConfig.sp_rating" v-cloak>
-                        <span class="pdp-rating-stars" aria-hidden="true">★★★★★</span>
-                        <span class="pdp-rating-score">5.0</span>
-                        <span class="pdp-rating-count">(@{{ sp_rating_count }} opiniones)</span>
+                    <div class="pdp-score" v-if="socialProofConfig.sp_rating" v-cloak>
+                        <span class="pdp-score-stars" aria-hidden="true"><svg class="pdp-star" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z"/></svg><svg class="pdp-star" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z"/></svg><svg class="pdp-star" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z"/></svg><svg class="pdp-star" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z"/></svg><svg class="pdp-star" viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M8.243 7.34l-6.38 .925l-.113 .023a1 1 0 0 0 -.44 1.684l4.622 4.499l-1.09 6.355l-.013 .11a1 1 0 0 0 1.464 .944l5.706 -3l5.693 3l.1 .046a1 1 0 0 0 1.352 -1.1l-1.091 -6.355l4.624 -4.5l.078 -.085a1 1 0 0 0 -.633 -1.62l-6.38 -.926l-2.852 -5.78a1 1 0 0 0 -1.794 0l-2.853 5.78z"/></svg></span>
+                        <span class="pdp-score-value">5.0</span>
+                        <span class="pdp-score-count"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20l-3 -3h-2a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3h10a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-2l-3 3z"/></svg>@{{ sp_rating_count }} opiniones</span>
                     </div>
                 </div>
 
                 @if($storefront_show_prices ?? true)
-                <div class="pdp-price-block" v-cloak>
-                    <div class="pdp-price-row">
-                        <span class="pdp-price">@{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}</span>
+                <div class="pdp-amount-block" v-cloak>
+                    <div class="pdp-amount-row">
+                        <span class="pdp-amount">@{{ product.currency_type_symbol }} @{{ Number(activeOfferPrice).toFixed(2) }}</span>
                         <template v-if="discountPercent">
-                            <span class="pdp-price-old">@{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}</span>
-                            <span class="pdp-price-off">-@{{ discountPercent }}%</span>
+                            <span class="pdp-amount-old">@{{ product.currency_type_symbol }} @{{ Number(compareAtPrice).toFixed(2) }}</span>
+                            <span class="pdp-amount-off">-@{{ discountPercent }}%</span>
                         </template>
                     </div>
 
-                    <p class="pdp-price-note">
-                        <span class="pdp-price-tax">{{ $record->has_igv ? 'Precio con IGV incluido' : 'Precio sin IGV' }}</span>
-                        <span class="pdp-price-deadline" v-if="offerExpiresAt && !sp_countdown_ended">
-                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                            Oferta válida por <strong>@{{ sp_countdown_text }}</strong>
+                    <div class="pdp-timer" v-if="offerExpiresAt && !sp_countdown_ended">
+                        <span class="pdp-timer-label"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>La oferta termina en</span>
+                        <span class="pdp-timer-clock">
+                            <span class="pdp-timer-unit"><b>@{{ countdown.days }}</b><small>días</small></span>
+                            <span class="pdp-timer-unit"><b>@{{ countdown.hours }}</b><small>hrs</small></span>
+                            <span class="pdp-timer-unit"><b>@{{ countdown.minutes }}</b><small>min</small></span>
+                            <span class="pdp-timer-unit"><b>@{{ countdown.seconds }}</b><small>seg</small></span>
                         </span>
-                    </p>
+                    </div>
                 </div>
                 @endif
 
@@ -232,11 +234,11 @@
                         <dt>Disponibilidad</dt>
                         <dd>
                             @if($record->stock > 0)
-                                <span class="pdp-stock pdp-stock--in">En stock</span>
-                                <span class="pdp-stock-qty">{{ number_format($record->stock, 0) }} unid.</span>
-                                <span class="pdp-stock-low" v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" v-cloak>últimas unidades</span>
+                                <span class="pdp-avail pdp-avail--in">En stock</span>
+                                <span class="pdp-avail-qty">{{ number_format($record->stock, 0) }} unid.</span>
+                                <span class="pdp-avail-low" v-if="socialProofConfig.sp_stock_alert && stock > 0 && stock <= stockThreshold" v-cloak>últimas unidades</span>
                             @else
-                                <span class="pdp-stock pdp-stock--out">Sin stock</span>
+                                <span class="pdp-avail pdp-avail--out">Sin stock</span>
                             @endif
                         </dd>
                     </div>
@@ -286,18 +288,20 @@
                 @endif
 
                 @if(!empty($record->attributes))
-                <ul class="pdp-attrs">
+                <ul class="pdp-extra">
                     @foreach($record->attributes as $at)
-                        <li><span class="pdp-attr-label">{{ $at->description }}</span><span class="pdp-attr-value">{{ $at->value }}</span></li>
+                        <li><span class="pdp-extra-label">{{ $at->description }}</span><span class="pdp-extra-value">{{ $at->value }}</span></li>
                     @endforeach
                 </ul>
                 @endif
 
                 <p class="pdp-activity" v-if="hasActivity" v-cloak>
                     <span class="pdp-live-dot" aria-hidden="true"></span>
-                    <span v-if="socialProofConfig.sp_views_count"><strong v-text="sp_viewers"></strong> viendo ahora</span>
+                    <span class="pdp-activity-item" v-if="socialProofConfig.sp_views_count"><strong v-text="sp_viewers"></strong> viendo ahora</span>
                     <span class="pdp-activity-sep" v-if="socialProofConfig.sp_views_count && socialProofConfig.sp_purchase_count">·</span>
-                    <span v-if="socialProofConfig.sp_purchase_count"><strong v-text="sp_purchases"></strong> compras esta semana</span>
+                    <span class="pdp-activity-item" v-if="socialProofConfig.sp_purchase_count">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7V5a3 3 0 0 1 6 0v2"/></svg><strong v-text="sp_purchases"></strong> compras esta semana
+                    </span>
                 </p>
 
                 <div class="pdp-actions product-action product-all-icons">
@@ -483,6 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 sp_purchases: Math.floor(Math.random() * purchaseSpan) + purchaseMin,
                 sp_rating_count: Math.floor(Math.random() * (120 - 45 + 1)) + 45,
                 sp_countdown_text: 'Cargando...',
+                countdown: { days: '00', hours: '00', minutes: '00', seconds: '00' },
                 sp_countdown_ended: false,
                 _countdownTimer: null,
                 _viewersTimer: null,
@@ -548,15 +553,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                         this.sp_countdown_ended = false;
-                        // Con varios días por delante un cronómetro al segundo se lee
-                        // como presión artificial; solo cuenta fino el último día.
-                        if (days >= 1) {
-                            this.sp_countdown_text = days === 1 ? '1 día' : days + ' días';
-                        } else if (hours >= 1) {
-                            this.sp_countdown_text = hours + 'h ' + minutes + 'm';
-                        } else {
-                            this.sp_countdown_text = minutes + 'm ' + seconds + 's';
-                        }
+
+                        const pad = value => String(value).padStart(2, '0');
+                        this.countdown = {
+                            days: pad(days),
+                            hours: pad(hours),
+                            minutes: pad(minutes),
+                            seconds: pad(seconds),
+                        };
+                        this.sp_countdown_text = days + 'd ' + pad(hours) + 'h ' + pad(minutes) + 'm ' + pad(seconds) + 's';
                     };
                     tick();
                     this._countdownTimer = setInterval(tick, 1000);

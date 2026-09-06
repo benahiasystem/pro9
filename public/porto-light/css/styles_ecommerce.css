@@ -4456,6 +4456,22 @@ html:has(#app.checkout-page-root) .container {
 .terms-txt {
     color: var(--subtitle-color);
 }
+/* Aviso de aceptación implícita, debajo del botón de compra. */
+.terms-note {
+    margin: 12px 0 0;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--subtitle-color);
+}
+.terms-note a {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+}
+.terms-note a:hover {
+    text-decoration: underline !important;
+}
 .pay-btn.disabled,
 .pay-btn:disabled {
     background-color: color-mix(in srgb, var(--primary-color) 30%, #ffffff) !important;

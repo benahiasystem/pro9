@@ -6,7 +6,7 @@
  * marca del tenant (--primary-h/s/l), así que no fija colores propios
  * salvo los semánticos de stock, oferta y WhatsApp.
  *
- * Los tokens viven en :root y no en .pdp porque el breadcrumb queda
+ * Los tokens viven en :root y no en .pdp-page porque el breadcrumb queda
  * fuera del contenedor del producto.
  */
 
@@ -71,7 +71,7 @@
 
 /* ---------- Estructura ---------- */
 
-.product-single-container.product-single-default.pdp {
+.product-single-container.product-single-default.pdp-page {
     margin-top: 1rem;
     margin-bottom: 3.2rem;
 }
@@ -333,7 +333,7 @@ body {
     padding: 3px 10px;
 }
 
-.pdp .pdp-title {
+.pdp-page .pdp-title {
     font-size: 26px;
     line-height: 1.25;
     font-weight: 700;
@@ -345,12 +345,12 @@ body {
 }
 
 @media (min-width: 1200px) {
-    .pdp .pdp-title {
+    .pdp-page .pdp-title {
         font-size: 29px;
     }
 }
 
-.pdp-rating {
+.pdp-score {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -358,37 +358,48 @@ body {
     font-size: 13px;
 }
 
-.pdp-rating-stars {
+.pdp-score-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
     color: #f5a623;
-    letter-spacing: 1px;
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1;
 }
 
-.pdp-rating-score {
+.pdp-score-value {
     font-weight: 700;
     color: var(--pdp-ink);
 }
 
-.pdp-rating-count {
+.pdp-score-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     color: var(--pdp-muted);
+}
+
+.pdp-score-count svg {
+    flex: none;
+    opacity: .7;
 }
 
 /* Precio */
 
-.pdp-price-block {
+.pdp-amount-block {
     margin-top: 18px;
     padding-top: 18px;
     border-top: 1px solid var(--pdp-line);
 }
 
-.pdp-price-row {
+.pdp-amount-row {
     display: flex;
     align-items: baseline;
     flex-wrap: wrap;
     gap: 10px;
 }
 
-.pdp-price {
+.pdp-amount {
     font-size: 34px;
     line-height: 1;
     font-weight: 700;
@@ -396,13 +407,13 @@ body {
     color: var(--pdp-ink);
 }
 
-.pdp-price-old {
+.pdp-amount-old {
     font-size: 16px;
     color: var(--pdp-muted);
     text-decoration: line-through;
 }
 
-.pdp-price-off {
+.pdp-amount-off {
     font-size: 12px;
     font-weight: 700;
     color: #b3103f;
@@ -411,33 +422,62 @@ body {
     padding: 4px 10px;
 }
 
-/* La vigencia de la oferta acompaña al precio en vez de ocupar su propia
-   tarjeta: es información del precio, no un anuncio aparte. */
-.pdp-price-note {
+/* Temporizador de la oferta: acompaña al precio, con los cuatro tramos
+   separados para que se lea de un golpe. */
+.pdp-timer {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 6px 14px;
-    margin: 10px 0 0;
-    font-size: 12px;
-    color: var(--pdp-muted);
+    gap: 8px 12px;
+    margin-top: 14px;
 }
 
-.pdp-price-deadline {
+.pdp-timer-label {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b3103f;
 }
 
-.pdp-price-deadline strong {
-    color: #b3103f;
+.pdp-timer-label svg {
+    flex: none;
+}
+
+.pdp-timer-clock {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.pdp-timer-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 42px;
+    padding: 5px 6px 4px;
+    border-radius: 8px;
+    background: #fff2f6;
+    border: 1px solid #ffd7e3;
+    line-height: 1;
+}
+
+.pdp-timer-unit b {
+    font-size: 16px;
     font-weight: 700;
+    color: #b3103f;
     font-variant-numeric: tabular-nums;
 }
 
-.pdp-price-deadline svg {
+.pdp-timer-unit small {
+    margin-top: 3px;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
     color: #b3103f;
-    flex: none;
+    opacity: .7;
 }
 
 /* Variaciones */
@@ -460,10 +500,13 @@ body {
 
 .pdp-meta-item {
     display: grid;
-    grid-template-columns: 116px 1fr;
-    align-items: baseline;
+    grid-template-columns: 104px 1fr;
+    /* Centrado y no por línea base: la píldora de stock tiene otra altura que
+       el texto plano y con baseline la fila quedaba descuadrada. */
+    align-items: center;
     gap: 12px;
     font-size: 13px;
+    min-height: 24px;
 }
 
 .pdp-meta dt {
@@ -479,7 +522,8 @@ body {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 4px 8px;
+    gap: 6px 8px;
+    line-height: 1.4;
 }
 
 .pdp-meta dd a {
@@ -490,7 +534,7 @@ body {
     text-decoration: underline !important;
 }
 
-.pdp-stock {
+.pdp-avail {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -500,7 +544,7 @@ body {
     padding: 3px 10px;
 }
 
-.pdp-stock::before {
+.pdp-avail::before {
     content: "";
     width: 6px;
     height: 6px;
@@ -508,23 +552,23 @@ body {
     background: currentColor;
 }
 
-.pdp-stock--in {
+.pdp-avail--in {
     color: #10794c;
     background: #e6f7ef;
 }
 
-.pdp-stock--out {
+.pdp-avail--out {
     color: #b3103f;
     background: #ffe9f0;
 }
 
-.pdp-stock-qty {
+.pdp-avail-qty {
     font-weight: 500;
     color: var(--pdp-muted);
 }
 
 /* El aviso de stock bajo va donde se habla del stock, no en un bloque aparte. */
-.pdp-stock-low {
+.pdp-avail-low {
     font-size: 12px;
     font-weight: 600;
     color: #c2670a;
@@ -546,7 +590,7 @@ body {
     -webkit-line-clamp: 4;
 }
 
-.pdp .product-description-toggle {
+.pdp-page .product-description-toggle {
     color: var(--primary-color);
     font-size: 13px;
 }
@@ -604,7 +648,7 @@ body {
 
 /* Atributos adicionales */
 
-.pdp-attrs {
+.pdp-extra {
     list-style: none;
     margin: 16px 0 0;
     padding: 0;
@@ -613,20 +657,20 @@ body {
     font-size: 13px;
 }
 
-.pdp-attrs li {
+.pdp-extra li {
     display: flex;
     gap: 8px;
 }
 
-.pdp-attr-label {
+.pdp-extra-label {
     color: var(--pdp-muted);
 }
 
-.pdp-attr-label::after {
+.pdp-extra-label::after {
     content: ":";
 }
 
-.pdp-attr-value {
+.pdp-extra-value {
     color: var(--pdp-ink);
     font-weight: 600;
 }
@@ -643,6 +687,17 @@ body {
     margin: 22px 0 0;
     font-size: 12.5px;
     color: var(--pdp-muted);
+}
+
+.pdp-activity-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pdp-activity-item svg {
+    flex: none;
+    opacity: .75;
 }
 
 .pdp-activity strong {
@@ -685,7 +740,7 @@ body {
 
 /* ---------- Acciones ---------- */
 
-.pdp .product-single-details .pdp-actions {
+.pdp-page .product-single-details .pdp-actions {
     margin-top: 12px;
     display: grid;
     grid-template-columns: 1fr;
@@ -702,7 +757,7 @@ body {
     width: 100%;
 }
 
-.pdp .pdp-buy .quantity-container {
+.pdp-page .pdp-buy .quantity-container {
     height: 50px;
     width: 132px;
     flex: 0 0 132px;
@@ -712,7 +767,7 @@ body {
     padding: 0 4px;
 }
 
-.pdp .pdp-buy .quantity-container .input-quantity {
+.pdp-page .pdp-buy .quantity-container .input-quantity {
     width: 100%;
     text-align: center;
     font-size: 15px;
@@ -722,25 +777,25 @@ body {
     -moz-appearance: textfield;
 }
 
-.pdp .pdp-buy .quantity-container .input-quantity::-webkit-outer-spin-button,
-.pdp .pdp-buy .quantity-container .input-quantity::-webkit-inner-spin-button {
+.pdp-page .pdp-buy .quantity-container .input-quantity::-webkit-outer-spin-button,
+.pdp-page .pdp-buy .quantity-container .input-quantity::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
 }
 
-.pdp .pdp-buy .quantity-container button {
+.pdp-page .pdp-buy .quantity-container button {
     height: 34px !important;
     width: 34px !important;
     border-radius: 8px;
     color: var(--pdp-ink);
 }
 
-.pdp .pdp-buy .quantity-container button:hover {
+.pdp-page .pdp-buy .quantity-container button:hover {
     background: hsl(var(--primary-h), var(--primary-s), 96%);
     color: var(--primary-color);
 }
 
-.pdp .product-single-details .paction.add-cart.pdp-cta {
+.pdp-page .product-single-details .paction.add-cart.pdp-cta {
     flex: 1 1 auto;
     width: auto;
     min-width: 0;
@@ -755,21 +810,21 @@ body {
     transition: transform .18s, box-shadow .18s, background-color .18s;
 }
 
-.pdp .product-single-details .paction.add-cart.pdp-cta span {
+.pdp-page .product-single-details .paction.add-cart.pdp-cta span {
     font-size: 15px;
 }
 
-.pdp .product-single-details .paction.add-cart.pdp-cta:hover {
+.pdp-page .product-single-details .paction.add-cart.pdp-cta:hover {
     background: var(--title-color);
     transform: translateY(-1px);
     box-shadow: 0 14px 26px hsla(var(--primary-h), var(--primary-s), var(--primary-l), .3);
 }
 
-.pdp .product-single-details .paction.add-cart.pdp-cta:active {
+.pdp-page .product-single-details .paction.add-cart.pdp-cta:active {
     transform: none;
 }
 
-.pdp .btn-whatsapp.pdp-whatsapp {
+.pdp-page .btn-whatsapp.pdp-whatsapp {
     width: 100%;
     height: 50px;
     border-radius: 12px;
@@ -780,7 +835,7 @@ body {
     gap: 8px;
 }
 
-.pdp .btn-whatsapp.pdp-whatsapp:hover {
+.pdp-page .btn-whatsapp.pdp-whatsapp:hover {
     background: #25d366;
     border-color: #25d366;
     color: #fff;
