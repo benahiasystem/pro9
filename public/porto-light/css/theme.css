@@ -23503,7 +23503,7 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
     flex-direction: column;
 }
 .fp-doc-tab-wrap .fp-doc-tab {
-    flex: none;
+    flex: 1 1 auto;
 }
 .fp-doc-tab {
     flex: 1;
@@ -23518,6 +23518,58 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
     white-space: nowrap;
     text-align: center;
     letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    user-select: none;
+}
+.fp-doc-tab:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+}
+.fp-doc-tab.has-series {
+    padding-bottom: 6px;
+}
+.fp-doc-tab-label {
+    line-height: 1.2;
+}
+/* Selector de serie embebido dentro del tab activo: hereda el color del tab */
+.fp-doc-tab .fp-series-inline {
+    width: 55px;
+    max-width: 96px;
+    cursor: pointer;
+}
+.fp-doc-tab .fp-series-inline .el-input__inner {
+    height: 22px !important;
+    line-height: 22px !important;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.02em;
+    padding: 0 16px 0 6px;
+    border-radius: 6px !important;
+    color: inherit !important;
+    background: color-mix(in srgb, currentColor 14%, transparent) !important;
+    border: 1px solid color-mix(in srgb, currentColor 32%, transparent) !important;
+    cursor: pointer;
+}
+.fp-doc-tab .fp-series-inline .el-input__inner:hover,
+.fp-doc-tab .fp-series-inline .el-input__inner:focus {
+    color: inherit !important;
+    background: color-mix(in srgb, currentColor 22%, transparent) !important;
+    border-color: color-mix(in srgb, currentColor 55%, transparent) !important;
+    box-shadow: none !important;
+}
+.fp-doc-tab .fp-series-inline .el-input__suffix {
+    right: 2px;
+}
+.fp-doc-tab .fp-series-inline .el-input__icon {
+    line-height: 22px;
+    width: 16px;
+    font-size: 0.7rem;
+    color: inherit;
+    opacity: 0.75;
 }
 .fp-customer-row {
     border-top: none;
@@ -23590,6 +23642,19 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
     text-overflow: ellipsis;
     margin: 0;
 }
+.pos-cart-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+}
+.pos-cart-price {
+    font-size: 0.85rem;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+}
 .pos-total-input {
     width: 90px;
 }
@@ -23637,7 +23702,11 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
 }
 .pos-qty-field {
     width: 32px;
+    min-width: 32px;
+    max-width: 60px;
+    flex-shrink: 0;
     margin: 0;
+    transition: width 0.12s ease;
 }
 .pos-qty-field .el-input__inner {
     text-align: center;
