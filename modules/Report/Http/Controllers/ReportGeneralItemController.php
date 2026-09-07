@@ -77,6 +77,9 @@ class ReportGeneralItemController extends Controller
         $data_type = $this->getDataType($request);
 
         $document_type_id = isset($request['document_type_id']) ? $request['document_type_id'] : null;
+        if ($document_type_id === '' || $document_type_id === 'null' || $document_type_id === 'undefined') {
+            $document_type_id = null;
+        }
 
         $person_id = isset($request['person_id']) ? $request['person_id'] : null;
         $type_person = isset($request['type_person']) ? $request['type_person'] : null;
@@ -119,85 +122,186 @@ class ReportGeneralItemController extends Controller
      */
     private function dataItems($date_start, $date_end, $document_type_id, $data_type, $person_id, $type_person, $item_id, $web_platform_id, $brand_id, $category_id, $user_id, $user_type)
     {
-        /* columna state_type_id */
         $documents_excluded = [
             '11', // Documentos anulados
-            '09' // Documentos rechazados
+            '09', // Documentos rechazados
         ];
-        if( $document_type_id && $document_type_id == '80' ) {
+
+        $is_sale = $data_type['model'] === DocumentItem::class;
+
+        // Sin tipo: mostrar todos los del filtro (CPE + NC + GU/NE + NV en ventas).
+        if (!$document_type_id && $is_sale) {
+            $document_query = $this->buildDocumentItemsQuery(
+                $date_start,
+                $date_end,
+                ['01', '03', '07', 'GU75', 'NE76'],
+                DocumentItem::class,
+                'document',
+                $documents_excluded,
+                $user_id,
+                $user_type
+            );
+            $sale_note_query = $this->buildSaleNoteItemsQuery(
+                $date_start,
+                $date_end,
+                $documents_excluded,
+                $user_id
+            );
+
+            $document_query = $this->applyCommonItemFilters(
+                $document_query,
+                'document',
+                $person_id,
+                $type_person,
+                $item_id,
+                $web_platform_id,
+                $brand_id,
+                $category_id
+            );
+            $sale_note_query = $this->applyCommonItemFilters(
+                $sale_note_query,
+                'sale_note',
+                $person_id,
+                $type_person,
+                $item_id,
+                $web_platform_id,
+                $brand_id,
+                $category_id
+            );
+
+            return new CombinedGeneralItemQuery($document_query, $sale_note_query);
+        }
+
+        if ($document_type_id && $document_type_id == '80') {
+            $data = $this->buildSaleNoteItemsQuery(
+                $date_start,
+                $date_end,
+                $documents_excluded,
+                $user_id
+            );
             $relation = 'sale_note';
-
-            $data = SaleNoteItem::whereHas('sale_note', function($query) use($date_start, $date_end, $user_id, $documents_excluded){
-                $query
-                ->whereBetween('date_of_issue', [$date_start, $date_end])
-                ->latest()
-                ->whereTypeUser();
-                if(!empty($user_id)){
-                    $query->where('user_id',$user_id);
-                }
-                $query->whereNotIn('state_type_id', $documents_excluded);
-            });
-
         } else {
-
             $model = $data_type['model'];
             $relation = $data_type['relation'];
 
-            $document_types = $document_type_id ? [$document_type_id] : ['01','03'];
-
-            $data = $model::whereHas($relation, function ($query) use ($date_start, $date_end, $document_types, $model,$documents_excluded) {
-                $query
-                    ->whereBetween('date_of_issue', [$date_start, $date_end])
-                    ->whereIn('document_type_id', $document_types)
-                    ->latest()
-                    ->whereTypeUser();
-                if ($model == 'App\Models\Tenant\DocumentItem') {
-                    $query->whereNotIn('state_type_id', $documents_excluded);
-                }
-            });
-            if ($user_id && $user_type === 'CREADOR') {
-                $data = $data->whereHas($relation.'.user', function($query) use($user_id){
-                    $query->where('user_id', $user_id);
-                });
+            if ($document_type_id) {
+                $document_types = [$document_type_id];
+            } else {
+                // Compras sin tipo: factura, boleta, guía y nota de entrada
+                $document_types = ['01', '03', 'GU75', 'NE76'];
             }
-			if ($user_id && $user_type === 'VENDEDOR') {
-				$data = $data->whereHas($relation . '.seller', function ($query) use ($user_id) {
-					$query->where('seller_id', $user_id);
-				});
-			}
+
+            $data = $this->buildDocumentItemsQuery(
+                $date_start,
+                $date_end,
+                $document_types,
+                $model,
+                $relation,
+                $documents_excluded,
+                $user_id,
+                $user_type
+            );
         }
 
+        return $this->applyCommonItemFilters(
+            $data,
+            $relation,
+            $person_id,
+            $type_person,
+            $item_id,
+            $web_platform_id,
+            $brand_id,
+            $category_id
+        );
+    }
 
-        if($person_id && $type_person){
+    private function buildSaleNoteItemsQuery($date_start, $date_end, array $documents_excluded, $user_id)
+    {
+        return SaleNoteItem::whereHas('sale_note', function ($query) use ($date_start, $date_end, $user_id, $documents_excluded) {
+            $query
+                ->whereBetween('date_of_issue', [$date_start, $date_end])
+                ->latest()
+                ->whereTypeUser();
+            if (!empty($user_id)) {
+                $query->where('user_id', $user_id);
+            }
+            $query->whereNotIn('state_type_id', $documents_excluded);
+        });
+    }
 
-            $column = ($type_person == 'customers') ? 'customer_id':'supplier_id';
+    private function buildDocumentItemsQuery(
+        $date_start,
+        $date_end,
+        array $document_types,
+        $model,
+        $relation,
+        array $documents_excluded,
+        $user_id,
+        $user_type
+    ) {
+        $data = $model::whereHas($relation, function ($query) use ($date_start, $date_end, $document_types, $model, $documents_excluded) {
+            $query
+                ->whereBetween('date_of_issue', [$date_start, $date_end])
+                ->whereIn('document_type_id', $document_types)
+                ->latest()
+                ->whereTypeUser();
+            if ($model == DocumentItem::class || $model == 'App\Models\Tenant\DocumentItem') {
+                $query->whereNotIn('state_type_id', $documents_excluded);
+            }
+        });
 
-            $data =  $data->whereHas($relation, function($query) use($column, $person_id){
-                                $query->where($column, $person_id);
-                            });
-
+        if ($user_id && $user_type === 'CREADOR') {
+            $data = $data->whereHas($relation . '.user', function ($query) use ($user_id) {
+                $query->where('user_id', $user_id);
+            });
         }
 
-        if($item_id){
-            $data =  $data->where('item_id', $item_id);
-        }
-
-        if($web_platform_id || $brand_id || $category_id){
-            $data = $data->whereHas('relation_item', function($q) use($web_platform_id, $brand_id, $category_id){
-				if ($web_platform_id) {
-					$q->where('web_platform_id', $web_platform_id);
-                }
-				if ($brand_id) {
-					$q->where('brand_id', $brand_id);
-				}
-                if ($category_id) {
-					$q->where('category_id', $category_id);
-				}
+        if ($user_id && $user_type === 'VENDEDOR') {
+            $data = $data->whereHas($relation . '.seller', function ($query) use ($user_id) {
+                $query->where('seller_id', $user_id);
             });
         }
 
         return $data;
+    }
 
+    private function applyCommonItemFilters(
+        $data,
+        $relation,
+        $person_id,
+        $type_person,
+        $item_id,
+        $web_platform_id,
+        $brand_id,
+        $category_id
+    ) {
+        if ($person_id && $type_person) {
+            $column = ($type_person == 'customers') ? 'customer_id' : 'supplier_id';
+
+            $data = $data->whereHas($relation, function ($query) use ($column, $person_id) {
+                $query->where($column, $person_id);
+            });
+        }
+
+        if ($item_id) {
+            $data = $data->where('item_id', $item_id);
+        }
+
+        if ($web_platform_id || $brand_id || $category_id) {
+            $data = $data->whereHas('relation_item', function ($q) use ($web_platform_id, $brand_id, $category_id) {
+                if ($web_platform_id) {
+                    $q->where('web_platform_id', $web_platform_id);
+                }
+                if ($brand_id) {
+                    $q->where('brand_id', $brand_id);
+                }
+                if ($category_id) {
+                    $q->where('category_id', $category_id);
+                }
+            });
+        }
+
+        return $data;
     }
 
 
