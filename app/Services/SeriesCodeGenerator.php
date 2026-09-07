@@ -47,16 +47,36 @@ class SeriesCodeGenerator
     ];
 
     /**
-     * Series que se siembran al crear un tenant (§4.5 / §9-F): básicas + NV.
-     * Las internas de almacén (U2/U3/U4) quedan FUERA por ahora (no confirmadas).
-     * Las avanzadas (RR/PP/TT/VV/LL) se crean a demanda desde la UI.
+     * Series que se siembran al crear un tenant.
+     * Incluye básicas, avanzadas (retención, percepción, guías, liquidación),
+     * nota de venta e internas de almacén — como antes del recorte a solo CPE+NV.
+     * En régimen NRUS solo boleta y nota de venta.
      *
-     * @param  int $establishment_id
+     * @param  int  $establishment_id
+     * @param  bool $is_nrus
      * @return array<int, array<string, mixed>>
      */
-    public static function defaultTenantSeries(int $establishment_id): array
+    public static function defaultTenantSeries(int $establishment_id, bool $is_nrus = false): array
     {
-        $keys = ['invoice', 'receipt', 'credit_note_invoice', 'credit_note_receipt', 'debit_note_invoice', 'debit_note_receipt', 'sale_note'];
+        $keys = $is_nrus
+            ? self::NRUS_SERIES_KEYS
+            : [
+                'invoice',
+                'receipt',
+                'credit_note_invoice',
+                'credit_note_receipt',
+                'debit_note_invoice',
+                'debit_note_receipt',
+                'retention',
+                'perception',
+                'dispatch_sender',
+                'dispatch_carrier',
+                'purchase_settlement',
+                'sale_note',
+                'warehouse_entry',
+                'warehouse_exit',
+                'warehouse_transfer',
+            ];
         $rows = [];
 
         foreach (self::SERIES_TYPES as $type) {

@@ -1081,20 +1081,12 @@ use Illuminate\Support\Facades\Mail;
             \Log::info('Warehouse insertado');
 
             \Log::info('Insertando series...');
-            // Solo se siembran las básicas (SUNAT: factura, boleta, NC y ND) y la nota de venta,
-            // con la codificación estándar (FF/BB/FC/BC/FD/BD/NV). Fuente única: SeriesCodeGenerator.
-            // Las avanzadas (retención/percepción/guías/liquidación) se crean a demanda desde la UI.
+            // Siembra completa (como antes): CPE, NC/ND, retención, percepción,
+            // guías remitente/transportista, liquidación, NV y guías de almacén.
+            // NRUS: solo boleta + nota de venta. Fuente: SeriesCodeGenerator.
             DB::connection('tenant')->table('series')->insert(
-                \App\Services\SeriesCodeGenerator::defaultTenantSeries($establishment_id)
+                \App\Services\SeriesCodeGenerator::defaultTenantSeries($establishment_id, (bool) $is_nrus)
             );
-
-            // Series internas de almacén (U2/U3/U4): NO confirmadas para sembrar.
-            // Descomentar en un commit posterior si se decide habilitarlas:
-            // DB::connection('tenant')->table('series')->insert([
-            //     ['establishment_id' => $establishment_id, 'document_type_id' => 'U2', 'number' => 'AI01'],
-            //     ['establishment_id' => $establishment_id, 'document_type_id' => 'U3', 'number' => 'AS01'],
-            //     ['establishment_id' => $establishment_id, 'document_type_id' => 'U4', 'number' => 'AT01'],
-            // ]);
             \Log::info('Series insertadas');
 
             \Log::info('Insertando usuario...');
