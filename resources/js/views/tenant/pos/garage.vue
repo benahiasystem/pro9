@@ -2333,8 +2333,6 @@ export default {
                     exchangeRateSale,
                     this.percentage_igv
                 );
-                console.log(this.row)
-
                 // this.row['unit_type_id'] = item.presentation ? item.presentation.unit_type_id : 'NIU';
 
                 this.row["unit_type_id"] = item.presentation
@@ -2371,6 +2369,9 @@ export default {
             await this.setFormPosLocalStorage();
 
             await this.setDefaultDataPriceSelected(item);
+            
+            this.$refs.componentFastPaymentGarage.checkPaymentGarage(this.form.total)
+
         },
         setDefaultDataPriceSelected(item) {
             if (
