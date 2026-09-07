@@ -182,9 +182,9 @@
        casi todo el espacio y el valor escrito no se llega a ver. Se recorta,
        salvo en los campos con icono a la izquierda o a la derecha, que
        necesitan ese espacio para el icono. */
-    .el-input:not(.el-input--prefix) > .el-input__inner {
+    /* .el-input:not(.el-input--prefix) > .el-input__inner {
         padding-left: 8px;
-    }
+    } */
 
     .el-input:not(.el-input--suffix) > .el-input__inner {
         padding-right: 8px;
@@ -218,7 +218,7 @@
     }
 
     /* iOS hace zoom al enfocar inputs con fuente < 16px; forzar 16px lo evita */
-    input[type="text"],
+    /* input[type="text"],
     input[type="email"],
     input[type="password"],
     input[type="number"],
@@ -232,7 +232,7 @@
     .el-textarea__inner,
     .select2-search__field {
         font-size: 16px !important;
-    }
+    } */
 
     /* ------------------------------------------------------------------------
        2. Contenido y espaciado: aprovechar el ancho completo de la pantalla

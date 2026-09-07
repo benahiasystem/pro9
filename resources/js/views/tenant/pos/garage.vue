@@ -693,32 +693,40 @@
             >
                 <!-- ── TOP: Tipo documento + cliente ── -->
                 <div class="fp-top-header">
-                    <div class="fp-doc-tabs d-flex align-items-start px-1 py-1">
+                    <div class="fp-doc-tabs d-flex align-items-stretch px-1 py-1">
                         <div
                             v-for="tab in docTypeTabsAvailable"
                             :key="tab.id"
                             class="fp-doc-tab-wrap"
                             :class="{'active': form.document_type_id === tab.id}"
                         >
-                            <button
+                            <div
                                 class="fp-doc-tab w-100"
-                                :class="{'active': form.document_type_id === tab.id}"
+                                :class="{
+                                    'active': form.document_type_id === tab.id,
+                                    'has-series': form.document_type_id === tab.id && show_fast_payment_garage && current_series_count > 1
+                                }"
+                                role="button"
+                                tabindex="0"
                                 @click="setDocType(tab.id)"
-                            >{{ tab.label }}</button>
-                            <el-select
-                                v-if="form.document_type_id === tab.id && show_fast_payment_garage && current_series_count > 1"
-                                v-model="form.series_id"
-                                size="mini"
-                                class="fp-series-inline w-100 mt-1"
-                                @click.native.stop
+                                @keyup.enter.self="setDocType(tab.id)"
                             >
-                                <el-option
-                                    v-for="s in ($refs.componentFastPaymentGarage ? $refs.componentFastPaymentGarage.series : [])"
-                                    :key="s.id"
-                                    :label="s.number"
-                                    :value="s.id"
-                                ></el-option>
-                            </el-select>
+                                <span class="fp-doc-tab-label">{{ tab.label }}</span>
+                                <el-select
+                                    v-if="form.document_type_id === tab.id && show_fast_payment_garage && current_series_count > 1"
+                                    v-model="form.series_id"
+                                    size="mini"
+                                    class="fp-series-inline"
+                                    @click.native.stop
+                                >
+                                    <el-option
+                                        v-for="s in ($refs.componentFastPaymentGarage ? $refs.componentFastPaymentGarage.series : [])"
+                                        :key="s.id"
+                                        :label="s.number"
+                                        :value="s.id"
+                                    ></el-option>
+                                </el-select>
+                            </div>
                         </div>
                     </div>
                     <div class="fp-customer-row d-flex align-items-center py-2 px-1">
@@ -758,7 +766,7 @@
                         <p class="pos-empty-text mt-2 mb-0">Sin productos</p>
                     </div>
                     <!-- Items list -->
-                    <div class="px-2 py-1">
+                    <div class="px-0 py-1">
                         <template v-for="(item, index) in form.items">
                             <div :key="index" class="pos-cart-row d-flex align-items-center py-2">
                                 <!-- Thumbnail -->
@@ -770,54 +778,58 @@
                                 <div v-else class="pos-cart-thumb-ph mr-2">
                                     <i class="fas fa-cube"></i>
                                 </div>
-                                <!-- Info -->
-                                <div class="pos-cart-info flex-grow-1 mr-2 min-w-0">
+                                <!-- Info: nombre arriba, controles abajo -->
+                                <div class="pos-cart-info flex-grow-1 min-w-0">
                                     <p class="pos-cart-name mb-0">
                                         {{ item.item.description }}
                                         <template v-if="item.item.presentation && item.item.presentation.hasOwnProperty('description')">
                                             {{ item.item.presentation.description }}
                                         </template>
                                     </p>
-                                    <template v-if="edit_unit_price">
-                                        <el-input
-                                            v-model="item.total"
-                                            size="mini"
-                                            inputmode="decimal"
-                                            @input="calculateQuantity(index)"
-                                            @blur="blurCalculateQuantity(index)"
-                                            class="pos-total-input"
-                                            @focus="$event.target.select()"
-                                        />
-                                    </template>
-                                    <span v-else class="pos-cart-price">{{ currency_type.symbol }} {{ item.total }}</span>
-                                </div>
-                                <!-- Qty controls + trash (trash visible on row hover, a la izquierda del -) -->
-                                <div class="pos-qty-wrap d-flex align-items-center">
-                                    <a class="pos-cart-del" @click="clickDeleteItem(index)" title="Eliminar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                            <path d="M4 7l16 0"/>
-                                            <path d="M10 11l0 6"/>
-                                            <path d="M14 11l0 6"/>
-                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
-                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
-                                        </svg>
-                                    </a>
-                                    <button class="pos-qty-btn" @click="decrementItem(item, index)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12l14 0" /></svg>
-                                    </button>
-                                    <el-input
-                                        v-model="item.item.aux_quantity"
-                                        inputmode="decimal"
-                                        @focus="valueInputSelect"
-                                        @click.native="valueInputSelect"
-                                        @input="clickAddItem(item, index, true)"
-                                        @keyup.enter.native="keyupEnterQuantity"
-                                        class="pos-qty-field"
-                                    />
-                                    <button class="pos-qty-btn" @click="clickAddItem(item, index)">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
-                                    </button>
+                                    <!-- Precio + cantidad + eliminar -->
+                                    <div class="pos-cart-controls d-flex align-items-center justify-content-between">
+                                        <template v-if="edit_unit_price">
+                                            <el-input
+                                                v-model="item.total"
+                                                size="mini"
+                                                inputmode="decimal"
+                                                @input="calculateQuantity(index)"
+                                                @blur="blurCalculateQuantity(index)"
+                                                class="pos-total-input"
+                                                @focus="$event.target.select()"
+                                            />
+                                        </template>
+                                        <span v-else class="pos-cart-price">{{ currency_type.symbol }} {{ item.total }}</span>
+                                        <!-- Qty controls + trash (trash visible on row hover, a la izquierda del -) -->
+                                        <div class="pos-qty-wrap d-flex align-items-center">
+                                            <a class="pos-cart-del" @click="clickDeleteItem(index)" title="Eliminar">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                                    <path d="M4 7l16 0"/>
+                                                    <path d="M10 11l0 6"/>
+                                                    <path d="M14 11l0 6"/>
+                                                    <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/>
+                                                    <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/>
+                                                </svg>
+                                            </a>
+                                            <button class="pos-qty-btn" @click="decrementItem(item, index)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M5 12l14 0" /></svg>
+                                            </button>
+                                            <el-input
+                                                v-model="item.item.aux_quantity"
+                                                inputmode="decimal"
+                                                @focus="valueInputSelect"
+                                                @click.native="valueInputSelect"
+                                                @input="clickAddItem(item, index, true)"
+                                                @keyup.enter.native="keyupEnterQuantity"
+                                                class="pos-qty-field"
+                                                :style="{ width: qtyFieldWidth(item) }"
+                                            />
+                                            <button class="pos-qty-btn" @click="clickAddItem(item, index)">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -842,6 +854,7 @@
                             :configuration="configuration"
                             :type-user="typeUser"
                             @series-filtered="current_series_count = $event"
+                            @series-doc-types="setSeriesDocTypes($event)"
                             @customer-required="customerError = true"
                         ></fast-payment>
                     </template>
@@ -1248,6 +1261,7 @@ export default {
             affectations_exonerated_igv: ["10", "20"],
             searchFromBarcode: false,
             current_series_count: 0,
+            series_doc_types: [],
             doc_type_tabs: [
                 { id: '03', label: 'Boleta' },
                 { id: '01', label: 'Factura' },
@@ -1318,10 +1332,15 @@ export default {
         },
         docTypeTabsAvailable() {
             // NRUS no emite Factura (01)
-            if (this.isNrus) {
-                return this.doc_type_tabs.filter(tab => tab.id !== '01');
+            let tabs = this.isNrus
+                ? this.doc_type_tabs.filter(tab => tab.id !== '01')
+                : this.doc_type_tabs;
+
+            if (this.series_doc_types.length) {
+                tabs = tabs.filter(tab => this.series_doc_types.includes(tab.id));
             }
-            return this.doc_type_tabs;
+
+            return tabs;
         },
         validteCreateProduct() {
             if (this.config) {
@@ -1373,6 +1392,11 @@ export default {
             const customer = _.find(this.all_customers, c => String(c.id) === String(this.form.customer_id));
             return customer ? customer.email : null;
         }
+    },
+    watch: {
+        "form.document_type_id"() {
+            this.ensureAvailableDocType();
+        },
     },
     methods: {
         loadPosViewSettings() {
@@ -1542,6 +1566,12 @@ export default {
 
             return count;
         },
+        qtyFieldWidth(item) {
+            const value = item && item.item ? item.item.aux_quantity : '';
+            const length = String(value === null || value === undefined ? '' : value).length;
+            const width = (length * 8) + 14;
+            return `${Math.min(60, Math.max(32, width))}px`;
+        },
         keyupEnterQuantity() {
             this.initFocus();
         },
@@ -1553,6 +1583,18 @@ export default {
                 item.item.aux_quantity = qty - 1;
                 this.clickAddItem(item, index, true);
             }
+        },
+        setSeriesDocTypes(docTypes) {
+            this.series_doc_types = (docTypes || []).map(id => String(id));
+            this.ensureAvailableDocType();
+        },
+        ensureAvailableDocType() {
+            const tabs = this.docTypeTabsAvailable;
+
+            if (!tabs.length) return;
+            if (tabs.some(tab => tab.id === this.form.document_type_id)) return;
+
+            this.setDocType(tabs[0].id);
         },
         setDocType(typeId) {
             this.form.document_type_id = typeId;
@@ -1968,6 +2010,8 @@ export default {
                 this.form.document_type_id =
                     customer.identity_document_type_id == "6" ? "01" : "03";
             }
+
+            this.ensureAvailableDocType();
 
             // console.log(this.customer);
 
