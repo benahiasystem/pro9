@@ -30,6 +30,8 @@ docker-compose.yml
 
 /ssh
 /.project
+# Generado por win-centrifugo.bat: config.json lleva la API key y bin/ el .exe
+/centrifugo
 app/CoreFacturalo/Templates/pdf/personalizada*
 public/templates/pdf/personalizada*
 supervisor.conf
