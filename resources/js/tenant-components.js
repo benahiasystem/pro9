@@ -397,6 +397,7 @@ import TenantItemAffectations from './views/tenant/item_affectations/index.vue';
 import TenantOperationTypes from './views/tenant/operation_types/index.vue';
 import TenantcustomFieldsIndex from '@viewsModuleCustomField/custom_fields/index.vue';
 import TenantWebhooksIndex from '@viewsModuleWebhook/webhooks/index.vue';
+import TenantSyncPanel from '@viewsModuleSync/panel/index.vue';
 import CheckoutIzipay from './components/checkouts/izipay.vue'
 import CheckoutCulqi from './components/checkouts/culqi.vue'
 import CheckoutMercadopago from './components/checkouts/mercadopago.vue'
@@ -447,6 +448,7 @@ Vue.component('tenant-configurations-pdf-guide', TenantConfigurationsPdfGuide)
 Vue.component('tenant-configurations-preprinted-pdf', TenantConfigurationsPreprintedPdf)
 Vue.component('tenant-configurations-custom-fields', TenantcustomFieldsIndex)
 Vue.component('tenant-configurations-webhooks', TenantWebhooksIndex)
+Vue.component('tenant-sync-panel', TenantSyncPanel)
 Vue.component('tenant-dialog-header-menu', TenantDialogHeaderMenu)
 
 Vue.component('tenant-bank_accounts-index', TenantBankAccountsIndex)

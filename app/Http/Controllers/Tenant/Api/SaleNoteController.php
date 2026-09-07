@@ -318,9 +318,30 @@ class SaleNoteController extends Controller
 
     private function getDataSeries($series_id, $id, $number)
     {
-        $series = Series::find($series_id)->number;
+        $series_row = Series::find($series_id);
+        $series = $series_row->number;
 
-        if (!$id) {
+        // Misma regla que los comprobantes: una serie asignada a una máquina
+        // VendeYa se numera en la máquina — el flujo online no puede usarla.
+        if (
+            !app()->bound('sync.batch.bypass')
+            && $series_row->series_device_group_id
+            && class_exists(\Modules\Sync\Models\OfflineMachine::class)
+            && \Illuminate\Support\Facades\Schema::connection('tenant')->hasTable('offline_machines')
+            && \Modules\Sync\Models\OfflineMachine::where('series_device_group_id', $series_row->series_device_group_id)->exists()
+        ) {
+            throw new \Exception(
+                "La serie {$series} está asignada a una máquina VendeYa (conexión offline): " .
+                'usa otra serie o libérala desde el panel de Conexión Offline.'
+            );
+        }
+
+        // Canal offline (VendeYa): la serie es dedicada de la máquina y el
+        // número ya se imprimió en el ticket — se respeta tal cual. El flujo
+        // online mantiene su asignación automática (último + 1).
+        $forced_offline_number = !$id && $number && app()->bound('sync.batch.bypass');
+
+        if (!$id && !$forced_offline_number) {
             $sale_note = SaleNote::select('number')->where('soap_type_id', $this->company->soap_type_id)
                 ->where('series', $series)
                 ->orderBy('number', 'desc')
