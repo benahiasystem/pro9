@@ -69,6 +69,12 @@
         use StorageDocument;
         use OfflineTrait;
 
+        /**
+         * Items que devuelve la carga inicial del selector (item/tables). El
+         * resto llega por search-items y los guardados por search/item/{id}.
+         */
+        const ITEMS_INITIAL_LIMIT = 20;
+
         protected $order_note;
         protected $company;
 
@@ -409,7 +415,9 @@
         public function item_tables()
         {
             // $items = $this->table('items');
-            $items = SearchItemController::getItemsToOrderNote();
+            // Solo la primera tanda: el selector es remoto (search-items) y los
+            // items guardados se piden por search/item/{id}.
+            $items = SearchItemController::getItemsToOrderNote(null, 0, self::ITEMS_INITIAL_LIMIT);
             $categories = [];
             $affectation_igv_types = AffectationIgvType::whereActive()->get();
             $system_isc_types = SystemIscType::whereActive()->get();

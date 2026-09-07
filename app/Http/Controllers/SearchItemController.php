@@ -745,14 +745,25 @@
          *
          * @return mixed
          */
-        public static function getItemsToOrderNote(Request $request = null, $id = 0)
+        public static function getItemsToOrderNote(Request $request = null, $id = 0, $limit = null)
         {
             $items_not_services = self::getNotServiceItem($request, $id);
             $items_services = self::getServiceItem($request, $id);
             $establishment_id = auth()->user()->establishment_id;
             $warehouse = Warehouse::where('establishment_id', $establishment_id)->first();
-// aqui
-            return self::TransformModalToOrderNote($items_not_services->merge($items_services), $warehouse);
+
+            $items = $items_not_services->merge($items_services);
+
+            // La carga inicial del selector no necesita el catalogo completo: el
+            // resto llega por la busqueda remota y los items ya guardados se
+            // resuelven uno a uno por search/item/{id}. Se recorta antes de
+            // transformar para no pagar el armado de cada fila (stock, precios,
+            // unidades) sobre todo el catalogo.
+            if ($limit) {
+                $items = $items->take($limit);
+            }
+
+            return self::TransformModalToOrderNote($items, $warehouse);
         }
 
         /**

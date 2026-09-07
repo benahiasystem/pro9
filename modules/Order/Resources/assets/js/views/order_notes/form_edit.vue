@@ -412,6 +412,10 @@
             updateRow(updatedRow) {
                 // actualizar item en la tabla
                 this.$set(this.form.items, this.currentEditIndex, updatedRow);
+                // Faltaba recalcular: addRow y clickRemoveItem si lo hacen, asi
+                // que al editar precio o cantidad los totales quedaban con el
+                // valor anterior.
+                this.calculateTotal();
                 this.showDialogEditItem = false;
                 this.$message.success('Producto actualizado');
             },
