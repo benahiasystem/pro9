@@ -1348,16 +1348,30 @@ export default {
             this.$emit("update:showDialog", false);
         },
         async changeItem() {
-            this.getItems();
+            // Sin await, _.find corria contra la lista anterior (o vacia) porque
+            // la peticion seguia en vuelo; this.items ademas es volatil: la
+            // busqueda remota y filterItems lo reemplazan.
+            await this.getItems();
 
-            this.form.item = _.find(this.items, { id: this.form.item_id });
-            this.form.unit_price = this.form.item.sale_unit_price;
-            this.form.unit_price_value = this.form.item.sale_unit_price;
-            this.lots = this.form.item.lots;
-            this.form.has_igv = this.form.item.has_igv;
-            this.form.affectation_igv_type_id = this.form.item.sale_affectation_igv_type_id;
+            const item = _.find(this.items, { id: this.form.item_id });
+
+            // Antes se asignaba el undefined de _.find a form.item: reventaba en
+            // la linea siguiente con sale_unit_price y despues en el render del
+            // dialogo con currency_type_symbol. Se deja el objeto vacio con el
+            // que arranca initForm.
+            if (!item) {
+                this.form.item = {};
+                return;
+            }
+
+            this.form.item = item;
+            this.form.unit_price = item.sale_unit_price;
+            this.form.unit_price_value = item.sale_unit_price;
+            this.lots = item.lots;
+            this.form.has_igv = item.has_igv;
+            this.form.affectation_igv_type_id = item.sale_affectation_igv_type_id;
             this.form.quantity = 1;
-            this.item_unit_types = this.form.item.item_unit_types;
+            this.item_unit_types = item.item_unit_types;
             this.item_unit_types.length > 0
                 ? (this.has_list_prices = true)
                 : (this.has_list_prices = false);
@@ -1422,7 +1436,10 @@ export default {
             }
         },
         reloadDataItems(item_id) {
-            this.$http.get(`/${this.resource}/table/items`).then(response => {
+            // Faltaba el return: create() hacia "await this.reloadDataItems(...)"
+            // sobre undefined, seguia sin esperar la respuesta y changeItem
+            // buscaba en una lista todavia sin cargar.
+            return this.$http.get(`/${this.resource}/table/items`).then(response => {
                 this.items = response.data;
                 this.form.item_id = item_id;
                 if (item_id) {
