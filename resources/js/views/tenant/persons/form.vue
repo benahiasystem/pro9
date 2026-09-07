@@ -214,7 +214,7 @@
                                      class="form-group">
                                     <label class="control-label">
                                         Ubigeo
-                                        <span v-if="form.country_id === 'PE'" class="text-danger">*</span>
+                                        <span v-if="form.country_id === 'PE' && !isPersonWithOptionalAddress()" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="form.location_id"
                                                  :clearable="true"
@@ -225,8 +225,11 @@
                                     <small v-if="errors.location_id"
                                            class="form-control-feedback"
                                            v-text="errors.location_id[0]"></small>
-                                    <small v-if="form.country_id === 'PE'" class="text-muted">
+                                    <small v-if="form.country_id === 'PE' && !isPersonWithOptionalAddress()" class="text-muted">
                                         Campo obligatorio
+                                    </small>
+                                    <small v-else-if="form.country_id === 'PE'" class="text-muted">
+                                        Opcional
                                     </small>
                                     <small v-if="form.country_id !== 'PE'" class="text-muted">
                                         Ubigeo solo disponible para Perú
@@ -456,7 +459,7 @@
                                      class="form-group">
                                     <label class="control-label">
                                         Ubigeo
-                                        <span v-if="row.country_id === 'PE'" class="text-danger">*</span>
+                                        <span v-if="row.country_id === 'PE' && !isPersonWithOptionalAddress()" class="text-danger">*</span>
                                     </label>
                                     <el-cascader v-model="row.location_id"
                                                  :key="`address-ubigeo-${index}-${locations.length}`"
@@ -467,8 +470,11 @@
                                     <small v-if="errors.location_id"
                                            class="form-control-feedback"
                                            v-text="errors.location_id[0]"></small>
-                                    <small v-if="row.country_id === 'PE'" class="text-muted">
+                                    <small v-if="row.country_id === 'PE' && !isPersonWithOptionalAddress()" class="text-muted">
                                         Campo obligatorio
+                                    </small>
+                                    <small v-else-if="row.country_id === 'PE'" class="text-muted">
+                                        Opcional
                                     </small>
                                     <small v-else class="text-muted">
                                         Ubigeo solo disponible para Perú
@@ -1210,13 +1216,16 @@ export default {
         },
         isPersonWithOptionalAddress() {
             // DNI (1): persona natural sin RUC.
-            // No Domiciliado sin RUC (0): no tiene domicilio fiscal en el pais.
-            if (['1', '0'].includes(this.form.identity_document_type_id)) return true
+            // No Domiciliado sin RUC (0): Clientes - Varios / sin domicilio fiscal.
+            // el-select a veces entrega el id como número (0); includes() es estricto.
+            const typeId = String(this.form.identity_document_type_id ?? '')
+
+            if (['1', '0'].includes(typeId)) return true
 
             // RUC 10xxxxxxxxx: tambien es persona natural, no se le exige domicilio.
             const number = (this.form.number || '').toString().trim()
 
-            return this.form.identity_document_type_id === '6' && number.startsWith('10')
+            return typeId === '6' && number.startsWith('10')
         },
         isEmptyAddressRow(row) {
             if (!row) return true
