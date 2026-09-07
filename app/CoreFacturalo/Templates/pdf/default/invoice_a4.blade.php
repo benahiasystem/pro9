@@ -956,7 +956,9 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
             @if($document->subtotal > 0)
                 @php
                     $labelSubtotal = $document->total_discount_with_igv > 0 ? 'SUMA DE IMPORTES' : 'SUBTOTAL';
-                    $subtotal = $document->total_discount_with_igv > 0 ? $document->subtotal + $document->total_discount_with_igv : $document->subtotal;
+                    $subtotal = $document->total_discount_with_igv > 0 ? 
+                    ( $document->total_prepayment > 0 ? $document->subtotal : $document->subtotal + $document->total_discount_with_igv ) 
+                    : $document->subtotal;
                 @endphp
             <tr>
                 <td colspan="{{ $colspan_total }}" class="text-right font-bold pr-2">{{ $labelSubtotal }}: {{ $document->currency_type->symbol }}</td>

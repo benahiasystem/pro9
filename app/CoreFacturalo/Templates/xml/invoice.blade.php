@@ -212,7 +212,7 @@
     @foreach($document->prepayments as $prepayment)
     <cac:PrepaidPayment>
         <cbc:ID>{{ $loop->iteration }}</cbc:ID>
-        <cbc:PaidAmount currencyID="{{ $document->currency_type_id }}">{{ $prepayment->total }}</cbc:PaidAmount>
+        <cbc:PaidAmount currencyID="{{ $document->currency_type_id }}">{{ $document->generalApplyNumberFormat((float) $prepayment->total) }}</cbc:PaidAmount>
     </cac:PrepaidPayment>
     @endforeach
     @endif
@@ -230,12 +230,15 @@
     @endif
     @if($document->discounts)
     @foreach($document->discounts as $discount)
+    {{-- Formateado igual que los cargos globales: un factor/base nulo saldria
+         como tag vacio y SUNAT rechaza. Aplica al descuento por anticipos
+         (codigos 04/05/06), cuyo factor lleva 5 decimales. --}}
     <cac:AllowanceCharge>
         <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
         <cbc:AllowanceChargeReasonCode>{{ $discount->discount_type_id }}</cbc:AllowanceChargeReasonCode>
-        <cbc:MultiplierFactorNumeric>{{ $discount->factor }}</cbc:MultiplierFactorNumeric>
-        <cbc:Amount currencyID="{{ $document->currency_type_id }}">{{ $discount->amount }}</cbc:Amount>
-        <cbc:BaseAmount currencyID="{{ $document->currency_type_id }}">{{ $discount->base }}</cbc:BaseAmount>
+        <cbc:MultiplierFactorNumeric>{{ $document->generalApplyNumberFormat((float) $discount->factor, 5) }}</cbc:MultiplierFactorNumeric>
+        <cbc:Amount currencyID="{{ $document->currency_type_id }}">{{ $document->generalApplyNumberFormat((float) $discount->amount) }}</cbc:Amount>
+        <cbc:BaseAmount currencyID="{{ $document->currency_type_id }}">{{ $document->generalApplyNumberFormat((float) $discount->base) }}</cbc:BaseAmount>
     </cac:AllowanceCharge>
     @endforeach
     @endif
@@ -424,7 +427,7 @@
         <cbc:ChargeTotalAmount currencyID="{{ $document->currency_type_id }}">{{ $document->total_charge }}</cbc:ChargeTotalAmount>
         @endif
         @if($document->total_prepayment > 0)
-        <cbc:PrepaidAmount currencyID="{{ $document->currency_type_id }}">{{ $document->total_prepayment }}</cbc:PrepaidAmount>
+        <cbc:PrepaidAmount currencyID="{{ $document->currency_type_id }}">{{ $document->generalApplyNumberFormat((float) $document->total_prepayment) }}</cbc:PrepaidAmount>
         @endif
         {{-- @if($total_discount_no_base > 0)
         <cbc:PayableAmount currencyID="{{ $document->currency_type_id }}">{{ $document->total - $total_discount_no_base}}</cbc:PayableAmount>
