@@ -352,6 +352,42 @@ use Modules\Sale\Models\Agent;
         }
 
         /**
+         * Descuento total con IGV para plantillas PDF (DESCUENTO TOTAL).
+         * Misma lógica que Document: las plantillas de NV usan $document->total_discount_with_igv.
+         *
+         * @return float
+         */
+        public function getTotalDiscountWithIgvAttribute()
+        {
+            $total_discount_item = 0;
+            $total_discount_global = 0;
+
+            $this->items->each(function ($it) use (&$total_discount_item, &$total_discount_global) {
+                if ($it->discounts) {
+                    foreach ($it->discounts as $dis) {
+                        $amount = $dis->discount_type_id == '00'
+                            ? $dis->amount_without_rounded * 1.18
+                            : $dis->amount;
+
+                        if (isset($dis->from_global_distribution) && $dis->from_global_distribution) {
+                            $total_discount_global += $amount;
+                        } else {
+                            $total_discount_item += $amount;
+                        }
+                    }
+                }
+            });
+
+            if ($this->total_value > 0 && $total_discount_item == 0 && $total_discount_global == 0) {
+                $factor = ($this->total_value + $this->total_taxes) / $this->total_value;
+
+                return round($this->total_discount * $factor, 2);
+            }
+
+            return round($total_discount_global + $total_discount_item, 2);
+        }
+
+        /**
          * Datos esenciales de la nota de venta para consumo por API.
          *
          * Mismo criterio de descuentos que en Document: los que traen
