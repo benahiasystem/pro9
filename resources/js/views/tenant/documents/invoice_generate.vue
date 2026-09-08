@@ -9464,10 +9464,6 @@ export default {
                 );
             }
 
-            if (val_detraction.success) {
-                this.form.retention = []; 
-            }
-
             if (!this.enabled_payments) {
                 this.form.payments = [];
             }
