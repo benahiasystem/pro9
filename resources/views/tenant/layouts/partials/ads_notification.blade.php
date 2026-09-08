@@ -5,7 +5,7 @@
             && strlen((string) ($phone_whatsapp ?? '')) > 0;
     @endphp
 
-    <div class="system-ads-notification system-ads-notification--{{ $vc_system_ads_notification->position }} @if($adsNotificationAvoidWs) system-ads-notification--avoid-ws @endif"
+    <div class="system-ads-notification system-ads-notification--{{ $vc_system_ads_notification->position }} system-ads-notification--{{ $vc_system_ads_notification->theme }} @if($adsNotificationAvoidWs) system-ads-notification--avoid-ws @endif"
          id="systemAdsNotification"
          data-version="{{ $vc_system_ads_notification->version }}"
          data-duration="{{ $vc_system_ads_notification->duration }}"
@@ -54,6 +54,48 @@
 
     <style>
         .system-ads-notification {
+            --ads-n-bg: #fff;
+            --ads-n-border: var(--border, #e4e8ee);
+            --ads-n-title: #182433;
+            --ads-n-desc: #67758b;
+            --ads-n-icon-bg: color-mix(in srgb, var(--primary, #3d6bf5) 12%, #ffffff);
+            --ads-n-icon-fg: var(--primary, #3d6bf5);
+            --ads-n-link: var(--primary, #3d6bf5);
+            --ads-n-close: #94a1b3;
+            --ads-n-close-hover-bg: #f2f5f9;
+            --ads-n-close-hover-fg: #182433;
+            --ads-n-shadow: 0 18px 44px -12px rgba(24, 36, 51, .30);
+        }
+        .system-ads-notification--dark {
+            --ads-n-bg: color-mix(in srgb, var(--primary) 32%, #000);
+            --ads-n-border: rgba(255, 255, 255, .12);
+            --ads-n-title: #f2f5f9;
+            --ads-n-desc: #9aa8bd;
+            --ads-n-icon-bg: rgba(255, 255, 255, .09);
+            --ads-n-icon-fg: color-mix(in srgb, var(--primary, #3d6bf5) 45%, #ffffff);
+            --ads-n-link: color-mix(in srgb, var(--primary, #3d6bf5) 45%, #ffffff);
+            --ads-n-close: #8b98ab;
+            --ads-n-close-hover-bg: rgba(255, 255, 255, .10);
+            --ads-n-close-hover-fg: #f2f5f9;
+            --ads-n-shadow: 0 18px 44px -12px rgba(0, 0, 0, .55);
+        }
+        @media (prefers-color-scheme: dark) {
+            .system-ads-notification--auto {
+                --ads-n-bg: #1b2431;
+                --ads-n-border: rgba(255, 255, 255, .12);
+                --ads-n-title: #f2f5f9;
+                --ads-n-desc: #9aa8bd;
+                --ads-n-icon-bg: rgba(255, 255, 255, .09);
+                --ads-n-icon-fg: color-mix(in srgb, var(--primary, #3d6bf5) 45%, #ffffff);
+                --ads-n-link: color-mix(in srgb, var(--primary, #3d6bf5) 45%, #ffffff);
+                --ads-n-close: #8b98ab;
+                --ads-n-close-hover-bg: rgba(255, 255, 255, .10);
+                --ads-n-close-hover-fg: #f2f5f9;
+                --ads-n-shadow: 0 18px 44px -12px rgba(0, 0, 0, .55);
+            }
+        }
+
+        .system-ads-notification {
             position: fixed;
             z-index: 2300;
             align-items: flex-start;
@@ -61,11 +103,11 @@
             width: 340px;
             max-width: calc(100vw - 40px);
             padding: 14px 36px 14px 14px;
-            color: #182433;
-            background: #fff;
-            border: 1px solid var(--border, #e4e8ee);
+            color: var(--ads-n-title);
+            background: var(--ads-n-bg);
+            border: 1px solid var(--ads-n-border);
             border-radius: 12px;
-            box-shadow: 0 18px 44px -12px rgba(24, 36, 51, .30);
+            box-shadow: var(--ads-n-shadow);
             opacity: 0;
             transition: opacity .25s ease, transform .25s ease;
         }
@@ -103,8 +145,8 @@
             justify-content: center;
             width: 40px;
             height: 40px;
-            color: var(--primary, #3d6bf5);
-            background: color-mix(in srgb, var(--primary, #3d6bf5) 12%, #ffffff);
+            color: var(--ads-n-icon-fg);
+            background: var(--ads-n-icon-bg);
             border-radius: 11px;
         }
         .system-ads-notification__icon--emoji {
@@ -124,7 +166,7 @@
             margin-top: 3px;
             font-size: 13px;
             line-height: 1.4;
-            color: #67758b;
+            color: var(--ads-n-desc);
             overflow-wrap: break-word;
         }
         .system-ads-notification__link {
@@ -132,7 +174,7 @@
             margin-top: 8px;
             font-size: 13px;
             font-weight: 600;
-            color: var(--primary, #3d6bf5);
+            color: var(--ads-n-link);
         }
         .system-ads-notification__close {
             position: absolute;
@@ -144,15 +186,15 @@
             width: 22px;
             height: 22px;
             padding: 0;
-            color: #94a1b3;
+            color: var(--ads-n-close);
             background: transparent;
             border: 0;
             border-radius: 50%;
             cursor: pointer;
         }
         .system-ads-notification__close:hover {
-            color: #182433;
-            background: #f2f5f9;
+            color: var(--ads-n-close-hover-fg);
+            background: var(--ads-n-close-hover-bg);
         }
 
         @media (max-width: 575.98px) {

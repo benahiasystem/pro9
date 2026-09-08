@@ -328,6 +328,7 @@ class Configuration extends Model
 
         $positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
         $position = $notification['position'] ?? null;
+        $theme = $notification['theme'] ?? 'light';
         $icon_type = $notification['icon_type'] ?? 'none';
         $icon_svg = self::sanitizeTenantAdsIconSvg($notification['icon_svg'] ?? null);
         $emoji = trim((string) ($notification['emoji'] ?? ''));
@@ -346,6 +347,7 @@ class Configuration extends Model
 
         return (object) [
             'position' => in_array($position, $positions, true) ? $position : 'bottom-right',
+            'theme' => in_array($theme, ['light', 'dark', 'auto'], true) ? $theme : 'light',
             'duration' => max(0, (int) ($notification['duration'] ?? 0)),
             'icon_type' => in_array($icon_type, ['none', 'tabler', 'emoji'], true) ? $icon_type : 'none',
             'icon_svg' => $icon_svg,

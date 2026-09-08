@@ -316,23 +316,26 @@
                                                             @select="applyNotificationIcon"></tabler-icon-picker>
                                     </div>
 
-                                    <div class="ads-emoji" v-if="form.tenant_ads_notification.icon_type === 'emoji'">
-                                        <div class="ads-emoji__list">
-                                            <button v-for="emoji in emojiPresets"
-                                                    :key="emoji"
-                                                    type="button"
-                                                    :aria-pressed="String(form.tenant_ads_notification.emoji === emoji)"
-                                                    @click="selectEmoji(emoji)"
-                                                    v-text="emoji"></button>
-                                        </div>
-                                        <input type="text"
-                                               class="ads-emoji__input"
-                                               maxlength="16"
-                                               v-model="form.tenant_ads_notification.emoji"
-                                               placeholder="O escribe otro emoji"
-                                               @change="submit">
+                                    <div v-if="form.tenant_ads_notification.icon_type === 'emoji'">
+                                        <emoji-picker :emoji="form.tenant_ads_notification.emoji"
+                                                      @select="selectEmoji"></emoji-picker>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="ads-divider"></div>
+
+                            <div class="ads-group">
+                                <span class="ads-group__label">Tema</span>
+                                <div class="ads-seg">
+                                    <button v-for="option in themes"
+                                            :key="option.value"
+                                            type="button"
+                                            :aria-pressed="String(form.tenant_ads_notification.theme === option.value)"
+                                            @click="selectTheme(option.value)"
+                                            v-text="option.label"></button>
+                                </div>
+                                <p class="ads-hint" v-text="themeHint"></p>
                             </div>
 
                             <div class="ads-divider"></div>
@@ -340,23 +343,21 @@
                             <div class="ads-sub">
                                 <span class="ads-sub__txt">
                                     <strong>Permanece en pantalla</strong>
-                                    <span>Se queda hasta que el usuario la cierre con la ×.</span>
+                                    <span v-text="durationHint"></span>
                                 </span>
-                                <el-switch v-model="notificationForever"></el-switch>
+                                <span class="ads-sub__controls">
+                                    <el-input-number v-if="!notificationForever"
+                                                     size="small"
+                                                     controls-position="right"
+                                                     step-strictly
+                                                     :min="3"
+                                                     :max="300"
+                                                     :step="1"
+                                                     v-model="form.tenant_ads_notification.duration"
+                                                     @change="setDuration"></el-input-number>
+                                    <el-switch v-model="notificationForever"></el-switch>
+                                </span>
                             </div>
-
-                            <label class="ads-field" v-if="!notificationForever">
-                                <span class="ads-field__label">Se cierra sola después de</span>
-                                <div class="ads-slider">
-                                    <input type="range"
-                                           min="3"
-                                           max="60"
-                                           step="1"
-                                           v-model.number="form.tenant_ads_notification.duration"
-                                           @change="submit">
-                                    <span class="ads-slider__secs">{{ form.tenant_ads_notification.duration }} s</span>
-                                </div>
-                            </label>
                         </div>
 
                         <aside class="ads-col-preview">
@@ -371,7 +372,8 @@
                                 <div class="ads-frame__bar"><i></i><i></i><i></i><span class="url">app.tuempresa.com</span></div>
                                 <div class="ads-stage">
                                     <div class="ads-skeleton"><i></i><i></i><i></i><div class="blocks"><i></i><i></i></div></div>
-                                    <div class="pv-toast" :class="'pv-toast--' + form.tenant_ads_notification.position">
+                                    <div class="pv-toast"
+                                         :class="['pv-toast--' + form.tenant_ads_notification.position, 'pv-toast--' + form.tenant_ads_notification.theme]">
                                         <span class="ic" v-if="notificationIconSvg" v-html="notificationIconSvg"></span>
                                         <span class="ic ic--emoji"
                                               v-else-if="form.tenant_ads_notification.icon_type === 'emoji' && form.tenant_ads_notification.emoji"
@@ -405,7 +407,7 @@
 
         <div class="ads-demo-toast"
              v-if="demo === 'notification'"
-             :class="'ads-demo-toast--' + form.tenant_ads_notification.position">
+             :class="['ads-demo-toast--' + form.tenant_ads_notification.position, 'ads-demo-toast--' + form.tenant_ads_notification.theme]">
             <span class="ic" v-if="notificationIconSvg" v-html="notificationIconSvg"></span>
             <span class="ic ic--emoji"
                   v-else-if="form.tenant_ads_notification.icon_type === 'emoji' && form.tenant_ads_notification.emoji"
@@ -424,6 +426,7 @@
 
 <script>
 import TablerIconPicker from '../../../../../modules/Ecommerce/Resources/assets/js/components/TablerIconPicker.vue'
+import EmojiPicker from '../../../components/EmojiPicker.vue'
 
 function defaultAdsToolbar() {
     return {
@@ -440,6 +443,7 @@ function defaultAdsNotification() {
     return {
         enabled: false,
         position: 'bottom-right',
+        theme: 'light',
         duration: 8,
         icon_type: 'none',
         icon: '',
@@ -470,6 +474,7 @@ function relativeLuminance(hex) {
 export default {
     components: {
         TablerIconPicker,
+        EmojiPicker,
     },
     data() {
         return {
@@ -487,7 +492,10 @@ export default {
                 {value: 'tabler', label: 'Ícono'},
                 {value: 'emoji', label: 'Emoji'},
             ],
-            emojiPresets: ['🎁', '🚀', '📢', '✨', '🔔', '💡', '📦', '🎉'],
+            themes: [
+                {value: 'light', label: 'Claro'},
+                {value: 'dark', label: 'Oscuro'},
+            ],
             colorPresets: [
                 {label: 'Azul', bg: '#3d6bf5', fg: '#ffffff'},
                 {label: 'Verde', bg: '#00c666', fg: '#ffffff'},
@@ -556,6 +564,19 @@ export default {
                 this.submit()
             }
         },
+        durationHint() {
+            return this.notificationForever
+                ? 'Se queda hasta que el usuario la cierre con la ×.'
+                : 'Se cierra sola después de estos segundos (entre 3 y 300).'
+        },
+        themeHint() {
+            const hints = {
+                light: 'Fondo blanco con texto oscuro.',
+                dark: 'Fondo oscuro con texto claro.',
+            }
+
+            return hints[this.form.tenant_ads_notification.theme] || hints.light
+        },
         notificationIconSvg() {
             const inner = this.form.tenant_ads_notification.icon_svg
 
@@ -578,6 +599,19 @@ export default {
         },
         selectIconType(value) {
             this.form.tenant_ads_notification.icon_type = value
+            this.submit()
+        },
+        selectTheme(value) {
+            this.form.tenant_ads_notification.theme = value
+            this.submit()
+        },
+        setDuration(value) {
+            const seconds = Math.round(Number(value))
+
+            this.form.tenant_ads_notification.duration = Number.isFinite(seconds) && seconds > 0
+                ? Math.min(300, Math.max(3, seconds))
+                : 8
+
             this.submit()
         },
         selectEmoji(emoji) {
@@ -647,7 +681,16 @@ export default {
     },
 }
 </script>
-
+<style>
+.ads-sub__controls .el-input-number .el-input.el-input--small .el-input__inner {
+    width: 118px;
+    height: 32px !important;
+}
+.ads-sub__controls .el-input-number .el-input-number__decrease,
+.ads-sub__controls .el-input-number .el-input-number__increase {
+    right: 13px;
+}
+</style>
 <style scoped>
 .ads-config {
     --ads-primary: var(--primary, #3d6bf5);
@@ -773,57 +816,12 @@ export default {
 }
 
 /* campos */
-.ads-field {
-    display: block;
-    margin: 0;
-    padding: 7px 12px 8px;
-    background: var(--ads-field);
-    border: 1px solid var(--ads-border);
-    border-radius: var(--ads-r);
-    transition: border-color .15s, box-shadow .15s;
-}
-.ads-field:focus-within {
-    border-color: var(--ads-primary);
-    box-shadow: 0 0 0 3px rgba(61, 107, 245, .18);
-}
-.ads-field__label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 5px;
-    margin-bottom: 1px;
-    font-size: 12px;
-    font-weight: 400;
-    color: var(--ads-muted);
-}
-.ads-field__label em {
-    font-style: normal;
-    color: var(--ads-faint);
-}
 .ads-counter {
     font-variant-numeric: tabular-nums;
     font-size: 11px;
 }
 .ads-counter.is-warn {
     color: var(--ads-amber);
-}
-.ads-field input,
-.ads-field textarea {
-    width: 100%;
-    padding: 0;
-    font: inherit;
-    color: var(--ads-text);
-    background: transparent;
-    border: 0;
-    resize: none;
-}
-.ads-field input:focus,
-.ads-field textarea:focus {
-    outline: none;
-}
-.ads-field input::placeholder,
-.ads-field textarea::placeholder {
-    color: var(--ads-faint);
 }
 
 .ads-hint {
@@ -876,7 +874,12 @@ export default {
     font-size: 12px;
     color: var(--ads-muted);
 }
-
+.ads-sub__controls {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 12px;
+}
 /* uploader */
 .ads-drop {
     padding: 22px 16px;
@@ -1120,63 +1123,6 @@ export default {
     box-shadow: var(--ads-shadow-sm);
 }
 
-/* emoji */
-.ads-emoji__list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 8px;
-}
-.ads-emoji__list button {
-    width: 34px;
-    height: 34px;
-    font-size: 18px;
-    line-height: 1;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--ads-r-sm);
-    cursor: pointer;
-}
-.ads-emoji__list button:hover {
-    background: var(--ads-field);
-}
-.ads-emoji__list button[aria-pressed="true"] {
-    background: var(--ads-primary-soft);
-    border-color: var(--ads-primary);
-}
-.ads-emoji__input {
-    width: 100%;
-    padding: 6px 10px;
-    font: inherit;
-    font-size: 13px;
-    color: var(--ads-text);
-    background: var(--ads-field);
-    border: 1px solid var(--ads-border);
-    border-radius: var(--ads-r);
-}
-.ads-emoji__input:focus {
-    outline: none;
-    border-color: var(--ads-primary);
-}
-
-/* slider */
-.ads-slider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.ads-slider input[type="range"] {
-    flex: 1;
-    accent-color: var(--ads-primary);
-}
-.ads-slider__secs {
-    min-width: 38px;
-    font-variant-numeric: tabular-nums;
-    font-size: 13px;
-    text-align: right;
-    color: var(--ads-muted);
-}
-
 /* vista previa */
 .ads-preview__head {
     display: flex;
@@ -1336,6 +1282,35 @@ export default {
     background: rgba(15, 23, 42, .55);
     border-radius: 50%;
 }
+.pv-toast,
+.ads-demo-toast {
+    --tst-bg: var(--ads-surface);
+    --tst-border: var(--ads-border);
+    --tst-title: var(--ads-text);
+    --tst-desc: var(--ads-muted);
+    --tst-icon-bg: var(--ads-primary-soft);
+    --tst-icon-fg: var(--ads-primary);
+}
+.pv-toast--dark,
+.ads-demo-toast--dark {
+    --tst-bg: #1b2431;
+    --tst-border: rgba(255, 255, 255, .12);
+    --tst-title: #f2f5f9;
+    --tst-desc: #9aa8bd;
+    --tst-icon-bg: rgba(255, 255, 255, .09);
+    --tst-icon-fg: color-mix(in srgb, var(--ads-primary) 45%, #ffffff);
+}
+@media (prefers-color-scheme: dark) {
+    .pv-toast--auto,
+    .ads-demo-toast--auto {
+        --tst-bg: #1b2431;
+        --tst-border: rgba(255, 255, 255, .12);
+        --tst-title: #f2f5f9;
+        --tst-desc: #9aa8bd;
+        --tst-icon-bg: rgba(255, 255, 255, .09);
+        --tst-icon-fg: color-mix(in srgb, var(--ads-primary) 45%, #ffffff);
+    }
+}
 
 .pv-toast {
     position: absolute;
@@ -1344,8 +1319,9 @@ export default {
     align-items: flex-start;
     width: 200px;
     padding: 11px 12px;
-    background: var(--ads-surface);
-    border: 1px solid var(--ads-border);
+    color: var(--tst-title);
+    background: var(--tst-bg);
+    border: 1px solid var(--tst-border);
     border-radius: var(--ads-r-lg);
     box-shadow: var(--ads-shadow-md);
     transition: top .2s, left .2s, right .2s, bottom .2s;
@@ -1361,8 +1337,8 @@ export default {
     width: 32px;
     height: 32px;
     font-size: 17px;
-    color: var(--ads-primary);
-    background: var(--ads-primary-soft);
+    color: var(--tst-icon-fg);
+    background: var(--tst-icon-bg);
     border-radius: 9px;
 }
 .pv-toast .tx {
@@ -1378,7 +1354,7 @@ export default {
     margin-top: 2px;
     font-size: 12px;
     font-style: normal;
-    color: var(--ads-muted);
+    color: var(--tst-desc);
 }
 
 /* demos a pantalla completa */
@@ -1427,8 +1403,8 @@ export default {
 }
 .ads-demo-modal .box {
     position: relative;
-    width: 100%;
-    max-width: 440px;
+    max-width: min(720px, 100%);
+    max-height: 100%;
     overflow: hidden;
     background: var(--ads-surface);
     border-radius: var(--ads-r-lg);
@@ -1436,7 +1412,10 @@ export default {
 }
 .ads-demo-modal img {
     display: block;
-    width: 100%;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: min(720px, calc(100vh - 40px));
 }
 .ads-demo-modal .x {
     position: absolute;
@@ -1460,8 +1439,9 @@ export default {
     width: 320px;
     max-width: calc(100vw - 32px);
     padding: 14px 34px 14px 14px;
-    background: var(--ads-surface);
-    border: 1px solid var(--ads-border);
+    color: var(--tst-title);
+    background: var(--tst-bg);
+    border: 1px solid var(--tst-border);
     border-radius: var(--ads-r-lg);
     box-shadow: var(--ads-shadow-lg);
     animation: adsPop .22s ease;
@@ -1477,8 +1457,8 @@ export default {
     width: 40px;
     height: 40px;
     font-size: 21px;
-    color: var(--ads-primary);
-    background: var(--ads-primary-soft);
+    color: var(--tst-icon-fg);
+    background: var(--tst-icon-bg);
     border-radius: 11px;
 }
 .ads-demo-toast .tx strong {
@@ -1490,7 +1470,7 @@ export default {
     margin-top: 3px;
     font-size: 13px;
     font-style: normal;
-    color: var(--ads-muted);
+    color: var(--tst-desc);
 }
 .ads-demo-toast .x {
     position: absolute;
@@ -1498,7 +1478,7 @@ export default {
     right: 10px;
     font-size: 16px;
     line-height: 1;
-    color: var(--ads-muted);
+    color: var(--tst-desc);
     background: none;
     border: 0;
     cursor: pointer;

@@ -46,7 +46,7 @@
         }
         .system-ads-modal__box {
             position: relative;
-            max-width: 100%;
+            max-width: min(720px, 100%);
             max-height: 100%;
             line-height: 0;
             border-radius: 12px;
@@ -57,7 +57,7 @@
             width: auto;
             height: auto;
             max-width: 100%;
-            max-height: calc(100vh - 48px);
+            max-height: min(720px, calc(100vh - 48px));
             border-radius: 12px;
         }
         .system-ads-modal__close {
@@ -94,7 +94,7 @@
                 padding: 16px;
             }
             .system-ads-modal__img {
-                max-height: calc(100vh - 32px);
+                max-height: min(720px, calc(100vh - 32px));
             }
             .system-ads-modal__close {
                 top: 8px;

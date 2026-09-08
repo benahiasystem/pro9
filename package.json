@@ -6,6 +6,7 @@
         "dev-simple": "vite",
         "build": "node --max-old-space-size=8192 node_modules/vite/bin/vite.js build",
         "icons": "node scripts/generate-tabler-icons.js",
+        "emojis": "node scripts/generate-emojis.js",
         "sync-skins": "node css-watcher.js",
         "sync-skins-once": "node -e \"const fs=require('fs');const path=require('path');const glob=require('glob');glob.sync('storage/app/public/skins/*.css').forEach(f=>{const dest=path.join('public/storage/skins',path.basename(f));fs.copyFileSync(f,dest);console.log('✅',path.basename(f),'sincronizado');});console.log('🎉 Sincronización completa');\""
     },
@@ -16,6 +17,7 @@
         "axios": "^0.27.2",
         "bootstrap": "^5.3.7",
         "chokidar": "^3.6.0",
+        "emojibase-data": "^17.0.0",
         "jquery": "^3.6.0",
         "laravel-vite-plugin": "^0.7.7",
         "lodash": "^4.17.21",

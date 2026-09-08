@@ -875,30 +875,33 @@ html.dark .garage {
     gap: 4px;
     height: 21px;
     padding: 0 7px;
-    border: 1px dashed var(--pos-border-strong);
     border-radius: 999px;
     background: transparent;
-    color: var(--pos-muted);
+    color: var(--pos-text);
     font-size: 12px;
     line-height: 1;
     cursor: pointer;
     transition: background .15s ease, border-color .15s ease, color .15s ease;
-}
+    border: 1px dashed transparent;
 
+}
+.pos .pos-cart-item:hover button.pos-cart-item__unit-price.is-editable {
+    border: 1px dashed var(--pos-border-strong);
+}
 .pos button.pos-cart-item__unit-price.is-editable svg {
-    opacity: .5;
+    opacity: 0;
 }
-
+.pos button.pos-cart-item__unit-price.is-editable:hover svg {
+    opacity: 1;
+}
+.pos .pos-cart-item:hover button.pos-cart-item__unit-price.is-editable svg {
+    opacity: 1;
+}
 .pos button.pos-cart-item__unit-price.is-editable:hover {
     background: var(--pos-surface-2);
     border-color: var(--pos-primary);
     color: var(--pos-primary);
 }
-
-.pos button.pos-cart-item__unit-price.is-editable:hover svg {
-    opacity: 1;
-}
-
 .pos button.pos-cart-item__unit-price.is-editable:focus {
     outline: none;
     border-color: var(--pos-primary);

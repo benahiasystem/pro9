@@ -467,6 +467,8 @@ class ConfigurationController extends Controller
         $position = $value['position'] ?? null;
         $positions = ['top-left', 'top-right', 'bottom-left', 'bottom-right'];
 
+        $theme = $value['theme'] ?? 'light';
+
         $icon_type = $value['icon_type'] ?? 'none';
         $icon_svg = $this->sanitizeAdsIconSvg($value['icon_svg'] ?? null);
         $icon = trim((string) ($value['icon'] ?? ''));
@@ -480,6 +482,7 @@ class ConfigurationController extends Controller
         return [
             'enabled' => filter_var($value['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
             'position' => in_array($position, $positions, true) ? $position : 'bottom-right',
+            'theme' => in_array($theme, ['light', 'dark', 'auto'], true) ? $theme : 'light',
             // Segundos visible. 0 = infinita (hasta que el usuario la cierre).
             'duration' => min(300, max(0, (int) ($value['duration'] ?? 0))),
             'icon_type' => in_array($icon_type, ['none', 'tabler', 'emoji'], true) ? $icon_type : 'none',
