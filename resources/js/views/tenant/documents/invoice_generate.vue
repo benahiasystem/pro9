@@ -4978,18 +4978,22 @@ export default {
             const documentType = this.document_types.find(
                 dt => dt.id === this.form.document_type_id
             );
-            console.log(documentType);
 
+            // 0501/0502/0503 son tipos de operacion de compra: no se ofrecen
+            // nunca en un comprobante de venta, venga o no el catalogo con ellos.
+            const excluded = ["0501", "0502", "0503"];
 
-            let filtered;
+            // La boleta (03) ademas no admite detraccion: el catalogo trae las
+            // cuatro variantes (general, hidrobiologicos, transporte de
+            // pasajeros y de carga), no solo 1001 y 1004.
             if (documentType && documentType.id === "03") {
-                filtered = this.operation_types.filter(
-                    ot => ot.id !== "1001" && ot.id !== "1004"
-                );
-            } else {
-                filtered = this.operation_types.slice();
+                excluded.push("1001", "1002", "1003", "1004");
             }
-            this.operation_types_filter = filtered;
+
+            this.operation_types_filter = this.operation_types.filter(
+                ot => !excluded.includes(ot.id)
+            );
+
             this.syncSingleOperationTypeSelection();
         },
         async initComponent() {
