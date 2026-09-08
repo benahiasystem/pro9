@@ -250,7 +250,10 @@
                     </a>
                 </li>
                 @if(in_array('cash', $vc_module_levels))
-                    <tenant-header-close-cash variant="mobile"></tenant-header-close-cash>
+                    <tenant-header-close-cash
+                        variant="mobile"
+                        type-user="{{ auth()->user()->type }}"
+                    ></tenant-header-close-cash>
                 @endif
             </ul>
 
@@ -450,7 +453,10 @@
                             Estilos y temas</a>
                     </li>
                     @if(in_array('cash', $vc_module_levels))
-                        <tenant-header-close-cash variant="desktop"></tenant-header-close-cash>
+                        <tenant-header-close-cash
+                            variant="desktop"
+                            type-user="{{ auth()->user()->type }}"
+                        ></tenant-header-close-cash>
                     @endif
 
                     @php
