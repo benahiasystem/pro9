@@ -2081,7 +2081,7 @@ export default {
                 // editar esto puede resolverse DESPUÉS de cargar el registro y
                 // borrar la afectación guardada del ítem.
                 if (!this.recordId) {
-                    this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+                    this.form.sale_affectation_igv_type_id = this.defaultSaleAffectationIgvTypeId()
                     this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
                 }
                 if (!this.recordId && this.currency_types.length === 1) {
@@ -2190,7 +2190,18 @@ export default {
          *                         se está vaciando y sí queremos los defaults
          *                         aunque recordId siga apuntando al ítem anterior.
          */
-        setDefaultConfiguration(force = false) {
+        defaultSaleAffectationIgvTypeId() {
+            const configured = this.config?.affectation_igv_type_id
+
+            // Se exige que siga activo en el catalogo; si no, el select quedaria
+            // sin opcion seleccionada.
+            if (configured && _.find(this.affectation_igv_types, {id: String(configured)})) {
+                return String(configured)
+            }
+
+            return (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+        },
+        async setDefaultConfiguration(force = false) {
             const apply_defaults = force || !this.recordId
 
             if (apply_defaults) {
@@ -2201,7 +2212,7 @@ export default {
                 this.form.sale_affectation_igv_type_id = this.config?.affectation_igv_type_id || '10'
             }
 
-            return this.$http.get(`/configurations/record`).then(response => {
+            return await this.$http.get(`/configurations/record`).then(response => {
                 const configuration = response.data.data || {}
                 const isGlobal = configuration.global_igv_handling !== false
                 if (apply_defaults) {
@@ -2265,7 +2276,7 @@ export default {
                     // (p. ej. al crear una marca desde el sub-diálogo, que emite
                     // 'reloadTables') reseteaba la afectación del ítem editado.
                     if (!this.recordId) {
-                        this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+                        this.form.sale_affectation_igv_type_id = this.defaultSaleAffectationIgvTypeId()
                         this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
                     }
                     if (!this.recordId && this.currency_types.length === 1) {
@@ -2649,7 +2660,7 @@ export default {
         },
         resetForm() {
             this.initForm()
-            this.form.sale_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
+            this.form.sale_affectation_igv_type_id = this.defaultSaleAffectationIgvTypeId()
             this.form.purchase_affectation_igv_type_id = (this.affectation_igv_types.length > 0) ? this.affectation_igv_types[0].id : null
             // force: el formulario se está vaciando, aquí sí toca aplicar los
             // defaults aunque recordId siga apuntando al ítem que se cerró.
