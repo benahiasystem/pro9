@@ -41,7 +41,7 @@
                                         Información adicional
                                     </button>
                                 </div>
-                                <div class="col-3 align-self-end invoice-type">
+                                <div class="col-5 col-md-3 align-self-end invoice-type">
                                     <div
                                         :class="{
                                             'has-danger': errors.document_type_id
@@ -74,7 +74,7 @@
                                         ></small>
                                     </div>
                                 </div>
-                                <div class="align-self-end serie-input col-2">
+                                <div class="align-self-end serie-input col-3 col-md-2">
                                     <div
                                         :class="{ 'has-danger': errors.series_id }"
                                         class="form-group"
@@ -102,7 +102,7 @@
 
                                 <div
                                     v-if="showOperationTypeField"
-                                    class="col-md-3 align-self-end operation-type"
+                                    class="col-4 col-md-3 align-self-end operation-type"
                                 >
                                     <div
                                         :class="{
@@ -4042,24 +4042,6 @@
         display: flex;
         flex-direction: row;
         justify-content: space-between;
-    }
-    .datetime-container > div {
-        width: 50%;
-    }
-    .inputs-container .invoice-type {
-        width: 70%;
-    }
-    .inputs-container .serie-input {
-        width: 30%;
-    }
-    .money-input {
-        width: 25%;
-    }
-    .operation-type {
-        width: 40%;
-    }
-    .change-type {
-        width: 35%;
     }
 }
 @media only screen and (max-width: 550px) {

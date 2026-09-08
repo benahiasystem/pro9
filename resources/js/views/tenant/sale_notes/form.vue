@@ -2122,14 +2122,6 @@ header .head-notes > div {
     .change-type {
         width: 60%;
     }
-    .money-input,
-    .serie-input {
-        width: 40%;
-    }
-    .change-type,
-    .serie-input {
-        padding-right: 0px;
-    }
 }
 @media only screen and (max-width: 576px) {
     header .head-notes {
