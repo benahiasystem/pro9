@@ -123,6 +123,7 @@
         protected $fillable = [
             'id',
             'user_id',
+            'seller_id',
             'external_id',
             'establishment_id',
             'establishment',
@@ -179,6 +180,7 @@
             'delivery_date' => 'date',
             'quotation_id' => 'int',
             'user_id' => 'int',
+            'seller_id' => 'int',
             'establishment_id' => 'int',
             'customer_id' => 'int',
             'exchange_rate_sale' => 'float',
@@ -328,6 +330,30 @@
         public function user()
         {
             return $this->belongsTo(User::class);
+        }
+
+        /**
+         * Vendedor asignado (independiente del usuario creador).
+         *
+         * @return BelongsTo
+         */
+        public function seller()
+        {
+            return $this->belongsTo(User::class, 'seller_id');
+        }
+
+        /**
+         * Nombre a mostrar en PDF: vendedor asignado o, si no hay, el creador.
+         *
+         * @return string
+         */
+        public function getPdfSellerName()
+        {
+            if (!empty($this->seller_id) && $this->seller) {
+                return $this->seller->name;
+            }
+
+            return optional($this->user)->name ?? '';
         }
 
         /**
@@ -778,7 +804,10 @@
                 'date_of_due' => ($this->date_of_due) ? $this->date_of_due->format('Y-m-d') : null,
                 'delivery_date' => ($this->delivery_date) ? $this->delivery_date->format('Y-m-d') : null,
                 'identifier' => $this->identifier,
+                'user_id' => $this->user_id,
                 'user_name' => $this->user->name,
+                'seller_id' => $this->seller_id ?: $this->user_id,
+                'seller_name' => $this->getPdfSellerName(),
                 'customer_name' => $this->customer->name,
                 'customer_number' => $this->customer->number,
                 'customer_telephone' => optional($this->customer)->telephone,

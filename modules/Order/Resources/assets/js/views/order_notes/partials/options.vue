@@ -872,7 +872,7 @@ export default {
                 format_pdf: "a4"
             };
             this.document.order_note_id = this.form.id;
-            this.document.seller_id = q.user_id;
+            this.document.seller_id = q.seller_id || q.user_id;
         },
         getSaleLotsGroup(lots_group) {
 
@@ -946,7 +946,8 @@ export default {
                 .get(`/${this.resource}/record2/${this.recordId}`)
                 .then(response => {
                     this.form = response.data.data;
-                    this.form.order_note.seller_id = this.form.order_note.user_id;
+                    this.form.order_note.seller_id = this.form.order_note.seller_id
+                        || this.form.order_note.user_id;
                     // this.validateIdentityDocumentType()
                     this.getCustomer();
                     let type = this.type == "edit" ? "editado" : "registrado";

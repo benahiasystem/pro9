@@ -180,7 +180,7 @@
     <tr>
         <td class="align-top">Vendedor:</td>
         <td colspan="3">
-            {{ $document->user->name }}
+            {{ $document->getPdfSellerName() }}
         </td>
     </tr>
 </table>

@@ -35,6 +35,7 @@
     use App\Models\Tenant\Series;
     use App\Services\SeriesResolver;
     use App\Models\Tenant\Warehouse;
+    use App\Models\Tenant\User;
     use App\Traits\OfflineTrait;
     use Exception;
     use Illuminate\Http\Request;
@@ -288,8 +289,22 @@
             $document_type_03_filter = config('tenant.document_type_03_filter');
             $payment_method_types = PaymentMethodType::orderBy('id', 'desc')->get();
             $payment_destinations = $this->getPaymentDestinations();
+            $establishment_id = auth()->user()->establishment_id;
+            $userId = auth()->id();
+            $sellers = User::getSellersToNvCpe($establishment_id, $userId);
 
-            return compact('customers', 'establishments', 'currency_types', 'discount_types', 'charge_types', 'company', 'document_type_03_filter', 'payment_method_types', 'payment_destinations');
+            return compact(
+                'customers',
+                'establishments',
+                'currency_types',
+                'discount_types',
+                'charge_types',
+                'company',
+                'document_type_03_filter',
+                'payment_method_types',
+                'payment_destinations',
+                'sellers'
+            );
         }
 
         public function table($table)
@@ -306,6 +321,7 @@
                             'identity_document_type_id' => $row->identity_document_type_id,
                             'identity_document_type_code' => $row->identity_document_type->code,
                             'address' => $row->address,
+                            'seller_id' => $row->seller_id,
                         ];
                     });
                     return $customers;
@@ -509,6 +525,8 @@
             $data = $request->toArray();
             $values = [
                 'user_id' => ($order_note) ? $order_note->user_id : auth()->id(),
+                'seller_id' => $request->input('seller_id')
+                    ?: (($order_note && $order_note->seller_id) ? $order_note->seller_id : auth()->id()),
                 'external_id' => Str::uuid()->toString(),
                 'customer' => PersonInput::set($request->customer_id),
                 'establishment' => EstablishmentInput::set($request->establishment_id),

@@ -208,7 +208,7 @@
                     </td>
                     <td class="font-sm" width="8px">:</td>
                     <td class="font-sm">
-                        {{ $document->user->name }}
+                        {{ $document->getPdfSellerName() }}
                     </td>
                 </tr>
             </table>

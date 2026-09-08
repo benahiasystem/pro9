@@ -80,6 +80,27 @@
                                 </div>
                             </div>
 
+                            <div class="col-lg-3">
+                                <div class="form-group form-seller">
+                                    <label class="control-label">Vendedor</label>
+                                    <el-select
+                                        v-model="form.seller_id"
+                                        filterable
+                                        clearable
+                                        :disabled="typeUser === 'seller'"
+                                    >
+                                        <el-option
+                                            v-for="sel in sellers"
+                                            :key="sel.id"
+                                            :value="sel.id"
+                                            :label="sel.name"
+                                        ></el-option>
+                                    </el-select>
+                                    <small class="form-control-feedback" v-if="errors.seller_id"
+                                           v-text="errors.seller_id[0]"></small>
+                                </div>
+                            </div>
+
                             <!-- <div class="col-lg-6">
                                 <div class="form-group" :class="{'has-danger': errors.exchange_rate_sale}">
                                     <label class="control-label">Descripcion
@@ -364,6 +385,7 @@
                 currency_type: {},
                 orderNoteNewId: null,
                 payment_method_types: [],
+                sellers: [],
                 activePanel: 0,
                 loading_search:false,
                 showDialogEditItem: false,
@@ -383,6 +405,7 @@
                     this.form.currency_type_id = (this.currency_types.length > 0)?this.currency_types[0].id:null
                     this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
                     this.payment_method_types = response.data.payment_method_types
+                    this.sellers = response.data.sellers || []
 
                     this.changeEstablishment()
                     this.changeDateOfIssue()
@@ -432,6 +455,13 @@
             },
             changeCustomer(){
                 this.setAddressByCustomer()
+                let customer = _.find(this.customers, {id : this.form.customer_id})
+                if (customer && customer.seller_id) {
+                    const seller = this.sellers.find(element => element.id == customer.seller_id)
+                    if (seller !== undefined) {
+                        this.form.seller_id = seller.id
+                    }
+                }
             },
             setAddressByCustomer(){
 
@@ -607,6 +637,7 @@
                     attributes: [],
                     guides: [],
                     shipping_address: null,
+                    seller_id: this.authUser ? this.authUser.id : null,
                     additional_information:null,
                     observation: null,
                     actions: {
