@@ -859,25 +859,10 @@ use Modules\Sale\Models\Agent;
          */
         public function getBtnGenerate($total_documents)
         {
-            if($total_documents > 0)
-            {
-                $btn_generate = false;
-            }
-            else
-            {
-                // si proviene de un pedido o registro externo que afecta inventario se deshabilita la opcion editar
-                // si se habilita se deben controlar los movimientos que afectan a inventario
-                if($this->isGeneratedFromExternalRecord())
-                {
-                    $btn_generate = false;
-                }
-                else
-                {
-                    $btn_generate = true;
-                }
-            }
-
-            return $btn_generate;
+            // Editar disponible mientras no tenga CPE generado.
+            // Antes se ocultaba también si venía de pedido (order_note_id) por inventario;
+            // el update de stock ya evita doble descuento cuando hay order_note_id.
+            return $total_documents <= 0;
         }
 
 
