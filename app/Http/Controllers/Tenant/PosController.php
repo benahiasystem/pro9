@@ -318,9 +318,28 @@ class PosController extends Controller
     public function table($table)
     {
         if ($table === 'customers') {
-            return $this->transformCustomers(
-                Person::whereType('customers')->whereIsEnabled()->orderBy('name')->get()
-            );
+            // Sin tope esto devolvia la cartera completa y pisaba el seed
+            // acotado de tables(); el selector del POS filtra en cliente, asi
+            // que la lista larga solo lo hace pesado. El resto se busca con
+            // search_customers.
+            $customers = Person::whereType('customers')->whereIsEnabled()
+                ->with(['plates', 'identity_document_type'])
+                ->orderBy('name')->take(self::CUSTOMER_SEED_LIMIT)->get();
+
+            // El cliente recien creado puede no entrar en el tope alfabetico, y
+            // quien llama a este endpoint lo selecciona justo despues: sin esto
+            // el selector se quedaria sin la opcion que acaba de elegir.
+            $customer_id = request()->input('customer_id');
+
+            if ($customer_id && !$customers->contains('id', $customer_id)) {
+                $customer = Person::whereType('customers')->whereIsEnabled()
+                    ->with(['plates', 'identity_document_type'])
+                    ->where('id', $customer_id)->first();
+
+                if ($customer) $customers->prepend($customer);
+            }
+
+            return $this->transformCustomers($customers);
         }
 
         if ($table === 'items') {
