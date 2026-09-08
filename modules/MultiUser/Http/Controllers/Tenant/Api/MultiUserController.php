@@ -9,6 +9,7 @@ use Modules\MultiUser\Traits\Tenant\MultiUserTrait;
 use Modules\MultiUser\Helpers\Tenant\AutoLoginHelper;
 use Modules\MultiUser\Http\Controllers\Tenant\MultiUserController as WebMultiUserController;
 use Modules\MultiUser\Http\Requests\Tenant\Api\ChangeClientRequest;
+use Modules\MultiUser\Services\MultiUserAccessService;
 
 
 class MultiUserController extends Controller
@@ -24,25 +25,37 @@ class MultiUserController extends Controller
      */
     public function changeClient(ChangeClientRequest $request)
     {
-        $helper = new AutoLoginHelper();
+        $helper = app(AutoLoginHelper::class);
         $client_id = null;
         $user_id = null;
 
-        $multi_user = $helper->getMultiUser($request->multi_user_id);
+        $is_destination = $request->boolean('is_destination');
+        $multi_user = app(MultiUserAccessService::class)->resolve(
+            $this->getCurrentClient(),
+            $request->user(),
+            (int) $request->input('multi_user_id'),
+            $is_destination
+        );
 
-        $this->setClientUserId($request->is_destination, $multi_user, $client_id, $user_id);
+        $this->setClientUserId($is_destination, $multi_user, $client_id, $user_id);
 
         $client = $this->getClient($client_id);
 
         $helper->validateFqdn($request->fqdn, $client->hostname->fqdn);
 
-        $this->setCurrentTenantConnection($client);
+        $source_website = $this->getTenantWebsite();
 
-        $user = $helper->findUser($user_id);
+        try {
+            $this->setCurrentTenantConnection($client);
 
-        if(is_null($user->api_token)) return $this->generalResponse(false, 'El usuario en la empresa destino no tiene un api token definido.');
+            $user = $helper->findUser($user_id);
 
-        return $this->getDataDestinationClient($user);
+            if(is_null($user->api_token)) return $this->generalResponse(false, 'El usuario en la empresa destino no tiene un api token definido.');
+
+            return $this->getDataDestinationClient($user);
+        } finally {
+            app(\Hyn\Tenancy\Environment::class)->tenant($source_website);
+        }
     }
     
    

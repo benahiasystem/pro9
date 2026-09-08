@@ -2,31 +2,17 @@
 
 namespace Modules\MultiUser\Http\Requests\Tenant\Api;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
+use Modules\MultiUser\Http\Requests\Tenant\ChangeClientRequest as BaseChangeClientRequest;
 
 
-class ChangeClientRequest extends FormRequest
+class ChangeClientRequest extends BaseChangeClientRequest
 {
      
-    public function authorize()
-    {
-        return true; 
-    }
- 
     public function rules()
     { 
-        return [
-            'fqdn' => [
-                'required',
-            ],
-            'multi_user_id' => [
-                'required',
-            ],
-            'is_destination' => [
-                'required',
-            ],
-        ];
+        return array_merge(parent::rules(), [
+            'fqdn' => ['required', 'string', 'max:253'],
+        ]);
     }
 
 }
