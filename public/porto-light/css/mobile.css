@@ -385,10 +385,6 @@
        en una sola fila pegada al título. */
     .content-body .row > .filter-container {
         margin-top: 0 !important;
-        flex: 0 0 auto;
-        width: auto;
-        max-width: none;
-        padding-right: 0;
     }
 
     /* El bloque siguiente (ver todos + selector) conserva el ancho completo
@@ -497,6 +493,29 @@
         background: var(--color-bg, rgba(0, 0, 0, 0.05));
     }
 
+    /* Acción con desplegable propio (p. ej. "Traslados"): sus opciones se
+       anidan aquí, así el menú no se cierra al abrirlas */
+    .m-menu-acciones__grupo-btn::after {
+        content: "\25BE";
+        float: right;
+        margin-left: 8px;
+        opacity: 0.55;
+    }
+
+    .m-menu-acciones__grupo.is-open .m-menu-acciones__grupo-btn::after {
+        content: "\25B4";
+    }
+
+    .m-menu-acciones__subitem {
+        display: none;
+        padding-left: 26px;
+        font-size: 13.5px;
+    }
+
+    .m-menu-acciones__grupo.is-open .m-menu-acciones__subitem {
+        display: block;
+    }
+
     /* Leyenda de colores (Boletas / Facturas / Notas de crédito): ocupa una
        franja entera en celular; los colores siguen visibles en las filas */
     .documents-legend {
@@ -567,6 +586,9 @@
         /* 40px de separación pensados para escritorio: en celular sólo
            dejaban un hueco entre la cabecera y la barra de herramientas */
         margin-top: 0 !important;
+    }
+    .content-body .filter-content {
+        margin-top: 12px !important;
     }
 
     /* Los .row de Bootstrap tienen margen negativo: sin esto los botones

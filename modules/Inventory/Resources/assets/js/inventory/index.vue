@@ -31,11 +31,11 @@
                 </li>
             </ol>
             <div v-if="typeUser == 'admin'" class="right-wrapper pull-right">
-                <el-dropdown v-if="hasTransferPermission" :hide-on-click="false" @command="handleRedirect">
+                <el-dropdown v-if="hasTransferPermission" trigger="click" @command="handleRedirect">
                     <el-button type="button"
                         class="btn btn-success btn-sm  mt-2 me-2"
                     >
-                        Traslados<i class="el-icon-arrow-down el-icon--right"></i>
+                        Traslados <i class="el-icon-arrow-down el-icon--right"></i>
                     </el-button>
                     <el-dropdown-menu slot="dropdown">
                         <el-dropdown-item v-for="(column, index) in routesTransfer " :command="column.route" :key="index">

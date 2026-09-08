@@ -176,13 +176,23 @@ const sincronizarFondoPagina = () => {
 
 const ES_BOTON_CREAR = /^\s*(\+\s*)?(nuevo|crear|agregar)\b/i;
 
+const opcionesElementUi = boton => {
+    const idMenu = boton.getAttribute('aria-controls');
+    const menuEl = idMenu ? document.getElementById(idMenu) : null;
+    if (!menuEl || !menuEl.classList.contains('el-dropdown-menu')) return [];
+
+    return [
+        ...menuEl.querySelectorAll('.el-dropdown-menu__item:not(.is-disabled)')
+    ].map(opcion => ({
+        boton: opcion,
+        texto: (opcion.textContent || '').replace(/\s+/g, ' ').trim()
+    }));
+};
+
 const construirMenuAcciones = () => {
     if (!isMobile()) return;
 
     document.querySelectorAll('.page-header .right-wrapper').forEach(cabecera => {
-        // Los botones no siempre cuelgan directo de la cabecera: varios
-        // módulos los agrupan en un .btn-group. Se excluyen los que ya son
-        // opciones de un desplegable y los del propio menú.
         // Los botones no siempre cuelgan directo de la cabecera: varios
         // módulos los agrupan en un .btn-group. Se excluyen los que ya son
         // opciones de un desplegable y los del propio menú.
@@ -222,6 +232,12 @@ const construirMenuAcciones = () => {
                 }
             }
 
+            const anidadas = opcionesElementUi(boton);
+            if (anidadas.length) {
+                secundarios.push({ boton, texto, opciones: anidadas });
+                return;
+            }
+
             secundarios.push({ boton, texto });
         });
 
@@ -232,7 +248,13 @@ const construirMenuAcciones = () => {
         }
 
         // Se rehace sólo si cambiaron las acciones disponibles
-        const firma = secundarios.map(s => s.texto).join('|');
+        const firma = secundarios
+            .map(s =>
+                s.opciones
+                    ? `${s.texto}>${s.opciones.map(o => o.texto).join(',')}`
+                    : s.texto
+            )
+            .join('|');
         if (menuPrevio && menuPrevio.dataset.firma === firma) return;
         if (menuPrevio) menuPrevio.remove();
 
@@ -248,11 +270,49 @@ const construirMenuAcciones = () => {
         const panel = document.createElement('div');
         panel.className = 'm-menu-acciones__panel';
 
-        secundarios.forEach(({ boton, texto }) => {
+        const crearItem = (texto, clase) => {
             const item = document.createElement('button');
             item.type = 'button';
-            item.className = 'm-menu-acciones__item';
+            item.className = clase;
             item.textContent = texto;
+            return item;
+        };
+
+        secundarios.forEach(({ boton, texto, opciones }) => {
+            if (opciones) {
+                const grupo = document.createElement('div');
+                grupo.className = 'm-menu-acciones__grupo';
+
+                const titulo = crearItem(
+                    texto,
+                    'm-menu-acciones__item m-menu-acciones__grupo-btn'
+                );
+                titulo.setAttribute('aria-expanded', 'false');
+                titulo.addEventListener('click', evento => {
+                    evento.preventDefault();
+                    const abierto = grupo.classList.toggle('is-open');
+                    titulo.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+                });
+                grupo.appendChild(titulo);
+
+                opciones.forEach(opcion => {
+                    const subitem = crearItem(
+                        opcion.texto,
+                        'm-menu-acciones__item m-menu-acciones__subitem'
+                    );
+                    subitem.addEventListener('click', evento => {
+                        evento.preventDefault();
+                        menu.classList.remove('is-open');
+                        opcion.boton.click();
+                    });
+                    grupo.appendChild(subitem);
+                });
+
+                panel.appendChild(grupo);
+                return;
+            }
+
+            const item = crearItem(texto, 'm-menu-acciones__item');
             item.addEventListener('click', evento => {
                 evento.preventDefault();
                 menu.classList.remove('is-open');
@@ -264,6 +324,12 @@ const construirMenuAcciones = () => {
         disparador.addEventListener('click', evento => {
             evento.preventDefault();
             evento.stopPropagation();
+            // Los grupos vuelven plegados en cada apertura
+            panel.querySelectorAll('.m-menu-acciones__grupo.is-open').forEach(g => {
+                g.classList.remove('is-open');
+                const titulo = g.querySelector('.m-menu-acciones__grupo-btn');
+                if (titulo) titulo.setAttribute('aria-expanded', 'false');
+            });
             menu.classList.toggle('is-open');
         });
 
