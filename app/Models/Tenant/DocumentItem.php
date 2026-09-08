@@ -336,19 +336,22 @@
             }
 
             /**
-             * Con este filtro se ajsuta reportes por campo user_id y seller_id para modulos que no lo tengan, esto es
-             * si el envio de la peticion tiene user_type y user_id se considera qomo parte del filtro de creador/vendedor
-             *
-             * Este filtro es compartido por app/Models/Tenant/SaleNoteItem.php
-             *
-             * @var \Illuminate\Http\Request $rquest
+             * Filtro de creador/vendedor: prioriza $params (listado HTTP y jobs de bandeja).
+             * Solo usa request() global como respaldo; en cola request() suele ir vacío y
+             * no debe pisar los filtros ya enviados en $params.
              */
-            $request = request();
-            $userType = ($request !== null && $request->has('user_type')&& !empty($request->user_type))?$request->user_type:null;
-            $userId =  ($request !== null && $request->has('user_id')&& !empty($request->user_id))?$request->user_id:null;
+            $httpRequest = request();
+            if (empty($params['user_type']) && $httpRequest && $httpRequest->filled('user_type')) {
+                $params['user_type'] = $httpRequest->input('user_type');
+            }
+            if (
+                (empty($params['user_id']) || $params['user_id'] === '[]')
+                && $httpRequest
+                && $httpRequest->filled('user_id')
+            ) {
+                $params['user_id'] = $httpRequest->input('user_id');
+            }
 
-            $params['user_type'] = $userType;
-            $params['user_id'] = $userId;
             $query->whereHas('document', function ($q) use ($params) {
                 $q->whereBetween($params['date_range_type_id'], [$params['date_start'], $params['date_end']])
                     ->whereStateTypeAccepted()

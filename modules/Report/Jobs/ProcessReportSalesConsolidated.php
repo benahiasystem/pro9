@@ -233,6 +233,8 @@ class ProcessReportSalesConsolidated implements ShouldQueue
     private function resolveRecords($params)
     {
         $request = Request::create('/', 'GET', $params);
+        // Para que scopes que lean request() (p. ej. filtros de vendedor) vean los mismos params en cola.
+        app()->instance('request', $request);
 
         switch ($this->report_source) {
             case 'order_notes':

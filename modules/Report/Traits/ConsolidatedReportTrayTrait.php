@@ -14,7 +14,7 @@ trait ConsolidatedReportTrayTrait
 
     protected function consolidatedReportThreshold(): int
     {
-        return 0;
+        return 500;
     }
 
     protected function resolveConsolidatedReportWebsiteId(Request $request): int
