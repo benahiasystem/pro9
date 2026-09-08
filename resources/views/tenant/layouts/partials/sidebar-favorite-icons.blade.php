@@ -167,7 +167,9 @@
         ['kind' => 'route', 'target' => 'tenant.summaries.index', 'icon' => 'files'], // Resumenes
         ['kind' => 'route', 'target' => 'tenant.voided.index', 'icon' => 'file-x'], // Anulaciones
         ['kind' => 'route', 'target' => 'tenant.retentions.index', 'icon' => 'percentage'], // Retenciones
-        ['kind' => 'route', 'target' => 'tenant.perceptions.index', 'icon' => 'receipt-tax'], // Percepciones
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        // Percepciones no se ofrece en la operación venezolana.
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         ['kind' => 'route', 'target' => 'tenant.purchase-settlements.index', 'icon' => 'file-check'], // Liquidaciones de compra
         ['kind' => 'route', 'target' => 'tenant.order_forms.index', 'icon' => 'clipboard-text'], // Ordenes de pedido
         ['kind' => 'route', 'target' => 'tenant.contingencies.index', 'icon' => 'alert-triangle'], // Documentos de contingencia

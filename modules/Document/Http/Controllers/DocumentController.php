@@ -167,7 +167,7 @@ class DocumentController extends Controller
     {
 
         $cat_payment_method_types = CatPaymentMethodType::whereActive()->get();
-        $detraction_types = DetractionType::whereActive()->get();
+        $detraction_types = DetractionType::available();
 
         $locations = [];
         $departments = Department::whereActive()->get();

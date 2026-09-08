@@ -523,7 +523,7 @@ class DocumentController extends Controller
         $items = SearchItemController::getItemsToDocuments();
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::whereActive()->get();
+        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $operation_types = OperationType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();

@@ -851,7 +851,7 @@ class Dispatch extends ModelTenant
     {
 
         if ($this->related) {
-            $related_document = RelatedDocumentType::find($this->related->document_type_id);
+            $related_document = RelatedDocumentType::available()->firstWhere('id', $this->related->document_type_id);
             if ($related_document) return $related_document->description;
         }
 

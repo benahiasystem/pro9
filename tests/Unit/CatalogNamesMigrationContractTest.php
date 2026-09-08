@@ -10,23 +10,24 @@ use Tests\TestCase;
 class CatalogNamesMigrationContractTest extends TestCase
 {
     /** @test */
-    public function tenant_seed_uses_venezuelan_names_without_removing_historical_ids(): void
+    public function tenant_seed_uses_the_reduced_venezuelan_document_catalog(): void
     {
         $documentTypes = $this->rowsById('cat_document_types');
 
         self::assertSame('FACTURA DE VENTA', $documentTypes['01']['description']);
         self::assertSame('NOTA DE CRÉDITO', $documentTypes['07']['description']);
         self::assertSame('NOTA DE DÉBITO', $documentTypes['08']['description']);
-        self::assertSame('GUÍA DE DESPACHO REMITENTE', $documentTypes['09']['description']);
+        self::assertSame('ORDEN DE ENTREGA', $documentTypes['09']['description']);
         self::assertSame('COMPROBANTE DE RETENCIÓN', $documentTypes['20']['description']);
-        self::assertSame('GUÍA DE DESPACHO TRANSPORTISTA', $documentTypes['31']['description']);
-        self::assertSame('COMPROBANTE DE PERCEPCIÓN', $documentTypes['40']['description']);
+        self::assertSame('Nota de Transferencia Almacén', $documentTypes['U4']['description']);
 
         $appModules = $this->rowsById('app_modules');
         self::assertSame('Factura de venta', $appModules[1]['description']);
 
-        self::assertArrayHasKey('03', $documentTypes);
-        self::assertSame(1, $documentTypes['03']['active']);
+        self::assertSame(
+            ['01', '07', '08', '09', '20', '80', 'NE76', 'U2', 'U3', 'U4'],
+            array_map('strval', array_keys($documentTypes))
+        );
         self::assertSame(['01', '80'], DocumentType::SALE_DOCUMENT_TYPES);
         self::assertContains('03', DocumentType::HISTORICAL_SALE_DOCUMENT_TYPES);
         self::assertArrayNotHasKey('03', config('tables.tenant.document_types'));
@@ -49,24 +50,23 @@ class CatalogNamesMigrationContractTest extends TestCase
     }
 
     /** @test */
-    public function peruvian_catalog_options_are_hidden_but_their_rows_are_preserved(): void
+    public function removed_peruvian_catalogs_are_absent_from_initial_tenant_data(): void
     {
-        $expectedHidden = [
-            'cat_related_tax_document_types' => ['03', '04', '05'],
-            'cat_other_tax_concept_types' => ['2003', '3001'],
-            'cat_transfer_reason_types' => ['18', '19'],
-            'cat_related_documents_types' => ['03', '05'],
-            'cat_perception_types' => ['02', '03'],
-            'cat_legend_types' => ['2001', '2002', '2003', '2005', '2006', '2007', '2008', '2009', '2010'],
-            'cat_payment_method_types' => ['007', '008', '009', '011', '012', '013', '106', '107', '108'],
-        ];
-
-        foreach ($expectedHidden as $table => $ids) {
-            $rows = $this->rowsById($table);
-            foreach ($ids as $id) {
-                self::assertArrayHasKey($id, $rows, "Missing historical {$table}.{$id}");
-                self::assertSame(0, (int) $rows[$id]['active'], "Visible legacy option {$table}.{$id}");
-            }
+        $seed = require base_path('database/seeders/data/tenant_initial_data.php');
+        foreach ([
+            'cat_other_tax_concept_types',
+            'cat_perception_types',
+            'cat_related_documents_types',
+            'cat_related_tax_document_types',
+            'cat_summary_status_types',
+            'cat_system_isc_types',
+            'pse_providers',
+            'cat_detraction_types',
+            'departments',
+            'provinces',
+            'districts',
+        ] as $table) {
+            self::assertArrayNotHasKey($table, $seed['tables'], $table);
         }
 
         $discounts = $this->rowsById('cat_charge_discount_types');
@@ -74,29 +74,48 @@ class CatalogNamesMigrationContractTest extends TestCase
         self::assertSame(1, (int) $discounts['01']['active']);
         self::assertStringContainsString('IVA', $discounts['00']['description']);
         self::assertStringContainsString('IVA', $discounts['01']['description']);
-        foreach (['02', '03', '47', '48', '49', '50'] as $id) {
-            self::assertSame(0, (int) $discounts[$id]['active']);
-        }
+        self::assertSame(['00', '01', '02', '03', '46', '62'], array_map('strval', array_keys($discounts)));
+        self::assertSame(['1000'], array_map('strval', array_keys($this->rowsById('cat_legend_types'))));
     }
 
     /** @test */
-    public function incremental_migration_updates_and_deactivates_without_deleting_catalog_rows(): void
+    public function consolidated_schema_does_not_create_removed_catalog_tables(): void
     {
-        $source = $this->source('database/migrations/tenant/2026_08_22_235959_configure_venezuela_catalog_names.php');
+        foreach ([
+            'cat_other_tax_concept_types', 'cat_perception_types',
+            'cat_related_documents_types', 'cat_related_tax_document_types',
+            'cat_summary_status_types', 'cat_system_isc_types',
+            'pse_providers', 'cat_detraction_types',
+        ] as $table) {
+            self::assertSame([], glob(database_path("migrations/tenant/*_create_{$table}_table.php")) ?: [], $table);
+        }
 
-        self::assertStringContainsString('DOCUMENT_DESCRIPTIONS', $source);
-        self::assertStringContainsString('HIDDEN_CATALOG_IDS', $source);
-        self::assertStringContainsString("'cat_affectation_igv_types'", $source);
-        self::assertStringContainsString("'cat_other_tax_concept_types'", $source);
-        self::assertStringContainsString("where('value', 'invoice')", $source);
-        self::assertStringContainsString("where('id', '10')", $source);
-        self::assertStringContainsString("where('id', '20')", $source);
-        self::assertSame(2, substr_count($source, "where('id', (string) \$id)"));
-        self::assertStringContainsString("->update(['active' => false])", $source);
-        self::assertStringNotContainsString('->delete(', $source);
-        self::assertStringNotContainsString('::delete(', $source);
-        self::assertSame(1, substr_count($source, '########## INICIO CAMBIO CATÁLOGOS DE NOMBRES'));
-        self::assertSame(1, substr_count($source, '######### FIN CAMBIO CATÁLOGOS DE NOMBRES'));
+        $foreignKeys = $this->source('database/migrations/tenant/2026_08_17_000328_add_tenant_foreign_keys.php');
+        self::assertStringNotContainsString('REFERENCES `cat_system_isc_types`', $foreignKeys);
+        self::assertStringNotContainsString('REFERENCES `cat_perception_types`', $foreignKeys);
+        self::assertStringNotContainsString('REFERENCES `cat_summary_status_types`', $foreignKeys);
+        self::assertStringNotContainsString('REFERENCES `pse_providers`', $foreignKeys);
+        self::assertStringNotContainsString('ALTER TABLE `cat_detraction_types`', $foreignKeys);
+    }
+
+    /** @test */
+    public function item_models_do_not_eager_load_the_removed_isc_catalog(): void
+    {
+        foreach ([
+            'app/Models/Tenant/DocumentItem.php',
+            'app/Models/Tenant/PurchaseItem.php',
+            'app/Models/Tenant/QuotationItem.php',
+            'app/Models/Tenant/SaleNoteItem.php',
+            'modules/Order/Models/OrderNoteItem.php',
+            'modules/Purchase/Models/FixedAssetPurchaseItem.php',
+            'modules/Purchase/Models/PurchaseOrderItem.php',
+            'modules/Sale/Models/ContractItem.php',
+            'modules/Sale/Models/SaleOpportunityItem.php',
+        ] as $file) {
+            $source = $this->source($file);
+            self::assertStringNotContainsString('system_isc_type', $this->eagerLoads($source), $file);
+            self::assertStringContainsString('function system_isc_type()', $source, $file);
+        }
     }
 
     /** @test */
@@ -161,6 +180,14 @@ class CatalogNamesMigrationContractTest extends TestCase
         self::assertNotFalse($source, $path);
 
         return $source;
+    }
+
+    private function eagerLoads(string $source): string
+    {
+        preg_match('/protected \\$with\\s*=\\s*\\[(.*?)\\];/s', $source, $matches);
+        self::assertArrayHasKey(1, $matches);
+
+        return $matches[1];
     }
 }
 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

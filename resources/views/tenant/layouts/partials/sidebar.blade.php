@@ -970,11 +970,9 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                         <a class="nav-link" href="{{route('tenant.retentions.index')}}">Retenciones</a>
                                     </li>
                                 @endif
-                                @if(in_array('advanced_perceptions', $vc_module_levels))
-                                    <li class="{{ ($firstLevel === 'perceptions') ? 'nav-active' : '' }}">
-                                        <a class="nav-link" href="{{route('tenant.perceptions.index')}}">Percepciones</a>
-                                    </li>
-                                @endif
+                                {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
+                                {{-- Percepciones se retiró de la operación venezolana. --}}
+                                {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                                 @if(in_array('advanced_purchase_settlements', $vc_module_levels))
                                     <li class="{{ ($firstLevel === 'purchase-settlements') ? 'nav-active' : '' }}">
                                         <a class="nav-link" href="{{route('tenant.purchase-settlements.index')}}">Liquidaciones

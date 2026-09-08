@@ -57,7 +57,7 @@ class PerceptionController extends Controller
     public function tables()
     {
 
-        $perception_types = PerceptionType::get();
+        $perception_types = PerceptionType::available();
         $currency_types = CurrencyType::all();
         $customers = $this->table('customers');
         $items = $this->table('items');
@@ -73,7 +73,7 @@ class PerceptionController extends Controller
  
     public function document_tables()
     {
-        $perception_types = PerceptionType::get();
+        $perception_types = PerceptionType::available();
         $currency_types = CurrencyType::whereActive()->get();
         $document_types = DocumentType::whereIn('id', ['01', '03'])->get();
 

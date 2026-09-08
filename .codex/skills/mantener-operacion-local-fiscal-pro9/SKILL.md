@@ -20,6 +20,7 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 ## Compatibilidad histórica
 
 - Conservar columnas, modelos, relaciones, casts, recursos API y cálculos de ISC, detracción e impuesto a bolsas cuando puedan existir en registros históricos.
+- La conservación de columnas históricas no implica crear catálogos peruanos en tenants nuevos. Aplicar `mantener-catalogos-fiscales-venezuela` cuando se retiren `cat_system_isc_types`, `cat_detraction_types`, percepciones, PSE u otras tablas catalogadas; sus consumidores deben devolver colecciones vacías sin consultar tablas ausentes.
 - Ocultar controles interactivos y presentación activa; no borrar datos existentes ni falsear totales persistidos.
 - Mantener los nombres internos SUNAT/PSE que sigan siendo contratos técnicos históricos. No renombrarlos a SENIAT sin una integración real.
 - Mantener series, correlativos, items, inventario, pagos, notas, PDF y correo comercial.

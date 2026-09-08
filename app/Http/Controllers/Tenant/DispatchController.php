@@ -574,7 +574,7 @@ class DispatchController extends Controller
         $drivers = (new DriverController())->getOptions();
         $transports = (new TransportController())->getOptions();
         $dispatchers = (new DispatcherController())->getOptions();
-        $related_document_types = RelatedDocumentType::get();
+        $related_document_types = RelatedDocumentType::available();
 
         return compact(
             'establishments',

@@ -143,9 +143,8 @@ class DocumentCentralizedController extends Controller
         $company = Company::select('detraction_account')->first();
         $configuration = Configuration::select('detraction_amount_rounded_int', 'available_detraction_for_amount_minor')->first();
 
-        $detraction_types = DetractionType::whereActive()
+        $detraction_types = DetractionType::available()
             ->where('operation_type_id', '1001')
-            ->get()
             ->map(fn($row) => [
                 'id' => (string) $row->id,
                 'description' => $row->description,

@@ -10,7 +10,7 @@ class DetractionTypeService
 
     public function getDetractionTypeDescription($value)
     {
-        $row = DetractionType::where('id', $value)->first();
+        $row = DetractionType::findAvailable($value);
         return $row ? $row->description:'Registro no encontrado';
     }
     

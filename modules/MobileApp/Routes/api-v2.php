@@ -32,7 +32,9 @@ if ($hostname)
             Route::prefix('documents')->group(function () {
                 Route::get('records-scroll', 'Api\DocumentCentralizedController@byScroll');
                 // catalogos de "operacion sujeta a detraccion" (1001)
-                Route::get('detraction-tables', 'Api\DocumentCentralizedController@detractionTables');
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                // El catálogo de detracciones fue retirado de la operación venezolana.
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             });
 
             // pagos de comprobantes (factura, boleta)

@@ -118,7 +118,7 @@ class FixedAssetPurchaseController extends Controller
 
         $fixed_asset_items = $this->table('fixed_asset_items');
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::whereActive()->get();
+        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();

@@ -108,9 +108,9 @@
                     <li>
                         <a href="{{url('list-attributes')}}"><i class="ti ti-tag"></i>Listado de Atributos</a>
                     </li>
-                    <li>
-                        <a href="{{url('list-detractions')}}"><i class="ti ti-receipt-refund"></i>Listado de tipos de detracciones</a>
-                    </li>
+                    {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
+                    {{-- El catálogo peruano de detracciones fue retirado. --}}
+                    {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
                     <li>
                         <a href="{{url('list-units')}}"><i class="ti ti-ruler"></i>Listado de unidades</a>
                     </li>

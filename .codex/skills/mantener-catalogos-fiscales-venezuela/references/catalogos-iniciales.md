@@ -1,0 +1,148 @@
+# Registro histórico de catálogos iniciales venezolanos
+
+Este documento es parte normativa de la skill. Registra el estado efectivo que debe producir `database/seeders/data/tenant_initial_data.php` y el historial retirado el 5 de septiembre de 2026. Todo cambio futuro en una de estas tablas debe actualizar simultáneamente el seeder, este registro y las pruebas contractuales.
+
+## Catálogos conservados
+
+Los identificadores y el orden son contractuales. Salvo indicación contraria, las filas están activas.
+
+### Bancos (`banks`)
+
+1. BANCO DE VENEZUELA
+2. BANESCO
+3. BANCO MERCANTIL
+4. BBVA BANCO PROVINCIAL
+5. BANCO NACIONAL DE CRÉDITO
+6. BANCO EXTERIOR
+7. BANCO DE LA FUERZA ARMADA NACIONAL BOLIVARIANA
+8. BANCO BICENTENARIO
+9. BANCO CARONÍ
+10. BANCO DEL CARIBE
+11. BANCO FONDO COMÚN
+12. BANCO PLAZA
+13. BANCO VENEZOLANO DE CRÉDITO
+
+Fuente histórica: `../pro6/database/migrations/tenant/2018_01_00_000001_tenant_system_table.php`.
+
+### Afectaciones IVA (`cat_affectation_igv_types`)
+
+- `10`: Gravado
+- `20`: Exento
+
+Se retiraron las 17 filas que tenían `active = 0`.
+
+### Atributos (`cat_attribute_types`)
+
+- `5010` Numero de Placa; `5011` Categoria; `5012` Marca; `5013` Modelo; `5014` Color; `5015` Motor; `5016` Combustible; `5017` Form. Rodante; `5018` VIN; `5019` Serie/Chasis.
+- `5020` Año fabricacion; `5021` Año modelo; `5022` Version; `5023` Ejes; `5024` Asientos; `5025` Pasajeros; `5026` Ruedas; `5027` Carroceria; `5028` Potencia; `5029` Cilindros.
+- `5030` Ciliindrada; `5031` Peso Bruto; `5032` Peso Neto; `5033` Carga Util; `5034` Longitud; `5035` Altura; `5036` Ancho.
+
+Se retiraron las 68 filas que tenían `active = 0`.
+
+### Descuentos y cargos (`cat_charge_discount_types`)
+
+- `00`: Descuentos que afectan la base imponible del IVA
+- `01`: Descuentos que no afectan la base imponible del IVA
+- `02`: Descuentos globales que afectan la base imponible del IVA
+- `03`: Descuentos globales que no afectan la base imponible del IVA
+- `46`: Recargo al consumo y/o propinas
+- `62`: Retención del IVA
+
+Se retiraron `04`, `05`, `06`, `45`, `47`, `48`, `49`, `50`, `51`, `52` y `53`.
+
+### Tipos de documento (`cat_document_types`)
+
+- `01` FACTURA DE VENTA; `07` NOTA DE CRÉDITO; `08` NOTA DE DÉBITO; `09` ORDEN DE ENTREGA; `20` COMPROBANTE DE RETENCIÓN; `80` NOTA DE VENTA.
+- `NE76` NOTA DE ENTRADA; `U2` Nota de Ingreso Almacén; `U3` Nota de Salida Almacén; `U4` Nota de Transferencia Almacén.
+
+Se retiraron `02` Recibo por honorarios, `03` Boleta de venta electrónica, `04` Liquidación de compra, `14` Servicios públicos, `40` Comprobante de percepción, `71` orden/guía complementaria y `GU75` Guía. Los nombres de almacén con “Guía” pasaron a “Nota”.
+
+### Identidad (`cat_identity_document_types`)
+
+- `0` Doc.sin.rif; `1` Venezolano; `6` Juridico; `7` Pasaporte; `E` Extranjero; `C` Comuna; `G` Gubernamental; `R` Firma Personal.
+
+Ya no forman parte del consolidado Ced. Diplomática, TIN, IN ni TAM.
+
+### Leyendas (`cat_legend_types`)
+
+- `1000`: Monto en Letras.
+
+Se retiraron todas las leyendas peruanas de transferencia gratuita, percepción, Amazonía, detracción, IVAP, Tacna/zona comercial, agencia de viaje, emisor itinerante y restitución arancelaria (`1002`, `2000` a `2010`).
+
+### Notas de crédito (`cat_note_credit_types`)
+
+- `01`: Anulación total de factura
+- `07`: Devolución parcial de mercancía
+- `04`: Descuento o rebajas concedidas
+- `09`: Corrección de precios o cálculos
+
+### Notas de débito (`cat_note_debit_types`)
+
+- `02`: Ajustes por incremento de precios
+- `01`: Intereses de mora o financiamiento
+- `03`: Gastos de despacho, fletes, seguros o embalaje
+
+### Operaciones (`cat_operation_types`)
+
+- `0101`: Venta interna
+- `0200`: Exportación de Bienes
+
+### Métodos de pago (`cat_payment_method_types`)
+
+- `001` Depósito en cuenta; `002` Giro; `003` Transferencia de fondos; `004` Orden de pago; `005` Tarjeta de débito; `006` Tarjeta de crédito emitida en el país por una empresa del sistema financiero.
+- `010` Medios de pago usados en comercio exterior; `101` Transferencias – Comercio exterior; `102` Cheques bancarios - Comercio exterior; `103` Orden de pago simple - Comercio exterior; `104` Orden de pago documentario - Comercio exterior; `105` Remesa simple - Comercio exterior; `999` Otros medios de pago.
+
+Fuente histórica: `../pro6/database/migrations/tenant/2018_00_00_000000_tenant_catalogs_table.php`.
+
+### Motivos de traslado (`cat_transfer_reason_types`)
+
+- `01`: Venta
+- `04`: Traslado entre almacenes
+- `06`: Devolución a proveedor
+- `05`: Demostración, evento o consignación
+- `20`: Demostración o evento (código venezolano nuevo)
+- `21`: Reparación, servicio técnico o mantenimiento (código venezolano nuevo)
+
+### Motivos de gasto (`expense_reasons`)
+
+1. Honorarios profesionales jurídicos y contables
+2. Servicios de publicidad, propaganda y mercadeo
+3. Comisiones de ventas y corretaje
+4. Mantenimiento y reparación de activos fijos
+5. Servicios de vigilancia y seguridad privada
+6. Servicios de limpieza y aseo industrial
+7. Fletes y transporte nacional
+8. Arrendamiento de inmuebles
+9. Alquiler de bienes muebles
+10. Energía eléctrica
+11. Servicio de agua potable
+12. Telecomunicaciones e Internet
+13. Viáticos, gastos de viaje y movilización
+14. Gastos de representación
+15. Suministros de oficina y papelería
+16. Pago de impuestos y tasas municipales
+17. Intereses de mora, multas y sanciones
+18. Gastos sin factura legal o soportes informales
+
+Las descripciones fiscales sobre retenciones son reglas futuras de parametrización; `expense_reasons` sólo posee `id` y `description`, por lo que no se inventan porcentajes ni banderas inexistentes.
+
+### Grupos (`groups`)
+
+- `01`: Facturas. Se retiró `02`: Boletas.
+
+## Catálogos y tablas eliminados
+
+Estas tablas no deben existir en `tenant_initial_data.php`, no deben tener migración de creación consolidada ni claves foráneas hacia ellas:
+
+- `cat_other_tax_concept_types` (12 filas históricas: `1000`–`1005`, `2001`–`2005`, `3001`).
+- `cat_perception_types` (3: `01` venta interna, `02` combustible, `03` tasa especial).
+- `cat_related_documents_types` (6: `01`–`06`, DAM, guía/orden, SCOP, manifiesto, detracción y otros).
+- `cat_related_tax_document_types` (6: `01`–`05`, `99`, anticipos y referencias tributarias peruanas).
+- `cat_summary_status_types` (3: `1` Adicionar, `2` Modificar, `3` Anulado).
+- `cat_system_isc_types` (3: `01` al valor, `02` monto fijo, `03` precio de venta).
+- `pse_providers` (5: ContaWeb, Gior, QPSE, SendFact y Validapse).
+- `cat_detraction_types` (12: `001`, `003`, `005`, `008`, `016`, `019`, `020`, `022`, `023`, `025`, `027`, `030`).
+
+## Territorio retirado del consolidado
+
+El consolidado contenía 25 departamentos, 196 provincias y 1.876 distritos de Perú. Las claves `departments`, `provinces` y `districts` deben estar ausentes de `tenant_initial_data.php`. `TenantMigrationDataSeeder` las sustituye por `venezuela_geopolitical_data.php`, cuyo contrato es 25 estados, 335 municipios y 1.138 parroquias.

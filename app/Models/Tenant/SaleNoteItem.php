@@ -16,7 +16,10 @@ use Modules\Inventory\Models\Warehouse;
 class SaleNoteItem extends ModelTenant
 {
     use AttributePerItems;
-    protected $with = ['affectation_igv_type', 'system_isc_type', 'price_type'];
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    // ISC se conserva como relación histórica, pero no se precarga en tenants sin su catálogo.
+    protected $with = ['affectation_igv_type', 'price_type'];
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
     public $timestamps = false;
 
     protected $fillable = [

@@ -6,10 +6,9 @@ $hostname = app(Hyn\Tenancy\Contracts\CurrentHostname::class);
 if ($hostname) {
     Route::domain($hostname->fqdn)->group(function () {
         Route::middleware(['auth', 'locked.tenant'])->group(function () {
-            Route::prefix('pseservice')->group(function() {
-
-                Route::get('/test', 'PseServiceController@index');
-            });
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            // No se registran rutas PSE en la operación local venezolana.
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         });
     });
 };

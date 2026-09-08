@@ -52,8 +52,7 @@ class DispatchController extends Controller
             ])
             ->values();
 
-        $relatedDocumentTypes = RelatedDocumentType::query()
-            ->get()
+        $relatedDocumentTypes = RelatedDocumentType::available()
             ->map(fn($row) => [
                 'id' => $row->id,
                 'description' => $row->description,

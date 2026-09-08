@@ -26,7 +26,9 @@ if($current_hostname) {
             Route::prefix('documents')->group(function() {
                 Route::post('pay-constancy/upload', 'DocumentController@upload');
                 Route::post('pay-constancy/save', 'DocumentController@savePayConstancy');
-                Route::get('detraction/tables', 'DocumentController@detractionTables');
+                // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+                // Sin catálogo de detracciones no se publica este endpoint.
+                // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
                 Route::get('data-table/customers', 'DocumentController@dataTableCustomers');
                 Route::get('prepayments/{type}', 'DocumentController@prepayments');
                 Route::get('search-items', 'DocumentController@searchItems');

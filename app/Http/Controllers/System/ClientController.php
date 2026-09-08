@@ -873,6 +873,13 @@ use Illuminate\Support\Facades\Mail;
                 $fqdn = $subDom . '.' . config('tenant.app_url_base');
                 \Log::info('Variables de tenant creadas', ['uuid' => $uuid, 'fqdn' => $fqdn]);
 
+                // ########## INICIO CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
+                // Un subdominio eliminado puede conservar en Redis un Hostname
+                // serializado que apunta al website anterior. Se invalida antes de
+                // recrearlo para que el primer acceso nunca resuelva esa relación.
+                $this->forgetTenantResolutionCache($fqdn, $uuid);
+                // ######### FIN CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
+
                 $this->validateWebsite($uuid, $website);
                 \Log::info('Validación de website completada');
 
@@ -885,6 +892,12 @@ use Illuminate\Support\Facades\Mail;
                 $hostname->fqdn = $fqdn;
                 $hostname = app(HostnameRepository::class)->create($hostname);
                 app(HostnameRepository::class)->attach($hostname, $website);
+
+                // ########## INICIO CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
+                // Fuerza que la siguiente petición cargue la asociación recién
+                // persistida, incluso si hubo una consulta concurrente al dominio.
+                $this->forgetTenantResolutionCache($fqdn, $uuid);
+                // ######### FIN CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
                 \Log::info('Hostname creado y asociado', ['hostname_id' => $hostname->id]);
 
                 $token = Str::random(50);
@@ -1412,6 +1425,10 @@ use Illuminate\Support\Facades\Mail;
             app(HostnameRepository::class)->delete($hostname, true);
             app(WebsiteRepository::class)->delete($website, true);
 
+            // ########## INICIO CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
+            $this->forgetTenantResolutionCache($hostname->fqdn, $uuid);
+            // ######### FIN CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
+
             // recien aca se tocan los archivos: si algo de arriba falla, el cliente
             // y sus archivos quedan intactos
             $storage = $this->deleteDirectory($tenant_path);
@@ -1425,6 +1442,19 @@ use Illuminate\Support\Facades\Mail;
                 'message' => 'Cliente eliminado con éxito'
             ];
         }
+
+        // ########## INICIO CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
+        /**
+         * Elimina todas las entradas que pueden sobrevivir a la eliminación y
+         * recreación de un cliente con el mismo subdominio.
+         */
+        private function forgetTenantResolutionCache(string $fqdn, string $uuid): void
+        {
+            Cache::forget("tenancy.hostname.{$fqdn}");
+            Cache::forget("tenancy.website.{$uuid}");
+            Cache::forget("tenant_session_lifetime_{$fqdn}");
+        }
+        // ######### FIN CORRECCIÓN CACHÉ DE TENANT REUTILIZADO ##########
 
         public function password($id)
         {

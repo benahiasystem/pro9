@@ -28,7 +28,21 @@ class AppServiceProvider extends ServiceProvider
 
 		// Evitar ejecutar en consola; aplicar sólo en contexto web
 		if (!app()->runningInConsole()) {
-			SessionLifetimeHelper::setTenantSessionLifetime();
+			// ########## INICIO CORRECCIÓN INICIALIZACIÓN TENANT ##########
+			// Las rutas de algunos módulos resuelven CurrentHostname antes de que Hyn
+			// registre ConnectsTenants. En ese caso el dominio queda identificado, pero
+			// nunca se crea database.connections.tenant. Al terminar el arranque se
+			// activa expresamente el website y luego se consulta su tiempo de sesión.
+			$this->app->booted(function (): void {
+				$hostname = app(\Hyn\Tenancy\Contracts\CurrentHostname::class);
+
+				if ($hostname && $hostname->website && ! config('database.connections.tenant')) {
+					app(\Hyn\Tenancy\Environment::class)->tenant($hostname->website);
+				}
+
+				SessionLifetimeHelper::setTenantSessionLifetime();
+			});
+			// ######### FIN CORRECCIÓN INICIALIZACIÓN TENANT ##########
 
 			// ngrok conserva el host público en X-Forwarded-Host aunque reescriba
 			// Host para que Hyn resuelva el tenant mediante local.pro9.test.

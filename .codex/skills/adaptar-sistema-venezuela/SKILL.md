@@ -51,10 +51,22 @@ Las migraciones consolidadas no deben ejecutarse directamente sobre un tenant cu
 
 <!-- ######## FIN PUENTE DE COMPATIBILIDAD TENANT HISTÓRICO ######## -->
 
+## Alta y primer acceso de un tenant
+
+<!-- ######## INICIO CONTRATO DE INICIALIZACIÓN TENANT ######## -->
+
+- No resolver `CurrentHostname` directamente durante `AppServiceProvider::boot()`: diferir cualquier configuración dependiente del tenant hasta `app->booted()` o hasta middleware.
+- Mantener `EnsureTenantConnection` antes de sesión y autenticación. Si falta `database.connections.tenant`, debe consultar el hostname vigente por el host de la petición y activar su website mediante `Environment`.
+- Al crear o eliminar un cliente, invalidar `tenancy.hostname.{fqdn}`, `tenancy.website.{uuid}` y `tenant_session_lifetime_{fqdn}`. Esto es obligatorio si se puede reutilizar un subdominio eliminado.
+- Verificar el primer acceso con una petición nueva a `/login`; debe responder `200` aun cuando Redis contenga previamente un hostname obsoleto para el mismo FQDN.
+
+<!-- ######## FIN CONTRATO DE INICIALIZACIÓN TENANT ######## -->
+
 ## Pruebas de contrato
 
 - Ejecutar `PersonRequestVenezuelaTest` para clientes nacionales, extranjeros, proveedores y formatos de documento.
 - Ejecutar `VenezuelaLocalizationTest` para VE, +58, VES/USD, símbolos, teléfonos y códigos territoriales.
+- Ejecutar `TenantConnectionBootstrapContractTest` cuando se toque creación, eliminación, caché, providers o middleware de tenants.
 - Ejecutar `VenezuelaSourceContractTest` para fuentes activas, estructura consolidada, defaults, parroquias sin código, esquema de personas, POS, moneda y datos mock.
 - Ejecutar `VenezuelaGeopoliticalContractTest`, `VenezuelaCurrencyTest`, `VenezuelaPhoneLocalizationTest`, `TenantMigrationDataSeederTest` y todas las pruebas `ItemImport*`.
 - Mantener estas pruebas enfocadas en el estado final; no confundir un país disponible como nacionalidad extranjera con un default geográfico PE.

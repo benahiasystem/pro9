@@ -10,7 +10,9 @@
             <tenant-system-environment></tenant-system-environment>
             <tenant-certificates-index></tenant-certificates-index>
             <tenant-certificates-qztray></tenant-certificates-qztray>
-            <tenant-signature-pse-index></tenant-signature-pse-index>
+            {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
+            {{-- La configuración PSE no se presenta en la operación local venezolana. --}}
+            {{-- ######### FIN CAMBIO CATÁLOGOS DE NOMBRES --}}
         </div>
 
 

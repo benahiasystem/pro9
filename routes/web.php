@@ -54,7 +54,9 @@ if ($hostname) {
             Route::get('list-cards', 'Tenant\SettingController@listCards');
             Route::get('list-platforms', 'Tenant\SettingController@listPlatforms');
             Route::get('list-attributes', 'Tenant\SettingController@listAttributes');
-            Route::get('list-detractions', 'Tenant\SettingController@listDetractions');
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            // El catálogo peruano de detracciones no existe en tenants venezolanos.
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
             Route::get('list-units', 'Tenant\SettingController@listUnits');
             Route::get('list-payment-methods', 'Tenant\SettingController@listPaymentMethods');
             Route::get('list-incomes', 'Tenant\SettingController@listIncomes');
@@ -103,11 +105,9 @@ if ($hostname) {
             Route::post('companies/uploads', 'Tenant\CompanyController@uploadFile');
             Route::post('companies/uploads', 'Tenant\CompanyController@uploadFile');
             Route::delete('companies/delete-logo', 'Tenant\CompanyController@deleteLogo');
-            Route::get('companies/pse-providers', 'Tenant\CompanyController@getPseProviders');
-
-            //configuracion envio documento a pse
-            Route::post('companies/store-send-pse', 'Tenant\CompanyController@storeSendPse');
-            Route::get('companies/record-send-pse', 'Tenant\CompanyController@recordSendPse');
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            // PSE no forma parte de la operación local venezolana.
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
             //configuracion WhatsApp Api
             Route::post('companies/store-whatsapp-api', 'Tenant\CompanyController@storeWhatsAppApi');
@@ -589,12 +589,9 @@ if ($hostname) {
             Route::get('operation-types/active/{id}/{active}', 'Tenant\OperationTypeController@changeActive');
 
 
-            //Detractions
-            Route::get('detraction_types/records', 'Tenant\DetractionTypeController@records');
-            Route::get('detraction_types/tables', 'Tenant\DetractionTypeController@tables');
-            Route::get('detraction_types/record/{code}', 'Tenant\DetractionTypeController@record');
-            Route::post('detraction_types', 'Tenant\DetractionTypeController@store');
-            Route::delete('detraction_types/{code}', 'Tenant\DetractionTypeController@destroy');
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            // Se retiró el CRUD del catálogo peruano de detracciones.
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
             //Banks
             Route::get('banks/records', 'Tenant\BankController@records');
@@ -612,17 +609,9 @@ if ($hostname) {
             Route::post('currency_types', 'Tenant\CurrencyTypeController@store');
             Route::delete('currency_types/{currency_type}', 'Tenant\CurrencyTypeController@destroy');
 
-            //Perceptions
-            Route::get('perceptions', 'Tenant\PerceptionController@index')->name('tenant.perceptions.index');
-            Route::get('perceptions/columns', 'Tenant\PerceptionController@columns');
-            Route::get('perceptions/records', 'Tenant\PerceptionController@records');
-            Route::get('perceptions/create', 'Tenant\PerceptionController@create')->name('tenant.perceptions.create');
-            Route::get('perceptions/tables', 'Tenant\PerceptionController@tables');
-            Route::get('perceptions/record/{perception}', 'Tenant\PerceptionController@record');
-            Route::post('perceptions', 'Tenant\PerceptionController@store');
-            Route::delete('perceptions/{perception}', 'Tenant\PerceptionController@destroy');
-            Route::get('perceptions/document/tables', 'Tenant\PerceptionController@document_tables');
-            Route::get('perceptions/table/{table}', 'Tenant\PerceptionController@table');
+            // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+            // Se retiró la emisión peruana de percepciones junto con su catálogo.
+            // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
             //Tribute Concept Type
             Route::get('tribute_concept_types/records', 'Tenant\TributeConceptTypeController@records');

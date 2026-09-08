@@ -191,7 +191,7 @@ class ContractController extends Controller
         // $items = SearchItemController::getItemToContract();
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::whereActive()->get();
+        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();
         $charge_types = ChargeDiscountType::whereType('charge')->whereLevel('item')->get();

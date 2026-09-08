@@ -4,6 +4,7 @@ namespace App\Models\Tenant\Catalogs;
 
 use App\Models\Tenant\TechnicalServiceItem;
 use Hyn\Tenancy\Traits\UsesTenantConnection;
+use Illuminate\Support\Facades\Schema;
 
 class SystemIscType extends ModelCatalog
 {
@@ -12,6 +13,16 @@ class SystemIscType extends ModelCatalog
     protected $table = "cat_system_isc_types";
     public $incrementing = false;
 
+    // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+    public static function available()
+    {
+        if (!Schema::connection('tenant')->hasTable((new static())->getTable())) {
+            return collect();
+        }
+
+        return static::whereActive()->orderByDescription()->get();
+    }
+    // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\HasMany

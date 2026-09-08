@@ -379,7 +379,7 @@ class ItemController extends Controller
         $unit_types = UnitType::whereActive()->orderByDescription()->get();
         $currency_types = CurrencyType::whereActive()->orderByDescription()->get();
         $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
-        $system_isc_types = SystemIscType::whereActive()->orderByDescription()->get();
+        $system_isc_types = SystemIscType::available();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $warehouses = Warehouse::all();
         $accounts = Account::all();
@@ -2066,7 +2066,7 @@ class ItemController extends Controller
         $items = SearchItemController::getItemsToDocuments();
         $categories = [];
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
-        $system_isc_types = SystemIscType::whereActive()->get();
+        $system_isc_types = SystemIscType::available();
         $price_types = PriceType::whereActive()->get();
         $operation_types = OperationType::whereActive()->get();
         $discount_types = ChargeDiscountType::whereType('discount')->whereLevel('item')->get();

@@ -59,7 +59,7 @@ class SummaryController extends Controller
     public function tables()
     {
         return [
-            'summary_status_types' => SummaryStatusType::whereIn('id', ['1', '2'])->get(),
+            'summary_status_types' => SummaryStatusType::available(['1', '2']),
             'show_summary_status_type' => config('tenant.show_summary_status_type'),
         ];
     }

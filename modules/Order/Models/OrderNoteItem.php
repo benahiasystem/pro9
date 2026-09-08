@@ -69,11 +69,13 @@
         use AttributePerItems;
 
         public $timestamps = false;
+        // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
+        // ISC se conserva como relación histórica, pero no se precarga en tenants sin su catálogo.
         protected $with = [
             'affectation_igv_type',
-            'system_isc_type',
             'price_type'
         ];
+        // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
         protected $fillable = [
             'order_note_id',
             'item_id',

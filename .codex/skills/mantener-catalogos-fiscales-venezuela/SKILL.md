@@ -1,27 +1,30 @@
 ---
 name: mantener-catalogos-fiscales-venezuela
-description: Mantener en Pro9 los nombres y la visibilidad de catálogos fiscales venezolanos, preservando códigos y referencias históricas. Usar al tocar tipos documentales, afectaciones IVA, descuentos/cargos, leyendas, motivos de traslado, percepciones, atributos UBL o medios de pago heredados de SUNAT.
+description: Mantener el inventario histórico y el estado inicial de los catálogos venezolanos de Pro9. Usar al tocar bancos, documentos, identidad, IVA, descuentos/cargos, leyendas, notas, operaciones, pagos, traslados, gastos o tablas fiscales peruanas retiradas.
 ---
 
-# Mantener catálogos fiscales venezolanos
+# Mantener catálogos iniciales venezolanos
+
+Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventario normativo [references/catalogos-iniciales.md](references/catalogos-iniciales.md). Ese archivo conserva el estado final y el registro histórico retirado; actualizarlo junto con el código y las pruebas en el mismo cambio.
 
 ## Contrato
 
-- Tratar los IDs fiscales como contratos estables: cambiar nombres o visibilidad, nunca reasignar códigos.
-- Separar opciones para crear de relaciones históricas. Una fila oculta debe continuar resolviendo documentos existentes.
+- Tratar los IDs conservados como contratos estables: no reasignar códigos. Los códigos venezolanos nuevos de traslado son `20` y `21`.
+- El estado inicial venezolano es una depuración total de los catálogos enumerados en el inventario. No reintroducir filas retiradas como inactivas.
 - Mantener `03` y sus series para consulta, PDF y auditoría, pero no ofrecer nuevas Boletas; aplicar también `mantener-facturas-notas-venta-sin-boleta` cuando intervenga un flujo de emisión.
 - Mostrar `01 = FACTURA DE VENTA`, `07 = NOTA DE CRÉDITO`, `08 = NOTA DE DÉBITO`, `09 = GUÍA DE DESPACHO REMITENTE`, `20 = COMPROBANTE DE RETENCIÓN`, `31 = GUÍA DE DESPACHO TRANSPORTISTA` y `40 = COMPROBANTE DE PERCEPCIÓN`.
 - Ofrecer únicamente `10 = Gravado` y `20 = Exento` en nuevas selecciones de afectación. Conservar los demás IDs para históricos y aplicar `migrar-iva-venezuela` para tasa, cálculos y nombres internos `igv`.
 - Mantener activos los descuentos por ítem `00` y `01` con descripciones IVA. No reproducir estados históricos intermedios que los retiraban.
-- Ocultar catálogos peruanos específicos mediante `active`, scopes o filtros; no borrar filas ni alterar integraciones técnicas SUNAT/UBL que sigan siendo contratos reales.
+- Retirar del esquema inicial las ocho tablas declaradas eliminadas en el inventario y adaptar sus consumidores; no basta con dejarlas vacías o inactivas.
+- No incluir relaciones hacia catálogos retirados en el `$with` global de Eloquent: conservar la relación para datos históricos y cargarla sólo cuando la tabla exista. Incluso una clave foránea nula provoca una consulta `where 0 = 1` durante la precarga.
 - Ocultar los paneles de atributos UBL adicionales mediante una capacidad central de Venezuela; no comentar bloques grandes de Vue.
 
 ## Datos
 
 1. Actualizar `database/seeders/data/tenant_initial_data.php` para tenants nuevos.
-2. Crear una migración tenant incremental para instalaciones existentes; no editar migraciones estructurales consolidadas ni migraciones históricas ejecutadas.
+2. Para instalaciones existentes, crear una migración tenant incremental e idempotente que aplique el mismo estado sin asumir que todas las tablas aún existen.
 3. Hacer `up()` idempotente por ID y limitar `down()` a valores reconocibles introducidos por la migración.
-4. Antes de cualquier eliminación excepcional, medir referencias y detenerse si existen. La implementación normal no debe borrar registros.
+4. Antes de eliminar tablas en un tenant histórico, medir referencias y retirar primero sus claves foráneas. Preservar columnas históricas consumidoras cuando borrarlas no haya sido solicitado.
 5. Invalidar cachés o adaptar proveedores de opciones cuando los catálogos no se consulten directamente.
 
 ## Presentación
@@ -33,5 +36,7 @@ description: Mantener en Pro9 los nombres y la visibilidad de catálogos fiscale
 ## Marcadores y pruebas
 
 - Delimitar cada hunk con `########## INICIO CAMBIO CATÁLOGOS DE NOMBRES` y `######### FIN CAMBIO CATÁLOGOS DE NOMBRES`, usando comentarios válidos.
-- Probar nombres finales, filtros de creación, lectura histórica de `03`, visibilidad de códigos peruanos, descuentos `00/01`, afectaciones `10/20`, paneles UBL y reversión segura.
+- Ejecutar `scripts/apply_catalog_contract.php` sólo cuando se necesite reaplicar mecánicamente el inventario al consolidado; revisar siempre su diff.
+- Ejecutar `scripts/validate_catalog_contract.php` para comprobar migración limpia, `TenancyDatabaseSeeder`, ausencia de tablas retiradas y conteos venezolanos en una base temporal descartable.
+- Probar el inventario completo, las tablas ausentes, los bancos, motivos de gasto, métodos de pago, códigos de traslado, afectaciones `10/20` y paneles UBL.
 - Ejecutar las pruebas de contrato de catálogos, IVA, ventas sin Boleta, datos tenant y SUNAT/SENIAT, además de `git diff --check` y lint PHP.

@@ -68,7 +68,7 @@ class ItemSetController extends Controller
         $unit_types = UnitType::whereActive()->orderByDescription()->get();
         $currency_types = CurrencyType::whereActive()->orderByDescription()->get();
         $attribute_types = AttributeType::whereActive()->orderByDescription()->get();
-        $system_isc_types = SystemIscType::whereActive()->orderByDescription()->get();
+        $system_isc_types = SystemIscType::available();
         $affectation_igv_types = AffectationIgvType::whereActive()->get();
         $web_platforms = WebPlatform::get();
         $categories = Category::all();

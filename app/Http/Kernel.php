@@ -14,6 +14,9 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middleware = [
+        // ########## INICIO CORRECCIÓN INICIALIZACIÓN TENANT ##########
+        \App\Http\Middleware\EnsureTenantConnection::class,
+        // ######### FIN CORRECCIÓN INICIALIZACIÓN TENANT ##########
         \Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,

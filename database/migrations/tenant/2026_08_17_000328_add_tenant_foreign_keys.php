@@ -17,16 +17,10 @@ return new class extends Migration
     {
         $statements = [
             <<<'SQL'
-ALTER TABLE `cat_detraction_types` ADD CONSTRAINT `cat_detraction_types_operation_type_id_foreign` FOREIGN KEY (`operation_type_id`) REFERENCES `cat_operation_types` (`id`)
-SQL,
-            <<<'SQL'
 ALTER TABLE `client_errors` ADD CONSTRAINT `client_errors_client_error_type_id_foreign` FOREIGN KEY (`client_error_type_id`) REFERENCES `client_error_types` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `companies` ADD CONSTRAINT `companies_identity_document_type_id_foreign` FOREIGN KEY (`identity_document_type_id`) REFERENCES `cat_identity_document_types` (`id`)
-SQL,
-            <<<'SQL'
-ALTER TABLE `companies` ADD CONSTRAINT `companies_pse_provider_id_foreign` FOREIGN KEY (`pse_provider_id`) REFERENCES `pse_providers` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `companies` ADD CONSTRAINT `companies_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
@@ -401,13 +395,7 @@ SQL,
 ALTER TABLE `items` ADD CONSTRAINT `items_purchase_affectation_igv_type_id_foreign` FOREIGN KEY (`purchase_affectation_igv_type_id`) REFERENCES `cat_affectation_igv_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `items` ADD CONSTRAINT `items_purchase_system_isc_type_id_foreign` FOREIGN KEY (`purchase_system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
-SQL,
-            <<<'SQL'
 ALTER TABLE `items` ADD CONSTRAINT `items_sale_affectation_igv_type_id_foreign` FOREIGN KEY (`sale_affectation_igv_type_id`) REFERENCES `cat_affectation_igv_types` (`id`)
-SQL,
-            <<<'SQL'
-ALTER TABLE `items` ADD CONSTRAINT `items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `items` ADD CONSTRAINT `items_unit_type_id_foreign` FOREIGN KEY (`unit_type_id`) REFERENCES `cat_unit_types` (`id`)
@@ -495,9 +483,6 @@ ALTER TABLE `perceptions` ADD CONSTRAINT `perceptions_document_type_id_foreign` 
 SQL,
             <<<'SQL'
 ALTER TABLE `perceptions` ADD CONSTRAINT `perceptions_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)
-SQL,
-            <<<'SQL'
-ALTER TABLE `perceptions` ADD CONSTRAINT `perceptions_perception_type_id_foreign` FOREIGN KEY (`perception_type_id`) REFERENCES `cat_perception_types` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `perceptions` ADD CONSTRAINT `perceptions_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
@@ -605,9 +590,6 @@ SQL,
 ALTER TABLE `summaries` ADD CONSTRAINT `summaries_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `summaries` ADD CONSTRAINT `summaries_summary_status_type_id_foreign` FOREIGN KEY (`summary_status_type_id`) REFERENCES `cat_summary_status_types` (`id`)
-SQL,
-            <<<'SQL'
 ALTER TABLE `summaries` ADD CONSTRAINT `summaries_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 SQL,
             <<<'SQL'
@@ -675,9 +657,6 @@ ALTER TABLE `fixed_asset_purchase_items` ADD CONSTRAINT `fixed_asset_purchase_it
 SQL,
             <<<'SQL'
 ALTER TABLE `fixed_asset_purchase_items` ADD CONSTRAINT `fixed_asset_purchase_items_price_type_id_foreign` FOREIGN KEY (`price_type_id`) REFERENCES `cat_price_types` (`id`)
-SQL,
-            <<<'SQL'
-ALTER TABLE `fixed_asset_purchase_items` ADD CONSTRAINT `fixed_asset_purchase_items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `guide_items` ADD CONSTRAINT `guide_items_guide_id_foreign` FOREIGN KEY (`guide_id`) REFERENCES `guides` (`id`) ON DELETE CASCADE
@@ -804,9 +783,6 @@ ALTER TABLE `order_note_items` ADD CONSTRAINT `order_note_items_order_note_id_fo
 SQL,
             <<<'SQL'
 ALTER TABLE `order_note_items` ADD CONSTRAINT `order_note_items_price_type_id_foreign` FOREIGN KEY (`price_type_id`) REFERENCES `cat_price_types` (`id`)
-SQL,
-            <<<'SQL'
-ALTER TABLE `order_note_items` ADD CONSTRAINT `order_note_items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `order_note_items` ADD CONSTRAINT `order_note_items_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`)
@@ -1031,9 +1007,6 @@ SQL,
 ALTER TABLE `purchase_order_items` ADD CONSTRAINT `purchase_order_items_purchase_order_id_foreign` FOREIGN KEY (`purchase_order_id`) REFERENCES `purchase_orders` (`id`) ON DELETE CASCADE
 SQL,
             <<<'SQL'
-ALTER TABLE `purchase_order_items` ADD CONSTRAINT `purchase_order_items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
-SQL,
-            <<<'SQL'
 ALTER TABLE `purchases` ADD CONSTRAINT `purchases_currency_type_id_foreign` FOREIGN KEY (`currency_type_id`) REFERENCES `cat_currency_types` (`id`)
 SQL,
             <<<'SQL'
@@ -1077,9 +1050,6 @@ ALTER TABLE `quotation_items` ADD CONSTRAINT `quotation_items_price_type_id_fore
 SQL,
             <<<'SQL'
 ALTER TABLE `quotation_items` ADD CONSTRAINT `quotation_items_quotation_id_foreign` FOREIGN KEY (`quotation_id`) REFERENCES `quotations` (`id`) ON DELETE CASCADE
-SQL,
-            <<<'SQL'
-ALTER TABLE `quotation_items` ADD CONSTRAINT `quotation_items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `quotation_payments` ADD CONSTRAINT `quotation_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)
@@ -1148,9 +1118,6 @@ SQL,
 ALTER TABLE `contract_items` ADD CONSTRAINT `contract_items_price_type_id_foreign` FOREIGN KEY (`price_type_id`) REFERENCES `cat_price_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `contract_items` ADD CONSTRAINT `contract_items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
-SQL,
-            <<<'SQL'
 ALTER TABLE `contract_payments` ADD CONSTRAINT `contract_payments_card_brand_id_foreign` FOREIGN KEY (`card_brand_id`) REFERENCES `card_brands` (`id`)
 SQL,
             <<<'SQL'
@@ -1193,9 +1160,6 @@ SQL,
 ALTER TABLE `purchase_items` ADD CONSTRAINT `purchase_items_purchase_id_foreign` FOREIGN KEY (`purchase_id`) REFERENCES `purchases` (`id`) ON DELETE CASCADE
 SQL,
             <<<'SQL'
-ALTER TABLE `purchase_items` ADD CONSTRAINT `purchase_items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
-SQL,
-            <<<'SQL'
 ALTER TABLE `purchase_items` ADD CONSTRAINT `purchase_items_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`)
 SQL,
             <<<'SQL'
@@ -1233,9 +1197,6 @@ ALTER TABLE `sale_note_items` ADD CONSTRAINT `sale_note_items_price_type_id_fore
 SQL,
             <<<'SQL'
 ALTER TABLE `sale_note_items` ADD CONSTRAINT `sale_note_items_sale_note_id_foreign` FOREIGN KEY (`sale_note_id`) REFERENCES `sale_notes` (`id`) ON DELETE CASCADE
-SQL,
-            <<<'SQL'
-ALTER TABLE `sale_note_items` ADD CONSTRAINT `sale_note_items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `sale_note_items` ADD CONSTRAINT `sale_note_items_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`)
@@ -1448,9 +1409,6 @@ SQL,
 ALTER TABLE `document_items` ADD CONSTRAINT `document_items_price_type_id_foreign` FOREIGN KEY (`price_type_id`) REFERENCES `cat_price_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `document_items` ADD CONSTRAINT `document_items_system_isc_type_id_foreign` FOREIGN KEY (`system_isc_type_id`) REFERENCES `cat_system_isc_types` (`id`)
-SQL,
-            <<<'SQL'
 ALTER TABLE `document_items` ADD CONSTRAINT `document_items_warehouse_id_foreign` FOREIGN KEY (`warehouse_id`) REFERENCES `warehouses` (`id`)
 SQL,
             <<<'SQL'
@@ -1552,7 +1510,6 @@ SQL
             ['table' => 'document_payments', 'name' => 'document_payments_document_id_foreign'],
             ['table' => 'document_payments', 'name' => 'document_payments_card_brand_id_foreign'],
             ['table' => 'document_items', 'name' => 'document_items_warehouse_id_foreign'],
-            ['table' => 'document_items', 'name' => 'document_items_system_isc_type_id_foreign'],
             ['table' => 'document_items', 'name' => 'document_items_price_type_id_foreign'],
             ['table' => 'document_items', 'name' => 'document_items_item_id_foreign'],
             ['table' => 'document_items', 'name' => 'document_items_document_id_foreign'],
@@ -1623,7 +1580,6 @@ SQL
             ['table' => 'sale_note_payments', 'name' => 'sale_note_payments_payment_method_type_id_foreign'],
             ['table' => 'sale_note_payments', 'name' => 'sale_note_payments_card_brand_id_foreign'],
             ['table' => 'sale_note_items', 'name' => 'sale_note_items_warehouse_id_foreign'],
-            ['table' => 'sale_note_items', 'name' => 'sale_note_items_system_isc_type_id_foreign'],
             ['table' => 'sale_note_items', 'name' => 'sale_note_items_sale_note_id_foreign'],
             ['table' => 'sale_note_items', 'name' => 'sale_note_items_price_type_id_foreign'],
             ['table' => 'sale_note_items', 'name' => 'sale_note_items_item_id_foreign'],
@@ -1637,7 +1593,6 @@ SQL
             ['table' => 'purchase_payments', 'name' => 'purchase_payments_payment_method_type_id_foreign'],
             ['table' => 'purchase_payments', 'name' => 'purchase_payments_card_brand_id_foreign'],
             ['table' => 'purchase_items', 'name' => 'purchase_items_warehouse_id_foreign'],
-            ['table' => 'purchase_items', 'name' => 'purchase_items_system_isc_type_id_foreign'],
             ['table' => 'purchase_items', 'name' => 'purchase_items_purchase_id_foreign'],
             ['table' => 'purchase_items', 'name' => 'purchase_items_price_type_id_foreign'],
             ['table' => 'purchase_items', 'name' => 'purchase_items_item_id_foreign'],
@@ -1652,7 +1607,6 @@ SQL
             ['table' => 'contract_payments', 'name' => 'contract_payments_payment_method_type_id_foreign'],
             ['table' => 'contract_payments', 'name' => 'contract_payments_contract_id_foreign'],
             ['table' => 'contract_payments', 'name' => 'contract_payments_card_brand_id_foreign'],
-            ['table' => 'contract_items', 'name' => 'contract_items_system_isc_type_id_foreign'],
             ['table' => 'contract_items', 'name' => 'contract_items_price_type_id_foreign'],
             ['table' => 'contract_items', 'name' => 'contract_items_item_id_foreign'],
             ['table' => 'contract_items', 'name' => 'contract_items_contract_id_foreign'],
@@ -1675,7 +1629,6 @@ SQL
             ['table' => 'quotation_payments', 'name' => 'quotation_payments_quotation_id_foreign'],
             ['table' => 'quotation_payments', 'name' => 'quotation_payments_payment_method_type_id_foreign'],
             ['table' => 'quotation_payments', 'name' => 'quotation_payments_card_brand_id_foreign'],
-            ['table' => 'quotation_items', 'name' => 'quotation_items_system_isc_type_id_foreign'],
             ['table' => 'quotation_items', 'name' => 'quotation_items_quotation_id_foreign'],
             ['table' => 'quotation_items', 'name' => 'quotation_items_price_type_id_foreign'],
             ['table' => 'quotation_items', 'name' => 'quotation_items_item_id_foreign'],
@@ -1691,7 +1644,6 @@ SQL
             ['table' => 'purchases', 'name' => 'purchases_document_type_id_foreign'],
             ['table' => 'purchases', 'name' => 'purchases_customer_id_foreign'],
             ['table' => 'purchases', 'name' => 'purchases_currency_type_id_foreign'],
-            ['table' => 'purchase_order_items', 'name' => 'purchase_order_items_system_isc_type_id_foreign'],
             ['table' => 'purchase_order_items', 'name' => 'purchase_order_items_purchase_order_id_foreign'],
             ['table' => 'purchase_order_items', 'name' => 'purchase_order_items_price_type_id_foreign'],
             ['table' => 'purchase_order_items', 'name' => 'purchase_order_items_item_id_foreign'],
@@ -1766,7 +1718,6 @@ SQL
             ['table' => 'perception_documents', 'name' => 'perception_details_perception_id_foreign'],
             ['table' => 'payment_link_payments', 'name' => 'payment_link_payments_payment_link_id_foreign'],
             ['table' => 'order_note_items', 'name' => 'order_note_items_warehouse_id_foreign'],
-            ['table' => 'order_note_items', 'name' => 'order_note_items_system_isc_type_id_foreign'],
             ['table' => 'order_note_items', 'name' => 'order_note_items_price_type_id_foreign'],
             ['table' => 'order_note_items', 'name' => 'order_note_items_order_note_id_foreign'],
             ['table' => 'order_note_items', 'name' => 'order_note_items_item_id_foreign'],
@@ -1809,7 +1760,6 @@ SQL
             ['table' => 'hotel_rooms', 'name' => 'hotel_rooms_establishment_id_foreign'],
             ['table' => 'guide_items', 'name' => 'guide_items_item_id_foreign'],
             ['table' => 'guide_items', 'name' => 'guide_items_guide_id_foreign'],
-            ['table' => 'fixed_asset_purchase_items', 'name' => 'fixed_asset_purchase_items_system_isc_type_id_foreign'],
             ['table' => 'fixed_asset_purchase_items', 'name' => 'fixed_asset_purchase_items_price_type_id_foreign'],
             ['table' => 'fixed_asset_purchase_items', 'name' => 'fixed_asset_purchase_items_fixed_asset_purchase_id_foreign'],
             ['table' => 'fixed_asset_purchase_items', 'name' => 'fixed_asset_purchase_items_fixed_asset_item_id_foreign'],
@@ -1833,7 +1783,6 @@ SQL
             ['table' => 'system_activity_logs', 'name' => 'system_activity_logs_user_id_foreign'],
             ['table' => 'system_activity_logs', 'name' => 'system_activity_logs_system_activity_log_type_id_foreign'],
             ['table' => 'summaries', 'name' => 'summaries_user_id_foreign'],
-            ['table' => 'summaries', 'name' => 'summaries_summary_status_type_id_foreign'],
             ['table' => 'summaries', 'name' => 'summaries_state_type_id_foreign'],
             ['table' => 'summaries', 'name' => 'summaries_soap_type_id_foreign'],
             ['table' => 'series', 'name' => 'series_series_device_group_id_foreign'],
@@ -1869,7 +1818,6 @@ SQL
             ['table' => 'perceptions', 'name' => 'perceptions_user_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_state_type_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_soap_type_id_foreign'],
-            ['table' => 'perceptions', 'name' => 'perceptions_perception_type_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_establishment_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_document_type_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_customer_id_foreign'],
@@ -1899,9 +1847,7 @@ SQL
             ['table' => 'items', 'name' => 'items_web_platform_id_foreign'],
             ['table' => 'items', 'name' => 'items_warehouse_id_foreign'],
             ['table' => 'items', 'name' => 'items_unit_type_id_foreign'],
-            ['table' => 'items', 'name' => 'items_system_isc_type_id_foreign'],
             ['table' => 'items', 'name' => 'items_sale_affectation_igv_type_id_foreign'],
-            ['table' => 'items', 'name' => 'items_purchase_system_isc_type_id_foreign'],
             ['table' => 'items', 'name' => 'items_purchase_affectation_igv_type_id_foreign'],
             ['table' => 'items', 'name' => 'items_preparation_area_id_foreign'],
             ['table' => 'items', 'name' => 'items_item_type_id_foreign'],
@@ -2026,10 +1972,8 @@ SQL
             ['table' => 'dispatchers', 'name' => 'dispatchers_identity_document_type_id_foreign'],
             ['table' => 'delivery_zone_locations', 'name' => 'delivery_zone_locations_delivery_zone_id_foreign'],
             ['table' => 'companies', 'name' => 'companies_soap_type_id_foreign'],
-            ['table' => 'companies', 'name' => 'companies_pse_provider_id_foreign'],
             ['table' => 'companies', 'name' => 'companies_identity_document_type_id_foreign'],
             ['table' => 'client_errors', 'name' => 'client_errors_client_error_type_id_foreign'],
-            ['table' => 'cat_detraction_types', 'name' => 'cat_detraction_types_operation_type_id_foreign']
         ];
 
         foreach ($foreignKeys as $foreignKey) {

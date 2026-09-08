@@ -73,9 +73,7 @@ class CompanyController extends Controller
 
     public function getPseProviders()
     {
-        $providers = PseProvider::select('id', 'name', 'description', 'active')
-            ->where('active', true) // Filtrar solo los proveedores activos
-            ->get();
+        $providers = PseProvider::available();
 
         return response()->json($providers);
     }
