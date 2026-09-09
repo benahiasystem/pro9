@@ -735,6 +735,12 @@
                             ref="select_person"
                             v-model="form.customer_id"
                             filterable
+                            remote
+                            reserve-keyword
+                            :remote-method="searchCustomers"
+                            :loading="loading_customers"
+                            loading-text="Buscando..."
+                            no-data-text="Sin coincidencias"
                             placeholder="Seleccionar Cliente"
                             @change="changeCustomer"
                             @keyup.native="keyupCustomer"
@@ -1243,6 +1249,13 @@ export default {
             customers: [],
             affectation_igv_types: [],
             all_customers: [],
+            // Primera pantalla del desplegable: es a lo que se vuelve al borrar
+            // la busqueda. all_customers pasa a ser el resultado de turno.
+            customer_seed: [],
+            default_customer: null,
+            loading_customers: false,
+            customer_search_timer: null,
+            customer_search_promise: null,
             establishment: null,
             currency_types: [],
             currency_type: {},
@@ -1835,10 +1848,14 @@ export default {
             this.showDialogHistorySales = true;
             // console.log(item)
         },
-        keyupEnterCustomer() {
+        async keyupEnterCustomer() {
             if (this.place == "cat3") {
                 return false;
             }
+
+            // La busqueda es remota y va con debounce: sin esperarla, Enter
+            // podria abrir el modal de cliente nuevo para uno que si existe.
+            await this.flushCustomerSearch();
 
             if (this.form.customer_id) {
                 this.clickPayment();
@@ -1997,6 +2014,15 @@ export default {
             let customer = _.find(this.all_customers, {
                 id: this.form.customer_id
             });
+
+            // Con busqueda remota la lista es el resultado de turno, no la
+            // cartera: si el id no esta ahi no hay nada que aplicar. Antes esto
+            // reventaba mas abajo al leer identity_document_type_id.
+            if (!customer) {
+                this.customer = null;
+                return;
+            }
+
             this.customer = customer;
 
             if (this.configuration.default_document_type_80) {
@@ -2548,6 +2574,13 @@ export default {
                     response.data.affectation_igv_types;
                 this.all_customers = response.data.customers;
                 this.establishment = response.data.establishment;
+                this.default_customer =
+                    this.all_customers.find(
+                        c =>
+                            String(c.id) ===
+                            String(this.establishment.customer_id)
+                    ) || null;
+                this.customer_seed = this.all_customers.slice();
                 this.currency_types = response.data.currency_types;
                 this.user = response.data.user;
                 this.form.establishment_id = this.establishment.id;
@@ -2564,10 +2597,91 @@ export default {
             });
         },
         selectDefaultCustomer() {
+            // Tras una venta la lista puede contener solo el ultimo resultado de
+            // busqueda; se vuelve a la semilla antes de fijar el defecto.
+            this.all_customers = this.withPinnedCustomers(this.customer_seed);
+
             if (this.establishment.customer_id && !this.form.customer_id) {
                 this.form.customer_id = this.establishment.customer_id;
                 this.changeCustomer();
             }
+        },
+        /**
+         * remote-method del selector de clientes. La lista ya no trae la cartera
+         * completa: se consulta al servidor con debounce y por debajo de 2
+         * caracteres se vuelve a la semilla.
+         */
+        searchCustomers(query) {
+            const input = (query || "").trim();
+
+            if (this.customer_search_timer) {
+                clearTimeout(this.customer_search_timer);
+                this.customer_search_timer = null;
+            }
+
+            if (input.length < 2) {
+                this.loading_customers = false;
+                this.customer_search_promise = null;
+                this.all_customers = this.withPinnedCustomers(
+                    this.customer_seed
+                );
+                return;
+            }
+
+            this.loading_customers = true;
+
+            this.customer_search_promise = new Promise(resolve => {
+                this.customer_search_timer = setTimeout(() => {
+                    this.customer_search_timer = null;
+                    this.$http
+                        .get(`/${this.resource}/search_customers`, {
+                            params: { input }
+                        })
+                        .then(response => {
+                            this.all_customers = this.withPinnedCustomers(
+                                response.data.data
+                            );
+                        })
+                        .catch(() => {})
+                        .then(() => {
+                            this.loading_customers = false;
+                            resolve();
+                        });
+                }, 250);
+            });
+        },
+        /**
+         * Espera la busqueda en vuelo para que Enter no decida sobre una lista a
+         * medio actualizar y abra el modal de cliente nuevo por error.
+         */
+        async flushCustomerSearch() {
+            if (this.customer_search_promise) {
+                await this.customer_search_promise;
+            }
+        },
+        /**
+         * Mantiene fijos el cliente seleccionado y el de por defecto: la lista ya
+         * no contiene toda la cartera y changeCustomer() los busca ahi por id.
+         */
+        withPinnedCustomers(list) {
+            const seen = new Set();
+            const rows = [];
+
+            const push = row => {
+                if (!row || !row.id) return;
+                const id = String(row.id);
+                if (seen.has(id)) return;
+                seen.add(id);
+                rows.push(row);
+            };
+
+            // La lista real manda; los fijos van al final y solo si faltan, para
+            // no encimar dos filas que no coinciden sobre una busqueda.
+            (list || []).forEach(push);
+            push(this.customer);
+            push(this.default_customer);
+
+            return rows;
         },
         renderCategories(source) {
             const contex = this;
@@ -2702,7 +2816,10 @@ export default {
                     params: { customer_id }
                 })
                 .then(response => {
-                    this.all_customers = response.data;
+                    this.customer_seed = response.data;
+                    this.all_customers = this.withPinnedCustomers(
+                        this.customer_seed
+                    );
                     this.form.customer_id = customer_id;
                     this.changeCustomer();
                 });
