@@ -88,9 +88,7 @@
                         @foreach($records as $key => $value)
                             <?php
                                 if(isset($qty)) unset($qty);
-                            /** @var \App\Models\Tenant\DocumentItem|\App\Models\Tenant\SaleNoteItem $value */
-                            $is_sale_note_row = $value instanceof \App\Models\Tenant\SaleNoteItem;
-                            $row_document_type_id = $is_sale_note_row ? '80' : $document_type_id;
+                            /** @var \App\Models\Tenant\DocumentItem $value */
                             $series = '';
                             if (isset($value->item->lots)) {
                                 $series_data = collect($value->item->lots)->where('has_sale', 1)->pluck('series')->toArray();
@@ -100,21 +98,20 @@
                             $utility_item = $value->total - $total_item_purchase;
                             $item = $value->getModelItem();
                             $model = $item->model;
-                            $document = $is_sale_note_row ? $value->sale_note : $value->document;
-                            $purchseOrder = $document->purchase_order ?? null;
+                            /** @var  \App\Models\Tenant\Document $document */
+                            $document = $value->document;
+                            $purchseOrder = $document->purchase_order;
                             $platform = $item->getWebPlatformModel();
                             if ($platform !== null) {
                                 $platform = $platform->name;
                             }
                             $pack = $item->getSetItems();
                             $item = $value->item;
-                            $stablihsment = $is_sale_note_row
-                                ? ['district' => '', 'department' => '', 'province' => '']
-                                : \App\CoreFacturalo\Helpers\Template\ReportHelper::getLocationData($document);
+                            $stablihsment = \App\CoreFacturalo\Helpers\Template\ReportHelper::getLocationData($document);
                             ?>
                             @include('report::general_items.partials.report_excel_body_sale',
                                     [
-                                        'document_type_id'=>$row_document_type_id,
+                                        'document_type_id'=>$document_type_id,
                                         'document'=>$document,
                                         'type'=>$type,
                                         'value'=>$value,
@@ -130,10 +127,11 @@
                                     /** @var \App\Models\Tenant\Item $item */
                                     $item = $value->item;
                                     $qty = $item_pack->quantity;
+                                    // dd($item);
                                     ?>
                                     @include('report::general_items.partials.report_excel_body_sale',
                                                                        [
-                                                                           'document_type_id'=>$row_document_type_id,
+                                                                           'document_type_id'=>$document_type_id,
                                                                            'document'=>$document,
                                                                            'type'=>$type,
                                                                            'value'=>$value,
