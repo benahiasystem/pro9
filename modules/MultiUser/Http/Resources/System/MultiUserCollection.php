@@ -8,39 +8,78 @@ use App\Models\Tenant\User;
 
 class MultiUserCollection extends ResourceCollection
 {
-    
-    public function toArray($request) 
+
+    public function toArray($request)
     {
         return $this->collection->transform(function($row, $key){
 
-            $client_destination_full_name = 'Cliente eliminado';
-            $destination_hostname = 'Subdominio no encontrado';
+            $origin = $this->parseClient($row->origin_client);
+            $origin_type = $row->type;
 
-            if($row->destination_client)
-            {
-                $client_destination_full_name = $row->destination_client->getFullName();
-                $destination_hostname = $row->destination_client->hostname->fqdn;
-            }
+            $links = collect($row->links)->map(function($link) use($origin_type){
 
-            $client_origin_full_name = 'Cliente eliminado';
-            $origin_hostname = 'Subdominio no encontrado';
+                $destination = $this->parseClient($link->destination_client);
 
-            if($row->origin_client)
-            {
-                $client_origin_full_name = $row->origin_client->getFullName();
-                $origin_hostname = $row->origin_client->hostname->fqdn;
-            }
+                return [
+                    'id' => $link->id,
+                    'full_name' => $destination['full_name'],
+                    'name' => $destination['name'],
+                    'number' => $destination['number'],
+                    'hostname' => $destination['hostname'],
+                    'missing' => $destination['missing'],
+                    'type' => $link->current_type ?? $origin_type,
+                    'description_type' => User::getDescriptionType($link->current_type ?? $origin_type),
+                ];
+
+            })->values();
 
             return [
                 'id' => $row->id,
-                'client_destination_full_name' => $client_destination_full_name,
-                'origin_hostname' => $origin_hostname,
-                'client_origin_full_name' => $client_origin_full_name,
-                'destination_hostname' => $destination_hostname,
+                'composed_id' => $row->composed_id,
                 'user_name' => $row->user->name ?? '-',
                 'user_full_name' => $row->email,
-                'description_type' => User::getDescriptionType($row->user->type ?? null)
+                'type' => $origin_type,
+                'description_type' => User::getDescriptionType($origin_type),
+                'client_origin_full_name' => $origin['full_name'],
+                'origin_name' => $origin['name'],
+                'origin_number' => $origin['number'],
+                'origin_hostname' => $origin['hostname'],
+                'origin_missing' => $origin['missing'],
+                'links' => $links,
+                'links_count' => $links->count(),
             ];
+
         });
     }
+
+
+    /**
+     *
+     * Datos de la empresa, contemplando clientes eliminados
+     *
+     * @param  Client|null $client
+     * @return array
+     */
+    private function parseClient($client)
+    {
+        if(!$client)
+        {
+            return [
+                'full_name' => 'Cliente eliminado',
+                'name' => 'Cliente eliminado',
+                'number' => null,
+                'hostname' => 'Subdominio no encontrado',
+                'missing' => true,
+            ];
+        }
+
+        return [
+            'full_name' => $client->getFullName(),
+            'name' => $client->name,
+            'number' => $client->number,
+            'hostname' => optional($client->hostname)->fqdn ?? 'Subdominio no encontrado',
+            'missing' => false,
+        ];
+    }
+
 }

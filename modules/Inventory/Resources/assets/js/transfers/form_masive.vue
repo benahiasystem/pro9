@@ -449,10 +449,17 @@ export default {
                     this.form_add.input_search = null
                     return this.$message.error('El stock es menor a la cantidad de traslado.')
                 }
+
+                // Traer el producto actualizado a la primera fila para verificarlo sin desplazarse.
+                const existIndex = this.form.items.indexOf(exist_item)
+                if (existIndex > 0) {
+                    this.form.items.splice(existIndex, 1)
+                    this.form.items.unshift(exist_item)
+                }
             } else {
                 const row = this.items.find(x => x.id == this.form_add.item_id)
 
-                this.form.items.push({
+                this.form.items.unshift({
                     id: row.id,
                     description: row.description,
                     barcode: row.barcode,
@@ -513,7 +520,7 @@ export default {
             }
 
             let row = this.items.find(x => x.id == this.form_add.item_id);
-            this.form.items.push({
+            this.form.items.unshift({
                 id: row.id,
                 description: row.description,
                 barcode: row.barcode,
