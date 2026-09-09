@@ -160,6 +160,7 @@
                         if (response.data.success) {
                             this.$message.success(response.data.message)
                             this.close()
+                            this.$eventHub.$emit('reloadData')
                         } else {
                             this.$message.error(response.data.message)
                         }

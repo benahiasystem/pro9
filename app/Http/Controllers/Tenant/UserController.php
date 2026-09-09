@@ -15,6 +15,7 @@ use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Zone;
 use App\Models\Tenant\Catalogs\IdentityDocumentType;
 use Modules\Finance\Helpers\UploadFileHelper;
+use Modules\MobileApp\Models\AppModule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Helpers\UserControlHelper;
@@ -90,7 +91,16 @@ class UserController extends Controller
 
         $identity_document_types = IdentityDocumentType::filterDataForPersons()->get();
 
-        return compact('modules', 'establishments', 'types', 'documents', 'series', 'config_permission_to_edit_cpe','zones', 'identity_document_types', 'config_regex_password_user');
+        $app_modules = AppModule::orderBy('order_menu')->get()->map(function($app_module){
+            return [
+                'id' => $app_module->id,
+                'description' => $app_module->description,
+                'value' => $app_module->value,
+                'checked' => false,
+            ];
+        });
+
+        return compact('modules', 'establishments', 'types', 'documents', 'series', 'config_permission_to_edit_cpe','zones', 'identity_document_types', 'config_regex_password_user', 'app_modules');
     }
 
     public function regenerateToken(User $user){
@@ -187,6 +197,8 @@ class UserController extends Controller
                 $user->setModuleAndLevelModule($request->modules,$request->levels);
             }
 
+            $this->saveAppModules($user, $request);
+
         });
 
         return [
@@ -264,6 +276,27 @@ class UserController extends Controller
         {
             $user->default_document_types()->create($row);
         }
+    }
+
+
+    /**
+     *
+     * Sincronizar permisos de la app movil
+     *
+     * Solo se aplica si el formulario envia los modulos, para no borrar los asignados desde el
+     * mantenimiento de permisos de la app
+     *
+     * @param  User $user
+     * @param  UserRequest $request
+     * @return void
+     */
+    private function saveAppModules(User $user, UserRequest $request)
+    {
+        if (!is_array($request->app_modules)) return;
+
+        $app_modules = collect($request->app_modules)->where('checked', true)->pluck('id')->toArray();
+
+        $user->app_modules()->sync($app_modules);
     }
 
 
