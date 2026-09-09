@@ -55,6 +55,9 @@
                                             :label="option.full_name"
                                             :value="option.id"></el-option>
                             </el-select>
+                            <div v-if="form.composed_id && !availableClients.length" class="mu-origin-hint">
+                                Este usuario ya está registrado en todas las empresas disponibles.
+                            </div>
                             <small v-if="errors.destination_client_id" class="form-control-feedback" v-text="errors.destination_client_id[0]"></small>
                         </div>
                     </div>
@@ -82,10 +85,14 @@
 <script>
 
 export default {
-    props: [
-        'showDialog',
-        'recordId',
-    ],
+    props: {
+        showDialog: Boolean,
+        recordId: null,
+        composedId: {
+            type: String,
+            default: null,
+        },
+    },
     data() {
         return {
             loading_submit: false,
@@ -107,10 +114,15 @@ export default {
     {
         availableClients()
         {
-            if (this.form.user && this.form.user.client_id) {
-                return this.clients.filter(client => client.id !== this.form.user.client_id)
-            }
-            return this.clients
+            if (!this.form.user || !this.form.user.email) return this.clients
+
+            const linked = this.form.user.linked_client_ids || []
+
+            const registered = this.users
+                .filter(user => user.email === this.form.user.email)
+                .map(user => user.client_id)
+
+            return this.clients.filter(client => !linked.includes(client.id) && !registered.includes(client.id))
         },
         destinationName()
         {
@@ -128,7 +140,7 @@ export default {
         {
             this.form.user = { ..._.find(this.users, {composed_id : this.form.composed_id}) }
 
-            if (this.form.destination_client_id && this.form.destination_client_id === this.form.user.client_id) {
+            if (this.form.destination_client_id && !_.find(this.availableClients, {id: this.form.destination_client_id})) {
                 this.form.destination_client_id = null
             }
         },
@@ -153,9 +165,20 @@ export default {
             }
 
         },
-        create()
+        async create()
         {
             this.titleDialog = 'Vincular otra empresa al usuario'
+
+            if (!this.composedId) return
+
+            if (!this.users.length) await this.getTables()
+
+            if (!_.find(this.users, {composed_id: this.composedId})) return
+
+            this.form.composed_id = this.composedId
+            this.changeUser()
+
+            this.titleDialog = `Vincular otra empresa a ${this.form.user.name}`
         },
         async submit()
         {

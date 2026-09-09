@@ -77,7 +77,194 @@ trait MultiUserTrait
             ]);
         }
 
+        $users = $this->setLinkedClients($users);
+
         return compact('clients', 'users');
+    }
+
+
+    /**
+     *
+     * @param  \Illuminate\Support\Collection $users
+     * @return \Illuminate\Support\Collection
+     */
+    private function setLinkedClients($users)
+    {
+        $linked = MultiUser::select(['origin_client_id', 'origin_user_id', 'destination_client_id'])
+                            ->get()
+                            ->groupBy(function($row){
+                                return "{$row->origin_user_id}-{$row->origin_client_id}";
+                            })
+                            ->map(function($group){
+                                return $group->pluck('destination_client_id')->unique()->values()->all();
+                            });
+
+        return $users->map(function($user) use($linked){
+
+            $user['linked_client_ids'] = $linked->get($user['composed_id'], []);
+
+            return $user;
+
+        });
+    }
+
+
+    /**
+     *
+     * Listado agrupado: una fila por usuario con todas sus empresas vinculadas
+     *
+     * @param  Request $request
+     * @return \Illuminate\Pagination\LengthAwarePaginator
+     */
+    private function getGroupedMultiUserRecords($request)
+    {
+        $paginator = MultiUser::filterGroupedRecords($request)->paginate(config('tenant.items_per_page'));
+
+        return $paginator->setCollection($this->buildGroupedMultiUserRows($paginator->getCollection()));
+    }
+
+
+    /**
+     *
+     * Arma cada fila del listado: usuario, empresa principal y todos sus vínculos
+     *
+     * @param  \Illuminate\Support\Collection $keys
+     * @return \Illuminate\Support\Collection
+     */
+    private function buildGroupedMultiUserRows($keys)
+    {
+        if($keys->isEmpty()) return collect();
+
+        $links = $this->getMultiUserLinks($keys);
+        $types = $this->getCurrentUserTypes($links);
+
+        return $keys->map(function($key) use($links, $types){
+
+            $group = $links->get($this->getMultiUserGroupKey($key), collect());
+            $first = $group->first();
+
+            if(!$first) return null;
+
+            $group->each(function($link) use($types){
+                $link->current_type = $types["{$link->destination_client_id}-{$link->destination_user_id}"] ?? null;
+            });
+
+            return (object)[
+                'id' => $key->id,
+                'composed_id' => "{$key->origin_user_id}-{$key->origin_client_id}",
+                'email' => $first->email,
+                'user' => $first->user,
+                'type' => $types["{$key->origin_client_id}-{$key->origin_user_id}"] ?? ($first->user->type ?? null),
+                'origin_client' => $first->origin_client,
+                'links' => $group->values(),
+            ];
+
+        })->filter()->values();
+    }
+
+
+    /**
+     *
+     * @param  \Illuminate\Support\Collection $keys
+     * @return \Illuminate\Support\Collection
+     */
+    private function getMultiUserLinks($keys)
+    {
+        return MultiUser::withClientData()
+                        ->whereIn('origin_user_id', $keys->pluck('origin_user_id')->unique()->values())
+                        ->whereIn('origin_client_id', $keys->pluck('origin_client_id')->unique()->values())
+                        ->orderBy('id')
+                        ->get()
+                        ->groupBy(function($row){
+                            return $this->getMultiUserGroupKey($row);
+                        });
+    }
+
+
+    /**
+     *
+     * @param  \Illuminate\Support\Collection $links
+     * @return array
+     */
+    private function getCurrentUserTypes($links)
+    {
+        $types = [];
+        $tenancy = app(Environment::class);
+
+        foreach ($this->getUsersByClient($links) as $target)
+        {
+            $website = optional(optional($target['client'])->hostname)->website;
+
+            if(!$website) continue;
+
+            try
+            {
+                $tenancy->tenant($website);
+
+                DB::connection('tenant')
+                    ->table('users')
+                    ->whereIn('id', $target['user_ids'])
+                    ->select(['id', 'type'])
+                    ->get()
+                    ->each(function($row) use(&$types, $target){
+                        $types["{$target['client_id']}-{$row->id}"] = $row->type;
+                    });
+            }
+            catch(Exception $e)
+            {
+                continue;
+            }
+        }
+
+        return $types;
+    }
+
+
+    /**
+     *
+     * @param  \Illuminate\Support\Collection $links
+     * @return array
+     */
+    private function getUsersByClient($links)
+    {
+        $targets = [];
+
+        foreach ($links->collapse() as $link)
+        {
+            $rows = [
+                [$link->origin_client_id, $link->origin_user_id, $link->origin_client],
+                [$link->destination_client_id, $link->destination_user_id, $link->destination_client],
+            ];
+
+            foreach ($rows as [$client_id, $user_id, $client])
+            {
+                if(!$client || !$user_id) continue;
+
+                if(!isset($targets[$client_id]))
+                {
+                    $targets[$client_id] = [
+                        'client_id' => $client_id,
+                        'client' => $client,
+                        'user_ids' => [],
+                    ];
+                }
+
+                $targets[$client_id]['user_ids'][$user_id] = $user_id;
+            }
+        }
+
+        return $targets;
+    }
+
+
+    /**
+     *
+     * @param  mixed $row
+     * @return string
+     */
+    private function getMultiUserGroupKey($row)
+    {
+        return "{$row->origin_client_id}-{$row->origin_user_id}";
     }
 
 
@@ -336,13 +523,13 @@ trait MultiUserTrait
         return $this->generalResponse(false, $message.$exception->getMessage());
     }
 
-    public function actionDelete($id)
+    /**
+     *
+     * @return array
+     */
+    public function getMultiUserRelatedTables()
     {
-        $multi = MultiUser::find($id);
-        // cambiar conexion a tenant destino
-        $this->changeClientConnection($multi->destination_client_id);
-        $user = User::whereFilterWithOutRelations()->findOrFail($multi->destination_user_id);
-        $tables = [
+        return [
             'default_document_types',
             'documents',
             'seller_documents',
@@ -376,23 +563,104 @@ trait MultiUserTrait
             'authorized_discount_users',
             // 'system_activity_logs',
         ];
+    }
 
-        $hasRelationship = false;
-        $current_table = '';
 
-        foreach ($tables as $table) {
-            if ($user->$table()->exists()) {
-                $current_table = $table;
-                $hasRelationship = true;
-                break;
-            }
+    /**
+     *
+     * @param  User $user
+     * @return string|null
+     */
+    public function findUserRecordsTable($user)
+    {
+        foreach ($this->getMultiUserRelatedTables() as $table)
+        {
+            if ($user->$table()->exists()) return $table;
         }
 
-        if ($hasRelationship) {
+        return null;
+    }
+
+
+    /**
+     *
+     * @param  int $id
+     * @return array
+     */
+    public function canDeleteMultiUser($id)
+    {
+        $multi = MultiUser::findOrFail($id);
+
+        $this->changeClientConnection($multi->destination_client_id);
+
+        $user = User::whereFilterWithOutRelations()->find($multi->destination_user_id);
+
+        // el usuario espejo ya no existe en la empresa: solo queda limpiar el vínculo
+        if (!$user) return $this->generalResponse(true, null);
+
+        $table = $this->findUserRecordsTable($user);
+
+        if ($table) return $this->generalResponse(false, $this->getUserRecordsMessage($table));
+
+        return $this->generalResponse(true, null);
+    }
+
+
+    /**
+     *
+     * @param  string $table
+     * @return string
+     */
+    public function getUserRecordsMessage($table)
+    {
+        $labels = [
+            'documents' => 'comprobantes',
+            'seller_documents' => 'comprobantes como vendedor',
+            'documents_where_seller' => 'comprobantes como vendedor',
+            'sale_notes' => 'notas de venta',
+            'seller_sale_notes' => 'notas de venta como vendedor',
+            'quotations' => 'cotizaciones',
+            'order_notes' => 'pedidos',
+            'order_forms' => 'órdenes de pedido',
+            'purchases' => 'compras',
+            'purchase_orders' => 'órdenes de compra',
+            'purchase_quotations' => 'cotizaciones de compra',
+            'purchase_settlements' => 'liquidaciones de compra',
+            'cashes' => 'cajas',
+            'expenses' => 'gastos',
+            'incomes' => 'ingresos',
+            'contracts' => 'contratos',
+            'devolutions' => 'devoluciones',
+            'dispatches' => 'guías de remisión',
+            'summaries' => 'resúmenes',
+            'voideds' => 'comunicaciones de baja',
+            'technical_services' => 'servicios técnicos',
+            'global_payments' => 'pagos',
+            'user_commissions' => 'comisiones',
+        ];
+
+        $label = $labels[$table] ?? $table;
+
+        return "El usuario ya registró {$label} en esta empresa, por eso no se puede desvincular.";
+    }
+
+
+    /**
+     *
+     * @param  int $id
+     * @return array
+     */
+    public function actionDelete($id)
+    {
+        $multi = MultiUser::find($id);
+        $this->changeClientConnection($multi->destination_client_id);
+        $user = User::whereFilterWithOutRelations()->findOrFail($multi->destination_user_id);
+
+        $current_table = $this->findUserRecordsTable($user);
+
+        if ($current_table) {
             // El usuario tiene al menos una relación en una de las tablas
-            // Realiza alguna acción aquí
-            $message = 'El usuario posee registros en el cliente, no puede ser eliminado. Tabla:'.$current_table;
-            return $this->generalResponse(false, $message);
+            return $this->generalResponse(false, $this->getUserRecordsMessage($current_table));
         } else {
             // El usuario no tiene relaciones
             $columns = ColumnsToReport::where('user_id', $user->id)->delete(); // no tiene relacion inversa en modelo
