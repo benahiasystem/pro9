@@ -15,17 +15,18 @@ Antes de cambiar cualquier categoría cubierta por esta skill, leer el inventari
 - Mostrar `01 = FACTURA DE VENTA`, `07 = NOTA DE CRÉDITO`, `08 = NOTA DE DÉBITO`, `09 = GUÍA DE DESPACHO REMITENTE`, `20 = COMPROBANTE DE RETENCIÓN`, `31 = GUÍA DE DESPACHO TRANSPORTISTA` y `40 = COMPROBANTE DE PERCEPCIÓN`.
 - Ofrecer únicamente `10 = Gravado` y `20 = Exento` en nuevas selecciones de afectación. Conservar los demás IDs para históricos y aplicar `migrar-iva-venezuela` para tasa, cálculos y nombres internos `igv`.
 - Mantener activos los descuentos por ítem `00` y `01` con descripciones IVA. No reproducir estados históricos intermedios que los retiraban.
-- Retirar del esquema inicial las ocho tablas declaradas eliminadas en el inventario y adaptar sus consumidores; no basta con dejarlas vacías o inactivas.
+- Retirar del esquema inicial las nueve tablas declaradas eliminadas en el inventario y adaptar sus consumidores; no basta con dejarlas vacías o inactivas.
 - No incluir relaciones hacia catálogos retirados en el `$with` global de Eloquent: conservar la relación para datos históricos y cargarla sólo cuando la tabla exista. Incluso una clave foránea nula provoca una consulta `where 0 = 1` durante la precarga.
 - Ocultar los paneles de atributos UBL adicionales mediante una capacidad central de Venezuela; no comentar bloques grandes de Vue.
 
 ## Datos
 
 1. Actualizar `database/seeders/data/tenant_initial_data.php` para tenants nuevos.
-2. Para instalaciones existentes, crear una migración tenant incremental e idempotente que aplique el mismo estado sin asumir que todas las tablas aún existen.
-3. Hacer `up()` idempotente por ID y limitar `down()` a valores reconocibles introducidos por la migración.
-4. Antes de eliminar tablas en un tenant histórico, medir referencias y retirar primero sus claves foráneas. Preservar columnas históricas consumidoras cuando borrarlas no haya sido solicitado.
-5. Invalidar cachés o adaptar proveedores de opciones cuando los catálogos no se consulten directamente.
+2. Excepción acordada para detracciones: retirar `cat_payment_method_types` y sus consumidores, campos y datos desde el consolidado, sin migración incremental ni conservación histórica; validar en una base temporal. No eliminar `payment_method_types`. La reconstrucción de tenants existentes requiere destinos explícitos.
+3. Para las demás instalaciones existentes, crear una migración tenant incremental e idempotente que aplique el mismo estado sin asumir que todas las tablas aún existen.
+4. Hacer `up()` idempotente por ID y limitar `down()` a valores reconocibles introducidos por la migración.
+5. Antes de eliminar tablas en un tenant histórico, medir referencias y retirar primero sus claves foráneas. Preservar columnas históricas consumidoras cuando borrarlas no haya sido solicitado.
+6. Invalidar cachés o adaptar proveedores de opciones cuando los catálogos no se consulten directamente.
 
 ## Presentación
 

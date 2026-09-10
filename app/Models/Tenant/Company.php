@@ -33,7 +33,6 @@ class Company extends ModelTenant
         'certificate_due',
         'logo',
         'logo_dark',
-        'detraction_account',
         'operation_amazonia',
         'img_firm',
         'cod_digemid',

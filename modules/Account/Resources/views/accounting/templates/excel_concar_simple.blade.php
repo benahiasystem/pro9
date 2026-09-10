@@ -37,9 +37,9 @@
             <td>Número Serie Caja Registradora</td>
             <td>Fecha de Operación</td>
             <td>Tipo de Tasa</td>
-            <td>Tasa Detracción/Percepción</td>
-            <td>Importe Base Detracción/Percepción Dólares</td>
-            <td>Importe Base Detracción/Percepción Bolívares</td>
+            <td>Tasa Percepción</td>
+            <td>Importe Base Percepción Dólares</td>
+            <td>Importe Base Percepción Bolívares</td>
             <td>Tipo Cambio para 'F'</td>
             <td>Importe de IGV sin derecho crédito fiscal</td>
             <td>Tasa IGV</td>

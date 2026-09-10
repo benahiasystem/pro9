@@ -54,7 +54,6 @@
  * - `guides`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `related`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `perception`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `detraction`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `legends`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
  * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
@@ -123,7 +122,6 @@ CREATE TABLE `purchases` (
   `guides` json DEFAULT NULL,
   `related` json DEFAULT NULL,
   `perception` json DEFAULT NULL,
-  `detraction` json DEFAULT NULL,
   `legends` json DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,

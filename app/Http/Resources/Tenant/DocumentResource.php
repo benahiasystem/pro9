@@ -132,9 +132,6 @@ class DocumentResource extends JsonResource
                 "filename_only" => $document->filename,
                 "extension_only" => "pdf"
             ],
-            'image_detraction' => ($document->detraction) ? (($document->detraction->image_pay_constancy) ?
-            asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'image_detractions'.DIRECTORY_SEPARATOR.$document->detraction->image_pay_constancy):false):false,
-            'detraction' => $document->detraction,
             'response_message' => $response_message,
             'response_type' => $response_type,
             'customer_telephone' => optional($document->person)->telephone,

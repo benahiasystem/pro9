@@ -93,12 +93,6 @@
         <td width="8px">:</td>
         <td>{{$document->date_of_issue->format('Y-m-d')}}</td>
 
-        @if ($document->detraction)
-
-            <td width="120px">N. CTA DETRACCIONES</td>
-            <td width="8px" class="align-top">:</td>
-            <td class="align-top">{{ $document->detraction->bank_account}}</td>
-        @endif
     </tr>
 
     @if($invoice)
@@ -109,23 +103,11 @@
         </tr>
     @endif
 
-    @if ($document->detraction)
-        <td width="120px">B/S SUJETO A DETRACCIÓN</td>
-        <td width="8px">:</td>
-        @inject('detractionType', 'App\Services\DetractionTypeService')
-        <td width="220px">{{$document->detraction->detraction_type_id}} - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}</td>
-
-    @endif
     <tr>
         <td>CLIENTE:</td>
         <td>:</td>
         <td>{{ $customer->name }}</td>
 
-        @if ($document->detraction)
-            <td width="120px">MÉTODO DE PAGO</td>
-            <td width="8px">:</td>
-            <td width="220px">{{ $detractionType->getPaymentMethodTypeDescription($document->detraction->payment_method_id ) }}</td>
-        @endif
     </tr>
     <tr>
         <td>{{ $customer->identity_document_type->description }}</td>
@@ -133,11 +115,6 @@
         <td>{{format_identity_document($customer->identity_document_type_id ?? null, $customer->number)}}</td>
 
 
-        @if ($document->detraction)
-            <td width="120px">P. DETRACCIÓN</td>
-            <td width="8px">:</td>
-            <td>{{ $document->detraction->percentage}}%</td>
-        @endif
     </tr>
     @if ($customer->address !== '')
     <tr>
@@ -150,22 +127,6 @@
             {{ ($customer->department_id !== '-')? '- '.$customer->department->description : '' }}
         </td>
 
-        @if ($document->detraction)
-            <td width="120px">MONTO DETRACCIÓN</td>
-            <td width="8px">:</td>
-            <td>{{ $document->currency_type->symbol }} {{ $document->detraction->amount}}</td>
-        @endif
-        @if ($document->detraction)
-            @if($document->detraction->pay_constancy)
-            <tr>
-                <td colspan="3">
-                </td>
-                <td width="120px">C. PAGO</td>
-                <td width="8px">:</td>
-                <td>{{ $document->detraction->pay_constancy}}</td>
-            </tr>
-            @endif
-        @endif
     </tr>
     @endif
 </table>
@@ -466,15 +427,6 @@
             @endforeach
             <br/>
 
-            @if ($document->detraction)
-            <p>
-                <span class="font-bold">
-                Operación sujeta al Sistema de Pago de Obligaciones Tributarias
-                </span>
-            </p>
-            <br/>
-
-            @endif
             @if ($customer->department_id == 16)
                 <br/><br/><br/>
                 <div>

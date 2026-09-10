@@ -217,31 +217,6 @@
             @endif
         </td>
     </tr>
-    @if ($document->detraction)
-        <tr>
-            @inject('detractionType', 'App\Services\DetractionTypeService')
-            <td>N. CTA DETRACCIONES:</td>
-            <td class="align-top">{{ $document->detraction->bank_account}}</td>
-            <td>B/S SUJETO A DETRACCIÓN:</td>
-            <td>
-                {{$document->detraction->detraction_type_id}} - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}
-            </td>
-        </tr>
-        <tr>
-            <td>MÉTODO DE PAGO:</td>
-            <td>{{ $detractionType->getPaymentMethodTypeDescription($document->detraction->payment_method_id ) }}</td>
-            <td>P. DETRACCIÓN:</td>
-            <td>{{ $document->detraction->percentage}}%</td>
-        </tr>
-        <tr>
-            <td>MONTO DETRACCIÓN:</td>
-            <td>Bs. {{ $document->detraction->amount}}</td>
-            @if($document->detraction->pay_constancy)
-                <td >C. PAGO:</td>
-                <td>{{ $document->detraction->pay_constancy}}</td>
-            @endif
-        </tr>
-    @endif
     @if ($document->reference_data)
         <tr>
             <td>D. REFERENCIA:</td>
@@ -701,7 +676,7 @@ foreach ($document->items as $row) {
         <td class="text-right font-bold">{{ number_format($document->total, 2) }}</td>
     </tr>
 
-    @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
+    @if(($document->retention) && $document->total_pending_payment > 0)
         <tr>
             <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
             <td class="text-right font-bold">{{ number_format($document->total_pending_payment, 2) }}</td>
@@ -768,11 +743,6 @@ foreach ($document->items as $row) {
                     <tr>
                         <td class="font-bold">MÉTODO DE PAGO:</td>
                         <td>{{ $document->payment_method_type->description }}</td>
-                    </tr>
-                @endif
-                @if($document->detraction)
-                    <tr>
-                        <td colspan="2">Operación sujeta al Sistema de Pago de Obligaciones Tributarias</td>
                     </tr>
                 @endif
                 @if ($document->payment_condition_id === '01')

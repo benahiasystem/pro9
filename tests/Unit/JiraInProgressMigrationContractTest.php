@@ -107,7 +107,7 @@ class JiraInProgressMigrationContractTest extends TestCase
     }
 
     /** @test */
-    public function isc_detraction_and_plastic_bag_controls_are_hidden_while_fields_remain_compatible(): void
+    public function isc_and_plastic_bag_fields_remain_compatible_without_detractions(): void
     {
         $itemForms = [
             'resources/js/views/tenant/items/form.vue',
@@ -117,7 +117,7 @@ class JiraInProgressMigrationContractTest extends TestCase
             $source = $this->source($path);
             self::assertDoesNotMatchRegularExpression('/v-model=["\'][^"\']*(?:has_isc|purchase_has_isc|subject_to_detraction)/', $source, $path);
             self::assertStringContainsString('has_isc', $source, $path);
-            self::assertStringContainsString('subject_to_detraction', $source, $path);
+            self::assertStringNotContainsString('subject_to_detraction', $source, $path);
         }
 
         foreach ($this->plasticBagForms() as $path) {

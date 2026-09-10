@@ -160,36 +160,6 @@
     <tr>
         <td width="47%" class="border-box pl-3 align-top">
             <table class="full-width">
-                @if ($document->detraction)
-                <tr>
-                    <td class="font-sm" width="80px">
-                        <strong>N. CTA DETRACCIONES</strong>
-                    </td>
-                    <td class="font-sm" width="8px">:</td>
-                    <td class="font-sm">
-                        {{ $document->detraction->bank_account }}
-                    </td>
-                </tr>
-                @endif
-                @if ($document->detraction)
-                    <tr>
-                        <td class="font-sm" width="80px">
-                            <strong>N. CTA DETRACCIONES</strong>
-                        </td>
-                        <td class="font-sm" width="8px">:</td>
-                        <td class="font-sm">{{ $document->detraction->bank_account}}</td>
-                    </tr>
-                @endif
-                @if ($document->detraction)
-                <tr>
-                    <td class="font-sm" width="80px">
-                        <strong>B/S SUJETO A DETRACCIÓN</strong>
-                    </td>
-                    <td class="font-sm" width="8px">:</td>
-                    <td class="font-sm">{{$document->detraction->detraction_type_id}}
-                        - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}</td>
-                </tr>
-                @endif
                 <tr>
                     <td class="font-sm" width="80px">
                         <strong>CLIENTE</strong>
@@ -203,15 +173,6 @@
                         @endif
                     </td>
                 </tr>
-                @if ($document->detraction)
-                <tr>
-                    <td class="font-sm" width="80px">
-                        <strong>MÉTODO DE PAGO</strong>
-                    </td>
-                    <td class="font-sm" width="8px">:</td>
-                    <td class="font-sm">{{ $detractionType->getPaymentMethodTypeDescription($document->detraction->payment_method_id ) }}</td>
-                </tr>
-                @endif
                 <tr>
                     <td class="font-sm" width="80px">
                         <strong>{{ $customer->identity_document_type->description }}</strong>
@@ -221,15 +182,6 @@
                         {{ format_identity_document($customer->identity_document_type_id ?? null, $customer->number)}}
                     </td>
                 </tr>
-                @if ($document->detraction)
-                <tr>
-                    <td class="font-sm" width="80px">
-                        <strong>P. DETRACCIÓN</strong>
-                    </td>
-                    <td class="font-sm" width="8px">:</td>
-                    <td class="font-sm">{{ $document->detraction->percentage}}%</td>
-                </tr>
-                @endif
                 @php
                     $addressParts = [];
 
@@ -274,28 +226,6 @@
                     </tr>
                 @endif
                 @if ($customer->address !== '')
-                @if ($document->detraction)
-                <tr>
-                    <td class="font-sm" width="80px">
-                        <strong>MONTO DETRACCIÓN</strong>
-                    </td>
-                    <td class="font-sm" width="8px">:</td>
-                    <td class="font-sm">Bs. {{ $document->detraction->amount}}</td>
-                </tr>
-                @endif
-                @if ($document->detraction)
-                        @if($document->detraction->pay_constancy)
-                        <tr>
-                            <td class="font-sm" width="80px">
-                                <strong>C. PAGO</strong>
-                            </td>
-                            <td class="font-sm" width="8px">:</td>
-                            <td class="font-sm">
-                                {{ $document->detraction->pay_constancy}}
-                            </td>
-                        </tr>
-                    @endif
-                @endif
                 </tr>
                 @endif
                 @if ($document->reference_data)
@@ -829,7 +759,7 @@ foreach ($document->items as $row) {
         @endif
     @endif
 
-    @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
+    @if(($document->retention) && $document->total_pending_payment > 0)
         <tr>
             <td class="p-1 text-right align-top desc cell-solid font-bold" colspan="{{ $colspan_total }}">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total_pending_payment, 2) }}</td>
@@ -863,15 +793,6 @@ foreach ($document->items as $row) {
     <tr>
         <td width="65%" style="text-align: top; vertical-align: top;">
 
-            @if ($document->detraction)
-                <p>
-                <span class="font-bold">
-                Operación sujeta al Sistema de Pago de Obligaciones Tributarias
-                </span>
-                </p>
-                <br/>
-
-            @endif
             @if ($customer->department_id == 16)
                 <br/><br/><br/>
                 <div>

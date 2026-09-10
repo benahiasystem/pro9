@@ -87,13 +87,6 @@ Se retiraron todas las leyendas peruanas de transferencia gratuita, percepción,
 - `0101`: Venta interna
 - `0200`: Exportación de Bienes
 
-### Métodos de pago (`cat_payment_method_types`)
-
-- `001` Depósito en cuenta; `002` Giro; `003` Transferencia de fondos; `004` Orden de pago; `005` Tarjeta de débito; `006` Tarjeta de crédito emitida en el país por una empresa del sistema financiero.
-- `010` Medios de pago usados en comercio exterior; `101` Transferencias – Comercio exterior; `102` Cheques bancarios - Comercio exterior; `103` Orden de pago simple - Comercio exterior; `104` Orden de pago documentario - Comercio exterior; `105` Remesa simple - Comercio exterior; `999` Otros medios de pago.
-
-Fuente histórica: `../pro6/database/migrations/tenant/2018_00_00_000000_tenant_catalogs_table.php`.
-
 ### Motivos de traslado (`cat_transfer_reason_types`)
 
 - `01`: Venta
@@ -141,6 +134,7 @@ Estas tablas no deben existir en `tenant_initial_data.php`, no deben tener migra
 - `cat_summary_status_types` (3: `1` Adicionar, `2` Modificar, `3` Anulado).
 - `cat_system_isc_types` (3: `01` al valor, `02` monto fijo, `03` precio de venta).
 - `pse_providers` (5: ContaWeb, Gior, QPSE, SendFact y Validapse).
+- `cat_payment_method_types` (13 filas retiradas: `001`–`006`, `010`, `101`–`105`, `999`). Eliminación completa junto con detracciones, sin históricos ni migración incremental. Los pagos operativos siguen en `payment_method_types`.
 - `cat_detraction_types` (12: `001`, `003`, `005`, `008`, `016`, `019`, `020`, `022`, `023`, `025`, `027`, `030`).
 
 ## Territorio retirado del consolidado

@@ -229,7 +229,7 @@
                                    @click.prevent="getRecordsByFilter">Buscar
                         </el-button>
 
-                        <template v-if="records.length>0 && resource  !== 'reports/document-detractions'">
+                        <template v-if="records.length>0">
 
                             <el-button class="submit me-2"
                                        icon="el-icon-tickets"

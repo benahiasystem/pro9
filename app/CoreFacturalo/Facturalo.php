@@ -556,8 +556,6 @@ class Facturalo
             $total_exonerated  = $this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = $this->document->total_taxed != '' ? '10' : '0';
             $perception       = $this->document->perception != '' ? '10' : '0';
-            $detraction       = $this->document->detraction != '' ? '50' : '0';
-            $detraction       += ($this->document->detraction && $this->document->invoice->operation_type_id == '1004') ? 45 : 0;
 
             $total_plastic_bag_taxes       = $this->document->total_plastic_bag_taxes != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items) + $was_deducted_prepayment;
@@ -654,7 +652,6 @@ class Facturalo
                     $total_discount +
                     $was_deducted_prepayment +
                     $customer_department_id+
-                    $detraction+
                     $total_plastic_bag_taxes+
                     $quotation_id+
                     $extra_by_item_additional_information+
@@ -2105,8 +2102,6 @@ class Facturalo
             $total_exonerated  = (object)$this->document->total_exonerated != '' ? '10' : '0';
             $total_taxed       = (object)$this->document->total_taxed != '' ? '10' : '0';
             $perception       = $this->document->perception != '' ? '10' : '0';
-            $detraction       = $this->document->detraction != '' ? '50' : '0';
-            $detraction       += ($this->document->detraction && $this->document->invoice->operation_type_id == '1004') ? 45 : 0;
 
             $total_plastic_bag_taxes       = (object)$this->document->total_plastic_bag_taxes != '' ? '10' : '0';
             $quantity_rows     = count($this->document->items) + $was_deducted_prepayment;
@@ -2200,7 +2195,6 @@ class Facturalo
                     $total_discount +
                     $was_deducted_prepayment +
                     $customer_department_id+
-                    $detraction+
                     $total_plastic_bag_taxes+
                     $quotation_id+
                     $extra_by_item_additional_information+

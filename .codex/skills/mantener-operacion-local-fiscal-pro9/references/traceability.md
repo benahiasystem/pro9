@@ -22,6 +22,5 @@
 1. `success: true` significa que el registro comercial local terminó; `sent: false` y `local: true` dejan claro que no hubo transmisión fiscal.
 2. El almacenamiento debe rechazar `unsigned`, `signed`, `cdr`, `cdr_xml` y `cdr_b64` cuando la política local está activa.
 3. La eliminación de una ruta fiscal es parte de la seguridad funcional, no sólo un cambio visual.
-4. Los campos históricos no se eliminan de base de datos, modelos ni payloads por estas tarjetas.
+4. Se conservan los campos históricos de ISC y bolsas. La decisión posterior para Venezuela retira completamente detracciones sin históricos: esquema consolidado, datos iniciales, modelos, API, interfaz y plantillas. `payment_method_types` y las retenciones permanecen. No se añade migración incremental; `CodeErrors.xml` no se modifica.
 5. El PDF es el artefacto comercial descargable y adjunto al correo.
-

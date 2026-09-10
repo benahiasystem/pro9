@@ -27,7 +27,6 @@
  * - `sale_unit_price`: decimal(16,6); NOT NULL — Sin comentario definido en el esquema fuente.
  * - `purchase_has_igv`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
  * - `has_igv`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
- * - `subject_to_detraction`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `purchase_unit_price`: decimal(16,6); NOT NULL; DEFAULT 0.000000 — Sin comentario definido en el esquema fuente.
  * - `has_isc`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `restrict_sale_cpe`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
@@ -112,7 +111,6 @@ CREATE TABLE `items` (
   `sale_unit_price` decimal(16,6) NOT NULL,
   `purchase_has_igv` tinyint(1) NOT NULL DEFAULT '1',
   `has_igv` tinyint(1) NOT NULL DEFAULT '1',
-  `subject_to_detraction` tinyint(1) NOT NULL DEFAULT '0',
   `purchase_unit_price` decimal(16,6) NOT NULL DEFAULT '0.000000',
   `has_isc` tinyint(1) NOT NULL DEFAULT '0',
   `restrict_sale_cpe` tinyint(1) NOT NULL DEFAULT '0',

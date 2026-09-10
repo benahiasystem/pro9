@@ -11,16 +11,23 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 
 ## Política central
 
-- Usar `App\Services\LocalFiscalDocumentPolicy` como única fuente para activar la emisión local y controlar la visibilidad de ISC y detracciones.
+- Usar `App\Services\LocalFiscalDocumentPolicy` como única fuente para activar la emisión local y controlar la visibilidad de ISC.
 - Registrar los documentos con estado local `REGISTERED` y respuesta `LOCAL_REGISTERED`.
 - Nunca representar un registro local como enviado, aceptado por SUNAT/SENIAT/PSE ni acompañado de XML, hash o CDR.
 - Bloquear XML/CDR en los productores, en `StorageDocument`, en descargas y en adjuntos de correo. Mantener la generación, descarga, impresión y envío por correo del PDF.
 - Desregistrar las rutas de envío, validación, consulta de CDR/ticket y regularización fiscal. No basta con ocultar botones si la ruta sigue activa.
 
+## Detracciones retiradas
+
+- El sistema venezolano no usa detracciones y no existen históricos que conservar: retirar el módulo completo, sus campos, constancias y `cat_payment_method_types`. No confundir con `payment_method_types`, que permanece operativo.
+- Ignorar los campos antiguos de detracción recibidos por API, sin validarlos, persistirlos ni devolverlos. Conservar retenciones, fondos de garantía y pagos comerciales.
+- Modificar migraciones consolidadas y `tenant_initial_data.php`; no crear una migración incremental para esta retirada. Los tenants existentes requieren reconstrucción con destino identificado explícitamente.
+- Conservar intacto `CodeErrors.xml`: contiene mensajes de referencia de un proveedor externo, no funcionalidad del módulo.
+
 ## Compatibilidad histórica
 
-- Conservar columnas, modelos, relaciones, casts, recursos API y cálculos de ISC, detracción e impuesto a bolsas cuando puedan existir en registros históricos.
-- La conservación de columnas históricas no implica crear catálogos peruanos en tenants nuevos. Aplicar `mantener-catalogos-fiscales-venezuela` cuando se retiren `cat_system_isc_types`, `cat_detraction_types`, percepciones, PSE u otras tablas catalogadas; sus consumidores deben devolver colecciones vacías sin consultar tablas ausentes.
+- Conservar columnas, modelos, relaciones, casts, recursos API y cálculos de ISC e impuesto a bolsas cuando puedan existir en registros históricos.
+- La conservación de columnas históricas no implica crear catálogos peruanos en tenants nuevos. Aplicar `mantener-catalogos-fiscales-venezuela` cuando se retiren `cat_system_isc_types`, percepciones, PSE u otras tablas catalogadas; sus consumidores históricos deben devolver colecciones vacías sin consultar tablas ausentes. Detracciones es la excepción de retirada total indicada arriba: no conservar modelos ni consumidores opcionales.
 - Ocultar controles interactivos y presentación activa; no borrar datos existentes ni falsear totales persistidos.
 - Mantener los nombres internos SUNAT/PSE que sigan siendo contratos técnicos históricos. No renombrarlos a SENIAT sin una integración real.
 - Mantener series, correlativos, items, inventario, pagos, notas, PDF y correo comercial.

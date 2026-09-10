@@ -34,7 +34,6 @@ use Modules\Sale\Models\Agent;
      * @property Establishment                                  $establishment
      * @property mixed                                          $charges
      * @property mixed                                          $customer
-     * @property mixed                                          $detraction
      * @property mixed                                          $discounts
      * @property mixed                                          $guides
      * @property mixed                                          $identifier
@@ -194,7 +193,6 @@ use Modules\Sale\Models\Agent;
             'guides',
             'related',
             'perception',
-            'detraction',
             'legends',
             'filename',
             'total_canceled',
@@ -584,15 +582,7 @@ use Modules\Sale\Models\Agent;
             $this->attributes['perception'] = (is_null($value)) ? null : json_encode($value);
         }
 
-        public function getDetractionAttribute($value)
-        {
-            return (is_null($value)) ? null : (object)json_decode($value);
-        }
 
-        public function setDetractionAttribute($value)
-        {
-            $this->attributes['detraction'] = (is_null($value)) ? null : json_encode($value);
-        }
 
         public function getLegendsAttribute($value)
         {

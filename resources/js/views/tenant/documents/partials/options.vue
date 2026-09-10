@@ -119,12 +119,6 @@
                 </div>
             </div>
             <div class="row">
-                <div v-if="form.image_detraction"
-                     class="col-lg-12 col-md-12 col-sm-12 text-center font-weight-bold mt-3">
-                    <a :href="`${this.form.image_detraction}`"
-                       class="text-center font-weight-bold text-dark"
-                       download>Descargar constancia de pago - detracción</a>
-                </div>
             </div>
             <div class="row mt-3">
                 <div class="col-md-12">
@@ -318,7 +312,6 @@ export default {
                 download_pdf: null,
                 external_id: null,
                 number: null,
-                image_detraction: null,
                 id: null,
                 response_message: null,
                 response_type: null,
@@ -372,9 +365,6 @@ export default {
         },
         clickPrint(format) {
             window.open(`/print/document/${this.form.external_id}/${format}`, '_blank');
-        },
-        clickDownloadImage() {
-            window.open(`${this.form.image_detraction}`, '_blank');
         },
         clickDownload(format) {
             window.open(`${this.form.download_pdf}/${format}`, '_blank');

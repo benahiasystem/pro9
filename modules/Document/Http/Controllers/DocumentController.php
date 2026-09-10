@@ -14,18 +14,12 @@ use App\Models\Tenant\Catalogs\DocumentType;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\Series;
 use App\Services\SeriesResolver;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\StateType;
-use App\Models\Tenant\Catalogs\DetractionType;
-use App\Models\Tenant\Catalogs\Department;
-use App\Models\Tenant\Catalogs\PaymentMethodType as CatPaymentMethodType;
 use App\Traits\OfflineTrait;
 use Modules\Inventory\Models\Warehouse as ModuleWarehouse;
 use App\Models\Tenant\Item;
 use Modules\Document\Traits\SearchTrait;
-use Modules\Finance\Helpers\UploadFileHelper;
 use Modules\Document\Helpers\ConsultCdr;
 use Modules\Item\Models\ItemLot;
 use Modules\Document\Http\Resources\ItemLotCollection;
@@ -118,85 +112,9 @@ class DocumentController extends Controller
     }
 
 
-    public function upload(Request $request)
-    {
-
-        $validate_upload = UploadFileHelper::validateUploadFile($request, 'file', 'jpg,jpeg,png,gif,svg,webp');
-
-        if (!$validate_upload['success']) {
-            return $validate_upload;
-        }
-
-        if ($request->hasFile('file')) {
-            $new_request = [
-                'file' => $request->file('file'),
-                'type' => $request->input('type'),
-            ];
-
-            return $this->upload_image($new_request);
-        }
-        return [
-            'success' => false,
-            'message' => __('app.actions.upload.error'),
-        ];
-    }
-
-    function upload_image($request)
-    {
-        $file = $request['file'];
-        $type = $request['type'];
-
-        $temp = tempnam(sys_get_temp_dir(), $type);
-        file_put_contents($temp, file_get_contents($file));
-
-        $mime = mime_content_type($temp);
-        $data = file_get_contents($temp);
-
-        return [
-            'success' => true,
-            'data' => [
-                'filename' => $file->getClientOriginalName(),
-                'temp_path' => $temp,
-                'temp_image' => 'data:' . $mime . ';base64,' . base64_encode($data)
-            ]
-        ];
-    }
 
 
-    public function detractionTables()
-    {
 
-        $cat_payment_method_types = CatPaymentMethodType::whereActive()->get();
-        $detraction_types = DetractionType::available();
-
-        $locations = [];
-        $departments = Department::whereActive()->get();
-        foreach ($departments as $department) {
-            $children_provinces = [];
-            foreach ($department->provinces as $province) {
-                $children_districts = [];
-                foreach ($province->districts as $district) {
-                    $children_districts[] = [
-                        'value' => $district->id,
-                        'label' => $district->description
-                    ];
-                }
-                $children_provinces[] = [
-                    'value' => $province->id,
-                    'label' => $province->description,
-                    'children' => $children_districts
-                ];
-            }
-            $locations[] = [
-                'value' => $department->id,
-                'label' => $department->description,
-                'children' => $children_provinces
-            ];
-        }
-
-        return compact('detraction_types', 'cat_payment_method_types', 'locations');
-
-    }
 
 
     public function dataTableCustomers(Request $request)
@@ -220,42 +138,6 @@ class DocumentController extends Controller
     }
 
 
-    public function savePayConstancy(Request $request)
-    {
-        $document = Document::findOrFail($request->id);
-
-        $detraction = $document->detraction;
-        $detraction->pay_constancy = $request->pay_constancy;
-
-
-        if ($request->upload_image_pay_constancy) {
-            //hacer proceso de carga de imagen
-            $image_pay_constancy = $request->upload_image_pay_constancy;
-            $directory = 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'image_detractions' . DIRECTORY_SEPARATOR;
-
-            $file_name_old = $image_pay_constancy['image'];
-
-            UploadFileHelper::checkIfValidFile($file_name_old, $image_pay_constancy['temp_path'], true);
-
-            $file_name_old_array = explode('.', $file_name_old);
-            $file_content = file_get_contents($image_pay_constancy['temp_path']);
-            $datenow = date('YmdHis');
-            $file_name = $detraction->detraction_type_id . '-' . $detraction->bank_account . '-' . $datenow . '.' . $file_name_old_array[1];
-            Storage::put($directory . $file_name, $file_content);
-            $set_image_pay_constancy = $file_name;
-            $detraction->image_pay_constancy = $set_image_pay_constancy;
-
-        }
-
-        // dd($detraction, $request->upload_image_pay_constancy['temp_path']);
-        $document->detraction = $detraction;
-        $document->save();
-
-        return [
-            'success' => true,
-            'message' => 'Constancia de pago guardada',
-        ];
-    }
 
 
     public function prepayments($type)

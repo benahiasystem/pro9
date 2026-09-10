@@ -432,7 +432,6 @@
                                   </el-dropdown-item>
 
                                   <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                                  <!-- La constancia de detracción no se ofrece desde el listado. -->
                                   <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
                                   <el-dropdown-item
@@ -453,8 +452,7 @@
 
                                   <el-dropdown-item
                                     divided
-                                    v-if="row.btn_note || row.btn_guide || row.btn_constancy_detraction ||
-                                     (isClient && !row.send_server) ||
+                                    v-if="row.btn_note || row.btn_guide || (isClient && !row.send_server) ||
                                       (isClient && row.send_server && (row.state_type_id === '01' || row.state_type_id === '03'))"
                                   />
 
@@ -562,7 +560,6 @@
             ></document-payments>
 
             <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-            <!-- El diálogo de constancia de detracción no se monta. -->
             <!-- ######### FIN SIN DETRACCIONES E ISC -->
             <report-payment
                 :showDialog.sync="showDialogReportPayment"
@@ -670,7 +667,6 @@ import DataTable from "../../../components/DataTableDocuments.vue";
 import ItemsImport from "./import.vue";
 import { deletable } from "../../../mixins/deletable";
 // ########## INICIO SIN DETRACCIONES E ISC
-// El componente exclusivo de constancia de detracción no se importa.
 // ######### FIN SIN DETRACCIONES E ISC
 import ReportPayment from "./partials/report_payment.vue";
 import ReportPaymentComplete from "./partials/report_payment_complete.vue";
@@ -715,7 +711,6 @@ export default {
         DocumentPayments,
         DataTable,
         // ########## INICIO SIN DETRACCIONES E ISC
-        // El diálogo de detracción no se registra.
         // ######### FIN SIN DETRACCIONES E ISC
         ReportPayment,
         ReportPaymentComplete,
@@ -736,7 +731,6 @@ export default {
             showDialogVoided: false,
             showImportDialog: false,
             // ########## INICIO SIN DETRACCIONES E ISC
-            // No se mantiene estado para constancias de detracción.
             // ######### FIN SIN DETRACCIONES E ISC
             showImportSecondDialog: false,
             showImportExcelDialog: false,
@@ -952,7 +946,6 @@ export default {
                 });
         },
         // ########## INICIO SIN DETRACCIONES E ISC
-        // La acción de constancia de detracción se retiró del listado.
         // ######### FIN SIN DETRACCIONES E ISC
         clickOptions(recordId = null) {
             this.recordId = recordId;

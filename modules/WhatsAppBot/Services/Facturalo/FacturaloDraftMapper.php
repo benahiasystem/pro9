@@ -138,7 +138,6 @@ class FacturaloDraftMapper
             'guides' => [],
             'related' => [],
             'perception' => null,
-            'detraction' => null,
             'legends' => [],
             'additional_information' => $draft['observations'] ?? null,
             'payment_method_type_id' => '01',

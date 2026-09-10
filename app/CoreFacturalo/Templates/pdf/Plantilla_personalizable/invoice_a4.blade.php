@@ -180,12 +180,6 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             <td width="8px">:</td>
             <td>{{$document->date_of_issue->format('Y-m-d')}} / {{ $document->time_of_issue }}</td>
 
-            @if ($document->detraction)
-
-            <td width="120px">N. CTA DETRACCIONES</td>
-            <td width="8px">:</td>
-            <td>{{ $document->detraction->bank_account}}</td>
-            @endif
         </tr>
         @if($invoice)
         <tr>
@@ -195,14 +189,6 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
         </tr>
         @endif
 
-        @if ($document->detraction)
-        <td width="140px">B/S SUJETO A DETRACCIÓN</td>
-        <td width="8px">:</td>
-        @inject('detractionType', 'App\Services\DetractionTypeService')
-        <td width="220px">{{$document->detraction->detraction_type_id}}
-            - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}</td>
-
-        @endif
         <tr>
             <td style="vertical-align: top;">CLIENTE</td>
             <td style="vertical-align: top;">:</td>
@@ -214,11 +200,6 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
                 @endif
             </td>
 
-            @if ($document->detraction)
-            <td width="120px">MÉTODO DE PAGO</td>
-            <td width="8px">:</td>
-            <td width="220px">{{ $detractionType->getPaymentMethodTypeDescription($document->detraction->payment_method_id ) }}</td>
-            @endif
 
         </tr>
         <tr>
@@ -226,12 +207,6 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             <td>:</td>
             <td>{{format_identity_document($customer->identity_document_type_id ?? null, $customer->number)}}</td>
 
-            @if ($document->detraction)
-
-            <td width="120px">P. DETRACCIÓN</td>
-            <td width="8px">:</td>
-            <td>{{ $document->detraction->percentage}}%</td>
-            @endif
         </tr>
         @php
             $addressParts = [];
@@ -284,12 +259,6 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             {{-- @php
                 dd($document->currency_type->toArray());
             @endphp --}}
-            @if ($document->detraction)
-            <td width="120px">MONTO DETRACCIÓN {{ $document->currency_type->id == 'USD' ? 'BOLÍVARES' : ''  }}
-            </td>
-            <td width="8px">:</td>
-            <td> Bs. {{ $document->detraction->amount}}</td>
-            @endif
         </tr>
         <tr>
             <td class="align-top">MONEDA</td>
@@ -330,20 +299,6 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             </td>
         </tr>
     @endif
-        @if ($document->detraction && $document->currency_type->id == 'USD')
-        <tr>
-            <td>
-            </td>
-            <td>
-            </td>
-            <td>
-            </td>
-            <td width="120px">MONTO DETRACCIÓN DÓLARES</td>
-            <td width="8px">:</td>
-            <td>{{$document->currency_type->symbol}} {{ number_format(($document->detraction->amount/$document->exchange_rate_sale), 2)}}</td>
-
-        </tr>
-        @endif
 
 
         @if ($document->reference_data)
@@ -354,59 +309,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
         </tr>
         @endif
 
-        @if ($document->detraction)
-        @if($document->detraction->pay_constancy)
-        <tr>
-            <td colspan="3">
-            </td>
-            <td width="120px">CONSTANCIA DE PAGO</td>
-            <td width="8px">:</td>
-            <td>{{ $document->detraction->pay_constancy}}</td>
-        </tr>
-        @endif
-        @endif
 
-        @if($document->detraction && $invoice->operation_type_id == '1004')
-        <tr>
-            <td colspan="4"><strong>DETALLE - SERVICIOS DE TRANSPORTE DE CARGA</strong></td>
-        </tr>
-        <tr>
-            <td class="align-top">Ubigeo origen</td>
-            <td>:</td>
-            <td>{{ $document->detraction->origin_location_id[2] }}</td>
-
-            <td width="120px">Dirección origen</td>
-            <td width="8px">:</td>
-            <td>{{ $document->detraction->origin_address }}</td>
-        </tr>
-        <tr>
-            <td class="align-top">Ubigeo destino</td>
-            <td>:</td>
-            <td>{{ $document->detraction->delivery_location_id[2] }}</td>
-
-            <td width="120px">Dirección destino</td>
-            <td width="8px">:</td>
-            <td>{{ $document->detraction->delivery_address }}</td>
-        </tr>
-        <tr>
-            <td class="align-top" width="170px">Valor referencial servicio de transporte</td>
-            <td>:</td>
-            <td>{{ $document->detraction->reference_value_service }}</td>
-
-            <td width="170px">Valor referencia carga efectiva</td>
-            <td width="8px">:</td>
-            <td>{{ $document->detraction->reference_value_effective_load }}</td>
-        </tr>
-        <tr>
-            <td class="align-top">Valor referencial carga útil</td>
-            <td>:</td>
-            <td>{{ $document->detraction->reference_value_payload }}</td>
-
-            <td width="120px">Detalle del viaje</td>
-            <td width="8px">:</td>
-            <td>{{ $document->detraction->trip_detail }}</td>
-        </tr>
-        @endif
         @if ($document->plate_number !== null)
         <tr>
             <td>N° Placa</td>
@@ -1041,7 +944,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
             </tr>
             @endif
 
-            @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
+            @if(($document->retention) && $document->total_pending_payment > 0)
             <tr>
                 <td colspan="{{ $colspan_total - 1 }}" class="text-right font-bold pr-2">M. PENDIENTE: {{ $document->currency_type->symbol }}</td>
                 <td class="text-right font-bold">{{ number_format($document->total_pending_payment, 2) }}</td>
@@ -1088,14 +991,6 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
 
                 @endforeach
                 <br />
-                @if ($document->detraction)
-                <p>
-                    <span class="font-bold">
-                        Operación sujeta al Sistema de Pago de Obligaciones Tributarias
-                    </span>
-                </p>
-                <br />
-                @endif
                 @if ($customer->department_id == 16)
                 <br /><br /><br />
                 <div>

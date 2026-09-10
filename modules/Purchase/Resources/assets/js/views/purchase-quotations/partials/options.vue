@@ -81,9 +81,6 @@
             clickPrint(format){
                 window.open(`/${this.resource}/print/${this.form.external_id}/${format}`, '_blank');
             },
-            clickDownloadImage() {
-                window.open(`${this.form.image_detraction}`, '_blank');
-            },
             clickDownload(format) {
                 window.open(`${this.form.download_pdf}/${format}`, '_blank');
             },

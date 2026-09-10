@@ -25,7 +25,6 @@ use Illuminate\Database\Eloquent\Collection;
  * @property \App\Models\Tenant\Establishment $establishment
  * @property mixed $charges
  * @property string $additional_information
- * @property mixed $detraction
  * @property mixed $discounts
  * @property mixed $guides
  * @property mixed $legends
@@ -113,7 +112,6 @@ class Purchase extends ModelTenant
         'guides',
         'related',
         'perception',
-        'detraction',
         'legends',
         'additional_information',
         'date_of_due',
@@ -219,15 +217,7 @@ class Purchase extends ModelTenant
         $this->attributes['perception'] = (is_null($value))?null:json_encode($value);
     }
 
-    public function getDetractionAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setDetractionAttribute($value)
-    {
-        $this->attributes['detraction'] = (is_null($value))?null:json_encode($value);
-    }
 
     public function getLegendsAttribute($value)
     {
@@ -302,9 +292,6 @@ class Purchase extends ModelTenant
         return $this->belongsTo(Person::class, 'supplier_id');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     /**
      * Datos esenciales de la compra para consumo por API.
      *

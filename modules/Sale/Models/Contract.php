@@ -61,7 +61,6 @@ class Contract extends ModelTenant
         'guides',
         'related',
         'perception',
-        'detraction',
         'legends',
         'filename',
         'shipping_address',
@@ -167,15 +166,7 @@ class Contract extends ModelTenant
         $this->attributes['perception'] = (is_null($value))?null:json_encode($value);
     }
 
-    public function getDetractionAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setDetractionAttribute($value)
-    {
-        $this->attributes['detraction'] = (is_null($value))?null:json_encode($value);
-    }
 
     public function getLegendsAttribute($value)
     {

@@ -61,7 +61,7 @@ class CatalogNamesMigrationContractTest extends TestCase
             'cat_summary_status_types',
             'cat_system_isc_types',
             'pse_providers',
-            'cat_detraction_types',
+            'cat_detraction_types', 'cat_payment_method_types',
             'departments',
             'provinces',
             'districts',
@@ -85,7 +85,7 @@ class CatalogNamesMigrationContractTest extends TestCase
             'cat_other_tax_concept_types', 'cat_perception_types',
             'cat_related_documents_types', 'cat_related_tax_document_types',
             'cat_summary_status_types', 'cat_system_isc_types',
-            'pse_providers', 'cat_detraction_types',
+            'pse_providers', 'cat_detraction_types', 'cat_payment_method_types',
         ] as $table) {
             self::assertSame([], glob(database_path("migrations/tenant/*_create_{$table}_table.php")) ?: [], $table);
         }

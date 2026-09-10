@@ -13,6 +13,7 @@ class DocumentTransform
 {
     public static function transform($inputs)
     {
+        $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         // ######## INICIO MIGRACIÓN MONEDA VENEZUELA ########
         // ########## INICIO CAMBIO AFECTACIÓN IVA
         $inputs = VendeyaDocumentPayloadNormalizer::normalize($inputs);
@@ -71,13 +72,11 @@ class DocumentTransform
             'subtotal' => (Functions::valueKeyInArray($totals, 'subtotal_venta')) ? $totals['subtotal_venta'] : $totals['total_venta'],
             'total' => Functions::valueKeyInArray($totals, 'total_venta'),
             'total_pending_payment' => Functions::valueKeyInArray($totals, 'total_pendiente_pago'),
-            // 'pending_amount_detraction' => Functions::valueKeyInArray($totals, 'total_pendiente_detraccion'),
             'has_prepayment' => Functions::valueKeyInArray($inputs, 'pago_anticipado',0),
             'is_itinerant' => Functions::valueKeyInArray($inputs, 'es_itinerante', false),
             'items' => self::items($inputs),
             'charges' => self::charges($inputs),
             'discounts' => self::discounts($inputs),
-            'detraction' => self::detraction($inputs),
             'retention' => self::retention($inputs),
             'perception' => self::perception($inputs),
             'prepayments' => self::prepayments($inputs),
@@ -245,34 +244,6 @@ class DocumentTransform
         return null;
     }
 
-    private static function detraction($inputs)
-    {
-        if(key_exists('detraccion', $inputs)) {
-
-            $detraction = $inputs['detraccion'];
-
-            $origin_location_id = Functions::valueKeyInArray($detraction, 'ubigeo_origen') ? self::parseLocation($detraction['ubigeo_origen']) : null;
-            $delivery_location_id = Functions::valueKeyInArray($detraction, 'ubigeo_destino') ? self::parseLocation($detraction['ubigeo_destino']) : null;
-
-            return [
-                'detraction_type_id' => $detraction['codigo_tipo_detraccion'],
-                'percentage' => $detraction['porcentaje'],
-                'amount' => $detraction['monto'],
-                'payment_method_id' => $detraction['codigo_metodo_pago'],
-                'bank_account' => $detraction['cuenta_bancaria'],
-
-                'trip_detail' => Functions::valueKeyInArray($detraction, 'detalle_viaje'),
-                'origin_address' => Functions::valueKeyInArray($detraction, 'direccion_origen'),
-                'delivery_address' => Functions::valueKeyInArray($detraction, 'direccion_destino'),
-                'origin_location_id' => $origin_location_id,
-                'delivery_location_id' => $delivery_location_id,
-                'reference_value_payload' => Functions::valueKeyInArray($detraction, 'valor_referencial_carga_util'),
-                'reference_value_service' => Functions::valueKeyInArray($detraction, 'valor_referencial_servicio_transporte'),
-                'reference_value_effective_load' => Functions::valueKeyInArray($detraction, 'valor_referencia_carga_efectiva')
-            ];
-        }
-        return null;
-    }
 
     private static function parseLocation($district_id)
     {

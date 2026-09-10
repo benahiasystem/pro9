@@ -115,7 +115,6 @@
                                         <label class="control-label"
                                             >Tipo Operación
                                             <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                                            <!-- Los datos de detracción históricos no son editables desde emisión. -->
                                             <!-- ######### FIN SIN DETRACCIONES E ISC -->
                                         </label>
                                         <el-select
@@ -1914,35 +1913,13 @@
                                                         </td>
                                                     </tr>
 
-                                                    <template
-                                                        v-if="form.detraction && !isNrus"
-                                                    >
-                                                        <tr
-                                                            v-if="
-                                                                form.detraction
-                                                                    .amount > 0
-                                                            "
-                                                        >
-                                                            <td width="60%">
-                                                                M. DETRACCIÓN:
-                                                            </td>
-                                                            <td>
-                                                                Bs.
-                                                                {{
-                                                                    form
-                                                                        .detraction
-                                                                        .amount
-                                                                }}
-                                                            </td>
-                                                            <!-- <td>{{ currency_type.symbol }} {{ form.detraction.amount }}</td> -->
-                                                        </tr>
-                                                    </template>
-                                                    <template v-if=" config.enabled_guarantee_fund && (form.detraction || form.retention) && !isNrus">
-                                                        <tr v-if="form.detraction.guarantee_fund > 0 || form.retention.guarantee_fund > 0">
-                                                            <td width="60%">FONDO DE GARANTIA:</td>
-                                                            <td>{{ currency_type.symbol }} {{ guarantee_fund }}</td>
-                                                        </tr>
-                                                    </template>
+
+                                                    <template v-if=" config.enabled_guarantee_fund && (form.retention) && !isNrus">
+                                        <tr v-if="guarantee_fund > 0">
+                                            <td width="60%">FONDO DE GARANTIA:</td>
+                                            <td>{{ currency_type.symbol }} {{ guarantee_fund }}</td>
+                                        </tr>
+                                    </template>
 
                                                     <!--                                                <template v-if="form.retention">-->
                                                     <!--                                                    <tr v-if="form.retention.amount > 0">-->
@@ -2295,39 +2272,7 @@
                                                         </td>
                                                     </tr>
 
-                                                    <!-- <template v-if="form.detraction">
-                                                    <tr v-if="form.detraction.amount > 0 && form.total_pending_payment > 0">
-                                                        <td width="60%">M. PENDIENTE:</td>
-                                                        <td>{{ currency_type.symbol }} {{ form.total_pending_payment }}</td>
-                                                    </tr>
-                                                </template> -->
 
-                                                    <template
-                                                        v-if="
-                                                            form.detraction ||
-                                                                form.retention
-                                                        "
-                                                    >
-                                                        <tr
-                                                            v-if="
-                                                                form.total_pending_payment >
-                                                                    0
-                                                            "
-                                                        >
-                                                            <!-- <tr v-if="form.detraction.amount > 0 && form.total_pending_payment > 0"> -->
-                                                            <td>
-                                                                M. PENDIENTE:
-                                                            </td>
-                                                            <td>
-                                                                {{
-                                                                    currency_type.symbol
-                                                                }}
-                                                                {{
-                                                                    form.total_pending_payment
-                                                                }}
-                                                            </td>
-                                                        </tr>
-                                                    </template>
 
                                                     <tr v-if="form.total > 0">
                                                         <!-- Metodos de pago -->
@@ -2965,19 +2910,12 @@
 
 
 
-                                    <template v-if="form.detraction && !isNrus">
-                                        <tr v-if="form.detraction.amount > 0">
-                                            <td width="60%">M. DETRACCIÓN:</td>
-                                            <td>
-                                                Bs. {{ form.detraction.amount }}
-                                            </td>
+
+                                    <template v-if="config.enabled_guarantee_fund && (form.retention) && !isNrus">
+                                        <tr v-if="guarantee_fund > 0">
+                                            <td width="60%">FONDO DE GARANTIA:</td>
+                                            <td>{{ currency_type.symbol }} {{ guarantee_fund }}</td>
                                         </tr>
-                                    </template>
-                                    <template v-if="config.enabled_guarantee_fund && (form.detraction || form.retention) && !isNrus">
-                                            <tr v-if="form.detraction.guarantee_fund > 0 || form.retention.guarantee_fund > 0">
-                                                <td width="60%">FONDO DE GARANTIA:</td>
-                                                <td>{{ currency_type.symbol }} {{ guarantee_fund }}</td>
-                                            </tr>
                                     </template>
 
                                     <template v-if="form.retention && !isNrus">
@@ -3148,15 +3086,9 @@
                                         </td>
                                     </tr>
 
-                                    <!-- <template v-if="form.detraction">
-                                        <tr v-if="form.detraction.amount > 0 && form.total_pending_payment > 0">
-                                            <td width="60%">M. PENDIENTE:</td>
-                                            <td>{{ currency_type.symbol }} {{ form.total_pending_payment }}</td>
-                                        </tr>
-                                    </template> -->
 
                                     <template
-                                        v-if="form.detraction || form.retention"
+                                        v-if="form.retention"
                                     >
                                         <tr
                                             v-if="
@@ -3826,7 +3758,6 @@
         ></document-transport-form> -->
 
         <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-        <!-- El editor de detracciones no se monta; el objeto histórico se conserva. -->
         <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
         <store-item-series-index
@@ -4075,7 +4006,6 @@ import Logo from "../companies/logo.vue";
 import DocumentHotelForm from "../../../../../modules/BusinessTurn/Resources/assets/js/views/hotels/form.vue";
 import DocumentTransportForm from "../../../../../modules/BusinessTurn/Resources/assets/js/views/transports/form.vue";
 // ########## INICIO SIN DETRACCIONES E ISC
-// El editor de detracciones no se importa.
 // ######### FIN SIN DETRACCIONES E ISC
 import moment from "moment";
 import { mapActions, mapState } from "vuex/dist/vuex.mjs";
@@ -4144,7 +4074,6 @@ export default {
         DocumentHotelForm,
         Keypress,
         // ########## INICIO SIN DETRACCIONES E ISC
-        // El editor de detracciones no se registra.
         // ######### FIN SIN DETRACCIONES E ISC
         DocumentTransportForm,
         DocumentReportCustomer,
@@ -4220,8 +4149,6 @@ export default {
             focus_on_client: false,
             dateValid: false,
             input_person: {},
-            showDialogDocumentDetraction: false,
-            has_data_detraction: false,
             showDialogFormHotel: false,
             showDialogFormTransport: false,
             showDialogItemSeriesIndex: false,
@@ -4279,10 +4206,7 @@ export default {
             user: null,
             is_receivable: false,
             is_contingency: false,
-            cat_payment_method_types: [],
             select_first_document_type_03: false,
-            detraction_types: [],
-            all_detraction_types: [],
             customer_addresses: [],
             payment_destinations: [],
             form_cash_document: {},
@@ -4301,9 +4225,7 @@ export default {
             showDialogReportCustomer: false,
             report_to_customer_id: null,
             retention_query_data: null,
-            // La retencion se quito por ser operacion sujeta a detraccion, no
             // porque el usuario la desmarcara. Solo esa se devuelve despues.
-            retention_removed_by_detraction: false,
             // itemDetailId: null,
             // showDialogItemDetail: false,
             showDialogConsignedForm: false,
@@ -4529,9 +4451,6 @@ export default {
         isCreditPaymentCondition: function() {
             return ["02", "03"].includes(this.form.payment_condition_id);
         },
-        detractionDecimalQuantity: function() {
-            return this.configuration.detraction_amount_rounded_int ? 0 : 2;
-        },
         isAutoPrint: function() {
             if (this.configuration) {
                 return this.configuration.auto_print;
@@ -4643,9 +4562,8 @@ export default {
             return this.form.subtotal;
         },
         guarantee_fund: function() {
-            let detraction = this.form.detraction || {};
             let retention = this.form.retention || {};
-            let fund_obj = Object.keys(detraction).length > 0 ? detraction : retention
+            let fund_obj = retention
             return fund_obj.guarantee_fund ? fund_obj.guarantee_fund : 0
         }
     },
@@ -4804,9 +4722,6 @@ export default {
 
         this.startConnectionQzTray();
 
-        // Verificar si es boleta, y desactivar las detracciones
-
-        await this.verifyDocumentType03ForDetraction();
 
 
     },
@@ -4981,24 +4896,6 @@ export default {
             this.operation_type_id_view = operationType.id;
             this.changeOperationType();
         },
-        async verifyDocumentType03ForDetraction() {
-            const documentType = this.document_types.find(
-                dt => dt.id === this.form.document_type_id
-            );
-            console.log(documentType);
-
-
-            let filtered;
-            if (documentType && documentType.id === "03") {
-                filtered = this.operation_types.filter(
-                    ot => ot.id !== "1001" && ot.id !== "1004"
-                );
-            } else {
-                filtered = this.operation_types.slice();
-            }
-            this.operation_types_filter = filtered;
-            this.syncSingleOperationTypeSelection();
-        },
         async initComponent() {
             this.loadConfiguration();
             this.$store.commit("setConfiguration", this.configuration);
@@ -5053,8 +4950,6 @@ export default {
                 this.affectation_igv_types = response.data.affectation_igv_types;
                 // this.prepayment_documents = response.data.prepayment_documents;
                 this.is_client = response.data.is_client;
-                // this.cat_payment_method_types = response.data.cat_payment_method_types;
-                // this.all_detraction_types = response.data.detraction_types;
                 this.payment_destinations = response.data.payment_destinations;
                 this.payment_conditions = response.data.payment_conditions;
 
@@ -5271,7 +5166,6 @@ export default {
                 payments: [],
                 prepayments: [],
                 legends: [],
-                detraction: {},
                 additional_information: null,
                 plate_number: null,
                 has_prepayment: false,
@@ -5315,7 +5209,6 @@ export default {
             this.total_global_charge = 0;
             this.is_amount = true;
             this.prepayment_deduction = false;
-            this.imageDetraction = {};
             this.$eventHub.$emit("eventInitForm");
 
             this.initInputPerson();
@@ -5332,7 +5225,6 @@ export default {
             this.total_exchange_points = 0;
 
             this.retention_query_data = null;
-            this.retention_removed_by_detraction = false;
 
             this.$eventHub.$emit("eventInitTip");
         },
@@ -5582,8 +5474,6 @@ export default {
             this.form.payments = data.payments || [];
             this.form.prepayments = data.prepayments || [];
             this.form.legends = [];
-            // this.form.detraction = data.detraction;
-            this.form.detraction = data.detraction ? data.detraction : {};
             this.form.sale_notes_relateds = data.sale_notes_relateds
                 ? data.sale_notes_relateds
                 : null;
@@ -5690,7 +5580,6 @@ export default {
 
             // this.form.additional_information = data.additional_information;
             // this.form.fee = [];
-            this.prepareDataDetraction();
             this.prepareDataRetention();
 
             if (!data.guides) {
@@ -5805,23 +5694,6 @@ export default {
                 this.setTotalPendingAmountRetention(this.form.retention.amount);
 
                 this.retention_query_data = { ...this.form.retention };
-            }
-        },
-        async prepareDataDetraction() {
-            // this.has_data_detraction = (this.form.detraction) ? true : false
-            this.has_data_detraction = !_.isEmpty(this.form.detraction);
-
-            if (this.has_data_detraction) {
-                let legend_value =
-                    this.form.operation_type_id === "1001"
-                        ? "Operación sujeta a detracción"
-                        : "Operación Sujeta a Detracción - Servicios de Transporte - Carga";
-                let legend = await _.find(this.form.legends, { code: "2006" });
-                if (!legend)
-                    this.form.legends.push({
-                        code: "2006",
-                        value: legend_value
-                    });
             }
         },
         updateChangeDestinationSale() {
@@ -6074,15 +5946,6 @@ export default {
                     }
                 }
             }
-        },
-        addDocumentDetraction(detraction) {
-            this.form.detraction = detraction;
-            // this.has_data_detraction = (detraction.pay_constancy || detraction.detraction_type_id || detraction.payment_method_id || (detraction.amount && detraction.amount >0)) ? true:false
-            this.has_data_detraction = detraction
-                ? detraction.has_data_detraction
-                : false;
-
-            this.changeDetractionType();
         },
         clickAddItemInvoice() {
             this.recordItem = null;
@@ -6583,220 +6446,18 @@ export default {
         },
         async changeOperationType() {
             await this.filterCustomers();
-            await this.setDataDetraction();
+            this.calculateAmountToPayments();
             if(this.form.operation_type_id !== "0101") {
                 this.form.is_itinerant = false;
             }
         },
-        // async filterDetractionTypes(){
-        //     this.detraction_types =  await _.filter(this.all_detraction_types, {'operation_type_id':this.form.operation_type_id})
         // },
-        async setDataDetraction() {
-            this.syncRetentionWithDetraction();
-
-            if (this.form.operation_type_id === "1001") {
-                this.showDialogDocumentDetraction = true;
-
-                // this.$message.warning('Sujeta a detracción');
-                // await this.filterDetractionTypes();
-                let legend = await _.find(this.form.legends, { code: "2006" });
-                if (!legend)
-                    this.form.legends.push({
-                        code: "2006",
-                        value: "Operación sujeta a detracción"
-                    });
-                this.form.detraction.bank_account = this.company.detraction_account;
-                // this.form.detraction.detraction_type_id = undefined
-            } else if (this.form.operation_type_id === "1004") {
-                this.showDialogDocumentDetraction = true;
-                let legend = await _.find(this.form.legends, { code: "2006" });
-                if (!legend)
-                    this.form.legends.push({
-                        code: "2006",
-                        value:
-                            "Operación Sujeta a Detracción - Servicios de Transporte - Carga"
-                    });
-                this.form.detraction.bank_account = this.company.detraction_account;
-            } else {
-                _.remove(this.form.legends, { code: "2006" });
-                this.form.detraction = {};
-            }
-
-            this.calculateAmountToPayments();
-        },
-        async changeDetractionType() {
-            if (this.form.detraction) {
-                let round = this.config.detraction_amount_rounded_int ? 0 : 2;
-                let total = this.form.total;
-
-                if (this.form.currency_type_id == "VES") {
-                    total =
-                        this.form.detraction.reference_value_service >
-                            this.form.total &&
-                        this.form.operation_type_id == "1004"
-                            ? this.form.detraction.reference_value_service
-                            : this.form.total;
-
-                    // this.form.detraction.amount = _.round(parseFloat(this.form.total) * (parseFloat(this.form.detraction.percentage) / 100), 2)
-                    this.form.detraction.amount = _.round(
-                        parseFloat(total) *
-                            (parseFloat(this.form.detraction.percentage) / 100),
-                        round
-                    );
-
-                    this.form.total_pending_payment =
-                        this.form.total - this.form.detraction.amount;
-                } else {
-                    total =
-                        this.form.detraction.reference_value_service >
-                            parseFloat(this.form.total) *
-                                this.form.exchange_rate_sale &&
-                        this.form.operation_type_id == "1004"
-                            ? this.form.detraction.reference_value_service
-                            : parseFloat(this.form.total) *
-                              this.form.exchange_rate_sale;
-
-                    // this.form.detraction.amount = _.round((parseFloat(this.form.total) * this.form.exchange_rate_sale) * (parseFloat(this.form.detraction.percentage) / 100), 2)
-                    this.form.detraction.amount = _.round(
-                        total *
-                            (parseFloat(this.form.detraction.percentage) / 100),
-                        round
-                    );
-
-                    this.form.total_pending_payment = _.round(
-                        this.form.total -
-                            this.form.detraction.amount /
-                                this.form.exchange_rate_sale,
-                        2
-                    );
-                }
-
-                this.calculateAmountToPayments();
-            }
-        },
         calculateAmountToPayments() {
             // if(this.form.payments.length > 0){
             //     // this.form.payments[0].payment = this.form.total_pending_payment
             // }
             this.calculatePayments();
             this.calculateFee();
-        },
-        /**
-         * La operacion esta sujeta a detraccion (catalogo 51: 1001 venta sujeta
-         * a detraccion, 1004 servicio de transporte de carga).
-         */
-        hasDetractionOperation() {
-            return ["1001", "1004"].includes(this.form.operation_type_id);
-        },
-        /**
-         * Detraccion y retencion no pueden convivir en el mismo comprobante:
-         * ambas escriben total_pending_payment y se pisan entre si. Con una
-         * operacion sujeta a detraccion se elimina la retencion, si es que
-         * existe. Devuelve si hubo algo que eliminar.
-         */
-        removeRetentionForDetraction() {
-            if (!this.hasDetractionOperation()) return false;
-
-            if (!this.form.has_retention && _.isEmpty(this.form.retention))
-                return false;
-
-            this.retention_removed_by_detraction = true;
-            this.form.has_retention = false;
-            // Con has_retention en false, changeRetention limpia form.retention,
-            // pone total_pending_payment en 0 y recalcula los pagos.
-            this.changeRetention();
-
-            return true;
-        },
-        /**
-         * Al dejar de ser una operacion sujeta a detraccion se devuelve la
-         * retencion que se habia quitado por ese motivo.
-         *
-         * Solo se restaura la que quito removeRetentionForDetraction: si el
-         * usuario la desmarco a mano, la bandera esta en false y se respeta.
-         */
-        restoreRetentionAfterDetraction() {
-            if (!this.retention_removed_by_detraction) return false;
-            if (this.hasDetractionOperation()) return false;
-
-            this.retention_removed_by_detraction = false;
-
-            const customer = _.find(this.customers, {
-                id: this.form.customer_id
-            });
-
-            // Mismas condiciones que aplican la retencion en el flujo normal:
-            // cliente agente de retencion, con RIF, y monto sobre el minimo.
-            if (!customer || !customer.is_agent_retention) return false;
-            if (customer.identity_document_type_id != "6") return false;
-            if (!this.amountRetentionValidate) return false;
-
-            this.form.has_retention = true;
-            this.changeRetention();
-
-            return true;
-        },
-        /**
-         * Mantiene retencion y detraccion en estados excluyentes, en los dos
-         * sentidos.
-         */
-        syncRetentionWithDetraction() {
-            return this.hasDetractionOperation()
-                ? this.removeRetentionForDetraction()
-                : this.restoreRetentionAfterDetraction();
-        },
-        validateDetraction() {
-            if (["1001", "1004"].includes(this.form.operation_type_id)) {
-                let detraction = this.form.detraction;
-
-                let tot =
-                    this.form.currency_type_id == "VES"
-                        ? this.form.total
-                        : this.form.total * this.form.exchange_rate_sale;
-
-                let total_restriction =
-                    this.form.operation_type_id == "1001" ? 700 : 400;
-                let is_residues =
-                    detraction.detraction_type_id === "010" &&
-                    this.form.operation_type_id == "1001"
-                        ? true
-                        : false;
-
-                if (tot <= total_restriction && !is_residues)
-                    return {
-                        success: false,
-                        message: `El importe de la operación debe ser mayor a Bs. ${total_restriction}.00 o equivalente en USD`
-                    };
-
-                if (!detraction.detraction_type_id)
-                    return {
-                        success: false,
-                        message:
-                            "El campo bien o servicio sujeto a detracción es obligatorio"
-                    };
-
-                if (!detraction.payment_method_id)
-                    return {
-                        success: false,
-                        message:
-                            "El campo método de pago - detracción es obligatorio"
-                    };
-
-                if (!detraction.bank_account)
-                    return {
-                        success: false,
-                        message: "El campo cuenta bancaria es obligatorio"
-                    };
-
-                if (detraction.amount <= 0)
-                    return {
-                        success: false,
-                        message:
-                            "El campo total detracción debe ser mayor a cero"
-                    };
-            }
-
-            return { success: true };
         },
         changeEstablishment() {
             this.establishment = _.find(this.establishments, {
@@ -6871,7 +6532,6 @@ export default {
             }
             this.filterCustomers();
             this.setDefaultSerieByDocument();
-            this.verifyDocumentType03ForDetraction();
         },
         shouldProtectPreloadedCustomer() {
             return Boolean(this.preloadedCustomerId);
@@ -7012,7 +6672,7 @@ export default {
             const protectCustomer = this.shouldProtectPreloadedCustomer();
 
             if (
-                ["0101", "1001", "1004"].includes(this.form.operation_type_id)
+                this.form.operation_type_id === "0101"
             ) {
                 if (this.form.document_type_id === "01") {
                     this.customers = this.all_customers;
@@ -7430,17 +7090,6 @@ export default {
 
             if (this.prepayment_deduction) this.discountGlobalPrepayment();
 
-            if (["1001", "1004"].includes(this.form.operation_type_id))
-                this.changeDetractionType();
-
-            // Antes de validateCustomerRetention: si la operacion es de
-            // detraccion no puede quedar retencion. Al elegir un cliente agente
-            // de retencion se marca has_retention (validateCustomerRetention lo
-            // vuelve a calcular en cada recalculo), asi que hay que limpiarlo
-            // aqui o la retencion reaparece pisando total_pending_payment.
-            // En sentido inverso devuelve la retencion si la operacion dejo de
-            // estar sujeta a detraccion.
-            this.syncRetentionWithDetraction();
 
             let customer = _.find(this.customers, {
                 id: this.form.customer_id
@@ -8596,18 +8245,7 @@ export default {
             await this.deleteInitGuides();
             await this.asignPlateNumberToItems();
 
-            let val_detraction = await this.validateDetraction();
-            if (!this.configuration.available_detraction_for_amount_minor) {
-                if (!val_detraction.success){
-                    return this.$message.error(val_detraction.message);
-                }
-            }
 
-            if (this.removeRetentionForDetraction()) {
-                this.$message.warning(
-                    "Se quito la retencion: la operacion esta sujeta a detraccion"
-                );
-            }
             if (!this.enabled_payments) {
                 this.form.payments = [];
             }
@@ -8622,7 +8260,7 @@ export default {
             }
 
             if (this.config.enabled_guarantee_fund) {
-                let fund_obj = Object.keys(this.form.detraction).length > 0 ? this.form.detraction : this.form.retention
+                let fund_obj = this.form.retention || {}
 
                 if(parseFloat(fund_obj.guarantee_fund) > this.form.total_pending_payment) {
                     return this.$message.error('El fondo de garantía no puede ser mayor al monto pendiente')
@@ -9068,12 +8706,6 @@ export default {
             // console.log(this.form.total_pending_payment)
             // console.log(this.form.total)
 
-            if (
-                !_.isEmpty(this.form.detraction) &&
-                this.form.total_pending_payment > 0
-            ) {
-                return this.form.total_pending_payment;
-            }
 
             if (
                 !_.isEmpty(this.form.retention) &&
@@ -9325,24 +8957,9 @@ export default {
             await this.deleteInitGuides();
             await this.asignPlateNumberToItems();
 
-            let val_detraction = await this.validateDetraction();
 
-            if (!this.configuration.available_detraction_for_amount_minor) {
-                if (!val_detraction.success) {
-                    this.$message.error(val_detraction.message);
-                    return false;
-                }
-            }
 
-            if (this.removeRetentionForDetraction()) {
-                this.$message.warning(
-                    "Se quito la retencion: la operacion esta sujeta a detraccion"
-                );
-            }
 
-            if (val_detraction.success) {
-                this.form.retention = [];
-            }
 
             if (!this.enabled_payments) {
                 this.form.payments = [];

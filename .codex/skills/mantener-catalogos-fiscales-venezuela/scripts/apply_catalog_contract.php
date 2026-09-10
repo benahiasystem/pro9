@@ -91,21 +91,6 @@ $desiredRows = [
         $tables['cat_operation_types']['rows'] ?? [],
         static fn (array $catalogRow): bool => in_array((string) $catalogRow['id'], ['0101', '0200'], true)
     )),
-    'cat_payment_method_types' => [
-        $activeCatalogRow('001', 'Depósito en cuenta'),
-        $activeCatalogRow('002', 'Giro'),
-        $activeCatalogRow('003', 'Transferencia de fondos'),
-        $activeCatalogRow('004', 'Orden de pago'),
-        $activeCatalogRow('005', 'Tarjeta de débito'),
-        $activeCatalogRow('006', 'Tarjeta de crédito emitida en el país por una empresa del sistema financiero'),
-        $activeCatalogRow('010', 'Medios de pago usados en comercio exterior'),
-        $activeCatalogRow('101', 'Transferencias – Comercio exterior'),
-        $activeCatalogRow('102', 'Cheques bancarios - Comercio exterior'),
-        $activeCatalogRow('103', 'Orden de pago simple - Comercio exterior'),
-        $activeCatalogRow('104', 'Orden de pago documentario - Comercio exterior'),
-        $activeCatalogRow('105', 'Remesa simple - Comercio exterior'),
-        $activeCatalogRow('999', 'Otros medios de pago'),
-    ],
     'cat_transfer_reason_types' => [
         $activeCatalogRow('01', 'Venta') + ['discount_stock' => 0],
         $activeCatalogRow('04', 'Traslado entre almacenes') + ['discount_stock' => 0],
@@ -152,6 +137,7 @@ $removedTables = [
     'cat_system_isc_types',
     'pse_providers',
     'cat_detraction_types',
+    'cat_payment_method_types',
     'departments',
     'provinces',
     'districts',
@@ -220,6 +206,7 @@ $obsoleteMigrationFiles = [
     '2026_08_17_000054_create_cat_system_isc_types_table.php',
     '2026_08_17_000140_create_pse_providers_table.php',
     '2026_08_17_000176_create_cat_detraction_types_table.php',
+    '2026_08_17_000046_create_cat_payment_method_types_table.php',
 ];
 
 foreach ($obsoleteMigrationFiles as $migrationFile) {

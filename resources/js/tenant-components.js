@@ -55,7 +55,6 @@ import TenantSearchIndex from './views/tenant/search/index.vue'
 import TenantOptionsForm from './views/tenant/options/form.vue'
 import TenantOptionsFormItem from './views/tenant/options/form_item.vue'
 import TenantUnitTypesIndex from './views/tenant/unit_types/index.vue'
-import TenantDetractionTypesIndex from './views/tenant/detraction_types/index.vue'
 import TenantUsersIndex from './views/tenant/users/index.vue'
 import TenantEstablishmentsIndex from './views/tenant/establishments/index.vue'
 import TenantChargeDiscountsIndex from './views/tenant/charge_discounts/index.vue'
@@ -101,7 +100,6 @@ import TenantCardBrandsIndex from './views/tenant/card_brands/index.vue'
 import TenantPosFast from './views/tenant/pos/fast.vue'
 import TenantPosGarage from './views/tenant/pos/garage.vue'
 
-import TenantPaymentMethodIndex from './views/tenant/payment_method/index.vue'
 
 // Modules
 import InventoryIndex from '../../modules/Inventory/Resources/assets/js/inventory/index.vue'
@@ -470,7 +468,6 @@ Vue.component('tenant-search-index', TenantSearchIndex)
 Vue.component('tenant-options-form', TenantOptionsForm)
 Vue.component('tenant-options-form-item', TenantOptionsFormItem)
 Vue.component('tenant-unit_types-index', TenantUnitTypesIndex)
-Vue.component('tenant-detraction_types-index', TenantDetractionTypesIndex)
 Vue.component('tenant-users-index', TenantUsersIndex)
 Vue.component('tenant-establishments-index', TenantEstablishmentsIndex)
 Vue.component('tenant-charge_discounts-index', TenantChargeDiscountsIndex)
@@ -518,7 +515,6 @@ Vue.component('tenant-card-brands-index', TenantCardBrandsIndex)
 Vue.component('tenant-pos-fast', TenantPosFast)
 Vue.component('tenant-pos-garage', TenantPosGarage)
 
-Vue.component('tenant-payment-method-index', TenantPaymentMethodIndex)
 
 Vue.component('inventory-index', InventoryIndex)
 Vue.component('inventory-transfers-index', InventoryTransfersIndex)

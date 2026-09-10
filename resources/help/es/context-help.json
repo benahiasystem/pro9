@@ -74,7 +74,7 @@
                 "Emisión de comprobantes electrónicos (factura, boleta, etc.) ante SUNAT/OSE según tu configuración.",
                 "Define cliente, tipo de documento, serie, moneda, fecha y condición de pago.",
                 "Agrega ítems con cantidades, precios y afectación IVA; luego genera el XML/PDF y envía según tu flujo.",
-                "Retenciones, detracciones y campos SUNAT aparecen solo cuando aplican al tipo de operación."
+                "Las retenciones aparecen cuando corresponden a la operación."
             ],
             "source_doc_repo_relative": "modulos/esenciales/ventas/nuevo-comprobante.md",
             "manual_full_url": "https://manual.pro8.uio.la/modulos/esenciales/ventas/nuevo-comprobante"

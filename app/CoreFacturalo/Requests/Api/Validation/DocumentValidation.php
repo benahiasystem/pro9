@@ -51,7 +51,6 @@ class DocumentValidation
         Functions::DNI($inputs);
         Functions::identityDocumentTypeInvoice($inputs);
 
-        Functions::validateDetraction($inputs);
 
         Functions::validateDateOfIssue($inputs);
         

@@ -199,7 +199,6 @@
             $activos = $balanceController->getRecords($request);
             /*
                         $retentions = $this->getRetentions($request)->get();
-                        2.1.4.2.1										                Detracción por pagar
                     */
 
 
@@ -323,4 +322,3 @@
             }
         }
     }
-

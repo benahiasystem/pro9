@@ -57,7 +57,6 @@ class DocumentWebTransform
             'items' => self::items($inputs),
             // 'charges' => self::charges($inputs),
             // 'discounts' => self::discounts($inputs),
-            // 'detraction' => self::detraction($inputs),
             // 'perception' => self::perception($inputs),
             // 'prepayments' => self::prepayments($inputs),
             // 'guides' => self::guides($inputs),
@@ -246,20 +245,6 @@ class DocumentWebTransform
         return null;
     }
 
-    private static function detraction($inputs)
-    {
-        // if(key_exists('detraccion', $inputs)) {
-        //     $detraction = $inputs['detraccion'];
-        //     return [
-        //         'code' => $detraction['codigo'],
-        //         'percentage' => $detraction['porcentaje'],
-        //         'amount' => $detraction['monto'],
-        //         'payment_method_id' => $detraction['codigo_metodo_pago'],
-        //         'bank_account' => $detraction['cuenta_bancaria'],
-        //     ];
-        // }
-        return null;
-    }
 
     private static function perception($inputs)
     {

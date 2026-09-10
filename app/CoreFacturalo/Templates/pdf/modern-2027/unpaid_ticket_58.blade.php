@@ -299,7 +299,7 @@
             <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total, 2) }}</td>
         </tr>
 
-        @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
+        @if(($document->retention) && $document->total_pending_payment > 0)
             <tr>
                 <td colspan="3" class="desc-ticket text-uppercase">M. PENDIENTE:
                     {{ $document->currency_type->symbol }}</td>

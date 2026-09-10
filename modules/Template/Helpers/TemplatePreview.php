@@ -110,9 +110,6 @@ class TemplatePreview
 //            $sale->observations = ['1. Observación 1', '2. Observación 2', '3. Observación 3'];
 //            $sale->bank_accounts = 'BCP Bs. 3432 423 / CCI: 4 23432<br/>BBVA Bs. 757567567 / CCI: 7657567567567';
 //
-//            $sale->has_detraction = true;
-//            $sale->detraction_message = 'SUJETO A DETRACCIÓN';
-//            $sale->detraction_account_number = '1324564 23465465446 465 4645456';
 //
 //            $sale->items = $items;
 //

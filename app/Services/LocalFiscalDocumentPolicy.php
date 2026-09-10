@@ -33,10 +33,6 @@ final class LocalFiscalDocumentPolicy
         return (bool) config('venezuela.visible_fiscal_features.isc', false);
     }
 
-    public static function showDetractions(): bool
-    {
-        return (bool) config('venezuela.visible_fiscal_features.detractions', false);
-    }
 
     // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
     public static function showUblAttributes(): bool

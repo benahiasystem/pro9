@@ -4,11 +4,6 @@ namespace Modules\MobileApp\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use App\Models\Tenant\Catalogs\DetractionType;
-use App\Models\Tenant\Catalogs\OperationType;
-use App\Models\Tenant\Catalogs\PaymentMethodType as CatPaymentMethodType;
-use App\Models\Tenant\Company;
-use App\Models\Tenant\Configuration;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\SaleNote;
 use Modules\MobileApp\Http\Resources\Api\DocumentCentralizedCollection;
@@ -130,48 +125,5 @@ class DocumentCentralizedController extends Controller
         ];
     }
 
-    /**
-     * Catalogos para "Operacion sujeta a detraccion" (1001) en la app movil.
-     * La app habilita la opcion solo si detraction_account esta configurada Y
-     * el tipo de operacion 1001 esta activo en el tenant (mismo doble gating que la web).
-     * Los porcentajes vienen del catalogo (editable por tenant): nunca hardcodear.
-     *
-     * @return array
-     */
-    public function detractionTables()
-    {
-        $company = Company::select('detraction_account')->first();
-        $configuration = Configuration::select('detraction_amount_rounded_int', 'available_detraction_for_amount_minor')->first();
 
-        $detraction_types = DetractionType::available()
-            ->where('operation_type_id', '1001')
-            ->map(fn($row) => [
-                'id' => (string) $row->id,
-                'description' => $row->description,
-                'percentage' => (float) $row->percentage,
-            ])
-            ->values();
-
-        // Catalogo 59 SUNAT (cat_payment_method_types) - distinto de los metodos de pagos[] del comprobante
-        $payment_methods = CatPaymentMethodType::whereActive()
-            ->get()
-            ->map(fn($row) => [
-                'id' => (string) $row->id,
-                'description' => $row->description,
-            ])
-            ->values();
-
-        return [
-            'success' => true,
-            'data' => [
-                'detraction_account' => $company->detraction_account ?: null,
-                'operation_type_active' => OperationType::where('id', '1001')->where('active', true)->exists(),
-                'detraction_types' => $detraction_types,
-                'payment_methods' => $payment_methods,
-                'amount_rounded_int' => (bool) optional($configuration)->detraction_amount_rounded_int,
-                'allow_amount_minor' => (bool) optional($configuration)->available_detraction_for_amount_minor,
-                'minimum_total' => 700,
-            ],
-        ];
-    }
 }

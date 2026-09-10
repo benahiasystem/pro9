@@ -58,7 +58,6 @@ class FixedAssetPurchase extends ModelTenant
         'guides',
         'related',
         'perception',
-        'detraction',
         'legends',
         'date_of_due',
         'customer_id',
@@ -151,15 +150,7 @@ class FixedAssetPurchase extends ModelTenant
         $this->attributes['perception'] = (is_null($value))?null:json_encode($value);
     }
 
-    public function getDetractionAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setDetractionAttribute($value)
-    {
-        $this->attributes['detraction'] = (is_null($value))?null:json_encode($value);
-    }
 
     public function getLegendsAttribute($value)
     {

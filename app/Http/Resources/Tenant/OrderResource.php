@@ -46,9 +46,6 @@ class OrderResource extends JsonResource
             --'number' => $this->number_full,
             'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
             'download_pdf' => $this->download_external_pdf,
-            'image_detraction' => ($this->detraction) ? (($this->detraction->image_pay_constancy) ?
-            asset('storage'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'image_detractions'.DIRECTORY_SEPARATOR.$this->detraction->image_pay_constancy):false):false,
-            'detraction' => $this->detraction,
             'response_message' => $response_message,
             'response_type' => $response_type,
         ];*/

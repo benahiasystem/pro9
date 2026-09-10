@@ -51,7 +51,6 @@
      * @property string|null                         $prepayments
      * @property string|null                         $related
      * @property string|null                         $perception
-     * @property string|null                         $detraction
      * @property string|null                         $legends
      * @property string|null                         $terms_condition
      * @property string                              $description
@@ -131,7 +130,6 @@
             'prepayments',
             'related',
             'perception',
-            'detraction',
             'legends',
             'terms_condition',
             'description',
@@ -248,24 +246,6 @@
         public function setPerceptionAttribute($value)
         {
             $this->attributes['perception'] = ($value === null) ? null : json_encode($value);
-        }
-
-        /**
-         * @param $value
-         *
-         * @return object|null
-         */
-        public function getDetractionAttribute($value)
-        {
-            return ($value === null) ? null : (object)json_decode($value);
-        }
-
-        /**
-         * @param $value
-         */
-        public function setDetractionAttribute($value)
-        {
-            $this->attributes['detraction'] = ($value === null) ? null : json_encode($value);
         }
 
         /**
@@ -927,25 +907,6 @@
         public function setPerception(?string $perception): SuscriptionPlan
         {
             $this->perception = $perception;
-            return $this;
-        }
-
-        /**
-         * @return string|null
-         */
-        public function getDetraction(): ?string
-        {
-            return $this->detraction;
-        }
-
-        /**
-         * @param string|null $detraction
-         *
-         * @return SuscriptionPlan
-         */
-        public function setDetraction(?string $detraction): SuscriptionPlan
-        {
-            $this->detraction = $detraction;
             return $this;
         }
 

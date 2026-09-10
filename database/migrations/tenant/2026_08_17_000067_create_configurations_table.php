@@ -21,7 +21,6 @@
  * - `locked_create_establishments`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `permission_to_edit_cpe`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `customer_filter_by_seller`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `detraction_amount_rounded_int`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `set_address_by_establishment`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `plan`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `enable_whatsapp`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
@@ -198,7 +197,6 @@
  * - `show_bank_accounts_in_pdf`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
  * - `enabled_price_items_dispatch`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `exact_discount`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
- * - `available_detraction_for_amount_minor`: tinyint(1); NOT NULL; DEFAULT 0 — Opción para que permita realizar detracciones por montos menores a 700 o USD
  * - `enabled_guarantee_fund`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `from_guest_register`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `was_verified_guest_user`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
@@ -277,7 +275,6 @@ CREATE TABLE `configurations` (
   `locked_create_establishments` tinyint(1) NOT NULL DEFAULT '0',
   `permission_to_edit_cpe` tinyint(1) NOT NULL DEFAULT '0',
   `customer_filter_by_seller` tinyint(1) NOT NULL DEFAULT '0',
-  `detraction_amount_rounded_int` tinyint(1) NOT NULL DEFAULT '0',
   `set_address_by_establishment` tinyint(1) NOT NULL DEFAULT '0',
   `plan` json DEFAULT NULL,
   `enable_whatsapp` tinyint(1) NOT NULL DEFAULT '1',
@@ -454,7 +451,6 @@ CREATE TABLE `configurations` (
   `show_bank_accounts_in_pdf` tinyint(1) NOT NULL DEFAULT '1',
   `enabled_price_items_dispatch` tinyint(1) NOT NULL DEFAULT '0',
   `exact_discount` tinyint(1) NOT NULL DEFAULT '1',
-  `available_detraction_for_amount_minor` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'Opción para que permita realizar detracciones por montos menores a 700 o USD',
   `enabled_guarantee_fund` tinyint(1) NOT NULL DEFAULT '0',
   `from_guest_register` tinyint(1) NOT NULL DEFAULT '0',
   `was_verified_guest_user` tinyint(1) NOT NULL DEFAULT '0',

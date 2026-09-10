@@ -887,7 +887,7 @@
                                         </div>
                                         <div>
                                             <span class="text-muted">
-                                                Parámetros tributarios: IGV, detracciones e impuestos especiales.
+                                                Parámetros tributarios: IVA e impuestos especiales.
                                             </span>
                                         </div>
                                     </div>
@@ -935,33 +935,7 @@
                                         </div>
 
                                         <div class="col-12">
-                                            <label class="control-label">Redondear monto de detracción a valor entero
-                                                <el-tooltip class="item" content="Disponible Nuevo CPE (Facturas/Boletas)"
-                                                    effect="dark" placement="top-start">
-                                                    <i class="fa fa-info-circle"></i>
-                                                </el-tooltip>
-                                            </label>
-                                            <div :class="{ 'has-danger': errors.detraction_amount_rounded_int }" class="form-group">
-                                                <el-switch v-model="form.detraction_amount_rounded_int"
-                                                            @change="submit"></el-switch>
-                                                <small v-if="errors.detraction_amount_rounded_int" class="form-control-feedback"
-                                                    v-text="errors.detraction_amount_rounded_int[0]"></small>
-                                            </div>
-                                        </div>
-
-                                        <div class="col-12">
-                                            <label class="control-label">Habilitar venta con detracción para montos inferiores a 700</label>
-                                            <div :class="{ 'has-danger': errors.available_detraction_for_amount_minor}"
-                                                    class="form-group">
-                                                <el-switch v-model="form.available_detraction_for_amount_minor"
-                                                               @change="submit"></el-switch>
-                                                <small v-if="errors.available_detraction_for_amount_minor"
-                                                        class="form-control-feedback"
-                                                        v-text="errors.available_detraction_for_amount_minor[0]"></small>
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="control-label">Habilitar fondo de garantia para detracción o retención</label>
+                                            <label class="control-label">Habilitar fondo de garantía para retención</label>
                                             <div :class="{ 'has-danger': errors.enabled_guarantee_fund}"
                                                     class="form-group">
                                                 <el-switch v-model="form.enabled_guarantee_fund"
@@ -3763,7 +3737,6 @@ export default {
                 smtp_encryption: '',
                 permission_to_edit_cpe: false,
                 name_product_pdf_to_xml: false,
-                detraction_amount_rounded_int: false,
                 validate_purchase_sale_unit_price: false,
                 show_logo_by_establishment: false,
                 shipping_time_days: 0,

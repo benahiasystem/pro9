@@ -165,22 +165,6 @@
             @endif
         </cac:Party>
     </cac:AccountingCustomerParty>
-    @if($document->detraction)
-        @php($detraction = $document->detraction)
-        <cac:PaymentMeans>
-            <cbc:ID>Detraccion</cbc:ID>
-            <cbc:PaymentMeansCode>{{ $detraction->payment_method_id }}</cbc:PaymentMeansCode>
-            <cac:PayeeFinancialAccount>
-                <cbc:ID>{{ $detraction->bank_account }}</cbc:ID>
-            </cac:PayeeFinancialAccount>
-        </cac:PaymentMeans>
-        <cac:PaymentTerms>
-            <cbc:ID>Detraccion</cbc:ID>
-            <cbc:PaymentMeansID>{{ $detraction->detraction_type_id }}</cbc:PaymentMeansID>
-            <cbc:PaymentPercent>{{ $detraction->percentage }}</cbc:PaymentPercent>
-            <cbc:Amount currencyID="VES">{{ $detraction->amount }}</cbc:Amount>
-        </cac:PaymentTerms>
-    @endif
     @if($document->payment_condition_id === '01')
     <cac:PaymentTerms>
         <cbc:ID>FormaPago</cbc:ID>
@@ -448,39 +432,6 @@
                 <cbc:PriceTypeCode>{{ $row->price_type_id }}</cbc:PriceTypeCode>
             </cac:AlternativeConditionPrice>
         </cac:PricingReference>
-        @if($document->detraction && $invoice->operation_type_id == '1004')
-        <cac:Delivery>
-            <cac:DeliveryLocation>
-                <cac:Address>
-                    <cbc:ID>{{ $document->detraction->delivery_location_id[2] }}</cbc:ID>
-                    <cac:AddressLine>
-                        <cbc:Line>{{$document->detraction->delivery_address}}</cbc:Line>
-                    </cac:AddressLine>
-                </cac:Address>
-            </cac:DeliveryLocation>
-            <cac:Despatch>
-                <cbc:Instructions>{{$document->detraction->trip_detail}}</cbc:Instructions>
-                <cac:DespatchAddress>
-                    <cbc:ID>{{ $document->detraction->origin_location_id[2] }}</cbc:ID>
-                    <cac:AddressLine>
-                        <cbc:Line>{{$document->detraction->origin_address}}</cbc:Line>
-                    </cac:AddressLine>
-                </cac:DespatchAddress>
-            </cac:Despatch>
-            <cac:DeliveryTerms>
-                <cbc:ID>01</cbc:ID>
-                <cbc:Amount currencyID="VES">{{$document->detraction->reference_value_service}}</cbc:Amount>
-            </cac:DeliveryTerms>
-            <cac:DeliveryTerms>
-                <cbc:ID>02</cbc:ID>
-                <cbc:Amount currencyID="VES">{{$document->detraction->reference_value_effective_load}}</cbc:Amount>
-            </cac:DeliveryTerms>
-            <cac:DeliveryTerms>
-                <cbc:ID>03</cbc:ID>
-                <cbc:Amount currencyID="VES">{{$document->detraction->reference_value_payload}}</cbc:Amount>
-            </cac:DeliveryTerms>
-        </cac:Delivery>
-        @endif
         @if($row->charges)
         @foreach($row->charges as $charge)
         <cac:AllowanceCharge>

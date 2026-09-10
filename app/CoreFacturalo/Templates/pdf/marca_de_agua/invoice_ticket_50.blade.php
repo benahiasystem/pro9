@@ -128,87 +128,6 @@
         </tr>
     @endif
 
-    @if ($document->detraction)
-        <tr>
-            <td class="align-top"><p class="desc-ticket text-uppercase">N. Cta Detracciones:</p></td>
-            <td><p class="desc-ticket text-uppercase">{{ $document->detraction->bank_account}}</p></td>
-        </tr>
-        <tr>
-            <td class="align-top"><p class="desc-ticket text-uppercase">B/S Sujeto a detracción:</p></td>
-            @inject('detractionType', 'App\Services\DetractionTypeService')
-            <td><p class="desc-ticket text-uppercase">{{$document->detraction->detraction_type_id}}
-                    - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}</p>
-            </td>
-        </tr>
-        <tr>
-            <td class="align-top"><p class="desc-ticket text-uppercase">Método de pago:</p></td>
-            <td>
-                <p class="desc-ticket text-uppercase">{{ $detractionType->getPaymentMethodTypeDescription($document->detraction->payment_method_id ) }}</p>
-            </td>
-        </tr>
-        <tr>
-            <td class="align-top"><p class="desc-ticket text-uppercase">Porcentaje detracción:</p></td>
-            <td><p class="desc-ticket text-uppercase">{{ $document->detraction->percentage}}%</p></td>
-        </tr>
-        <tr>
-            <td class="align-top"><p class="desc-ticket text-uppercase">Monto detracción:</p></td>
-            <td><p class="desc-ticket text-uppercase">Bs. {{ $document->detraction->amount}}</p></td>
-        </tr>
-        @if($document->detraction->pay_constancy)
-            <tr>
-                <td class="align-top"><p class="desc-ticket text-uppercase">Constancia de pago:</p></td>
-                <td><p class="desc-ticket text-uppercase">{{ $document->detraction->pay_constancy}}</p></td>
-            </tr>
-        @endif
-
-
-        @if($invoice->operation_type_id == '1004')
-            <tr>
-                <td colspan="2"></td>
-            </tr>
-            <tr>
-                <td colspan="2">DETALLE - SERVICIOS DE TRANSPORTE DE CARGA</td>
-            </tr>
-            <tr>
-                <td class="align-top"><p class="desc-ticket text-uppercase">Ubigeo origen:</p></td>
-                <td><p class="desc-ticket text-uppercase">{{ $document->detraction->origin_location_id[2] }}</p></td>
-            </tr>
-            <tr>
-                <td class="align-top"><p class="desc-ticket text-uppercase">Dirección origen:</td>
-                <td><p class="desc-ticket text-uppercase">{{ $document->detraction->origin_address }}</td>
-            </tr>
-            <tr>
-                <td class="align-top"><p class="desc-ticket text-uppercase">Ubigeo destino:</p></td>
-                <td><p class="desc-ticket text-uppercase">{{ $document->detraction->delivery_location_id[2] }}</p></td>
-            </tr>
-            <tr>
-
-                <td class="align-top"><p class="desc-ticket text-uppercase">Dirección destino:</p></td>
-                <td><p class="desc-ticket text-uppercase">{{ $document->detraction->delivery_address }}</p></td>
-            </tr>
-            <tr>
-                <td class="align-top"><p class="desc-ticket text-uppercase">Valor referencial servicio de
-                        transporte:</p></td>
-                <td><p class="desc-ticket text-uppercase">{{ $document->detraction->reference_value_service }}</p></td>
-            </tr>
-            <tr>
-
-                <td class="align-top"><p class="desc-ticket text-uppercase">Valor referencia carga efectiva:</p></td>
-                <td>
-                    <p class="desc-ticket text-uppercase">{{ $document->detraction->reference_value_effective_load }}</p>
-                </td>
-            </tr>
-            <tr>
-                <td class="align-top"><p class="desc-ticket text-uppercase">Valor referencial carga útil:</p></td>
-                <td><p class="desc-ticket text-uppercase">{{ $document->detraction->reference_value_payload }}</p></td>
-            </tr>
-            <tr>
-                <td class="align-top"><p class="desc-ticket text-uppercase">Detalle del viaje:</p></td>
-                <td><p class="desc-ticket text-uppercase">{{ $document->detraction->trip_detail }}</p></td>
-            </tr>
-        @endif
-
-    @endif
 
     @if ($document->retention)
         <br>
@@ -520,7 +439,7 @@
         <td colspan="2" class="text-right desc-ticket text-uppercase">{{ number_format($document->total, 2) }}</td>
     </tr>
 
-    @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
+    @if(($document->retention) && $document->total_pending_payment > 0)
         <tr>
             <td colspan="3" class="desc-ticket text-uppercase">M. PENDIENTE:
                 {{ $document->currency_type->symbol }}</td>

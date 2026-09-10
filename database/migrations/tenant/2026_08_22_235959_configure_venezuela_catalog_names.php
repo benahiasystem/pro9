@@ -50,9 +50,6 @@ return new class extends Migration
             '7000', '7001', '7002', '7003', '7004', '7005',
             '7006', '7007', '7008', '7009', '7010', '7011',
         ],
-        'cat_payment_method_types' => [
-            '007', '008', '009', '011', '012', '013', '106', '107', '108',
-        ],
     ];
 
     private const PREVIOUSLY_ACTIVE_IDS = [
@@ -64,7 +61,6 @@ return new class extends Migration
         'cat_perception_types' => ['02', '03'],
         'cat_legend_types' => ['2001', '2002', '2003', '2005', '2006', '2007', '2008', '2009', '2010'],
         'cat_charge_discount_types' => ['02', '03', '47', '48', '49', '50'],
-        'cat_payment_method_types' => ['007', '008', '009', '011', '012', '013', '106', '107', '108'],
     ];
 
     public function up(): void

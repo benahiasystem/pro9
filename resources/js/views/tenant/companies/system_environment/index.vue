@@ -159,7 +159,6 @@ export default {
 				logo: null,
 				logo_dark: null,
 				logo_store: null,
-				detraction_account: null,
 				operation_amazonia: false,
 				toggle: false,
 				config_system_env: false,

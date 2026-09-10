@@ -52,7 +52,6 @@ use Modules\Sale\Models\Agent;
  * @property mixed $company
  * @property mixed $customer
  * @property mixed $data_json
- * @property mixed $detraction
  * @property mixed $discounts
  * @property mixed $download_external_cdr
  * @property mixed $download_external_pdf
@@ -212,7 +211,6 @@ class Document extends ModelTenant
         'guides',
         'related',
         'perception',
-        'detraction',
         'legends',
         'additional_information',
         'additional_data',
@@ -251,8 +249,7 @@ class Document extends ModelTenant
         'subtotal',
         'total_igv_free',
         'technical_service_id',
-        // 'pending_amount_detraction',
-        'total_pending_payment', //usado para detracciones - retenciones
+        'total_pending_payment', // Retenciones
         'retention',
         'user_rel_suscription_plan_id',
         'automatic_date_of_issue',
@@ -634,15 +631,7 @@ class Document extends ModelTenant
         $this->attributes['perception'] = (is_null($value)) ? null : json_encode($value);
     }
 
-    public function getDetractionAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setDetractionAttribute($value)
-    {
-        $this->attributes['detraction'] = (is_null($value)) ? null : json_encode($value);
-    }
 
     public function getLegendsAttribute($value)
     {

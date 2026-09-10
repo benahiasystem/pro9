@@ -325,7 +325,6 @@
                         <div class="row mt-4">
                             <h4 class="col-12 m-0 fw-medium">Campos adicionales</h4>
                             <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                            <!-- La cuenta de detracción se conserva como dato compatible, sin control editable. -->
                             <!-- ######### FIN SIN DETRACCIONES E ISC -->
                             <div class="col-md-6">
                                 <div :class="{'has-danger': errors.mtc_code}"
@@ -738,7 +737,6 @@ export default {
                 logo: null,
                 logo_dark: null,
                 logo_store: null,
-                detraction_account: null,
                 operation_amazonia: false,
                 toggle: false,
                 config_system_env: false,

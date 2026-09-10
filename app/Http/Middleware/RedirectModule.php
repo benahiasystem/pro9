@@ -113,7 +113,6 @@
                     "extra-general-items",
                     "general-items",
                     "quotations",
-                    "document-detractions",
                     "sales-consolidated",
                     "tips",
                     "user-commissions",
@@ -136,7 +135,7 @@
                 $group = "establishments";
             } ///* Module configuration (Configuraciones globales) */
             elseif (
-                in_array($firstLevel, ['list-platforms', 'list-cards', 'list-currencies', 'list-bank-accounts', 'list-banks', 'list-attributes', 'list-detractions', 'list-units', 'list-payment-methods', 'list-incomes', 'list-payments', 'company_accounts', 'list-vouchers-type',     'companies', 'advanced', 'tasks', 'inventories','bussiness_turns','offline-configurations','series-configurations','configurations', 'login-page', 'list-settings'])) {
+                in_array($firstLevel, ['list-platforms', 'list-cards', 'list-currencies', 'list-bank-accounts', 'list-banks', 'list-attributes', 'list-units', 'list-payment-methods', 'list-incomes', 'company_accounts', 'list-vouchers-type',     'companies', 'advanced', 'tasks', 'inventories','bussiness_turns','offline-configurations','series-configurations','configurations', 'login-page', 'list-settings'])) {
                 $group = "configuration";
             }//
             elseif (

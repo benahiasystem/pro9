@@ -37,7 +37,6 @@ class CompanyResource extends JsonResource
             'certificate_due' => $this->certificate_due,
             'logo' => $this->logo,
             'logo_dark' => $this->logo_dark,
-            'detraction_account' => $this->detraction_account,
             'logo_store' => $this->logo_store,
             'operation_amazonia' => (bool) $this->operation_amazonia,
             'config_system_env' => (bool) $configuration->config_system_env,

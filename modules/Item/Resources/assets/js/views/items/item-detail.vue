@@ -433,7 +433,6 @@
                                 </div>
 
                                 <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                                <!-- ISC y detracción permanecen como datos compatibles, sin controles editables. -->
                                 <!-- ######### FIN SIN DETRACCIONES E ISC -->
 
 
@@ -1407,7 +1406,6 @@ export default {
                 purchase_has_isc: false,
                 purchase_system_isc_type_id: null,
                 purchase_percentage_isc: 0,
-                subject_to_detraction: false,
 
                 exchange_points: false,
                 quantity_of_points: 0,

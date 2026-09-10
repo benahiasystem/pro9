@@ -772,7 +772,6 @@ class SaleNoteController extends Controller
             "guides" => $saleNote['guides'],
             "related" => $saleNote['related'],
             "perception" => $saleNote['perception'],
-            "detraction" => $saleNote['detraction'],
             "invoice" => [
                 'operation_type_id' => "0101",
                 'date_of_due' => $request->fecha_de_vencimiento,

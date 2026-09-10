@@ -33,7 +33,6 @@
     $totalFilas = 6 + $totalProductos;
 
     $totalFilas += (int)$document->terms_condition;
-    $document->detraction;
 
     if (!empty($configurationInPdf->show_bank_accounts_in_pdf) &&
         in_array($document->document_type->id, ['01', '03'])) {
@@ -672,9 +671,9 @@
                         {{ $information }} <br>
                     @endif
                 @endforeach
-                @if ($document->retention || $document->detraction)
+                @if ($document->retention)
                     @php
-                        $value_ob = $document->detraction ? $document->detraction : $document->retention;
+                        $value_ob = $document->retention;
                         $total_pending_payment = $document->total_pending_payment - $value_ob->guarantee_fund;
                     @endphp
                 @endif
@@ -692,20 +691,6 @@
                     @endif
 
                     <br><span class=""> Fondo de garantía: </strong>{{ $document->currency_type->symbol }} {{ number_format($value_ob->guarantee_fund, 2) }}</span>
-                @endif
-                @if ($document->detraction)
-                    <span class="font-bold">N. Cta. detracciones:</span> {{ $document->detraction->bank_account }}
-                    @inject('detractionType', 'App\Services\DetractionTypeService')
-                    <br><span class="font-bold">B/S sujeto a detracción:</span> {{$document->detraction->detraction_type_id}} - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}
-                    <br><span class="font-bold">Método de pago:</span> {{ $detractionType->getPaymentMethodTypeDescription($document->detraction->payment_method_id ) }}
-                    <br><span class="font-bold">Porcentaje detracción:</span> {{ $document->detraction->percentage}}%
-                    <br><span class="font-bold">Monto detracción {{ $document->currency_type->id == 'USD' ? 'bolívares' : ''  }}:</span> Bs. {{ $document->detraction->amount}}
-
-                    @if ($document->currency_type->id == 'USD')
-                        <br><span class="font-bold">Monto detracción dólares:</span>
-                        {{$document->currency_type->symbol}} {{ number_format(($document->detraction->amount/$document->exchange_rate_sale), 2)}}
-                    @endif
-
                 @endif
             <td class="p-1 text-center align-top desc cell-solid " rowspan="6">
                 <img src="data:image/png;base64, {{ $document->qr }}" class="p-0 m-0" style="width: 120px;" /><br>
@@ -747,7 +732,7 @@
             </td>
             <td class="p-1 text-right align-top desc cell-solid font-bold">{{ number_format($document->total, 2) }}</td>
         </tr>
-        @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
+        @if(($document->retention) && $document->total_pending_payment > 0)
             <tr>
                 <td colspan="6" class="p-1 text-right align-top desc cell-solid font-bold">
                     M. PENDIENTE. {{ $document->currency_type->symbol }}
@@ -765,15 +750,6 @@
             <td>
                 <h6 style="font-size: 12px; font-weight: bold;">Términos y condiciones del servicio</h6>
                 {!! $document->terms_condition !!}
-            </td>
-        </tr>
-    </table>
-@endif
-@if ($document->detraction)
-    <table class="full-width">
-        <tr>
-            <td>
-                Operación sujeta al Sistema de Pago de Obligaciones Tributarias
             </td>
         </tr>
     </table>

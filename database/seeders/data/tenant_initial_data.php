@@ -1340,94 +1340,6 @@ return array (
         ),
       ),
     ),
-    'cat_payment_method_types' =>
-    array (
-      'key_columns' =>
-      array (
-        0 => 'id',
-      ),
-      'rows' =>
-      array (
-        0 =>
-        array (
-          'id' => '001',
-          'active' => 1,
-          'description' => 'Depósito en cuenta',
-        ),
-        1 =>
-        array (
-          'id' => '002',
-          'active' => 1,
-          'description' => 'Giro',
-        ),
-        2 =>
-        array (
-          'id' => '003',
-          'active' => 1,
-          'description' => 'Transferencia de fondos',
-        ),
-        3 =>
-        array (
-          'id' => '004',
-          'active' => 1,
-          'description' => 'Orden de pago',
-        ),
-        4 =>
-        array (
-          'id' => '005',
-          'active' => 1,
-          'description' => 'Tarjeta de débito',
-        ),
-        5 =>
-        array (
-          'id' => '006',
-          'active' => 1,
-          'description' => 'Tarjeta de crédito emitida en el país por una empresa del sistema financiero',
-        ),
-        6 =>
-        array (
-          'id' => '010',
-          'active' => 1,
-          'description' => 'Medios de pago usados en comercio exterior',
-        ),
-        7 =>
-        array (
-          'id' => '101',
-          'active' => 1,
-          'description' => 'Transferencias – Comercio exterior',
-        ),
-        8 =>
-        array (
-          'id' => '102',
-          'active' => 1,
-          'description' => 'Cheques bancarios - Comercio exterior',
-        ),
-        9 =>
-        array (
-          'id' => '103',
-          'active' => 1,
-          'description' => 'Orden de pago simple - Comercio exterior',
-        ),
-        10 =>
-        array (
-          'id' => '104',
-          'active' => 1,
-          'description' => 'Orden de pago documentario - Comercio exterior',
-        ),
-        11 =>
-        array (
-          'id' => '105',
-          'active' => 1,
-          'description' => 'Remesa simple - Comercio exterior',
-        ),
-        12 =>
-        array (
-          'id' => '999',
-          'active' => 1,
-          'description' => 'Otros medios de pago',
-        ),
-      ),
-    ),
     'cat_periods' =>
     array (
       'key_columns' =>
@@ -5598,7 +5510,6 @@ return array (
           'prepayments' => NULL,
           'related' => NULL,
           'perception' => NULL,
-          'detraction' => NULL,
           'legends' => NULL,
           'terms_condition' => NULL,
           'created_at' => NULL,
@@ -7485,7 +7396,6 @@ return array (
           'sale_unit_price' => '0.000000',
           'purchase_has_igv' => 1,
           'has_igv' => 1,
-          'subject_to_detraction' => 0,
           'purchase_unit_price' => '0.000000',
           'has_isc' => 0,
           'restrict_sale_cpe' => 0,
@@ -7560,7 +7470,6 @@ return array (
           'sale_unit_price' => '0.000000',
           'purchase_has_igv' => 0,
           'has_igv' => 0,
-          'subject_to_detraction' => 0,
           'purchase_unit_price' => '0.000000',
           'has_isc' => 0,
           'restrict_sale_cpe' => 0,

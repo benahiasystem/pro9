@@ -72,10 +72,6 @@
         /**
          * @return Factory|Application|View
          */
-        public function listDetractions()
-        {
-            return view('tenant.settings.list_detractions');
-        }
 
         /**
          * @return Factory|Application|View
@@ -101,13 +97,6 @@
             return view('tenant.settings.list_incomes');
         }
 
-        /**
-         * @return Factory|Application|View
-         */
-        public function listPayments()
-        {
-            return view('tenant.settings.list_payments');
-        }
 
         /**
          * @return Factory|Application|View

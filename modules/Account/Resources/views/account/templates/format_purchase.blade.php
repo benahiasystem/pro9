@@ -70,9 +70,6 @@ $col_span = 25;
         <td>
             MONEDA
         </td>
-        <td colspan="2">
-            CONSTANCIA DE DEPOSITO DE DETRACCION
-        </td>
         <td>
             TIPO DE CAMBIO
         </td>
@@ -109,8 +106,6 @@ $col_span = 25;
         <td></td>
         <td></td>
         <td></td>
-        <td>NÚMERO</td>
-        <td>FECHA DE EMISIÓN</td>
         <td></td>
         <td>FECHA</td>
         <td>TIPO</td>
@@ -146,8 +141,6 @@ $col_span = 25;
         <td></td>
         <td>{{ (in_array($row['document_type_id'],['01','03']) && in_array($row['state_type_id'],['09','11'])) ? 0 :  $row['total'] }}</td>
         <td>{{ $row['currency_type_symbol'] }}</td>
-        <td></td>
-        <td></td>
         <td>{{ $row['exchange_rate_sale'] }}</td>
         <td></td>
         <td></td>

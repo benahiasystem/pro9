@@ -144,9 +144,6 @@
                     <li>
                         <a href="{{url('list-incomes')}}"><i class="ti ti-cash"></i>Motivos de ingresos / Gastos</a>
                     </li>
-                    <li>
-                        <a href="{{url('list-payments')}}"><i class="ti ti-coins"></i>Listado de métodos de pago</a>
-                    </li>
                     @endif
                     @if($user->type != 'integrator')
                     <li>

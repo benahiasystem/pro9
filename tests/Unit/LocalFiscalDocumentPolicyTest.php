@@ -27,16 +27,14 @@ class LocalFiscalDocumentPolicyTest extends TestCase
     }
 
     /** @test */
-    public function isc_and_detractions_are_hidden_by_default(): void
+    public function isc_and_ubl_attributes_are_hidden_by_default(): void
     {
         config()->set('venezuela.visible_fiscal_features.isc', false);
-        config()->set('venezuela.visible_fiscal_features.detractions', false);
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         config()->set('venezuela.visible_fiscal_features.ubl_attributes', false);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         self::assertFalse(LocalFiscalDocumentPolicy::showIsc());
-        self::assertFalse(LocalFiscalDocumentPolicy::showDetractions());
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         self::assertFalse(LocalFiscalDocumentPolicy::showUblAttributes());
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES

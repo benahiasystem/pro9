@@ -1628,7 +1628,6 @@
                         </div>
 
                         <!-- ########## INICIO SIN DETRACCIONES E ISC -->
-                        <!-- ISC y detracción permanecen en el estado histórico, sin controles activos. -->
                         <!-- ######### FIN SIN DETRACCIONES E ISC -->
                     </div>
                 </el-tab-pane>
@@ -2426,7 +2425,6 @@ export default {
                 purchase_has_isc: false,
                 purchase_system_isc_type_id: null,
                 purchase_percentage_isc: 0,
-                subject_to_detraction: false,
 
                 exchange_points: false,
                 quantity_of_points: 0,

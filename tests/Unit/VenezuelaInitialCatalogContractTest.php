@@ -71,21 +71,7 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             11 => 'BANCO FONDO COMÚN', 12 => 'BANCO PLAZA', 13 => 'BANCO VENEZOLANO DE CRÉDITO',
         ], $this->descriptionsById('banks'));
 
-        self::assertSame([
-            '001' => 'Depósito en cuenta',
-            '002' => 'Giro',
-            '003' => 'Transferencia de fondos',
-            '004' => 'Orden de pago',
-            '005' => 'Tarjeta de débito',
-            '006' => 'Tarjeta de crédito emitida en el país por una empresa del sistema financiero',
-            '010' => 'Medios de pago usados en comercio exterior',
-            '101' => 'Transferencias – Comercio exterior',
-            '102' => 'Cheques bancarios - Comercio exterior',
-            '103' => 'Orden de pago simple - Comercio exterior',
-            '104' => 'Orden de pago documentario - Comercio exterior',
-            '105' => 'Remesa simple - Comercio exterior',
-            '999' => 'Otros medios de pago',
-        ], $this->descriptionsById('cat_payment_method_types'));
+        self::assertArrayNotHasKey('cat_payment_method_types', (require base_path('database/seeders/data/tenant_initial_data.php'))['tables']);
     }
 
     /** @test */

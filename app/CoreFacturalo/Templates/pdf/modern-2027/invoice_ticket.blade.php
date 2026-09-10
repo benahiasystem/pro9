@@ -261,85 +261,6 @@
     @endif
 
 
-    @if ($document->detraction)
-        {{--<strong>Operación sujeta a detracción</strong>--}}
-        <tr>
-            <td class="align-top m27-label"><p class="m27-label">N. Cta Detracciones:</p></td>
-            <td><p class="m27-value">{{ $document->detraction->bank_account}}</p></td>
-        </tr>
-        <tr>
-            <td class="align-top m27-label"><p class="m27-label">B/S Sujeto a detracción:</p></td>
-            @inject('detractionType', 'App\Services\DetractionTypeService')
-            <td><p class="m27-value">{{$document->detraction->detraction_type_id}}
-                    - {{ $detractionType->getDetractionTypeDescription($document->detraction->detraction_type_id ) }}</p>
-            </td>
-        </tr>
-        <tr>
-            <td class="align-top m27-label"><p class="m27-label">Método de pago:</p></td>
-            <td>
-                <p class="m27-value">{{ $detractionType->getPaymentMethodTypeDescription($document->detraction->payment_method_id ) }}</p>
-            </td>
-        </tr>
-        <tr>
-            <td class="align-top m27-label"><p class="m27-label">Porcentaje detracción:</p></td>
-            <td><p class="m27-value">{{ $document->detraction->percentage}}%</p></td>
-        </tr>
-        <tr>
-            <td class="align-top m27-label"><p class="m27-label">Monto detracción:</p></td>
-            <td><p class="m27-value">Bs. {{ $document->detraction->amount}}</p></td>
-        </tr>
-        @if($document->detraction->pay_constancy)
-            <tr>
-                <td class="align-top m27-label"><p class="m27-label">Constancia de pago:</p></td>
-                <td><p class="m27-value">{{ $document->detraction->pay_constancy}}</p></td>
-            </tr>
-        @endif
-
-
-        @if($invoice->operation_type_id == '1004')
-            <tr class="mt-2">
-                <td colspan="2"></td>
-            </tr>
-            <tr class="mt-2">
-                <td colspan="2">DETALLE - SERVICIOS DE TRANSPORTE DE CARGA</td>
-            </tr>
-            <tr>
-                <td class="align-top m27-label"><p class="m27-label">Ubigeo origen:</p></td>
-                <td><p class="m27-value">{{ $document->detraction->origin_location_id[2] }}</p></td>
-            </tr>
-            <tr>
-                <td class="align-top m27-label"><p class="m27-label">Dirección origen:</td>
-                <td><p class="m27-value">{{ $document->detraction->origin_address }}</td>
-            </tr>
-            <tr>
-                <td class="align-top m27-label"><p class="m27-label">Ubigeo destino:</p></td>
-                <td><p class="m27-value">{{ $document->detraction->delivery_location_id[2] }}</p></td>
-            </tr>
-            <tr>
-
-                <td class="align-top m27-label"><p class="m27-label">Dirección destino:</p></td>
-                <td><p class="m27-value">{{ $document->detraction->delivery_address }}</p></td>
-            </tr>
-            <tr>
-                <td class="align-top m27-label"><p class="m27-label">Valor referencial servicio de transporte:</p></td>
-                <td><p class="m27-value">{{ $document->detraction->reference_value_service }}</p></td>
-            </tr>
-            <tr>
-
-                <td class="align-top m27-label"><p class="m27-label">Valor referencia carga efectiva:</p></td>
-                <td><p class="m27-value">{{ $document->detraction->reference_value_effective_load }}</p></td>
-            </tr>
-            <tr>
-                <td class="align-top m27-label"><p class="m27-label">Valor referencial carga útil:</p></td>
-                <td><p class="m27-value">{{ $document->detraction->reference_value_payload }}</p></td>
-            </tr>
-            <tr>
-                <td class="align-top m27-label"><p class="m27-label">Detalle del viaje:</p></td>
-                <td><p class="m27-value">{{ $document->detraction->trip_detail }}</p></td>
-            </tr>
-        @endif
-
-    @endif
 
     @if ($document->retention)
         <br>
@@ -863,7 +784,7 @@
         </tr>
     @endif
 
-    @if(($document->retention || $document->detraction) && $document->total_pending_payment > 0)
+    @if(($document->retention) && $document->total_pending_payment > 0)
         <tr>
             <td colspan="2" class="m27-total-label">M. pendiente:</td>
             <td class="m27-total-value">{{ $document->currency_type->symbol }} {{ number_format($document->total_pending_payment, 2) }}</td>
@@ -949,11 +870,6 @@
 @endif
 
 <table class="full-width">
-    @if ($document->detraction)
-        <tr>
-            <td class="m27-item-note pt-2">Operación sujeta al Sistema de Pago de Obligaciones Tributarias</td>
-        </tr>
-    @endif
     @foreach($document->additional_information as $information)
         @if ($information)
             @if ($loop->first)

@@ -361,32 +361,6 @@
                         <span slot="label">Productos</span>
                         <div class="row">
                             <div class="col-12 row ">
-                                <!--
-                                                                <div class="col-lg-2 align-self-end">
-                                                                    <div :class="{'has-danger': errors.operation_type_id}"
-                                                                         class="form-group">
-                                                                        <label class="control-label">Tipo Operación
-                                                                            <template v-if="(form.operation_type_id == '1001' || form.operation_type_id == '1004') && has_data_detraction">
-                                                                                <a class="text-center font-weight-bold text-info"
-                                                                                   href="#"
-                                                                                   @click.prevent="showDialogDocumentDetraction = true"> [+ Ver
-                                                                                                                                         datos]</a>
-                                                                            </template>
-
-                                                                        </label>
-                                                                        <el-select v-model="form.operation_type_id"
-                                                                                   @change="changeOperationType">
-                                                                            <el-option v-for="option in operation_types"
-                                                                                       :key="option.id"
-                                                                                       :label="option.description"
-                                                                                       :value="option.id"></el-option>
-                                                                        </el-select>
-                                                                        <small v-if="errors.operation_type_id"
-                                                                               class="form-control-feedback"
-                                                                               v-text="errors.operation_type_id[0]"></small>
-                                                                    </div>
-                                                                </div>
-                                                                -->
                             </div>
                             <div class="col-12">
                                 <div class="table-responsive">
@@ -676,8 +650,6 @@ export default {
             default_series_type: null,
             dateValid: false,
             input_person: {},
-            showDialogDocumentDetraction: false,
-            has_data_detraction: false,
             showDialogFormHotel: false,
             showDialogFormTransport: false,
             is_client: false,
@@ -711,10 +683,7 @@ export default {
             user: null,
             is_receivable: false,
             is_contingency: false,
-            cat_payment_method_types: [],
             select_first_document_type_03: false,
-            detraction_types: [],
-            all_detraction_types: [],
             customer_addresses: [],
             payment_destinations: [],
             form_cash_document: {},
@@ -789,8 +758,6 @@ export default {
                     response.data.affectation_igv_types;
                 // this.prepayment_documents = response.data.prepayment_documents;
                 this.is_client = response.data.is_client;
-                // this.cat_payment_method_types = response.data.cat_payment_method_types;
-                // this.all_detraction_types = response.data.detraction_types;
                 this.payment_destinations = response.data.payment_destinations;
                 this.payment_conditions = response.data.payment_conditions;
 
@@ -827,7 +794,6 @@ export default {
         async changeOperationType() {
             this.form.customer_id = null;
             await this.filterCustomers();
-            await this.setDataDetraction();
         },
 
         getDescriptionFromAffectationIgvType(type_id) {
@@ -897,37 +863,9 @@ export default {
             this.form.items = items;
             this.calculateTotal();
         },
-        async setDataDetraction() {
-            if (this.form.operation_type_id === "1001") {
-                this.showDialogDocumentDetraction = true;
-
-                // this.$message.warning('Sujeta a detracción');
-                // await this.filterDetractionTypes();
-                let legend = await _.find(this.form.legends, { code: "2006" });
-                if (!legend)
-                    this.form.legends.push({
-                        code: "2006",
-                        value: "Operación sujeta a detracción"
-                    });
-                this.form.detraction.bank_account = this.company.detraction_account;
-            } else if (this.form.operation_type_id === "1004") {
-                this.showDialogDocumentDetraction = true;
-                let legend = await _.find(this.form.legends, { code: "2006" });
-                if (!legend)
-                    this.form.legends.push({
-                        code: "2006",
-                        value:
-                            "Operación Sujeta a Detracción - Servicios de Transporte - Carga"
-                    });
-                this.form.detraction.bank_account = this.company.detraction_account;
-            } else {
-                _.remove(this.form.legends, { code: "2006" });
-                this.form.detraction = {};
-            }
-        },
         filterCustomers() {
             if (
-                ["0101", "1001", "1004"].includes(this.form.operation_type_id)
+                this.form.operation_type_id === "0101"
             ) {
                 if (this.form.document_type_id === "01") {
                     this.customers = _.filter(this.all_customers, {
@@ -1127,8 +1065,6 @@ export default {
 
             if (this.prepayment_deduction) this.discountGlobalPrepayment();
 
-            if (["1001", "1004"].includes(this.form.operation_type_id))
-                this.changeDetractionType();
 
             this.setTotalDefaultPayment();
             this.setPendingAmount();
@@ -1354,26 +1290,6 @@ export default {
                 this.form.discounts[0].factor = factor;
             }
         },
-        async changeDetractionType() {
-            /* Extraido de resources/js/views/tenant/documents/invoice.vue */
-            if (this.form.detraction) {
-                this.form.detraction.amount =
-                    this.form.currency_type_id == "VES"
-                        ? _.round(
-                              parseFloat(this.form.total) *
-                                  (parseFloat(this.form.detraction.percentage) /
-                                      100),
-                              2
-                          )
-                        : _.round(
-                              parseFloat(this.form.total) *
-                                  this.form.exchange_rate_sale *
-                                  (parseFloat(this.form.detraction.percentage) /
-                                      100),
-                              2
-                          );
-            }
-        },
         setTotalDefaultPayment() {
             /* Extraido de resources/js/views/tenant/documents/invoice.vue */
             if (
@@ -1548,7 +1464,6 @@ export default {
                 payments: [],
                 prepayments: [],
                 legends: [],
-                detraction: {},
                 additional_information: null,
                 plate_number: null,
                 has_prepayment: false,
@@ -1988,7 +1903,6 @@ export default {
             this.form.payments = data.payments;
             this.form.prepayments = data.prepayments || [];
             this.form.legends = [];
-            this.form.detraction = data.detraction;
             this.form.affectation_type_prepayment =
                 data.affectation_type_prepayment;
             this.form.purchase_order = data.purchase_order;
@@ -2247,13 +2161,6 @@ export default {
                 }
             }
         },
-        addDocumentDetraction(detraction) {
-            this.form.detraction = detraction;
-            // this.has_data_detraction = (detraction.pay_constancy || detraction.detraction_type_id || detraction.payment_method_id || (detraction.amount && detraction.amount >0)) ? true:false
-            this.has_data_detraction = detraction
-                ? detraction.has_data_detraction
-                : false;
-        },
         async changeDocumentPrepayment(index) {
             let prepayment = await _.find(this.prepayment_documents, {
                 id: this.form.prepayments[index].document_id
@@ -2432,56 +2339,7 @@ export default {
             this.changeCurrencyType();
             // this.changeDestinationSale()
         },
-        // async filterDetractionTypes(){
-        //     this.detraction_types =  await _.filter(this.all_detraction_types, {'operation_type_id':this.form.operation_type_id})
         // },
-        validateDetraction() {
-            if (["1001", "1004"].includes(this.form.operation_type_id)) {
-                let detraction = this.form.detraction;
-
-                let tot =
-                    this.form.currency_type_id == "VES"
-                        ? this.form.total
-                        : this.form.total * this.form.exchange_rate_sale;
-                let total_restriction =
-                    this.form.operation_type_id == "1001" ? 700 : 400;
-
-                if (tot <= total_restriction)
-                    return {
-                        success: false,
-                        message: `El importe de la operación debe ser mayor a Bs. ${total_restriction}.00 o equivalente en USD`
-                    };
-
-                if (!detraction.detraction_type_id)
-                    return {
-                        success: false,
-                        message:
-                            "El campo bien o servicio sujeto a detracción es obligatorio"
-                    };
-
-                if (!detraction.payment_method_id)
-                    return {
-                        success: false,
-                        message:
-                            "El campo método de pago - detracción es obligatorio"
-                    };
-
-                if (!detraction.bank_account)
-                    return {
-                        success: false,
-                        message: "El campo cuenta bancaria es obligatorio"
-                    };
-
-                if (detraction.amount <= 0)
-                    return {
-                        success: false,
-                        message:
-                            "El campo total detracción debe ser mayor a cero"
-                    };
-            }
-
-            return { success: true };
-        },
         changeEstablishment() {
             this.establishment = _.find(this.establishments, {
                 id: this.form.establishment_id

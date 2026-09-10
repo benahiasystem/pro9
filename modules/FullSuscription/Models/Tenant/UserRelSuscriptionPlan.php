@@ -84,7 +84,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
      * @property string|null          $prepayments
      * @property string|null          $related
      * @property string|null          $perception
-     * @property string|null          $detraction
      * @property string|null          $legends
      * @property string|null          $terms_condition
      * @property int|null             $children_customer_id
@@ -196,7 +195,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
             'prepayments',
             'related',
             'perception',
-            'detraction',
             'legends',
             'terms_condition'
         ];
@@ -573,7 +571,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
             $btn_voided = false;
             $btn_consult_cdr = false;
             $btn_delete_doc_type_03 = false;
-            $btn_constancy_detraction = false;
 
             $affected_document = null;
 
@@ -620,7 +617,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
             }
 
             if (in_array($document->document_type_id, ['01', '03'])) {
-                $btn_constancy_detraction = ($document->detraction) ? true : false;
             }
 
             $btn_recreate_document = config('tenant.recreate_document');
@@ -682,7 +678,6 @@ use App\Http\Controllers\Tenant\SaleNoteController;
 //                'btn_ticket' => $btn_ticket,
                 'btn_resend' => $btn_resend,
                 'btn_consult_cdr' => $btn_consult_cdr,
-                'btn_constancy_detraction' => $btn_constancy_detraction,
                 'btn_recreate_document' => $btn_recreate_document,
                 'btn_change_to_registered_status' => $btn_change_to_registered_status,
                 'btn_delete_doc_type_03' => $btn_delete_doc_type_03,

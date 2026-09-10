@@ -14,14 +14,13 @@ use App\Models\Tenant\Document;
 use App\Models\Tenant\Item;
 use Illuminate\Support\Str;
 use Modules\Offline\Models\OfflineConfiguration;
-use Illuminate\Support\Facades\Storage;
-use Modules\Finance\Helpers\UploadFileHelper;
 
 
 class DocumentUpdateInput
 {
     public static function set($inputs)
     {
+        $inputs = \App\Support\Venezuela\RetiredDetractionFields::discard($inputs);
         $document_type_id = $inputs['document_type_id'];
         $series = $inputs['series'];
         $number = $inputs['number'];
@@ -108,7 +107,6 @@ class DocumentUpdateInput
             'guides' => self::guides($inputs),
             'related' => self::related($inputs),
             'perception' => self::perception($inputs),
-            'detraction' => self::detraction($inputs),
             'retention' => self::retention($inputs),
             'invoice' => $invoice,
             'note' => $note,
@@ -137,7 +135,6 @@ class DocumentUpdateInput
             'unique_filename' => Functions::valueKeyInArray($inputs, 'filename'),
             'payment_condition_id' => key_exists('payment_condition_id', $inputs) ? $inputs['payment_condition_id'] : '01',
             'fee' => Functions::valueKeyInArray($inputs, 'fee', []),
-            'pending_amount_detraction' => Functions::valueKeyInArray($inputs, 'pending_amount_detraction', 0),
 
             'sale_notes_relateds' => Functions::valueKeyInArray($inputs, 'sale_notes_relateds'),
             'seller_id' => Functions::valueKeyInArray($inputs, 'seller_id'),
@@ -414,87 +411,6 @@ class DocumentUpdateInput
         return null;
     }
 
-    private static function detraction($inputs)
-    {
-
-        if (isset($inputs['detraction']) && !empty($inputs['detraction'])) {
-
-            $detraction = $inputs['detraction'];
-
-            $detraction_type_id = $detraction['detraction_type_id'];
-            $percentage = $detraction['percentage'];
-            $amount = $detraction['amount'];
-            $payment_method_id = $detraction['payment_method_id'];
-            $bank_account = $detraction['bank_account'];
-
-            //detraction transport
-            $reference_value_service = null;
-            $reference_value_effective_load = null;
-            $reference_value_payload = null;
-            $origin_location_id = [];
-            $origin_address = null;
-            $delivery_location_id = [];
-            $delivery_address = null;
-            $trip_detail = null;
-
-
-            if ($inputs['operation_type_id'] === '1004') {
-
-                $reference_value_service = $detraction['reference_value_service'];
-                $reference_value_effective_load = $detraction['reference_value_effective_load'];
-                $reference_value_payload = $detraction['reference_value_payload'];
-                $origin_location_id = $detraction['origin_location_id'];
-                $origin_address = $detraction['origin_address'];
-                $delivery_location_id = $detraction['delivery_location_id'];
-                $delivery_address = $detraction['delivery_address'];
-                $trip_detail = $detraction['trip_detail'];
-
-            }
-
-            $pay_constancy = array_key_exists('pay_constancy', $detraction) ? $detraction['pay_constancy'] : null;
-            $set_image_pay_constancy = null;
-            $image_pay_constancy = array_key_exists('image_pay_constancy', $detraction) ? $detraction['image_pay_constancy'] : null;
-
-            if (isset($image_pay_constancy['temp_path'])) {
-
-                $directory = 'public' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'image_detractions' . DIRECTORY_SEPARATOR;
-                $file_name_old = $image_pay_constancy['image'];
-                $file_name_old_array = explode('.', $file_name_old);
-                $file_content = file_get_contents($image_pay_constancy['temp_path']);
-                $datenow = date('YmdHis');
-                $file_name = $detraction['detraction_type_id'] . '-' . $detraction['bank_account'] . '-' . $datenow . '.' . $file_name_old_array[1];
-
-                UploadFileHelper::checkIfValidFile($file_name, $image_pay_constancy['temp_path'], true);
-
-                Storage::put($directory . $file_name, $file_content);
-                $set_image_pay_constancy = $file_name;
-
-            } else {
-                $set_image_pay_constancy = $image_pay_constancy;
-            }
-
-            return [
-                'detraction_type_id' => $detraction_type_id,
-                'percentage' => $percentage,
-                'amount' => $amount,
-                'payment_method_id' => $payment_method_id,
-                'bank_account' => $bank_account,
-                'pay_constancy' => $pay_constancy,
-                'image_pay_constancy' => $set_image_pay_constancy,
-                'reference_value_service' => $reference_value_service,
-                'reference_value_effective_load' => $reference_value_effective_load,
-                'reference_value_payload' => $reference_value_payload,
-                'origin_location_id' => $origin_location_id,
-                'origin_address' => $origin_address,
-                'delivery_location_id' => $delivery_location_id,
-                'delivery_address' => $delivery_address,
-                'trip_detail' => $trip_detail,
-            ];
-
-        }
-
-        return null;
-    }
 
     private static function hotel($inputs)
     {

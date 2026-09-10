@@ -26,9 +26,6 @@ class CreateMassiveInvoicesTable extends Migration
             $table->text('observacion')->nullable();
             $table->string('orden_compra')->nullable();
             $table->boolean('incluye_igv')->default(true);
-            $table->boolean('incluye_detraccion')->default(false);
-            $table->decimal('porcentaje_detraccion', 10, 2)->nullable();
-            $table->string('servicio_detraccion')->nullable();
             $table->string('item');
             $table->string('descripcion_producto');
             $table->decimal('cantidad', 12, 2);

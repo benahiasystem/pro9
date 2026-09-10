@@ -50,7 +50,6 @@
  * - `guides`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `related`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `perception`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `detraction`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `legends`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `filename`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `terms_condition`: text; NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -121,7 +120,6 @@ CREATE TABLE `quotations` (
   `guides` json DEFAULT NULL,
   `related` json DEFAULT NULL,
   `perception` json DEFAULT NULL,
-  `detraction` json DEFAULT NULL,
   `legends` json DEFAULT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `terms_condition` text COLLATE utf8mb4_unicode_ci,

@@ -10,7 +10,6 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Support\Facades\File;
 
 class DocumentEmail extends Mailable
 {
@@ -51,9 +50,6 @@ class DocumentEmail extends Mailable
         }
 
 
-        $image_detraction = (!LocalFiscalDocumentPolicy::showDetractions() || !$this->document->detraction)
-            ? false
-            : (($this->document->detraction->image_pay_constancy) ? storage_path('app'.DIRECTORY_SEPARATOR.'public'.DIRECTORY_SEPARATOR.'uploads'.DIRECTORY_SEPARATOR.'image_detractions'.DIRECTORY_SEPARATOR.$this->document->detraction->image_pay_constancy):false);
 
         $template_document_mail = config('tenant.template_document_mail');
         if($template_document_mail === 'default') {
@@ -83,9 +79,6 @@ class DocumentEmail extends Mailable
         }
         // ######### FIN CAMBIO SIN XML CDR SUNAT
 
-        if($image_detraction){
-            return $email->attachData(File::get($image_detraction), $this->document->detraction->image_pay_constancy);
-        }
 
         return $email;
     }

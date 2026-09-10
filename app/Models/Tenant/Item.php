@@ -186,7 +186,6 @@ class Item extends ModelTenant
         'purchase_system_isc_type_id',
         'purchase_has_isc',
 
-        'subject_to_detraction',
         'favorite',
         'restaurant_favorite',
 
@@ -206,7 +205,6 @@ class Item extends ModelTenant
         'purchase_has_isc' => 'boolean',
         'has_igv' => 'boolean',
         'purchase_has_igv' => 'boolean',
-        'subject_to_detraction' => 'boolean',
         'sale_unit_price' => 'float',
         'purchase_unit_price' => 'float',
         'favorite' => 'boolean',
@@ -1438,7 +1436,6 @@ class Item extends ModelTenant
             'system_isc_type_id' => $this->system_isc_type_id,
             'percentage_isc' => $this->percentage_isc,
             'is_for_production'=>$this->isIsForProduction(),
-            'subject_to_detraction' => $this->subject_to_detraction,
             'exchange_points' => $this->exchange_points,
             'quantity_of_points' => $this->quantity_of_points,
             'exchanged_for_points' => false, //para determinar si desea canjear el producto
@@ -3343,12 +3340,6 @@ class Item extends ModelTenant
     }
 
 
-    /**
-     *
-     * Obtener datos para lista de productos en ventas - Modo Pos
-     *
-     * @return array
-     */
     /**
      *
      * Stock por almacen uniforme para la API movil (records-scroll, document/tables, search-items).

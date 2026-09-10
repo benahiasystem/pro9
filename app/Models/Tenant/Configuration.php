@@ -122,7 +122,6 @@ use Illuminate\Support\Facades\Log;
      * @property bool|false  $show_terms_condition_pos
      * @property bool        $order_node_advanced
      * @property bool        $exact_discount
-     * @property bool        $available_detraction_for_amount_minor
      * @package App\Models\Tenant
      * @mixin ModelTenant
      * @method static Builder|Configuration newModelQuery()
@@ -241,7 +240,6 @@ use Illuminate\Support\Facades\Log;
             'sidebar_mode',
             'show_totals_on_cpe_list',
             'mi_tienda_pe',
-            'detraction_amount_rounded_int',
             'validate_purchase_sale_unit_price',
             'show_terms_condition_pos',
             'show_ticket_80',
@@ -356,7 +354,6 @@ use Illuminate\Support\Facades\Log;
             'enabled_price_items_dispatch',
             'legend_footer_sale',
             'exact_discount',
-            'available_detraction_for_amount_minor',
             'available_cash_report_seller',
             'from_guest_register',
             'was_verified_guest_user',
@@ -461,7 +458,6 @@ use Illuminate\Support\Facades\Log;
             'pos_cost_price' => 'bool',
             'show_totals_on_cpe_list' => 'bool',
             'auto_print' => 'bool',
-            'detraction_amount_rounded_int' => 'bool',
             'validate_purchase_sale_unit_price' => 'bool',
             'show_terms_condition_pos' => 'bool',
             'show_last_price_sale' => 'bool',
@@ -543,7 +539,6 @@ use Illuminate\Support\Facades\Log;
             'show_bank_accounts_in_pdf' => 'bool',
             'enabled_price_items_dispatch' => 'bool',
             'exact_discount' => 'bool',
-            'available_detraction_for_amount_minor' => 'bool',
             'available_cash_report_seller' => 'bool',
             'from_guest_register' => 'bool',
             'was_verified_guest_user' => 'bool',
@@ -826,7 +821,6 @@ use Illuminate\Support\Facades\Log;
                 'pos_history' => $this->isPosHistory(),
                 'pos_cost_price' => $this->isPosCostPrice(),
                 'show_totals_on_cpe_list' => $this->isShowTotalsOnCpeList(),
-                'detraction_amount_rounded_int' => $this->detraction_amount_rounded_int,
                 'customer_filter_by_seller' => $this->customer_filter_by_seller,
                 'validate_purchase_sale_unit_price' => $this->validate_purchase_sale_unit_price,
                 'global_discount_type_id' => $this->global_discount_type_id,
@@ -923,7 +917,6 @@ use Illuminate\Support\Facades\Log;
                 'show_bank_accounts_in_pdf' => $this->show_bank_accounts_in_pdf,
                 'enabled_price_items_dispatch' => $this->enabled_price_items_dispatch,
                 'exact_discount' => $this->exact_discount,
-                'available_detraction_for_amount_minor' => $this->available_detraction_for_amount_minor,
                 'available_cash_report_seller' => $this->available_cash_report_seller,
                 'enable_consigned' => $this->enable_consigned,
                 'price1_label' => $this->price1_label ?? 'Precio 1',

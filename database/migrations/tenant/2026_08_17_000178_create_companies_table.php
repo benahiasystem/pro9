@@ -20,7 +20,6 @@
  * - `certificate_due`: date; NULL — Sin comentario definido en el esquema fuente.
  * - `logo`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `logo_dark`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `detraction_account`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `app_logo`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `logo_store`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `favicon`: varchar(150); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -90,7 +89,6 @@ CREATE TABLE `companies` (
   `certificate_due` date DEFAULT NULL,
   `logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `logo_dark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `detraction_account` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `app_logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `logo_store` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `favicon` varchar(150) COLLATE utf8mb4_unicode_ci DEFAULT NULL,

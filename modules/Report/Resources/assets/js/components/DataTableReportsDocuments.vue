@@ -269,7 +269,7 @@
                                    @click.prevent="getRecordsByFilter">Buscar
                         </el-button>
 
-                        <template v-if="records.length>0 && resource  !== 'reports/document-detractions'">
+                        <template v-if="records.length>0">
 
 
                             <div class="dropdown d-inline ml-1 mr-1">

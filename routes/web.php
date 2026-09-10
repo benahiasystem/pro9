@@ -60,7 +60,6 @@ if ($hostname) {
             Route::get('list-units', 'Tenant\SettingController@listUnits');
             Route::get('list-payment-methods', 'Tenant\SettingController@listPaymentMethods');
             Route::get('list-incomes', 'Tenant\SettingController@listIncomes');
-            Route::get('list-payments', 'Tenant\SettingController@listPayments');
             Route::get('list-vouchers-type', 'Tenant\SettingController@listVouchersType');
             Route::get('list-transfer-reason-types', 'Tenant\SettingController@listTransferReasonTypes');
             Route::get('list-item-affectations', 'Tenant\SettingController@listItemAffectations');
@@ -847,10 +846,6 @@ if ($hostname) {
             Route::post('cuenta/plan_change/order', 'Tenant\AccountController@createPlanChangeOrder');
 
             //Payment Methods
-            Route::get('payment_method/records', 'Tenant\PaymentMethodTypeController@records');
-            Route::get('payment_method/record/{code}', 'Tenant\PaymentMethodTypeController@record');
-            Route::post('payment_method', 'Tenant\PaymentMethodTypeController@store');
-            Route::delete('payment_method/{code}', 'Tenant\PaymentMethodTypeController@destroy');
 
             //formats PDF
             Route::get('templates', 'Tenant\FormatTemplateController@records');

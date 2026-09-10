@@ -2460,7 +2460,6 @@ export default {
             this.row.document_item_id = document_item_id;
             this.row.various_item = this.various_item
 
-            this.showMessageDetraction();
 
             this.$emit("add", this.row);
 
@@ -2474,21 +2473,6 @@ export default {
             } else {
                 this.setFocusSelectItem();
             }
-        },
-        showMessageDetraction() {
-            let total =
-                this.currencyTypeIdActive === "VES"
-                    ? this.row.total
-                    : this.row.total * this.exchangeRateSale;
-            let total_restriction = 700;
-
-            if (
-                total >= total_restriction &&
-                this.row.item.subject_to_detraction
-            )
-                this.$message.warning(
-                    "El producto/servicio vendido está sujeto a detracción"
-                );
         },
         cleanItems() {
             this.items = [];

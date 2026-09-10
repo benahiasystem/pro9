@@ -40,7 +40,6 @@
  * - `prepayments`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `related`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `perception`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `detraction`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `legends`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `terms_condition`: longtext; NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
@@ -90,7 +89,6 @@ CREATE TABLE `suscription_plans` (
   `prepayments` json DEFAULT NULL,
   `related` json DEFAULT NULL,
   `perception` json DEFAULT NULL,
-  `detraction` json DEFAULT NULL,
   `legends` json DEFAULT NULL,
   `terms_condition` longtext COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,

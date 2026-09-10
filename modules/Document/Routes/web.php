@@ -12,9 +12,6 @@ if($current_hostname) {
             // ######### FIN CAMBIO SIN XML CDR SUNAT
 
             /**
-            * documents/pay-constancy/upload
-            * documents/pay-constancy/save
-            * documents/detraction/tables
             * documents/data-table/customers
             * documents/prepayments/{type}
             * documents/search-items
@@ -24,8 +21,6 @@ if($current_hostname) {
             * documents/regularize-lots/{document_item_id}
              */
             Route::prefix('documents')->group(function() {
-                Route::post('pay-constancy/upload', 'DocumentController@upload');
-                Route::post('pay-constancy/save', 'DocumentController@savePayConstancy');
                 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
                 // Sin catálogo de detracciones no se publica este endpoint.
                 // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
