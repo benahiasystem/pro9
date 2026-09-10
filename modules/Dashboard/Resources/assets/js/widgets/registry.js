@@ -224,6 +224,7 @@ export function defaultLayout(catalogSources) {
     { source: 'ventas.top_productos', type: 'ranking', size: 'm', cols: 4, rows: 6 },
     { source: 'finanzas.medios_pago', type: 'donut', size: 'l', cols: products ? 4 : 6, rows: 6 },
     { source: 'finanzas.flujo_caja', type: 'area', size: 'l', cols: 8, rows: 5 },
+    { source: 'finanzas.utilidades', type: 'donut', size: 'l', cols: 4, rows: 5 },
     { source: 'sunat.estado_cpe', type: 'custom', size: 'm', cols: 4, rows: 2 },
     { source: 'inventario.stock_bajo', type: 'custom', size: 'm', cols: 4, rows: 3 },
   ]

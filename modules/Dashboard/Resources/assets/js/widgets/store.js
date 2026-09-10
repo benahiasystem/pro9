@@ -2,6 +2,17 @@ import Vue from 'vue'
 import { coerceSize, defaultLayout, typeById, typesForSource } from './registry'
 
 const LS_KEY = 'dashboard_widgets_layout_v1'
+/** Una sola vez: inyecta Utilidades/Ganancias en layouts viejos que no lo tengan. */
+const LS_SEED_UTILIDADES = 'dashboard_widgets_seed_utilidades_v1'
+
+const UTILIDADES_WIDGET = {
+  source: 'finanzas.utilidades',
+  type: 'donut',
+  size: 'l',
+  cols: 4,
+  rows: 5,
+  options: {},
+}
 
 /**
  * Estado compartido del dashboard de widgets (Vue.observable, Vue 2.6).
@@ -78,6 +89,28 @@ function loadLocal() {
   return []
 }
 
+/**
+ * Clientes ya creados: si el layout guardado no incluye Utilidades/Ganancias,
+ * lo agrega una vez (no se vuelve a forzar si el usuario lo quita después).
+ */
+function ensureUtilidadesWidget(layout) {
+  if (!Array.isArray(layout) || !layout.length) return layout
+  if (layout.some(w => w.source === UTILIDADES_WIDGET.source)) {
+    try { localStorage.setItem(LS_SEED_UTILIDADES, '1') } catch (e) { /* ignore */ }
+    return layout
+  }
+  if (!sourceByKey(UTILIDADES_WIDGET.source)) return layout
+
+  let alreadySeeded = false
+  try { alreadySeeded = localStorage.getItem(LS_SEED_UTILIDADES) === '1' } catch (e) { /* ignore */ }
+  if (alreadySeeded) return layout
+
+  const id = 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+  const next = layout.concat([Object.assign({ id }, UTILIDADES_WIDGET)])
+  try { localStorage.setItem(LS_SEED_UTILIDADES, '1') } catch (e) { /* ignore */ }
+  return next
+}
+
 async function fetchDatasets(widgets) {
   const pending = []
   const seen = {}
@@ -126,8 +159,12 @@ export const widgetStore = {
     } catch (e) { /* sin backend de layout: cae a local */ }
 
     if (!layout.length) layout = loadLocal()
-    state.layout = layout.length ? layout : defaultLayout(state.catalog.sources)
+    layout = layout.length ? layout : defaultLayout(state.catalog.sources)
+    const seeded = ensureUtilidadesWidget(layout)
+    state.layout = seeded
     state.ready = true
+
+    if (seeded !== layout) persistLocal()
 
     await this.refresh()
   },
