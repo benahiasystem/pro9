@@ -53,18 +53,22 @@
         public $incrementing = false;
         public $timestamps = false;
 
+        // ######### INICIO CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
         protected $exclude_method_types = [
-            //'01', // Efectivo
+            //'01', // Efectivo Bolivares
             //'02', // Tarjeta de crédito
             //'03', // Tarjeta de débito
-            //'04', // Transferencia
-            //'05', // Factura a 30 días
-            //'06', // Tarjeta crédito visa
-            //'07', // Contado contraentrega
-            //'08', // A 30 días
+            //'04', // Transferencia Bancaria
+            //'05', // Crédito a 30 días
+            //'06', // Tarjeta Internacional
+            //'07', // Delivery / Pago en Sitio
             //'09', // Crédito
-            //'10', // Contado
+            //'10', // Efectivo Dólares
+            //'11', // Pago Móvil
+            //'12', // Biopago
+            //'13', // Zelle
         ];
+        // ######### FIN CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
         protected $fillable = [
             'id',
             'description',
@@ -85,19 +89,35 @@
         public const CASH_PAYMENT_ID = '01';
         public const TRANSFER_PAYMENT_ID = '04';
 
+        // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
+        public const INITIAL_PAYMENT_METHOD_IDS = [
+            '01', '02', '03', '04', '05', '06', '07',
+            '09', '10', '11', '12', '13',
+        ];
+
+        public static function isInitialPaymentMethodId($id): bool
+        {
+            return in_array((string) $id, self::INITIAL_PAYMENT_METHOD_IDS, true);
+        }
+        // ######### FIN PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
+
         /**
          * Devuelve los metodos de pago como standandar. Se pueden excluir elementos por $exclude_method_types_id
          *
-         * //'01', // Efectivo
+         * // ######### INICIO CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
+         * //'01', // Efectivo Bolivares
          * //'02', // Tarjeta de crédito
          * //'03', // Tarjeta de débito
-         * //'04', // Transferencia
-         * //'05', // Factura a 30 días
-         * //'06', // Tarjeta crédito visa
-         * //'07', // Contado contraentrega
-         * //'08', // A 30 días
+         * //'04', // Transferencia Bancaria
+         * //'05', // Crédito a 30 días
+         * //'06', // Tarjeta Internacional
+         * //'07', // Delivery / Pago en Sitio
          * //'09', // Crédito
-         * //'10', // Contado
+         * //'10', // Efectivo Dólares
+         * //'11', // Pago Móvil
+         * //'12', // Biopago
+         * //'13', // Zelle
+         * // ######### FIN CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
          *
          * @param array $exclude_method_types_id Id de metodos a excluir
          *

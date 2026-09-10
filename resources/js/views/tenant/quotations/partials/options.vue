@@ -919,9 +919,11 @@ export default {
             let error_by_item = 0
 
             this.document.payments.forEach((item) => {
-                if (!['05', '08', '09'].includes(item.payment_method_type_id)) {
+                // ######### INICIO MÉTODOS DE CRÉDITO VENEZUELA #########
+                if (!['05', '09'].includes(item.payment_method_type_id)) {
                     if (item.payment_destination_id == null) error_by_item++;
                 }
+                // ######### FIN MÉTODOS DE CRÉDITO VENEZUELA #########
             })
 
             return {

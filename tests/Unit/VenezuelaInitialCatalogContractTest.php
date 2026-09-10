@@ -2,6 +2,8 @@
 
 namespace Tests\Unit;
 
+use App\Models\Tenant\PaymentMethodType;
+use Modules\Sale\Http\Controllers\PaymentMethodTypeController;
 use Tests\TestCase;
 
 // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
@@ -84,6 +86,49 @@ class VenezuelaInitialCatalogContractTest extends TestCase
             '105' => 'Remesa simple - Comercio exterior',
             '999' => 'Otros medios de pago',
         ], $this->descriptionsById('cat_payment_method_types'));
+    }
+
+    /** @test */
+    public function tenant_payment_methods_match_the_venezuelan_contract(): void
+    {
+        // ######### INICIO CONTRATO MÉTODOS DE PAGO VENEZUELA #########
+        self::assertSame([
+            ['id' => '01', 'description' => 'Efectivo Bolivares', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
+            ['id' => '02', 'description' => 'Tarjeta de crédito', 'has_card' => 1, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
+            ['id' => '03', 'description' => 'Tarjeta de débito', 'has_card' => 1, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
+            ['id' => '04', 'description' => 'Transferencia Bancaria', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '05', 'description' => 'Crédito a 30 días', 'has_card' => 0, 'charge' => null, 'number_days' => 30, 'is_credit' => 1, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '06', 'description' => 'Tarjeta Internacional', 'has_card' => 1, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 0],
+            ['id' => '07', 'description' => 'Delivery / Pago en Sitio', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 0, 'is_active' => 0],
+            ['id' => '09', 'description' => 'Crédito', 'has_card' => 1, 'charge' => null, 'number_days' => null, 'is_credit' => 1, 'is_cash' => 0, 'is_active' => 1],
+            ['id' => '10', 'description' => 'Efectivo Dólares', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
+            ['id' => '11', 'description' => 'Pago Móvil', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
+            ['id' => '12', 'description' => 'Biopago', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 1],
+            ['id' => '13', 'description' => 'Zelle', 'has_card' => 0, 'charge' => null, 'number_days' => null, 'is_credit' => 0, 'is_cash' => 1, 'is_active' => 0],
+        ], $this->rows('payment_method_types'));
+        // ######### FIN CONTRATO MÉTODOS DE PAGO VENEZUELA #########
+    }
+
+    /** @test */
+    public function initial_venezuelan_payment_methods_cannot_be_deleted(): void
+    {
+        // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
+        self::assertSame([
+            '01', '02', '03', '04', '05', '06', '07',
+            '09', '10', '11', '12', '13',
+        ], PaymentMethodType::INITIAL_PAYMENT_METHOD_IDS);
+
+        foreach (PaymentMethodType::INITIAL_PAYMENT_METHOD_IDS as $id) {
+            self::assertTrue(PaymentMethodType::isInitialPaymentMethodId($id), $id);
+        }
+
+        self::assertFalse(PaymentMethodType::isInitialPaymentMethodId('08'));
+        self::assertFalse(PaymentMethodType::isInitialPaymentMethodId('14'));
+
+        $response = app(PaymentMethodTypeController::class)->destroy('11');
+        self::assertFalse($response['success']);
+        self::assertSame('Los métodos de pago iniciales no se pueden eliminar', $response['message']);
+        // ######### FIN PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
     }
 
     /** @test */

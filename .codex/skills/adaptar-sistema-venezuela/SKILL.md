@@ -21,6 +21,7 @@ description: Coordinar y documentar una adaptación funcional integral de Pro9 a
 - País y territorio: usar VE, zona horaria `America/Caracas`, Estado/Municipio/Parroquia y ubicación inicial `14/0229/000619`.
 - Clientes: normalizar país y nacionalidad, validar RIF/cédula/Extranjero, guardar direcciones venezolanas y conservar Sitio Web/Observaciones.
 - Moneda: usar VES/Bs./Bolívares, conservar USD, migrar PEN y VED sin recalcular importes y revisar documentos, compras, POS, caja, finanzas, ecommerce, restaurante y reportes.
+- Métodos de pago: sembrar exclusivamente desde `database/seeders/data/tenant_initial_data.php` los IDs `01`–`07` y `09`–`13` del contrato venezolano; usar `05` para Crédito a 30 días, no crear `08`, y no crear una migración incremental ni conservar registros históricos para este catálogo.
 - Telefonía: mostrar +58, normalizar teléfonos y construir enlaces `tel:`/`wa.me` y payloads QR sin prefijos duplicados.
 - POS: mantener `PAGAR` visible, permitir seleccionar FACTURA/BOLETA/NOTA DE VENTA y proteger accesos opcionales a QZ y turnos de negocio.
 - Importación: validar íntegramente `public/formats/items.xlsx` antes de `ItemsImport` y entregar un XLSX corregible cuando haya errores.
@@ -69,6 +70,7 @@ Las migraciones consolidadas no deben ejecutarse directamente sobre un tenant cu
 - Ejecutar `TenantConnectionBootstrapContractTest` cuando se toque creación, eliminación, caché, providers o middleware de tenants.
 - Ejecutar `VenezuelaSourceContractTest` para fuentes activas, estructura consolidada, defaults, parroquias sin código, esquema de personas, POS, moneda y datos mock.
 - Ejecutar `VenezuelaGeopoliticalContractTest`, `VenezuelaCurrencyTest`, `VenezuelaPhoneLocalizationTest`, `TenantMigrationDataSeederTest` y todas las pruebas `ItemImport*`.
+- Ejecutar `VenezuelaInitialCatalogContractTest` para verificar el catálogo exacto de `payment_method_types`, sus banderas activas y la ausencia de `08`.
 - Mantener estas pruebas enfocadas en el estado final; no confundir un país disponible como nacionalidad extranjera con un default geográfico PE.
 
 ## Secuencia

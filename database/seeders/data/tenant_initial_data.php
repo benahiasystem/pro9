@@ -4842,6 +4842,7 @@ return array (
         ),
       ),
     ),
+    // ######### INICIO CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
     'payment_method_types' =>
     array (
       'key_columns' =>
@@ -4853,7 +4854,7 @@ return array (
         0 =>
         array (
           'id' => '01',
-          'description' => 'Efectivo',
+          'description' => 'Efectivo Bolivares',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4886,7 +4887,7 @@ return array (
         3 =>
         array (
           'id' => '04',
-          'description' => 'Transferencia',
+          'description' => 'Transferencia Bancaria',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
@@ -4897,7 +4898,7 @@ return array (
         4 =>
         array (
           'id' => '05',
-          'description' => 'Factura a 30 días',
+          'description' => 'Crédito a 30 días',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => 30,
@@ -4908,37 +4909,26 @@ return array (
         5 =>
         array (
           'id' => '06',
-          'description' => 'Tarjeta crédito visa',
+          'description' => 'Tarjeta Internacional',
           'has_card' => 1,
-          'charge' => '3.68',
+          'charge' => NULL,
           'number_days' => NULL,
           'is_credit' => 0,
           'is_cash' => 1,
-          'is_active' => 1,
+          'is_active' => 0,
         ),
         6 =>
         array (
           'id' => '07',
-          'description' => 'Contado contraentrega',
+          'description' => 'Delivery / Pago en Sitio',
           'has_card' => 0,
           'charge' => NULL,
           'number_days' => NULL,
           'is_credit' => 0,
           'is_cash' => 0,
-          'is_active' => 1,
+          'is_active' => 0,
         ),
         7 =>
-        array (
-          'id' => '08',
-          'description' => 'A 30 días',
-          'has_card' => 0,
-          'charge' => NULL,
-          'number_days' => 30,
-          'is_credit' => 1,
-          'is_cash' => 0,
-          'is_active' => 1,
-        ),
-        8 =>
         array (
           'id' => '09',
           'description' => 'Crédito',
@@ -4949,8 +4939,53 @@ return array (
           'is_cash' => 0,
           'is_active' => 1,
         ),
+        8 =>
+        array (
+          'id' => '10',
+          'description' => 'Efectivo Dólares',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 1,
+          'is_active' => 1,
+        ),
+        9 =>
+        array (
+          'id' => '11',
+          'description' => 'Pago Móvil',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 1,
+          'is_active' => 1,
+        ),
+        10 =>
+        array (
+          'id' => '12',
+          'description' => 'Biopago',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 1,
+          'is_active' => 1,
+        ),
+        11 =>
+        array (
+          'id' => '13',
+          'description' => 'Zelle',
+          'has_card' => 0,
+          'charge' => NULL,
+          'number_days' => NULL,
+          'is_credit' => 0,
+          'is_cash' => 1,
+          'is_active' => 0,
+        ),
       ),
     ),
+    // ######### FIN CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
     'price_labels' =>
     array (
       'key_columns' =>

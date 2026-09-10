@@ -2,6 +2,7 @@
 
 namespace Modules\Sale\Http\Resources;
 
+use App\Models\Tenant\PaymentMethodType;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class PaymentMethodTypeCollection extends ResourceCollection
@@ -20,11 +21,9 @@ class PaymentMethodTypeCollection extends ResourceCollection
             /** @var \App\Models\Tenant\PaymentMethodType  $row */
             $show_actions = true;
 
-            $default_payment_method_type_ids = [
-                '01', '02', '03', '04', '05', '06', '07', '08', '09', '10',
-            ];
-
-            $can_delete = !in_array((string) $row->id, $default_payment_method_type_ids, true);
+            // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
+            $can_delete = !PaymentMethodType::isInitialPaymentMethodId($row->id);
+            // ######### FIN PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
 
             if(in_array($row->id, ['01', '05', '08', '09', '04'])){
                 $show_actions = false;

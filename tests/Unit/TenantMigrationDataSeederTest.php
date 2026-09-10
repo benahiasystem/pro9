@@ -18,7 +18,7 @@ class TenantMigrationDataSeederTest extends TestCase
 
         // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
         self::assertCount(73, $tables);
-        self::assertSame(855, $totalRows);
+        self::assertSame(858, $totalRows);
         // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
 
         foreach ($tables as $table => $definition) {

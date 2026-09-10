@@ -638,13 +638,9 @@ class DocumentController extends Controller
         }
 
         if ($table === 'payment_method_types') {
-
+            // ######### INICIO CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
             return PaymentMethodType::getPaymentMethodTypes();
-            /*
-            $payment_method_types = PaymentMethodType::whereNotIn('id', ['05', '08', '09'])->get();
-            $end_payment_method_types = PaymentMethodType::whereIn('id', ['05', '08', '09'])->get(); //by requirement
-            return $payment_method_types->merge($end_payment_method_types);
-            */
+            // ######### FIN CATÁLOGO MÉTODOS DE PAGO VENEZUELA #########
         }
 
         if ($table === 'items') {

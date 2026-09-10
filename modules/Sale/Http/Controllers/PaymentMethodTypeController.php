@@ -46,6 +46,15 @@ class PaymentMethodTypeController extends Controller
 
     public function destroy($id)
     {
+        // ######### INICIO PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
+        if (PaymentMethodType::isInitialPaymentMethodId($id)) {
+            return [
+                'success' => false,
+                'message' => 'Los métodos de pago iniciales no se pueden eliminar',
+            ];
+        }
+        // ######### FIN PROTECCIÓN MÉTODOS INICIALES VENEZUELA #########
+
         try {
 
             $record = PaymentMethodType::findOrFail($id);
