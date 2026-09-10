@@ -167,7 +167,7 @@ class TenantCatalogsTable extends Migration
             ['id' => '15', 'active' => false, 'exportation' => false, 'free' => true,  'description' => 'Gravado – Bonificaciones'],
             ['id' => '16', 'active' => false, 'exportation' => false, 'free' => true,  'description' => 'Gravado – Retiro por entrega a trabajadores'],
             ['id' => '17', 'active' => false, 'exportation' => false, 'free' => true,  'description' => 'Gravado – IVAP'],
-            ['id' => '20', 'active' => true,  'exportation' => false, 'free' => false, 'description' => 'Exonerado - Operación Onerosa'],
+            ['id' => '20', 'active' => false, 'exportation' => false, 'free' => false, 'description' => 'Exonerado - Operación Onerosa'],
             ['id' => '21', 'active' => false, 'exportation' => false, 'free' => true,  'description' => 'Exonerado – Transferencia Gratuita'],
             ['id' => '30', 'active' => false, 'exportation' => false, 'free' => false, 'description' => 'Inafecto - Operación Onerosa'],
             ['id' => '31', 'active' => false, 'exportation' => false, 'free' => true,  'description' => 'Inafecto – Retiro por Bonificación'],
