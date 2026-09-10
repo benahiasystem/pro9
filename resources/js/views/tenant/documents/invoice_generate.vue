@@ -1350,7 +1350,8 @@
                                             </template>
                                             <br /><small>{{
                                                 row.affectation_igv_type
-                                                    .description
+                                                    ? row.affectation_igv_type.description
+                                                    : ""
                                             }}</small>
                                             <template
                                                 v-if="
