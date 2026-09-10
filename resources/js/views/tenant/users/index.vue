@@ -220,7 +220,7 @@
                 showTokenDialog: false,
                 selectedTokenRow: null,
                 // modulos aun no implementados en la app movil, se ocultan del listado
-                hidden_app_modules: ['order-note', 'report-sales', 'configuration', 'dispatches', 'carrier_dispatches'],
+                hidden_app_modules: ['order-note', 'report-sales', 'configuration'],
                 // cantidad de permisos visibles antes de agrupar el resto en "+n más"
                 visible_chips: 3,
                 expanded: {},

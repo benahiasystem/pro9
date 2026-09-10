@@ -220,7 +220,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                             </span>
                         </div>
                         <ul id="sidebar-pinned-items" class="nav nav-main sidebar-pinned-items"></ul>
-                        <p id="sidebar-pinned-empty" class="sidebar-pinned-empty mb-0">
+                        <p class="sidebar-pinned-empty mb-0">
                             Usa “Configurar menú” para agregar tus accesos favoritos.
                         </p>
                         <small id="sidebar-preferences-status" class="sidebar-preferences-status" role="status" aria-live="polite"></small>
@@ -232,7 +232,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                         </div>
                     </section>
                 @else
-                    <section id="sidebar-favorites" class="sidebar-favorites sidebar-favorites--search-only" aria-label="Buscar opciones">
+                    <section id="sidebar-favorites" class="sidebar-favorites sidebar-favorites--search-only" style="background-color: transparent !important" aria-label="Buscar opciones">
                         <button type="button" class="sidebar-search-bar text-muted js-sidebar-search-open" title="Buscar opciones (Ctrl + K)" aria-label="Abrir buscador de opciones">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-search" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 10a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M21 21l-6 -6" /></svg>
                             <span class="sidebar-search-bar-label">Buscar</span>
@@ -2116,7 +2116,6 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
     .sidebar-preferences-status {
         display: block;
         padding: 6px 5px;
-        color: var(--menu-text-muted);
         line-height: 1.3;
     }
     .sidebar-preferences-status {

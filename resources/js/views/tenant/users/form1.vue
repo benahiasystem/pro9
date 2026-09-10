@@ -718,7 +718,7 @@ export default {
             },
             modules: [],
             // modulos aun no implementados en la app movil, se ocultan del formulario
-            hidden_app_modules: ['order-note', 'report-sales', 'configuration', 'dispatches', 'carrier_dispatches'],
+            hidden_app_modules: ['order-note', 'report-sales', 'configuration'],
             app_modules_default: [],
             selectAllModules: false,
             ignoreSelectAllChange: false,

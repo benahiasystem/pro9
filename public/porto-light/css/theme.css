@@ -24704,7 +24704,8 @@ html.sidebar-left-collapsed .sidebar-left .contain-icon-establishment {
 
 .customer-link {
     cursor: pointer;
-    text-decoration: none;
+    text-decoration: underline;
+    font-weight: 600;
 }
 .customer-link:hover,
 .customer-link:focus {
