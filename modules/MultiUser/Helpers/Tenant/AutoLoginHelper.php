@@ -7,6 +7,7 @@ use Hyn\Tenancy\Contracts\CurrentHostname;
 use Illuminate\Support\Facades\Cache;
 use Modules\MultiUser\Models\System\MultiUser;
 use App\Models\Tenant\User;
+use App\Models\System\Client;
 use Modules\MultiUser\Services\MultiUserPermissionSync;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -56,6 +57,18 @@ class AutoLoginHelper
     private function runLogin($login_data)
     {
         $multi_user = $this->getMultiUser($login_data->multi_user_id);
+
+        foreach (['origin_client_id', 'origin_user_id', 'destination_client_id', 'destination_user_id'] as $field) {
+            abort_unless(isset($login_data->association->{$field})
+                && (int) $login_data->association->{$field} === (int) $multi_user->{$field},
+                403, 'La asociación del acceso solicitado ya no es válida.');
+        }
+
+        // La asociación puede cambiar mientras el acceso está pendiente en caché.
+        $client_id = $login_data->is_destination ? $multi_user->destination_client_id : $multi_user->origin_client_id;
+        $client = Client::filterDataMultiUser()->find($client_id);
+        abort_unless($client && $client->hostname && $client->hostname->fqdn === $login_data->fqdn,
+            403, 'La empresa del acceso solicitado ya no es válida.');
 
         $user_id = $login_data->is_destination ? $multi_user->destination_user_id : $multi_user->origin_user_id;
 
@@ -166,7 +179,10 @@ class AutoLoginHelper
      */
     public function findUser($user_id)
     {
-        return User::whereFilterWithOutRelations()->findOrFail($user_id);
+        $user = User::whereFilterWithOutRelations()->findOrFail($user_id);
+        abort_unless($user->isActive(), 403, 'El usuario de la empresa destino está inactivo.');
+
+        return $user;
     }
 
     
@@ -196,7 +212,7 @@ class AutoLoginHelper
      */
     public function validateFqdn($input_fqdn, $current_fqdn)
     {
-        if($input_fqdn !== $current_fqdn) $this->throwException("El fqdn actual es diferente al obtenido para iniciar sesión: {$input_fqdn} - {$current_fqdn}");
+        abort_unless($input_fqdn === $current_fqdn, 403, 'La empresa del acceso solicitado no coincide.');
     }
 
     

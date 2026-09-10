@@ -9,6 +9,7 @@ use Modules\MultiUser\Models\System\MultiUser;
 use App\Models\Tenant\User;
 use App\Models\Tenant\Company;
 use Modules\MobileApp\Models\AppConfiguration;
+use Modules\MultiUser\Services\MultiUserAccessService;
 use Exception;
 
 
@@ -139,7 +140,10 @@ trait MultiUserTrait
         if($current_user->is_multi_user)
         {
             // se obtiene registro de usuario origen del admin
-            $origin_multi_user = MultiUser::with(['origin_client'])->findOrFail($current_user->multi_user_id);
+            $origin_multi_user = app(MultiUserAccessService::class)
+                ->originAssociation($this->getCurrentClient(), $current_user);
+            if (! $origin_multi_user) return;
+            $origin_multi_user->load('origin_client');
 
             // se agregan datos de la empresa y usuario origen 
             // is_destination = false, para controlar el acceso a fk de cliente origen o destino (redireccion al usuario/cliente principal - origen)
