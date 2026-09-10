@@ -14,7 +14,7 @@ class JiraInProgressMigrationContractTest extends TestCase
     public function fiscal_generation_storage_download_and_shipping_have_local_policy_barriers(): void
     {
         $facturalo = $this->source('app/CoreFacturalo/Facturalo.php');
-        self::assertStringContainsString('LocalFiscalDocumentPolicy::enabled()', $facturalo);
+        self::assertStringContainsString('LocalFiscalDocumentPolicy::registeredResponse()', $facturalo);
         self::assertStringContainsString('private function registerLocally', $facturalo);
         self::assertStringContainsString("'state_type_id' => self::REGISTERED", $facturalo);
 
@@ -26,7 +26,9 @@ class JiraInProgressMigrationContractTest extends TestCase
         self::assertStringContainsString("in_array(\$type, ['xml', 'cdr', 'cdr_xml'], true)", $download);
 
         $email = $this->source('app/Mail/Tenant/DocumentEmail.php');
-        self::assertStringContainsString('!LocalFiscalDocumentPolicy::enabled() && $xml !== null', $email);
+        self::assertStringNotContainsString("'signed'", $email);
+        self::assertStringNotContainsString("'cdr'", $email);
+        self::assertStringContainsString("'.pdf'", $email);
 
         $configuration = $this->source('app/Models/Tenant/Configuration.php');
         self::assertStringContainsString('$localDocumentEmission = LocalFiscalDocumentPolicy::enabled()', $configuration);

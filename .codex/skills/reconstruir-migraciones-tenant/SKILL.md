@@ -7,6 +7,7 @@ description: Reconstruir la estructura y los datos iniciales de una base tenant 
 
 ## Contrato
 
+- Para la modalidad fiscal SOAP/PFX de Pro9, la autoridad es el contrato de instalación nueva de [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md): no hay tenant fuente ni conversión histórica que reproducir. Modificar el consolidado y comprobar creación/seeding/rollback/segunda creación en bases temporales con `FiscalEmissionSchemaTest`. Las instrucciones de copiar un tenant o reproducir su historial de esta skill no aplican a ese caso.
 - Tomar como autoridad la estructura efectiva de un tenant, no la intención de las migraciones históricas.
 - Crear una migración por tabla y una migración final para claves foráneas.
 - Excluir `migrations`: Laravel debe crear y administrar esa tabla.

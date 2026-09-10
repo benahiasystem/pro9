@@ -822,7 +822,6 @@ class DocumentController extends Controller
 
             if(!$this->validationOpenCash($request)) return $this->generalResponse(false, 'Ocurrió un error: Caja seleccionada en métodos de pago se encuentra cerrada');
 
-            if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
 
             $data = $request->all();
             if (empty($data['source_module'])) {
@@ -1077,7 +1076,6 @@ class DocumentController extends Controller
 
         $validate = $this->validateDocument($request);
         if (!$validate['success']) return $validate;
-        if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
 
         $fact = DB::connection('tenant')->transaction(function () use ($request, $id) {
             $facturalo = new Facturalo();
@@ -1154,7 +1152,6 @@ class DocumentController extends Controller
             $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
             $facturalo->updateHash($service_pse_xml['hash']);
             $facturalo->updateQr();
-            $facturalo->updateSoap('02', $type);
             $facturalo->updateState('01');
             $facturalo->createPdf($document, $type, 'ticket');
 //            $facturalo->senderXmlSignedBill();

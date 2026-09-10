@@ -85,11 +85,11 @@ class SaleNoteController extends Controller
 
     public function index()
     {
-        $company = Company::select('soap_type_id')->first();
-        $soap_company  = $company->soap_type_id;
+        $company = Company::select('fiscal_environment')->first();
+        $company_environment  = $company->fiscal_environment;
         $configuration = Configuration::select('ticket_58')->first();
 
-        return view('tenant.sale_notes.index', compact('soap_company', 'configuration'));
+        return view('tenant.sale_notes.index', compact('company_environment', 'configuration'));
     }
 
 
@@ -900,7 +900,7 @@ class SaleNoteController extends Controller
         else{
 
             $document = SaleNote::query()
-                                ->select('number')->where('soap_type_id', $this->company->soap_type_id)
+                                ->select('number')->where('fiscal_environment', $this->company->fiscal_environment)
                                 ->where('series', $series)
                                 ->orderBy('number', 'desc')
                                 ->first();
@@ -926,7 +926,7 @@ class SaleNoteController extends Controller
             'external_id' => Str::uuid()->toString(),
             'customer' => PersonInput::set($inputs['customer_id']),
             'establishment' => EstablishmentInput::set($inputs['establishment_id']),
-            'soap_type_id' => $this->company->soap_type_id,
+            'fiscal_environment' => $this->company->fiscal_environment,
             'state_type_id' => '01',
             'series' => $series,
             'number' => $number
@@ -1908,7 +1908,7 @@ class SaleNoteController extends Controller
             'client_id' => 'required|numeric|min:1',
         ]);
         $clientId = $request->client_id;
-        $records = SaleNote::without(['user', 'soap_type', 'state_type', 'currency_type', 'payments'])
+        $records = SaleNote::without(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'payments'])
                             ->select('series', 'number', 'id', 'date_of_issue', 'total')
                             ->where('customer_id', $clientId)
                             ->whereNull('document_id')

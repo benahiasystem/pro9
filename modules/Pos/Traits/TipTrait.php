@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Pos\Traits;
 
@@ -59,16 +60,16 @@ trait TipTrait
      */
     public function getTipFromRequest($inputs)
     {
-        return DocumentInput::tip($inputs, $this->getCompanySoapTypeId());
+        return DocumentInput::tip($inputs, $this->getCompanyFiscalEnvironment());
     }
     
 
     /**
      * @return string
      */
-    public function getCompanySoapTypeId()
+    public function getCompanyFiscalEnvironment()
     {
-        return Company::getCompanySoapTypeId();
+        return Company::getCompanyFiscalEnvironment();
     }
 
 
@@ -86,3 +87,4 @@ trait TipTrait
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

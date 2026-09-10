@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace App\Http\Controllers\System;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -18,11 +19,7 @@ class CompanyController extends Controller
 
     public function tables()
     {
-        $soap_sends = config('tables.system.soap_sends');
-        $soap_types = SoapType::all();
-
-
-        return compact('soap_types', 'soap_sends');
+        return [];
     }
 
     public function record()
@@ -85,3 +82,4 @@ class CompanyController extends Controller
     // }
     
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

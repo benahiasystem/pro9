@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\CoreFacturalo\Requests\Api\Validation;
 
@@ -22,10 +23,10 @@ class SummaryValidation
     {
         $company = Company::active();
         
-        $documents = Document::filterDocumentsForSummary($inputs['date_of_reference'], $company->soap_type_id)->get();
+        $documents = Document::filterDocumentsForSummary($inputs['date_of_reference'], $company->fiscal_environment)->get();
 
         // $documents = Document::where('date_of_issue', $inputs['date_of_reference'])
-        //                     ->where('soap_type_id', $company->soap_type_id)
+        //                     ->where('fiscal_environment', $company->fiscal_environment)
         //                     ->where('group_id', '02')
         //                     ->where('state_type_id', '01')
         //                     ->take(500)
@@ -45,3 +46,4 @@ class SummaryValidation
         return $docs;
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

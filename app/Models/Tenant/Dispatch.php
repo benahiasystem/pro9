@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Models\Tenant;
 
@@ -43,7 +44,6 @@ use App\Models\Tenant\Catalogs\IdentityDocumentType;
  * @property string $number_full
  * @property mixed $origin
  * @property mixed $secondary_license_plates
- * @property mixed $soap_shipping_response
  * @property \Illuminate\Database\Eloquent\Collection|InventoryKardex[] $inventory_kardex
  * @property int|null $inventory_kardex_count
  * @property \Illuminate\Database\Eloquent\Collection|\App\Models\Tenant\DispatchItem[] $items
@@ -53,7 +53,7 @@ use App\Models\Tenant\Catalogs\IdentityDocumentType;
  * @property \App\Models\Tenant\Person $person
  * @property \App\Models\Tenant\Document $reference_document
  * @property \App\Models\Tenant\SaleNote $sale_note
- * @property \App\Models\Tenant\SoapType $soap_type
+ * @property \App\Models\Tenant\FiscalEnvironment $fiscal_environment_type
  * @property \App\Models\Tenant\StateType $state_type
  * @property TransferReasonType $transfer_reason_type
  * @property TransportModeType $transport_mode_type
@@ -70,14 +70,14 @@ class Dispatch extends ModelTenant
 {
     use ApiResourceFindTrait;
 
-    protected $with = ['user', 'soap_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type','transfer_reason_type', 'items', 'reference_document'];
+    protected $with = ['user', 'fiscal_environment_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type','transfer_reason_type', 'items', 'reference_document'];
 
     protected $fillable = [
         'user_id',
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'ubl_version',
         'document_type_id',
@@ -121,12 +121,8 @@ class Dispatch extends ModelTenant
         'reference_order_form_id',
         'secondary_license_plates',
         'reference_sale_note_id',
-        'soap_shipping_response',
         'data_affected_document',
         'related',
-        'send_to_pse',
-        'response_signature_pse',
-        'response_send_cdr_pse',
         'order_form_external',
         'terms_condition',
         'additional_data',
@@ -160,7 +156,6 @@ class Dispatch extends ModelTenant
     protected $casts = [
         'date_of_issue' => 'date',
         'date_of_shipping' => 'date',
-        'send_to_pse' => 'bool',
         'transport_data' => 'array',
         'receiver_data' => 'array',
         'sender_data' => 'array',
@@ -256,15 +251,7 @@ class Dispatch extends ModelTenant
         $this->attributes['legends'] = (is_null($value)) ? null : json_encode($value);
     }
 
-    public function getSoapShippingResponseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setSoapShippingResponseAttribute($value)
-    {
-        $this->attributes['soap_shipping_response'] = (is_null($value)) ? null : json_encode($value);
-    }
 
     public function setBuyerAttribute($value)
     {
@@ -316,9 +303,9 @@ class Dispatch extends ModelTenant
     /**
      * @return BelongsTo
      */
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     /**
@@ -715,7 +702,7 @@ class Dispatch extends ModelTenant
             'id' => $this->id,
             'external_id' => $this->external_id,
             'group_id' => $this->group_id,
-            'soap_type_id' => $this->soap_type_id,
+            'fiscal_environment' => $this->fiscal_environment,
             'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
             'number' => $this->number_full,
             'customer_id' => $this->customer_id,
@@ -745,7 +732,6 @@ class Dispatch extends ModelTenant
             'order_notes' => $this->order_note,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
-            'soap_shipping_response' => $this->soap_shipping_response,
             'btn_generate_document' => $this->generate_document || $this->reference_document_id || !$btn_generate_document ? false : true,
             'transfer_reason_type' => $this->transfer_reason_type,
             'transfer_reason_description' => $this->transfer_reason_description,
@@ -787,14 +773,6 @@ class Dispatch extends ModelTenant
     /**
      * @return bool
      */
-    public function wasSend()
-    {
-        $temp = $this->soap_shipping_response;
-        if (empty($temp)) {
-            return false;
-        }
-        return $temp->sent;
-    }
 
     public function getDataAffectedDocumentAttribute($value)
     {
@@ -859,38 +837,11 @@ class Dispatch extends ModelTenant
     }
 
 
-    /**
-     * Obtener tipo de documento válido para enviar el xml a firmar al pse
-     *
-     * Usado en:
-     * App\CoreFacturalo\Services\Helpers\SendDocumentPse
-     *
-     * @return string
-     */
-    public function getDocumentTypeForPse()
-    {
-        return 'GUIA';
-    }
 
-    public function getResponseSendCdrPseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setResponseSendCdrPseAttribute($value)
-    {
-        $this->attributes['response_send_cdr_pse'] = (is_null($value)) ? null : json_encode($value);
-    }
 
-    public function getResponseSignaturePseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setResponseSignaturePseAttribute($value)
-    {
-        $this->attributes['response_signature_pse'] = (is_null($value)) ? null : json_encode($value);
-    }
+
 
 
     /**
@@ -934,7 +885,8 @@ class Dispatch extends ModelTenant
      */
     public function scopeWhereFilterWithOutRelations($query)
     {
-        return $query->withOut(['user', 'soap_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type', 'transfer_reason_type', 'items', 'reference_document']);
+        return $query->withOut(['user', 'fiscal_environment_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type', 'transfer_reason_type', 'items', 'reference_document']);
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

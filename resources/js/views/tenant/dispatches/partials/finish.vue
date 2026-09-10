@@ -223,16 +223,13 @@ export default {
                 download_cdr: null,
                 state_type_id: '05',
                 has_cdr: true,
-                send_to_pse: false,
-                response_signature_pse: null,
-                response_send_cdr_pse: null,
             }
             this.locked_emission = {
                 success: true,
                 message: null
             }
             this.company = {
-                soap_type_id: null,
+                fiscal_environment: null,
             }
             this.response_sunat_send = {
                 'success': false,

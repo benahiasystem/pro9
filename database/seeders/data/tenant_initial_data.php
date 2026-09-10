@@ -5242,31 +5242,13 @@ return array (
         ),
       ),
     ),
-    'soap_types' =>
-    array (
-      'key_columns' =>
-      array (
-        0 => 'id',
-      ),
-      'rows' =>
-      array (
-        0 =>
-        array (
-          'id' => '01',
-          'description' => 'Demo',
-        ),
-        1 =>
-        array (
-          'id' => '02',
-          'description' => 'Producción',
-        ),
-        2 =>
-        array (
-          'id' => '03',
-          'description' => 'Interno',
-        ),
-      ),
-    ),
+    'fiscal_environments' => [
+      'key_columns' => ['id'],
+      'rows' => [
+        ['id' => 'demo', 'description' => 'Demo'],
+        ['id' => 'production', 'description' => 'Producción'],
+      ],
+    ],
     'state_types' =>
     array (
       'key_columns' =>
@@ -5635,11 +5617,6 @@ return array (
       ),
       'rows' =>
       array (
-        0 =>
-        array (
-          'id' => 'companies_certificate',
-          'description' => 'Actualización del campo certificado en configuración de empresa',
-        ),
         1 =>
         array (
           'id' => 'companies_name',
@@ -5649,31 +5626,6 @@ return array (
         array (
           'id' => 'companies_number',
           'description' => 'Actualización del campo número en configuración de empresa',
-        ),
-        3 =>
-        array (
-          'id' => 'companies_soap_password',
-          'description' => 'Actualización del campo SOAP Contraseña en configuración de empresa',
-        ),
-        4 =>
-        array (
-          'id' => 'companies_soap_send_id',
-          'description' => 'Actualización del campo SOAP envío en configuración de empresa',
-        ),
-        5 =>
-        array (
-          'id' => 'companies_soap_type_id',
-          'description' => 'Actualización del campo SOAP tipo en configuración de empresa',
-        ),
-        6 =>
-        array (
-          'id' => 'companies_soap_url',
-          'description' => 'Actualización del campo SOAP url envío en configuración de empresa',
-        ),
-        7 =>
-        array (
-          'id' => 'companies_soap_username',
-          'description' => 'Actualización del campo SOAP Usuario en configuración de empresa',
         ),
         8 =>
         array (

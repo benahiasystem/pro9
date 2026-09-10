@@ -217,7 +217,7 @@
                             </div>
                         </section>
                     </div>
-                    <div class="col-12 col-md-6 col-xl-3 mb-2" v-if="soapCompany != '03'">
+                    <div class="col-12 col-md-6 col-xl-3 mb-2">
                         <section class="card card-dashboard sn-panel">
                             <div class="card-body" v-if="loaders.document">
                                 <template >
@@ -809,7 +809,7 @@ import MonthGoal from "./partials/MonthGoal.vue";
 import {mapActions, mapState} from "vuex/dist/vuex.mjs";
 
 export default {
-  props: ["typeUser", "soapCompany",'configuration'],
+  props: ["typeUser", "companyEnvironment",'configuration'],
   components: { DashboardStock, LoaderGraph, RowTop, DashboardInventory, NewDashboard, WidgetGrid, TopProducts, CashFlowChart, LowStock, WeeklySalesChart, PaymentMethods, SunatStatus, Debtors, MonthGoal },
   data() {
     return {

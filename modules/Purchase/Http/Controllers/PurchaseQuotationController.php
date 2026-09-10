@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Purchase\Http\Controllers;
 
@@ -167,7 +168,7 @@ class PurchaseQuotationController extends Controller
             'user_id' => auth()->id(),
             'external_id' => Str::uuid()->toString(),
             'establishment' => EstablishmentInput::set($inputs['establishment_id']),
-            'soap_type_id' => $this->company->soap_type_id,
+            'fiscal_environment' => $this->company->fiscal_environment,
             'state_type_id' => '01',
             'suppliers' => $suppliers,
         ];
@@ -399,3 +400,4 @@ class PurchaseQuotationController extends Controller
         return compact('items');
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

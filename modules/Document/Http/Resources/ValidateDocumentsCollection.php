@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Document\Http\Resources;
 
@@ -43,8 +44,8 @@ class ValidateDocumentsCollection extends ResourceCollection
 
             return [
                 'id' => $row->id,
-                'soap_type_id' => $row->soap_type_id,
-                'soap_type_description' => $row->soap_type->description,
+                'fiscal_environment' => $row->fiscal_environment,
+                'fiscal_environment_description' => $row->fiscal_environment_type->description,
                 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                 'number' => $row->number_full,
                 'customer_name' => $row->customer->name,
@@ -63,3 +64,4 @@ class ValidateDocumentsCollection extends ResourceCollection
         });
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

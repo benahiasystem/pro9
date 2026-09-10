@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
   <div class="col-lg-6 col-md-12 0">
     <div class="card card-config">
@@ -50,8 +51,7 @@ export default {
       resource: "ecommerce",
       errors: {},
       form: {},
-      soap_sends: [],
-      soap_types: []
+      fiscal_environments: []
     };
   },
   async created() {
@@ -103,6 +103,4 @@ export default {
   }
 };
 </script>
-
-
-
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

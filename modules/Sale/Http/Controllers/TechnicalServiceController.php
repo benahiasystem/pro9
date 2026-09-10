@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace Modules\Sale\Http\Controllers;
 
@@ -282,7 +283,7 @@
             $values = [
                 'user_id' => auth()->id(),
                 'customer' => PersonInput::set($inputs['customer_id']),
-                'soap_type_id' => $this->company->soap_type_id,
+                'fiscal_environment' => $this->company->fiscal_environment,
             ];
 
             $inputs->merge($values);
@@ -445,3 +446,4 @@
         }
 
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

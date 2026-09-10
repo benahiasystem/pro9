@@ -73,7 +73,6 @@ class Kernel extends HttpKernel
         'redirect.level' => \App\Http\Middleware\RedirectModuleLevel::class,
         'locked.tenant' => \App\Http\Middleware\LockedTenant::class,
         //'locked.admin' => \App\Http\Middleware\LockedAdmin::class,
-        'tenant.internal.mode' => \App\Http\Middleware\InternalModeTenant::class,
         'tenant.auto.login' => \Modules\MultiUser\Http\Middleware\Tenant\AutoLogin::class,
         'check.email.verified' => \Modules\LevelAccess\Http\Middleware\CheckEmailIsVerified::class,
         'enable.guest.register' => \App\Http\Middleware\EnableGuestRegister::class,

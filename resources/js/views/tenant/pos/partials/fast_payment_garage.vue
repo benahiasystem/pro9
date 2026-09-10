@@ -279,7 +279,7 @@ export default {
         // ######### FIN CAMBIO AFECTACIÓN IVA
         'exchangeRateSale',
         'is_payment',
-        'soapCompany',
+        'companyEnvironment',
         'businessTurns',
         'isPrint',
         'rowsItems',

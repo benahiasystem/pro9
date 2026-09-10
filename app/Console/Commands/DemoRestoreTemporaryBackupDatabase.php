@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Console\Commands;
 
@@ -57,17 +58,17 @@ class DemoRestoreTemporaryBackupDatabase extends Command
             foreach ($records as &$row) {
                 $tenancy = app(Environment::class);
                 $tenancy->tenant($row->hostname->website);
-                $row->soap_type = DB::connection('tenant')
+                $row->fiscal_environment_type = DB::connection('tenant')
                     ->table('companies')
                     ->first()
-                    ->soap_type_id;
+                    ->fiscal_environment;
                 $row->database = $row->hostname->website->uuid;
             }
 
             $this->initDbConfig();
 
             $demoClients = $records->filter(function ($row) {
-                return $row->soap_type === '01' && $row->enabled_cron_restore_bkdemo == 1 && $row->restore_dbname_bkdemo != null && $row->restore_type_bkdemo!=null;
+                return $row->fiscal_environment_type === 'demo' && $row->enabled_cron_restore_bkdemo == 1 && $row->restore_dbname_bkdemo != null && $row->restore_type_bkdemo!=null;
             });
 
             foreach ($demoClients as $client) {
@@ -202,3 +203,4 @@ class DemoRestoreTemporaryBackupDatabase extends Command
     }
     
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

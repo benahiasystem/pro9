@@ -16,7 +16,6 @@
     use Exception;
     use Illuminate\Http\Request;
     use Modules\ApiPeruDev\Data\ServiceData;
-    use Modules\Document\Helpers\ConsultCdr;
 
 
     class ServiceController extends Controller
@@ -28,28 +27,6 @@
         use StorageDocument;
         protected $document;
 
-        public function consultCdrStatus(ServiceRequest $request)
-        {
-
-            $document_type_id = $request->codigo_tipo_documento;
-            $series = $request->serie_documento;
-            $number = $request->numero_documento;
-
-            $this->document = Document::where([['soap_type_id', '02'],
-                ['document_type_id', $document_type_id],
-                ['series', $series],
-                ['number', $number]
-            ])->first();
-
-            // if(!$this->document)  throw new Exception("Documento no encontrado");
-            if (!$this->document) return [
-                'success' => false,
-                'message' => "Documento no encontrado"
-            ];
-
-            return (new ConsultCdr())->search($this->document);
-
-        }
 
 
         /**

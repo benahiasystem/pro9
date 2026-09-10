@@ -33,11 +33,11 @@ class DispatchInput
         $number = $inputs['number'];
 
         $company = Company::active();
-        $soap_type_id = $company->soap_type_id;
-        $number = Functions::newNumber($soap_type_id, $document_type_id, $series, $number, Dispatch::class);
+        $fiscal_environment = $company->fiscal_environment;
+        $number = Functions::newNumber($fiscal_environment, $document_type_id, $series, $number, Dispatch::class);
 
         if (is_null($inputs['id'])) {
-            Functions::validateUniqueDocument($soap_type_id, $document_type_id, $series, $number, Dispatch::class);
+            Functions::validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, Dispatch::class);
         }
 
         $filename = Functions::filename($company, $document_type_id, $series, $number);
@@ -51,7 +51,7 @@ class DispatchInput
             'external_id' => Str::uuid()->toString(),
             'establishment_id' => $inputs['establishment_id'],
             'establishment' => $establishment,
-            'soap_type_id' => $soap_type_id,
+            'fiscal_environment' => $fiscal_environment,
             'state_type_id' => '01',
             'ubl_version' => '2.0',
             'filename' => $filename,

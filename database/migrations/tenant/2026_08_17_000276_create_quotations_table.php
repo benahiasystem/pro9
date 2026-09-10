@@ -12,7 +12,7 @@
  * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `establishment`: json; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `state_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `prefix`: char(3); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `date_of_issue`: date; NOT NULL — Sin comentario definido en el esquema fuente.
@@ -82,7 +82,7 @@ CREATE TABLE `quotations` (
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `establishment` json NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `prefix` char(3) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date_of_issue` date NOT NULL,
@@ -139,7 +139,7 @@ CREATE TABLE `quotations` (
   KEY `quotations_user_id_foreign` (`user_id`),
   KEY `quotations_establishment_id_foreign` (`establishment_id`),
   KEY `quotations_customer_id_foreign` (`customer_id`),
-  KEY `quotations_soap_type_id_foreign` (`soap_type_id`),
+  KEY `quotations_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `quotations_state_type_id_foreign` (`state_type_id`),
   KEY `quotations_currency_type_id_foreign` (`currency_type_id`),
   KEY `quotations_payment_method_type_id_foreign` (`payment_method_type_id`),

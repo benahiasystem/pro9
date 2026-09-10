@@ -77,6 +77,8 @@ class SystemClientRifRequestTest extends TestCase
 
         $ownRequest = ClientUpdateRequest::create('/', 'POST', [
             'id' => 1,
+            'fiscal_emission_mode' => 'free_form',
+            'fiscal_environment' => 'demo',
             'number' => 'j-123.456 789',
         ]);
         $this->resolve($ownRequest);
@@ -84,6 +86,8 @@ class SystemClientRifRequestTest extends TestCase
 
         $duplicateRequest = ClientUpdateRequest::create('/', 'POST', [
             'id' => 1,
+            'fiscal_emission_mode' => 'free_form',
+            'fiscal_environment' => 'demo',
             'number' => 'V987654321',
         ]);
 
@@ -105,8 +109,8 @@ class SystemClientRifRequestTest extends TestCase
             'subdomain' => 'clientedemo',
             'plan_id' => 1,
             'type' => 'admin',
-            'soap_send_id' => '01',
-            'soap_type_id' => '01',
+            'fiscal_emission_mode' => 'free_form',
+            'fiscal_environment' => 'demo',
         ], $overrides);
     }
 

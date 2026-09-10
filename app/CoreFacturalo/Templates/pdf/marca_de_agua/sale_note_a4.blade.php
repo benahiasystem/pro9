@@ -53,7 +53,7 @@
     $total_weight = 0;
 
 
-    $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
+    $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment();
 @endphp
 <html>
 <head>

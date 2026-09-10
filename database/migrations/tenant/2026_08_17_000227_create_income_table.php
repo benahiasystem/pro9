@@ -10,7 +10,7 @@
  * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `income_type_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `income_reason_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `state_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `customer`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -39,7 +39,7 @@ CREATE TABLE `income` (
   `user_id` int(10) unsigned NOT NULL,
   `income_type_id` int(10) unsigned NOT NULL,
   `income_reason_id` int(10) unsigned NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `customer` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -60,7 +60,7 @@ CREATE TABLE `income` (
   KEY `income_income_type_id_foreign` (`income_type_id`),
   KEY `income_income_reason_id_foreign` (`income_reason_id`),
   KEY `income_state_type_id_foreign` (`state_type_id`),
-  KEY `income_soap_type_id_foreign` (`soap_type_id`),
+  KEY `income_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `income_currency_type_id_foreign` (`currency_type_id`),
   KEY `income_number_index` (`number`),
   KEY `income_date_of_issue_index` (`date_of_issue`),

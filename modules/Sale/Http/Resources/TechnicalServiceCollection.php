@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Sale\Http\Resources;
 
@@ -20,7 +21,7 @@ class TechnicalServiceCollection extends ResourceCollection
             return $row->getCollectionData();
             return [
                 'id' => $row->id,
-                'soap_type_id' => $row->soap_type_id,
+                'fiscal_environment' => $row->fiscal_environment,
                 'cellphone' => $row->cellphone,
                 'serial_number' => $row->serial_number,
                 'cost' => $row->cost,
@@ -35,3 +36,4 @@ class TechnicalServiceCollection extends ResourceCollection
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

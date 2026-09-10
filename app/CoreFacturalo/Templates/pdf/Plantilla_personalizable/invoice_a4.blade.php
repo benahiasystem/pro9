@@ -40,7 +40,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
 
 $configuration_decimal_quantity= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
 $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
-$type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
+$type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment();
 
 // Obtener configuración de columnas para Plantilla_personalizable
 $columnsConfig = \App\Models\Tenant\TemplateColumnsConfig::where('establishment_id', $document->establishment_id)
@@ -74,7 +74,7 @@ $showColumns = $columnsConfig ? $columnsConfig->columns_config : [
 </head>
 
 <body>
-    @if ($type->soap_type_id === '01')
+    @if ($type->fiscal_environment === 'demo')
     <table class="full-width">
         <tr>
             <td style="width: 100%;text-align: center">

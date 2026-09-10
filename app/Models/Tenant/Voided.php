@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Models\Tenant;
 
@@ -14,12 +15,12 @@ use Illuminate\Support\Facades\DB;
 class Voided extends ModelTenant
 {
     protected $table = 'voided';
-    protected $with = ['user', 'soap_type', 'state_type', 'documents'];
+    protected $with = ['user', 'fiscal_environment_type', 'state_type', 'documents'];
 
     protected $fillable = [
         'user_id',
         'external_id',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'ubl_version',
         'date_of_issue',
@@ -29,17 +30,12 @@ class Voided extends ModelTenant
         'ticket',
         'has_ticket',
         'has_cdr',
-        'soap_shipping_response',
         
-        'send_to_pse',
-        'response_signature_pse',
-        'response_send_cdr_pse',
     ];
 
     protected $casts = [
         'date_of_issue' => 'date',
         'date_of_reference' => 'date',
-        'send_to_pse' => 'bool',
     ];
 
     /**
@@ -53,9 +49,9 @@ class Voided extends ModelTenant
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     /**
@@ -98,15 +94,7 @@ class Voided extends ModelTenant
         return route('tenant.download.external_id', ['model' => 'voided', 'type' => 'cdr', 'external_id' => $this->external_id]);
     }
 
-    public function getSoapShippingResponseAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setSoapShippingResponseAttribute($value)
-    {
-        $this->attributes['soap_shipping_response'] = (is_null($value))?null:json_encode($value);
-    }
 
     /**
      * Devuelve la clase Facturalo con los elementos cargados
@@ -122,66 +110,15 @@ class Voided extends ModelTenant
         });
     }
 
-    /**
-     * Obtener tipo de documento válido para enviar el xml a firmar al pse
-     *
-     * Usado en:
-     * App\CoreFacturalo\Services\Helpers\SendDocumentPse
-     * 
-     * @return string
-     */
-    public function getDocumentTypeForPse()
-    {
-        return 'ANUL';
-    }
 
-    public function getResponseSendCdrPseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setResponseSendCdrPseAttribute($value)
-    {
-        $this->attributes['response_send_cdr_pse'] = (is_null($value)) ? null : json_encode($value);
-    }
 
-    public function getResponseSignaturePseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setResponseSignaturePseAttribute($value)
-    {
-        $this->attributes['response_signature_pse'] = (is_null($value)) ? null : json_encode($value);
-    }
+
+
 
     
-    /**
-     * 
-     * Validar si la RA se firma y envia a pse
-     *
-     * @param  SendDocumentPse $sendDocumentPse
-     * @return bool
-     */
-    public function getSendToPse($sendDocumentPse)
-    {
-        $send_to_pse = false;
-
-        // validar si los documentos informados en la RA fueron enviados a pse
-        $voided_documents = $this->documents;
-        $filter_quantity_documents = $voided_documents->where('document.send_to_pse', true)->count();
-
-        if($voided_documents->count() === $filter_quantity_documents)
-        {
-            $send_to_pse = true;
-        }
-        else
-        {
-            $sendDocumentPse->throwException('Documento a anular no fue enviado al PSE.');
-        }
-
-        return $send_to_pse;
-    }
 
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -685,7 +685,7 @@
                             :currency-type-active="currency_type"
                             :exchange-rate-sale="form.exchange_rate_sale"
                             :customer="customer"
-                            :soapCompany="soapCompany"
+                            :companyEnvironment="companyEnvironment"
                             :businessTurns="businessTurns"
                             :is-print="isPrint"
                         ></fast-payment>
@@ -830,7 +830,7 @@ import VariationsModal from "./partials/variations_modal.vue";
 import { mapState, mapActions } from "vuex/dist/vuex.mjs";
 
 export default {
-    props: ["configuration2", "configuration", "soapCompany", "businessTurns", "typeUser", "isPrint"],
+    props: ["configuration2", "configuration", "companyEnvironment", "businessTurns", "typeUser", "isPrint"],
     components: {
         FastPayment,
         ItemForm,

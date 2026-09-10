@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace Modules\Payment\Http\Controllers;
 
 use App\Http\Controllers\Controller;
@@ -199,7 +200,7 @@ class PaymentLinkController extends Controller
             $payment_link->fill([
                 'user_id' => $payment_link->user_id ?? auth()->id(),
                 'uuid' => $payment_link->uuid ?? Str::uuid()->toString(),
-                'soap_type_id' => $payment_link->soap_type_id ?? Company::select('soap_type_id')->firstOrFail()->soap_type_id,
+                'fiscal_environment' => $payment_link->fiscal_environment ?? Company::select('fiscal_environment')->firstOrFail()->fiscal_environment,
                 // el tipo ya no se elige en el formulario, la pasarela la define el checkout configurado
                 'payment_link_type_id' => $payment_link->payment_link_type_id
                     ?? $request->input('payment_link_type_id')
@@ -320,7 +321,7 @@ class PaymentLinkController extends Controller
             $payment_link = PaymentLink::create([
                 'user_id' => auth()->id(),
                 'uuid' => Str::uuid()->toString(),
-                'soap_type_id' => Company::select('soap_type_id')->firstOrFail()->soap_type_id,
+                'fiscal_environment' => Company::select('fiscal_environment')->firstOrFail()->fiscal_environment,
                 'payment_link_type_id' => $this->getDefaultPaymentLinkTypeId(),
                 'person_id' => $document->customer_id,
                 'total' => $pending,
@@ -621,7 +622,7 @@ class PaymentLinkController extends Controller
         $record->fill([
             'user_id' => auth()->id(),
             'uuid' => Str::uuid()->toString(),
-            'soap_type_id' => $record->soap_type_id ?? Company::select('soap_type_id')->firstOrFail()->soap_type_id,
+            'fiscal_environment' => $record->fiscal_environment ?? Company::select('fiscal_environment')->firstOrFail()->fiscal_environment,
             'payment_link_type_id' => $request->payment_link_type_id,
             'total' => $request->total,
         ]);
@@ -832,3 +833,4 @@ class PaymentLinkController extends Controller
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

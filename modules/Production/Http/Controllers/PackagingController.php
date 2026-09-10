@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace Modules\Production\Http\Controllers;
 
@@ -67,7 +68,7 @@
                 $model->item = $item->toArray();
 
                 $model->user_id = \Auth::user()->id;
-                $model->soap_type_id = Company::getCompanySoapTypeId();
+                $model->fiscal_environment = Company::getCompanyFiscalEnvironment();
                 $model->push();
 
 
@@ -246,3 +247,4 @@
             return $pdf->stream($filename . '.pdf');
         }
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

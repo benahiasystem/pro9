@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Sale\Http\Controllers;
 
@@ -252,7 +253,7 @@ class SaleOpportunityController extends Controller
             'external_id' => ($inputs->id) ? $inputs->external_id : Str::uuid()->toString(),
             'customer' => PersonInput::set($inputs['customer_id']),
             'establishment' => EstablishmentInput::set($inputs['establishment_id']),
-            'soap_type_id' => $this->company->soap_type_id,
+            'fiscal_environment' => $this->company->fiscal_environment,
             'state_type_id' => '01'
         ];
 
@@ -495,3 +496,4 @@ class SaleOpportunityController extends Controller
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

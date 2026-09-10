@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Pos\Models;
  
@@ -6,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Tenant\{
     ModelTenant,
-    SoapType,
+    FiscalEnvironment,
     Document,
     SaleNote,
 };
@@ -23,7 +24,7 @@ class Tip extends ModelTenant
 {
     
     protected $fillable = [
-        'soap_type_id',
+        'fiscal_environment',
         'date',  
         'origin_date_of_issue',  
         'origin_id',  
@@ -49,9 +50,9 @@ class Tip extends ModelTenant
     /**
      * @return BelongsTo
      */
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function getDocumentTypeDescriptionAttribute()
@@ -74,7 +75,7 @@ class Tip extends ModelTenant
     {
         return [
 
-            'soap_type_id' => $this->soap_type_id,
+            'fiscal_environment' => $this->fiscal_environment,
             'date' => $this->date,  
             'origin_date_of_issue' => $this->origin_date_of_issue->format('Y-m-d'),  
             'origin_id' => $this->origin_id,  
@@ -87,3 +88,4 @@ class Tip extends ModelTenant
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

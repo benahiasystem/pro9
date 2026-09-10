@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Traits;
 
@@ -17,7 +18,6 @@ trait SummaryTrait
         $validate = $this->validateSummary($request);
 
         if (!$validate['success']) return $validate;
-        if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
 
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
@@ -128,3 +128,4 @@ trait SummaryTrait
 
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

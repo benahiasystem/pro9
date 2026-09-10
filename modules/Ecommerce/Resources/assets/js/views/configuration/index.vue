@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
   <div class="col-12 pt-2 pt-md-0">
     <el-tabs v-model="activeConfigTab" type="border-card" tab-position="left" class="el-tab-ecommerce-config">
@@ -760,8 +761,7 @@ export default {
         { icon: 'truck', text: 'Envío Rápido', svg: '' },
       ],
       trust_badges_saving: false,
-      soap_sends: [],
-      soap_types: [],
+      fiscal_environments: [],
       products_per_page_options: [8, 12, 16, 24, 32, 40],
       editors: {
           classic: ClassicEditor
@@ -1134,3 +1134,4 @@ export default {
   }
 };
 </script>
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

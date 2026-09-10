@@ -1,8 +1,7 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 //Route::get('generate_token', 'ServiceController@dispatch');
-//Route::get('generate_token', 'ServiceDispatchController@generateToken');
-//Route::get('status_ticket/{ticket}', 'ServiceDispatchController@statusTicket');
 
 use Illuminate\Support\Facades\Route;
 
@@ -17,3 +16,4 @@ if($current_hostname) {
         });
     });
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

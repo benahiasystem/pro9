@@ -23,28 +23,16 @@ use App\Models\Tenant\Perception;
 use App\Mail\Tenant\DocumentEmail;
 use App\Models\Tenant\Configuration;
 use Modules\Finance\Traits\FinanceTrait;
-use App\CoreFacturalo\WS\Client\WsClient;
 use App\CoreFacturalo\Helpers\Xml\XmlHash;
-use App\CoreFacturalo\WS\Signed\XmlSigned;
 use App\CoreFacturalo\Helpers\Xml\XmlFormat;
-use App\CoreFacturalo\WS\Services\BillSender;
-use App\CoreFacturalo\WS\Services\ExtService;
-use App\CoreFacturalo\WS\Services\SummarySender;
-use App\CoreFacturalo\WS\Services\SunatEndpoints;
 use App\CoreFacturalo\Helpers\QrCode\QrCodeGenerate;
-use App\CoreFacturalo\WS\Services\ConsultCdrService;
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
-use App\CoreFacturalo\WS\Validator\XmlErrorCodeProvider;
 use Modules\Inventory\Models\Warehouse;
 use App\CoreFacturalo\Requests\Inputs\Functions;
 use App\Models\Tenant\PurchaseSettlement;
-use App\CoreFacturalo\Services\Helpers\SendDocumentPse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Modules\Finance\Traits\FilePaymentTrait;
-use Modules\PseService\Http\Gior\Service as GiorService;
-use Modules\PseService\Http\Gior\ServiceSendFact as ServiceSendFact;
-use Modules\PseService\Http\Gior\ServiceOseSendFact as ServiceOseSendFact;
 
 
 /**
@@ -66,40 +54,22 @@ class Facturalo
 
     protected $configuration;
     protected $company;
-    protected $isDemo;
-    protected $isOse;
-    protected $signer;
-    protected $wsClient;
     protected $document;
     protected $type;
     protected $actions;
     protected $xmlUnsigned;
     protected $xmlSigned;
-    protected $pathCertificate;
-    protected $soapUsername;
-    protected $soapPassword;
-    protected $endpoint;
     protected $response;
     protected $apply_change;
-    protected $sendDocumentPse;
 
     public function __construct()
     {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         $this->configuration = Configuration::first();
         $this->company = Company::active();
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
         $this->actions = [];
         $this->response = LocalFiscalDocumentPolicy::registeredResponse();
-        if (LocalFiscalDocumentPolicy::enabled()) {
-            return;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $this->isDemo = ($this->company->soap_type_id === '01')?true:false;
-        $this->isOse = ($this->company->soap_send_id === '02')?true:false;
-        $this->signer = new XmlSigned();
-        $this->wsClient = new WsClient();
-        $this->sendDocumentPse = new SendDocumentPse($this->company);
-        $this->setDataSoapType();
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function setDocument($document)
@@ -259,16 +229,12 @@ class Facturalo
 
     public function createXmlUnsigned()
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             $this->xmlUnsigned = null;
             return $this;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $template = new Template();
-        $this->xmlUnsigned = XmlFormat::format($template->xml($this->type, $this->company, $this->document));
-        $this->uploadFile($this->xmlUnsigned, 'unsigned');
-        return $this;
+
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
 
@@ -277,29 +243,12 @@ class Facturalo
      */
     public function signXmlUnsigned($pse_xml_signed = null)
     {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
             $this->xmlSigned = null;
             return $this;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
 
-        //validar si es que el documento se enviara al pse para la agregar la firma
-        if($pse_xml_signed !== null){
-            // if $this->sendToPse(); // deprecated
-            $this->xmlSigned = base64_decode($pse_xml_signed);
-
-        }else{
-
-            $this->setPathCertificate();
-            $this->signer->setCertificateFromFile($this->pathCertificate);
-            $this->xmlSigned = $this->signer->signXml($this->xmlUnsigned);
-        }
-
-        $this->uploadFile($this->xmlSigned, 'signed');
-
-        return $this;
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     /*
@@ -307,50 +256,20 @@ class Facturalo
      */
     public function servicePseSendXml()
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             return LocalFiscalDocumentPolicy::registeredResponse();
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $company = Company::first();
-        if ($company->pse_provider_id == 4) {
-            $service = new ServiceSendFact();
-        } else {
-            $service = new GiorService();
-        }
-        if($this->hasPseSend()) {
-            $service->getToken();
-            $response = $service->sendXml($this->xmlUnsigned, $this->document->filename);
-            if(!$response['success']) {
-                throw new Exception("PSE. QUERY - Code: {$response['code']}; Description: ".  json_encode($response['message']));
-            } else {
-                return $response;
-            }
-        } else {
-            return [
-                'xml_signed' => null,
-                'hash' => null,
-                'code' => null,
-            ];
-        }
+
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function updateHash($pse_hash = null)
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             return;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        if($pse_hash == null){
-            $this->document->update([
-                'hash' => $this->getHash(),
-            ]);
-        } else {
-            $this->document->update([
-                'hash' => $pse_hash,
-            ]);
-        }
+
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function updateQr()
@@ -364,15 +283,9 @@ class Facturalo
 
     public function updateState($state_type_id)
     {
-        if ($state_type_id == '09' && $this->company->soap_send_id == 4) {
-            $state_type_id = '01';
-        }
-
-        $this->document->update([
-            'state_type_id' => $state_type_id,
-            'soap_shipping_response' => isset($this->response['sent']) ? $this->response:null
-        ]);
-
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        $this->document->update(['state_type_id' => $state_type_id]);
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     // ########## INICIO CAMBIO SIN XML CDR SUNAT
@@ -383,7 +296,6 @@ class Facturalo
         if ($this->document) {
             $this->document->update([
                 'state_type_id' => self::REGISTERED,
-                'soap_shipping_response' => null,
             ]);
 
             if ($updateRelatedDocuments) {
@@ -393,17 +305,6 @@ class Facturalo
     }
     // ######### FIN CAMBIO SIN XML CDR SUNAT
 
-    public function updateSoap($soap_type_id, $type)
-    {
-        $this->document->update([
-            'soap_type_id' => $soap_type_id
-        ]);
-        // if($type === 'invoice') {
-        //     $invoice = Invoice::where('document_id', $this->document->id)->first();
-        //     $invoice->date_of_due = $this->document->date_of_issue;
-        //     $invoice->save();
-        // }
-    }
 
     public function updateStateDocuments($state_type_id)
     {
@@ -1067,53 +968,38 @@ class Facturalo
 
     public function loadXmlSigned()
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             $this->xmlSigned = null;
             return $this;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $this->xmlSigned = $this->getStorage($this->document->filename, 'signed');
-//        dd($this->xmlSigned);
-        return $this;
+
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     private function senderXmlSigned()
     {
-        $this->setDataSoapType();
-        $sender = in_array($this->type, ['summary', 'voided'])?new SummarySender():new BillSender();
-        $sender->setClient($this->wsClient);
-        $sender->setCodeProvider(new XmlErrorCodeProvider());
-
-        return $sender->send($this->document->filename, $this->xmlSigned);
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        return null;
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function senderXmlSignedBill($service_pse_code = null)
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             $this->registerLocally();
             return $this;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        if(!$this->actions['send_xml_signed']) {
-            $this->response = [
-                'sent' => false,
-            ];
-            return;
-        }
 
-        $this->onlySenderXmlSignedBill($service_pse_code);
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function hasPseSend()
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             return false;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        return $this->company->send_document_to_pse;
+
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
 
@@ -1128,193 +1014,31 @@ class Facturalo
      */
     public function sendToPse()
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             return false;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $send_to_pse = false;
 
-        if($this->company->send_document_to_pse)
-        {
-            if(in_array($this->type, ['invoice', 'dispatch', 'credit', 'debit']))
-            {
-                $send_to_pse = true;
-            }
-            elseif(in_array($this->type, ['voided', 'summary']))
-            {
-                $send_to_pse = $this->document->getSendToPse($this->sendDocumentPse);
-            }
-        }
-
-        return $send_to_pse;
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
 
     public function sendCdrToPse($cdr_zip, $document)
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             return;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        if($this->sendToPse())
-        {
-            $this->sendDocumentPse->sendCdr($cdr_zip, $document);
-        }
+
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function onlySenderXmlSignedBill($service_pse_code = null)
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             $this->registerLocally();
             return $this->response;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $company = Company::first();
-        $serviceose = new ServiceOseSendFact();
-        if ($company->pse_provider_id == 4) {
-            $service = new ServiceSendFact();
-        } else {
-            $service = new GiorService();
-        }
-        if($service_pse_code != null) {
 
-            $this->document->update([
-                'send_to_pse' => true
-            ]);
-
-            $response = $service->sendXmlSigned($this->document->filename, $this->xmlSigned);
-
-            if($response['success']) {
-                if($response['cdr'] != null) {
-                    $this->uploadFile($response['cdr'], 'cdr_b64');
-                    $cdrResponse = $service->getCdrResponse($response['cdr']);
-                    $code = $cdrResponse['code'];
-                    $description = $cdrResponse['description'];
-                        $this->response = [
-                            'sent' => true,
-                            'code' => $cdrResponse['code'],
-                            'description' => $cdrResponse['description'],
-                            'notes' => $cdrResponse['notes'],
-                        ];
-
-                    if ($company->pse_provider_id == 4) {
-                        $query = $service->querySummary($this->document->filename);
-                        $this->response['code'] = $query['document_status'];
-                        $state_type_id = $service->validationCodeResponseIntegration($query['document_status'], $description );
-                        $this->updateState($state_type_id);
-                    } else {
-                        $this->validationCodeResponse($code, $description);
-                    }
-                }
-            } else {
-                $description = 'PSE - SEND. '. $response['message'].' - - '.json_encode($response['errors']);
-                $this->response = [
-                    'sent' => true,
-                    'code' => $response['code'],
-                    'description' => $description,
-                ];
-
-                if ($company->pse_provider_id == 4) {
-                    if ($response['is_rejected']) {
-                        $this->updateState('01');
-                    } else {
-                        $query = $service->querySummary($this->document->filename);
-                        $this->response['code'] = $query['document_status'];
-                        $state_type_id = $service->validationCodeResponseIntegration($query['document_status'], $description, $response['is_rejected'] );
-                        $this->updateState($state_type_id);
-                    }
-                } else {
-                    $this->validationCodeResponse($response['code'], $description);
-                }
-
-            }
-        } else {
-            if ($this->company->soap_send_id == '04') {
-                $this->soapUsername = $this->company->soap_username;
-                $this->soapPassword = $this->company->soap_password;
-                $response = $serviceose->sendXmlSigned($this->document->filename, $this->xmlSigned);
-                if($response['success']) {
-                    if($response['cdr'] != null) {
-                        $this->uploadFile($response['cdr'], 'cdr_b64');
-                        $cdrResponse = $serviceose->getCdrResponse($response['cdr']);
-                        $code = $cdrResponse['code'];
-                        $description = $cdrResponse['description'];
-                        $this->response = [
-                            'sent' => true,
-                            'code' => $cdrResponse['code'],
-                            'description' => $cdrResponse['description'],
-                            'notes' => $cdrResponse['notes'],
-                        ];
-                        if ($company->soap_send_id == '04') {
-                            $query = $serviceose->querySummary($this->document->filename);
-                            $this->response['code'] = $query['document_status'];
-                            $state_type_id = $serviceose->validationCodeResponseIntegration($query['document_status'], $description );
-                            $this->updateState($state_type_id);
-                        } else {
-                            $this->validationCodeResponse($code, $description);
-                        }
-                    }
-                } else {
-                    $description = 'OSE - SEND. '. $response['message'].' - - '.json_encode($response['errors']);
-                    $this->response = [
-                        'sent' => true,
-                        'code' => $response['code'],
-                        'description' => $description,
-                    ];
-                    if ($company->soap_send_id == '04') {
-                        if ($response['is_rejected']) {
-                            $this->updateState('01');
-                        } else {
-                            $query = $serviceose->querySummary($this->document->filename);
-                            $this->response['code'] = $query['document_status'];
-                            $state_type_id = $serviceose->validationCodeResponseIntegration($query['document_status'], $description );
-                            $this->updateState($state_type_id);
-                        }
-                    } else {
-                        $this->validationCodeResponse($response['code'], $description);
-                    }
-
-                }
-            } else {
-                $res = $this->senderXmlSigned();
-
-                if($res->isSuccess()) {
-
-                    $cdrResponse = $res->getCdrResponse();
-                    $this->uploadFile($res->getCdrZip(), 'cdr');
-
-                    //enviar cdr a pse
-                    //$this->sendCdrToPse($res->getCdrZip(), $this->document);
-                    //enviar cdr a pse
-
-                    $code = $cdrResponse->getCode();
-                    $description = $cdrResponse->getDescription();
-
-                    $this->response = [
-                        'sent' => true,
-                        'code' => $cdrResponse->getCode(),
-                        'description' => $cdrResponse->getDescription(),
-                        'notes' => $cdrResponse->getNotes()
-                    ];
-
-                    $this->validationCodeResponse($code, $description);
-
-                } else {
-                    $code = $res->getError()->getCode();
-                    $message = $res->getError()->getMessage();
-                    $this->response = [
-                        'sent' => true,
-                        'code' => $code,
-                        'description' => $message
-                    ];
-
-                    $this->validationCodeResponse($code, $message);
-                }
-            }
-        }
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
 
@@ -1391,71 +1115,12 @@ class Facturalo
 
     public function senderXmlSignedSummary()
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             $this->registerLocally(true);
             return $this;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $company = Company::first();
-        $serviceose = new ServiceOseSendFact();
-        if ($company->pse_provider_id == 4) {
-            $service = new ServiceSendFact();
-        } else {
-            $service = new GiorService();
-        }
-        if($this->hasPseSend()) {
-            $response = $service->sendXmlSigned($this->document->filename, $this->xmlSigned, true);
-            if(!$response['success']) {
-                throw new Exception("PSE. SEND - Code: {$response['code']}; Description: {$response['message']}");
-            } else {
-                $this->updateTicket($response['ticket']?? null);
-                $this->updateState(self::SENT);
-                $this->updateStateDocuments(self::SENT);
-                $this->response = [
-                    'sent' => true
-                ];
-            }
 
-        } else {
-            if ($this->company->soap_send_id == 4){
-                $this->soapUsername = $this->company->soap_username;
-                $this->soapPassword = $this->company->soap_password;
-                $response = $serviceose->sendXmlSigned($this->document->filename, $this->xmlSigned, true);
-                if(!$response['success']) {
-                    throw new Exception("PSE. SEND - Code: {$response['code']}; Description: {$response['message']}");
-                } else {
-                    $this->updateTicket($response['ticket']?? null);
-                    $this->updateState(self::SENT);
-                    $this->updateStateDocuments(self::SENT);
-                    $this->response = [
-                        'sent' => true
-                    ];
-                }
-            } else {
-                $res = $this->senderXmlSigned();
-                if($res->isSuccess()) {
-                    $ticket = $res->getTicket();
-                    $this->updateTicket($ticket);
-                    $this->updateState(self::SENT);
-                    if($this->type === 'summary') {
-                        // if($this->document->summary_status_type_id === '1') {
-                        if(in_array($this->document->summary_status_type_id, ['1', '2'])) {
-                            $this->updateStateDocuments(self::SENT);
-                        } else {
-                            $this->updateStateDocuments(self::CANCELING);
-                        }
-                    } else {
-                        $this->updateStateDocuments(self::CANCELING);
-                    }
-                    $this->response = [
-                        'sent' => true
-                    ];
-                } else {
-                    throw new Exception("Code: {$res->getError()->getCode()}; Description: {$res->getError()->getMessage()}");
-                }
-            }
-        }
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     private function updateTicket($ticket)
@@ -1467,171 +1132,18 @@ class Facturalo
 
     public function pseQuerySummary()
     {
-        $company = Company::first();
-        if ($company->pse_provider_id == 4) {
-            $service = new ServiceSendFact();
-        } else {
-            $service = new GiorService();
-        }
-        $response = $service->querySummary($this->document->filename);
-        if(!$response['success']) {
-            throw new Exception("PSE. SEND - Code: {$response['code']}; Description: {$response['message']}");
-        } else {
-            $status_code = 98;
-            if($response['cdr'] != null) {
-                $this->uploadFile($response['cdr'], 'cdr_b64');
-                $cdrResponse = $service->getCdrResponse($response['cdr']);
-                $status_code = $cdrResponse['code'];
-
-                if($status_code == 0) {
-                    if(in_array($this->document->summary_status_type_id, ['1', '2'])) {
-                        $this->updateStateDocuments(self::ACCEPTED);
-                    } else {
-                        $this->updateStateDocuments(self::VOIDED);
-                    }
-                    $this->updateState(self::ACCEPTED);
-                } elseif ($status_code == 99) {
-                    $this->updateState(self::REJECTED);
-                    $this->updateStateDocuments(self::REGISTERED);
-                }
-
-                $this->response = [
-                    'sent' => true,
-                    'code' => $cdrResponse['code'],
-                    'description' => $cdrResponse['description'],
-                    'notes' => $cdrResponse['notes'],
-                    'is_accepted' => true,
-                    'status_code' => $cdrResponse['code'],
-                ];
-
-                if ($company->pse_provider_id == 4) {
-                    $this->response['document_status'] = $response['document_status'];
-                }
-
-                $this->document->update([
-                    'soap_shipping_response' => $this->response
-                ]);
-            } else {
-                $this->response = [
-                    'description' => $response['message'],
-                    'status_code' => $response['code'],
-                ];
-
-                if ($company->pse_provider_id == 4) {
-                    $this->response['document_status'] = $response['document_status'];
-                }
-
-            }
-        }
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        $this->registerLocally();
+        return $this->response;
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function statusSummary($ticket)
     {
-        $serviceose = new ServiceOseSendFact();
-        if($this->hasPseSend()) {
-            $this->pseQuerySummary();
-        } else {
-            if ($this->company->soap_send_id == 4){
-                $this->soapUsername = $this->company->soap_username;
-                $this->soapPassword = $this->company->soap_password;
-                $response = $serviceose->querySummary($this->document->filename);
-                if(!$response['success']) {
-                    throw new Exception("PSE. SEND - Code: {$response['code']}; Description: {$response['message']}");
-                } else {
-                    $status_code = 98;
-                    if($response['cdr'] != null) {
-                        $this->uploadFile($response['cdr'], 'cdr_b64');
-                        $cdrResponse = $serviceose->getCdrResponse($response['cdr']);
-                        $status_code = $cdrResponse['code'];
-
-                        if($status_code == 0) {
-                            if(in_array($this->document->summary_status_type_id, ['1', '2'])) {
-                                $this->updateStateDocuments(self::ACCEPTED);
-                            } else {
-                                $this->updateStateDocuments(self::VOIDED);
-                            }
-                            $this->updateState(self::ACCEPTED);
-                        } elseif ($status_code == 99) {
-                            $this->updateState(self::REJECTED);
-                            $this->updateStateDocuments(self::REGISTERED);
-                        }
-
-                        $this->response = [
-                            'sent' => true,
-                            'code' => $cdrResponse['code'],
-                            'description' => $cdrResponse['description'],
-                            'notes' => $cdrResponse['notes'],
-                            'is_accepted' => true,
-                            'status_code' => $cdrResponse['code'],
-                        ];
-                        $this->document->update([
-                            'soap_shipping_response' => $this->response
-                        ]);
-                    } else {
-                        $this->response = [
-                            'description' => $cdrResponse['description'],
-                            'status_code' => $cdrResponse['code'],
-                        ];
-                    }
-                }
-            } else {
-                $extService = new ExtService();
-                $extService->setClient($this->wsClient);
-                $extService->setCodeProvider(new XmlErrorCodeProvider());
-                $res = $extService->getStatus($ticket);
-                if(!$res->isSuccess()) {
-                    throw new Exception("Code: {$res->getError()->getCode()}; Description: {$res->getError()->getMessage()}", 511); //custom exception code
-                } else {
-                    $cdrResponse = $res->getCdrResponse();
-                    $this->uploadFile($res->getCdrZip(), 'cdr');
-
-                    $this->response = [
-                        'sent' => true,
-                        'code' => $cdrResponse->getCode(),
-                        'description' => $cdrResponse->getDescription(),
-                        'notes' => $cdrResponse->getNotes(),
-                        'is_accepted' => $cdrResponse->isAccepted(),
-                        'status_code' => $extService->getCustomStatusCode(),
-                    ];
-
-                    $this->validationStatusCodeResponse($extService->getCustomStatusCode());
-                    // $this->updateState(self::ACCEPTED);
-
-                    if($this->type === 'summary') {
-
-                        if($extService->getCustomStatusCode() === 0){
-
-                            // if($this->document->summary_status_type_id === '1') {
-                            if(in_array($this->document->summary_status_type_id, ['1', '2']))
-                            {
-                                $this->updateStateDocuments(self::ACCEPTED);
-                            }
-                            else
-                            {
-                                $this->updateStateDocuments(self::VOIDED);
-                            }
-
-                            //enviar cdr a pse
-                            //$this->sendCdrToPse($res->getCdrZip(), $this->document);
-                            //enviar cdr a pse
-
-                        }else if($extService->getCustomStatusCode() === 99){
-
-                            $this->updateStateDocuments(self::REGISTERED);
-
-                        }
-
-                    } else {
-
-                        //enviar cdr a pse
-                        //$this->sendCdrToPse($res->getCdrZip(), $this->document);
-                        //enviar cdr a pse
-
-                        $this->updateStateDocuments(self::VOIDED);
-                    }
-                }
-            }
-        }
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        $this->registerLocally();
+        return $this->response;
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function validationStatusCodeResponse($status_code)
@@ -1652,34 +1164,12 @@ class Facturalo
 
     public function consultCdr()
     {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+
             $this->response = LocalFiscalDocumentPolicy::registeredResponse();
             return $this;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $this->wsClient = new WsClient($this->endpoint);
-        $this->wsClient->setCredentials($this->soapUsername, $this->soapPassword);
-        $this->wsClient->setService($this->endpoint);
-        $consultCdrService = new ConsultCdrService();
-        $consultCdrService->setClient($this->wsClient);
-        $consultCdrService->setCodeProvider(new XmlErrorCodeProvider());
-        $res = $consultCdrService->getStatusCdr($this->company->number, $this->document->document_type_id,
-                                                $this->document->series, $this->document->number);
 
-        if(!$res->isSuccess()) {
-            throw new Exception("Code: {$res->getError()->getCode()}; Description: {$res->getError()->getMessage()}");
-        } else {
-            $cdrResponse = $res->getCdrResponse();
-            $this->uploadFile($res->getCdrZip(), 'cdr');
-            $this->updateState(self::ACCEPTED);
-            $this->response = [
-                'sent' => true,
-                'code' => $cdrResponse->getCode(),
-                'description' => $cdrResponse->getDescription(),
-                'notes' => $cdrResponse->getNotes()
-            ];
-        }
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     }
 
     public function uploadFile($file_content, $file_type)
@@ -1687,112 +1177,9 @@ class Facturalo
         $this->uploadStorage($this->document->filename, $file_content, $file_type);
     }
 
-    private function setDataSoapType()
-    {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
-            return;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $this->setSoapCredentials();
-        $this->wsClient->setCredentials($this->soapUsername, $this->soapPassword);
-        $this->wsClient->setService($this->endpoint);
-    }
-
-    private function setPathCertificate()
-    {
-        if($this->isOse) {
-            $this->pathCertificate = storage_path('app'.DIRECTORY_SEPARATOR.
-                'certificates'.DIRECTORY_SEPARATOR.$this->company->certificate);
-        } else {
-            if($this->isDemo) {
-                $this->pathCertificate = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.
-                    'WS'.DIRECTORY_SEPARATOR.
-                    'Signed'.DIRECTORY_SEPARATOR.
-                    'Resources'.DIRECTORY_SEPARATOR.
-                    'certificate.pem');
-            } else {
-                $this->pathCertificate = storage_path('app'.DIRECTORY_SEPARATOR.
-                    'certificates'.DIRECTORY_SEPARATOR.$this->company->certificate);
-            }
-        }
-
-//        if($this->isDemo) {
-//            $this->pathCertificate = app_path('CoreFacturalo'.DIRECTORY_SEPARATOR.
-//                'WS'.DIRECTORY_SEPARATOR.
-//                'Signed'.DIRECTORY_SEPARATOR.
-//                'Resources'.DIRECTORY_SEPARATOR.
-//                'certificate.pem');
-//        } else {
-//            $this->pathCertificate = storage_path('app'.DIRECTORY_SEPARATOR.
-//                'certificates'.DIRECTORY_SEPARATOR.$this->company->certificate);
-//        }
-    }
-
-    public static function validateCertificate(): bool
-    {
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        if (LocalFiscalDocumentPolicy::enabled()) {
-            return false;
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-        $company = Company::first();
-
-        if ($company->soap_type_id == '02' && !$company->send_document_to_pse ) {
-            if (!isset($company->certificate)) {
-                return true;
-            }  else {
-                return !Storage::exists('certificates'.DIRECTORY_SEPARATOR.$company->certificate);
-            }
-
-        }
-        return false;
-    }
-
-    private function setSoapCredentials()
-    {
-
-        if($this->isOse) {
-
-            $this->soapUsername = $this->company->soap_username;
-            $this->soapPassword = $this->company->soap_password;
-
-        }else{
-
-            if($this->isDemo) {
-                $this->soapUsername = $this->company->number.'MODDATOS';
-                $this->soapPassword = 'moddatos';
-            } else {
-                $this->soapUsername = $this->company->soap_username;
-                $this->soapPassword = $this->company->soap_password;
-            }
-
-        }
 
 
-//        $this->soapUsername = ($this->isDemo)?$this->company->number.'MODDATOS':$this->company->soap_username;
-//        $this->soapPassword = ($this->isDemo)?'moddatos':$this->company->soap_password;
 
-        if($this->isOse) {
-            $this->endpoint = $this->company->soap_url;
-//            dd($this->soapPassword);
-        } else {
-            switch ($this->type) {
-                case 'perception':
-                case 'retention':
-                    $this->endpoint = ($this->isDemo)?SunatEndpoints::RETENCION_BETA:SunatEndpoints::RETENCION_PRODUCCION;
-                    break;
-                case 'dispatch':
-                    $this->endpoint = ($this->isDemo)?SunatEndpoints::GUIA_BETA:SunatEndpoints::GUIA_PRODUCCION;
-                    break;
-                default:
-                    // $this->endpoint = ($this->isDemo)?SunatEndpoints::FE_BETA:SunatEndpoints::FE_PRODUCCION;
-                    $this->endpoint = ($this->isDemo)?SunatEndpoints::FE_BETA : ($this->configuration->sunat_alternate_server ? SunatEndpoints::FE_PRODUCCION_ALTERNATE : SunatEndpoints::FE_PRODUCCION);
-                    break;
-            }
-        }
-
-    }
 
     private function updatePrepaymentDocuments($inputs){
         // dd($inputs);
@@ -1830,7 +1217,6 @@ class Facturalo
         //     return
 
         //     $this->document->update([
-        //         'soap_shipping_response' => $this->response
         //     ]);
 
         // }

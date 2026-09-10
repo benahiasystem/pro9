@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Webhook\Services\Payloads;
 
@@ -12,16 +13,13 @@ use Hyn\Tenancy\Environment;
  */
 class DocumentPayload implements PayloadBuilderInterface
 {
-    const STATES_WITH_CDR = ['05', '07'];
-
     /**
      * @param Document $model
      */
     public function build($model): array
     {
         $customer = $model->customer;
-        $sunatResponse = $model->soap_shipping_response;
-        $hasCdr = in_array($model->state_type_id, self::STATES_WITH_CDR, true);
+        $localResponse = \App\Services\LocalFiscalDocumentPolicy::registeredResponse();
         $baseUrl = $this->tenantBaseUrl();
 
         return [
@@ -45,14 +43,11 @@ class DocumentPayload implements PayloadBuilderInterface
                 'name' => $customer->name ?? null,
             ] : null,
             'links' => [
-                'xml' => "{$baseUrl}/downloads/document/xml/{$model->external_id}",
                 'pdf' => "{$baseUrl}/downloads/document/pdf/{$model->external_id}",
-                'cdr' => $hasCdr ? "{$baseUrl}/downloads/document/cdr/{$model->external_id}" : null,
             ],
-            'sunat_response' => $sunatResponse ? [
-                'code' => $sunatResponse->code ?? null,
-                'description' => $sunatResponse->description ?? null,
-            ] : null,
+            'local_response' => $localResponse,
+            'fiscal_environment' => $model->fiscal_environment,
+            'fiscal_emission_mode' => $model->fiscal_emission_mode,
         ];
     }
 
@@ -75,3 +70,4 @@ class DocumentPayload implements PayloadBuilderInterface
         return "{$scheme}://{$fqdn}";
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

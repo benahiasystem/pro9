@@ -37,7 +37,6 @@
  * - `locked_tenant`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `compact_sidebar`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `amount_plastic_bag_taxes`: decimal(6,2); NOT NULL; DEFAULT 0.10 — Sin comentario definido en el esquema fuente.
- * - `config_system_env`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
  * - `colums_grid_item`: tinyint(4); NULL; DEFAULT 4 — Sin comentario definido en el esquema fuente.
  * - `options_pos`: tinyint(1); NOT NULL; DEFAULT 1 — Sin comentario definido en el esquema fuente.
  * - `edit_name_product`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
@@ -291,7 +290,6 @@ CREATE TABLE `configurations` (
   `locked_tenant` tinyint(1) NOT NULL DEFAULT '0',
   `compact_sidebar` tinyint(1) NOT NULL DEFAULT '0',
   `amount_plastic_bag_taxes` decimal(6,2) NOT NULL DEFAULT '0.10',
-  `config_system_env` tinyint(1) NOT NULL DEFAULT '1',
   `colums_grid_item` tinyint(4) DEFAULT '4',
   `options_pos` tinyint(1) NOT NULL DEFAULT '1',
   `edit_name_product` tinyint(1) NOT NULL DEFAULT '0',

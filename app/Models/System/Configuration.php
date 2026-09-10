@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Models\System;
 
@@ -12,12 +13,6 @@ class Configuration extends Model
 
     protected $fillable = [
         'locked_admin',
-        'certificate',
-        'soap_send_id',
-        'soap_type_id',
-        'soap_username',
-        'soap_password',
-        'soap_url',
         'token_public_culqui',
         'token_private_culqui',
         'url_apiruc',
@@ -252,3 +247,4 @@ class Configuration extends Model
         return null;
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

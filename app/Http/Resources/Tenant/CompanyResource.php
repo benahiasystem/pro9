@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\Tenant;
 
@@ -28,40 +29,24 @@ class CompanyResource extends JsonResource
             'number' => $this->number,
             'name' => $this->name,
             'trade_name' => $this->trade_name,
-            'soap_send_id' => $this->soap_send_id,
-            'soap_type_id' => $this->soap_type_id,
-            'soap_username' => $this->soap_username,
-            'soap_password' => $this->soap_password,
-            'soap_url' => $this->soap_url,
-            'certificate' => $this->certificate,
-            'certificate_due' => $this->certificate_due,
+            ...\App\Services\FiscalEmissionSettings::publicData($this->resource),
             'logo' => $this->logo,
             'logo_dark' => $this->logo_dark,
             'logo_store' => $this->logo_store,
             'operation_amazonia' => (bool) $this->operation_amazonia,
-            'config_system_env' => (bool) $configuration->config_system_env,
             'img_firm' => $this->img_firm,
             'favicon' => $this->favicon,
             'cod_digemid' => $this->cod_digemid,
             'is_pharmacy' => $configuration->isPharmacy(),
             'integrated_query_client_id' => $this->integrated_query_client_id,
             'integrated_query_client_secret' => $this->integrated_query_client_secret,
-            'send_document_to_pse' => $this->send_document_to_pse,
-            'url_send_cdr_pse' => $this->url_send_cdr_pse,
-            'url_signature_pse' => $this->url_signature_pse,
-            'client_id_pse' => $this->client_id_pse,
             'app_logo' => $this->app_logo,
-            'soap_sunat_username' => $this->soap_sunat_username,
-            'soap_sunat_password' => $this->soap_sunat_password,
-            'api_sunat_id' => $this->api_sunat_id,
-            'api_sunat_secret' => $this->api_sunat_secret,
             'title_web' => $this->title_web,
             'smtp_host' => $configuration->smtp_host,
             'smtp_port' => $configuration->smtp_port,
             'smtp_user' => $configuration->smtp_user,
             'smtp_password' => $configuration->smtp_password,
             'smtp_encryption' => $configuration->smtp_encryption,
-            'pse_provider_id' => $this->pse_provider_id,
             'qr_api_enable_ws' => $configuration->qr_api_enable,
             'qr_api_url_ws' => $configuration->qr_api_url,
             'qr_api_key_ws' => $configuration->qr_api_apiKey,
@@ -69,3 +54,4 @@ class CompanyResource extends JsonResource
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -7,7 +7,7 @@ final class LocalFiscalDocumentPolicy
 {
     public static function enabled(): bool
     {
-        return (bool) config('venezuela.local_document_emission.enabled', true);
+        return true;
     }
 
     public static function registeredResponse(): array

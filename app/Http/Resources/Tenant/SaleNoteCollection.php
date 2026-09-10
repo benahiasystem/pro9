@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace App\Http\Resources\Tenant;
 
@@ -41,7 +42,7 @@
                 //return dd($date);
                 return [
                     'id'                           => $row->id,
-                    'soap_type_id'                 => $row->soap_type_id,
+                    'fiscal_environment'                 => $row->fiscal_environment,
                     'external_id'                  => $row->external_id,
                     'date_of_issue'                => $row->date_of_issue->format('Y-m-d'),
                     'identifier'                   => $row->identifier,
@@ -93,3 +94,4 @@
         }
 
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

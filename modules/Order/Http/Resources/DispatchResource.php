@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Order\Http\Resources;
 
@@ -22,22 +23,7 @@ class DispatchResource extends JsonResource
         // el accessor del modelo devuelve un stdClass vacio cuando la columna trae
         // json invalido, y un objeto vacio pasa como verdadero: por eso se consulta
         // la propiedad directamente en lugar de chequear el objeto
-        if($this->soap_shipping_response->sent ?? false){
 
-            $response_message = $this->soap_shipping_response->description ?? null;
-            $code =  (int) $this->soap_shipping_response->code;
-
-            if($code === 0) {
-                $response_type = 'success';
-            }elseif($code < 2000) {
-                $response_type = 'error';
-            }elseif ($code < 4000) {
-                $response_type = 'error';
-            } else {
-                $response_type = 'warning';
-            }
-
-        }
 
         $has_cdr = false;
 
@@ -65,11 +51,9 @@ class DispatchResource extends JsonResource
                 'filename_only' => $this->filename,
                 'extension_only' => 'pdf'
             ],
-            'send_to_pse' => $this->send_to_pse,
-            'response_signature_pse' => optional($this->response_signature_pse)->message,
-            'response_send_cdr_pse' => optional($this->response_send_cdr_pse)->message,
             'reference_documents' => $this->reference_documents,
 
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Store\Helpers;
 
@@ -12,7 +13,7 @@ class DocumentData
     {
         $data->id = $record->id;
         $data->filename = $record->filename;
-        $data->soap_type_id = $record->soap_type_id;
+        $data->fiscal_environment = $record->fiscal_environment;
         $data->document_type_id = $record->document_type_id;
         $data->document_type_name = func_str_to_upper_utf8($record->document_type->name);
         $data->series = $record->series;
@@ -60,3 +61,4 @@ class DocumentData
         return $establishment_entity;
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

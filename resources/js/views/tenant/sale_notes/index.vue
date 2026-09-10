@@ -246,7 +246,7 @@
                                   </el-dropdown-item>
 
                                   <el-dropdown-item
-                                    v-if="!row.changed && row.state_type_id != '11' && soapCompany != '03'"
+                                    v-if="!row.changed && row.state_type_id != '11'"
                                     @click.native="clickGenerate(row.id)"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M19 12v7a1.78 1.78 0 0 1 -3.1 1.4a1.65 1.65 0 0 0 -2.6 0a1.65 1.65 0 0 1 -2.6 0a1.65 1.65 0 0 0 -2.6 0a1.78 1.78 0 0 1 -3.1 -1.4v-14a2 2 0 0 1 2 -2h7l5 5v4.25"></path></svg>
@@ -434,7 +434,7 @@ import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 import SaleNoteDispatchStatus from "./partials/dispatch_status.vue";
 
 export default {
-    props: ["soapCompany", "typeUser", "configuration"],
+    props: ["companyEnvironment", "typeUser", "configuration"],
     mixins: [deletable],
     components: {
         DataTable,
@@ -781,7 +781,7 @@ export default {
             return String(row.state_type_id) !== '11';
         },
         canGenerateSaleNoteDocument(row) {
-            return !row.changed && String(row.state_type_id) !== '11' && this.soapCompany !== '03';
+            return !row.changed && String(row.state_type_id) !== '11';
         },
         clickDownload(external_id) {
             window.open(

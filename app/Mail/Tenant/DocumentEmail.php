@@ -3,9 +3,7 @@
 namespace App\Mail\Tenant;
 
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
-use App\CoreFacturalo\WS\Services\BaseSunat;
 use App\Models\Tenant\Document;
-use App\Services\LocalFiscalDocumentPolicy;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -34,23 +32,7 @@ class DocumentEmail extends Mailable
     public function build()
     {
         $pdf = $this->getStorage($this->document->filename, 'pdf');
-        // ########## INICIO CAMBIO SIN XML CDR SUNAT
-        $xml = LocalFiscalDocumentPolicy::enabled()
-            ? null
-            : $this->getStorage($this->document->filename, 'signed');
-        $cdr = null;
-
-        if(!LocalFiscalDocumentPolicy::enabled() && $this->document->document_type_id !== '03') {
-
-            if($this->existFileInStorage($this->document->filename, 'cdr'))
-            {
-                $cdr = $this->getStorage($this->document->filename, 'cdr');
-            }
-
-        }
-
-
-
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
         $template_document_mail = config('tenant.template_document_mail');
         if($template_document_mail === 'default') {
             $template_document_mail_view = 'tenant.templates.email.document';
@@ -65,30 +47,9 @@ class DocumentEmail extends Mailable
                     ->view($template_document_mail_view)
                     ->attachData($pdf, $this->document->filename.'.pdf');
 
-        if (!LocalFiscalDocumentPolicy::enabled() && $xml !== null) {
-            $email->attachData($xml, $this->document->filename.'.xml');
-        }
-
-
-        // $file = $this->getCdr($this->document);
-
-        if(!empty($cdr) ){
-            $xml_cdr = (new BaseSunat())->getXmlResponse($cdr);
-//            $email->attachData($cdr, $this->document->filename.'.zip');
-            $email->attachData($xml_cdr, 'R-'.$this->document->filename.'.xml');
-        }
-        // ######### FIN CAMBIO SIN XML CDR SUNAT
-
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
 
         return $email;
     }
 
-    public function getCdr($document){
-        $file = null;
-        if( !empty($document->external_id)) {
-            $file = $this->getStorage($document->filename, 'cdr');
-        }
-        return $file;
-
-    }
 }

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
     <div class="container-fluid p-0">
         <div class="row page-header pr-0 no-gutters" style="height:auto">
@@ -807,7 +808,7 @@
             :currency-type-active="currency_type"
             :exchange-rate-sale="form.exchange_rate_sale"
             :customer="customer"
-            :soapCompany="soapCompany"
+            :companyEnvironment="companyEnvironment"
             :businessTurns="businessTurns"
         ></fast-payment>
 
@@ -927,7 +928,7 @@ import queryString from "query-string";
 import TableItems from "./partials/table.vue";
 
 export default {
-    props: ["configuration", "soapCompany", "businessTurns", "typeUser"],
+    props: ["configuration", "companyEnvironment", "businessTurns", "typeUser"],
     components: {
         FastPayment,
         PaymentForm,
@@ -2029,3 +2030,4 @@ export default {
     }
 };
 </script>
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

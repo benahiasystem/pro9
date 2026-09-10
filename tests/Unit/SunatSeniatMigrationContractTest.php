@@ -109,9 +109,9 @@ class SunatSeniatMigrationContractTest extends TestCase
     public function internal_fiscal_contracts_remain_named_but_are_not_exposed_as_active_shipping_routes(): void
     {
         self::assertStringNotContainsString("Route::post('/sendSunat/{document}'", $this->source('routes/web.php'));
-        self::assertStringContainsString('function sendDispatchToSunat', $this->source('app/Http/Controllers/Tenant/DispatchController.php'));
+        self::assertStringNotContainsString('function sendDispatchToSunat', $this->source('app/Http/Controllers/Tenant/DispatchController.php'));
         self::assertStringContainsString("env('SUNAT_ALTERNATE_SERVER'", $this->source('config/configuration.php'));
-        self::assertStringContainsString('LocalFiscalDocumentPolicy::enabled()', $this->source('app/CoreFacturalo/Facturalo.php'));
+        self::assertStringContainsString('LocalFiscalDocumentPolicy::registeredResponse()', $this->source('app/CoreFacturalo/Facturalo.php'));
         self::assertDirectoryDoesNotExist(base_path('app/CoreFacturalo/WS-BK'));
     }
 
@@ -119,7 +119,6 @@ class SunatSeniatMigrationContractTest extends TestCase
     public function generic_user_copy_no_longer_exposes_peruvian_authorities(): void
     {
         $expectations = [
-            'resources/js/views/system/certificate/index.vue' => ['Certificado PSE - Datos Sunat', 'Usuario Secundario SUNAT'],
             'resources/js/views/system/clients/form.vue' => ['Usuario Secundario Sunat'],
             'resources/js/views/system/companies/form.vue' => ['Usuario Secundario Sunat'],
             'resources/js/views/tenant/companies/form.vue' => ['portal de Sunat', 'Usuario Secundario Sunat'],

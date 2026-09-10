@@ -1,10 +1,11 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Sale\Models;
 
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\User;
-use App\Models\Tenant\SoapType;
+use App\Models\Tenant\FiscalEnvironment;
 // use App\Models\Tenant\StateType;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Establishment;
@@ -17,7 +18,7 @@ class Contract extends ModelTenant
 {
     use SellerIdTrait;
 
-    protected $with = ['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments'];
+    protected $with = ['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments'];
 
     protected $fillable = [
         'id',
@@ -25,7 +26,7 @@ class Contract extends ModelTenant
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'payment_method_type_id',
 
@@ -188,9 +189,9 @@ class Contract extends ModelTenant
         return $this->belongsTo(User::class);
     }
 
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function state_type()
@@ -283,7 +284,7 @@ class Contract extends ModelTenant
      */  
     public function scopeWhereFilterWithOutRelations($query)
     {
-        return $query->withOut(['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments']);
+        return $query->withOut(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments']);
     }
 
 
@@ -301,3 +302,4 @@ class Contract extends ModelTenant
     
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

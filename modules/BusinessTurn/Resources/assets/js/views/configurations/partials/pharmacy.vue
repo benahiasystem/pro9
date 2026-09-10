@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
     <div v-if="isPharmacyActive">
         <hr>
@@ -82,11 +83,6 @@ export default {
                     number: companyData.number,
                     name: companyData.name,
                     trade_name: companyData.trade_name,
-                    soap_type_id: companyData.soap_type_id,
-                    soap_send_id: companyData.soap_send_id,
-                    soap_username: companyData.soap_username,
-                    soap_password: companyData.soap_password,
-                    certificate: companyData.certificate,
                     identity_document_type_id: companyData.identity_document_type_id,
                     country_id: companyData.country_id,
                     department_id: companyData.department_id,
@@ -117,3 +113,4 @@ export default {
     },
 }
 </script>
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

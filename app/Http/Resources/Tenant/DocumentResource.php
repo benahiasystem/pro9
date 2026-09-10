@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\Tenant;
 
@@ -23,53 +24,6 @@ class DocumentResource extends JsonResource
 
         $response_message = null;
         $response_type = null;
-
-        if($this->soap_shipping_response){
-            if($this->soap_shipping_response->sent){
-
-                $company = Company::first();
-                if ($company->pse_provider_id == 4 || $company->soap_send_id == '04') {
-                    // Code es para retrocompatibilidad con response anteriores
-                    $code =  (int) $this->soap_shipping_response->code;
-                    if($code === 1) {
-                        $response_type = 'success';
-                    }elseif($code === 5) {
-                        $response_type = 'error';
-                    } else if($code === 4) {
-                        $response_type = 'warning';
-                    } else if ($code === 400) {
-                        $response_type = 'error';
-                    } else if ($code === 401) {
-                        $response_type = 'warning';
-                    } else if ($code === 0) {
-                        $response_type = 'error';
-                    }
-
-                } else {
-                    $code =  (int) $this->soap_shipping_response->code;
-                    if($code === 0) {
-                        $response_type = 'success';
-                    }elseif($code < 2000) {
-                        $response_type = 'error';
-                    }elseif ($code < 4000) {
-                        $response_type = 'error';
-                    } else {
-                        $response_type = 'warning';
-                    }
-
-                }
-                $response_message = $this->soap_shipping_response->description;
-
-
-            }
-
-        }else if ($this->regularize_shipping) {
-
-            $response_message = "Por regularizar: {$this->response_regularize_shipping->code} - {$this->response_regularize_shipping->description}";
-            $code =  (int) $this->response_regularize_shipping->code;
-            $response_type = 'error';
-
-        }
 
         /** @var Document $document */
         $document = $this->resource;
@@ -116,6 +70,8 @@ class DocumentResource extends JsonResource
 
         $data = [
             'id' => $document->id,
+            'fiscal_environment' => $document->fiscal_environment,
+            'fiscal_emission_mode' => $document->fiscal_emission_mode,
             'external_id' => $document->external_id,
             'group_id' => $document->group_id,
             'number' => $document->number_full,
@@ -138,9 +94,6 @@ class DocumentResource extends JsonResource
             'message_text' => "Su comprobante de pago electrónico {$this->number_full} ha sido generado correctamente, puede revisarlo en el siguiente enlace: ".url('')."/print/document/{$this->external_id}/".(optional(Configuration::first())->qr_api_pdf_format === 'a4' ? 'a4' : 'ticket')."",
             'sales_note' => $nvs,
 
-            'send_to_pse' => $document->send_to_pse,
-            'response_signature_pse' => optional($document->response_signature_pse)->message,
-            'response_send_cdr_pse' => optional($document->response_send_cdr_pse)->message,
 
             'document_type_id' => $document->document_type_id,
             'document_type_description' => optional($document->document_type)->description,
@@ -241,3 +194,4 @@ class DocumentResource extends JsonResource
             ->all();
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

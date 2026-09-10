@@ -11,7 +11,7 @@
  * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `establishment`: json; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `state_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `ubl_version`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `operation_type_id`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -46,7 +46,6 @@
  * - `has_cdr`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
  * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
- * - `soap_shipping_response`: json; NULL — Sin comentario definido en el esquema fuente.
  */
 
 use Illuminate\Database\Migrations\Migration;
@@ -63,7 +62,7 @@ CREATE TABLE `purchase_settlements` (
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `establishment` json NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `operation_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -98,13 +97,12 @@ CREATE TABLE `purchase_settlements` (
   `has_cdr` tinyint(1) NOT NULL DEFAULT '0',
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
-  `soap_shipping_response` json DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `purchase_settlements_filename_unique` (`filename`),
   KEY `purchase_settlements_user_id_foreign` (`user_id`),
   KEY `purchase_settlements_establishment_id_foreign` (`establishment_id`),
   KEY `purchase_settlements_supplier_id_foreign` (`supplier_id`),
-  KEY `purchase_settlements_soap_type_id_foreign` (`soap_type_id`),
+  KEY `purchase_settlements_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `purchase_settlements_state_type_id_foreign` (`state_type_id`),
   KEY `purchase_settlements_document_type_id_foreign` (`document_type_id`),
   KEY `purchase_settlements_currency_type_id_foreign` (`currency_type_id`),

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Models\Tenant;
 
@@ -14,12 +15,12 @@ use Illuminate\Support\Facades\DB;
  */
 class Summary extends ModelTenant
 {
-    // protected $with = ['user', 'soap_type', 'state_type', 'summary_status_type', 'documents'];
+    // protected $with = ['user', 'fiscal_environment_type', 'state_type', 'summary_status_type', 'documents'];
 
     protected $fillable = [
         'user_id',
         'external_id',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'summary_status_type_id',
         'ubl_version',
@@ -30,15 +31,11 @@ class Summary extends ModelTenant
         'ticket',
         'has_ticket',
         'has_cdr',
-        'soap_shipping_response',
         'unknown_error_status_response',
         'manually_regularized',
         'error_manually_regularized',
         'unique_filename',
 
-        'send_to_pse',
-        'response_signature_pse',
-        'response_send_cdr_pse',
 
     ];
 
@@ -47,7 +44,6 @@ class Summary extends ModelTenant
         'date_of_reference' => 'date',
         'unknown_error_status_response' => 'boolean',
         'manually_regularized' => 'boolean',
-        'send_to_pse' => 'bool',
     ];
 
     /**
@@ -61,9 +57,9 @@ class Summary extends ModelTenant
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     /**
@@ -114,15 +110,7 @@ class Summary extends ModelTenant
         return route('tenant.download.external_id', ['model' => 'summary', 'type' => 'cdr', 'external_id' => $this->external_id]);
     }
 
-    public function getSoapShippingResponseAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setSoapShippingResponseAttribute($value)
-    {
-        $this->attributes['soap_shipping_response'] = (is_null($value))?null:json_encode($value);
-    }
 
     public function getErrorManuallyRegularizedAttribute($value)
     {
@@ -133,7 +121,7 @@ class Summary extends ModelTenant
     {
         $this->attributes['error_manually_regularized'] = (is_null($value))?null:json_encode($value);
     }
-    
+
     /**
      * Devuelve la clase Facturalo con los elementos cargados
      *
@@ -148,7 +136,7 @@ class Summary extends ModelTenant
         });
     }
 
-        
+
     /**
      * 
      * Verificar si es un resumen para adicionar o modificar
@@ -161,70 +149,18 @@ class Summary extends ModelTenant
     }
 
 
-    /**
-     * Obtener tipo de documento válido para enviar el xml a firmar al pse
-     *
-     * Usado en:
-     * App\CoreFacturalo\Services\Helpers\SendDocumentPse
-     * 
-     * @return string
-    */
-    public function getDocumentTypeForPse()
-    {
-        return $this->isAddModifySummary() ? 'RESU' : 'REAN';
-    }
 
 
-    public function getResponseSendCdrPseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
 
-    public function setResponseSendCdrPseAttribute($value)
-    {
-        $this->attributes['response_send_cdr_pse'] = (is_null($value)) ? null : json_encode($value);
-    }
 
 
-    public function getResponseSignaturePseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
 
-    public function setResponseSignaturePseAttribute($value)
-    {
-        $this->attributes['response_signature_pse'] = (is_null($value)) ? null : json_encode($value);
-    }
 
-    
-    /**
-     * 
-     * Validar si el resumen se firma y envia a pse
-     *
-     * @param  SendDocumentPse $sendDocumentPse
-     * @return bool
-     */
-    public function getSendToPse($sendDocumentPse)
-    {
-        $send_to_pse = true;
-        // $send_to_pse = false;
 
-        // $summary_voided_documents = $this->documents;
-        // $filter_quantity_documents = $summary_voided_documents->where('document.send_to_pse', true)->count();
-        
-        // if($summary_voided_documents->count() === $filter_quantity_documents)
-        // {
-        //     $send_to_pse = true;
-        // }
-        // else
-        // {
-        //     $difference = $summary_voided_documents->count() - $filter_quantity_documents;
-        //     $sendDocumentPse->throwException("La cantidad de documentos firmados por el PSE, debe ser igual al total de documentos a enviar en el resumen: {$difference} documento(s) no fueron firmados por el PSE.");
-        // }
 
-        return $send_to_pse;
-    }
+
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

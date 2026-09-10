@@ -93,7 +93,7 @@
                    Route::prefix('sales')->group(function () {
                        Route::get('', 'ReportDocumentController@index')
                            ->name('tenant.reports.sales.index')
-                            ->middleware('tenant.internal.mode');
+                            ;
                        Route::get('/pdf', 'ReportDocumentController@pdf')
                            ->name('tenant.reports.sales.pdf');
                        Route::get('/excel', 'ReportDocumentController@excel')
@@ -294,7 +294,7 @@
                     Route::prefix('state-account')->group(function () {
                          Route::get('', 'ReportStateAccountController@index')
                              ->name('tenant.reports.state_account.index')
-                              ->middleware('tenant.internal.mode');
+                              ;
                          Route::get('/pdf', 'ReportStateAccountController@pdf')
                              ->name('tenant.reports.state_account.pdf');
                          Route::get('/excel', 'ReportStateAccountController@excel')

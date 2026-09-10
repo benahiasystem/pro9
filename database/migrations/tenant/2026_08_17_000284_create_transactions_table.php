@@ -8,7 +8,7 @@
  * Inventario de columnas:
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
  * - `payment_link_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `date`: date; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `time`: time; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `uuid`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -31,7 +31,7 @@ return new class extends Migration
 CREATE TABLE `transactions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `payment_link_id` int(10) unsigned NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `date` date NOT NULL,
   `time` time NOT NULL,
   `uuid` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -50,7 +50,7 @@ CREATE TABLE `transactions` (
   KEY `transactions_description_index` (`description`),
   KEY `transactions_payment_id_index` (`payment_id`),
   KEY `transactions_amount_index` (`amount`),
-  KEY `transactions_soap_type_id_foreign` (`soap_type_id`)
+  KEY `transactions_fiscal_environment_foreign` (`fiscal_environment`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }

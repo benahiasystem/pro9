@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 return [
 	/*
@@ -153,9 +154,10 @@ return [
 		'time'                      => 'hora',
 		'subject'                   => 'asunto',
 		'message'                   => 'mensaje',
-		'soap_type_id'              => 'SOAP tipo',
-		'soap_username'             => 'SOAP Usuario',
-		'soap_password'             => 'SOAP Contraseña',
+        'fiscal_emission_mode' => 'modalidad de emisión fiscal',
+        'fiscal_configuration' => 'parámetros de emisión fiscal',
+        'fiscal_credentials' => 'credenciales del proveedor',
+		'fiscal_environment'              => 'ambiente fiscal',
 		'company_number'            => 'número de empresa',
 		'company_name'              => 'nombre de empresa',
 		'unit_price'                => 'Precio unitario',
@@ -259,8 +261,7 @@ return [
 		'license_plates.register_number_2'         => 'N° registro 2',
 		'dispatcher_id'                            => 'transportista',
 		'driver_id'                                => 'conductor',
-		'soap_type_id'                             => 'soap tipo',
-		'soap_send_id'                             => 'soap envío',
+		'fiscal_environment'                             => 'ambiente fiscal',
 		'initial_balance'                          => 'saldo inicial',
 		'devolution_reason_id'                     => 'motivo',
 		'observation'                              => 'observación',
@@ -332,7 +333,6 @@ return [
 		'ws_api_phone_number_id' => 'identificador de número de teléfono',
 		'ws_api_token' => 'token',
 		'certificate' => 'certificado',
-		'soap_url' => 'soap url envío',
 		'personal_email' => 'correo electrónico personal',
 		'corporate_email' => 'correo electrónico corporativo',
 		'personal_cell_phone' => 'celular personal',
@@ -358,3 +358,4 @@ return [
 
 	],
 ];
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace App\Http\Resources\System;
 
@@ -32,6 +33,7 @@
 
             return [
                 'id' => $this->id,
+                ...($this->fiscal_settings ?? []),
                 'hostname' => $this->hostname->fqdn,
                 'name' => $this->name,
                 'email' => $this->email,
@@ -55,13 +57,6 @@
                 'created_at' => $this->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
 
-                'soap_send_id' => $this->soap_send_id,
-                'soap_type_id' => $this->soap_type_id,
-                'soap_username' => $this->soap_username,
-                'soap_password' => $this->soap_password,
-                'soap_url' => $this->soap_url,
-                'config_system_env' => (bool)$this->config_system_env,
-                'certificate' => $this->certificate,
                 'smtp_host' => $this->smtp_host,
                 'smtp_port' => $this->smtp_port,
                 'smtp_user' => $this->smtp_user,
@@ -75,3 +70,4 @@
 
         }
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

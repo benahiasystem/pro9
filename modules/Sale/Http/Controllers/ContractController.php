@@ -306,7 +306,7 @@ class ContractController extends Controller
             'external_id' => Str::uuid()->toString(),
             'customer' => PersonInput::set($inputs['customer_id']),
             'establishment' => EstablishmentInput::set($inputs['establishment_id']),
-            'soap_type_id' => $this->company->soap_type_id,
+            'fiscal_environment' => $this->company->fiscal_environment,
             'state_type_id' => '01'
         ];
 

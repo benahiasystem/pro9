@@ -44,7 +44,6 @@
                         <svg class="shad-kpi-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 3l-6 18" /><path d="M15 3l6 18" /><path d="M4 14l16 0" /><path d="M12 3c-1.333 4.667 -2 8 -2 10c0 3 .667 5.333 2 7" /><path d="M12 3c1.333 4.667 2 8 2 10c0 3 -.667 5.333 -2 7" /></svg>
                     </div>
                     <div class="shad-kpi-value">{{ kpiDemo }}</div>
-                    <div class="shad-kpi-desc">{{ kpiInterno }} entorno interno</div>
                 </div>
             </div>
             <!-- Total Docs -->
@@ -336,9 +335,8 @@
                                 style="width: 100%;"
                                 @change="applyFilters">
                                 <el-option label="Todos" value=""></el-option>
-                                <el-option label="Demo" value="01"></el-option>
-                                <el-option label="Producción" value="02"></el-option>
-                                <el-option label="Interno" value="03"></el-option>
+                                <el-option label="Demo" value="demo"></el-option>
+                                <el-option label="Producción" value="production"></el-option>
                             </el-select>
                         </div>
                         <div class="form-group col-lg-3 col-md-6 col-sm-12 mb-2">
@@ -422,7 +420,6 @@
                             <th v-if="columns.consultas_api.visible" class="text-center">Consultas <br>API Peru <br>(mes)</th>
                             <th v-if="columns.notas_venta.visible" class="text-center">Cant. <br>Notas de venta</th>
                             <th v-if="columns.total_mes.visible" class="text-center">Total<br><small>(Comprobantes <br>por mes)</small></th>
-                            <th v-if="columns.total_pse.visible" class="text-center">Total<br><small>(Comprobantes <br>a PSE)</small></th>
                             <th v-if="columns.total_notas.visible" class="text-center">Total<br><small>(Comprobantes <br>notas de venta)</small></th>
                             <th v-if="columns.limitar_doc.visible" class="text-end">Limitar Doc.</th>
                             <th v-if="columns.limitar_usuarios.visible" class="text-center">Limitar <br>Usuarios</th>
@@ -464,12 +461,10 @@
                             <td v-if="columns.plan.visible">{{ row.plan }}</td>
                             <td v-if="columns.correo.visible">{{ row.email }}</td>
                             <td v-if="columns.entorno.visible">
-                                <span v-if="row.soap_type == '01'"
+                                <span v-if="row.fiscal_environment_type == 'demo'"
                                       class="badge badge-default">Demo</span>
-                                <span v-if="row.soap_type == '02'"
+                                <span v-if="row.fiscal_environment_type == 'production'"
                                       class="badge badge-success">Producción</span>
-                                <span v-if="row.soap_type == '03'"
-                                      class="badge badge-info">Interno</span>
                             </td>
                             <td v-if="columns.total_comprobantes.visible" class="text-center">
                                 <label>
@@ -635,7 +630,6 @@
 
                             <td v-if="columns.notas_venta.visible" class="text-center"><strong>{{ row.count_sales_notes }}</strong></td>
                             <td v-if="columns.total_mes.visible" class="text-center"><strong>{{ row.current_count_doc_month }}</strong></td>
-                            <td v-if="columns.total_pse.visible" class="text-center"><strong>{{ row.count_doc_pse }}</strong></td>
                             <td v-if="columns.total_notas.visible" class="text-center"><strong>{{ row.count_doc_month + row.count_sales_notes_month }}</strong></td>
 
                             <td v-if="columns.limitar_doc.visible" class="text-center">
@@ -689,7 +683,7 @@
                                         </el-dropdown-item>
 
                                         <el-dropdown-item
-                                            v-if="row.soap_type=='01'"
+                                            v-if="row.fiscal_environment_type=='demo'"
                                             :command="{action: 'demoConfig', id: row.id}">
                                             <svg  xmlns="http://www.w3.org/2000/svg"  width="16"  height="16"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-settings me-2"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /></svg>
                                             Configurar Demo
@@ -1237,10 +1231,6 @@ export default {
                     title: 'Total (Comprobantes por mes)',
                     visible: false
                 },
-                total_pse: {
-                    title: 'Total (Comprobantes a PSE)',
-                    visible: false
-                },
                 total_notas: {
                     title: 'Total (Comprobantes notas de venta)',
                     visible: false
@@ -1323,9 +1313,8 @@ export default {
     computed: {
         kpiActivos() { return this.records.filter(r => !r.locked_tenant).length; },
         kpiBloqueados() { return this.records.filter(r => r.locked_tenant).length; },
-        kpiProduccion() { return this.records.filter(r => r.soap_type == '02').length; },
-        kpiDemo() { return this.records.filter(r => r.soap_type == '01').length; },
-        kpiInterno() { return this.records.filter(r => r.soap_type == '03').length; },
+        kpiProduccion() { return this.records.filter(r => r.fiscal_environment_type == 'production').length; },
+        kpiDemo() { return this.records.filter(r => r.fiscal_environment_type == 'demo').length; },
         kpiPctProduccion() {
             if (!this.records.length) return 0;
             return Math.round(this.kpiProduccion / this.records.length * 100);
@@ -1353,7 +1342,6 @@ export default {
             const segs = [
                 { label: 'Producción', count: this.kpiProduccion, color: '#3b82f6' },
                 { label: 'Demo',       count: this.kpiDemo,       color: '#f59e0b' },
-                { label: 'Interno',    count: this.kpiInterno,    color: '#06b6d4' },
             ];
             let acc = 0;
             return segs.filter(s => s.count > 0).map(s => {
@@ -1393,7 +1381,7 @@ export default {
             // Filtro por entorno
             if (this.filters.entorno) {
                 filtered = filtered.filter((row) => {
-                    return row.soap_type === this.filters.entorno;
+                    return row.fiscal_environment_type === this.filters.entorno;
                 });
             }
 
@@ -1496,9 +1484,8 @@ export default {
         },
         getEntornoLabel(value) {
             const entornos = {
-                '01': 'Demo',
-                '02': 'Producción',
-                '03': 'Interno'
+                demo: 'Demo',
+                production: 'Producción',
             };
             return entornos[value] || value;
         },

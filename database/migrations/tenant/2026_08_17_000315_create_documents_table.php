@@ -11,7 +11,8 @@
  * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `establishment`: json; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_emission_mode`: varchar(32); NOT NULL — Modalidad de la empresa al registrar la factura.
  * - `state_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `ubl_version`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `ticket_single_shipment`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
@@ -97,12 +98,8 @@
  * - `query_status`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `success_query_status`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `total_canceled`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `soap_shipping_response`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `regularize_shipping`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `response_regularize_shipping`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `send_to_pse`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `response_signature_pse`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `response_send_cdr_pse`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `sale_notes_relateds`: json; NULL — registros asociados cuando se genera cpe desde multiples notas de venta
  * - `terms_condition`: text; NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `folio`: varchar(50); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -137,7 +134,8 @@ CREATE TABLE `documents` (
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `establishment` json NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_emission_mode` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `ticket_single_shipment` tinyint(1) NOT NULL DEFAULT '0',
@@ -223,12 +221,8 @@ CREATE TABLE `documents` (
   `query_status` json DEFAULT NULL,
   `success_query_status` tinyint(1) NOT NULL DEFAULT '0',
   `total_canceled` tinyint(1) NOT NULL DEFAULT '0',
-  `soap_shipping_response` json DEFAULT NULL,
   `regularize_shipping` tinyint(1) NOT NULL DEFAULT '0',
   `response_regularize_shipping` json DEFAULT NULL,
-  `send_to_pse` tinyint(1) NOT NULL DEFAULT '0',
-  `response_signature_pse` json DEFAULT NULL,
-  `response_send_cdr_pse` json DEFAULT NULL,
   `sale_notes_relateds` json DEFAULT NULL COMMENT 'registros asociados cuando se genera cpe desde multiples notas de venta',
   `terms_condition` text COLLATE utf8mb4_unicode_ci,
   `folio` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -252,7 +246,7 @@ CREATE TABLE `documents` (
   KEY `documents_user_id_foreign` (`user_id`),
   KEY `documents_establishment_id_foreign` (`establishment_id`),
   KEY `documents_customer_id_foreign` (`customer_id`),
-  KEY `documents_soap_type_id_foreign` (`soap_type_id`),
+  KEY `documents_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `documents_state_type_id_foreign` (`state_type_id`),
   KEY `documents_group_id_foreign` (`group_id`),
   KEY `documents_document_type_id_foreign` (`document_type_id`),

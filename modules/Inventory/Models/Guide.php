@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Inventory\Models;
 
@@ -16,7 +17,7 @@ class Guide extends Model
     protected $fillable = [
         'external_id',
         'user_id',
-        'soap_type_id',
+        'fiscal_environment',
         'document_type_id',
         'series',
         'number',
@@ -76,3 +77,4 @@ class Guide extends Model
         return $this->hasOne(Inventory::class, 'guide_id');
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -1,3 +1,4 @@
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 import './bootstrap';
 import './mobile-app-behavior';
 import Swal from 'sweetalert2';
@@ -35,7 +36,6 @@ import SystemClientsIndex from './views/system/clients/index.vue';
 import SystemClientsForm from './views/system/clients/form.vue';
 import SystemUsersform from './views/system/users/form.vue';
 import SystemUsersTokenUser from './views/system/users/token-user.vue';
-import SystemCertificateIndex from './views/system/certificate/index.vue';
 import SystemCompaniesForm from './views/system/companies/form.vue';
 import SystemAccountingIndex from '@viewsModuleAccount/system/accounting/index.vue';
 import SystemMultiUsersIndex from '@viewsModuleMultiUser/system/multi-users/index.vue';
@@ -126,7 +126,6 @@ Vue.component('system-clients-form', SystemClientsForm);
 Vue.component('system-users-form', SystemUsersform);
 Vue.component('system-users-token-user', SystemUsersTokenUser);
 
-Vue.component('system-certificate-index', SystemCertificateIndex);
 Vue.component('system-companies-form', SystemCompaniesForm);
 
 Vue.component('system-accounting-index', SystemAccountingIndex);
@@ -257,3 +256,4 @@ const app = new Vue({
     store: store,
     el: '#main-wrapper'
 });
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
     <div>
         <div class="page-header pr-0">
@@ -24,7 +25,7 @@
                     <tr>
                     <tr slot-scope="{ index, row }">
                         <!-- <td>{{ index }}</td> -->
-                        <td>{{ row.soap_type_description }}</td>
+                        <td>{{ row.fiscal_environment_description }}</td>
                         <td class="text-left">{{ row.user_name }}</td>
                         <td class="text-left">{{ row.date_of_issue }}</td>
                         <td>{{ row.customer_name }}<br/><small v-text="row.customer_number"></small></td>
@@ -38,7 +39,7 @@
 
                         <td class="text-center">
                             <template v-if="row.btn_consult_cdr">
-                            <!-- <template v-if="row.soap_type_id == '02' && row.group_id == '01'"> -->
+                            <!-- <template v-if="row.fiscal_environment == 'production' && row.group_id == '01'"> -->
                                 <el-button type="success"  class="btn btn-sm" @click.prevent="clickConsultCdr(row.id)" v-if="!isClient"><i class="el-icon-check"></i></el-button>
                             </template>
                         </td>
@@ -170,3 +171,4 @@
         }
     }
 </script>
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

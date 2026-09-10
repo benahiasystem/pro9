@@ -178,12 +178,12 @@
             <div class="card-body">
                 <h6 class="card-title">Avanzado</h6>
                 <ul class="card-report-links">
-                    @if($user->type != 'integrator' && $vc_company->soap_type_id != '03')
+                    @if($user->type != 'integrator')
                     <li>
                         <a href="{{route('tenant.tasks.index')}}"><i class="ti ti-clock"></i>Tareas programadas</a>
                     </li>
                     @endif
-                    @if($vc_company->soap_type_id != '03')
+                    {{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
                         {{-- <li>
                             <a href="{{route('tenant.offline_configurations.index')}}"><i class="ti ti-cloud-off"></i>Modo offline</a>
                         </li> --}}
@@ -198,11 +198,11 @@
                                 <span class="badge badge-info">Ahora en Series</span>
                             </a>
                         </li>
-                    @endif
+                    {{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}
                     <li>
                         <a href="{{route('tenant.company_accounts.create')}}"><i class="ti ti-calculator"></i>Avanzado - Contable</a>
                     </li>
-                    @if($user->type != 'integrator' && $vc_company->soap_type_id != '03')
+                    @if($user->type != 'integrator')
                     <li>
                         <a href="{{route('tenant.inventories.configuration.index')}}"><i class="ti ti-packages"></i>Inventarios</a>
                     </li>

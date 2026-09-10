@@ -2,7 +2,8 @@
 
     namespace App\Http\Controllers\System;
 
-    use App\CoreFacturalo\Helpers\Certificate\GenerateCertificate;
+    use App\Services\FiscalEmissionSettings;
+    use App\Models\Tenant\Company as TenantCompany;
     use App\Http\Controllers\Controller;
     use App\Http\Requests\System\ClientRequest;
     // ########## INICIO CAMBIO RIF SUPER ADMIN
@@ -89,9 +90,6 @@ use Illuminate\Support\Facades\Mail;
 
             $config = Configuration::first();
 
-            $certificate_admin = $config->certificate;
-            $soap_username = $config->soap_username;
-            $soap_password = $config->soap_password;
             $regex_password_client = $config->regex_password_client;
 
             $global_smtp_config = [
@@ -113,9 +111,6 @@ use Illuminate\Support\Facades\Mail;
                 'types',
                 'modules',
                 'apps',
-                'certificate_admin',
-                'soap_username',
-                'soap_password',
                 'business_turns',
                 'regex_password_client',
                 'global_smtp_config',
@@ -263,8 +258,6 @@ use Illuminate\Support\Facades\Mail;
                 $current_month_start = $current_day->startOfMonth()->format('Y-m-d');
                 $current_month_end = $current_day->endOfMonth()->format('Y-m-d');
                 $row->current_count_doc_month = DB::connection('tenant')->table('documents')->whereBetween('date_of_issue', [$current_month_start, $current_month_end])->count(); // contador mensual
-                $row->count_doc_pse = DB::connection('tenant')->table('documents')->where('send_to_pse', true)->count();
-                //dd($row->count_doc_pse);
 
                 $tenant_configuration = DB::connection('tenant')
                     ->table('configurations')
@@ -274,10 +267,10 @@ use Illuminate\Support\Facades\Mail;
                 $row->is_nrus = $this->permissionsAreNrus(
                     data_get(json_decode($tenant_configuration->plan ?? 'null'), 'module_permissions')
                 );
-                $row->soap_type = DB::connection('tenant')
+                $row->fiscal_environment_type = DB::connection('tenant')
                     ->table('companies')
                     ->first()
-                    ->soap_type_id;
+                    ->fiscal_environment;
                 $row->count_user = DB::connection('tenant')
                     ->table('users')
                     ->count();
@@ -431,7 +424,6 @@ use Illuminate\Support\Facades\Mail;
                 ->table('configurations')
                 ->first();
 
-            $client->config_system_env = $config->config_system_env;
             $tenant_plan = json_decode($config->plan);
             $module_permissions = data_get($tenant_plan, 'module_permissions', $client->plan->module_permissions);
 
@@ -452,12 +444,7 @@ use Illuminate\Support\Facades\Mail;
                 ->table('companies')
                 ->first();
 
-            $client->soap_send_id = $company->soap_send_id;
-            $client->soap_type_id = $company->soap_type_id;
-            $client->soap_username = $company->soap_username;
-            $client->soap_password = $company->soap_password;
-            $client->soap_url = $company->soap_url;
-            $client->certificate = $company->certificate;
+            $client->fiscal_settings = FiscalEmissionSettings::publicData(TenantCompany::firstOrFail());
             $client->number = $company->number;
 
             return new ClientResource($client);
@@ -575,33 +562,8 @@ use Illuminate\Support\Facades\Mail;
             $smtp_encryption = ($request->has('smtp_encryption')) ? $request->smtp_encryption : null;
             try {
 
-                $temp_path = $request->input('temp_path');
-
-                $name_certificate = $request->input('certificate');
-
-                if ($temp_path) {
-
-                    try {
-                        $password = $request->input('password_certificate');
-                        $pfx = file_get_contents($temp_path);
-                        $pem = GenerateCertificate::typePEM($pfx, $password);
-                        $name = 'certificate_' . $request->input('number') . '.pem';
-                        if (!file_exists(storage_path('app' . DIRECTORY_SEPARATOR . 'certificates'))) {
-                            mkdir(storage_path('app' . DIRECTORY_SEPARATOR . 'certificates'));
-                        }
-                        file_put_contents(storage_path('app' . DIRECTORY_SEPARATOR . 'certificates' . DIRECTORY_SEPARATOR . $name), $pem);
-                        $name_certificate = $name;
-
-                    } catch (Exception $e) {
-                        return [
-                            'success' => false,
-                            'message' => $e->getMessage()
-                        ];
-                    }
-                }
-
-
                 $client = Client::findOrFail($request->id);
+                app(Environment::class)->tenant($client->hostname->website);
 
                 $whatsapp_override_error = $this->validateWhatsappMessagesOverride($request->plan_id, $request->whatsapp_messages_limit_override);
                 if ($whatsapp_override_error) {
@@ -622,6 +584,8 @@ use Illuminate\Support\Facades\Mail;
                         'message' => $nrus_error,
                     ];
                 }
+
+                FiscalEmissionSettings::update(TenantCompany::firstOrFail(), $request->all(), 'system', (int) auth('admin')->id());
 
                 $client
                     ->setSmtpHost($smtp_host)
@@ -662,7 +626,6 @@ use Illuminate\Support\Facades\Mail;
 
                 $clientData = [
                     'plan' => json_encode($plan_for_config),
-                    'config_system_env' => $request->config_system_env,
                     'limit_documents' => $plan->limit_documents,
                     'smtp_host' => $client->smtp_host,
                     'smtp_port' => $client->smtp_port,
@@ -684,12 +647,6 @@ use Illuminate\Support\Facades\Mail;
                         // ########## INICIO CAMBIO RIF SUPER ADMIN
                         'number' => $request->number,
                         // ######### FIN CAMBIO RIF SUPER ADMIN
-                        'soap_type_id' => $request->soap_type_id,
-                        'soap_send_id' => $request->soap_send_id,
-                        'soap_username' => $request->soap_username,
-                        'soap_password' => $request->soap_password,
-                        'soap_url' => $request->soap_url,
-                        'certificate' => $name_certificate
                     ]);
 
 
@@ -768,6 +725,8 @@ use Illuminate\Support\Facades\Mail;
                     'levels' => $array_levels,
                 ];
 
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                throw $e;
             } catch (Exception $e) {
                 return [
                     'success' => false,
@@ -834,40 +793,12 @@ use Illuminate\Support\Facades\Mail;
                 ];
             }
 
+            FiscalEmissionSettings::validate($request->all());
             $hostname = new Hostname();
             $website = new Website();
 
             try {
-                $temp_path = $request->input('temp_path');
                 $configuration = Configuration::first();
-                \Log::info('Configuración obtenida', ['config_id' => $configuration->id ?? 'null']);
-
-                $name_certificate = $configuration->certificate;
-
-                if ($temp_path) {
-                    \Log::info('Procesando certificado', ['temp_path' => $temp_path]);
-                    try {
-                        $number = $request->input('number');
-                        $password = $request->input('password_certificate');
-                        $pfx = file_get_contents($temp_path);
-                        $pem = GenerateCertificate::typePEM($pfx, $password);
-                        $name = 'certificate_' . 'admin_tenant'. "_$number" . '.pem';
-                        if (!file_exists(storage_path('app' . DIRECTORY_SEPARATOR . 'certificates'))) {
-                            mkdir(storage_path('app' . DIRECTORY_SEPARATOR . 'certificates'));
-                        }
-                        file_put_contents(storage_path('app' . DIRECTORY_SEPARATOR . 'certificates' . DIRECTORY_SEPARATOR . $name), $pem);
-                        $name_certificate = $name;
-                        \Log::info('Certificado procesado exitosamente', ['name' => $name]);
-
-                    } catch (Exception $e) {
-                        \Log::error('Error procesando certificado', ['error' => $e->getMessage()]);
-                        return [
-                            'success' => false,
-                            'message' => $e->getMessage()
-                        ];
-                    }
-                }
-
                 $subDom = strtolower($request->input('subdomain'));
                 $uuid = config('tenant.prefix_database') . '_' . $subDom;
                 $fqdn = $subDom . '.' . config('tenant.app_url_base');
@@ -947,14 +878,11 @@ use Illuminate\Support\Facades\Mail;
                     'number' => $request->input('number'),
                     'name' => $request->input('name'),
                     'trade_name' => $request->input('name'),
-                    'soap_type_id' => $request->soap_type_id,
-                    'soap_send_id' => $request->soap_send_id,
-                    'soap_username' => $request->soap_username,
-                    'soap_password' => $request->soap_password,
-                    'soap_url' => $request->soap_url,
-                    'certificate' => $name_certificate,
+                    'fiscal_environment' => $request->fiscal_environment,
+                    'fiscal_emission_mode' => $request->fiscal_emission_mode,
                 ]);
 
+                FiscalEmissionSettings::update(TenantCompany::firstOrFail(), $request->all(), 'system', (int) (auth('admin')->id() ?? 0), true);
                 \Log::info('Company insertada');
 
             $plan = Plan::findOrFail($request->input('plan_id'));
@@ -1023,7 +951,6 @@ use Illuminate\Support\Facades\Mail;
                 'plan' => json_encode($plan_for_config),
                 'date_time_start' => date('Y-m-d H:i:s'),
                 'quantity_documents' => 0,
-                'config_system_env' => $request->config_system_env,
                 'login' => json_encode([
                     'type' => 'image',
                     'image' => $http.$fqdn.'/images/fondo-5.svg',
@@ -1484,49 +1411,6 @@ use Illuminate\Support\Facades\Mail;
             ];
         }
 
-        public function upload(Request $request)
-        {
-            if ($request->hasFile('file')) {
-                $new_request = [
-                    'file' => $request->file('file'),
-                    'type' => $request->input('type'),
-                ];
-
-                return $this->upload_certificate($new_request);
-            }
-            return [
-                'success' => false,
-                'message' => 'Error al subir file.',
-            ];
-        }
-
-        public function upload_certificate($request)
-        {
-            $file = $request['file'];
-            $type = $request['type'];
-
-            $temp = tempnam(sys_get_temp_dir(), $type);
-            file_put_contents($temp, file_get_contents($file));
-
-            $mime = mime_content_type($temp);
-            $data = file_get_contents($temp);
-
-            return [
-                'success' => true,
-                'data' => [
-                    'filename' => $file->getClientOriginalName(),
-                    'temp_path' => $temp,
-                    //'temp_image' => 'data:' . $mime . ';base64,' . base64_encode($data)
-                ]
-            ];
-        }
-
-
-        /**
-         *
-         * @param  Request $request
-         * @return array
-         */
         public function lockedByColumn(Request $request)
         {
             $column = $request->column;

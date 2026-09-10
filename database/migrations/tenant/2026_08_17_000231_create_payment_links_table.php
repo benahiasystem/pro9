@@ -7,7 +7,7 @@
  *
  * Inventario de columnas:
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `uuid`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `person_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
@@ -33,7 +33,7 @@ return new class extends Migration
         DB::unprepared(<<<'SQL'
 CREATE TABLE `payment_links` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `uuid` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` int(10) unsigned NOT NULL,
   `person_id` int(10) unsigned DEFAULT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE `payment_links` (
   UNIQUE KEY `payment_links_uuid_unique` (`uuid`),
   KEY `payment_index` (`payment_id`,`payment_type`),
   KEY `payment_links_user_id_foreign` (`user_id`),
-  KEY `payment_links_soap_type_id_foreign` (`soap_type_id`),
+  KEY `payment_links_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `payment_links_payment_link_type_id_foreign` (`payment_link_type_id`),
   KEY `payment_links_person_id_foreign` (`person_id`),
   KEY `payment_links_status_index` (`status`)

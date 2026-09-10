@@ -11,7 +11,7 @@
  * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `establishment`: json; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `state_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `prefix`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `date_of_issue`: date; NOT NULL — Sin comentario definido en el esquema fuente.
@@ -50,7 +50,7 @@ CREATE TABLE `sale_opportunities` (
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `establishment` json NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `prefix` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date_of_issue` date NOT NULL,
@@ -77,7 +77,7 @@ CREATE TABLE `sale_opportunities` (
   KEY `sale_opportunities_user_id_foreign` (`user_id`),
   KEY `sale_opportunities_establishment_id_foreign` (`establishment_id`),
   KEY `sale_opportunities_customer_id_foreign` (`customer_id`),
-  KEY `sale_opportunities_soap_type_id_foreign` (`soap_type_id`),
+  KEY `sale_opportunities_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `sale_opportunities_state_type_id_foreign` (`state_type_id`),
   KEY `sale_opportunities_currency_type_id_foreign` (`currency_type_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

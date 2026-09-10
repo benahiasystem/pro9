@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\CoreFacturalo\Requests\Inputs;
 
@@ -10,7 +11,7 @@ use Modules\Document\Models\SeriesConfiguration;
 
 class Functions
 {
-    public static function newNumber($soap_type_id, $document_type_id, $series, $number, $model)
+    public static function newNumber($fiscal_environment, $document_type_id, $series, $number, $model)
     {
         // Marca la serie como en uso al asignarle n├║mero en emisi├│n (┬º4.7).
         Series::markInUse($document_type_id, $series);
@@ -37,7 +38,7 @@ class Functions
 
         if ($number === '#') {
             $document = $model::select('number')
-                                ->where('soap_type_id', $soap_type_id)
+                                ->where('fiscal_environment', $fiscal_environment)
                                 ->where('document_type_id', $document_type_id)
                                 ->where('series', $series)
                                 ->orderBy('number', 'desc')
@@ -52,7 +53,7 @@ class Functions
         return join('-', [$company->number, $document_type_id, $series, $number]);
     }
 
-    public static function validateUniqueDocument($soap_type_id, $document_type_id, $series, $number, $model)
+    public static function validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, $model)
     {
         $document = $model::where('document_type_id', $document_type_id)
                         ->where('series', $series)
@@ -63,9 +64,9 @@ class Functions
         }
     }
 
-    public static function identifier($soap_type_id, $date_of_issue, $model)
+    public static function identifier($fiscal_environment, $date_of_issue, $model)
     {
-        $documents = $model::where('soap_type_id', $soap_type_id)
+        $documents = $model::where('fiscal_environment', $fiscal_environment)
                         ->where('date_of_issue', $date_of_issue)
                         ->get();
         $numeration = count($documents) + 1;
@@ -94,3 +95,4 @@ class Functions
         return (isset($inputs[$key]) && null !== $inputs[$key]) ? $inputs[$key] : $default;
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

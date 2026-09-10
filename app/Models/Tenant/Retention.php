@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Models\Tenant;
 
@@ -19,14 +20,14 @@ use Illuminate\Database\Eloquent\Builder;
 class Retention extends ModelTenant
 {
 
-    protected $with = ['user', 'soap_type', 'state_type', 'document_type', 'retention_type', 'currency_type', 'documents'];
+    protected $with = ['user', 'fiscal_environment_type', 'state_type', 'document_type', 'retention_type', 'currency_type', 'documents'];
 
     protected $fillable = [
         'user_id',
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'ubl_version',
         'document_type_id',
@@ -50,7 +51,6 @@ class Retention extends ModelTenant
         'has_xml',
         'has_pdf',
         'has_cdr',
-        'soap_shipping_response',
     ];
 
     protected $casts = [
@@ -87,15 +87,7 @@ class Retention extends ModelTenant
         $this->attributes['legends'] = (is_null($value))?null:json_encode($value);
     }
 
-    public function getSoapShippingResponseAttribute($value)
-    {
-        return (is_null($value))?null:(object) json_decode($value);
-    }
 
-    public function setSoapShippingResponseAttribute($value)
-    {
-        $this->attributes['soap_shipping_response'] = (is_null($value))?null:json_encode($value);
-    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -116,9 +108,9 @@ class Retention extends ModelTenant
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     /**
@@ -248,7 +240,8 @@ class Retention extends ModelTenant
      */
     public function scopeWhereFilterWithOutRelations($query)
     {
-        return $query->withOut(['user', 'soap_type', 'state_type', 'document_type', 'retention_type', 'currency_type', 'documents']);
+        return $query->withOut(['user', 'fiscal_environment_type', 'state_type', 'document_type', 'retention_type', 'currency_type', 'documents']);
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

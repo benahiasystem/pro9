@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Inventory\Observers;
 
@@ -14,7 +15,7 @@ class GuideObserver
 
         $guide->user_id = auth()->id();
         $guide->external_id = Str::uuid()->toString();
-        $guide->soap_type_id = $company->soap_type_id;
+        $guide->fiscal_environment = $company->fiscal_environment;
 
         $number = $this->getNumberDocument($guide);
         $filename = join('-', [$company->number, $guide->document_type_id, $guide->series, $number]);
@@ -27,7 +28,7 @@ class GuideObserver
         if ($guide->number === '#') {
             $record = Guide::query()
                 ->select('number')
-                ->where('soap_type_id', $guide->soap_type_id)
+                ->where('fiscal_environment', $guide->fiscal_environment)
                 ->where('document_type_id', $guide->document_type_id)
                 ->where('series', $guide->series)
                 ->orderBy('number', 'desc')
@@ -39,3 +40,4 @@ class GuideObserver
         return $guide->number;
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

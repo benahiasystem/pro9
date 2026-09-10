@@ -271,10 +271,10 @@ use Modules\FullSuscription\Http\Resources\SuscriptionPlansCollection;
          */
         public function index()
         {
-            $company = Company::select('soap_type_id')->first();
-            $soap_company = $company->soap_type_id;
+            $company = Company::select('fiscal_environment')->first();
+            $company_environment = $company->fiscal_environment;
 
-            return view('full_suscription::payment_receipt.index', compact('soap_company'));
+            return view('full_suscription::payment_receipt.index', compact('company_environment'));
         }
 
         /**

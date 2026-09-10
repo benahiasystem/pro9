@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Controllers\System\Api;
 
@@ -19,6 +20,7 @@ class TenantController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            ...\App\Services\FiscalEmissionSettings::rules(),
             'ruc' => 'required|numeric|unique:system.clients,number',
             'subdomain' => ['required', 'alpha_dash', new SubdomainNotLatin],
             'email' => 'required|email',
@@ -41,12 +43,10 @@ class TenantController extends Controller
             'price' => $plan->pricing,
             'locked_emission' => false,
             'type' => 'admin',
-            'config_system_env' => true,
-            'soap_send_id' => '01',
-            'soap_type_id' => '01',
-            'soap_username' => null,
-            'soap_password' => null,
-            'soap_url' => null,
+            'fiscal_environment' => $request->fiscal_environment,
+            'fiscal_emission_mode' => $request->fiscal_emission_mode,
+            'fiscal_configuration' => $request->input('fiscal_configuration', []),
+            'fiscal_credentials' => $request->fiscal_credentials,
             'regex_password_client' => false,
             'modules' => $basic_module_levels['modules'],
             'levels' => $basic_module_levels['levels'],
@@ -69,3 +69,4 @@ class TenantController extends Controller
         ]);
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

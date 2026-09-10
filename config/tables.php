@@ -12,14 +12,9 @@ return [
             '13' => 'Anulando',// 'Anulación registrada',
             '15' => 'Anulando',// 'Anulación enviada',
         ],
-        'soap_sends' => [
-            '01' => 'Sunat',
-            '02' => 'Ose',
-            '04' => 'OseSendfact',
-        ],
-        'soap_types' => [
-            '01' => 'Demo',
-            '02' => 'Producción',
+        'fiscal_environments' => [
+            'demo' => 'Demo',
+            'production' => 'Producción',
         ],
         'groups' => [
             '01' => 'F',

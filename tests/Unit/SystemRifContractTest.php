@@ -48,7 +48,7 @@ class SystemRifContractTest extends TestCase
     }
 
     /** @test */
-    public function super_admin_client_surfaces_present_rif_without_changing_soap_copy(): void
+    public function super_admin_client_surfaces_present_rif_and_venezuelan_fiscal_configuration(): void
     {
         $expectations = [
             'resources/js/views/system/clients/form.vue' => '<label class="control-label">RIF</label>',
@@ -64,8 +64,8 @@ class SystemRifContractTest extends TestCase
         }
 
         $form = $this->source('resources/js/views/system/clients/form.vue');
-        self::assertStringContainsString('RUC + Usuario. Ejemplo:', $form);
-        self::assertStringContainsString("soap_sends: [{value: '01', text: 'Sunat'}", $form);
+        self::assertStringContainsString('Modalidad de emisión fiscal', $form);
+        self::assertStringNotContainsString('soap_send_id', $form);
         self::assertStringNotContainsString('<x-input-service class="btn-sunat-reniec-container"', $form);
         self::assertStringContainsString('<rif-input', $form);
     }

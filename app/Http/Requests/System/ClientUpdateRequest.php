@@ -22,6 +22,7 @@ class ClientUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...\App\Services\FiscalEmissionSettings::rules(),
             'id' => ['required', Rule::exists('system.clients', 'id')],
             'number' => [
                 'required',

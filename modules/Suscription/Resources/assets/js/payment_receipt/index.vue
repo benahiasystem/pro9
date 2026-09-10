@@ -346,7 +346,7 @@
                                 v-if="
                                     !row.changed &&
                                         row.state_type_id != '11' &&
-                                        soapCompany != '03'
+                                        true
                                 "
                                 class="btn waves-effect waves-light btn-xs btn-success"
                                 data-placement="top"
@@ -466,7 +466,7 @@ import { deletable } from "../../../../../../resources/js/mixins/deletable";
 export default {
     // tenant-index-payment-receipt
     props: [
-        "soapCompany",
+        "companyEnvironment",
         // 'typeUser',
         "configuration"
     ],

@@ -517,10 +517,11 @@ class BotOrchestrator
             return "No se puede emitir la {$type}: el RIF del cliente no es válido. Verifica el documento del cliente.";
         }
 
-        // Configuración SUNAT
-        if (str_contains($lower, 'soap') || str_contains($lower, 'certificado') || str_contains($lower, 'sunat')) {
-            return "No se pudo emitir la {$type}: hay un problema con la configuración SUNAT del negocio. Contacta al administrador.";
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        if (str_contains($lower, 'modalidad de emisión fiscal')) {
+            return "No se pudo registrar la {$type}: configura la modalidad de emisión fiscal del negocio en Pro9.";
         }
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
 
         // Serie / correlativo
         if (str_contains($lower, 'serie') || str_contains($lower, 'duplicate entry') || str_contains($lower, 'correlativo')) {

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Requests\Tenant;
 
@@ -9,7 +10,7 @@ class CompanyRequest extends FormRequest
 {
     public function authorize()
     {
-        return true;
+        return $this->user() instanceof \App\Models\Tenant\User && $this->user()->type === 'admin';
     }
 
     public function rules()
@@ -28,17 +29,8 @@ class CompanyRequest extends FormRequest
                 'required',
                 Rule::unique('tenant.companies')->ignore($id),
             ],
-            'soap_type_id' => [
-                'nullable'
-            ],
-            'soap_username' => [
-                'required_if:soap_type_id,"02"',
-                'required_if:soap_send_id,"02"'
-            ],
-            'soap_password' => [
-                'required_if:soap_type_id,"02"',
-                'required_if:soap_send_id,"02"'
-            ],
+            ...array_fill_keys(\App\Services\FiscalEmissionSettings::FIELDS, ['missing']),
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -127,20 +127,10 @@
                     <h4>Sistema</h4>
                 </li>
                 @php
-                    $is_pse = $vc_company->send_document_to_pse;
-                    $environment = 'SUNAT';
-                    $is_ose = ($vc_company->soap_send_id === '02') ? true : false;
-                    if ($is_pse) {
-                        $environment = 'PSE';
-                    }
-                    if ($is_ose) {
-                        $environment = 'OSE';
-                    }
-                    if ($is_ose && $is_pse) {
-                        $environment = 'OSE-PSE';
-                    }
-                @endphp
-                @if($vc_company->soap_type_id == "01")
+                    $environment = \App\Services\FiscalEmissionSettings::MODES[$vc_company->fiscal_emission_mode] ?? 'Modalidad pendiente';
+                $productionClass = 'btn-primary';
+            @endphp
+                @if($vc_company->fiscal_environment == 'demo')
                     <li>
                         <a href="@if(in_array('configuration', $vc_modules)){{route('tenant.companies.create')}}@else # @endif"
                             class="notification-icon text-secondary navigation-options" data-toggle="tooltip"
@@ -162,7 +152,7 @@
                             </svg>
                         </a>
                     </li>
-                @elseif($vc_company->soap_type_id == "02")
+                @elseif($vc_company->fiscal_environment == 'production')
                     <li>
                         <a href="@if(in_array('configuration', $vc_modules)){{route('tenant.companies.create')}}@else # @endif"
                             class="notification-icon text-secondary navigation-options" data-toggle="tooltip"
@@ -256,22 +246,10 @@
         </div>
         <ul class="notifications mx-2">
             @php
-                $is_pse = $vc_company->send_document_to_pse;
-                $environment = 'SUNAT';
-                $is_ose = ($vc_company->soap_send_id === '02') ? true : false;
-                if ($is_pse) {
-                    $environment = 'PSE';
-                }
-                if ($is_ose) {
-                    $environment = 'OSE';
-                }
-                if ($is_ose && $is_pse) {
-                    $environment = 'OSE-PSE';
-                }
-
-                $productionClass = ($vc_company->soap_type_id == "02" && $is_ose) ? 'btn-success' : 'btn-primary';
+                $environment = \App\Services\FiscalEmissionSettings::MODES[$vc_company->fiscal_emission_mode] ?? 'Modalidad pendiente';
+                $productionClass = 'btn-primary';
             @endphp
-            @if($vc_company->soap_type_id == "1")
+            @if($vc_company->fiscal_environment == 'demo')
                 <li>
                     <a href="@if(in_array('configuration', $vc_modules)){{route('tenant.companies.create')}}@else # @endif"
                         class="btn-sunat btn-danger" data-toggle="tooltip" data-placement="bottom"
@@ -280,7 +258,7 @@
                         <span style="font-size: 12px;">Conectado a {{ $environment }}</span>
                     </a>
                 </li>
-            @elseif($vc_company->soap_type_id == "02")
+            @elseif($vc_company->fiscal_environment == 'production')
                 <li>
                     <a href="@if(in_array('configuration', $vc_modules)){{route('tenant.companies.create')}}@else # @endif"
                         class="btn-sunat {{ $productionClass }}" data-toggle="tooltip" data-placement="bottom"

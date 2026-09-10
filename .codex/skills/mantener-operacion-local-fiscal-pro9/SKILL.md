@@ -11,6 +11,8 @@ Sostener conjuntamente los contratos de SCRUM-19, SCRUM-22, SCRUM-41, SCRUM-53 y
 
 ## Política central
 
+- Para modalidad, ambiente y retirada total de SOAP/PFX, aplicar [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Se trabaja con instalación nueva, esquema consolidado y sin conversiones ni validaciones de payloads SOAP/PFX antiguos. Las reglas de compatibilidad de esta skill no aplican a esos campos. `LocalFiscalDocumentPolicy::enabled()` es permanente: cambiar una variable de entorno no puede reactivar la transmisión peruana. Los certificados QZ Tray permanecen fuera de esa retirada.
+
 - Usar `App\Services\LocalFiscalDocumentPolicy` como única fuente para activar la emisión local y controlar la visibilidad de ISC.
 - Registrar los documentos con estado local `REGISTERED` y respuesta `LOCAL_REGISTERED`.
 - Nunca representar un registro local como enviado, aceptado por SUNAT/SENIAT/PSE ni acompañado de XML, hash o CDR.

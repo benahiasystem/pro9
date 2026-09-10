@@ -1,10 +1,11 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Sale\Models;
 
 use App\Models\Tenant\Catalogs\CurrencyType;
 use App\Models\Tenant\User;
-use App\Models\Tenant\SoapType;
+use App\Models\Tenant\FiscalEnvironment;
 use App\Models\Tenant\StateType;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Establishment;
@@ -16,7 +17,7 @@ use Modules\Purchase\Models\PurchaseOrder;
 
 class SaleOpportunity extends ModelTenant
 {
-    protected $with = ['user', 'soap_type', 'state_type', 'currency_type', 'items', 'files'];
+    protected $with = ['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'files'];
 
     protected $fillable = [
         'id',
@@ -24,7 +25,7 @@ class SaleOpportunity extends ModelTenant
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'prefix',
         'date_of_issue',
@@ -82,9 +83,9 @@ class SaleOpportunity extends ModelTenant
         return $this->belongsTo(User::class);
     }
 
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function state_type()
@@ -130,3 +131,4 @@ class SaleOpportunity extends ModelTenant
  
      
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

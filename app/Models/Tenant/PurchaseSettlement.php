@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Models\Tenant;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,7 +32,7 @@ class PurchaseSettlement extends ModelTenant
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'ubl_version',
         'operation_type_id',
@@ -145,9 +146,9 @@ class PurchaseSettlement extends ModelTenant
         return $this->belongsTo(User::class);
     }
 
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function state_type()
@@ -267,7 +268,7 @@ class PurchaseSettlement extends ModelTenant
 
         return [
             'id' => $this->id,
-            'soap_type_id' => $this->soap_type_id,
+            'fiscal_environment' => $this->fiscal_environment,
             'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
             'number_full' => $this->number_full,
             'supplier_name' => $this->supplier->name,
@@ -305,3 +306,4 @@ class PurchaseSettlement extends ModelTenant
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

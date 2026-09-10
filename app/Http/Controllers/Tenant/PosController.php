@@ -56,11 +56,11 @@ class PosController extends Controller
 
         $configuration = Configuration::first();
 
-        $company = Company::select('soap_type_id')->first();
-        $soap_company = $company->soap_type_id;
+        $company = Company::select('fiscal_environment')->first();
+        $company_environment = $company->fiscal_environment;
         $business_turns = BusinessTurn::select('active')->where('id', 4)->first();
 
-        return view('tenant.pos.index', compact('configuration', 'soap_company', 'business_turns'));
+        return view('tenant.pos.index', compact('configuration', 'company_environment', 'business_turns'));
     }
 
     public function index_full()
@@ -663,11 +663,11 @@ class PosController extends Controller
 
         $configuration = Configuration::first();
 
-        $company = Company::select('soap_type_id')->first();
-        $soap_company = $company->soap_type_id;
+        $company = Company::select('fiscal_environment')->first();
+        $company_environment = $company->fiscal_environment;
         $business_turns = BusinessTurn::select('active')->where('id', 4)->first();
 
-        return view('tenant.pos.fast', compact('configuration', 'soap_company', 'business_turns'));
+        return view('tenant.pos.fast', compact('configuration', 'company_environment', 'business_turns'));
     }
 
     public function garage()
@@ -678,10 +678,10 @@ class PosController extends Controller
 
         $configuration = Configuration::first();
 
-        $company = Company::select('soap_type_id')->first();
-        $soap_company = $company->soap_type_id;
+        $company = Company::select('fiscal_environment')->first();
+        $company_environment = $company->fiscal_environment;
         $business_turns = BusinessTurn::select('active')->where('id', 4)->first();
 
-        return view('tenant.pos.garage', compact('configuration', 'soap_company', 'business_turns'));
+        return view('tenant.pos.garage', compact('configuration', 'company_environment', 'business_turns'));
     }
 }

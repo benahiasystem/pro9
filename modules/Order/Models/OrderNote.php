@@ -13,7 +13,7 @@
     use App\Models\Tenant\Person;
     use App\Models\Tenant\Quotation;
     use App\Models\Tenant\SaleNote;
-    use App\Models\Tenant\SoapType;
+    use App\Models\Tenant\FiscalEnvironment;
     use App\Models\Tenant\StateType;
     use App\Models\Tenant\User;
     use Carbon\Carbon;
@@ -39,7 +39,7 @@
      * @property int                                                        $user_id
      * @property string                                                     $external_id
      * @property int                                                        $establishment_id
-     * @property string                                                     $soap_type_id
+     * @property string                                                     $fiscal_environment
      * @property string                                                     $state_type_id
      * @property string                                                     $prefix
      * @property Carbon                                                     $date_of_issue
@@ -98,7 +98,7 @@
      * @property Person                                                     $person
      * @property \Illuminate\Database\Eloquent\Collection|SaleNote[]        $sale_notes
      * @property int|null                                                   $sale_notes_count
-     * @property SoapType                                                   $soap_type
+     * @property FiscalEnvironment                                                   $fiscal_environment_type
      * @property StateType                                                  $state_type
      * @property User                                                       $user
      * @method static Builder|OrderNote newModelQuery()
@@ -115,7 +115,7 @@
     {
         protected $with = [
             'user',
-            'soap_type',
+            'fiscal_environment_type',
             'state_type',
             'currency_type',
             'items',
@@ -127,7 +127,7 @@
             'external_id',
             'establishment_id',
             'establishment',
-            'soap_type_id',
+            'fiscal_environment',
             'state_type_id',
             'payment_method_type_id',
             'prefix',
@@ -325,9 +325,9 @@
         /**
          * @return BelongsTo
          */
-        public function soap_type()
+        public function fiscal_environment_type()
         {
-            return $this->belongsTo(SoapType::class);
+            return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
         }
 
         /**
@@ -764,7 +764,7 @@
             return [
                 'id' => $this->id,
                 'quotation' => (object)$quotation,
-                'soap_type_id' => $this->soap_type_id,
+                'fiscal_environment' => $this->fiscal_environment,
                 'external_id' => $this->external_id,
                 'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
                 'date_of_due' => ($this->date_of_due) ? $this->date_of_due->format('Y-m-d') : null,

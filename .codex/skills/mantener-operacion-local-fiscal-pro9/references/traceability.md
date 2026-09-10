@@ -24,3 +24,11 @@
 3. La eliminación de una ruta fiscal es parte de la seguridad funcional, no sólo un cambio visual.
 4. Se conservan los campos históricos de ISC y bolsas. La decisión posterior para Venezuela retira completamente detracciones sin históricos: esquema consolidado, datos iniciales, modelos, API, interfaz y plantillas. `payment_method_types` y las retenciones permanecen. No se añade migración incremental; `CodeErrors.xml` no se modifica.
 5. El PDF es el artefacto comercial descargable y adjunto al correo.
+
+## Retirada total de SOAP/PFX — 10 de septiembre de 2026
+
+La decisión de modalidad fiscal sustituye la conservación histórica de SOAP/PFX. `LocalFiscalDocumentPolicy::enabled()` es permanente: cambiar el antiguo flag de configuración no habilita transporte externo. Se retiran controladores y componentes de certificados fiscales, clientes WS, firmadores y servicios PSE de emisión. QZ Tray conserva su función de impresión.
+
+`DocumentEmail` sólo lee y adjunta PDF. Los webhooks documentales presentan `local_response`, `fiscal_environment` y `fiscal_emission_mode`, sin enlaces XML/CDR. Los métodos internos de Facturalo aún usados por flujos comerciales para firmar/generar XML son inertes; su presencia no habilita envío.
+
+La configuración se rige por [mantener-modalidad-emision-fiscal-pro9](../../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Sólo hay inicialización nueva: campos obligatorios y auditoría directamente en el consolidado, sin migración de conversión ni validadores de payloads SOAP/PFX antiguos. Pruebas adicionales: `FiscalEmissionSettingsTest`, `FiscalEmissionSchemaTest` y comportamiento de correo/política permanente en `LocalFiscalDocumentPolicyTest`. No interpretar el ambiente Producción como autorización o integración fiscal efectiva.

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Traits;
 
@@ -175,12 +176,10 @@ trait GuestRegisterTrait
             'price' => $plan->pricing,
             'locked_emission' => false,
             'type' => 'admin',
-            'config_system_env' => true,
-            'soap_send_id' => '01',
-            'soap_type_id' => '01',
-            'soap_username' => null,
-            'soap_password' => null,
-            'soap_url' => null,
+            'fiscal_environment' => $request->fiscal_environment,
+            'fiscal_emission_mode' => $request->fiscal_emission_mode,
+            'fiscal_configuration' => $request->input('fiscal_configuration', []),
+            'fiscal_credentials' => $request->fiscal_credentials,
             'regex_password_client' => false,
             'modules' => $basic_module_levels['modules'],
             'levels' => $basic_module_levels['levels'],
@@ -320,3 +319,4 @@ trait GuestRegisterTrait
         return "{$protocol}://".$fqdn."/guest-register/email-verification-valid/{$key}";
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

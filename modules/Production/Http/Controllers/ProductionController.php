@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace Modules\Production\Http\Controllers;
 
@@ -84,7 +85,7 @@
                 $production->fill($request->all());
                 $production->inventory_id_reference = $inventory->id;
                 $production->user_id = auth()->user()->id;
-                $production->soap_type_id = $this->getCompanySoapTypeId();
+                $production->fiscal_environment = $this->getCompanyFiscalEnvironment();
                 $production->save();
 
 
@@ -350,3 +351,4 @@
             return $pdf->stream($filename . '.pdf');
         }
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

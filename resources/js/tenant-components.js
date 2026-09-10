@@ -13,7 +13,6 @@ import TenantDashboardSalesByProduct from '../../modules/Dashboard/Resources/ass
 import XGraph from './components/graph/src/Graph.vue'
 import XGraphLine from './components/graph/src/GraphLine.vue'
 
-import TenantSignaturePseIndex from './views/tenant/companies/signature_pse/index.vue'
 import TenantWhatsappApiIndex from './views/tenant/companies/whatsapp_api/index.vue'
 import TenantDedicatedGroupSelector from './views/tenant/series/dedicated_group_selector.vue'
 
@@ -21,8 +20,6 @@ import TenantCompaniesForm from './views/tenant/companies/form.vue'
 import TenantCompaniesLogo from './views/tenant/companies/logo.vue'
 import TenantCertificatesQztray from './views/tenant/companies/certificates_qztray/index.vue'
 import TenantSystemEnvironment from './views/tenant/companies/system_environment/index.vue'
-import TenantCertificatesIndex from './views/tenant/certificates/index.vue'
-import TenantCertificatesForm from './views/tenant/certificates/form.vue'
 import TenantConfigurationsForm from './views/tenant/configurations/form.vue'
 import TenantConfigurationsFormPurchases from './views/tenant/configurations/partials/purchases.vue'
 import TenantConfigurationsVisual from './views/tenant/configurations/visual.vue'
@@ -425,15 +422,12 @@ Vue.component('tenant-dashboard-sales-by-product', TenantDashboardSalesByProduct
 Vue.component('x-graph', XGraph)
 Vue.component('x-graph-line', XGraphLine)
 
-Vue.component('tenant-signature-pse-index', TenantSignaturePseIndex)
 Vue.component('tenant-whatsapp-api-index', TenantWhatsappApiIndex)
 
 Vue.component('tenant-companies-form', TenantCompaniesForm)
 Vue.component('tenant-companies-logo', TenantCompaniesLogo)
 Vue.component('tenant-certificates-qztray', TenantCertificatesQztray)
-Vue.component('tenant-certificates-index', TenantCertificatesIndex)
 Vue.component('tenant-system-environment', TenantSystemEnvironment)
-Vue.component('tenant-certificates-form', TenantCertificatesForm)
 Vue.component('tenant-configurations-form', TenantConfigurationsForm)
 Vue.component('tenant-configurations-form-purchases', TenantConfigurationsFormPurchases)
 Vue.component('tenant-configurations-visual', TenantConfigurationsVisual)

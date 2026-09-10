@@ -40,7 +40,7 @@ $logo = "{$establishment->logo}";
 $configuration_decimal_quantity= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationDecimalQuantity();
 $configurationInPdf= App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationInPdf();
 $configurationEnableGuaranteeFund = App\CoreFacturalo\Helpers\Template\TemplateHelper::getConfigurationShowGuaranteeFund();
-$type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
+$type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment();
 $total_pending_payment = $document->total_pending_payment;
 
 $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInUploads($logo);
@@ -53,7 +53,7 @@ $exists_logo = \App\CoreFacturalo\Helpers\Template\TemplateHelper::existsFileInU
 </head>
 
 <body>
-    @if ($type->soap_type_id === '01')
+    @if ($type->fiscal_environment === 'demo')
     <table class="full-width">
         <tr>
             <td style="width: 100%;text-align: center">

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Report\Http\Controllers;
 
@@ -84,7 +85,7 @@ class ReportStateAccountController extends Controller
             $records_documents = $this->getRecords($request->all(), Document::class)->select(
                 'id',
                 'state_type_id',
-                'soap_type_id',
+                'fiscal_environment',
                 'date_of_issue',
                 'currency_type_id',
                 'series',
@@ -102,7 +103,7 @@ class ReportStateAccountController extends Controller
                 'total',
                 'total_isc')->with(['person'=> function ($query) {
                 $query->select('id','name', 'number');
-            }])->with(['soap_type'=> function ($q) {
+            }])->with(['fiscal_environment_type'=> function ($q) {
                 $q->select('id','description');
             }])->with(['state_type'=> function ($y) {
                 $y->select('id','description');
@@ -113,7 +114,7 @@ class ReportStateAccountController extends Controller
             $records_sales = $this->getRecords($request->all(), SaleNote::class)->select(
                 'id',
                 'state_type_id',
-                'soap_type_id',
+                'fiscal_environment',
                 'date_of_issue',
                 'currency_type_id',
                 'series',
@@ -131,7 +132,7 @@ class ReportStateAccountController extends Controller
                 'total',
                 'total_isc')->with(['customer'=> function ($query) {
                 $query->select('id','name', 'number');
-            }])->with(['soap_type'=> function ($q) {
+            }])->with(['fiscal_environment_type'=> function ($q) {
                 $q->select('id','description');
             }])->with(['state_type'=> function ($y) {
                 $y->select('id','description');
@@ -168,7 +169,7 @@ class ReportStateAccountController extends Controller
                 'id',
                 'document_type_id',
                 'group_id',
-                'soap_type_id',
+                'fiscal_environment',
                 'payment_condition_id',
                 'date_of_issue',
                 'currency_type_id',
@@ -191,7 +192,7 @@ class ReportStateAccountController extends Controller
                 'user_id',
                 'seller_id')->with(['person'=> function ($query) {
                 $query->select('id','name', 'number');
-            }])->with(['soap_type'=> function ($q) {
+            }])->with(['fiscal_environment_type'=> function ($q) {
                 $q->select('id','description');
             }])->with(['state_type'=> function ($y) {
                 $y->select('id','description');
@@ -202,7 +203,7 @@ class ReportStateAccountController extends Controller
             $records_sales = $this->getRecords($request->all(), SaleNote::class)->select(
                 'id',
                 'state_type_id',
-                'soap_type_id',
+                'fiscal_environment',
                 'date_of_issue',
                 'due_date',
                 'currency_type_id',
@@ -226,7 +227,7 @@ class ReportStateAccountController extends Controller
                 'user_id',
                 'seller_id')->with(['customer'=> function ($query) {
                 $query->select('id','name', 'number');
-            }])->with(['soap_type'=> function ($q) {
+            }])->with(['fiscal_environment_type'=> function ($q) {
                 $q->select('id','description');
             }])->with(['state_type'=> function ($y) {
                 $y->select('id','description');
@@ -286,3 +287,4 @@ class ReportStateAccountController extends Controller
 
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

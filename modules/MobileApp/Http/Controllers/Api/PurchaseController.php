@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\MobileApp\Http\Controllers\Api;
 
@@ -37,7 +38,7 @@ class PurchaseController extends Controller
 
         $query = Purchase::with([
                 'user',
-                'soap_type',
+                'fiscal_environment_type',
                 'state_type',
                 'document_type',
                 'currency_type',
@@ -231,3 +232,4 @@ class PurchaseController extends Controller
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

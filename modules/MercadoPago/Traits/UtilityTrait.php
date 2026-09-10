@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\MercadoPago\Traits;
 
@@ -74,9 +75,10 @@ trait UtilityTrait
     /**
      * @return Company
      */
-    public function getSoapTypeId()
+    public function getFiscalEnvironmentId()
     {
-        return Company::select('soap_type_id')->firstOrFail()->soap_type_id;
+        return Company::select('fiscal_environment')->firstOrFail()->fiscal_environment;
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

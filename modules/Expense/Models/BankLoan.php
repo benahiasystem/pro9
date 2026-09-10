@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 
     namespace Modules\Expense\Models;
@@ -8,7 +9,7 @@
     use App\Models\Tenant\Catalogs\CurrencyType;
     use App\Models\Tenant\Establishment;
     use App\Models\Tenant\ModelTenant;
-    use App\Models\Tenant\SoapType;
+    use App\Models\Tenant\FiscalEnvironment;
     use App\Models\Tenant\StateType;
     use App\Models\Tenant\User;
     use Carbon\Carbon;
@@ -37,14 +38,14 @@
      * @property float|null                   $total
      * @property float|null                   $total_interest
      * @property float|null                   $total_ingress
-     * @property string|null                  $soap_type_id
+     * @property string|null                  $fiscal_environment
      * @property string|null                  $state_type_id
      * @property Carbon|null                  $created_at
      * @property Carbon|null                  $updated_at
      * @property BankLoanType                 $bank_loan_type
      * @property CurrencyType                 $currency_type
      * @property Establishment                $establishment
-     * @property SoapType|null                $soap_type
+     * @property FiscalEnvironment|null                $fiscal_environment_type
      * @property StateType|null               $state_type
      * @property User                         $user
      * @property Collection|BankLoanFee[]     $bank_loan_fees
@@ -95,7 +96,7 @@
             'total',
             'total_interest',
             'total_ingress',
-            'soap_type_id',
+            'fiscal_environment',
             'state_type_id',
         ];
         /*
@@ -206,9 +207,9 @@
         /**
          * @return BelongsTo
          */
-        public function soap_type()
+        public function fiscal_environment_type()
         {
-            return $this->belongsTo(SoapType::class, 'soap_type_id', 'id');
+            return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment', 'id');
         }
 
         /**
@@ -491,19 +492,19 @@
         /**
          * @return string|null
          */
-        public function getSoapTypeId(): ?string
+        public function getFiscalEnvironmentId(): ?string
         {
-            return $this->soap_type_id;
+            return $this->fiscal_environment;
         }
 
         /**
-         * @param string|null $soap_type_id
+         * @param string|null $fiscal_environment
          *
          * @return BankLoan
          */
-        public function setSoapTypeId(?string $soap_type_id): BankLoan
+        public function setFiscalEnvironmentId(?string $fiscal_environment): BankLoan
         {
-            $this->soap_type_id = $soap_type_id;
+            $this->fiscal_environment = $fiscal_environment;
             return $this;
         }
 
@@ -584,21 +585,21 @@
         }
 
         /**
-         * @return SoapType|null
+         * @return FiscalEnvironment|null
          */
-        public function getSoapType(): ?SoapType
+        public function getFiscalEnvironment(): ?FiscalEnvironment
         {
-            return $this->soap_type;
+            return $this->fiscal_environment_type;
         }
 
         /**
-         * @param SoapType|null $soap_type
+         * @param FiscalEnvironment|null $fiscal_environment_type
          *
          * @return BankLoan
          */
-        public function setSoapType(?SoapType $soap_type): BankLoan
+        public function setFiscalEnvironment(?FiscalEnvironment $fiscal_environment_type): BankLoan
         {
-            $this->soap_type = $soap_type;
+            $this->fiscal_environment_type = $fiscal_environment_type;
             return $this;
         }
 
@@ -747,5 +748,4 @@
         }
 
     }
-
-
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

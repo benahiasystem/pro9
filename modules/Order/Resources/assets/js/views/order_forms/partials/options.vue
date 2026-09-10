@@ -118,7 +118,7 @@
                     message: null
                 }
                 this.company = {
-                    soap_type_id: null,
+                    fiscal_environment: null,
                 }
             },
             async create() {

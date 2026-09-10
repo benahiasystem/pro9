@@ -161,7 +161,7 @@
                     </div>
                     <tr slot="heading">
                         <template v-for="col in orderedColumns">
-                            <th v-if="col.visible && col.key === 'soap_type'" :key="col.key">SOAP</th>
+                            <th v-if="col.visible && col.key === 'fiscal_environment_type'" :key="col.key">Ambiente</th>
                             <th v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start" style="min-width: 95px;">Emisión</th>
                             <th v-if="col.visible && col.key === 'date_payment'" :key="col.key" class="text-center" style="min-width: 95px;">Fecha de pago</th>
                             <th v-if="col.visible && col.key === 'date_of_due'" :key="col.key" class="text-center">Fecha Vencimiento</th>
@@ -218,7 +218,7 @@
                         }"
                     >
                         <template v-for="col in orderedColumns">
-                            <td v-if="col.visible && col.key === 'soap_type'" :key="col.key">{{ row.soap_type_description }}</td>
+                            <td v-if="col.visible && col.key === 'fiscal_environment_type'" :key="col.key">{{ row.fiscal_environment_description }}</td>
                             <td v-if="col.visible && col.key === 'date_of_issue'" :key="col.key" class="text-start">
                                 {{ formatDateLong(row.date_of_issue) }}
                             </td>
@@ -743,7 +743,7 @@ export default {
             showDialogOptions: false,
             showDialogPayments: false,
             columns: {
-                soap_type:          { title: "Soap",                           visible: false, order: 0  },
+                fiscal_environment_type:          { title: "Ambiente",                           visible: false, order: 0  },
                 date_of_issue:      { title: "Emisión",                        visible: true,  order: 1  },
                 date_payment:       { title: "Fecha de pago",                  visible: false, order: 2  },
                 date_of_due:        { title: "F. Vencimiento",                 visible: false, order: 3  },

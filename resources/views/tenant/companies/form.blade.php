@@ -8,7 +8,6 @@
         </div>
         <div class="col-lg-6 col-md-12">
             <tenant-system-environment></tenant-system-environment>
-            <tenant-certificates-index></tenant-certificates-index>
             <tenant-certificates-qztray></tenant-certificates-qztray>
             {{-- ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES --}}
             {{-- La configuración PSE no se presenta en la operación local venezolana. --}}

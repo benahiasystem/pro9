@@ -339,7 +339,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                 <span>Ventas</span>
                             </a>
                             <ul class="nav nav-children" style="">
-                                {{-- @if(auth()->user()->type != 'integrator' && $vc_company->soap_type_id != '03')
+                                {{-- @if(auth()->user()->type != 'integrator')
                                     @if(in_array('documents', $vc_modules))
                                         @if(in_array('new_document', $vc_module_levels))
                                             <li
@@ -350,7 +350,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                     @endif
                                 @endif --}}
 
-                                @if(in_array('documents', $vc_modules) && $vc_company->soap_type_id != '03')
+                                @if(in_array('documents', $vc_modules))
                                     @if(in_array('list_document', $vc_module_levels))
                                         <li
                                             class="{{ ($firstLevel === 'documents' && $secondLevel != 'create' && $secondLevel != 'not-sent' && $secondLevel != 'regularize-shipping') ? 'nav-active' : '' }} {{ ($firstLevel === 'documents' && $secondLevel === 'create') ? 'nav-active' : '' }} nav-item-with-action">
@@ -831,7 +831,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                         </li>
                     @endif
 
-                    @if(in_array('guia', $vc_modules) && $vc_company->soap_type_id != '03')
+                    @if(in_array('guia', $vc_modules))
                         <li
                             class="nav-parent
                                                                                                                                                     {{ ($firstLevel === 'dispatches') ? 'nav-active nav-expanded' : '' }}
@@ -922,7 +922,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                 {{-- ########## INICIO CAMBIO SIN XML CDR SUNAT --}}
                                 {{-- Sin bandejas de envío ni rectificación fiscal en la operación local. --}}
                                 {{-- ######### FIN CAMBIO SIN XML CDR SUNAT --}}
-                                @if(in_array('summary_voided', $vc_module_levels) && $vc_company->soap_type_id != '03')
+                                @if(in_array('summary_voided', $vc_module_levels))
 
                                     <li class="{{ ($firstLevel === 'summaries') ? 'nav-active' : '' }}">
                                         <a class="nav-link text-danger" href="{{route('tenant.summaries.index')}}">
@@ -941,7 +941,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                     @endif
 
 
-                    @if(in_array('advanced', $vc_modules) && $vc_company->soap_type_id != '03')
+                    @if(in_array('advanced', $vc_modules))
                         <li
                             class="nav-parent
                                                                                                                                             {{ ($firstLevel === 'retentions') ? 'nav-active nav-expanded' : '' }}
@@ -986,7 +986,7 @@ $showTransfer = collect($vc_module_levels)->intersect(['inventory', 'inventory_d
                                     </li>
                                 @endif
                                 @if(auth()->user()->type != 'integrator' && in_array('documents', $vc_modules))
-                                    @if(auth()->user()->type != 'integrator' && in_array('document_contingengy', $vc_module_levels) && $vc_company->soap_type_id != '03')
+                                    @if(auth()->user()->type != 'integrator' && in_array('document_contingengy', $vc_module_levels))
                                         <li class="{{ ($firstLevel === 'contingencies') ? 'nav-active' : '' }}">
                                             <a class="nav-link" href="{{route('tenant.contingencies.index')}}">
                                                 Documentos de contingencia

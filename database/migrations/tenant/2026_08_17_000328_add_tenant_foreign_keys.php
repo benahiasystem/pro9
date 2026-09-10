@@ -23,7 +23,10 @@ SQL,
 ALTER TABLE `companies` ADD CONSTRAINT `companies_identity_document_type_id_foreign` FOREIGN KEY (`identity_document_type_id`) REFERENCES `cat_identity_document_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `companies` ADD CONSTRAINT `companies_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `companies` ADD CONSTRAINT `companies_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
+SQL,
+            <<<'SQL'
+ALTER TABLE `fiscal_configuration_audits` ADD CONSTRAINT `fiscal_configuration_audits_company_id_foreign` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `delivery_zone_locations` ADD CONSTRAINT `delivery_zone_locations_delivery_zone_id_foreign` FOREIGN KEY (`delivery_zone_id`) REFERENCES `delivery_zones` (`id`) ON DELETE CASCADE
@@ -50,7 +53,7 @@ SQL,
 ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_document_type_id_foreign` FOREIGN KEY (`document_type_id`) REFERENCES `cat_document_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `inventories_transfer` ADD CONSTRAINT `inventories_transfer_transfer_collect_id_foreign` FOREIGN KEY (`transfer_collect_id`) REFERENCES `inventories_transfer` (`id`)
@@ -59,7 +62,7 @@ SQL,
 ALTER TABLE `item_movement_rel_extra` ADD CONSTRAINT `item_movement_rel_extra_item_movement_id_foreign` FOREIGN KEY (`item_movement_id`) REFERENCES `item_movement` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `mill` ADD CONSTRAINT `mill_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `mill` ADD CONSTRAINT `mill_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `module_levels` ADD CONSTRAINT `module_levels_module_id_foreign` FOREIGN KEY (`module_id`) REFERENCES `modules` (`id`)
@@ -77,13 +80,13 @@ SQL,
 ALTER TABLE `origin_addresses` ADD CONSTRAINT `origin_addresses_country_id_foreign` FOREIGN KEY (`country_id`) REFERENCES `countries` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `packaging` ADD CONSTRAINT `packaging_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `packaging` ADD CONSTRAINT `packaging_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `person_types` ADD CONSTRAINT `person_types_price_label_id_foreign` FOREIGN KEY (`price_label_id`) REFERENCES `price_labels` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `production` ADD CONSTRAINT `production_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `production` ADD CONSTRAINT `production_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `provinces` ADD CONSTRAINT `provinces_department_id_foreign` FOREIGN KEY (`department_id`) REFERENCES `departments` (`id`)
@@ -92,7 +95,7 @@ SQL,
 ALTER TABLE `supplies` ADD CONSTRAINT `supplies_unit_type_id_foreign` FOREIGN KEY (`unit_type_id`) REFERENCES `cat_unit_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `tips` ADD CONSTRAINT `tips_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `tips` ADD CONSTRAINT `tips_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `webhook_deliveries` ADD CONSTRAINT `webhook_deliveries_webhook_subscription_id_foreign` FOREIGN KEY (`webhook_subscription_id`) REFERENCES `webhook_subscriptions` (`id`) ON DELETE CASCADE
@@ -245,7 +248,7 @@ SQL,
 ALTER TABLE `devolutions` ADD CONSTRAINT `devolutions_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `devolutions` ADD CONSTRAINT `devolutions_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `devolutions` ADD CONSTRAINT `devolutions_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `devolutions` ADD CONSTRAINT `devolutions_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -287,7 +290,7 @@ SQL,
 ALTER TABLE `expenses` ADD CONSTRAINT `expenses_expense_type_id_foreign` FOREIGN KEY (`expense_type_id`) REFERENCES `expense_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `expenses` ADD CONSTRAINT `expenses_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `expenses` ADD CONSTRAINT `expenses_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `expenses` ADD CONSTRAINT `expenses_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -314,7 +317,7 @@ SQL,
 ALTER TABLE `fixed_asset_purchases` ADD CONSTRAINT `fixed_asset_purchases_group_id_foreign` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `fixed_asset_purchases` ADD CONSTRAINT `fixed_asset_purchases_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `fixed_asset_purchases` ADD CONSTRAINT `fixed_asset_purchases_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `fixed_asset_purchases` ADD CONSTRAINT `fixed_asset_purchases_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -326,7 +329,7 @@ SQL,
 ALTER TABLE `fixed_asset_purchases` ADD CONSTRAINT `fixed_asset_purchases_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `global_payments` ADD CONSTRAINT `global_payments_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `global_payments` ADD CONSTRAINT `global_payments_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `global_payments` ADD CONSTRAINT `global_payments_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
@@ -338,7 +341,7 @@ SQL,
 ALTER TABLE `guides` ADD CONSTRAINT `guides_inventory_transaction_id_foreign` FOREIGN KEY (`inventory_transaction_id`) REFERENCES `inventory_transactions` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `guides` ADD CONSTRAINT `guides_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `guides` ADD CONSTRAINT `guides_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `guides` ADD CONSTRAINT `guides_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
@@ -365,7 +368,7 @@ SQL,
 ALTER TABLE `income` ADD CONSTRAINT `income_income_type_id_foreign` FOREIGN KEY (`income_type_id`) REFERENCES `income_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `income` ADD CONSTRAINT `income_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `income` ADD CONSTRAINT `income_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `income` ADD CONSTRAINT `income_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -419,7 +422,7 @@ SQL,
 ALTER TABLE `order_forms` ADD CONSTRAINT `order_forms_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `order_forms` ADD CONSTRAINT `order_forms_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `order_forms` ADD CONSTRAINT `order_forms_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `order_forms` ADD CONSTRAINT `order_forms_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -449,7 +452,7 @@ SQL,
 ALTER TABLE `order_notes` ADD CONSTRAINT `order_notes_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `order_notes` ADD CONSTRAINT `order_notes_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `order_notes` ADD CONSTRAINT `order_notes_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `order_notes` ADD CONSTRAINT `order_notes_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -464,7 +467,7 @@ SQL,
 ALTER TABLE `payment_links` ADD CONSTRAINT `payment_links_person_id_foreign` FOREIGN KEY (`person_id`) REFERENCES `persons` (`id`) ON DELETE SET NULL
 SQL,
             <<<'SQL'
-ALTER TABLE `payment_links` ADD CONSTRAINT `payment_links_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `payment_links` ADD CONSTRAINT `payment_links_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `payment_links` ADD CONSTRAINT `payment_links_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
@@ -485,7 +488,7 @@ SQL,
 ALTER TABLE `perceptions` ADD CONSTRAINT `perceptions_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `perceptions` ADD CONSTRAINT `perceptions_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `perceptions` ADD CONSTRAINT `perceptions_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `perceptions` ADD CONSTRAINT `perceptions_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -497,7 +500,7 @@ SQL,
 ALTER TABLE `purchase_quotations` ADD CONSTRAINT `purchase_quotations_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `purchase_quotations` ADD CONSTRAINT `purchase_quotations_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `purchase_quotations` ADD CONSTRAINT `purchase_quotations_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `purchase_quotations` ADD CONSTRAINT `purchase_quotations_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -521,7 +524,7 @@ SQL,
 ALTER TABLE `purchase_settlements` ADD CONSTRAINT `purchase_settlements_payment_method_type_id_foreign` FOREIGN KEY (`payment_method_type_id`) REFERENCES `payment_method_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `purchase_settlements` ADD CONSTRAINT `purchase_settlements_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `purchase_settlements` ADD CONSTRAINT `purchase_settlements_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `purchase_settlements` ADD CONSTRAINT `purchase_settlements_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -545,7 +548,7 @@ SQL,
 ALTER TABLE `retentions` ADD CONSTRAINT `retentions_retention_type_id_foreign` FOREIGN KEY (`retention_type_id`) REFERENCES `cat_retention_types` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `retentions` ADD CONSTRAINT `retentions_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `retentions` ADD CONSTRAINT `retentions_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `retentions` ADD CONSTRAINT `retentions_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -566,7 +569,7 @@ SQL,
 ALTER TABLE `sale_opportunities` ADD CONSTRAINT `sale_opportunities_establishment_id_foreign` FOREIGN KEY (`establishment_id`) REFERENCES `establishments` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `sale_opportunities` ADD CONSTRAINT `sale_opportunities_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `sale_opportunities` ADD CONSTRAINT `sale_opportunities_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `sale_opportunities` ADD CONSTRAINT `sale_opportunities_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -584,7 +587,7 @@ SQL,
 ALTER TABLE `series` ADD CONSTRAINT `series_series_device_group_id_foreign` FOREIGN KEY (`series_device_group_id`) REFERENCES `series_device_groups` (`id`) ON DELETE SET NULL
 SQL,
             <<<'SQL'
-ALTER TABLE `summaries` ADD CONSTRAINT `summaries_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `summaries` ADD CONSTRAINT `summaries_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `summaries` ADD CONSTRAINT `summaries_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -605,7 +608,7 @@ SQL,
 ALTER TABLE `technical_services` ADD CONSTRAINT `technical_services_customer_id_foreign` FOREIGN KEY (`customer_id`) REFERENCES `persons` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `technical_services` ADD CONSTRAINT `technical_services_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `technical_services` ADD CONSTRAINT `technical_services_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `technical_services` ADD CONSTRAINT `technical_services_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
@@ -614,7 +617,7 @@ SQL,
 ALTER TABLE `user_commissions` ADD CONSTRAINT `user_commissions_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `voided` ADD CONSTRAINT `voided_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `voided` ADD CONSTRAINT `voided_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `voided` ADD CONSTRAINT `voided_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -821,7 +824,7 @@ SQL,
 ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_sale_opportunity_id_foreign` FOREIGN KEY (`sale_opportunity_id`) REFERENCES `sale_opportunities` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `purchase_orders` ADD CONSTRAINT `purchase_orders_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -875,7 +878,7 @@ SQL,
 ALTER TABLE `quotations` ADD CONSTRAINT `quotations_sale_opportunity_id_foreign` FOREIGN KEY (`sale_opportunity_id`) REFERENCES `sale_opportunities` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `quotations` ADD CONSTRAINT `quotations_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `quotations` ADD CONSTRAINT `quotations_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `quotations` ADD CONSTRAINT `quotations_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -932,7 +935,7 @@ SQL,
 ALTER TABLE `transactions` ADD CONSTRAINT `transactions_payment_link_id_foreign` FOREIGN KEY (`payment_link_id`) REFERENCES `payment_links` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `transactions` ADD CONSTRAINT `transactions_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `transactions` ADD CONSTRAINT `transactions_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `transactions` ADD CONSTRAINT `transactions_transaction_state_id_foreign` FOREIGN KEY (`transaction_state_id`) REFERENCES `transaction_states` (`id`)
@@ -965,7 +968,7 @@ SQL,
 ALTER TABLE `contracts` ADD CONSTRAINT `contracts_quotation_id_foreign` FOREIGN KEY (`quotation_id`) REFERENCES `quotations` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `contracts` ADD CONSTRAINT `contracts_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `contracts` ADD CONSTRAINT `contracts_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `contracts` ADD CONSTRAINT `contracts_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `contract_state_types` (`id`)
@@ -1028,7 +1031,7 @@ SQL,
 ALTER TABLE `purchases` ADD CONSTRAINT `purchases_purchase_order_id_foreign` FOREIGN KEY (`purchase_order_id`) REFERENCES `purchase_orders` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `purchases` ADD CONSTRAINT `purchases_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `purchases` ADD CONSTRAINT `purchases_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `purchases` ADD CONSTRAINT `purchases_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -1091,7 +1094,7 @@ SQL,
 ALTER TABLE `sale_notes` ADD CONSTRAINT `sale_notes_quotation_id_foreign` FOREIGN KEY (`quotation_id`) REFERENCES `quotations` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `sale_notes` ADD CONSTRAINT `sale_notes_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `sale_notes` ADD CONSTRAINT `sale_notes_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `sale_notes` ADD CONSTRAINT `sale_notes_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -1304,7 +1307,7 @@ SQL,
 ALTER TABLE `dispatches` ADD CONSTRAINT `dispatches_sender_id_foreign` FOREIGN KEY (`sender_id`) REFERENCES `persons` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `dispatches` ADD CONSTRAINT `dispatches_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `dispatches` ADD CONSTRAINT `dispatches_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `dispatches` ADD CONSTRAINT `dispatches_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -1373,7 +1376,7 @@ SQL,
 ALTER TABLE `documents` ADD CONSTRAINT `documents_seller_id_foreign` FOREIGN KEY (`seller_id`) REFERENCES `users` (`id`)
 SQL,
             <<<'SQL'
-ALTER TABLE `documents` ADD CONSTRAINT `documents_soap_type_id_foreign` FOREIGN KEY (`soap_type_id`) REFERENCES `soap_types` (`id`)
+ALTER TABLE `documents` ADD CONSTRAINT `documents_fiscal_environment_foreign` FOREIGN KEY (`fiscal_environment`) REFERENCES `fiscal_environments` (`id`)
 SQL,
             <<<'SQL'
 ALTER TABLE `documents` ADD CONSTRAINT `documents_state_type_id_foreign` FOREIGN KEY (`state_type_id`) REFERENCES `state_types` (`id`)
@@ -1521,7 +1524,7 @@ SQL
             ['table' => 'documents', 'name' => 'documents_user_id_foreign'],
             ['table' => 'documents', 'name' => 'documents_technical_service_id_foreign'],
             ['table' => 'documents', 'name' => 'documents_state_type_id_foreign'],
-            ['table' => 'documents', 'name' => 'documents_soap_type_id_foreign'],
+            ['table' => 'documents', 'name' => 'documents_fiscal_environment_foreign'],
             ['table' => 'documents', 'name' => 'documents_seller_id_foreign'],
             ['table' => 'documents', 'name' => 'documents_sale_note_id_foreign'],
             ['table' => 'documents', 'name' => 'documents_quotation_id_foreign'],
@@ -1544,7 +1547,7 @@ SQL
             ['table' => 'dispatches', 'name' => 'dispatches_transport_id_foreign'],
             ['table' => 'dispatches', 'name' => 'dispatches_transfer_reason_type_id_foreign'],
             ['table' => 'dispatches', 'name' => 'dispatches_state_type_id_foreign'],
-            ['table' => 'dispatches', 'name' => 'dispatches_soap_type_id_foreign'],
+            ['table' => 'dispatches', 'name' => 'dispatches_fiscal_environment_foreign'],
             ['table' => 'dispatches', 'name' => 'dispatches_sender_id_foreign'],
             ['table' => 'dispatches', 'name' => 'dispatches_sender_address_id_foreign'],
             ['table' => 'dispatches', 'name' => 'dispatches_receiver_id_foreign'],
@@ -1615,7 +1618,7 @@ SQL
             ['table' => 'sale_notes', 'name' => 'sale_notes_user_id_foreign'],
             ['table' => 'sale_notes', 'name' => 'sale_notes_technical_service_id_foreign'],
             ['table' => 'sale_notes', 'name' => 'sale_notes_state_type_id_foreign'],
-            ['table' => 'sale_notes', 'name' => 'sale_notes_soap_type_id_foreign'],
+            ['table' => 'sale_notes', 'name' => 'sale_notes_fiscal_environment_foreign'],
             ['table' => 'sale_notes', 'name' => 'sale_notes_quotation_id_foreign'],
             ['table' => 'sale_notes', 'name' => 'sale_notes_payment_method_type_id_foreign'],
             ['table' => 'sale_notes', 'name' => 'sale_notes_payment_condition_id_foreign'],
@@ -1636,7 +1639,7 @@ SQL
             ['table' => 'purchases', 'name' => 'purchases_user_id_foreign'],
             ['table' => 'purchases', 'name' => 'purchases_supplier_id_foreign'],
             ['table' => 'purchases', 'name' => 'purchases_state_type_id_foreign'],
-            ['table' => 'purchases', 'name' => 'purchases_soap_type_id_foreign'],
+            ['table' => 'purchases', 'name' => 'purchases_fiscal_environment_foreign'],
             ['table' => 'purchases', 'name' => 'purchases_purchase_order_id_foreign'],
             ['table' => 'purchases', 'name' => 'purchases_payment_condition_id_foreign'],
             ['table' => 'purchases', 'name' => 'purchases_group_id_foreign'],
@@ -1657,7 +1660,7 @@ SQL
             ['table' => 'hotel_room_rates', 'name' => 'hotel_room_rates_hotel_rate_id_foreign'],
             ['table' => 'contracts', 'name' => 'contracts_user_id_foreign'],
             ['table' => 'contracts', 'name' => 'contracts_state_type_id_foreign'],
-            ['table' => 'contracts', 'name' => 'contracts_soap_type_id_foreign'],
+            ['table' => 'contracts', 'name' => 'contracts_fiscal_environment_foreign'],
             ['table' => 'contracts', 'name' => 'contracts_quotation_id_foreign'],
             ['table' => 'contracts', 'name' => 'contracts_payment_method_type_id_foreign'],
             ['table' => 'contracts', 'name' => 'contracts_establishment_id_foreign'],
@@ -1668,7 +1671,7 @@ SQL
             ['table' => 'user_default_document_types', 'name' => 'user_default_document_types_series_id_foreign'],
             ['table' => 'user_default_document_types', 'name' => 'user_default_document_types_document_type_id_foreign'],
             ['table' => 'transactions', 'name' => 'transactions_transaction_state_id_foreign'],
-            ['table' => 'transactions', 'name' => 'transactions_soap_type_id_foreign'],
+            ['table' => 'transactions', 'name' => 'transactions_fiscal_environment_foreign'],
             ['table' => 'transactions', 'name' => 'transactions_payment_link_id_foreign'],
             ['table' => 'technical_service_payments', 'name' => 'technical_service_payments_technical_service_id_foreign'],
             ['table' => 'technical_service_payments', 'name' => 'technical_service_payments_payment_method_type_id_foreign'],
@@ -1687,7 +1690,7 @@ SQL
             ['table' => 'restaurant_item_supplies', 'name' => 'restaurant_item_supplies_item_id_foreign'],
             ['table' => 'quotations', 'name' => 'quotations_user_id_foreign'],
             ['table' => 'quotations', 'name' => 'quotations_state_type_id_foreign'],
-            ['table' => 'quotations', 'name' => 'quotations_soap_type_id_foreign'],
+            ['table' => 'quotations', 'name' => 'quotations_fiscal_environment_foreign'],
             ['table' => 'quotations', 'name' => 'quotations_sale_opportunity_id_foreign'],
             ['table' => 'quotations', 'name' => 'quotations_payment_method_type_id_foreign'],
             ['table' => 'quotations', 'name' => 'quotations_establishment_id_foreign'],
@@ -1705,7 +1708,7 @@ SQL
             ['table' => 'purchase_orders', 'name' => 'purchase_orders_user_id_foreign'],
             ['table' => 'purchase_orders', 'name' => 'purchase_orders_supplier_id_foreign'],
             ['table' => 'purchase_orders', 'name' => 'purchase_orders_state_type_id_foreign'],
-            ['table' => 'purchase_orders', 'name' => 'purchase_orders_soap_type_id_foreign'],
+            ['table' => 'purchase_orders', 'name' => 'purchase_orders_fiscal_environment_foreign'],
             ['table' => 'purchase_orders', 'name' => 'purchase_orders_sale_opportunity_id_foreign'],
             ['table' => 'purchase_orders', 'name' => 'purchase_orders_purchase_quotation_id_foreign'],
             ['table' => 'purchase_orders', 'name' => 'purchase_orders_payment_method_type_id_foreign'],
@@ -1774,30 +1777,30 @@ SQL
             ['table' => 'cash_transactions', 'name' => 'cash_transactions_cash_id_foreign'],
             ['table' => 'voided', 'name' => 'voided_user_id_foreign'],
             ['table' => 'voided', 'name' => 'voided_state_type_id_foreign'],
-            ['table' => 'voided', 'name' => 'voided_soap_type_id_foreign'],
+            ['table' => 'voided', 'name' => 'voided_fiscal_environment_foreign'],
             ['table' => 'user_commissions', 'name' => 'user_commissions_user_id_foreign'],
             ['table' => 'technical_services', 'name' => 'technical_services_user_id_foreign'],
-            ['table' => 'technical_services', 'name' => 'technical_services_soap_type_id_foreign'],
+            ['table' => 'technical_services', 'name' => 'technical_services_fiscal_environment_foreign'],
             ['table' => 'technical_services', 'name' => 'technical_services_customer_id_foreign'],
             ['table' => 'tag_template_fields', 'name' => 'tag_template_fields_tag_template_id_foreign'],
             ['table' => 'system_activity_logs', 'name' => 'system_activity_logs_user_id_foreign'],
             ['table' => 'system_activity_logs', 'name' => 'system_activity_logs_system_activity_log_type_id_foreign'],
             ['table' => 'summaries', 'name' => 'summaries_user_id_foreign'],
             ['table' => 'summaries', 'name' => 'summaries_state_type_id_foreign'],
-            ['table' => 'summaries', 'name' => 'summaries_soap_type_id_foreign'],
+            ['table' => 'summaries', 'name' => 'summaries_fiscal_environment_foreign'],
             ['table' => 'series', 'name' => 'series_series_device_group_id_foreign'],
             ['table' => 'series', 'name' => 'series_establishment_id_foreign'],
             ['table' => 'series', 'name' => 'series_document_type_id_foreign'],
             ['table' => 'sale_opportunities', 'name' => 'sale_opportunities_user_id_foreign'],
             ['table' => 'sale_opportunities', 'name' => 'sale_opportunities_state_type_id_foreign'],
-            ['table' => 'sale_opportunities', 'name' => 'sale_opportunities_soap_type_id_foreign'],
+            ['table' => 'sale_opportunities', 'name' => 'sale_opportunities_fiscal_environment_foreign'],
             ['table' => 'sale_opportunities', 'name' => 'sale_opportunities_establishment_id_foreign'],
             ['table' => 'sale_opportunities', 'name' => 'sale_opportunities_customer_id_foreign'],
             ['table' => 'sale_opportunities', 'name' => 'sale_opportunities_currency_type_id_foreign'],
             ['table' => 'retentions', 'name' => 'retentions_user_id_foreign'],
             ['table' => 'retentions', 'name' => 'retentions_supplier_id_foreign'],
             ['table' => 'retentions', 'name' => 'retentions_state_type_id_foreign'],
-            ['table' => 'retentions', 'name' => 'retentions_soap_type_id_foreign'],
+            ['table' => 'retentions', 'name' => 'retentions_fiscal_environment_foreign'],
             ['table' => 'retentions', 'name' => 'retentions_retention_type_id_foreign'],
             ['table' => 'retentions', 'name' => 'retentions_establishment_id_foreign'],
             ['table' => 'retentions', 'name' => 'retentions_document_type_id_foreign'],
@@ -1805,7 +1808,7 @@ SQL
             ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_user_id_foreign'],
             ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_supplier_id_foreign'],
             ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_state_type_id_foreign'],
-            ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_soap_type_id_foreign'],
+            ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_fiscal_environment_foreign'],
             ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_payment_method_type_id_foreign'],
             ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_operation_type_id_foreign'],
             ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_establishment_id_foreign'],
@@ -1813,23 +1816,23 @@ SQL
             ['table' => 'purchase_settlements', 'name' => 'purchase_settlements_currency_type_id_foreign'],
             ['table' => 'purchase_quotations', 'name' => 'purchase_quotations_user_id_foreign'],
             ['table' => 'purchase_quotations', 'name' => 'purchase_quotations_state_type_id_foreign'],
-            ['table' => 'purchase_quotations', 'name' => 'purchase_quotations_soap_type_id_foreign'],
+            ['table' => 'purchase_quotations', 'name' => 'purchase_quotations_fiscal_environment_foreign'],
             ['table' => 'purchase_quotations', 'name' => 'purchase_quotations_establishment_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_user_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_state_type_id_foreign'],
-            ['table' => 'perceptions', 'name' => 'perceptions_soap_type_id_foreign'],
+            ['table' => 'perceptions', 'name' => 'perceptions_fiscal_environment_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_establishment_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_document_type_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_customer_id_foreign'],
             ['table' => 'perceptions', 'name' => 'perceptions_currency_type_id_foreign'],
             ['table' => 'pending_account_commissions', 'name' => 'pending_account_commissions_seller_id_foreign'],
             ['table' => 'payment_links', 'name' => 'payment_links_user_id_foreign'],
-            ['table' => 'payment_links', 'name' => 'payment_links_soap_type_id_foreign'],
+            ['table' => 'payment_links', 'name' => 'payment_links_fiscal_environment_foreign'],
             ['table' => 'payment_links', 'name' => 'payment_links_person_id_foreign'],
             ['table' => 'payment_links', 'name' => 'payment_links_payment_link_type_id_foreign'],
             ['table' => 'order_notes', 'name' => 'order_notes_user_id_foreign'],
             ['table' => 'order_notes', 'name' => 'order_notes_state_type_id_foreign'],
-            ['table' => 'order_notes', 'name' => 'order_notes_soap_type_id_foreign'],
+            ['table' => 'order_notes', 'name' => 'order_notes_fiscal_environment_foreign'],
             ['table' => 'order_notes', 'name' => 'order_notes_payment_method_type_id_foreign'],
             ['table' => 'order_notes', 'name' => 'order_notes_establishment_id_foreign'],
             ['table' => 'order_notes', 'name' => 'order_notes_customer_id_foreign'],
@@ -1839,7 +1842,7 @@ SQL
             ['table' => 'order_forms', 'name' => 'order_forms_transport_mode_type_id_foreign'],
             ['table' => 'order_forms', 'name' => 'order_forms_transfer_reason_type_id_foreign'],
             ['table' => 'order_forms', 'name' => 'order_forms_state_type_id_foreign'],
-            ['table' => 'order_forms', 'name' => 'order_forms_soap_type_id_foreign'],
+            ['table' => 'order_forms', 'name' => 'order_forms_fiscal_environment_foreign'],
             ['table' => 'order_forms', 'name' => 'order_forms_establishment_id_foreign'],
             ['table' => 'order_forms', 'name' => 'order_forms_driver_id_foreign'],
             ['table' => 'order_forms', 'name' => 'order_forms_dispatcher_id_foreign'],
@@ -1857,7 +1860,7 @@ SQL
             ['table' => 'items', 'name' => 'items_account_id_foreign'],
             ['table' => 'income', 'name' => 'income_user_id_foreign'],
             ['table' => 'income', 'name' => 'income_state_type_id_foreign'],
-            ['table' => 'income', 'name' => 'income_soap_type_id_foreign'],
+            ['table' => 'income', 'name' => 'income_fiscal_environment_foreign'],
             ['table' => 'income', 'name' => 'income_income_type_id_foreign'],
             ['table' => 'income', 'name' => 'income_income_reason_id_foreign'],
             ['table' => 'income', 'name' => 'income_establishment_id_foreign'],
@@ -1866,15 +1869,15 @@ SQL
             ['table' => 'hotel_rents', 'name' => 'hotel_rents_establishment_id_foreign'],
             ['table' => 'guides', 'name' => 'guides_warehouse_id_foreign'],
             ['table' => 'guides', 'name' => 'guides_user_id_foreign'],
-            ['table' => 'guides', 'name' => 'guides_soap_type_id_foreign'],
+            ['table' => 'guides', 'name' => 'guides_fiscal_environment_foreign'],
             ['table' => 'guides', 'name' => 'guides_inventory_transaction_id_foreign'],
             ['table' => 'guides', 'name' => 'guides_document_type_id_foreign'],
             ['table' => 'global_payments', 'name' => 'global_payments_user_id_foreign'],
-            ['table' => 'global_payments', 'name' => 'global_payments_soap_type_id_foreign'],
+            ['table' => 'global_payments', 'name' => 'global_payments_fiscal_environment_foreign'],
             ['table' => 'fixed_asset_purchases', 'name' => 'fixed_asset_purchases_user_id_foreign'],
             ['table' => 'fixed_asset_purchases', 'name' => 'fixed_asset_purchases_supplier_id_foreign'],
             ['table' => 'fixed_asset_purchases', 'name' => 'fixed_asset_purchases_state_type_id_foreign'],
-            ['table' => 'fixed_asset_purchases', 'name' => 'fixed_asset_purchases_soap_type_id_foreign'],
+            ['table' => 'fixed_asset_purchases', 'name' => 'fixed_asset_purchases_fiscal_environment_foreign'],
             ['table' => 'fixed_asset_purchases', 'name' => 'fixed_asset_purchases_group_id_foreign'],
             ['table' => 'fixed_asset_purchases', 'name' => 'fixed_asset_purchases_establishment_id_foreign'],
             ['table' => 'fixed_asset_purchases', 'name' => 'fixed_asset_purchases_document_type_id_foreign'],
@@ -1883,7 +1886,7 @@ SQL
             ['table' => 'expenses', 'name' => 'expenses_user_id_foreign'],
             ['table' => 'expenses', 'name' => 'expenses_supplier_id_foreign'],
             ['table' => 'expenses', 'name' => 'expenses_state_type_id_foreign'],
-            ['table' => 'expenses', 'name' => 'expenses_soap_type_id_foreign'],
+            ['table' => 'expenses', 'name' => 'expenses_fiscal_environment_foreign'],
             ['table' => 'expenses', 'name' => 'expenses_expense_type_id_foreign'],
             ['table' => 'expenses', 'name' => 'expenses_expense_reason_id_foreign'],
             ['table' => 'expenses', 'name' => 'expenses_establishment_id_foreign'],
@@ -1897,7 +1900,7 @@ SQL
             ['table' => 'documentary_files', 'name' => 'documentary_files_documentary_process_id_foreign'],
             ['table' => 'devolutions', 'name' => 'devolutions_user_id_foreign'],
             ['table' => 'devolutions', 'name' => 'devolutions_state_type_id_foreign'],
-            ['table' => 'devolutions', 'name' => 'devolutions_soap_type_id_foreign'],
+            ['table' => 'devolutions', 'name' => 'devolutions_fiscal_environment_foreign'],
             ['table' => 'devolutions', 'name' => 'devolutions_establishment_id_foreign'],
             ['table' => 'devolutions', 'name' => 'devolutions_devolution_reason_id_foreign'],
             ['table' => 'columns_to_reports', 'name' => 'columns_to_reports_user_id_foreign'],
@@ -1948,21 +1951,21 @@ SQL
             ['table' => 'districts', 'name' => 'districts_province_id_foreign'],
             ['table' => 'workers', 'name' => 'workers_identity_document_type_id_foreign'],
             ['table' => 'webhook_deliveries', 'name' => 'webhook_deliveries_webhook_subscription_id_foreign'],
-            ['table' => 'tips', 'name' => 'tips_soap_type_id_foreign'],
+            ['table' => 'tips', 'name' => 'tips_fiscal_environment_foreign'],
             ['table' => 'supplies', 'name' => 'supplies_unit_type_id_foreign'],
             ['table' => 'provinces', 'name' => 'provinces_department_id_foreign'],
-            ['table' => 'production', 'name' => 'production_soap_type_id_foreign'],
+            ['table' => 'production', 'name' => 'production_fiscal_environment_foreign'],
             ['table' => 'person_types', 'name' => 'person_types_price_label_id_foreign'],
-            ['table' => 'packaging', 'name' => 'packaging_soap_type_id_foreign'],
+            ['table' => 'packaging', 'name' => 'packaging_fiscal_environment_foreign'],
             ['table' => 'origin_addresses', 'name' => 'origin_addresses_country_id_foreign'],
             ['table' => 'orders', 'name' => 'orders_status_order_id_foreign'],
             ['table' => 'orders', 'name' => 'orders_shipping_status_order_id_foreign'],
             ['table' => 'orders', 'name' => 'orders_payment_status_order_id_foreign'],
             ['table' => 'module_levels', 'name' => 'module_levels_module_id_foreign'],
-            ['table' => 'mill', 'name' => 'mill_soap_type_id_foreign'],
+            ['table' => 'mill', 'name' => 'mill_fiscal_environment_foreign'],
             ['table' => 'item_movement_rel_extra', 'name' => 'item_movement_rel_extra_item_movement_id_foreign'],
             ['table' => 'inventories_transfer', 'name' => 'inventories_transfer_transfer_collect_id_foreign'],
-            ['table' => 'inventories_transfer', 'name' => 'inventories_transfer_soap_type_id_foreign'],
+            ['table' => 'inventories_transfer', 'name' => 'inventories_transfer_fiscal_environment_foreign'],
             ['table' => 'inventories_transfer', 'name' => 'inventories_transfer_document_type_id_foreign'],
             ['table' => 'fixed_asset_items', 'name' => 'fixed_asset_items_unit_type_id_foreign'],
             ['table' => 'fixed_asset_items', 'name' => 'fixed_asset_items_purchase_affectation_igv_type_id_foreign'],
@@ -1971,7 +1974,8 @@ SQL
             ['table' => 'drivers', 'name' => 'drivers_identity_document_type_id_foreign'],
             ['table' => 'dispatchers', 'name' => 'dispatchers_identity_document_type_id_foreign'],
             ['table' => 'delivery_zone_locations', 'name' => 'delivery_zone_locations_delivery_zone_id_foreign'],
-            ['table' => 'companies', 'name' => 'companies_soap_type_id_foreign'],
+            ['table' => 'fiscal_configuration_audits', 'name' => 'fiscal_configuration_audits_company_id_foreign'],
+            ['table' => 'companies', 'name' => 'companies_fiscal_environment_foreign'],
             ['table' => 'companies', 'name' => 'companies_identity_document_type_id_foreign'],
             ['table' => 'client_errors', 'name' => 'client_errors_client_error_type_id_foreign'],
         ];

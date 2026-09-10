@@ -233,7 +233,7 @@
                     user_id: null,
                     establishment_id: null,
                     external_id: null,
-                    soap_type_id: null,
+                    fiscal_environment: null,
                     state_type_id: '01',
                     ubl_version: '2.0',
                     document_type_id: null,
@@ -257,7 +257,7 @@
             resetForm() {
 
                 this.initForm()
-                // this.form.soap_type_id = this.company.soap_type_id
+                // this.form.fiscal_environment = this.company.fiscal_environment
                 this.form.establishment_id = (this.establishments.length > 0)?this.establishments[0].id:null
                 this.form.retention_type_id = (this.retention_types.length > 0)?this.retention_types[0].id:null
                 this.form.document_type_id = '20'

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace Modules\Finance\Models;
 
@@ -9,7 +10,7 @@
     use App\Models\Tenant\PurchasePayment;
     use App\Models\Tenant\PurchaseSettlementPayment;
     use App\Models\Tenant\SaleNotePayment;
-    use App\Models\Tenant\SoapType;
+    use App\Models\Tenant\FiscalEnvironment;
     use App\Models\Tenant\TransferAccountPayment;
     use App\Models\Tenant\User;
     use Carbon\Carbon;
@@ -36,7 +37,7 @@
      * Modules\Finance\Models\GlobalPayment
      *
      * @property int                          $id
-     * @property string                       $soap_type_id
+     * @property string                       $fiscal_environment
      * @property int|null                     $destination_id
      * @property string                       $destination_type
      * @property int                          $payment_id
@@ -44,7 +45,7 @@
      * @property int|null                     $user_id
      * @property Carbon|null                  $created_at
      * @property Carbon|null                  $updated_at
-     * @property SoapType                     $soap_type
+     * @property FiscalEnvironment                     $fiscal_environment_type
      * @property User|null                    $user
      * @property-read CashTransaction         $cas_transaction
      * @property-read ContractPayment         $con_payment
@@ -77,7 +78,7 @@
         use UsesTenantConnection;
 
         protected $fillable = [
-            'soap_type_id',
+            'fiscal_environment',
             'destination_id',
             'destination_type',
             'payment_id',
@@ -94,9 +95,9 @@
         /**
          * @return BelongsTo
          */
-        public function soap_type()
+        public function fiscal_environment_type()
         {
-            return $this->belongsTo(SoapType::class);
+            return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
         }
 
         /**
@@ -1075,3 +1076,4 @@
         }
 
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -20,7 +20,6 @@ use App\Traits\OfflineTrait;
 use Modules\Inventory\Models\Warehouse as ModuleWarehouse;
 use App\Models\Tenant\Item;
 use Modules\Document\Traits\SearchTrait;
-use Modules\Document\Helpers\ConsultCdr;
 use Modules\Item\Models\ItemLot;
 use Modules\Document\Http\Resources\ItemLotCollection;
 use App\Models\Tenant\Configuration;
@@ -307,14 +306,6 @@ class DocumentController extends Controller
     }
 
 
-    public function consultCdr($document_id)
-    {
-
-        $document = Document::find($document_id);
-
-        return (new ConsultCdr)->search($document);
-
-    }
 
 
     /**

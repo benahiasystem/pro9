@@ -22,7 +22,7 @@
  * - `total`: decimal(12,2); NULL; DEFAULT 0.00 — Sin comentario definido en el esquema fuente.
  * - `total_interest`: decimal(12,2); NULL; DEFAULT 0.00 — Sin comentario definido en el esquema fuente.
  * - `total_ingress`: decimal(12,2); NULL; DEFAULT 0.00 — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `state_type_id`: char(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
  * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
@@ -53,7 +53,7 @@ CREATE TABLE `bank_loans` (
   `total` decimal(12,2) DEFAULT '0.00',
   `total_interest` decimal(12,2) DEFAULT '0.00',
   `total_ingress` decimal(12,2) DEFAULT '0.00',
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `state_type_id` char(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,

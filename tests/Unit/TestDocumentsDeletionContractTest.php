@@ -25,7 +25,7 @@ class TestDocumentsDeletionContractTest extends TestCase
         $controller = $this->source('app/Http/Controllers/Tenant/OptionController.php');
 
         self::assertStringContainsString("DB::connection('tenant')->transaction", $controller);
-        self::assertStringContainsString("Document::where('soap_type_id', '01')->get()", $controller);
+        self::assertStringContainsString("Document::where('fiscal_environment', 'demo')->get()", $controller);
         self::assertStringContainsString('$document->items()->delete();', $controller);
         self::assertStringContainsString('$document->payments()->each', $controller);
         self::assertStringContainsString('$document->items()->delete();', $controller);

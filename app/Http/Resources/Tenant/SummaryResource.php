@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\Tenant;
 
@@ -18,27 +19,7 @@ class SummaryResource extends JsonResource
         $response_message = null;
         $response_type = null;
 
-        if($this->soap_shipping_response){
-            if($this->soap_shipping_response->sent){
 
-                $response_message = $this->soap_shipping_response->description;
-                $status_code =  $this->soap_shipping_response->status_code;
-
-                switch ($status_code) {
-                    case 0:
-                        $response_type = 'success';
-                        break;
-                    case 99:
-                        $response_type = 'error';
-                        break;
-                    default:
-                        $response_type = 'error';
-                        break;
-                }
- 
-            }
-
-        }
 
         return [
             'id' => $this->id,
@@ -51,9 +32,7 @@ class SummaryResource extends JsonResource
             'manually_regularized' => $this->manually_regularized,
             'error_manually_regularized' => $this->error_manually_regularized,
 
-            'send_to_pse' => $this->send_to_pse,
-            'response_signature_pse' => optional($this->response_signature_pse)->message,
-            'response_send_cdr_pse' => optional($this->response_send_cdr_pse)->message,
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

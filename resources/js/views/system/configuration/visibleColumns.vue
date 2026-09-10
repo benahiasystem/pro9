@@ -380,7 +380,7 @@ const MODULES = {
     document_index: {
         label: 'Boleta / Factura',
         columns: {
-            soap_type:         { title: 'Soap',                       visible: false, type: 'text'     },
+            fiscal_environment_type:         { title: 'Ambiente',                       visible: false, type: 'text'     },
             date_of_issue:     { title: 'Emisión',                    visible: true,  type: 'date'     },
             date_payment:      { title: 'Fecha de pago',              visible: false, type: 'date'     },
             date_of_due:       { title: 'F. Vencimiento',             visible: false, type: 'date'     },

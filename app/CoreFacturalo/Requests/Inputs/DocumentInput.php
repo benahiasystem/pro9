@@ -27,14 +27,14 @@ class DocumentInput
         $number = $inputs['number'];
 
         $company = Company::active();
-        $soap_type_id = $company->soap_type_id;
+        $fiscal_environment = $company->fiscal_environment;
 
         $offline_configuration = OfflineConfiguration::firstOrFail();
-        // $number = Functions::newNumber($soap_type_id, $document_type_id, $series, $number, Document::class);
+        // $number = Functions::newNumber($fiscal_environment, $document_type_id, $series, $number, Document::class);
         $configuration = Configuration::getColumnsForDocuments();
 
         if ($number !== '#') {
-            Functions::validateUniqueDocument($soap_type_id, $document_type_id, $series, $number, Document::class);
+            Functions::validateUniqueDocument($fiscal_environment, $document_type_id, $series, $number, Document::class);
         }
 
         // $filename = Functions::filename($company, $document_type_id, $series, $number);
@@ -86,7 +86,7 @@ class DocumentInput
             'external_id' => Str::uuid()->toString(),
             'establishment_id' => $inputs['establishment_id'],
             'establishment' => $establishment,
-            'soap_type_id' => $soap_type_id,
+            'fiscal_environment' => $fiscal_environment,
             'state_type_id' => '01',
             'ubl_version' => '2.1',
             'filename' => '',//$filename,
@@ -159,7 +159,7 @@ class DocumentInput
             'fee' => Functions::valueKeyInArray($inputs, 'fee', []),
             'is_editable' => true,
             'total_pending_payment' => Functions::valueKeyInArray($inputs, 'total_pending_payment', 0),
-            'tip' => self::tip($inputs, $soap_type_id),
+            'tip' => self::tip($inputs, $fiscal_environment),
             'ticket_single_shipment' => $ticket_single_shipment,
             'point_system' => $point_system_data['point_system'],
             'point_system_data' => $point_system_data['point_system_data'],
@@ -680,10 +680,10 @@ class DocumentInput
      * TipTrait
      *
      * @param  array $inputs
-     * @param  string $soap_type_id
+     * @param  string $fiscal_environment
      * @return array
      */
-    public static function tip($inputs, $soap_type_id)
+    public static function tip($inputs, $fiscal_environment)
     {
         $worker_full_name_tips = Functions::valueKeyInArray($inputs, 'worker_full_name_tips');
         $total_tips = Functions::valueKeyInArray($inputs, 'total_tips', 0);
@@ -694,7 +694,7 @@ class DocumentInput
                 'date' => date('Y-m-d'),
                 'worker_full_name' => $worker_full_name_tips,
                 'total' => $total_tips,
-                'soap_type_id' => $soap_type_id,
+                'fiscal_environment' => $fiscal_environment,
                 'origin_date_of_issue' => $inputs['date_of_issue'],
             ];
         }

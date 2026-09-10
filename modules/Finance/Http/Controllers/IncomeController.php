@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Finance\Http\Controllers;
 
@@ -178,9 +179,9 @@ class IncomeController extends Controller
 
         $values = [
             'user_id' => auth()->id(),
-            'number' => $inputs['id'] ? $inputs['number'] : self::newNumber($company->soap_type_id),
+            'number' => $inputs['id'] ? $inputs['number'] : self::newNumber($company->fiscal_environment),
             'state_type_id' => '05',
-            'soap_type_id' => $company->soap_type_id,
+            'fiscal_environment' => $company->fiscal_environment,
             'external_id' => Str::uuid()->toString(),
         ];
 
@@ -189,10 +190,10 @@ class IncomeController extends Controller
         return $inputs->all();
     }
 
-    private static function newNumber($soap_type_id){
+    private static function newNumber($fiscal_environment){
 
         $number = Income::select('number')
-                            ->where('soap_type_id', $soap_type_id)
+                            ->where('fiscal_environment', $fiscal_environment)
                             ->max('number');
 
         return ($number) ? (int)$number+1 : 1;
@@ -240,3 +241,4 @@ class IncomeController extends Controller
 
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

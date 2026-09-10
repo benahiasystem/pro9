@@ -1,3 +1,4 @@
+{{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
 @extends('tenant.layouts.app')
 
 @push('styles')
@@ -14,9 +15,10 @@
     <tenant-pos-index
         :configuration2="{{\App\Models\Tenant\Configuration::getPublicConfig()}}"
         :configuration="{{ $configuration}}"
-     	:soap-company="{{ json_encode($soap_company) }}"
+        :company-environment="{{ json_encode($company_environment) }}"
       :business-turns="{{ $business_turns }}"
       :type-user="{{json_encode(Auth::user()->type)}}"
       :is-print="{{json_encode($configuration->auto_print)}}">
     </tenant-pos-index>
 @endsection
+{{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}

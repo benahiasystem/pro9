@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Purchase\Http\Controllers\Api;
 
@@ -261,7 +262,7 @@ class PurchaseController extends Controller
             'establishment_id' => auth()->user()->establishment_id,
             'external_id' => Str::uuid()->toString(),
             'supplier' => PersonInput::set($inputs['supplier_id']),
-            'soap_type_id' => $company->soap_type_id,
+            'fiscal_environment' => $company->fiscal_environment,
             'group_id' => ($inputs->document_type_id === '01') ? '01':'02',
             'state_type_id' => '01'
         ];
@@ -357,3 +358,4 @@ class PurchaseController extends Controller
 
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

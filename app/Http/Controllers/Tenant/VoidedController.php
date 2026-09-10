@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Controllers\Tenant;
 
@@ -58,7 +59,6 @@ class VoidedController extends Controller
     {
         $validate = $this->validateVoided($request);
         if(!$validate['success']) return $validate;
-        if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
 
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
@@ -178,3 +178,4 @@ class VoidedController extends Controller
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

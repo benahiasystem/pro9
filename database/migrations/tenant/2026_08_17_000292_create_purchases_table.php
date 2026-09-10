@@ -10,7 +10,7 @@
  * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `state_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `group_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `document_type_id`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -78,7 +78,7 @@ CREATE TABLE `purchases` (
   `user_id` int(10) unsigned NOT NULL,
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `group_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -135,7 +135,7 @@ CREATE TABLE `purchases` (
   KEY `purchases_user_id_foreign` (`user_id`),
   KEY `purchases_establishment_id_foreign` (`establishment_id`),
   KEY `purchases_supplier_id_foreign` (`supplier_id`),
-  KEY `purchases_soap_type_id_foreign` (`soap_type_id`),
+  KEY `purchases_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `purchases_state_type_id_foreign` (`state_type_id`),
   KEY `purchases_group_id_foreign` (`group_id`),
   KEY `purchases_document_type_id_foreign` (`document_type_id`),

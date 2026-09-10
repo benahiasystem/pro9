@@ -14,13 +14,6 @@ class Company extends ModelTenant
         'number',
         'name',
         'trade_name',
-        'soap_send_id',
-        'soap_type_id',
-        'soap_username',
-        'soap_password',
-        'soap_url',
-        'certificate',
-        'certificate_due',
         'logo',
         'logo_dark',
         'operation_amazonia',
@@ -31,31 +24,17 @@ class Company extends ModelTenant
         'app_logo',
 
         // section disabled
-        'url_send_cdr_pse',
-        'url_signature_pse',
-        'client_id_pse',
-        // 'password_pse',
-        'url_login_pse',
-        // 'user_pse',
 
         'ws_api_token',
         'ws_api_phone_number_id',
         'qr_api_url_ws',
         'qr_api_key_ws',
         'qr_api_enable_ws',
-        'soap_sunat_username',
-        'soap_sunat_password',
-        'api_sunat_id',
-        'api_sunat_secret',
         'title_web',
         'sire_client_id',
         'sire_client_secret',
         'sire_username',
         'sire_password',
-        'send_document_to_pse',
-        'pse_provider_id',
-        'pse_username',
-        'pse_password',
         'security_code',
         'mtc_code',
         'name_person_support_contaweb',
@@ -63,8 +42,11 @@ class Company extends ModelTenant
         'email_support_contaweb',
     ];
 
+    // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+    protected $hidden = ['fiscal_credentials'];
+    // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
+
     protected $casts = [
-        'send_document_to_pse' => 'bool',
         'qr_api_enable_ws' => 'bool'
     ];
 
@@ -123,13 +105,13 @@ class Company extends ModelTenant
 
     /**
      *
-     * Obtener soap_type_id para registro de entorno en tablas relacionadas
+     * Obtener fiscal_environment para registro de entorno en tablas relacionadas
      *
      * @return string
      */
-    public static function getCompanySoapTypeId()
+    public static function getCompanyFiscalEnvironment()
     {
-        return Company::select('soap_type_id')->withOut(['identity_document_type'])->firstOrFail()->soap_type_id;
+        return Company::select('fiscal_environment')->withOut(['identity_document_type'])->firstOrFail()->fiscal_environment;
     }
 
 
@@ -184,9 +166,9 @@ class Company extends ModelTenant
         return $query->select('qr_api_url_ws', 'qr_api_key_ws', 'qr_api_enable_ws');
     }
 
-    public function scopeGetTypeSoap($query)
+    public function scopeGetFiscalEnvironment($query)
     {
-        return $query->select('soap_type_id')->first();
+        return $query->select('fiscal_environment')->first();
     }
 
     /**
@@ -233,7 +215,7 @@ class Company extends ModelTenant
      */
     public function getCheckColumnsForSystemActivity()
     {
-        return ['number', 'name', 'soap_send_id', 'soap_type_id', 'soap_username', 'soap_password', 'soap_url', 'certificate'];
+        return ['number', 'name'];
     }
 
     public function scopeSelectCertificateQzTray($query)

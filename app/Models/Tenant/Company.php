@@ -3,7 +3,7 @@
 namespace App\Models\Tenant;
 
 use App\Models\Tenant\Catalogs\IdentityDocumentType;
-use App\Models\Tenant\SoapType;
+use App\Models\Tenant\FiscalEnvironment;
 use Modules\LevelAccess\Models\SystemActivityLog;
 
 
@@ -22,15 +22,9 @@ class Company extends ModelTenant
         'number',
         'name',
         'trade_name',
-        'soap_send_id',
-        'soap_type_id',
-        'soap_username',
-        'soap_password',
-        'soap_url',
-        'certificate',
+        'fiscal_environment',
         'digital_certificate_qztray',
         'private_certificate_qztray',
-        'certificate_due',
         'logo',
         'logo_dark',
         'operation_amazonia',
@@ -39,27 +33,23 @@ class Company extends ModelTenant
         'integrated_query_client_id',
         'integrated_query_client_secret',
         'app_logo',
-        'send_document_to_pse',
-        'url_send_cdr_pse',
-        'url_signature_pse',
-        'client_id_pse',
-        'password_pse',
-        'url_login_pse',
-        'user_pse',
         'ws_api_token',
         'ws_api_phone_number_id',
-        'soap_sunat_username',
-        'soap_sunat_password',
-        'api_sunat_id',
-        'api_sunat_secret',
         'title_web',
-        'pse_provider_id',
         'mtc_code'
     ];
 
     protected $casts = [
-        'send_document_to_pse' => 'bool',
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        'fiscal_configuration' => 'array',
+        'fiscal_credentials' => 'encrypted',
+        'fiscal_environment_locked' => 'boolean',
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
     ];
+
+    // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+    protected $hidden = ['fiscal_credentials'];
+    // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
 
     /**
      * @return mixed
@@ -187,13 +177,13 @@ class Company extends ModelTenant
 
     /**
      *
-     * Obtener soap_type_id para registro de entorno en tablas relacionadas
+     * Obtener fiscal_environment para registro de entorno en tablas relacionadas
      *
      * @return string
      */
-    public static function getCompanySoapTypeId()
+    public static function getCompanyFiscalEnvironment()
     {
-        return Company::select('soap_type_id')->withOut(['identity_document_type'])->firstOrFail()->soap_type_id;
+        return Company::select('fiscal_environment')->withOut(['identity_document_type'])->firstOrFail()->fiscal_environment;
     }
 
 
@@ -283,9 +273,9 @@ class Company extends ModelTenant
         return $query->select('digital_certificate_qztray', 'private_certificate_qztray')->withOut(['identity_document_type']);
     }
 
-    public function scopeGetTypeSoap($query)
+    public function scopeGetFiscalEnvironment($query)
     {
-        return $query->select('soap_type_id')->first();
+        return $query->select('fiscal_environment')->first();
     }
     /**
      *
@@ -331,7 +321,7 @@ class Company extends ModelTenant
      */
     public function getCheckColumnsForSystemActivity()
     {
-        return ['number', 'name', 'soap_send_id', 'soap_type_id', 'soap_username', 'soap_password', 'soap_url', 'certificate'];
+        return ['number', 'name'];
     }
 
 
@@ -345,9 +335,9 @@ class Company extends ModelTenant
         return "{$this->getTable()}_{$column}";
     }
 
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function scopeGetInformationCompany($query)

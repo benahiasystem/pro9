@@ -24,7 +24,7 @@ No exponer URL, token, cabeceras, cuerpo remoto ni mensajes crudos. No reutiliza
 ## Límites de alcance
 
 - Conservar sin cambios formularios, catálogos, rutas y servicios tenant.
-- Conservar SOAP, certificados, credenciales de envío y referencias SUNAT/RUC que describan contratos fiscales peruanos ajenos al identificador del cliente del sistema.
+- SOAP y los certificados PFX de envío fiscal están retirados. El alta nueva debe insertar modalidad y ambiente obligatorios desde el primer guardado de la empresa, sin conversión de tenants anteriores. Aplicar [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md); mantener intacta la normalización y unicidad del RIF.
 - Mantener fuera de esta migración el autoregistro RUC/SUNAT, la búsqueda pública por RUC emisor, facturación masiva y `System\\Api\\TenantController`; son flujos públicos o documentales distintos del mantenimiento autenticado de clientes.
 - No copiar URLs, tokens, `dd()`, logs de respuestas ni bundles históricos de Pro6.
 - No editar bundles compilados; verificar mediante el build desde fuentes.
@@ -46,6 +46,6 @@ No envolver funciones preexistentes completas ni insertar marcadores en JSON, ar
 1. Ejecutar `SystemRifTest`, `SystemRifLookupServiceTest` y `SystemRifContractTest`.
 2. Cubrir normalización, cinco prefijos, rechazos de formato, unicidad de requests, proveedor exitoso y fallos controlados.
 3. Confirmar que la ruta RIF aparece una sola vez dentro del grupo autenticado del sistema y no existe en rutas tenant/API/autoregistro.
-4. Auditar textos RUC/RIF del sistema y justificar las exclusiones SOAP, certificados, autoregistro y documentos peruanos.
+4. Auditar textos RUC/RIF del sistema y justificar exclusiones ajenas al flujo; no restaurar SOAP ni certificados fiscales retirados.
 5. Confirmar que ningún archivo tenant fue modificado por este contrato.
 6. Ejecutar `git diff --check`, análisis PHP, PHPUnit completo y `npm run build`; retirar del diff los artefactos generados.

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\WhatsAppBot\Services\Validators;
 
@@ -23,10 +24,11 @@ class SystemGuardValidator implements DocumentValidator
             return ValidationResult::fail('El RIF del negocio no es válido.', 'invalid_company_ruc');
         }
 
-        if ($company->soap_type_id === '02' && (empty($company->soap_username) || empty($company->soap_password))) {
-            return ValidationResult::fail('SOAP está en modo Producción pero faltan las credenciales SUNAT.', 'sunat_credentials_missing_in_prod');
+        if (!array_key_exists($company->fiscal_emission_mode ?? '', \App\Services\FiscalEmissionSettings::MODES)) {
+            return ValidationResult::fail('Configure la modalidad de emisión fiscal del negocio.', 'fiscal_emission_mode_missing');
         }
 
         return ValidationResult::ok();
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

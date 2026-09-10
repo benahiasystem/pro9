@@ -1,9 +1,10 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Finance\Models;
 
 use App\Models\Tenant\User;
-use App\Models\Tenant\SoapType;
+use App\Models\Tenant\FiscalEnvironment;
 use App\Models\Tenant\StateType;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Establishment;
@@ -18,7 +19,7 @@ class Income extends ModelTenant
 
     protected $fillable = [
         'user_id',
-        'soap_type_id',
+        'fiscal_environment',
         'income_type_id',
         'income_reason_id',
         'establishment_id',
@@ -43,9 +44,9 @@ class Income extends ModelTenant
         return $this->hasMany(IncomeItem::class);
     }
 
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function state_type()
@@ -159,3 +160,4 @@ class Income extends ModelTenant
 
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

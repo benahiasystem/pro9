@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Controllers\Tenant\Api;
 
@@ -8,7 +9,6 @@ use App\Http\Resources\Tenant\DispatchCollection;
 use App\Models\Tenant\Dispatch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Modules\ApiPeruDev\Http\Controllers\ServiceDispatchController;
 use App\Models\Tenant\Establishment;
 use Modules\Dispatch\Models\Driver;
 use Modules\Dispatch\Models\Transport;
@@ -38,10 +38,6 @@ class DispatchController extends Controller
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
             $document = $facturalo->getDocument();
-            $data = (new ServiceDispatchController())->getData($document->id);
-            $facturalo->setXmlUnsigned((new ServiceDispatchController())->createXmlUnsigned($data));
-            $service_pse_xml = $facturalo->servicePseSendXml();
-            $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
             $facturalo->createPdf();
             return $facturalo;
         });
@@ -58,38 +54,7 @@ class DispatchController extends Controller
         ];
     }
 
-    public function send(Request $request)
-    {
-        $external_id = $request->input('external_id');
-        $record = Dispatch::query()
-            ->where('external_id', $external_id)
-            ->first();
-        if (!$record) {
-            return [
-                'success' => false,
-                'message' => 'El external id es incorrecto'
-            ];
-        }
-        return ((new ServiceDispatchController())->send($external_id));
-    }
 
-    public function statusTicket(Request $request)
-    {
-        $external_id = $request->input('external_id');
-        $record = Dispatch::query()
-            ->where('external_id', $external_id)
-            ->first();
-        if (!$record) {
-            return [
-                'success' => false,
-                'message' => 'El external id es incorrecto'
-            ];
-        }
-        $res = ((new ServiceDispatchController())->statusTicket($external_id));
-        (new Facturalo())->createPdf($record, 'dispatch', 'a4');
-        return $res;
-
-    }
 
     /**
     * Tables
@@ -171,3 +136,4 @@ class DispatchController extends Controller
         ]);
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

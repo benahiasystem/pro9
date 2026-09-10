@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Inventory\Observers;
 
@@ -15,7 +16,7 @@ class InventoryTransferObserver
 
         $inventory_transfer->user_id = auth()->id();
         $inventory_transfer->external_id = Str::uuid()->toString();
-        $inventory_transfer->soap_type_id = $company->soap_type_id;
+        $inventory_transfer->fiscal_environment = $company->fiscal_environment;
 
         $number = $this->getNumberDocument($inventory_transfer);
         $filename = join('-', [$company->number, $inventory_transfer->document_type_id, $inventory_transfer->series, $number]);
@@ -28,7 +29,7 @@ class InventoryTransferObserver
         if ($inventory_transfer->number === '#') {
             $record = InventoryTransfer::query()
                 ->select('number')
-                ->where('soap_type_id', $inventory_transfer->soap_type_id)
+                ->where('fiscal_environment', $inventory_transfer->fiscal_environment)
                 ->where('document_type_id', $inventory_transfer->document_type_id)
                 ->where('series', $inventory_transfer->series)
                 ->orderBy('number', 'desc')
@@ -40,3 +41,4 @@ class InventoryTransferObserver
         return $inventory_transfer->number;
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

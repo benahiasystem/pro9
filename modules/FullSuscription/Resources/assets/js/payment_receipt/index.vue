@@ -255,7 +255,7 @@ import { deletable } from "../../../../../../resources/js/mixins/deletable";
 export default {
     // tenant-index-payment-receipt
     props: [
-        "soapCompany",
+        "companyEnvironment",
         // 'typeUser',
         "configuration"
     ],

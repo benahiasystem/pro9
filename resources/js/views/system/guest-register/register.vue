@@ -437,6 +437,7 @@
                         </div>
                     </div>
 
+                    <div class="col-md-12"><fiscal-emission-fields :form="form" :errors="errors" /></div>
                     <div class="col-md-12 text-end pt-2">
                         <button
                             class="btn-signin btn-block mt-0"
@@ -631,9 +632,11 @@
 </template>
 
 <script>
+import FiscalEmissionFields from '../../../components/FiscalEmissionFields.vue'
 import { serviceNumber } from "../../../mixins/functions";
 
 export default {
+    components: { FiscalEmissionFields },
     props: {
         baseUrl: {
             type: String,
@@ -1115,6 +1118,10 @@ export default {
                 password: null,
                 subdomain: null,
                 plan_id: this.planDefault,
+                fiscal_emission_mode: null,
+                fiscal_environment: 'demo',
+                fiscal_configuration: {},
+                fiscal_credentials: '',
                 guest_register: {},
                 payment: {
                     card_number: null,

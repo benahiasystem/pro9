@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Inventory\Http\Controllers;
 
@@ -301,7 +302,7 @@ class ReportKardexController extends Controller
                         $query
                             ->without([
                                 'user',
-                                'soap_type',
+                                'fiscal_environment_type',
                                 'state_type',
                                 'document_type',
                                 'currency_type',
@@ -319,7 +320,7 @@ class ReportKardexController extends Controller
                                             'affected_document' => function ($query) {
                                                 $query->without([
                                                         'user',
-                                                        'soap_type',
+                                                        'fiscal_environment_type',
                                                         'state_type',
                                                         'document_type',
                                                         'currency_type',
@@ -345,7 +346,7 @@ class ReportKardexController extends Controller
                     Purchase::class => function ($query) {
                         $query
                             ->without([
-                                'user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments'
+                                'user', 'fiscal_environment_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments'
                             ])
                             ->select('id', 'series', 'number', 'date_of_issue');
                     }, 
@@ -356,7 +357,7 @@ class ReportKardexController extends Controller
                         $query
                             ->without([
                                 'user',
-                                'soap_type',
+                                'fiscal_environment_type',
                                 'state_type',
                                 'currency_type',
                                 'items',
@@ -374,7 +375,7 @@ class ReportKardexController extends Controller
                         $query
                             ->without([
                                 'user',
-                                'soap_type',
+                                'fiscal_environment_type',
                                 'state_type',
                                 'currency_type',
                                 'items',
@@ -383,7 +384,7 @@ class ReportKardexController extends Controller
                     },
                     Dispatch::class => function($query) {
                         $query
-                            ->without(['user', 'soap_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type', 'items', 'reference_document']
+                            ->without(['user', 'fiscal_environment_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type', 'items', 'reference_document']
                             )
                             ->with(['transfer_reason_type', 'reference_document',
                                 'sale_note' => function ($query) {
@@ -823,3 +824,4 @@ class ReportKardexController extends Controller
         return $pdf->stream($filename . '.pdf');
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

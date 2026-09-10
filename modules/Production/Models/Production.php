@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 
     namespace Modules\Production\Models;
@@ -12,7 +13,7 @@
     use Hyn\Tenancy\Traits\UsesTenantConnection;
     use Illuminate\Database\Eloquent\Builder;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
-    use App\Models\Tenant\SoapType;
+    use App\Models\Tenant\FiscalEnvironment;
 
     /**
      * Class Production
@@ -99,7 +100,7 @@
             'imperfect',
             'production_collaborator',
             'mix_collaborator',
-            'soap_type_id',
+            'fiscal_environment',
         ];
 
         /**
@@ -121,9 +122,9 @@
         /**
          * @return BelongsTo
          */
-        public function soap_type()
+        public function fiscal_environment_type()
         {
-            return $this->belongsTo(SoapType::class);
+            return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
         }
 
         public function getCollectionData()
@@ -174,3 +175,4 @@
             $this->attributes['item_extra_data'] = (null === $value) ? null : json_encode($value);
         }
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

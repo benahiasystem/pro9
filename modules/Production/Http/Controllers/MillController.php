@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace Modules\Production\Http\Controllers;
 
@@ -59,7 +60,7 @@
             $values = [
                 'user_id' => auth()->id(),
                 'state_type_id' => $inputs['id'] ? $inputs['state_type_id'] : '05',
-                'soap_type_id' => $company->soap_type_id,
+                'fiscal_environment' => $company->fiscal_environment,
                 'external_id' => $inputs['id'] ? $inputs['external_id'] : Str::uuid()->toString(),
                 'supplier' => PersonInput::set($inputs['supplier_id']),
             ];
@@ -118,7 +119,7 @@
             if(empty($model->user_id)) {
                 $model->user_id = \Auth::user()->id;
             }
-            $model->soap_type_id = $this->getCompanySoapTypeId();
+            $model->fiscal_environment = $this->getCompanyFiscalEnvironment();
             $model->save();
 
             $userWarehouse = \Auth::user()->establishment;
@@ -485,3 +486,4 @@
             return $pdf->stream($filename.'.pdf');
         }
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -58,11 +58,11 @@ class QuotationController extends Controller
 
     public function index()
     {
-        $company = Company::select('soap_type_id')->first();
-        $soap_company = $company->soap_type_id;
+        $company = Company::select('fiscal_environment')->first();
+        $company_environment = $company->fiscal_environment;
         $generate_order_note_from_quotation = Configuration::getRecordIndividualColumn('generate_order_note_from_quotation');
 
-        return view('tenant.quotations.index', compact('soap_company', 'generate_order_note_from_quotation'));
+        return view('tenant.quotations.index', compact('company_environment', 'generate_order_note_from_quotation'));
     }
 
 
@@ -446,7 +446,7 @@ class QuotationController extends Controller
             'external_id' => Str::uuid()->toString(),
             'customer' => PersonInput::set($inputs['customer_id'], isset($inputs['customer_address_id']) ? $inputs['customer_address_id'] : null),
             'establishment' => EstablishmentInput::set($inputs['establishment_id']),
-            'soap_type_id' => $this->company->soap_type_id,
+            'fiscal_environment' => $this->company->fiscal_environment,
             'state_type_id' => '01'
         ];
 
@@ -1181,7 +1181,7 @@ class QuotationController extends Controller
 
             try {
                 if ($quotation && $quotation->filename) {
-                    $this->createPdf($quotation->fresh(['items', 'user', 'soap_type', 'state_type', 'currency_type']), 'a4', $quotation->filename);
+                    $this->createPdf($quotation->fresh(['items', 'user', 'fiscal_environment_type', 'state_type', 'currency_type']), 'a4', $quotation->filename);
                 }
             } catch (Exception $pdfError) {
                 // Los precios ya se guardaron; el PDF puede regenerarse luego.

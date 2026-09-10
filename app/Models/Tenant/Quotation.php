@@ -30,7 +30,7 @@ class Quotation extends ModelTenant
      */
     public const SERIES_ECOMMERCE = 'COTV';
 
-    protected $with = ['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments'];
+    protected $with = ['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments'];
 
     protected $fillable = [
         'id',
@@ -38,7 +38,7 @@ class Quotation extends ModelTenant
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'payment_method_type_id',
 
@@ -216,9 +216,9 @@ class Quotation extends ModelTenant
         return $this->belongsTo(User::class);
     }
 
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function state_type()
@@ -526,7 +526,7 @@ class Quotation extends ModelTenant
         $btn_generate_cnt = $row->contract ?false:true;
         $external_id_contract = $row->contract ? $row->contract->external_id : null;
 
-        $btn_options = ($row->state_type_id != '11') && $btn_generate && ($company->soap_type_id !== '03');
+        $btn_options = ($row->state_type_id != '11') && $btn_generate && (true);
         if($user->type === 'seller') {
             $btn_options = $btn_options && ($configuration->quotation_allow_seller_generate_sale);
         } else {
@@ -557,7 +557,7 @@ class Quotation extends ModelTenant
             'items' => $items,
             'order_note' => (object)$orderNote,
             'payment_method_type_id' => $row->payment_method_type_id,
-            'soap_type_id' => $row->soap_type_id,
+            'fiscal_environment' => $row->fiscal_environment,
             'external_id' => $row->external_id,
             'number_full' => $row->number_full,
             'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
@@ -700,7 +700,7 @@ class Quotation extends ModelTenant
      */
     public function scopeWhereFilterWithOutRelations($query)
     {
-        return $query->withOut(['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments']);
+        return $query->withOut(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments']);
     }
 
 

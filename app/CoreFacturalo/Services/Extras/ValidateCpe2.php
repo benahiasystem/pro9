@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\CoreFacturalo\Services\Extras;
 
@@ -176,7 +177,7 @@ class ValidateCpe2
             $date_from = $date->format('Y-m-d');
             $date_to = $date->endOfMonth()->format('Y-m-d');
             $documents = Document::where('state_type_id', '01')
-                ->where('soap_type_id', '02')
+                ->where('fiscal_environment', 'production')
                 ->where('document_type_id', '03')
                 ->where('series', 'B146')
                 ->whereBetween('date_of_issue', [$date_from, $date_to])
@@ -207,3 +208,4 @@ class ValidateCpe2
         }
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -101,7 +101,7 @@ class FacturaloDraftMapper
             'establishment_id' => $establishmentId,
             'establishment' => $this->establishmentSnapshot($establishmentId),
             'group_id' => '01',
-            'soap_type_id' => '02',
+            'fiscal_environment' => 'production',
             'state_type_id' => '01',
             'ubl_version' => '2.1',
             'document_type_id' => $documentTypeId,
@@ -166,7 +166,6 @@ class FacturaloDraftMapper
             'has_pdf' => false,
             'has_cdr' => false,
             'actions' => [
-                'send_to_pse' => false,
                 'format_pdf' => 'ticket',
             ],
         ];

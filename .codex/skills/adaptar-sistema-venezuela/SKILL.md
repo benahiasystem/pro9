@@ -54,6 +54,8 @@ Las migraciones consolidadas no deben ejecutarse directamente sobre un tenant cu
 
 ## Alta y primer acceso de un tenant
 
+Modalidad y ambiente se rigen por [mantener-modalidad-emision-fiscal-pro9](../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Para esta adaptación sólo hay instalaciones nuevas: crear directamente `fiscal_environment` y `fiscal_emission_mode`, ambos obligatorios; no conservar SOAP/PFX ni crear conversiones de tenants anteriores. Esta excepción prevalece sobre las reglas generales de migración incremental y de comprobación en tenants reales de esta skill. La compatibilidad de los demás módulos requiere un plan separado.
+
 <!-- ######## INICIO CONTRATO DE INICIALIZACIÓN TENANT ######## -->
 
 - No resolver `CurrentHostname` directamente durante `AppServiceProvider::boot()`: diferir cualquier configuración dependiente del tenant hasta `app->booted()` o hasta middleware.

@@ -507,7 +507,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                 'user_id' => auth()->id(),
                 'external_id' => Str::uuid()->toString(),
                 'supplier' => PersonInput::set($inputs['supplier_id']),
-                'soap_type_id' => $company->soap_type_id,
+                'fiscal_environment' => $company->fiscal_environment,
                 'group_id' => ($inputs->document_type_id === '01') ? '01' : '02',
                 'state_type_id' => '01'
             ];
@@ -1276,7 +1276,7 @@ use Modules\Purchase\Helpers\WeightedAverageCostHelper;
                     'user_id' => auth()->id(),
                     'external_id' => Str::uuid()->toString(),
                     'supplier' => PersonInput::set($model['supplier_id']),
-                    'soap_type_id' => $company['soap_type_id'],
+                    'fiscal_environment' => $company['fiscal_environment'],
                     'group_id' => ($model['document_type_id'] === '01') ? '01' : '02',
                     'state_type_id' => '01',
                     'time_of_issue' => Carbon::parse($model['time_of_issue'])->format('H:i:s'),

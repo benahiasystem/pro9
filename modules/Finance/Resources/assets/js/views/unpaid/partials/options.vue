@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
     <el-dialog
                :title="titleDialog"
@@ -121,7 +122,7 @@ export default {
                 group_id: null,
             };
             this.company = {
-                soap_type_id: null,
+                fiscal_environment: null,
             }
         },
         async create() {
@@ -195,3 +196,4 @@ export default {
     }
 }
 </script>
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

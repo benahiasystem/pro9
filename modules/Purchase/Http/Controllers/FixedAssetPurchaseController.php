@@ -192,7 +192,7 @@ class FixedAssetPurchaseController extends Controller
             'user_id' => auth()->id(),
             'external_id' => Str::uuid()->toString(),
             'supplier' => PersonInput::set($inputs['supplier_id']),
-            'soap_type_id' => $company->soap_type_id,
+            'fiscal_environment' => $company->fiscal_environment,
             'group_id' => ($inputs->document_type_id === '01') ? '01':'02',
             'state_type_id' => '01'
         ];

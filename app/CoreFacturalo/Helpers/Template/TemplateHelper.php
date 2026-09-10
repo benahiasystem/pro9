@@ -433,9 +433,9 @@ use Illuminate\Support\Str;
             return Configuration::getConfigurationShowGuaranteeFund();
         }
 
-        public static function getTypeSoap()
+        public static function getFiscalEnvironment()
         {
-            return Company::getTypeSoap();
+            return Company::getFiscalEnvironment();
         }
 
         public static function getInformationCompany()

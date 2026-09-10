@@ -46,7 +46,6 @@ use Illuminate\Support\Facades\Log;
      * @property bool        $locked_tenant
      * @property bool        $compact_sidebar
      * @property float       $amount_plastic_bag_taxes
-     * @property bool        $config_system_env
      * @property int|null    $colums_grid_item
      * @property bool        $options_pos
      * @property bool        $edit_name_product
@@ -109,11 +108,7 @@ use Illuminate\Support\Facades\Log;
      * @property bool        $show_service_on_pos
      * @property bool        $locked_admin
      * @property string|null $certificate
-     * @property string|null $soap_send_id
-     * @property string|null $soap_type_id
-     * @property string|null $soap_username
-     * @property string|null $soap_password
-     * @property string|null $soap_url
+     * @property string|null $fiscal_environment
      * @property string|null $token_public_culqui
      * @property string|null $token_private_culqui
      * @property string|null $url_apiruc
@@ -132,11 +127,7 @@ use Illuminate\Support\Facades\Log;
      * @method static Builder|Configuration whereId($value)
      * @method static Builder|Configuration whereLockedAdmin($value)
      * @method static Builder|Configuration whereLogin($value)
-     * @method static Builder|Configuration whereSoapPassword($value)
-     * @method static Builder|Configuration whereSoapSendId($value)
-     * @method static Builder|Configuration whereSoapTypeId($value)
-     * @method static Builder|Configuration whereSoapUrl($value)
-     * @method static Builder|Configuration whereSoapUsername($value)
+     * @method static Builder|Configuration whereFiscalEnvironmentId($value)
      * @method static Builder|Configuration whereTokenApiruc($value)
      * @method static Builder|Configuration whereTokenPrivateCulqui($value)
      * @method static Builder|Configuration whereTokenPublicCulqui($value)
@@ -168,7 +159,6 @@ use Illuminate\Support\Facades\Log;
             'change_free_affectation_igv',
             'colums_grid_item',
             'compact_sidebar',
-            'config_system_env',
             'cotizaction_finance',
             'cron',
             'currency_type_id',
@@ -434,7 +424,6 @@ use Illuminate\Support\Facades\Log;
             'locked_tenant' => 'bool',
             'compact_sidebar' => 'bool',
             'amount_plastic_bag_taxes' => 'float',
-            'config_system_env' => 'bool',
             'colums_grid_item' => 'int',
             'options_pos' => 'bool',
             'edit_name_product' => 'bool',
@@ -1871,24 +1860,6 @@ use Illuminate\Support\Facades\Log;
             return $this;
         }
 
-        /**
-         * @return bool
-         */
-        public function isConfigSystemEnv(): ?bool
-        {
-            return (bool)$this->config_system_env;
-        }
-
-        /**
-         * @param bool|null $config_system_env
-         *
-         * @return Configuration
-         */
-        public function setConfigSystemEnv(?bool $config_system_env): Configuration
-        {
-            $this->config_system_env = (bool)$config_system_env;
-            return $this;
-        }
 
         /**
          * @return int|null

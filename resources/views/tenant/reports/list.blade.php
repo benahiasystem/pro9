@@ -35,7 +35,7 @@
                 <div class="card-body">
                     <h6 class="card-title">General</h6>
                     <ul class="card-report-links">
-                        @if($vc_company->soap_type_id != '03')
+                        {{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
                             <li>
                                 <a href="{{route('tenant.consistency-documents.index')}}">
                                     Consistencia documentos
@@ -44,7 +44,7 @@
                             {{-- ########## INICIO CAMBIO SIN XML CDR SUNAT --}}
                             {{-- No se ofrece validación contra una autoridad fiscal externa. --}}
                             {{-- ######### FIN CAMBIO SIN XML CDR SUNAT --}}
-                        @endif
+                        {{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}
                         @if(in_array('hotel', $vc_business_turns))
                             <li>
                                 <a href="{{route('tenant.reports.document_hotels.index')}}">
@@ -125,11 +125,11 @@
                 <div class="card-body">
                     <h6 class="card-title">Ventas</h6>
                     <ul class="card-report-links">
-                        @if($vc_company->soap_type_id != '03')
+                        {{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
                             <li>
                                 <a href="{{route('tenant.reports.sales.index')}}">Documentos</a>
                             </li>
-                        @endif
+                        {{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}
                         <li>
                             <a href="{{route('tenant.reports.customers.index')}}">Clientes</a>
                         </li>

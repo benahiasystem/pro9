@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Report\Http\Resources;
 
@@ -82,8 +83,8 @@ class StateAccountCollection extends ResourceCollection
             return [
                 'id' => $row->id,
                 'group_id' => $row->group_id,
-                'soap_type_id' => $row->soap_type_id,
-                'soap_type_description' => isset($row->soap_type)?$row->soap_type->description:null,
+                'fiscal_environment' => $row->fiscal_environment,
+                'fiscal_environment_description' => isset($row->fiscal_environment_type)?$row->fiscal_environment_type->description:null,
                 'date_of_issue' => $row->date_of_issue?$row->date_of_issue->format('Y-m-d'):null,
                 'date_of_due' => (in_array($document_type_id, ['01', '03'])) ?$row->invoice->date_of_due->format('Y-m-d') : (($date_of_due) ? $date_of_due->format('Y-m-d') : null),
                 'number' => $row->number_full,
@@ -138,3 +139,4 @@ class StateAccountCollection extends ResourceCollection
         });
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -45,7 +45,7 @@ trait SuscriptionDocumentService
     public function transform(array $values, $get_ids): array
     {
         $company              = Company::active();
-        $soap_type_id         = $company->soap_type_id;
+        $fiscal_environment         = $company->fiscal_environment;
         $customer             = (object) $values['customer'];
         $identity_document_type_id = $customer->identity_document_type_id;
         $establishment_id     = auth()->user()->establishment_id;
@@ -75,7 +75,7 @@ trait SuscriptionDocumentService
             'external_id'             => Str::uuid()->toString(),
             'document_type_id'        => $document_type_id,
             'number'                  => '#',
-            'soap_type_id'            => $soap_type_id,
+            'fiscal_environment'            => $fiscal_environment,
             'state_type_id'           => '01',
             'ubl_version'             => '2.1',
             'date_of_issue'           => now()->format('Y-m-d'),

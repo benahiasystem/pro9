@@ -8,7 +8,7 @@
  * Inventario de columnas:
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
  * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `expense_type_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `supplier_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
@@ -38,7 +38,7 @@ return new class extends Migration
 CREATE TABLE `expenses` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `expense_type_id` int(10) unsigned NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `supplier_id` int(10) unsigned NOT NULL,
@@ -63,7 +63,7 @@ CREATE TABLE `expenses` (
   KEY `expenses_expense_type_id_foreign` (`expense_type_id`),
   KEY `expenses_currency_type_id_foreign` (`currency_type_id`),
   KEY `expenses_expense_reason_id_foreign` (`expense_reason_id`),
-  KEY `expenses_soap_type_id_foreign` (`soap_type_id`),
+  KEY `expenses_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `expenses_state_type_id_foreign` (`state_type_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);

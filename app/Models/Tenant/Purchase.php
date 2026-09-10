@@ -50,7 +50,7 @@ use Illuminate\Database\Eloquent\Collection;
  * @property \Illuminate\Database\Eloquent\Collection|\App\Models\Tenant\PurchasePayment[] $purchase_payments
  * @property int|null $purchase_payments_count
  * @property mixed $related_documents
- * @property \App\Models\Tenant\SoapType $soap_type
+ * @property \App\Models\Tenant\FiscalEnvironment $fiscal_environment_type
  * @property \App\Models\Tenant\StateType $state_type
  * @property \App\Models\Tenant\User $user
  * @method static \Illuminate\Database\Eloquent\Builder|Purchase dasboardSalePurchase($establishment_id = 0)
@@ -67,14 +67,14 @@ class Purchase extends ModelTenant
 
     // use SoftDeletes;
 
-    protected $with = ['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments'];
+    protected $with = ['user', 'fiscal_environment_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments'];
 
     protected $fillable = [
         'user_id',
         'external_id',
         'establishment_id',
         // 'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'group_id',
         'document_type_id',
@@ -248,9 +248,9 @@ class Purchase extends ModelTenant
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     /**
@@ -497,7 +497,7 @@ class Purchase extends ModelTenant
     public function scopeDasboardSalePurchase( $query, $establishment_id = 0) {
         $query->without(
             [
-                'user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items',
+                'user', 'fiscal_environment_type', 'state_type', 'document_type', 'currency_type', 'group', 'items',
                 'purchase_payments',
             ]
         );
@@ -593,7 +593,7 @@ class Purchase extends ModelTenant
             'document_type_description'      => $this->document_type->description,
             'group_id'                       => $this->group_id,
             'guides'                       => $guides,
-            'soap_type_id'                   => $this->soap_type_id,
+            'fiscal_environment'                   => $this->fiscal_environment,
             'date_of_issue'                  => $this->date_of_issue->format('Y-m-d'),
             'date_of_due'                    => ($this->date_of_due) ? $this->date_of_due->format('Y-m-d') : '-',
             'purchase_order'                         => $this->purchase_order,
@@ -849,7 +849,7 @@ class Purchase extends ModelTenant
      */
     public function scopeWhereFilterWithOutRelations($query)
     {
-        return $query->withOut(['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments']);
+        return $query->withOut(['user', 'fiscal_environment_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'purchase_payments']);
     }
 
 

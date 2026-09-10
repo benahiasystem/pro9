@@ -1,3 +1,4 @@
+{{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
 @php
     $logo = null;
 
@@ -7,7 +8,7 @@
         $logo = "{$establishment->logo}";
     }
 
-    $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
+    $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment();
 @endphp
 
 @if($document->state_type->id == '11')
@@ -50,7 +51,7 @@
             alt="vista previa" class="" style="opacity: 0.6; width: 50%;">
     </div>
 @endif
-@if ($type->soap_type_id === '01')
+@if ($type->fiscal_environment === 'demo')
     <table class="full-width">
         <tr>
             <td style="width: 100%;text-align: center">
@@ -139,3 +140,4 @@
         @endif
     </tr>
 </table>
+{{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}

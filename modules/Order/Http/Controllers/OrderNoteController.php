@@ -74,11 +74,11 @@
 
         public function index()
         {
-            $company = Company::select('soap_type_id')->first();
-            $soap_company = $company->soap_type_id;
+            $company = Company::select('fiscal_environment')->first();
+            $company_environment = $company->fiscal_environment;
             $configuration = Configuration::first();
 
-            return view('order::order_notes.index', compact('soap_company', 'configuration'));
+            return view('order::order_notes.index', compact('company_environment', 'configuration'));
         }
 
 
@@ -514,7 +514,7 @@
                 'external_id' => Str::uuid()->toString(),
                 'customer' => PersonInput::set($request->customer_id),
                 'establishment' => EstablishmentInput::set($request->establishment_id),
-                'soap_type_id' => $this->company->soap_type_id,
+                'fiscal_environment' => $this->company->fiscal_environment,
                 'state_type_id' => '01',
                 'type' => 'order-notes',
             ];
@@ -905,7 +905,7 @@
                 'external_id' => Str::uuid()->toString(),
                 'customer' => PersonInput::set($inputs['customer_id']),
                 'establishment' => EstablishmentInput::set($inputs['establishment_id']),
-                'soap_type_id' => $this->company->soap_type_id,
+                'fiscal_environment' => $this->company->fiscal_environment,
                 'state_type_id' => '01'
             ];
 

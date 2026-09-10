@@ -75,10 +75,10 @@ class OptionController extends Controller
         return DB::connection('tenant')->transaction(function () {
             $this->delete_quantity = 0;
 
-        Summary::where('soap_type_id', '01')->delete();
-        Voided::where('soap_type_id', '01')->delete();
+        Summary::where('fiscal_environment', 'demo')->delete();
+        Voided::where('fiscal_environment', 'demo')->delete();
 
-        $dispatches = Dispatch::where('soap_type_id', '01')->get();
+        $dispatches = Dispatch::where('fiscal_environment', 'demo')->get();
         $this->deleteInventoryKardex(Dispatch::class, $dispatches);
 
         $dispatches->each(function ($dispatch) {
@@ -89,28 +89,28 @@ class OptionController extends Controller
         //Purchase
         $this->deleteInventoryKardex(Purchase::class);
 
-        Purchase::where('soap_type_id', '01')->delete();
+        Purchase::where('fiscal_environment', 'demo')->delete();
 
-        PurchaseOrder::where('soap_type_id', '01')->delete();
-        PurchaseQuotation::where('soap_type_id', '01')->delete();
+        PurchaseOrder::where('fiscal_environment', 'demo')->delete();
+        PurchaseQuotation::where('fiscal_environment', 'demo')->delete();
 
-        $documents = Document::where('soap_type_id', '01')->get();
+        $documents = Document::where('fiscal_environment', 'demo')->get();
         $quantity = $documents->count();
 
         // Los comprobantes de prueba se eliminan junto a sus relaciones de detalle.
         $this->delete_quantity += $quantity;
         $this->deleteRecordsCash(Document::class);
         $this->deleteDocumentRelations($documents);
-        // Document::where('soap_type_id', '01')->delete();
+        // Document::where('fiscal_environment', 'demo')->delete();
 
         $this->update_quantity_documents($quantity);
 
-        Retention::where('soap_type_id', '01')->delete();
-        Perception::where('soap_type_id', '01')->delete();
+        Retention::where('fiscal_environment', 'demo')->delete();
+        Perception::where('fiscal_environment', 'demo')->delete();
 
         //SaleNote
-        $sale_notes = SaleNote::where('soap_type_id', '01')->get();
-        // SaleNote::where('soap_type_id', '01')->delete();
+        $sale_notes = SaleNote::where('fiscal_environment', 'demo')->get();
+        // SaleNote::where('fiscal_environment', 'demo')->delete();
 
         $this->deleteRecordsCash(SaleNote::class);
 
@@ -118,22 +118,22 @@ class OptionController extends Controller
         $this->deleteSaleNoteRelations($sale_notes);
 
 
-        Contract::where('soap_type_id', '01')->delete();
-        // Quotation::where('soap_type_id', '01')->delete();
+        Contract::where('fiscal_environment', 'demo')->delete();
+        // Quotation::where('fiscal_environment', 'demo')->delete();
         $this->deleteQuotation();
 
-        SaleOpportunity::where('soap_type_id', '01')->delete();
+        SaleOpportunity::where('fiscal_environment', 'demo')->delete();
 
-        Expense::where('soap_type_id', '01')->delete();
-        OrderNote::where('soap_type_id', '01')->delete();
-        OrderForm::where('soap_type_id', '01')->delete();
+        Expense::where('fiscal_environment', 'demo')->delete();
+        OrderNote::where('fiscal_environment', 'demo')->delete();
+        OrderForm::where('fiscal_environment', 'demo')->delete();
 
-        GlobalPayment::where('soap_type_id', '01')->delete();
-        Tip::where('soap_type_id', '01')->delete();
+        GlobalPayment::where('fiscal_environment', 'demo')->delete();
+        Tip::where('fiscal_environment', 'demo')->delete();
 
-        Income::where('soap_type_id', '01')->delete();
+        Income::where('fiscal_environment', 'demo')->delete();
 
-        FixedAssetPurchase::where('soap_type_id', '01')->delete();
+        FixedAssetPurchase::where('fiscal_environment', 'demo')->delete();
 
         $this->updateStockAfterDelete();
 
@@ -141,8 +141,8 @@ class OptionController extends Controller
 
         // produccion
 
-        Production::where('soap_type_id', '01')->delete();
-        Packaging::where('soap_type_id', '01')->delete();
+        Production::where('fiscal_environment', 'demo')->delete();
+        Packaging::where('fiscal_environment', 'demo')->delete();
         $this->deleteMill();
 
             return [
@@ -221,7 +221,7 @@ class OptionController extends Controller
      */
     private function deletePaymentLink()
     {
-        $transactions = Transaction::where('soap_type_id', '01')->get();
+        $transactions = Transaction::where('fiscal_environment', 'demo')->get();
 
         foreach ($transactions as $transaction)
         {
@@ -229,7 +229,7 @@ class OptionController extends Controller
             $transaction->delete();
         }
 
-        PaymentLink::where('soap_type_id', '01')->delete();
+        PaymentLink::where('fiscal_environment', 'demo')->delete();
     }
 
 
@@ -241,7 +241,7 @@ class OptionController extends Controller
      */
     private function deleteMill()
     {
-        $mills = Mill::where('soap_type_id', '01')->get();
+        $mills = Mill::where('fiscal_environment', 'demo')->get();
 
         foreach ($mills as $mill)
         {
@@ -259,10 +259,10 @@ class OptionController extends Controller
      */
     private function deleteQuotation()
     {
-        $records_id = Quotation::where('soap_type_id', '01')->whereFilterWithOutRelations()->select('id')->get()->pluck('id')->toArray();
+        $records_id = Quotation::where('fiscal_environment', 'demo')->whereFilterWithOutRelations()->select('id')->get()->pluck('id')->toArray();
         // dd($records_id);
         CashDocument::whereIn('quotation_id', $records_id)->delete();
-        Quotation::where('soap_type_id', '01')->delete();
+        Quotation::where('fiscal_environment', 'demo')->delete();
     }
 
 
@@ -274,7 +274,7 @@ class OptionController extends Controller
      */
     private function deleteRecordsCash($model)
     {
-        $records_id = $model::where('soap_type_id', '01')->whereFilterWithOutRelations()->select('id')->get()->pluck('id')->toArray();
+        $records_id = $model::where('fiscal_environment', 'demo')->whereFilterWithOutRelations()->select('id')->get()->pluck('id')->toArray();
 
         $column = ($model === Document::class) ? 'document_id' : 'sale_note_id';
 
@@ -282,7 +282,7 @@ class OptionController extends Controller
         CashDocumentPayment::whereIn('cash_document_credit_id', $idCashDocumentCredit)->delete();
         CashDocumentCredit::whereIn($column, $records_id)->delete();
 
-        $document_records = $model::where('soap_type_id', '01')->get();
+        $document_records = $model::where('fiscal_environment', 'demo')->get();
 
         $document_records->each(function ($record) {
             $record->payments()->each(function ($payment) {
@@ -312,7 +312,7 @@ class OptionController extends Controller
     private function deleteInventoryKardex($model, $records = null){
 
         if(!$records){
-            $records = $model::where('soap_type_id', '01')->get();
+            $records = $model::where('fiscal_environment', 'demo')->get();
         }
 
         $this->delete_quantity += $records->count();

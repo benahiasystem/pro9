@@ -8,7 +8,7 @@
  * Inventario de columnas:
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
  * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `establishment`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `customer_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
@@ -71,7 +71,7 @@ return new class extends Migration
 CREATE TABLE `technical_services` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned DEFAULT '0',
   `establishment` json DEFAULT NULL,
   `customer_id` int(10) unsigned NOT NULL,
@@ -123,7 +123,7 @@ CREATE TABLE `technical_services` (
   `diagnosis` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `technical_services_user_id_foreign` (`user_id`),
-  KEY `technical_services_soap_type_id_foreign` (`soap_type_id`),
+  KEY `technical_services_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `technical_services_customer_id_foreign` (`customer_id`),
   KEY `technical_services_date_of_issue_index` (`date_of_issue`),
   KEY `technical_services_serial_number_index` (`serial_number`)

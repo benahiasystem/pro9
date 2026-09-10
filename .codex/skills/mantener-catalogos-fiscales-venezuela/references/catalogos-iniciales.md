@@ -152,3 +152,18 @@ Estas tablas no deben existir en `tenant_initial_data.php`, no deben tener migra
 ## Territorio retirado del consolidado
 
 El consolidado contenía 25 departamentos, 196 provincias y 1.876 distritos de Perú. Las claves `departments`, `provinces` y `districts` deben estar ausentes de `tenant_initial_data.php`. `TenantMigrationDataSeeder` las sustituye por `venezuela_geopolitical_data.php`, cuyo contrato es 25 estados, 335 municipios y 1.138 parroquias.
+
+## Actualización del 10 de septiembre de 2026: modalidad fiscal
+
+`fiscal_environments` sustituye totalmente a `soap_types`:
+
+| ID | Presentación |
+| --- | --- |
+| `demo` | Demo |
+| `production` | Producción |
+
+No existe ambiente Interno ni equivalencia pública con `01`, `02` o `03`. Las modalidades se validan en `FiscalEmissionSettings`: `fiscal_machine`, `digital`, `free_form`; no son ambientes ni implican integración con un proveedor.
+
+El seeder no crea los tipos de auditoría `companies_certificate`, `companies_soap_password`, `companies_soap_send_id`, `companies_soap_type_id`, `companies_soap_url` y `companies_soap_username`. No hay registros anteriores que limpiar. Los cambios nuevos se registran en `fiscal_configuration_audits`, creada directamente por el consolidado y sin filas iniciales ni secretos. El inventario de tablas con datos iniciales contiene 72 tablas y 850 filas; no renumerar otros identificadores.
+
+Consultar también [mantener-modalidad-emision-fiscal-pro9](../../mantener-modalidad-emision-fiscal-pro9/SKILL.md). Las instalaciones nuevas crean directamente el esquema fiscal final, sin columnas SOAP/PFX/PSE ni migraciones de conversión.

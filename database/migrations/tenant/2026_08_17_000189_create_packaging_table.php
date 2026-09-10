@@ -9,7 +9,7 @@
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
  * - `item_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `user_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `item_extra_data`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
  * - `quantity`: decimal(8,2); NULL; DEFAULT 0.00 — Sin comentario definido en el esquema fuente.
@@ -39,7 +39,7 @@ CREATE TABLE `packaging` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `item_id` int(10) unsigned NOT NULL,
   `user_id` int(10) unsigned DEFAULT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `item_extra_data` json DEFAULT NULL,
   `establishment_id` int(10) unsigned DEFAULT NULL,
   `quantity` decimal(8,2) DEFAULT '0.00',
@@ -56,7 +56,7 @@ CREATE TABLE `packaging` (
   `updated_at` timestamp NULL DEFAULT NULL,
   `packaging_collaborator` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`),
-  KEY `packaging_soap_type_id_foreign` (`soap_type_id`)
+  KEY `packaging_fiscal_environment_foreign` (`fiscal_environment`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }

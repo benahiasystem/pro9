@@ -26,6 +26,35 @@
     {
         use UsesTenantConnection;
 
+        // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+        public function save(array $options = [])
+        {
+            if ($this->exists || !in_array($this->getTable(), config('fiscal_emission.operation_tables', []), true)) {
+                return parent::save($options);
+            }
+            return $this->getConnection()->transaction(function () use ($options) {
+                $company = Company::query()->lockForUpdate()->first();
+                // Seeders may create catalog opening stock before the company is inserted.
+                if ($company) {
+                    if ($this->getTable() === 'documents') {
+                        if (!array_key_exists($company->fiscal_emission_mode ?? '', \App\Services\FiscalEmissionSettings::MODES)) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'fiscal_emission_mode' => 'Seleccione la modalidad de emisión fiscal en la configuración de la empresa antes de registrar facturas.',
+                            ]);
+                        }
+                        $this->setAttribute('fiscal_emission_mode', $company->fiscal_emission_mode);
+                    }
+                    if ($this->isFillable('fiscal_environment')) {
+                        $this->setAttribute('fiscal_environment', $company->fiscal_environment);
+                    }
+                    $company->fiscal_environment_locked = true;
+                    $company->save();
+                }
+                return parent::save($options);
+            });
+        }
+        // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
+
         public const RESERVED_SYMBOLS_FILTER = ['-', '+', '<', '>', '@', '(', ')', '~'];
 
         public const VOIDED_REJECTED_IDS = ['09', '11'];
@@ -34,7 +63,7 @@
 
         public const STATE_TYPE_REGISTERED = '01';
 
-        public const SOAP_TYPE_PRODUCTION = '02';
+        public const FISCAL_ENVIRONMENT_PRODUCTION = 'production';
 
         public const NATIONAL_CURRENCY_ID = 'VES';
 

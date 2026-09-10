@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
     <div v-loading="loading_submit">
         <div class="row ">
@@ -57,7 +58,7 @@
                 </div>
                 <div class="row mx-0">
                     <div class="col-lg-3 col-md-4 col-sm-12 pb-2 btn-container-mobile">
-                        <el-button type="primary" v-if="typeUser == 'admin' &&  soapCompany != '03'" @click.prevent="clickGenerateDocuments()" >
+                        <el-button type="primary" v-if="typeUser == 'admin' &&  true" @click.prevent="clickGenerateDocuments()" >
                             Generar comprobantes
                         </el-button>
                     </div>
@@ -108,7 +109,7 @@
         props: {
             resource: String,
             typeUser: String,
-            soapCompany: String,
+            companyEnvironment: String,
             applyFilter:{
                 type: Boolean,
                 default: true,
@@ -223,3 +224,4 @@
         }
     }
 </script>
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

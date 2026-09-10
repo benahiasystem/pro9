@@ -54,7 +54,7 @@ use Modules\Sale\Models\Agent;
      * @property int|null                                       $payments_count
      * @property Person                                         $person
      * @property Quotation                                      $quotation
-     * @property SoapType                                       $soap_type
+     * @property FiscalEnvironment                                       $fiscal_environment_type
      * @property StateType                                      $state_type
      * @property User                                           $user
      * @property User                                           $seller
@@ -64,7 +64,7 @@ use Modules\Sale\Models\Agent;
      * @property int                                            $user_id
      * @property string                                         $external_id
      * @property int                                            $establishment_id
-     * @property string                                         $soap_type_id
+     * @property string                                         $fiscal_environment
      * @property string                                         $state_type_id
      * @property string                                         $prefix
      * @property string|null                                    $series
@@ -144,7 +144,7 @@ use Modules\Sale\Models\Agent;
 
         protected $with = [
             'user',
-            'soap_type',
+            'fiscal_environment_type',
             'state_type',
             'currency_type',
             'items',
@@ -159,7 +159,7 @@ use Modules\Sale\Models\Agent;
             'establishment_id',
             'establishment',
             'payment_condition_id',
-            'soap_type_id',
+            'fiscal_environment',
             'state_type_id',
             'grade',
             'section',
@@ -646,9 +646,9 @@ use Modules\Sale\Models\Agent;
         /**
          * @return BelongsTo
          */
-        public function soap_type()
+        public function fiscal_environment_type()
         {
-            return $this->belongsTo(SoapType::class);
+            return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
         }
 
         /**
@@ -969,7 +969,7 @@ use Modules\Sale\Models\Agent;
 
             return [
                 'id' => $this->id,
-                'soap_type_id' => $this->soap_type_id,
+                'fiscal_environment' => $this->fiscal_environment,
                 'fee' => $this->fee,
                 'external_id' => $this->external_id,
                 'date_of_issue' => $this->date_of_issue->format('Y-m-d'),
@@ -1611,7 +1611,7 @@ use Modules\Sale\Models\Agent;
          */
         public function scopeWhereRecordsByItems($query, $sale_note_ids)
         {
-            return$query->withOut(['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments'])
+            return$query->withOut(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments'])
                         ->whereIn('id', $sale_note_ids)
                         ->select('id', 'total', 'currency_type_id', 'exchange_rate_sale');
 
@@ -1641,7 +1641,7 @@ use Modules\Sale\Models\Agent;
         {
             return $query->withOut([
                 'user',
-                'soap_type',
+                'fiscal_environment_type',
                 'state_type',
                 'currency_type',
                 'items',
@@ -1821,7 +1821,7 @@ use Modules\Sale\Models\Agent;
                             'user_id',
                             'external_id',
                             'establishment_id',
-                            'soap_type_id',
+                            'fiscal_environment',
                             'state_type_id',
                             'prefix',
                             'date_of_issue',

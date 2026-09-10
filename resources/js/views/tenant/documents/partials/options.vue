@@ -64,19 +64,7 @@
                 </template>
             </div>
 
-            <div class="row" v-if="form.send_to_pse">
 
-                <div class="col-lg-12 col-md-12 col-sm-12" v-if="form.response_signature_pse">
-                    <el-alert :title="`Firma Xml PSE: ${form.response_signature_pse}`"
-                              show-icon type="success"></el-alert>
-                </div>
-
-                <div class="col-lg-12 col-md-12 col-sm-12 mt-3" v-if="form.response_send_cdr_pse">
-                    <el-alert :title="`Envio CDR PSE: ${form.response_send_cdr_pse}`"
-                              show-icon type="success"></el-alert>
-                </div>
-
-            </div>
 
             <span>Formatos disponibles para la descarga del comprobante:</span>
             <div class="row print-buttons-container">
@@ -173,7 +161,7 @@
                         :wsData="form.pdf_a4_data"
                     />
             </div>
-            <div v-if="company.soap_type_id == '02' && form.group_id == '01'"
+            <div v-if="company.fiscal_environment == 'production' && form.group_id == '01'"
                  class="row mt-4">
                 <div class="col-md-12 text-center">
                     <button class="btn waves-effect waves-light btn-outline-primary"
@@ -318,16 +306,13 @@ export default {
                 customer_telephone: null,
                 message_text: null,
                 group_id: null,
-                send_to_pse: false,
-                response_signature_pse: null,
-                response_send_cdr_pse: null,
             };
             this.locked_emission = {
                 success: true,
                 message: null
             }
             this.company = {
-                soap_type_id: null,
+                fiscal_environment: null,
             }
         },
         async create() {

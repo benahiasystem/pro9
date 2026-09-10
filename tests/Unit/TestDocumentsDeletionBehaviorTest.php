@@ -33,7 +33,7 @@ class TestDocumentsDeletionBehaviorTest extends TestCase
             'global_payments', 'document_fee', 'document_hotels', 'document_transports',
             'invoices', 'notes', 'summary_documents', 'kardex', 'cash_documents',
             'payment_method_types', 'card_brands', 'inventory_kardex', 'payment_files', 'payment_links',
-            'payment_link_payments', 'users', 'soap_types',
+            'payment_link_payments', 'users', 'fiscal_environments',
             'sale_notes', 'sale_note_items', 'sale_note_payments', 'sale_note_fees',
             'hotel_rent_orders', 'hotel_rent_items', 'hotel_rent_item_payments', 'dispatch_sale_notes',
         ] as $table) {

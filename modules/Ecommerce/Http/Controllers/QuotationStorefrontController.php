@@ -336,7 +336,7 @@ class QuotationStorefrontController extends Controller
                     'external_id' => Str::uuid()->toString(),
                     'establishment_id' => $establishment->id,
                     'establishment' => EstablishmentInput::set($establishment->id),
-                    'soap_type_id' => $company->soap_type_id,
+                    'fiscal_environment' => $company->fiscal_environment,
                     'state_type_id' => '01',
                     'prefix' => Quotation::SERIES_STANDARD,
                     'series' => '',

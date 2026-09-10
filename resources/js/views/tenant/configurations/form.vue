@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
     <div class="row-mx-0">
         <div class="page-header pe-0">
@@ -3202,7 +3203,7 @@
                                         </div>
                                     </div>
                                     <div class="row mx-0 adv-conf-container">
-                                        <template v-if="typeUser != 'integrator' && soapTypeId != '03'">
+                                        <template v-if="typeUser != 'integrator'">
                                             <div class="col-md-6 col-12">
                                                 <label class="control-label">Venta con restricción de stock
                                                     <el-tooltip class="item"
@@ -3406,7 +3407,6 @@ export default {
     props: [
         'typeUser',
         'configuration',
-        'soapTypeId',
         'canDeleteTestDocuments',
     ],
     components: {
@@ -4026,3 +4026,4 @@ export default {
     }
 }
 </script>
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

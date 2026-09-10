@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     /**
      */
@@ -646,8 +647,8 @@ use App\Http\Controllers\Tenant\SaleNoteController;
 
                 'id' => $document->id,
                 'group_id' => $document->group_id,
-                'soap_type_id' => $document->soap_type_id,
-                'soap_type_description' => $document->soap_type->description,
+                'fiscal_environment' => $document->fiscal_environment,
+                'fiscal_environment_description' => $document->fiscal_environment_type->description,
                 'date_of_issue' => $document->date_of_issue->format('Y-m-d'),
                 'date_of_due' => (in_array($document->document_type_id, ['01', '03'])) ? $document->invoice->date_of_due->format('Y-m-d') : null,
                 'number' => $document->number_full,
@@ -1240,3 +1241,4 @@ use App\Http\Controllers\Tenant\SaleNoteController;
             };
         }
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

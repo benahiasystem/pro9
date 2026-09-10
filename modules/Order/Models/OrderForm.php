@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Order\Models;
 
@@ -7,7 +8,7 @@ use App\Models\Tenant\Catalogs\TransferReasonType;
 use App\Models\Tenant\Catalogs\TransportModeType;
 use App\Models\Tenant\Catalogs\UnitType;
 use App\Models\Tenant\User;
-use App\Models\Tenant\SoapType;
+use App\Models\Tenant\FiscalEnvironment;
 use App\Models\Tenant\StateType;
 use App\Models\Tenant\Person;
 use App\Models\Tenant\Establishment;
@@ -18,7 +19,7 @@ use Modules\Dispatch\Models\Driver;
 
 class OrderForm extends ModelTenant
 {
-    protected $with = ['user', 'soap_type', 'state_type', 'unit_type', 'transport_mode_type',
+    protected $with = ['user', 'fiscal_environment_type', 'state_type', 'unit_type', 'transport_mode_type',
                        'transfer_reason_type', 'items', 'driver', 'dispatcher'];
 
     protected $fillable = [
@@ -26,7 +27,7 @@ class OrderForm extends ModelTenant
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'prefix',
         'date_of_issue',
@@ -141,9 +142,9 @@ class OrderForm extends ModelTenant
         return $this->belongsTo(Establishment::class);
     }
 
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function state_type()
@@ -186,3 +187,4 @@ class OrderForm extends ModelTenant
         return $this->belongsTo(Dispatcher::class);
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

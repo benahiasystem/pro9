@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace Modules\Expense\Models;
 
@@ -6,7 +7,7 @@
     use App\Models\Tenant\Establishment;
     use App\Models\Tenant\ModelTenant;
     use App\Models\Tenant\Person;
-    use App\Models\Tenant\SoapType;
+    use App\Models\Tenant\FiscalEnvironment;
     use App\Models\Tenant\StateType;
     use App\Models\Tenant\User;
     use Carbon\Carbon;
@@ -21,7 +22,7 @@
      *
      * @property int                              $id
      * @property int                              $user_id
-     * @property string|null                      $soap_type_id
+     * @property string|null                      $fiscal_environment
      * @property int                              $expense_type_id
      * @property int                              $establishment_id
      * @property int                              $supplier_id
@@ -41,7 +42,7 @@
      * @property Establishment                    $establishment
      * @property ExpenseReason                    $expense_reason
      * @property ExpenseType                      $expense_type
-     * @property SoapType|null                    $soap_type
+     * @property FiscalEnvironment|null                    $fiscal_environment_type
      * @property StateType|null                   $state_type
      * @property User                             $user
      * @property Collection|ExpenseItem[]         $expense_items
@@ -70,7 +71,7 @@
 
         protected $fillable = [
             'user_id',
-            'soap_type_id',
+            'fiscal_environment',
             'expense_type_id',
             'expense_reason_id',
             'establishment_id',
@@ -135,9 +136,9 @@
         /**
          * @return BelongsTo
          */
-        public function soap_type()
+        public function fiscal_environment_type()
         {
-            return $this->belongsTo(SoapType::class);
+            return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
         }
 
         /**
@@ -286,3 +287,4 @@
         }
 
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

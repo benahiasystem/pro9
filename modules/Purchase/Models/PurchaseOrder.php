@@ -1,9 +1,10 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Purchase\Models;
 
 use App\Models\Tenant\User;
-use App\Models\Tenant\SoapType;
+use App\Models\Tenant\FiscalEnvironment;
 use App\Models\Tenant\Establishment;
 use App\Models\Tenant\StateType;
 use App\Models\Tenant\PaymentMethodType;
@@ -21,7 +22,7 @@ class PurchaseOrder extends ModelTenant
         'external_id',
         'prefix',
         'establishment_id',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'date_of_issue',
         'time_of_issue',
@@ -83,9 +84,9 @@ class PurchaseOrder extends ModelTenant
         return $this->belongsTo(PaymentMethodType::class);
     }
 
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     public function state_type()
@@ -172,3 +173,4 @@ class PurchaseOrder extends ModelTenant
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

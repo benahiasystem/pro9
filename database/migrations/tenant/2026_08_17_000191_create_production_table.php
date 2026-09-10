@@ -8,7 +8,7 @@
  * Inventario de columnas:
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
  * - `user_id`: int(10) unsigned; NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `item_id`: int(10) unsigned; NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `inventory_id_reference`: int(10) unsigned; NULL — Sin comentario definido en el esquema fuente.
  * - `quantity`: decimal(12,4); NULL; DEFAULT 0.0000 — Peso dle insumo
@@ -47,7 +47,7 @@ return new class extends Migration
 CREATE TABLE `production` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned DEFAULT '0',
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `item_id` int(10) unsigned DEFAULT '0',
   `inventory_id_reference` int(10) unsigned DEFAULT NULL,
   `quantity` decimal(12,4) DEFAULT '0.0000' COMMENT 'Peso dle insumo ',
@@ -74,7 +74,7 @@ CREATE TABLE `production` (
   `production_collaborator` text COLLATE utf8mb4_unicode_ci,
   `mix_collaborator` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`id`),
-  KEY `production_soap_type_id_foreign` (`soap_type_id`)
+  KEY `production_fiscal_environment_foreign` (`fiscal_environment`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }

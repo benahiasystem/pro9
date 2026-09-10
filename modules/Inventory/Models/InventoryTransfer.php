@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Inventory\Models;
 
@@ -48,7 +49,7 @@ class InventoryTransfer extends ModelTenant
     protected $fillable = [
         'external_id',
         'user_id',
-        'soap_type_id',
+        'fiscal_environment',
         'document_type_id',
         'series',
         'number',
@@ -195,3 +196,4 @@ class InventoryTransfer extends ModelTenant
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

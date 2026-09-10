@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\Tenant;
 
@@ -23,10 +24,11 @@ class ClientCollection extends ResourceCollection
                 'api_token' => $row->api_token,
                 'client_name' => $row->client_name,
                 'client_number' => $row->client_number,
-                'soap_type_description' => $row->soap_type->description,
+                'fiscal_environment_description' => $row->fiscal_environment_type->description,
                 'created_at' => $row->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $row->updated_at->format('Y-m-d H:i:s'),
             ];
         });
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

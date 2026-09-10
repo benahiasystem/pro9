@@ -1,21 +1,20 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace App\Http\Controllers\Tenant;
 
 use App\Models\Tenant\Company;
 use App\Models\Tenant\Configuration;
-use App\Models\Tenant\SoapType;
+use App\Models\Tenant\FiscalEnvironment;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Tenant\CompanyRequest;
 use App\Http\Resources\Tenant\CompanyResource;
 use Illuminate\Http\Request;
-use App\Http\Requests\Tenant\CompanyPseRequest;
 use App\Http\Requests\Tenant\CompanyWhatsAppApiRequest;
 use App\Models\Tenant\Dispatch;
 use App\Models\Tenant\Document;
 use App\Models\Tenant\SaleNote;
 use Illuminate\Support\Facades\Storage;
 use Modules\Finance\Helpers\UploadFileHelper;
-use Modules\PseService\Models\PseProvider;
 
 /**
  * Class CompanyController
@@ -32,51 +31,9 @@ class CompanyController extends Controller
 
     public function tables()
     {
-        $soap_sends = config('tables.system.soap_sends');
-        $soap_types = SoapType::all();
-
-        $models = [
-            Document::class,
-            SaleNote::class,
-            Dispatch::class
-        ];
-
-        $message = [
-            'tiene documentos que fueron creados en demo, por favor borrarlos para evitar conflictos en producción'
-        ];
-
-        $verifyDocumentsInDemo =  [
-            'success' => false,
-        ];
-
-        foreach ($models as $index => $model) {
-            $count = $model::where('soap_type_id', '01')->count();
-            if ($count > 0) {
-                if ($model === Document::class) {
-                   array_unshift($message, 'Factura/Boleta o Nota de Crédito o Nota de Débito'); 
-                } else if ($model === SaleNote::class) {
-                   array_unshift($message, 'Nota de Venta'); 
-                } else if ($model === Dispatch::class) {
-                   // ########## INICIO CAMBIO CATÁLOGOS DE NOMBRES
-                   array_unshift($message, 'Orden de entrega');
-                   // ######### FIN CAMBIO CATÁLOGOS DE NOMBRES
-                }
-
-                $verifyDocumentsInDemo['success'] = true;
-            } 
-        }
-
-        $verifyDocumentsInDemo['message'] = implode(', ', $message);
-
-        return compact('soap_types', 'soap_sends', 'verifyDocumentsInDemo');
+        return ['fiscal_emission_modes' => \App\Services\FiscalEmissionSettings::MODES, 'fiscal_environments' => \App\Services\FiscalEmissionSettings::ENVIRONMENTS];
     }
 
-    public function getPseProviders()
-    {
-        $providers = PseProvider::available();
-
-        return response()->json($providers);
-    }
 
     public function record()
     {
@@ -89,7 +46,8 @@ class CompanyController extends Controller
     public function store(CompanyRequest $request)
     {
         $id = $request->input('id');
-        $company = Company::find($id);
+        $company = Company::firstOrFail();
+        abort_unless((int) $id === (int) $company->id, 404);
         $company->fill($request->except([
             'smtp_host',
             'smtp_port',
@@ -315,24 +273,6 @@ class CompanyController extends Controller
      * @param  Request $request
      * @return array
      */
-    public function storeSendPse(CompanyPseRequest $request)
-    {
-        $company = Company::firstOrFail();
-        $company->send_document_to_pse = $request->send_document_to_pse;
-        $company->pse_provider_id = $request->pse_provider_id; // Guardar el proveedor seleccionado
-        $company->url_signature_pse = $request->url_signature_pse;
-        $company->url_send_cdr_pse = $request->url_send_cdr_pse;
-        $company->client_id_pse = $request->client_id_pse;
-        $company->url_login_pse = $request->url_login_pse;
-        $company->user_pse = $request->user_pse;
-        $company->password_pse = $request->password_pse ?? $company->password_pse;
-        $company->save();
-
-        return [
-            'success' => true,
-            'message' => 'Datos guardados correctamente'
-        ];
-    }
 
 
     /**
@@ -341,23 +281,6 @@ class CompanyController extends Controller
      * @param  Request $request
      * @return array
      */
-    public function recordSendPse()
-    {
-
-        $company = Company::firstOrFail();
-
-        return [
-            'send_document_to_pse' => $company->send_document_to_pse,
-            'pse_provider_id' => $company->pse_provider_id,
-            'url_signature_pse' => $company->url_signature_pse,
-            'url_send_cdr_pse' => $company->url_send_cdr_pse,
-            'client_id_pse' => $company->client_id_pse,
-            'url_login_pse' => $company->url_login_pse,
-            'user_pse' => $company->user_pse,
-            'password_pse' => $company->password_pse,
-        ];
-
-    }
 
 
     /**
@@ -457,3 +380,4 @@ class CompanyController extends Controller
 
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

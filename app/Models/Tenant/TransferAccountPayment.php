@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 
     namespace App\Models\Tenant;
@@ -59,7 +60,7 @@
                 $company = Company::active();
 
                 $data = [
-                    'soap_type_id' => $company->soap_type_id,
+                    'fiscal_environment' => $company->fiscal_environment,
                     'destination_id' => $model->destiny_id,
                     'destination_type' => $model->destiny_type,
                     'user_id' => $model->user_id,
@@ -319,3 +320,4 @@
         }
         
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

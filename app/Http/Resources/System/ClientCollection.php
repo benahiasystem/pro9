@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\System;
 
@@ -50,7 +51,6 @@ class ClientCollection extends ResourceCollection
                 'created_at' => $row->created_at->format('Y-m-d H:i:s'),
                 'updated_at' => $row->updated_at->format('Y-m-d H:i:s'),
                 'current_count_doc_month' => $row->current_count_doc_month,
-                'count_doc_pse' => $row->count_doc_pse,
 
                 // ciclo facturacion
                 'start_billing_cycle' => ( $row->start_billing_cycle ) ? $row->start_billing_cycle->format('Y-m-d') : '',
@@ -60,7 +60,7 @@ class ClientCollection extends ResourceCollection
                 'count_sales_notes_month' => $row->count_sales_notes_month,
 
                 'select_date_billing' => '',
-                'soap_type' => $row->soap_type,
+                'fiscal_environment_type' => $row->fiscal_environment_type,
                 'document_regularize_shipping' => $row->document_regularize_shipping,
                 'document_not_sent' => $row->document_not_sent,
                 'document_to_be_canceled' => $row->document_to_be_canceled,
@@ -89,3 +89,4 @@ class ClientCollection extends ResourceCollection
         });
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

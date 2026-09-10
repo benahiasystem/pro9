@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Observers;
 
@@ -33,7 +34,7 @@ class DocumentObserver
 
         $seed = $document->number;
         $number = Functions::newNumber(
-            $document->soap_type_id,
+            $document->fiscal_environment,
             $document->document_type_id,
             $document->series,
             $seed,
@@ -127,3 +128,4 @@ class DocumentObserver
         }
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

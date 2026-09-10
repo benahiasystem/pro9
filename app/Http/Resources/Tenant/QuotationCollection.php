@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\Tenant;
 
@@ -29,7 +30,7 @@ class QuotationCollection extends ResourceCollection
             $btn_generate_cnt = $row->contract ?false:true;
             $external_id_contract = $row->contract ? $row->contract->external_id : null;
 
-            $btn_options = ($row->state_type_id != '11') && $btn_generate && ($company->soap_type_id !== '03');
+            $btn_options = ($row->state_type_id != '11') && $btn_generate && (true);
             if($user->type === 'seller') {
                 $btn_options = $btn_options && ($configuration->quotation_allow_seller_generate_sale);
             } else {
@@ -38,7 +39,7 @@ class QuotationCollection extends ResourceCollection
 
             return [
                 'id' => $row->id,
-                'soap_type_id' => $row->soap_type_id,
+                'fiscal_environment' => $row->fiscal_environment,
                 'external_id' => $row->external_id,
                 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                 // 'delivery_date' => ($row->delivery_date) ? $row->delivery_date->format('Y-m-d') : null,
@@ -83,3 +84,4 @@ class QuotationCollection extends ResourceCollection
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

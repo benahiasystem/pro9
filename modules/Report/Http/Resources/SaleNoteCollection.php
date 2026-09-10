@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace Modules\Report\Http\Resources;
 
@@ -37,8 +38,8 @@
                 return [
                     'id' => $row->id,
                     'group_id' => $row->hasAttribute('group_id') ? $row->group_id : null,
-                    'soap_type_id' => $row->soap_type_id,
-                    'soap_type_description' => $row->soap_type->description,
+                    'fiscal_environment' => $row->fiscal_environment,
+                    'fiscal_environment_description' => $row->fiscal_environment_type->description,
                     'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                     // 'date_of_due' => (in_array($document_type_id, ['01', '03'])) ? $row->invoice->date_of_due->format('Y-m-d') : null,
                     'date_of_due' => ($row->due_date) ? $row->due_date->format('Y-m-d') : null,
@@ -100,3 +101,4 @@
             });
         }
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

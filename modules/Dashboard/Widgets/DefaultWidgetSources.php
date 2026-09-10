@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Dashboard\Widgets;
 
@@ -11,15 +12,15 @@ use App\Models\Tenant\Company;
  */
 class DefaultWidgetSources
 {
-    private static $soapCompany;
+    private static $companyEnvironment;
 
-    private static function soapCompany()
+    private static function companyEnvironment()
     {
-        if (is_null(static::$soapCompany)) {
-            static::$soapCompany = optional(Company::select('soap_type_id')->first())->soap_type_id;
+        if (is_null(static::$companyEnvironment)) {
+            static::$companyEnvironment = optional(Company::select('fiscal_environment')->first())->fiscal_environment;
         }
 
-        return static::$soapCompany;
+        return static::$companyEnvironment;
     }
 
     /**
@@ -113,7 +114,7 @@ class DefaultWidgetSources
                     ->totals((float) $data['totals']['total'])
                     ->meta(['totals' => $data['totals']]);
             }, function () {
-                return static::soapCompany() !== '03';
+                return true;
             }),
 
             new CallbackWidgetSource(array_merge($module, [
@@ -497,8 +498,9 @@ class DefaultWidgetSources
                     ->totals((int) $data['accepted'] + (int) $data['pending'] + (int) $data['rejected'])
                     ->meta($data);
             }, function () {
-                return static::soapCompany() !== '03';
+                return true;
             }),
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

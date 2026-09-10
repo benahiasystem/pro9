@@ -150,7 +150,7 @@
 
             $model->global_payment()->create([
                 'user_id' => auth()->id(),
-                'soap_type_id' => $company->soap_type_id,
+                'fiscal_environment' => $company->fiscal_environment,
                 'destination_id' => $destination['destination_id'],
                 'destination_type' => $destination['destination_type'],
             ]);
@@ -829,7 +829,7 @@
 
             $model->global_payment()->create([
                 'user_id' => auth()->id(),
-                'soap_type_id' => $company->soap_type_id,
+                'fiscal_environment' => $company->fiscal_environment,
                 'destination_id' => $destination['destination_id'],
                 'destination_type' => $destination['destination_type'],
             ]);
@@ -879,13 +879,13 @@
 
         /**
          *
-         * Obtener soap_type_id para registro de entorno
+         * Obtener fiscal_environment para registro de entorno
          *
          * @return string
          */
-        public function getCompanySoapTypeId()
+        public function getCompanyFiscalEnvironment()
         {
-            return Company::getCompanySoapTypeId();
+            return Company::getCompanyFiscalEnvironment();
         }
 
     }

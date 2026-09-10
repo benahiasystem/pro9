@@ -9,7 +9,7 @@
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
  * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `state_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `summary_status_type_id`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `ubl_version`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -21,10 +21,6 @@
  * - `ticket`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `has_ticket`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `has_cdr`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `soap_shipping_response`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `send_to_pse`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `response_signature_pse`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `response_send_cdr_pse`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `unknown_error_status_response`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `manually_regularized`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `error_manually_regularized`: json; NULL — Sin comentario definido en el esquema fuente.
@@ -44,7 +40,7 @@ CREATE TABLE `summaries` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `summary_status_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -56,10 +52,6 @@ CREATE TABLE `summaries` (
   `ticket` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `has_ticket` tinyint(1) NOT NULL DEFAULT '0',
   `has_cdr` tinyint(1) NOT NULL DEFAULT '0',
-  `soap_shipping_response` json DEFAULT NULL,
-  `send_to_pse` tinyint(1) NOT NULL DEFAULT '0',
-  `response_signature_pse` json DEFAULT NULL,
-  `response_send_cdr_pse` json DEFAULT NULL,
   `unknown_error_status_response` tinyint(1) NOT NULL DEFAULT '0',
   `manually_regularized` tinyint(1) NOT NULL DEFAULT '0',
   `error_manually_regularized` json DEFAULT NULL,
@@ -68,7 +60,7 @@ CREATE TABLE `summaries` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `summaries_unique_filename_unique` (`unique_filename`),
   KEY `summaries_user_id_foreign` (`user_id`),
-  KEY `summaries_soap_type_id_foreign` (`soap_type_id`),
+  KEY `summaries_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `summaries_state_type_id_foreign` (`state_type_id`),
   KEY `summaries_summary_status_type_id_foreign` (`summary_status_type_id`),
   KEY `summaries_date_of_issue_index` (`date_of_issue`)

@@ -259,7 +259,7 @@ export default {
     components: {OptionsForm, CardBrandsForm, SaleNotesOptions, MultiplePaymentForm, Keypress},
     mixins: [buhoprinter],
 
-    props: ['form', 'customer', 'configuration', 'config', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'soapCompany', 'businessTurns', 'isPrint', 'rowsItems'],
+    props: ['form', 'customer', 'configuration', 'config', 'currencyTypeActive', 'exchangeRateSale', 'is_payment', 'companyEnvironment', 'businessTurns', 'isPrint', 'rowsItems'],
     data() {
         return {
             enabled_discount: false,

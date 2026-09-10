@@ -1073,7 +1073,7 @@
                 :customer="customer"
                 :customer_email="customerEmail"
                 :config="config"
-                :soapCompany="soapCompany"
+                :companyEnvironment="companyEnvironment"
                 :businessTurns="businessTurns"
                 :is-print="isPrint"
                 :globalDiscountTypeId="configuration.global_discount_type_id"
@@ -1480,7 +1480,7 @@ export default {
     props: [
         "configuration2",
         "configuration",
-        "soapCompany",
+        "companyEnvironment",
         "businessTurns",
         "typeUser",
         "isPrint"

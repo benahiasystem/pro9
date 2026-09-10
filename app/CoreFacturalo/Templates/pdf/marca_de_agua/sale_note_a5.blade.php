@@ -1,3 +1,4 @@
+{{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
 @php
     use Modules\Template\Helpers\TemplatePdf;
 
@@ -41,7 +42,7 @@
     $cycle_items = $allowed_items - ($quantity_items * 3);
     $total_weight = 0;
 
-    $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getTypeSoap();
+    $type = App\CoreFacturalo\Helpers\Template\TemplateHelper::getFiscalEnvironment();
 @endphp
 <html>
 <head>
@@ -659,3 +660,4 @@ foreach ($document->items as $row) {
 @endif
 </body>
 </html>
+{{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}

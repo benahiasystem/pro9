@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Models\Tenant;
 
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
  */
 class Perception extends ModelTenant
 {
-    // protected $with = ['user', 'establishment', 'soap_type', 'state_type', 'document_type', 'series',
+    // protected $with = ['user', 'establishment', 'fiscal_environment_type', 'state_type', 'document_type', 'series',
     //                    'customer', 'currency_type', 'system_code_perception', 'details'];
 
 
@@ -27,7 +28,7 @@ class Perception extends ModelTenant
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'ubl_version',
         'document_type_id',
@@ -115,9 +116,9 @@ class Perception extends ModelTenant
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     /**
@@ -220,3 +221,4 @@ class Perception extends ModelTenant
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

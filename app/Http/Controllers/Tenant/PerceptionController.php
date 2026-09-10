@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
@@ -113,7 +114,6 @@ class PerceptionController extends Controller
     public function store(PerceptionRequest $request)
     {
 
-        if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
@@ -146,3 +146,4 @@ class PerceptionController extends Controller
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

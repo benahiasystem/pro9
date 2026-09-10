@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Dashboard\Http\Controllers;
 
@@ -40,11 +41,11 @@ class DashboardController extends Controller
             return redirect()->route('tenant.documents.index');
         }
 
-        $company = Company::select('soap_type_id')->first();
-        $soap_company  = $company->soap_type_id;
+        $company = Company::select('fiscal_environment')->first();
+        $company_environment  = $company->fiscal_environment;
         $configuration = Configuration::first();
 
-        return view('dashboard::index', compact('soap_company','configuration'));
+        return view('dashboard::index', compact('company_environment','configuration'));
     }
 
     public function filter()
@@ -298,3 +299,4 @@ class DashboardController extends Controller
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

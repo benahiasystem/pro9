@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace App\Http\Controllers\Tenant;
 
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
@@ -106,7 +107,6 @@ class RetentionController extends Controller
 
     public function store(RetentionRequest $request)
     {
-        if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
         $fact = DB::connection('tenant')->transaction(function () use($request) {
             $facturalo = new Facturalo();
             $facturalo->save($request->all());
@@ -156,3 +156,4 @@ class RetentionController extends Controller
         return $this->downloadStorage($retention->filename, $folder);
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -398,7 +398,7 @@ export default {
         'currencyTypeActive',
         'exchangeRateSale',
         'is_payment',
-        'soapCompany',
+        'companyEnvironment',
         'businessTurns',
         'isPrint',
         'globalDiscountTypeId',

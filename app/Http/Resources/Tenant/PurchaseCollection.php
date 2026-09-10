@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\Tenant;
 
@@ -34,7 +35,7 @@ class PurchaseCollection extends ResourceCollection
                 'id' => $row->id,
                 'document_type_description' => $row->document_type->description,
                 'group_id' => $row->group_id,
-                'soap_type_id' => $row->soap_type_id,
+                'fiscal_environment' => $row->fiscal_environment,
                 'date_of_issue' => $row->date_of_issue->format('Y-m-d'),
                 'date_of_due' => ($row->date_of_due) ? $row->date_of_due->format('Y-m-d'):'-',
                 'number' => $row->number_full,
@@ -78,3 +79,4 @@ class PurchaseCollection extends ResourceCollection
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

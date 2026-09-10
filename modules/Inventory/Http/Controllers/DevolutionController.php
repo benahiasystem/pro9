@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Inventory\Http\Controllers;
 
@@ -165,7 +166,7 @@ class DevolutionController extends Controller
         $values = [
             'user_id' => auth()->id(),
             'external_id' => Str::uuid()->toString(),
-            'soap_type_id' => $this->company->soap_type_id,
+            'fiscal_environment' => $this->company->fiscal_environment,
             'state_type_id' => '01'
         ];
 
@@ -351,3 +352,4 @@ class DevolutionController extends Controller
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

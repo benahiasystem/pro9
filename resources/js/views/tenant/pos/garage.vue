@@ -812,7 +812,7 @@
                             :exchange-rate-sale="form.exchange_rate_sale"
                             :percentage-igv="percentage_igv"
                             :customer.sync="customer"
-                            :soapCompany="soapCompany"
+                            :companyEnvironment="companyEnvironment"
                             :businessTurns="businessTurns"
                             :is-print="isPrint"
                             :rows-items="form.items.length"
@@ -1021,7 +1021,7 @@ import { mapActions, mapState } from "vuex/dist/vuex.mjs";
 export default {
     props: [
         "configuration",
-        "soapCompany",
+        "companyEnvironment",
         "businessTurns",
         "typeUser",
         "isPrint"

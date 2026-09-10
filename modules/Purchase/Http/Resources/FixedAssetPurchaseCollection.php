@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Purchase\Http\Resources;
 
@@ -25,7 +26,7 @@ class FixedAssetPurchaseCollection extends ResourceCollection
                 'id' => $row->id,
                 'document_type_description' => $row->document_type->description,
                 'group_id' => $row->group_id,
-                'soap_type_id' => $row->soap_type_id,
+                'fiscal_environment' => $row->fiscal_environment,
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
                 'date_of_due' => ($row->date_of_due) ? $row->date_of_due->format('d-m-Y') : '-',
                 'number' => $row->number_full,
@@ -57,3 +58,4 @@ class FixedAssetPurchaseCollection extends ResourceCollection
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -24,7 +24,7 @@
  * - `date_end`: date; NULL — Sin comentario definido en el esquema fuente.
  * - `time_end`: time; NULL — Sin comentario definido en el esquema fuente.
  * - `user_id`: int(10) unsigned; NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `created_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
  * - `updated_at`: timestamp; NULL — Sin comentario definido en el esquema fuente.
  * - `name`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -48,7 +48,7 @@ CREATE TABLE `mill` (
   `date_end` date DEFAULT NULL,
   `time_end` time DEFAULT NULL,
   `user_id` int(10) unsigned DEFAULT '0',
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE `mill` (
   `mill_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `lot_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `mill_soap_type_id_foreign` (`soap_type_id`)
+  KEY `mill_fiscal_environment_foreign` (`fiscal_environment`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 SQL);
     }

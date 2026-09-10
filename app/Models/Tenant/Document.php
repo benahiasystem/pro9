@@ -83,7 +83,6 @@ use Modules\Sale\Models\Agent;
  * @property bool $apply_concurrency
  * @property mixed $related
  * @property mixed $response_regularize_shipping
- * @property mixed $soap_shipping_response
  * @property DocumentHotel|null $hotel
  * @property EloquentCollection|InventoryKardex[] $inventory_kardex
  * @property int|null $inventory_kardex_count
@@ -105,7 +104,7 @@ use Modules\Sale\Models\Agent;
  * @property Quotation $quotation
  * @property SaleNote $sale_note
  * @property User $seller
- * @property SoapType $soap_type
+ * @property FiscalEnvironment $fiscal_environment_type
  * @property StateType $state_type
  * @property User $user
  * @property EloquentCollection|Cash[] $cashes
@@ -156,7 +155,7 @@ class Document extends ModelTenant
 
     protected $with = [
         'user',
-        'soap_type',
+        'fiscal_environment_type',
         'state_type',
         'document_type',
         'currency_type',
@@ -172,7 +171,7 @@ class Document extends ModelTenant
         'external_id',
         'establishment_id',
         'establishment',
-        'soap_type_id',
+        'fiscal_environment',
         'state_type_id',
         'ubl_version',
         'group_id',
@@ -235,7 +234,6 @@ class Document extends ModelTenant
         'plate_number',
         'total_canceled',
         'order_note_id',
-        'soap_shipping_response',
         'pending_amount_prepayment',
         'payment_method_type_id',
         'regularize_shipping',
@@ -258,9 +256,6 @@ class Document extends ModelTenant
         'enabled_concurrency',
         'apply_concurrency',
 
-        'send_to_pse',
-        'response_signature_pse',
-        'response_send_cdr_pse',
 
         'sale_notes_relateds', //generar cpe desde multiples notas de venta
         'unique_filename', //registra nombre de archivo unico (campo validador para evitar duplicidad)
@@ -288,7 +283,6 @@ class Document extends ModelTenant
         'quantity_period' => 'int',
         'enabled_concurrency' => 'bool',
         'apply_concurrency' => 'bool',
-        'send_to_pse' => 'bool',
         'total' => 'float',
         'ticket_single_shipment' => 'bool',
         'point_system' => 'bool',
@@ -653,15 +647,7 @@ class Document extends ModelTenant
         $this->attributes['data_json'] = (is_null($value)) ? null : json_encode($value);
     }
 
-    public function getSoapShippingResponseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setSoapShippingResponseAttribute($value)
-    {
-        $this->attributes['soap_shipping_response'] = (is_null($value)) ? null : json_encode($value);
-    }
 
     public function getResponseRegularizeShippingAttribute($value)
     {
@@ -753,9 +739,9 @@ class Document extends ModelTenant
     /**
      * @return BelongsTo
      */
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
 
     /**
@@ -1412,48 +1398,11 @@ class Document extends ModelTenant
     }
 
 
-    /**
-     * Obtener tipo de documento válido para enviar el xml a firmar al pse
-     *
-     * Usado en:
-     * App\CoreFacturalo\Services\Helpers\SendDocumentPse
-     *
-     * @return string
-     */
-    public function getDocumentTypeForPse()
-    {
-
-        $allowed_document_types = [
-            '01' => 'FACT',
-            '03' => 'BOLE',
-            '07' => 'NOCR',
-            '08' => 'NODB',
-        ];
 
 
-        return $allowed_document_types[$this->document_type_id];
 
-    }
 
-    public function getResponseSendCdrPseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
 
-    public function setResponseSendCdrPseAttribute($value)
-    {
-        $this->attributes['response_send_cdr_pse'] = (is_null($value)) ? null : json_encode($value);
-    }
-
-    public function getResponseSignaturePseAttribute($value)
-    {
-        return (is_null($value)) ? null : (object)json_decode($value);
-    }
-
-    public function setResponseSignaturePseAttribute($value)
-    {
-        $this->attributes['response_signature_pse'] = (is_null($value)) ? null : json_encode($value);
-    }
 
     /**
      * registros asociados cuando se genera cpe desde multiples notas de venta
@@ -1486,7 +1435,7 @@ class Document extends ModelTenant
     {
         return $query->withOut([
             'user',
-            'soap_type',
+            'fiscal_environment_type',
             'state_type',
             'document_type',
             'currency_type',
@@ -1671,11 +1620,11 @@ class Document extends ModelTenant
      *
      * @param Builder $query
      * @param string $date_of_reference
-     * @param string $soap_type_id
+     * @param string $fiscal_environment
      * @return Builder
      *
      */
-    public function scopeFilterDocumentsForSummary($query, $date_of_reference, $soap_type_id)
+    public function scopeFilterDocumentsForSummary($query, $date_of_reference, $fiscal_environment)
     {
         return $query->whereFilterWithOutRelations()
             ->with([
@@ -1699,13 +1648,13 @@ class Document extends ModelTenant
                 'total',
                 // columnas usadas solo por los filtros del where
                 'date_of_issue',
-                'soap_type_id',
+                'fiscal_environment',
                 'group_id',
                 'state_type_id',
                 'ticket_single_shipment',
             ])
             ->where('date_of_issue', $date_of_reference)
-            ->where('soap_type_id', $soap_type_id)
+            ->where('fiscal_environment', $fiscal_environment)
             ->where('group_id', '02')
             ->where('state_type_id', '01')
             ->where('ticket_single_shipment', false)
@@ -1783,7 +1732,7 @@ class Document extends ModelTenant
     {
         $action = false;
 
-        if ($this->state_type_id === self::STATE_TYPE_REGISTERED && $this->soap_type_id === self::SOAP_TYPE_PRODUCTION)
+        if ($this->state_type_id === self::STATE_TYPE_REGISTERED && $this->fiscal_environment === self::FISCAL_ENVIRONMENT_PRODUCTION)
         {
             if($this->group_id === self::GROUP_INVOICE)
             {
@@ -1873,7 +1822,7 @@ class Document extends ModelTenant
                 'user_id',
                 'external_id',
                 'establishment_id',
-                'soap_type_id',
+                'fiscal_environment',
                 'state_type_id',
                 'document_type_id',
                 'series',

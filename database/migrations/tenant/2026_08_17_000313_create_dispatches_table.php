@@ -11,7 +11,7 @@
  * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `establishment_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `establishment`: json; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `state_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `ubl_version`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `document_type_id`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
@@ -68,11 +68,7 @@
  * - `optional`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `filename`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `hash`: varchar(255); NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
- * - `soap_shipping_response`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `sunat_error_response`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `send_to_pse`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
- * - `response_signature_pse`: json; NULL — Sin comentario definido en el esquema fuente.
- * - `response_send_cdr_pse`: json; NULL — Sin comentario definido en el esquema fuente.
  * - `has_xml`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `has_pdf`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
  * - `has_cdr`: tinyint(1); NOT NULL; DEFAULT 0 — Sin comentario definido en el esquema fuente.
@@ -107,7 +103,7 @@ CREATE TABLE `dispatches` (
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `establishment_id` int(10) unsigned NOT NULL,
   `establishment` json NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `state_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `ubl_version` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_type_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -164,11 +160,7 @@ CREATE TABLE `dispatches` (
   `optional` json DEFAULT NULL,
   `filename` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `hash` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `soap_shipping_response` json DEFAULT NULL,
   `sunat_error_response` json DEFAULT NULL,
-  `send_to_pse` tinyint(1) NOT NULL DEFAULT '0',
-  `response_signature_pse` json DEFAULT NULL,
-  `response_send_cdr_pse` json DEFAULT NULL,
   `has_xml` tinyint(1) NOT NULL DEFAULT '0',
   `has_pdf` tinyint(1) NOT NULL DEFAULT '0',
   `has_cdr` tinyint(1) NOT NULL DEFAULT '0',
@@ -190,7 +182,7 @@ CREATE TABLE `dispatches` (
   PRIMARY KEY (`id`),
   KEY `dispatches_user_id_foreign` (`user_id`),
   KEY `dispatches_establishment_id_foreign` (`establishment_id`),
-  KEY `dispatches_soap_type_id_foreign` (`soap_type_id`),
+  KEY `dispatches_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `dispatches_state_type_id_foreign` (`state_type_id`),
   KEY `dispatches_document_type_id_foreign` (`document_type_id`),
   KEY `dispatches_customer_id_foreign` (`customer_id`),

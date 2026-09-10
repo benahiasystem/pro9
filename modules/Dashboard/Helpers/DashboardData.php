@@ -945,7 +945,7 @@ class DashboardData
      */
     public function sale_note_totals_global($start_date = null, $end_date = null)
     {
-        $sale_notes_query = SaleNote::without(['user', 'soap_type', 'state_type', 'currency_type', 'items'])
+        $sale_notes_query = SaleNote::without(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items'])
             ->where('changed', false)
             ->whereStateTypeAccepted()
             ->select('id', 'currency_type_id', 'total', 'exchange_rate_sale');
@@ -1107,7 +1107,7 @@ class DashboardData
      */
     public function document_totals_globals($start_date = null, $end_date = null)
     {
-        $documents_query = Document::without(['user', 'soap_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'invoice', 'note'])
+        $documents_query = Document::without(['user', 'fiscal_environment_type', 'state_type', 'document_type', 'currency_type', 'group', 'items', 'invoice', 'note'])
                                     ->select('id', 'state_type_id', 'document_type_id', 'currency_type_id', 'total', 'exchange_rate_sale');
 
 

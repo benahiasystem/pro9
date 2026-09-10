@@ -28,7 +28,6 @@ use App\Services\SeriesResolver;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Modules\ApiPeruDev\Http\Controllers\ServiceDispatchController;
 use Modules\Dispatch\Http\Controllers\DispatcherController;
 use Modules\Dispatch\Http\Controllers\DriverController;
 use Modules\Dispatch\Http\Controllers\OriginAddressController;
@@ -350,52 +349,26 @@ class DispatchController extends Controller
         return view('tenant.dispatches.form', compact('document', 'type', 'dispatch', 'items'));
     }
 
-    public function sendDispatchToSunat(Dispatch $document)
-    {
-
-        $data = [
-            'sent' => false,
-            'code' => null,
-            'description' => "El elemento ya fue enviado",
-        ];
-        if (!$document->wasSend()) {
-            $facturalo = $document->getFacturalo();
-
-            $facturalo
-                ->setActions(['send_xml_signed' => true])
-                ->loadXmlSigned()
-                ->senderXmlSignedBill();
-            $data = $facturalo->getResponse();
-        }
-
-        return json_encode($data);
-    }
 
     public function store(DispatchRequest $request)
     {
         $company = Company::query()
-            ->select('soap_type_id')
+            ->select('fiscal_environment')
             ->first();
         $configuration = Configuration::first();
         $res = [];
         if ($request->series[0] == 'T') {
-            if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
             /** @var Facturalo $fact */
             $fact = DB::connection('tenant')->transaction(function () use ($request, $configuration) {
                 $facturalo = new Facturalo();
                 $facturalo->save($request->all());
                 $document = $facturalo->getDocument();
-                $data = (new ServiceDispatchController())->getData($document->id);
-                $facturalo->setXmlUnsigned((new ServiceDispatchController())->createXmlUnsigned($data));
-                $service_pse_xml = $facturalo->servicePseSendXml();
-                $facturalo->signXmlUnsigned($service_pse_xml['xml_signed']);
                 $facturalo->createPdf();
                 return $facturalo;
             });
 
             $document = $fact->getDocument();
-//            if ($company->soap_type_id === '02') {
-//                $res = ((new ServiceDispatchController())->send($document->external_id));
+//            if ($company->fiscal_environment === 'production') {
 //            }
             // $response = $fact->getResponse();
         } else {
@@ -817,9 +790,9 @@ class DispatchController extends Controller
 
     public function dispatchesByClient($clientId)
     {
-        $records = Dispatch::without(['user', 'soap_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type',
+        $records = Dispatch::without(['user', 'fiscal_environment_type', 'state_type', 'document_type', 'unit_type', 'transport_mode_type',
             'transfer_reason_type', 'items', 'reference_document'])
-            ->select('series', 'number', 'id', 'date_of_issue', 'soap_shipping_response')
+            ->select('series', 'number', 'id', 'date_of_issue')
             ->where('customer_id', $clientId)
             ->whereNull('reference_document_id')
             ->whereStateTypeAccepted()

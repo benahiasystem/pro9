@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
@@ -76,7 +77,6 @@ class PurchaseSettlementController extends Controller
     {
         $data = self::convert($request);
         // dd($request->all());
-        if (Facturalo::validateCertificate()) return $this->generalResponse(false, 'Ocurrió un error: Certificado digital no encontrado.');
         try {
         $fact = DB::connection('tenant')->transaction(function () use($data) {
             $facturalo = new Facturalo();
@@ -152,7 +152,7 @@ class PurchaseSettlementController extends Controller
             'user_id' => auth()->id(),
             'external_id' => Str::uuid()->toString(),
             'supplier' => $suplier_info,
-            'soap_type_id' => $company->soap_type_id,
+            'fiscal_environment' => $company->fiscal_environment,
             'state_type_id' => '01',
             'establishment'=>EstablishmentInput::set($inputs['establishment_id']),
             'ubl_version' => '2.1',
@@ -311,3 +311,4 @@ class PurchaseSettlementController extends Controller
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

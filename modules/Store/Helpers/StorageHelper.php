@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Store\Helpers;
 
@@ -9,9 +10,9 @@ class StorageHelper
 {
     protected $root;
 
-    public function setFolder($soap_type_id, $folder)
+    public function setFolder($fiscal_environment, $folder)
     {
-        $root = ($soap_type_id === '01') ? 'demo' : 'production';
+        $root = ($fiscal_environment === 'demo') ? 'demo' : 'production';
         $this->root = $root . DIRECTORY_SEPARATOR . $folder;
     }
 
@@ -189,3 +190,4 @@ class StorageHelper
         return Storage::disk('tenant')->exists($folder);
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

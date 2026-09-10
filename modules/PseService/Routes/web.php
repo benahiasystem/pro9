@@ -1,7 +1,8 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('pseservice')->group(function() {
-    // Route::get('/', 'PseServiceController@index');
 });
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

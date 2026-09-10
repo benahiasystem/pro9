@@ -159,7 +159,7 @@ class TransactionController extends Controller
             $payment_id = isset($transaction_query['id']) ? $transaction_query['id'] : null;
 
             $transaction = $this->payment_link->transactions()->create([
-                'soap_type_id' => $this->getSoapTypeId(),
+                'fiscal_environment' => $this->getFiscalEnvironmentId(),
                 'date' => date('Y-m-d'),
                 'time' => date('H:i:s'),
                 'uuid' => Str::uuid()->toString(),

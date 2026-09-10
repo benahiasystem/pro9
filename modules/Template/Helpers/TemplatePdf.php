@@ -153,7 +153,7 @@ class TemplatePdf
         }
 
         $storage = new StorageHelper();
-        $storage->setFolder($document->soap_type_id, $model);
+        $storage->setFolder($document->fiscal_environment, $model);
         $storage->uploadPdf($document->filename, $result);
 //        $storage->uploadHtml($document->filename, $html);
 

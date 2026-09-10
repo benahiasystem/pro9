@@ -52,9 +52,9 @@ class DocumentRegularizeShippingCollection extends ResourceCollection
 
             return [
                 'id' => $row->id,
-                'soap_type_id' => $row->soap_type_id,
+                'fiscal_environment' => $row->fiscal_environment,
                 'group_id' => $row->group_id,
-                'soap_type_description' => $row->soap_type->description,
+                'fiscal_environment_description' => $row->fiscal_environment_type->description,
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
                 'number' => $row->number_full,
                 'customer_name' => $row->customer->name,

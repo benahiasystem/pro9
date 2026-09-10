@@ -247,7 +247,7 @@ class PurchaseOrderController extends Controller
             'supplier' => PersonInput::set($inputs['supplier_id']),
             'external_id' => Str::uuid()->toString(),
             'establishment' => EstablishmentInput::set($inputs['establishment_id']),
-            'soap_type_id' => $this->company->soap_type_id,
+            'fiscal_environment' => $this->company->fiscal_environment,
             'state_type_id' => '01',
             'document_type_id' => $inputs->input('document_type_id') ?? '',
             'series' => $inputs->input('series') ?? '',

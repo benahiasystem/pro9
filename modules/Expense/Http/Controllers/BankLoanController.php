@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
     namespace Modules\Expense\Http\Controllers;
 
@@ -236,7 +237,7 @@
             $values = [
                 'user_id' => auth()->id(),
                 'state_type_id' => $inputs['id'] ? $inputs['state_type_id'] : '05',
-                'soap_type_id' => $company->soap_type_id,
+                'fiscal_environment' => $company->fiscal_environment,
                 'external_id' => $inputs['id'] ? $inputs['external_id'] : Str::uuid()->toString(),
                 'bank' => BankInput::set($bank),
                 'bank_id'=>$bank
@@ -295,3 +296,4 @@
             return $balance->download('Expense_' . Carbon::now() . '.xlsx');
         }
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

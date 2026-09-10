@@ -8,6 +8,31 @@ use Tests\TestCase;
 // ########## INICIO CAMBIO SIN XML CDR SUNAT
 class LocalFiscalDocumentPolicyTest extends TestCase
 {
+    public function test_retired_transport_cannot_be_reenabled_by_legacy_configuration(): void
+    {
+        config()->set('venezuela.local_document_emission.enabled', false);
+        self::assertTrue(LocalFiscalDocumentPolicy::enabled());
+        self::assertFalse(LocalFiscalDocumentPolicy::registeredResponse()['sent']);
+    }
+
+    public function test_invoice_email_reads_and_attaches_only_the_pdf(): void
+    {
+        config()->set('tenant.template_document_mail', 'default');
+        config()->set('mail.username', 'fiscal-test@example.test');
+        $mail = new class((object) [], (object) ['filename' => 'invoice-test']) extends \App\Mail\Tenant\DocumentEmail {
+            public array $reads = [];
+            public function getStorage($filename, $file_type, $root = null)
+            {
+                $this->reads[] = [$filename, $file_type];
+                return '%PDF-test';
+            }
+        };
+        $mail->build();
+        self::assertSame([['invoice-test', 'pdf']], $mail->reads);
+        self::assertCount(1, $mail->rawAttachments);
+        self::assertSame('invoice-test.pdf', $mail->rawAttachments[0]['name']);
+    }
+
     /** @test */
     public function local_registration_is_successful_without_claiming_transmission_or_acceptance(): void
     {

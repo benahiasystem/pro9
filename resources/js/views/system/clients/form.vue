@@ -456,203 +456,11 @@
                         </div>
 
                     </el-collapse-item>
-                    <el-collapse-item
-                        name="2"
-                        title="Entorno del sistema">
-                        <div class="row mt-2">
-                            <div class="col-md-6">
-                                <div :class="{'has-danger': errors.soap_send_id}"
-                                     class="form-group">
-                                    <label class="control-label">
-                                        SOAP Envio
-                                    </label>
-                                    <el-select
-                                        v-model="form.soap_send_id">
-                                        <el-option
-                                            v-for="(option, index) in soap_sends"
-                                            :key="index"
-                                            :label="option.text"
-                                            :value="option.value">
-                                        </el-option>
-                                    </el-select>
-                                    <small
-                                        v-if="errors.soap_send_id"
-                                        class="form-control-feedback"
-                                        v-text="errors.soap_send_id[0]">
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div :class="{'has-danger': errors.soap_type_id}"
-                                     class="form-group">
-                                    <label class="control-label">
-                                        SOAP Tipo
-                                    </label>
-                                    <el-select
-                                        v-model="form.soap_type_id">
-                                        <el-option
-                                            v-for="option in soap_types"
-                                            :key="option.id"
-                                            :label="option.description"
-                                            :value="option.id">
-                                        </el-option>
-                                    </el-select>
-
-                                    <el-checkbox
-                                        v-if="form.soap_send_id == '02' && form.soap_type_id == '01'"
-                                        v-model="toggle"
-                                        label="Ingresar Usuario">
-                                    </el-checkbox>
-                                    <small
-                                        v-if="errors.soap_type_id"
-                                        class="form-control-feedback"
-                                        v-text="errors.soap_type_id[0]">
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        <template v-if="form.soap_type_id == '02' || toggle == true ">
-                            <div class="row">
-                                <div class="col-md-12 mt-2">
-                                    <h4 class="border-bottom">
-                                        Usuario Secundario Sunat
-                                    </h4>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div :class="{'has-danger': errors.soap_username}"
-                                         class="form-group">
-                                        <label class="control-label">
-                                            SOAP Usuario
-                                            <span class="text-danger">*</span>
-                                        </label>
-                                        <el-input
-                                            v-model="form.soap_username">
-                                        </el-input>
-                                        <div class="sub-title text-muted">
-                                            <small>
-                                                RUC + Usuario. Ejemplo: 01234567890ELUSUARIO
-                                            </small>
-                                        </div>
-                                        <small
-                                            v-if="errors.soap_username"
-                                            class="form-control-feedback"
-                                            v-text="errors.soap_username[0]">
-                                        </small>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div :class="{'has-danger': errors.soap_password}"
-                                         class="form-group">
-                                        <label class="control-label">
-                                            SOAP Password
-                                            <span class="text-danger">*</span>
-                                        </label>
-                                        <el-input
-                                            v-model="form.soap_password">
-                                        </el-input>
-                                        <small
-                                            v-if="errors.soap_password"
-                                            class="form-control-feedback"
-                                            v-text="errors.soap_password[0]">
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                        <div v-if="form.soap_send_id == '02'"
-                             class="row">
-                            <div class="col-md-12">
-                                <div :class="{'has-danger': errors.soap_url}"
-                                     class="form-group">
-                                    <label class="control-label">
-                                        SOAP Url
-                                    </label>
-                                    <el-input
-                                        v-model="form.soap_url">
-                                    </el-input>
-                                    <small
-                                        v-if="errors.soap_url"
-                                        class="form-control-feedback"
-                                        v-text="errors.soap_url[0]">
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        <br>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div :class="{'has-danger': errors.password_certificate}"
-                                     class="form-group">
-                                    <label class="control-label">
-                                        Contraseña certificado
-                                    </label>
-                                    <el-input
-                                        v-model="form.password_certificate">
-                                    </el-input>
-                                    <small
-                                        v-if="errors.password_certificate"
-                                        class="form-control-feedback"
-                                        v-text="errors.password_certificate[0]">
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div :class="{'has-danger': errors.certificate}"
-                                     class="form-group">
-                                    <label>
-                                        Certificado pfx
-                                    </label>
-                                    <el-upload
-                                        ref="upload"
-                                        :action="`/${resource}/upload`"
-                                        :data="{'type': 'certificate'}"
-                                        :headers="headers"
-                                        :multiple="false"
-                                        :on-error="errorUpload"
-                                        :on-success="successUpload"
-                                        :show-file-list="false">
-                                        <el-button slot="trigger"
-                                                   type="primary">
-                                            Selecciona un archivo
-                                        </el-button>
-                                    </el-upload>
-                                    <small
-                                        v-if="errors.certificate"
-                                        class="form-control-feedback"
-                                        v-text="errors.certificate[0]">
-                                    </small>
-                                </div>
-                            </div>
-                            <div v-show="form.is_update == false && certificate_admin"
-                                 class="col-md-4">
-                                <div class="form-group">
-                                    <label class="control-label">
-                                        Archivo cargado (Administrador)
-                                    </label>
-                                    <el-input
-                                        v-model="certificate_admin"
-                                        :disabled="true">
-                                    </el-input>
-
-                                </div>
-                            </div>
-                            <div v-show="form.is_update == true"
-                                 class="col-md-6">
-                                <div class="form-group">
-                                    <label class="control-label">
-                                        Archivo cargado (Cliente) {{ form.certificate ? '(1)' : '(0)' }}
-                                    </label>
-                                    <el-input
-                                        v-model="form.certificate"
-                                        :disabled="true">
-                                    </el-input>
-
-                                </div>
-                            </div>
-                        </div>
+                    <!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
+                    <el-collapse-item name="2" title="Modalidad de emisión fiscal">
+                        <fiscal-emission-fields :form="form" :errors="errors" />
                     </el-collapse-item>
+                    <!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->
                     <!-- Configuracion de correo -->
 
                     <el-collapse-item name="3"
@@ -771,17 +579,6 @@
                 </el-collapse>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-6 center-el-checkbox mt-4">
-                        <div class="form-group">
-                            <el-checkbox
-                                v-model="form.config_system_env">
-                                ¿ Permitir a la empresa cambiar la configuración de producción ?
-                            </el-checkbox>
-                            <br>
-                        </div>
-                    </div>
-                </div>
             </div>
             <div class="form-actions text-end pt-2 px-2">
                 <el-button
@@ -858,11 +655,12 @@ import {serviceNumber} from '../../../mixins/functions'
 import {nrusModules} from '../../../mixins/nrus-modules'
 // ########## INICIO CAMBIO RIF SUPER ADMIN
 import RifInput from './partials/RifInput.vue'
+import FiscalEmissionFields from '../../../components/FiscalEmissionFields.vue'
 // ######### FIN CAMBIO RIF SUPER ADMIN
 
 export default {
     // ########## INICIO CAMBIO RIF SUPER ADMIN
-    components: { RifInput },
+    components: { FiscalEmissionFields, RifInput },
     // ######### FIN CAMBIO RIF SUPER ADMIN
     mixins: [serviceNumber, nrusModules],
     props: ['showDialog', 'recordId'],
@@ -895,12 +693,7 @@ export default {
             apps: [],
             business_turns: [],
             types: [],
-            soap_sends: [{value: '01', text: 'Sunat'}, {value: '02', text: 'Ose'}],
-            soap_types: [{id: "01", description: "Demo"}, {id: "02", description: "Producción"}],
             toggle: false,
-            certificate_admin: '',
-            soap_username: null,
-            soap_password: null,
             collapse: 1,
             business: null,
             applyingBusinessModules: false,
@@ -946,9 +739,6 @@ export default {
                 this.modules = response.data.modules
                 this.apps = response.data.apps
                 this.types = response.data.types
-                this.certificate_admin = response.data.certificate_admin
-                this.soap_username = response.data.soap_username
-                this.soap_password = response.data.soap_password
                 this.business_turns = response.data.business_turns || []
                 this.regex_password_client = response.data.regex_password_client
                 this.plan_periods = response.data.plan_periods
@@ -960,8 +750,6 @@ export default {
 
         await this.initForm()
 
-        this.form.soap_username = this.soap_username
-        this.form.soap_password = this.soap_password
     },
     methods: {
         FixChildren(currentObj, treeStatus) {
@@ -1043,15 +831,12 @@ export default {
                 modules: [],
                 apps: [],
                 levels: [],
-                config_system_env: true,
-                soap_send_id: '01',
-                soap_type_id: '01',
-                soap_username: null,
-                soap_password: null,
-                soap_url: null,
-                password_certificate: null,
-                certificate: null,
-                temp_path: null,
+                fiscal_environment: 'demo',
+                fiscal_emission_mode: null,
+                fiscal_configuration: {},
+                fiscal_credentials: '',
+                clear_fiscal_credentials: false,
+                fiscal_environment_locked: false,
                 /** Mail */
                 smtp_host: 'smtp.gmail.com',
                 smtp_port: 465,
@@ -1271,21 +1056,10 @@ export default {
                 return this.$message.error('El plan seleccionado no cumple los límites NRUS (ventas máx. Bs. 8000 y 1 sucursal).')
             }
 
-            if (!this.form.is_update) {
-                if (this.form.certificate && !this.form.password_certificate) {
-                    return this.$message.error('Si carga un certificado, es necesario ingresar el password del certificado')
-                }
-            } else {
-                if (this.form.temp_path && !this.form.password_certificate) {
-                    return this.$message.error('Si carga un certificado, es necesario ingresar el password del certificado')
-                }
-            }
-
             this.button_text = (this.form.is_update) ? 'Actualizando cliente...' : 'Creando base de datos...'
             this.loading_submit = true
             console.log('modules', this.form.modules)
             console.log('levels', this.form.levels)
-            console.log('form', this.form)
             await this.$http.post(`${this.resource}${(this.form.is_update ? '/update' : '')}`, this.form)
                 .then(response => {
                     if (response.data.success) {
@@ -1320,14 +1094,6 @@ export default {
         },
         errorUpload(r) {
             console.log(r)
-        },
-        successUpload(response) {
-            if (response.success) {
-                this.form.certificate = response.data.filename
-                this.form.temp_path = response.data.temp_path
-            } else {
-                this.$message.error(response.message)
-            }
         },
         searchNumber(data) {
             this.form.name = data.name;

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\CoreFacturalo\Requests\Inputs;
 
@@ -26,7 +27,7 @@ class DocumentUpdateInput
         $number = $inputs['number'];
 
         $company = Company::active();
-        $soap_type_id = $company->soap_type_id;
+        $fiscal_environment = $company->fiscal_environment;
 
         $offline_configuration = OfflineConfiguration::firstOrFail();
 
@@ -62,7 +63,7 @@ class DocumentUpdateInput
             'external_id' => Str::uuid()->toString(),
             'establishment_id' => $inputs['establishment_id'],
             'establishment' => $establishment,
-            'soap_type_id' => $soap_type_id,
+            'fiscal_environment' => $fiscal_environment,
             'state_type_id' => '01',
             'ubl_version' => '2.1',
             'document_type_id' => $document_type_id,
@@ -515,3 +516,4 @@ class DocumentUpdateInput
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

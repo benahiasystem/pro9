@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\System;
 
@@ -16,11 +17,7 @@ class CompanyResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'soap_send_id' => $this->soap_send_id,
-            'soap_type_id' => $this->soap_type_id,
-            'soap_username' => $this->soap_username,
-            'soap_password' => $this->soap_password,
-            'soap_url' => $this->soap_url,
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

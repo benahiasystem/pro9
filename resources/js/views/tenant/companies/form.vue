@@ -300,20 +300,7 @@
                                 </div>
                             </div> -->
 
-                            <div v-if="form.soap_type_id == '02'"
-                                 class="col-md-6">
-                                <div :class="{'has-danger': errors.certificate_due}"
-                                     class="form-group">
-                                    <label class="control-label">Vencimiento de Certificado</label>
-                                    <el-date-picker v-model="form.certificate_due"
-                                                    :clearable="true"
-                                                    type="date"
-                                                    value-format="yyyy-MM-dd"></el-date-picker>
-                                    <small v-if="errors.certificate_due"
-                                           class="form-control-feedback"
-                                           v-text="errors.certificate_due[0]"></small>
-                                </div>
-                            </div>
+
                             <div v-show="false"
                                  class="col-md-6 mt-4">
                                 <div :class="{'has-danger': errors.operation_amazonia}"
@@ -435,79 +422,6 @@
                 </form>
             </div>
         </div>
-        <div class="card card-config">
-            <div class="card-header bg-info">
-                <h3 class="my-0">Órdenes de entrega</h3>
-            </div>
-            <div class="card-body">
-                <form autocomplete="off"
-                      @submit.prevent="submit('integrated')">
-                    <div class="form-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <!-- ########## INICIO CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                                <h4 class="border-bottom">Usuario secundario</h4>
-                                <!-- ######### FIN CAMBIO NELSON: RETIRO PALABRA SUNAT -->
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div :class="{'has-danger': errors.soap_sunat_username}"
-                                     class="form-group">
-                                    <label class="control-label">SOAP Usuario</label>
-                                    <el-input v-model="form.soap_sunat_username"
-                                              :disabled="!form.config_system_env"></el-input>
-                                    <div class="sub-title text-muted"><small>RIF + Usuario. Ejemplo:
-                                        01234567890ELUSUARIO</small></div>
-                                    <small v-if="errors.soap_sunat_username"
-                                           class="form-control-feedback"
-                                           v-text="errors.soap_sunat_username[0]"></small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div :class="{'has-danger': errors.soap_sunat_password}"
-                                     class="form-group">
-                                    <label class="control-label">SOAP Password</label>
-                                    <el-input v-model="form.soap_sunat_password"
-                                              :disabled="!form.config_system_env"></el-input>
-                                    <small v-if="errors.soap_sunat_password"
-                                           class="form-control-feedback"
-                                           v-text="errors.soap_sunat_password[0]"></small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div :class="{'has-danger': errors.api_sunat_id}"
-                                     class="form-group">
-                                    <label class="control-label">Client ID</label>
-                                    <el-input v-model="form.api_sunat_id"></el-input>
-                                    <small v-if="errors.api_sunat_id"
-                                           class="form-control-feedback"
-                                           v-text="errors.api_sunat_id[0]"></small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div :class="{'has-danger': errors.api_sunat_secret}"
-                                     class="form-group">
-                                    <label class="control-label">Client Secret (Clave)</label>
-                                    <el-input v-model="form.api_sunat_secret"></el-input>
-                                    <small v-if="errors.api_sunat_secret"
-                                           class="form-control-feedback"
-                                           v-text="errors.api_sunat_secret[0]"></small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-actions text-end pt-2">
-                        <el-button :loading="loading_submit.integrated"
-                                   native-type="submit"
-                                   type="primary">Guardar
-                        </el-button>
-                    </div>
-                </form>
-            </div>
-        </div>
         <TokenRucDni></TokenRucDni>
         <SireConfiguration></SireConfiguration>
     </div>
@@ -573,6 +487,7 @@ export default {
             .then(response => {
                 if (response.data !== '') {
                     this.form = response.data.data
+                    ;['fiscal_emission_mode', 'fiscal_environment', 'fiscal_configuration', 'fiscal_environment_locked', 'fiscal_credentials_configured', 'fiscal_integration_status'].forEach(key => { delete this.form[key] })
                 }
             })
             .catch(() => {
@@ -603,6 +518,7 @@ export default {
                 .then(response => {
                     if (response.data !== '') {
                         this.form = response.data.data
+                    ;['fiscal_emission_mode', 'fiscal_environment', 'fiscal_configuration', 'fiscal_environment_locked', 'fiscal_credentials_configured', 'fiscal_integration_status'].forEach(key => { delete this.form[key] })
                     }
                 })
                 .finally(() => {
@@ -727,28 +643,16 @@ export default {
                 number: null,
                 name: null,
                 trade_name: null,
-                soap_send_id: '01',
-                soap_type_id: '01',
-                soap_username: null,
-                soap_password: null,
-                soap_url: null,
-                certificate: null,
-                certificate_due: null,
                 logo: null,
                 logo_dark: null,
                 logo_store: null,
                 operation_amazonia: false,
                 toggle: false,
-                config_system_env: false,
                 img_firm: null,
                 is_pharmacy: false,
                 cod_digemid: null,
                 integrated_query_client_id: null,
                 integrated_query_client_secret: null,
-                soap_sunat_username: null,
-                soap_sunat_password: null,
-                api_sunat_id: null,
-                api_sunat_secret: null,
                 title_web: null,
                 /** Mail */
                 smtp_host: null,

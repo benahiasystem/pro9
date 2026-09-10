@@ -100,6 +100,10 @@ if ($hostname) {
             Route::get('companies/create', 'Tenant\CompanyController@create')->name('tenant.companies.create')->middleware('redirect.level');
             Route::get('companies/tables', 'Tenant\CompanyController@tables');
             Route::get('companies/record', 'Tenant\CompanyController@record');
+            // ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
+            Route::get('companies/fiscal-emission', 'Tenant\FiscalEmissionController@record');
+            Route::post('companies/fiscal-emission', 'Tenant\FiscalEmissionController@store');
+            // ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
             Route::post('companies', 'Tenant\CompanyController@store');
             Route::post('companies/uploads', 'Tenant\CompanyController@uploadFile');
             Route::post('companies/uploads', 'Tenant\CompanyController@uploadFile');
@@ -189,9 +193,6 @@ if ($hostname) {
             Route::post('price-labels/clear-default', 'Tenant\PriceLabelController@clearDefault');
 
             //Certificates
-            Route::get('certificates/record', 'Tenant\CertificateController@record');
-            Route::post('certificates/uploads', 'Tenant\CertificateController@uploadFile');
-            Route::delete('certificates', 'Tenant\CertificateController@destroy');
 
             //Certificates Qz Tray
             Route::get('certificates-qztray/record', 'Tenant\CertificateQzTrayController@record');
@@ -381,16 +382,16 @@ if ($hostname) {
             Route::get('documents/search/customer/{id}', 'Tenant\DocumentController@searchCustomerById');
             Route::get('documents/search/externalId/{external_id}', 'Tenant\DocumentController@searchExternalId');
 
-            Route::get('documents', 'Tenant\DocumentController@index')->name('tenant.documents.index')->middleware(['redirect.level', 'tenant.internal.mode']);
+            Route::get('documents', 'Tenant\DocumentController@index')->name('tenant.documents.index')->middleware(['redirect.level']);
             Route::get('documents/columns', 'Tenant\DocumentController@columns');
             Route::get('documents/records', 'Tenant\DocumentController@records');
             Route::post('documents/custom-fields/update', 'Tenant\DocumentController@updateCustomFields');
             Route::get('documents/recordsTotal', 'Tenant\DocumentController@recordsTotal');
             Route::get('documents/kpis', 'Tenant\DocumentController@kpis');
-            Route::get('documents/create/{table}/{table_id}', 'Tenant\DocumentController@createFromTable')->name('tenant.documents.create_from_table')->middleware(['redirect.level', 'tenant.internal.mode']);
-            Route::get('documents/create', 'Tenant\DocumentController@create')->name('tenant.documents.create')->middleware(['redirect.level', 'tenant.internal.mode']);
+            Route::get('documents/create/{table}/{table_id}', 'Tenant\DocumentController@createFromTable')->name('tenant.documents.create_from_table')->middleware(['redirect.level']);
+            Route::get('documents/create', 'Tenant\DocumentController@create')->name('tenant.documents.create')->middleware(['redirect.level']);
             Route::get('documents/create_tensu', 'Tenant\DocumentController@create_tensu')->name('tenant.documents.create_tensu');
-            Route::get('documents/{id}/edit', 'Tenant\DocumentController@edit')->middleware(['redirect.level', 'tenant.internal.mode']);
+            Route::get('documents/{id}/edit', 'Tenant\DocumentController@edit')->middleware(['redirect.level']);
             Route::get('documents/{id}/show', 'Tenant\DocumentController@show');
 
             Route::get('documents/tables', 'Tenant\DocumentController@tables');
@@ -446,13 +447,13 @@ if ($hostname) {
             Route::post('documents/retention/upload', 'Tenant\DocumentController@retentionUpload');
 
             //Contingencies
-            Route::get('contingencies', 'Tenant\ContingencyController@index')->name('tenant.contingencies.index')->middleware('redirect.level', 'tenant.internal.mode');
+            Route::get('contingencies', 'Tenant\ContingencyController@index')->name('tenant.contingencies.index')->middleware('redirect.level');
             Route::get('contingencies/columns', 'Tenant\ContingencyController@columns');
             Route::get('contingencies/records', 'Tenant\ContingencyController@records');
             Route::get('contingencies/create', 'Tenant\ContingencyController@create')->name('tenant.contingencies.create');
 
             //Summaries
-            Route::get('summaries', 'Tenant\SummaryController@index')->name('tenant.summaries.index')->middleware('redirect.level', 'tenant.internal.mode');
+            Route::get('summaries', 'Tenant\SummaryController@index')->name('tenant.summaries.index')->middleware('redirect.level');
             Route::get('summaries/records', 'Tenant\SummaryController@records');
             Route::post('summaries/documents', 'Tenant\SummaryController@documents');
             Route::post('summaries', 'Tenant\SummaryController@store');
@@ -465,7 +466,7 @@ if ($hostname) {
             Route::get('summaries/tables', 'Tenant\SummaryController@tables');
 
             //Voided
-            Route::get('voided', 'Tenant\VoidedController@index')->name('tenant.voided.index')->middleware('redirect.level', 'tenant.internal.mode');
+            Route::get('voided', 'Tenant\VoidedController@index')->name('tenant.voided.index')->middleware('redirect.level');
             Route::get('voided/columns', 'Tenant\VoidedController@columns');
             Route::get('voided/records', 'Tenant\VoidedController@records');
             Route::post('voided', 'Tenant\VoidedController@store');
@@ -542,7 +543,7 @@ if ($hostname) {
             });
 
             Route::get('customers/list', 'Tenant\PersonController@clientsForGenerateCPE');
-            Route::get('reports/consistency-documents', 'Tenant\ReportConsistencyDocumentController@index')->name('tenant.consistency-documents.index')->middleware('tenant.internal.mode');
+            Route::get('reports/consistency-documents', 'Tenant\ReportConsistencyDocumentController@index')->name('tenant.consistency-documents.index');
             Route::post('reports/consistency-documents/lists', 'Tenant\ReportConsistencyDocumentController@lists');
 
             Route::post('options/delete_documents', 'Tenant\OptionController@deleteDocuments');
@@ -1094,10 +1095,6 @@ if ($hostname) {
             Route::get('services/rif/{rif}', 'System\ServiceController@rif');
             // ######### FIN CAMBIO RIF SUPER ADMIN
 
-            Route::get('certificates/record', 'System\CertificateController@record');
-            Route::post('certificates/uploads', 'System\CertificateController@uploadFile');
-            Route::post('certificates/saveSoapUser', 'System\CertificateController@saveSoapUser');
-            Route::delete('certificates', 'System\CertificateController@destroy');
             Route::get('configurations', 'System\ConfigurationController@index')->name('system.configuration.index');
             Route::get('configurations/mozo', 'System\MozoController@index')->name('system.mozo.index');
             Route::get('configurations/mozo/record', 'System\MozoController@record')->name('system.mozo.record');

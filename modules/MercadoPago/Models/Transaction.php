@@ -1,10 +1,11 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\MercadoPago\Models;
 
 use App\Models\Tenant\{
     ModelTenant,
-    SoapType,
+    FiscalEnvironment,
 };
 use Modules\Payment\Models\{
     PaymentLink
@@ -17,7 +18,7 @@ class Transaction extends ModelTenant
     public const TRANSACTION_STATE_APPROVED = '01';
 
     protected $fillable = [
-        'soap_type_id',
+        'fiscal_environment',
         'date',
         'time',
         'uuid',
@@ -44,9 +45,9 @@ class Transaction extends ModelTenant
         return $this->hasMany(TransactionQuery::class);
     } 
  
-    public function soap_type()
+    public function fiscal_environment_type()
     {
-        return $this->belongsTo(SoapType::class);
+        return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
     }
      
     public function getRowResource()
@@ -73,3 +74,4 @@ class Transaction extends ModelTenant
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

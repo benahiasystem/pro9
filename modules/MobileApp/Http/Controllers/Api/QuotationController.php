@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\MobileApp\Http\Controllers\Api;
 
@@ -36,7 +37,7 @@ class QuotationController extends Controller
         // Validar límite máximo
         $limit = min($limit, 100);
 
-        $query = Quotation::with(['user', 'soap_type', 'state_type', 'currency_type', 'items', 'payments', 'person'])
+        $query = Quotation::with(['user', 'fiscal_environment_type', 'state_type', 'currency_type', 'items', 'payments', 'person'])
             ->whereSourceAdmin()
             ->orderBy('created_at', 'desc');
 
@@ -65,3 +66,4 @@ class QuotationController extends Controller
         ];
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

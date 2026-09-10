@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace App\Http\Requests\System;
 
 use App\Rules\SubdomainNotLatin;
@@ -10,6 +11,7 @@ class GuestRegisterClientRequest extends FormRequest
     public function rules()
     {
         return [
+            ...\App\Services\FiscalEmissionSettings::rules(),
             'number' => [
                 'required',
                 'numeric',
@@ -44,3 +46,4 @@ class GuestRegisterClientRequest extends FormRequest
         return true;
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

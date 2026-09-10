@@ -307,7 +307,7 @@ class SaleNoteController extends Controller
             'external_id' => Str::uuid()->toString(),
             'customer' => $customer,
             'establishment' => EstablishmentInput::set($inputs['establishment_id']),
-            'soap_type_id' => $this->company->soap_type_id,
+            'fiscal_environment' => $this->company->fiscal_environment,
             'state_type_id' => '01',
             'series' => $data_series['series'],
             'number' => $data_series['number']
@@ -323,7 +323,7 @@ class SaleNoteController extends Controller
         $series = Series::find($series_id)->number;
 
         if (!$id) {
-            $sale_note = SaleNote::select('number')->where('soap_type_id', $this->company->soap_type_id)
+            $sale_note = SaleNote::select('number')->where('fiscal_environment', $this->company->fiscal_environment)
                 ->where('series', $series)
                 ->orderBy('number', 'desc')
                 ->first();
@@ -727,7 +727,7 @@ class SaleNoteController extends Controller
             'external_id' => $saleNote['external_id'],
             'establishment_id' => $saleNote['establishment_id'],
             'establishment' => $saleNote['establishment'],
-            "soap_type_id" => $saleNote['soap_type_id'],
+            "fiscal_environment" => $saleNote['fiscal_environment'],
             "state_type_id" => $saleNote['state_type_id'],
             "ubl_version" => "2.1",
             "filename" => "",

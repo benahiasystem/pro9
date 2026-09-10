@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\Tenant;
 
@@ -18,7 +19,7 @@ class PerceptionCollection extends ResourceCollection
             return [
                 'id' => $row->id,
                 'group_id' => $row->group_id,
-                'soap_type_id' => $row->soap_type_id,
+                'fiscal_environment' => $row->fiscal_environment,
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
                 'document_type_short' => $row->document_type->short,
                 'number' => $row->number_full,
@@ -41,3 +42,4 @@ class PerceptionCollection extends ResourceCollection
         });
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

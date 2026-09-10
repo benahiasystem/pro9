@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace App\Http\Resources\Tenant;
 
@@ -19,25 +20,7 @@ class RetentionResource extends JsonResource
         $response_type = null;
         $code = null;
 
-        if($this->soap_shipping_response){
-            if($this->soap_shipping_response->sent){
 
-                $response_message = $this->soap_shipping_response->description;
-                $code =  (int) $this->soap_shipping_response->code;
-
-                if($code === 0) {
-                    $response_type = 'success';
-                }elseif($code < 2000) {
-                    $response_type = 'error';
-                }elseif ($code < 4000) {
-                    $response_type = 'error';
-                } else {
-                    $response_type = 'warning';
-                }
- 
-            }
-
-        }
 
         return [
             'id' => $this->id,
@@ -51,3 +34,4 @@ class RetentionResource extends JsonResource
         
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

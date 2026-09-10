@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace Modules\Order\Http\Resources;
 
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -22,7 +23,7 @@ class OrderFormCollection extends ResourceCollection
                 'id' => $row->id,
                 'btn_dispatch' => $btn_dispatch,
                 'external_id' => $row->external_id,
-                'soap_type_id' => $row->soap_type_id,
+                'fiscal_environment' => $row->fiscal_environment,
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
                 'number' => $row->number_full,
                 'driver_name' => $row->driver->name,
@@ -37,3 +38,4 @@ class OrderFormCollection extends ResourceCollection
         });
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

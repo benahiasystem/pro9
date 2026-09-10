@@ -1,10 +1,12 @@
+{{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
 @extends('tenant.layouts.app')
 
 @section('content')
 
     <affiliation-receipts
         :configuration="{{\App\Models\Tenant\Configuration::getPublicConfig()}}"
-        :soap-company="{{ json_encode($soap_company) }}">
+        :company-environment="{{ json_encode($company_environment) }}">
     </affiliation-receipts>
 
 @endsection
+{{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 namespace App\Http\Controllers\Tenant;
 
 use App\CoreFacturalo\Helpers\Storage\StorageDocument;
@@ -69,11 +70,11 @@ class SummaryController extends Controller
         $company = Company::active();
         $date_of_reference = $request->input('date_of_reference');
         
-        $documents = Document::filterDocumentsForSummary($date_of_reference, $company->soap_type_id)->get();
+        $documents = Document::filterDocumentsForSummary($date_of_reference, $company->fiscal_environment)->get();
          
         // $documents = Document::query()
         //     ->where('date_of_issue', $request->input('date_of_reference'))
-        //     ->where('soap_type_id', $company->soap_type_id)
+        //     ->where('fiscal_environment', $company->fiscal_environment)
         //     ->where('group_id', '02')
         //     ->where('state_type_id', '01')
         //     ->take(500)
@@ -185,3 +186,4 @@ class SummaryController extends Controller
     
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

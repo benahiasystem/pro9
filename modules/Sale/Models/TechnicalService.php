@@ -10,7 +10,7 @@
     use App\Models\Tenant\Establishment;
     use App\Models\Tenant\TechnicalServiceItem;
     use App\Models\Tenant\User;
-    use App\Models\Tenant\SoapType;
+    use App\Models\Tenant\FiscalEnvironment;
     use App\Models\Tenant\Person;
     use App\Models\Tenant\ModelTenant;
     // use App\Traits\SellerIdTrait;
@@ -29,7 +29,7 @@
      *
      * @property int                                  $id
      * @property int                                  $user_id
-     * @property string                               $soap_type_id
+     * @property string                               $fiscal_environment
      * @property int|null                             $establishment_id
      * @property string|null                          $establishment
      * @property int                                  $customer_id
@@ -79,7 +79,7 @@
      * @property bool                                 $warranty
      * @property bool                                 $maintenance
      * @property bool                                 $diagnosis
-     * @property SoapType                             $soap_type
+     * @property FiscalEnvironment                             $fiscal_environment_type
      * @property User                                 $user
      * @property Collection|CashDocument[]            $cash_documents
      * @property Collection|TechnicalServicePayment[] $technical_service_payments
@@ -97,7 +97,7 @@
         protected $fillable = [
 
             'user_id',
-            'soap_type_id',
+            'fiscal_environment',
             'establishment_id',
             'establishment',
             'customer_id',
@@ -238,9 +238,9 @@
         /**
          * @return BelongsTo
          */
-        public function soap_type()
+        public function fiscal_environment_type()
         {
-            return $this->belongsTo(SoapType::class, 'soap_type_id', 'id');
+            return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment', 'id');
         }
 
         /**
@@ -410,7 +410,7 @@
 
             $data = array_merge($this->toArray(), [
                 'id' => $this->id,
-                'soap_type_id' => $this->soap_type_id,
+                'fiscal_environment' => $this->fiscal_environment,
                 'cellphone' => $this->cellphone,
                 'serial_number' => $this->serial_number,
                 'cost' => $this->cost,
@@ -507,19 +507,19 @@
         /**
          * @return string
          */
-        public function getSoapTypeId(): string
+        public function getFiscalEnvironmentId(): string
         {
-            return $this->soap_type_id;
+            return $this->fiscal_environment;
         }
 
         /**
-         * @param string $soap_type_id
+         * @param string $fiscal_environment
          *
          * @return TechnicalService
          */
-        public function setSoapTypeId(string $soap_type_id): TechnicalService
+        public function setFiscalEnvironmentId(string $fiscal_environment): TechnicalService
         {
-            $this->soap_type_id = $soap_type_id;
+            $this->fiscal_environment = $fiscal_environment;
             return $this;
         }
 
@@ -1426,21 +1426,21 @@
         }
 
         /**
-         * @return SoapType
+         * @return FiscalEnvironment
          */
-        public function getSoapType(): SoapType
+        public function getFiscalEnvironment(): FiscalEnvironment
         {
-            return $this->soap_type;
+            return $this->fiscal_environment_type;
         }
 
         /**
-         * @param SoapType $soap_type
+         * @param FiscalEnvironment $fiscal_environment_type
          *
          * @return TechnicalService
          */
-        public function setSoapType(SoapType $soap_type): TechnicalService
+        public function setFiscalEnvironment(FiscalEnvironment $fiscal_environment_type): TechnicalService
         {
-            $this->soap_type = $soap_type;
+            $this->fiscal_environment_type = $fiscal_environment_type;
             return $this;
         }
 

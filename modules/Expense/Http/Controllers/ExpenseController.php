@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Expense\Http\Controllers;
 
@@ -252,7 +253,7 @@ class ExpenseController extends Controller
         $values = [
             'user_id' => auth()->id(),
             'state_type_id' => $inputs['id'] ? $inputs['state_type_id'] : '05',
-            'soap_type_id' => $company->soap_type_id,
+            'fiscal_environment' => $company->fiscal_environment,
             'external_id' => $inputs['id'] ? $inputs['external_id'] : Str::uuid()->toString(),
             'supplier' => PersonInput::set($inputs['supplier_id']),
         ];
@@ -378,3 +379,4 @@ class ExpenseController extends Controller
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

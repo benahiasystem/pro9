@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Sale\Http\Resources;
 
@@ -19,7 +20,7 @@ class ContractCollection extends ResourceCollection
 
             return [
                 'id' => $row->id,
-                'soap_type_id' => $row->soap_type_id,
+                'fiscal_environment' => $row->fiscal_environment,
                 'external_id' => $row->external_id,
                 'date_of_issue' => $row->date_of_issue->format('d-m-Y'),
                 'delivery_date' => ($row->delivery_date) ? $row->delivery_date->format('d-m-Y') : null,
@@ -45,3 +46,4 @@ class ContractCollection extends ResourceCollection
     }
 
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 namespace Modules\Order\Helpers;
 
@@ -18,7 +19,7 @@ class OrderFormHelper
     {
 
         $company = Company::active();
-        $soap_type_id = $company->soap_type_id;
+        $fiscal_environment = $company->fiscal_environment;
 
         $filename = null;
         $establishment = EstablishmentInput::set($inputs['establishment_id']);
@@ -29,7 +30,7 @@ class OrderFormHelper
             'external_id' => $inputs['id'] ? $inputs['external_id'] : Str::uuid()->toString(),
             'establishment_id' => $inputs['establishment_id'],
             'establishment' => $establishment,
-            'soap_type_id' => $soap_type_id,
+            'fiscal_environment' => $fiscal_environment,
             'state_type_id' => '01',
             'filename' => $filename,
             'prefix' => 'OP',
@@ -149,3 +150,4 @@ class OrderFormHelper
         return null;
     }
 }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########

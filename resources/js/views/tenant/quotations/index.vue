@@ -1,3 +1,4 @@
+<!-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## -->
 <template>
     <div class="quotations">
         <div class="page-header pe-0">
@@ -449,7 +450,7 @@ import { mapActions, mapState } from "vuex";
 import SendEmailDocument from "@components/secondary/SendEmailDocument.vue";
 
 export default {
-    props: ["typeUser", "soapCompany", "generateOrderNoteFromQuotation"],
+    props: ["typeUser", "companyEnvironment", "generateOrderNoteFromQuotation"],
     mixins: [deletable],
     components: {
         DataTable,
@@ -779,3 +780,4 @@ export default {
     color: #66b1ff;
 }
 </style>
+<!-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## -->

@@ -1,3 +1,4 @@
+{{-- ######## INICIO MODALIDAD DE EMISIÓN FISCAL ######## --}}
 @extends('tenant.layouts.app')
 
 @section('content')
@@ -28,7 +29,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                             </div>
                             <div class="card-body py-2">
                                 <div class="row actions-cards-row">
-                                    @if(auth()->user()->type != 'integrator' && $vc_company->soap_type_id != '03')
+                                    @if(auth()->user()->type != 'integrator')
                                         @if(in_array('documents', $vc_modules))
                                             @if(in_array('new_document', $vc_module_levels))
                                                 <div class="col quick-action-col px-1 text-center">
@@ -80,7 +81,7 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
                                         </div>
                                     @endif
 
-                                    @if(in_array('documents', $vc_modules) && $vc_company->soap_type_id != '03')
+                                    @if(in_array('documents', $vc_modules))
                                         @if(in_array('list_document', $vc_module_levels))
                                             <div class="col quick-action-col px-1 text-center">
                                                 <a href="{{route('tenant.documents.index')}}" class="w-100 h-100 d-inline-block border bg-danger text-light rounded p-1">
@@ -312,8 +313,9 @@ $show_welcome_panel = data_get($configuration, 'visual.show_welcome_panel', fals
 
     <tenant-dashboard-index
     	:type-user="{{ json_encode(auth()->user()->type) }}"
-    	:soap-company="{{ json_encode($soap_company) }}"
+        :company-environment="{{ json_encode($company_environment) }}"
         :configuration="{{ json_encode($configuration) }}">
     </tenant-dashboard-index>
 
 @endsection
+{{-- ######## FIN MODALIDAD DE EMISIÓN FISCAL ######## --}}

@@ -10,7 +10,7 @@
  * - `external_id`: char(36); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `user_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
  * - `warehouse_id`: int(10) unsigned; NOT NULL — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `document_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `series`: varchar(255); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `number`: int(11); NOT NULL — Sin comentario definido en el esquema fuente.
@@ -38,7 +38,7 @@ CREATE TABLE `guides` (
   `external_id` char(36) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` int(10) unsigned NOT NULL,
   `warehouse_id` int(10) unsigned NOT NULL,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `document_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
   `series` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `number` int(11) NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE `guides` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `guides_series_number_unique` (`soap_type_id`,`document_type_id`,`series`,`number`),
+  UNIQUE KEY `guides_series_number_unique` (`fiscal_environment`,`document_type_id`,`series`,`number`),
   KEY `guides_user_id_foreign` (`user_id`),
   KEY `guides_warehouse_id_foreign` (`warehouse_id`),
   KEY `guides_document_type_id_foreign` (`document_type_id`),

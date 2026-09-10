@@ -7,7 +7,7 @@
  *
  * Inventario de columnas:
  * - `id`: int(10) unsigned; NOT NULL; auto_increment — Sin comentario definido en el esquema fuente.
- * - `soap_type_id`: char(2); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
+ * - `fiscal_environment`: varchar(16); NOT NULL; COLLATE utf8mb4_unicode_ci — Sin comentario definido en el esquema fuente.
  * - `date`: date; NOT NULL — Fecha de registro
  * - `origin_date_of_issue`: date; NOT NULL — Fecha del documento origen de la propina
  * - `origin_id`: int(11); NOT NULL — Sin comentario definido en el esquema fuente.
@@ -28,7 +28,7 @@ return new class extends Migration
         DB::unprepared(<<<'SQL'
 CREATE TABLE `tips` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `soap_type_id` char(2) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fiscal_environment` varchar(16) COLLATE utf8mb4_unicode_ci NOT NULL,
   `date` date NOT NULL COMMENT 'Fecha de registro',
   `origin_date_of_issue` date NOT NULL COMMENT 'Fecha del documento origen de la propina',
   `origin_id` int(11) NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE `tips` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `origin_index` (`origin_id`,`origin_type`),
-  KEY `tips_soap_type_id_foreign` (`soap_type_id`),
+  KEY `tips_fiscal_environment_foreign` (`fiscal_environment`),
   KEY `tips_date_index` (`date`),
   KEY `tips_origin_date_of_issue_index` (`origin_date_of_issue`),
   KEY `tips_worker_full_name_index` (`worker_full_name`)

@@ -1,4 +1,5 @@
 <?php
+// ######## INICIO MODALIDAD DE EMISIÓN FISCAL ########
 
 
     namespace Modules\Production\Models;
@@ -12,7 +13,7 @@
     use Illuminate\Database\Eloquent\Collection;
     use Illuminate\Database\Eloquent\Relations\BelongsTo;
     use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-    use App\Models\Tenant\SoapType;
+    use App\Models\Tenant\FiscalEnvironment;
 
 
     /**
@@ -58,7 +59,7 @@
             'comment',
             'mill_name',
             'lot_code',
-            'soap_type_id',
+            'fiscal_environment',
         ];
 
         /**
@@ -72,9 +73,9 @@
         /**
          * @return BelongsTo
          */
-        public function soap_type()
+        public function fiscal_environment_type()
         {
-            return $this->belongsTo(SoapType::class);
+            return $this->belongsTo(FiscalEnvironment::class, 'fiscal_environment');
         }
         
         /**
@@ -106,3 +107,4 @@
         }
 
     }
+// ######## FIN MODALIDAD DE EMISIÓN FISCAL ########
