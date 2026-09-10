@@ -1018,8 +1018,6 @@ use Illuminate\Support\Facades\Mail;
                 'has_advanced_statuses' => true,
                 'show_item_discounts_charges_attributes' => false,
                 'edit_name_product' => false,
-                'default_document_type_03' => false,
-                'default_document_type_80' => true,
             ]);
 
 
